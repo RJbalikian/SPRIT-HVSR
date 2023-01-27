@@ -20,6 +20,11 @@
 import os
 import sys
 
+args= { 'net':'AM',
+        'sta':'RAC84',
+        'loc':'Unknown'
+        }
+
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 # import the libraries

@@ -10,7 +10,10 @@ import setParams
 import sys
 import os
 
-args = utilities.get_args(sys.argv)
+
+
+utilities.get_args(sys.argv)
+args = setParams.args
 report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=setParams.verbose))
 
 # network, station, and location to process.
