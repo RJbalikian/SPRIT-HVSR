@@ -3,8 +3,11 @@ Various functions to do various necessary, behind-the-scenes stuff
 '''
 import time
 import sys
+from datetime import datetime
 
-import msgLib
+
+import hvsr.pyUpdates.msgLib as msgLib
+
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -51,7 +54,6 @@ def date_range(_start, _end, _interval):
         _date_list = [_start, _end]
     else:
         _date_list = list()
-        from datetime import datetime
         start_t = datetime.strptime(_start, '%Y-%m-%d')
         end_t = datetime.strptime(_end, '%Y-%m-%d')
         diff = (end_t - start_t) / _interval
@@ -87,4 +89,4 @@ def get_param(_args, _key, _msg_lib, _value, be_verbose=-1):
     else:
         _msg_lib.error('missing parameter {}'.format(_key), 1)
         #usage()
-        sys.exit()
+        #sys.exit()
