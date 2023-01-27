@@ -31,7 +31,7 @@ parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 libraryPath = os.path.join(parentDirectory, 'lib')
 sys.path.append(libraryPath)
 
-import fileLib as fileLib
+import hvsr.pyUpdates.fileLib as fileLib
 
 verbose = 1
 
@@ -48,7 +48,8 @@ reportDirectory = fileLib.mkdir(dataDirectory, 'report')
 hvsrDirectory = fileLib.mkdir(dataDirectory, 'hvsr')
 
 # Default station channel list.
-chan = 'BHZ,BHN,BHE'
+#chan = 'BHZ,BHN,BHE' #From original code
+chan = 'EHZ, EHN, EHE' #For rasp shake
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
 # Should break the long requested interval to 'n' segments for smaller data request chunks.

@@ -16,7 +16,7 @@ hvsr_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 library_path = os.path.join(hvsr_directory, 'lib')
 sys.path.append(library_path)
 
-import msgLib
+import hvsr.pyUpdates.msgLib
 
 
 def mkdir(base_directory, target_directory):

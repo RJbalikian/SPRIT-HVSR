@@ -1,28 +1,26 @@
-import utilities
-import powspecdens
-import readhvsr
-import msgLib
-import fileLib
-import setParams
-import hvsrCalcs
-import ioput
-
 import datetime
 import sys
 import os
-
-import matplotlib
-import numpy as np
 import math
-
 import time
 import urllib
 import xml.etree.ElementTree as ET
 
+
+import matplotlib
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
-
 import obspy
+
+import hvsr.pyUpdates.fileLib as fileLib
+import hvsr.pyUpdates.msgLib as msgLib
+import hvsr.pyUpdates.hvsrCalcs as hvsrCalcs
+import hvsr.pyUpdates.ioput as ioput
+import hvsr.pyUpdates.powspecdens as powspecdens
+import hvsr.pyUpdates.readhvsr as readhvsr
+import hvsr.pyUpdates.setParams as setParams
+import hvsr.pyUpdates.utilities as utilities
 
 args=setParams.args
 def computeHVSR():

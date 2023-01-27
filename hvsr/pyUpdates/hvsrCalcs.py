@@ -1,13 +1,16 @@
-import msgLib
-import powspecdens
+
 import math
-from scipy.signal import argrelextrema
-import numpy as np
 import urllib
 import sys
 
-import utilities
-import setParams
+import numpy as np
+from scipy.signal import argrelextrema
+
+
+import hvsr.pyUpdates.msgLib as msgLib
+import hvsr.pyUpdates.powspecdens as powspecdens
+import hvsr.pyUpdates.utilities as utilities
+import hvsr.pyUpdates.setParams as setParams
 
 args = utilities.get_args(sys.argv)
 #target = '.'.join([network, station, location, channel, '*'])

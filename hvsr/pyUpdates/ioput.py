@@ -1,19 +1,117 @@
 '''
 Functions for reading in data
 '''
-
-import utilities
-import fileLib
-import msgLib
-import setParams
-
 import sys
 import os
+import datetime
+import pathlib
 
+import obspy
 
+import hvsr.pyUpdates.utilities as utilities
+import hvsr.pyUpdates.fileLib as fileLib
+import hvsr.pyUpdates.msgLib as msgLib
+import hvsr.pyUpdates.setParams as setParams
 
-utilities.get_args(sys.argv)
+#utilities.get_args(sys.argv) #This is for command-line?
 args = setParams.args
+
+args= { 'net':'AM',
+        'sta':'RAC84',
+        'loc':'00',
+        'cha':['EHE', 'EHN', 'EHZ']
+        }
+
+#Converts filepaths to pathlib paths, if not already
+def checkifpath(filepath):
+    # checks if the variable is any instance of pathlib
+    if isinstance(filepath, pathlib.PurePath):
+        pass
+    else:
+        try:
+            filepath = pathlib.Path(filepath)
+            print('Converted string to pathlib path') #Assume a string was input rather than pathlib object
+        except:
+            msgLib.error('Input cannot be converted to pathlib path', 0)
+    return filepath
+
+#Reads in traces to obspy stream
+def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), doy='', year='', args=args, inst='raspshake'):
+    """Fetch ambient seismic data from a source to read into obspy stream
+        Parameters
+        ----------
+        datapath : str or pathlib path
+            Path to directory containing data. For Raspberry Shakes, 
+            this is the directory where the channel folders are located.
+        starttime : str or time object
+            Start time for the data traces/streams
+        endtime : str or time object
+            End time for the data traces/streams
+        date : str, int, or date object
+            Date for which to read in the data traces. 
+            If string, will attempt to decode to convert to a date format.
+            If int, assumes it is day of year (DOY).
+            If date object, will read it in directly.
+        args : dict, optional in some cases
+            For raspberry shakes using EHZ, EHN, EHE channels, this is not needed.
+            Otherwise, use the following keys:
+                net : the station's network (AM for raspberry shakes)
+                sta : the station name (unique per raspberry shake)
+                loc : two-digit integer; by default 00
+                cha : channel names in a list. By default, raspberry shake should be ['EHE', 'EHN', 'EHZ']
+                d   : unknown designator. For raspberry shake, this will always be "D"
+                year: integer year
+                doy : integer day of year
+        inst : str {'raspshake}
+            The type of instrument from which the data is reading. Currently, only raspberry shake supported
+        Returns
+        -------
+        rawDataIN : obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+        
+        """
+
+    datapath = checkifpath(datapath)
+
+    #Need to put dates and times in right formats first
+
+    if type(date) is int:
+        doy = date
+        year = datetime.datetime.now().year()
+        print('Assuming current year')
+    else: #FOR NOW, need to update
+        date = datetime.datetime.now()
+        doy = date.timetuple().tm_yday
+        year = date.year()
+
+    if inst=='raspshake':
+        folderList = []
+        folderPathList = []
+        for child in datapath.iterdir():
+            folderPathList.append(child)
+            folderList.append(child.stem.split('.')[0])
+        folderList.sort(reverse=True) #Channels in Z, N, E order
+
+        if len(folderList) !=3:
+            msgLib.error('3 channels needed!', 1)
+        else:
+            filepaths = []
+            for folder in folderPathList:
+                for file in folder.iterdir():
+                    if str(doy) in str(file.name) and str(year) in str(file.name):
+                        filepaths.append(file)
+            
+            traceList = []
+            for i, f in enumerate(filepaths):
+                meta = {'station': args['sta'], 'network': args['net'], 'channel': args['cha'][i]}
+
+                tr = obspy.read(str(f), format='MSEED')
+                tr= obspy.Trace(header=meta)
+                traceList.append(tr)
+                
+            rawDataIN = obspy.Stream(traceList)
+
+    return rawDataIN
+
 report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=setParams.verbose))
 
 # network, station, and location to process.
@@ -31,6 +129,8 @@ if location is None:
     sys.exit()
 
 channel='NEED TO DEFINE CHANNEL'#########################################
+
+
 
 
 def print_peak_report(_station_header, _report_header, _peak, _reportinfo, _min_rank):
