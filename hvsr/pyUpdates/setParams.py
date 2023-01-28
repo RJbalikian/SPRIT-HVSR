@@ -22,7 +22,8 @@ import sys
 
 args= { 'net':'AM',
         'sta':'RAC84',
-        'loc':'Unknown'
+        'loc':'00',
+        'cha': ['EHZ', 'EHN', 'EHE']
         }
 
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

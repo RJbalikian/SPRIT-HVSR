@@ -36,7 +36,7 @@ def checkifpath(filepath):
     return filepath
 
 #Reads in traces to obspy stream
-def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), args=args, inst='raspshake'):
+def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=datetime.datetime.today(), args=args, inst='raspshake'):
     """Fetch ambient seismic data from a source to read into obspy stream
         Parameters
         ----------
@@ -73,15 +73,38 @@ def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), args
     datapath = checkifpath(datapath)
 
     #Need to put dates and times in right formats first
+    if type(date) is tuple:
+        if date[0]>366:
+            msgLib.error('First item in date tuple must be day of year (0-366)', 0)
+        elif date[1] > datetime.datetime.now().year:
+            msgLib.error('Second item in date tuple should be year, but given item is in the future', 0)
+        else:
+            doy = date[0]
+            year = date[1]
+    elif type(date) is str:
+        if '/' in date:
+            dateSplit = date.split('/')            
+        elif '-' in date:
+            dateSplit = date.split('-')
+        else:
+            dateSplit = date
 
-    if type(date) is int:
-        doy = date
-        year = datetime.datetime.now().year()
-        print('Assuming current year')
+        if int(dateSplit[0]) > 31:
+            date = datetime.datetime(int(dateSplit[0]), int(dateSplit[1]), int(dateSplit[2]))
+            doy = date.timetuple().tm_yday
+            year = date.year
+        elif int(dateSplit[0])<=12 and int(dateSplit[2]) > 31:
+            msgLib.info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Will attempt to parse date.")
+            date = datetime.datetime(int(dateSplit[2]), int(dateSplit[0]), int(dateSplit[1]))
+            doy = date.timetuple().tm_yday
+            year = date.year
+        else:
+            msgLib.info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Cannot parse date.")
     else: #FOR NOW, need to update
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
-        year = date.year()
+        year = date.year
+        print("Did not recognize date, using year {} and day {}".format(year, doy))
 
     if inst=='raspshake':
         folderList = []
@@ -99,38 +122,25 @@ def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), args
                 for file in folder.iterdir():
                     if str(doy) in str(file.name) and str(year) in str(file.name):
                         filepaths.append(file)
-            
+
+            if len(filepaths) == 0:
+                msgLib.info('No file found for specified day/year. The following days/files exist for specified year in this directory')
+                doyList = []
+                for j, folder in enumerate(folderPathList):
+                    for i, file in enumerate(folder.iterdir()):
+                        if j ==0:
+                            doyList.append(str(year) + ' ' + str(file.name[-3:]))
+                            print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
+
             traceList = []
             for i, f in enumerate(filepaths):
                 meta = {'station': args['sta'], 'network': args['net'], 'channel': args['cha'][i]}
-
-                tr = obspy.read(str(f), format='MSEED')
-                tr= obspy.Trace(header=meta)
+                tr = obspy.read(f)
+                tr= obspy.Trace(tr[0].data,header=meta)
                 traceList.append(tr)
-                
             rawDataIN = obspy.Stream(traceList)
 
     return rawDataIN
-
-report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=setParams.verbose))
-
-# network, station, and location to process.
-network = utilities.get_param(args, 'net', msgLib, None)
-if network is None:
-    msgLib.error('network not defined!', 1)
-    sys.exit()
-station = utilities.get_param(args, 'sta', msgLib, None)
-if station is None:
-    msgLib.error('station not defined!', 1)
-    sys.exit()
-location = utilities.get_param(args, 'loc', msgLib, '*')
-if location is None:
-    msgLib.error('location not defined!', 1)
-    sys.exit()
-
-channel='NEED TO DEFINE CHANNEL'#########################################
-
-
 
 
 def print_peak_report(_station_header, _report_header, _peak, _reportinfo, _min_rank):
