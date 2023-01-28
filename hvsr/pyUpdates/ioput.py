@@ -36,7 +36,7 @@ def checkifpath(filepath):
     return filepath
 
 #Reads in traces to obspy stream
-def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), doy='', year='', args=args, inst='raspshake'):
+def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), args=args, inst='raspshake'):
     """Fetch ambient seismic data from a source to read into obspy stream
         Parameters
         ----------
@@ -47,10 +47,10 @@ def fetchdata(datapath, starttime, endtime, date=datetime.datetime.today(), doy=
             Start time for the data traces/streams
         endtime : str or time object
             End time for the data traces/streams
-        date : str, int, or date object
+        date : str, tuple, or date object
             Date for which to read in the data traces. 
             If string, will attempt to decode to convert to a date format.
-            If int, assumes it is day of year (DOY).
+            If tuple, assumes first item is day of year (DOY) and second item is year 
             If date object, will read it in directly.
         args : dict, optional in some cases
             For raspberry shakes using EHZ, EHN, EHE channels, this is not needed.
