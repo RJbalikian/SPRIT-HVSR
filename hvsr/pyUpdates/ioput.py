@@ -5,6 +5,7 @@ import sys
 import os
 import datetime
 import pathlib
+import warnings
 
 import obspy
 
@@ -134,10 +135,12 @@ def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=date
 
             traceList = []
             for i, f in enumerate(filepaths):
-                meta = {'station': args['sta'], 'network': args['net'], 'channel': args['cha'][i]}
-                tr = obspy.read(f)
-                tr= obspy.Trace(tr[0].data,header=meta)
-                traceList.append(tr)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                    meta = {'station': args['sta'], 'network': args['net'], 'channel': args['cha'][i]}
+                    tr = obspy.read(f)
+                    tr= obspy.Trace(tr[0].data,header=meta)
+                    traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
 
     return rawDataIN

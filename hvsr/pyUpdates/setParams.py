@@ -20,11 +20,18 @@
 import os
 import sys
 
+
+
 args= { 'net':'AM',
         'sta':'RAC84',
         'loc':'00',
         'cha': ['EHZ', 'EHN', 'EHE']
         }
+
+##HERE
+def setShakeMetadata(filepath, startDate, endDate, lon, lat, createDate, elevation, depth):
+
+    return
 
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
