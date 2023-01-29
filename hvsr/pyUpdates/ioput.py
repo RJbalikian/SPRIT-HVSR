@@ -15,7 +15,7 @@ import hvsr.pyUpdates.msgLib as msgLib
 import hvsr.pyUpdates.setParams as setParams
 
 #utilities.get_args(sys.argv) #This is for command-line?
-args = setParams.args
+#args = setParams.args()
 
 args= { 'net':'AM',
         'sta':'RAC84',

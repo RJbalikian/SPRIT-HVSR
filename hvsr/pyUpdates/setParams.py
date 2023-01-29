@@ -19,10 +19,13 @@
 """
 import os
 import sys
+import json
+
+import hvsr.pyUpdates.ioput as ioput
+import hvsr.pyUpdates.fileLib as fileLib
 
 
-
-args= { 'net':'AM',
+args = { 'net':'AM',
         'sta':'RAC84',
         'loc':'00',
         'cha': ['EHZ', 'EHN', 'EHE']
@@ -30,7 +33,11 @@ args= { 'net':'AM',
 
 ##HERE
 def setShakeMetadata(filepath, startDate, endDate, lon, lat, createDate, elevation, depth):
-
+    filepath = ioput.checkifpath(filepath)
+    
+    with open(filepath , 'r') as f:
+        metadata = json.load(filepath)
+    print(metadata.keys())
     return
 
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -38,8 +45,6 @@ parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # import the libraries
 libraryPath = os.path.join(parentDirectory, 'lib')
 sys.path.append(libraryPath)
-
-import hvsr.pyUpdates.fileLib as fileLib
 
 verbose = 1
 
