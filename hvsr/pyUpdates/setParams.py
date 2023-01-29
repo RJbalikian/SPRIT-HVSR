@@ -20,6 +20,7 @@
 import os
 import sys
 import json
+import datetime
 
 import hvsr.pyUpdates.ioput as ioput
 import hvsr.pyUpdates.fileLib as fileLib
@@ -31,8 +32,54 @@ args = { 'net':'AM',
         'cha': ['EHZ', 'EHN', 'EHE']
         }
 
+def defineInputParameters(network='AM', 
+                        station='RAC84', 
+                        loc='00', 
+                        channels=['EHZ', 'EHN', 'EHE'],
+                        date=datetime.datetime.now().date,
+                        starttime = '00:00:00.00',
+                        endtime = '23:59:99.99',
+                        tzone = 'America/Chicago', #or 'UTC'
+                        lon = -88.2290526,
+                        lat =  40.1012122,
+                        elevation = 755,
+                        depth = 0
+                        ):
+    #day_of_year = 1#Get day of year
+    #Reformat time
+    starthour = starttime.split(':')[0]
+    startminute = starttime.split(':')[1]
+    startsecond = starttime.split(':')[2]
+
+    starttime = datetime.datetime(date.year, date.month, date.day,
+                                starthour, startminute, startsecond,tzinfo=tzone)
+
+    endhour = endtime.split(':')[0]
+    endminute = endtime.split(':')[1]
+    endsecond = endtime.split(':')[2]
+
+    endtime = datetime.datetime(date.year, date.month, date.day,
+                                endhour, endminute, endsecond)
+
+    if tzone.upper() == 'local':
+        tzone = 'America/Chicago'
+
+    if tzone.upper() == 'UTC':
+        pass
+    else:
+        starttime= datetime.timezone.fromutc(starttime)
+        endtime=endtime #reformat time to UTC
+        year = starttime.year()
+
+    inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels,
+                    'date':date,'starttime':starttime,'endtime':endtime, 
+                    'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth,
+                    }
+
+    return inputParamDict
+
 ##HERE
-def setShakeMetadata(filepath, startDate, endDate, lon, lat, createDate, elevation, depth):
+def setShakeMetadata(filepath, startDate='2022-10-22', endDate=datetime.datetime.today(), lon, lat, createDate, elevation, depth):
     filepath = ioput.checkifpath(filepath)
     
     with open(filepath , 'r') as f:
