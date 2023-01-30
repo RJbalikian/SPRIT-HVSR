@@ -21,6 +21,7 @@ import os
 import sys
 import json
 import datetime
+import xml.etree.ElementTree as ET
 
 import hvsr.pyUpdates.ioput as ioput
 import hvsr.pyUpdates.fileLib as fileLib
@@ -78,14 +79,59 @@ def defineInputParameters(network='AM',
 
     return inputParamDict
 
-##HERE
-def setShakeMetadata(filepath, startDate='2022-10-22', endDate=datetime.datetime.today(), lon, lat, createDate, elevation, depth):
+def getShakeMetadata(filepath, station='RAC84', network='AM', channels = ['EHZ', 'EHN', 'EHZ']):
+
     filepath = ioput.checkifpath(filepath)
     
-    with open(filepath , 'r') as f:
-        metadata = json.load(filepath)
-    print(metadata.keys())
-    return
+    tree = ET.parse(str(filepath))
+    root = tree.getroot()
+
+    c=channels[0]
+    pzList = [str(n) for n in list(range(7))]
+    s=pzList[0]
+
+    prefix= "{http://www.fdsn.org/xml/station/1}"
+
+    sensitivityPath = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"InstrumentSensitivity/"+prefix+"Value"
+    gainPath = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"StageGain/"+prefix+"Value"
+    polePathReal = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Pole[@number='"+s+"']/"+prefix+"Real"
+    polePathImag = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Pole[@number='"+s+"']/"+prefix+"Imaginary"
+    zeroPathReal = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Real"
+    zeroPathImag = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Imaginary"
+
+    paz = []
+    for c in channels:
+        channelPaz = {}
+        for item in root.findall(sensitivityPath):
+            channelPaz['sensitivity']=float(item.text)
+
+        for item in root.findall(gainPath):
+            channelPaz['gain']=float(item.text)
+        
+        poleList = []
+        zeroList = []
+        for s in pzList:
+            if int(s) < 4:
+                for poleItem in root.findall(polePathReal):
+                    poleReal = poleItem.text
+                for poleItem in root.findall(polePathImag):
+                    pole = complex(float(poleReal), float(poleItem.text))
+                    poleList.append(pole)
+                    channelPaz['poles'] = poleList
+            else:
+                zeroPathReal = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Real"
+                zeroPathImag = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Imaginary"
+                for zeroItem in root.findall(zeroPathReal):
+                    zeroReal = zeroItem.text
+                
+                for zeroItem in root.findall(zeroPathImag):
+                    zero = complex(float(zeroReal), float(zeroItem.text))
+                    #zero = zeroReal + "+" + zeroItem.text+'j'
+                    zeroList.append(zero)
+                    channelPaz['zeros'] = list(set(zeroList))
+
+        paz.append(channelPaz)
+    return paz
 
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 

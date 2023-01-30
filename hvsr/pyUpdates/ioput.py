@@ -6,6 +6,7 @@ import os
 import datetime
 import pathlib
 import warnings
+import xml.etree.ElementTree as ET
 
 import obspy
 
@@ -37,7 +38,7 @@ def checkifpath(filepath):
     return filepath
 
 #Reads in traces to obspy stream
-def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=datetime.datetime.today(), args=args, inst='raspshake'):
+def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.today(), args=args, inst='raspshake'):
     """Fetch ambient seismic data from a source to read into obspy stream
         Parameters
         ----------
@@ -46,8 +47,6 @@ def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=date
             this is the directory where the channel folders are located.
         starttime : str or time object
             Start time for the data traces/streams
-        endtime : str or time object
-            End time for the data traces/streams
         date : str, tuple, or date object
             Date for which to read in the data traces. 
             If string, will attempt to decode to convert to a date format.
@@ -107,6 +106,9 @@ def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=date
         year = date.year
         print("Did not recognize date, using year {} and day {}".format(year, doy))
 
+    filestart = datetime.datetime(date.year, date.month, date.day,
+                                int(filestart.split(':')[0]), int(filestart.split(':')[1]), int(float(filestart.split(':')[2])))
+
     if inst=='raspshake':
         folderList = []
         folderPathList = []
@@ -137,14 +139,91 @@ def fetchdata(datapath, starttime='00:00:00.0', endtime='23:59:59.99', date=date
             for i, f in enumerate(filepaths):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    meta = {'station': args['sta'], 'network': args['net'], 'channel': args['cha'][i]}
-                    tr = obspy.read(f)
-                    tr= obspy.Trace(tr[0].data,header=meta)
+                    meta = {'station': args['sta'], 
+                            'network': args['net'], 
+                            'channel': args['cha'][i],
+                            'location':'00',
+                            'starttime':filestart,
+                            'delta':1/100
+                            }
+                    st = obspy.read(f)
+
+                    tr= obspy.Trace(st[0].data,header=meta)
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
+            rawDataIN.attach_response(inv)
 
     return rawDataIN
 
+#Read in metadata .inv file, specifically for RaspShake
+def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ', 'EHN', 'EHE'], 
+                    startdate=str(datetime.datetime(2022,1,1)), enddate=str(datetime.datetime.today()), 
+                    lon = '-88.2290526', lat = '40.1012122', elevation = '755', depth='0'):
+    """
+    Reads static metadata file provided for Rasp Shake and updates with input parameters
+        --------------
+        PARAMETERS
+            filepath
+            network
+            station
+            channels
+            startdate
+            enddate
+            lon
+            lat
+            elevation
+            depth
+        -------------
+        Returns
+        
+        updated tree, output filepath
+    """
+    filepath = checkifpath(filepath)
+
+    parentPath = filepath.parent
+    filename = filepath.stem
+
+    tree = ET.parse(str(filepath))
+    root = tree.getroot()
+
+    prefix= "{http://www.fdsn.org/xml/station/1}"
+
+    #metadata  = list(root)#.getchildren()
+
+    for item in root.iter(prefix+'Channel'):
+        item.attrib['endDate'] = enddate
+
+    for item in root.iter(prefix+'Station'):
+        item.attrib['code'] = station
+        item.attrib['endDate'] = enddate
+
+    for item in root.iter(prefix+'Network'):
+        item.attrib['code'] = network
+        
+    for item in root.iter(prefix+'Latitude'):
+        item.text = lat
+
+    for item in root.iter(prefix+'Longitude'):
+        item.text = lon
+
+    for item in root.iter(prefix+'Created'):
+        nowTime = str(datetime.datetime.now())
+        item.text = nowTime
+
+    for item in root.iter(prefix+'Elevation'):
+        item.text= elevation
+
+    for item in root.iter(prefix+'Depth'):
+        item.text=depth
+
+    #Set up (and) export
+    filetag = '_'+str(datetime.datetime.today().date())
+
+    outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
+
+
+    tree.write(outfile, xml_declaration=True, method='xml',encoding='UTF-8')
+    return tree, outfile
 
 def print_peak_report(_station_header, _report_header, _peak, _reportinfo, _min_rank):
     """print a report of peak parameters"""
