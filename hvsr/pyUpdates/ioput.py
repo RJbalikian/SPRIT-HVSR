@@ -146,9 +146,9 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
                             'starttime':filestart,
                             'delta':1/100
                             }
-                    st = obspy.read(f)
-
-                    tr= obspy.Trace(st[0].data,header=meta)
+                    st = obspy.read(str(f))
+                    tr = (st[0])
+                    #tr= obspy.Trace(st[0].data)#,header=meta)
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
             rawDataIN.attach_response(inv)
