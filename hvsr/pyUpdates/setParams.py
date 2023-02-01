@@ -112,6 +112,8 @@ def getShakeMetadata(filepath, station='RAC84', network='AM', channels = ['EHZ',
         zeroList = []
         for s in pzList:
             if int(s) < 4:
+                polePathReal = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Pole[@number='"+s+"']/"+prefix+"Real"
+                polePathImag = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Pole[@number='"+s+"']/"+prefix+"Imaginary"
                 for poleItem in root.findall(polePathReal):
                     poleReal = poleItem.text
                 for poleItem in root.findall(polePathImag):

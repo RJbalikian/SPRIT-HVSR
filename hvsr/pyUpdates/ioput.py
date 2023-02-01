@@ -73,7 +73,10 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
     datapath = checkifpath(datapath)
 
     #Need to put dates and times in right formats first
-    if type(date) is tuple:
+    if type(date) is datetime.datetime:
+        doy = date.timetuple().tm_yday
+        year = date.year
+    elif type(date) is tuple:
         if date[0]>366:
             msgLib.error('First item in date tuple must be day of year (0-366)', 0)
         elif date[1] > datetime.datetime.now().year:
@@ -148,7 +151,7 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
                             }
                     st = obspy.read(str(f))
                     tr = (st[0])
-                    #tr= obspy.Trace(st[0].data)#,header=meta)
+                    #tr= obspy.Trace(tr.data,header=meta)
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
             rawDataIN.attach_response(inv)
@@ -223,7 +226,7 @@ def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ'
 
 
     tree.write(outfile, xml_declaration=True, method='xml',encoding='UTF-8')
-    return tree, outfile
+    return outfile
 
 def print_peak_report(_station_header, _report_header, _peak, _reportinfo, _min_rank):
     """print a report of peak parameters"""
