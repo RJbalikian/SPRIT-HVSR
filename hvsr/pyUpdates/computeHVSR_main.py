@@ -23,7 +23,8 @@ import hvsr.pyUpdates.setParams as setParams
 import hvsr.pyUpdates.utilities as utilities
 
 args=setParams.args
-def computeHVSR():
+
+def __computesetup():
     #Main variables
     greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
     channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -56,27 +57,88 @@ def computeHVSR():
     sorted_channel_list = channelList.copy()
     for channel in channelList:
         sorted_channel_list[channel_order[channel[2]]] = channel
+    return
 
+def __formatTime(inputTime):
+    if type(inputTime) is str:
+        tzone = 'America/Chicago'
+        #Format string to datetime obj
+        if "/" in inputTime:
+            div = '/'
+        elif '-' in inputTime:
+            div = '/'
+
+        if ':' in inputTime:
+            hasTime = True
+        else:
+            hasTime = False
+
+        if len(inputTime.split(div)[0])>2:
+            dateStr = '%Y'+div+'%m'+div+'%d'
+        elif len(inputTime.split(div)[2])>2:
+            if int(inputTime.split(div)[0])>12:
+                dateStr = '%d'+div+'%m'+div+'%Y'                
+            else:
+                dateStr = '%m'+div+'%d'+div+'%Y'
+        #####CONTINUE HERE!!!
+        if hasTime:
+            
+    elif type(inputTime) is datetime.datetime:
+        outputTimeObj = inputTime
+    return outputTimeObj
+
+def __checkifnone(param):
+    if param is None:
+        msgLib.error('{} not defined!'.format(param), 1)
+        sys.exit() 
+    return
+
+def computeHVSR(network, station, location, start, end, nSegments, method, 
+                plot, ymax,xtype, hvsrband,
+                minrank, waterlevel, outlier_rem, verbose,**kwargs):
+    """ Main computational function for HVSR
+    -------------------
+    Parameters:
+        network     : str
+        station     : str
+        location    : str
+        start       : str or datetime obj
+        end         : str or datetime obj
+        nSegments   : int
+        method      : str
+        plot        : bool, str, or list
+        ymax        : float
+        xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
+        hvsrband    : tupe or 2-item list (?)
+        minrank     : float (or int?)
+        waterlevel  : ???
+        outlier_rem : bool = True
+        verbose     : bool = False
+        **kwargs    : Keyword arguments, primarily to be passed as matplotlib plotting parameters
+
+    """
     # See if we want to reject suspect PSDs.
-    remove_outliers = bool(int(utilities.get_param(args, 'removeoutliers', msgLib, False)))
-    msgLib.info('remove_outliers: {}'.format(remove_outliers))
+    remove_outliers = outlier_rem #from original: bool(int(utilities.get_param(args, 'removeoutliers', msgLib, False)))
+    if verbose:
+        msgLib.info('remove_outliers: {}'.format(remove_outliers))
 
     # Minimum SESAME 2004 rank to be accepted.
-    min_rank = float(utilities.get_param(args, 'minrank', msgLib, setParams.minrank))
+    min_rank = minrank #from original: float(utilities.get_param(args, 'minrank', msgLib, setParams.minrank))
 
     # network, station, and location to process.
-    network = utilities.get_param(args, 'net', msgLib, None)
-    if network is None:
-        msgLib.error('network not defined!', 1)
-        sys.exit()
-    station = utilities.get_param(args, 'sta', msgLib, None)
-    if station is None:
-        msgLib.error('station not defined!', 1)
-        sys.exit()
-    location = utilities.get_param(args, 'loc', msgLib, '*')
-    if location is None:
-        msgLib.error('location not defined!', 1)
-        sys.exit()
+    #From original: network = utilities.get_param(args, 'net', msgLib, None)
+    __checkifnone(param=network)
+    __checkifnone(param=station)
+    __checkifnone(param=location)
+
+    #Reformat start and end of time window
+    startTimeObj = __formatTime(inputTime = start)
+    start_hour = startTimeObj.hour
+    start_time = startTimeObj.time
+
+    endTimeObj = __formatTime(inputTime = end)
+    end_hour = endTimeObj.hour
+    end_time = endTimeObj.time
 
     # Start of the window.
     start = utilities.get_param(args, 'start', msgLib, None)
@@ -733,3 +795,5 @@ def computeHVSR():
         if verbose >= 0:
             msgLib.info('SHOW PLOT')
         plt.show()
+
+    return
