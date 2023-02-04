@@ -179,7 +179,7 @@ waterlevel = 1.8
 minrank = 2
 
 # H is computed based on the selected method for combining h1 and h2
-#     see: https://academic.oup.com/gji/article/194/2/936/597415 FOR METHODS 2-6
+#     see: https://academic.oup.com/gji/article/194/2/936/597415 FOR METHODS 2-
 #     method:
 #        (1) Diffuse Field Assumption
 #        (2) arithmetic mean H = (HN + HE)/2 (the horizontal components are combined by using a simple mean)
