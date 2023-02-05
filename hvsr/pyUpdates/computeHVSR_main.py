@@ -59,32 +59,92 @@ def __computesetup():
         sorted_channel_list[channel_order[channel[2]]] = channel
     return
 
-def __formatTime(inputTime):
-    if type(inputTime) is str:
-        tzone = 'America/Chicago'
+def __formatTime(inputDT):
+    if type(inputDT) is str:
+        #tzone = 'America/Chicago'
         #Format string to datetime obj
-        if "/" in inputTime:
+        if "/" in inputDT:
             div = '/'
-        elif '-' in inputTime:
+        elif '-' in inputDT:
             div = '/'
 
-        if ':' in inputTime:
+        if ':' in inputDT:
             hasTime = True
         else:
             hasTime = False
 
-        if len(inputTime.split(div)[0])>2:
-            dateStr = '%Y'+div+'%m'+div+'%d'
-        elif len(inputTime.split(div)[2])>2:
-            if int(inputTime.split(div)[0])>12:
-                dateStr = '%d'+div+'%m'+div+'%Y'                
+        if len(inputDT.split(div)[0])>2:
+            year = inputDT.split(div)[0]
+            month = inputDT.split(div)[1]
+            day = inputDT.split(div)[2]
+        elif len(inputDT.split(div)[2])>2:
+            if int(inputDT.split(div)[0])>12:
+                #dateStr = '%d'+div+'%m'+div+'%Y'   
+                year = inputDT.split(div)[2]
+                month = inputDT.split(div)[1]
+                day = inputDT.split(div)[0]                             
             else:
-                dateStr = '%m'+div+'%d'+div+'%Y'
-        #####CONTINUE HERE!!!
+                year = inputDT.split(div)[2]
+                month = inputDT.split(div)[0]
+                day = inputDT.split(div)[1]     
+                #dateStr = '%m'+div+'%d'+div+'%Y'
+        elif int(inputDT.split(div)[0])>31:
+            #dateStr = '%y'+div+'%m'+div+'%d'
+            year = inputDT.split(div)[0]
+            if year < datetime.datetime.today().year:
+                year = '20'+year
+            else:
+                year = '19'+year
+            month = inputDT.split(div)[1]
+            day = inputDT.split(div)[2]            
+        elif int(inputDT.split(div)[2])>31:
+            if int(inputDT.split(div)[0])>12:
+                #dateStr = '%d'+div+'%m'+div+'%y'       
+                year = inputDT.split(div)[2]
+                if year < datetime.datetime.today().year:
+                    year = '20'+year
+                else:
+                    year = '19'+year
+                month = inputDT.split(div)[1]
+                day = inputDT.split(div)[0]                           
+            else:
+                #dateStr = '%m'+div+'%d'+div+'%y'
+                year = inputDT.split(div)[2]
+                if year < datetime.datetime.today().year:
+                    year = '20'+year
+                else:
+                    year = '19'+year
+                month = inputDT.split(div)[0]
+                day = inputDT.split(div)[1]                  
+
         if hasTime:
+            microS=0
+            timeStr = inputDT.split(div)[2]
+            if 'T' in timeStr:
+                timeStr=timeStr.split('T')[1]
+            elif ' ' in timeStr:
+                timeStr=timeStr.split(' ')[1]
+
+            timeStrList = timeStr.split(':')
+            if len(timeStrList[0])>2:
+                timeStrList[0] = timeStrList[0][-2:]
+            elif int(timeStrList[0]) > 23:
+                timeStrList[0] = timeStrList[0][-1:]
             
-    elif type(inputTime) is datetime.datetime:
-        outputTimeObj = inputTime
+            if '.' in timeStrList[2]:
+                microS = int(timeStrList[2].split('.')[1])
+                timeStrList[2] = timeStrList[2].split('.')[0]
+
+            hour = int(timeStrList[0])
+            minute=int(timeStrList[1])
+            sec = int(timeStrList[2])
+
+
+            outputTimeObj = datetime.datetime(year=year,month=month, day=day
+                                hour=hour, minute=minute, second=sec, microsecond=microS)
+
+    elif type(inputDT) is datetime.datetime:
+        outputTimeObj = inputDT
     return outputTimeObj
 
 def __checkifnone(param):
