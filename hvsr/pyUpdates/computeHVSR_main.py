@@ -154,7 +154,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
         localTime = datetime.datetime.now()
         utcOffset = utc_time-localTime
         outputTimeObj=outputTimeObj+utcOffset
-c_time-localTime
+        utcOffset = utc_time-localTime
         outputTimeObj = outputTimeObj+utcOffset
     if dst:
         outputTimeObj = outputTimeObj-datetime.timedelta(hours=1)
