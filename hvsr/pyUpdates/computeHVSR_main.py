@@ -59,7 +59,7 @@ def __computesetup():
         sorted_channel_list[channel_order[channel[2]]] = channel
     return
 
-def __formatTime(inputDT):
+def __formatTime(inputDT, tzone='utc', dst=True):
     if type(inputDT) is str:
         #tzone = 'America/Chicago'
         #Format string to datetime obj
@@ -148,6 +148,16 @@ def __formatTime(inputDT):
 
     elif type(inputDT) is datetime.datetime:
         outputTimeObj = inputDT
+
+    if tzone != 'utc':
+        utc_time = datetime.datetime.utcnow()
+        localTime = datetime.datetime.now()
+        utcOffset = utc_time-localTime
+        outputTimeObj=outputTimeObj+utcOffset
+c_time-localTime
+        outputTimeObj = outputTimeObj+utcOffset
+    if dst:
+        outputTimeObj = outputTimeObj-datetime.timedelta(hours=1)
     return outputTimeObj
 
 def __checkifnone(param):
@@ -156,19 +166,20 @@ def __checkifnone(param):
         sys.exit() 
     return
 
-def computeHVSR(network, station, location, start, end, nSegments, method, 
+def computeHVSR(network, station, location, start, end, tzone, dst,
+                nSegments, method, minrank, waterlevel, outlier_rem, verbose,
                 plot, ymax,xtype, hvsrband,
-                minrank, waterlevel, outlier_rem, verbose,**kwargs):
+                **kwargs):
     """ Main computational function for HVSR
     -------------------
     Parameters:
         network     : str
         station     : str
         location    : str
-        start       : str or datetime obj
+        start       : str or datetime obj. If string, preferred format is YYYY-mm-ddTHH:MM:SS.f (Y=year, m=month, d=day, ). Will be converted to UTC
         end         : str or datetime obj
-        nSegments   : int
-        method      : str
+        tzone       : str   Only options are 'utc' or 'local'
+        dst         : bool True if daylight savings time when data was collected (usualyl True in summers        method      : str
         plot        : bool, str, or list
         ymax        : float
         xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
@@ -195,11 +206,11 @@ def computeHVSR(network, station, location, start, end, nSegments, method,
     __checkifnone(param=location)
 
     #Reformat start and end of time window
-    startTimeObj = __formatTime(inputTime = start)
+    startTimeObj = __formatTime(inputTime=start, kwargs)
     start_hour = startTimeObj.hour
     start_time = startTimeObj.time
 
-    endTimeObj = __formatTime(inputTime = end)
+    endTimeObj = __formatTime(inputTime=end, kwargs)
     end_hour = endTimeObj.hour
     end_time = endTimeObj.time
 
