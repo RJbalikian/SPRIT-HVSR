@@ -22,42 +22,21 @@ import hvsr.pyUpdates.readhvsr as readhvsr
 import hvsr.pyUpdates.setParams as setParams
 import hvsr.pyUpdates.utilities as utilities
 
-args=setParams.args
+#args=setParams.args #From original, not needed anyore
 
-def __computesetup():
-    #Main variables
-    greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
+def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
+    """"
+    Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
+        ----------------
+        Parameters
+            channels    : list = ['EHZ', 'EHN', 'EHE']
+    """
     channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-    separator_character = '='
 
-    t0 = time.time()
-    display = True
-    max_rank = 0
-    plotRows = 4
-
-    # Set run parameters.
-    args = utilities.get_args(sys.argv)
-    if len(args) <= 1:
-        sys.exit()
-
-    verbose = int(utilities.get_param(args, 'verbose', msgLib, -1, be_verbose=setParams.verbose))
-    if verbose >= 0:
-        print('\n[INFO]', sys.argv[0])#, version)
-
-    report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=verbose))
-
-    # Get channels and sort them in the reverse ] order to make sure that we always have ?HZ first.
-    # Order of the horizontals is not important.
-    channels = utilities.get_param(args, 'chan', msgLib, setParams.chan)
-    channelList = sorted(channels.split(','), reverse=True)
-    if len(channelList) < 3:
-        msgLib.error('need 3 channels!', 1)
-        sys.exit()
-
-    sorted_channel_list = channelList.copy()
-    for channel in channelList:
+    sorted_channel_list = channels.copy()
+    for channel in channels:
         sorted_channel_list[channel_order[channel[2]]] = channel
-    return
+    return sorted_channel_list
 
 def __formatTime(inputDT, tzone='utc', dst=True):
     if type(inputDT) is str:
@@ -149,8 +128,9 @@ def __formatTime(inputDT, tzone='utc', dst=True):
     elif type(inputDT) is datetime.datetime:
         outputTimeObj = inputDT
 
-    if tzone is int:
-        pass ##FINISH WITH UTC offset
+    if tzone is int: #Plus/minus needs to be correct there
+        #pass ##FINISH WITH UTC offset
+        outputTimeObj = outputTimeObj+datetime.timedelta(hours=tzone)
     elif type(tzone) is str:
         if tzone != 'utc':
             utc_time = datetime.datetime.utcnow()
@@ -169,31 +149,46 @@ def __checkifnone(param):
         sys.exit() 
     return
 
-def computeHVSR(network, station, location, start, end, tzone, dst,
-                nSegments, method, minrank, waterlevel, outlier_rem, verbose,
-                plot, ymax,xtype, hvsrband,
+def computeHVSR(start, end, tzone='utc', dst=True,
+                network='AM', station='RAC84', location='00', channels=['EHZ', 'EHN', 'EHE'], 
+                nSegments=256, method=4, minrank=2, water_level=1.8, outlier_rem=True, verbose=False,
+                plot=True, xtype='frequency', hvsrband=[0.2, 15], hvsr_ymax = 10,
                 **kwargs):
     """ Main computational function for HVSR
     -------------------
     Parameters:
-        network     : str
-        station     : str
-        location    : str
         start       : str or datetime obj. If string, preferred format is YYYY-mm-ddTHH:MM:SS.f (Y=year, m=month, d=day, ). Will be converted to UTC
         end         : str or datetime obj
-        tzone       : str or int  If str, 'utc' is easiest, otherwise, will use local timezone of processing computer; if int, offset from UTC in hours
-        dst         : bool True if daylight savings time when data was collected (usualyl True in summers        method      : str
-        plot        : bool, str, or list
-        ymax        : float
-        xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
-        hvsrband    : tupe or 2-item list (?)
-        minrank     : float (or int?)
-        waterlevel  : ???
-        outlier_rem : bool = True
+        tzone       : str='utc', or int  If str, 'utc' is easiest, otherwise, will use local timezone of processing computer; if int, offset from UTC in hours
+        dst         : bool=True     True if daylight savings time when data was collected (usualyl True in summers           network     : str='AM'
+        station     : str='RAC84'
+        location    : str='00'
+        channels    : list=['EHZ', 'EHN', 'EHE']     
+        nSegments   : int=256       Number of segments to break the signal into
+        method      : int or str. Method for combining the horizontal components. If integer, the following 
+        minrank     : float=2 (or int?)
+        water_level : float=1.8
+        outlier_rem : bool = True        
         verbose     : bool = False
+        plot        : bool, list, or dict
+                        If bool, just says whether or not to plot
+                        If list, should be list of bools saying whether to plot (in the following order):
+                            [0] : Whether to plot anything
+                            [1] : Whether to plot nnm
+                            [2] : Whether to plot Power Spectral Densities
+                            [3] : Whether to plot Probability density functions for each freq. bin (?)
+                            [4] : Whether to plot bad points (?)
+        xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
+        hvsrband    : tuple or 2-item list (?)
+        hvsr_ymax   : float = 10
+        report      : bool=True Whether to print report information to file
         **kwargs    : Keyword arguments, primarily to be passed as matplotlib plotting parameters
-
     """
+    t0 = time.time()
+    display = True
+    plotRows = 4
+    report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=verbose))
+
     # See if we want to reject suspect PSDs.
     remove_outliers = outlier_rem #from original: bool(int(utilities.get_param(args, 'removeoutliers', msgLib, False)))
     if verbose:
@@ -204,63 +199,45 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
 
     # network, station, and location to process.
     #From original: network = utilities.get_param(args, 'net', msgLib, None)
+    __checkifnone(param=start)
+    __checkifnone(param=end)
+    __checkifnone(param=location)
     __checkifnone(param=network)
     __checkifnone(param=station)
     __checkifnone(param=location)
 
     #Reformat start and end of time window
-    startTimeObj = __formatTime(inputTime=start, kwargs)
+    startTimeObj = __formatTime(inputTime=start, tzone=tzone, dst=dst)
     start_hour = startTimeObj.hour
     start_time = startTimeObj.time
 
-    endTimeObj = __formatTime(inputTime=end, kwargs)
+    endTimeObj = __formatTime(inputTime=end, tzone=tzone, dst=dst)
     end_hour = endTimeObj.hour
     end_time = endTimeObj.time
 
-    # Start of the window.
-    start = utilities.get_param(args, 'start', msgLib, None)
-    start_hour = 'T00:00:00'
-    start_time = time.strptime(start, '%Y-%m-%d')
-    end = utilities.get_param(args, 'end', msgLib, None)
+    n = nSegments
 
-    # If start and end are the same day, process that day.
-    if start.strip() == end.strip():
-        end_hour = 'T23:59:59'
-    else:
-        end_hour = 'T00:00:00'
-    end_time = datetime.datetime.time.strptime(end, '%Y-%m-%d')
+    # Method for combining horizontal components h1 & h2.
+    method = setParams.getHComboMethod(method) 
 
-    # Break the start-end interval to n segments.
-    n = int(utilities.get_param(args, 'n', msgLib, 1))
-    date_list = utilities.date_range(start, end, n)
-    msgLib.info('DATE LIST: {}'.format(date_list))
-
-    # How to combine h1 & h2.
-    method = int(utilities.get_param(args, 'method', msgLib, setParams.method))
-    if method <= 0 or method > 6:
-        msgLib.error('method {} for combining H1 & H2 is invalid!'.format(method), 1)
-        sys.exit()
-    elif method == 1:
-        dfa = 1
-    else:
-        dfa = 0
-
-    msgLib.info('Combining H1 and H2 Using {} method'.format(setParams.methodList[method]))
-
-    do_plot = int(utilities.get_param(args, 'plot', msgLib, setParams.plot))
-    show_plot = int(utilities.get_param(args, 'showplot', msgLib, setParams.plot))
-    plot_psd = int(utilities.get_param(args, 'plotpsd', msgLib, setParams.plotpsd))
-    plot_pdf = int(utilities.get_param(args, 'plotpdf', msgLib, setParams.plotpdf))
-    plot_bad = int(utilities.get_param(args, 'plotbad', msgLib, setParams.plotbad))
-    plot_nnm = int(utilities.get_param(args, 'plotnnm', msgLib, setParams.plotnnm))
+    plotParams = setParams.plotparameters(plot) #returns a dictionary with keys below
+    show_plot = plotParams[0] #from original: int(utilities.get_param(args, 'showplot', msgLib, setParams.plot))
+    plot_nnm = plotParams[1] #from original: int(utilities.get_param(args, 'plotnnm', msgLib, setParams.plotnnm))
+    plot_psd = plotParams[2] #from original: int(utilities.get_param(args, 'plotpsd', msgLib, setParams.plotpsd))
+    plot_pdf = plotParams[3] #from original: int(utilities.get_param(args, 'plotpdf', msgLib, setParams.plotpdf))
+    plot_bad = plotParams[4] #from original: int(utilities.get_param(args, 'plotbad', msgLib, setParams.plotbad))
 
     day_values_passed = [[], [], []]
-    water_level = float(utilities.get_param(args, 'waterlevel', msgLib, setParams.waterlevel))
-    hvsr_ylim = setParams.hvsrylim
-    hvsr_ylim[1] = float(utilities.get_param(args, 'ymax', msgLib, setParams.hvsrylim[1]))
-    xtype = utilities.get_param(args, 'xtype', msgLib, setParams.xtype)
-    hvsr_band = utilities.get_param(args, 'hvsrband', msgLib, setParams.hvsrband)
+    #From original: water_level = float(utilities.get_param(args, 'waterlevel', msgLib, setParams.waterlevel))
+    #hvsr_ylim = setParams.hvsrylim
+    hvsr_ylim = [0, 10]
+    hvsr_ylim[1] = hvsr_ymax #from originalfloat(utilities.get_param(args, 'ymax', msgLib, setParams.hvsrylim[1]))
+    #From original: xtype = utilities.get_param(args, 'xtype', msgLib, setParams.xtype)
+    #From original: hvsr_band = utilities.get_param(args, 'hvsrband', msgLib, setParams.hvsrband)
 
+    sorted_channel_list = __sortchannels(channels)
+
+    #Get and format header information and plot title info
     report_header = '.'.join([network, station, location, '-'.join(sorted_channel_list)])
     station_header = report_header
     station_header = '{} {} {}'.format(station_header, start, end)
@@ -268,6 +245,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
     plot_title = report_header
     report_header = '{}\n\n'.format(report_header)
 
+    #Plotting stuff!
     # Turn off the display requirement if not needed.
     if not show_plot:
         if verbose >= 0:
@@ -436,7 +414,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
         # PSDs:
         # Initial settings.
         if channel_index == 0:
-            if do_plot:
+            if show_plot:
                 if verbose >= 0:
                     msgLib.info('PLOT PSD')
 
@@ -451,7 +429,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
             median_daily_psd = [{}, {}, {}]
             equal_daily_energy = [{}, {}, {}]
         else:
-            if do_plot:
+            if show_plot:
                 ax.append(plt.subplot(plotRows, 1, channel_index + 1, sharex=ax[0]))
 
         # Go through all PSDs and reject the 'bad' ones based on the station baseline
@@ -494,7 +472,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
         if verbose and notok:
             t0 = utilities.time_it(t0)
 
-        if do_plot:
+        if show_plot:
             # Plot the 'bad' PSDs in gray.
             if plot_psd and plot_bad:
                 msgLib.info('[INFO] Plot {} BAD PSDs'.format(len(notok)))
@@ -833,7 +811,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
     peak = hvsrCalcs.check_stability(stdf, peak, hvsr_log_std, True)
     peak = hvsrCalcs.check_freq_stability(peak, peakm, peakp)
 
-    if do_plot > 0 and len(hvsr) > 0:
+    if show_plot > 0 and len(hvsr) > 0:
         nx = len(x_values) - 1
         plt.suptitle(plot_title)
         if plot_pdf or plot_psd:

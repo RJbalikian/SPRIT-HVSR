@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 
 import hvsr.pyUpdates.ioput as ioput
 import hvsr.pyUpdates.fileLib as fileLib
-
+import hvsr.pyUpdates.msgLib as msgLib
 
 args = { 'net':'AM',
         'sta':'RAC84',
@@ -135,6 +135,63 @@ def getShakeMetadata(filepath, station='RAC84', network='AM', channels = ['EHZ',
         paz.append(channelPaz)
     return paz
 
+def getHComboMethod(method=4):
+    """
+     H is computed based on the selected method for combining the two horizontal componenets (h1 and h2, order does not matter)
+         see: https://academic.oup.com/gji/article/194/2/936/597415 FOR METHODS 2-6
+         method:
+            (1) Diffuse Field Assumption
+            (2) arithmetic mean H = (HN + HE)/2 (the horizontal components are combined by using a simple mean)
+            (3) geometric mean H = Sqrt(HN . HE) (mean horizontal spectra is derived by taking square-root of the
+                product of the two horizontal components)
+            (4) vector summation H = Sqrt(N^2 + E^2) **DEFAULT**
+            (5) quadratic mean H = Sqrt((N^2 + E^2)/2.0)
+            (6) maximum horizontal value H = Max(HN, HE)  
+    """
+    methodList = ['', 'Diffuse Field Assumption', 'arithmetic mean', 'geometric mean', 'vector summation',
+                'quadratic mean', 'maximum horizontal value']
+    
+    #Translate all possible inputs to int for consistency
+    if type(method) is str:
+        if method.isnumeric()
+            method = int(method)
+        elif method not in methodList:
+            msgLib.error('method {} for combining H1 & H2 is invalid!'.format(method), 1)
+        elif method in methodList:
+            method = int(methodList.index(method))
+    elif type(method) is float:
+        method = int(method)
+
+    #Now, check that int is consitent with items in methodList
+    if type(method) is int:
+        if method <= 0 or method > 6:
+            msgLib.error('method {} for combining H1 & H2 is invalid!'.format(method), 1)
+            sys.exit()
+        elif method == 1:
+            dfa = 1
+        else:
+            dfa = 0
+    else:
+        msgLib.error('method {} for combining H1 & H2 is invalid!'.format(method), 1)
+        sys.exit()
+
+    methName = methodList[method]
+    msgLib.info('Combining H1 and H2 Using {} method'.format(methName))
+    return methName
+
+def plotparameters(plot):
+    """
+        Get parameters for which plots to plot and how to plot them
+    """
+    if type(plot) is bool:
+        pass
+    elif type(plot) is list:
+        pass
+    elif type(plot) is dict:
+        pass
+
+    return plotParams
+
 parentDirectory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 # import the libraries
@@ -178,20 +235,6 @@ waterlevel = 1.8
 # minimum rank to be accepted
 minrank = 2
 
-# H is computed based on the selected method for combining h1 and h2
-#     see: https://academic.oup.com/gji/article/194/2/936/597415 FOR METHODS 2-
-#     method:
-#        (1) Diffuse Field Assumption
-#        (2) arithmetic mean H = (HN + HE)/2 (the horizontal components are combined by using a simple mean)
-#        (3) geometric mean H = Sqrt(HN . HE) (mean horizontal spectra is derived by taking square-root of the
-#            product of the two horizontal components)
-#        (4) vector summation H = Sqrt(N^2 + E^2)
-#        (5) quadratic mean H = Sqrt((N^2 + E^2)/2.0)
-#        (6) maximum horizontal value H = Max(HN, HE)
-methodList = ['', 'Diffuse Field Assumption', 'arithmetic mean', 'geometric mean', 'vector summation',
-              'quadratic mean', 'maximum horizontal value']
-
-method = 4
 
 # plot
 plot = 1
