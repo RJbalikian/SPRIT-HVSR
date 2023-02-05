@@ -117,8 +117,11 @@ def __formatTime(inputDT):
                 month = inputDT.split(div)[0]
                 day = inputDT.split(div)[1]                  
 
+        hour=0
+        minute=0
+        sec=0
+        microS=0
         if hasTime:
-            microS=0
             timeStr = inputDT.split(div)[2]
             if 'T' in timeStr:
                 timeStr=timeStr.split('T')[1]
@@ -140,7 +143,7 @@ def __formatTime(inputDT):
             sec = int(timeStrList[2])
 
 
-            outputTimeObj = datetime.datetime(year=year,month=month, day=day
+        outputTimeObj = datetime.datetime(year=year,month=month, day=day,
                                 hour=hour, minute=minute, second=sec, microsecond=microS)
 
     elif type(inputDT) is datetime.datetime:
