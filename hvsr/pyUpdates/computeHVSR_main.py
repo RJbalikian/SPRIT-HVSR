@@ -149,15 +149,18 @@ def __formatTime(inputDT, tzone='utc', dst=True):
     elif type(inputDT) is datetime.datetime:
         outputTimeObj = inputDT
 
-    if tzone != 'utc':
-        utc_time = datetime.datetime.utcnow()
-        localTime = datetime.datetime.now()
-        utcOffset = utc_time-localTime
-        outputTimeObj=outputTimeObj+utcOffset
-        utcOffset = utc_time-localTime
-        outputTimeObj = outputTimeObj+utcOffset
-    if dst:
-        outputTimeObj = outputTimeObj-datetime.timedelta(hours=1)
+    if tzone is int:
+        pass ##FINISH WITH UTC offset
+    elif type(tzone) is str:
+        if tzone != 'utc':
+            utc_time = datetime.datetime.utcnow()
+            localTime = datetime.datetime.now()
+            utcOffset = utc_time-localTime
+            outputTimeObj=outputTimeObj+utcOffset
+            utcOffset = utc_time-localTime
+            outputTimeObj = outputTimeObj+utcOffset
+        if dst:
+            outputTimeObj = outputTimeObj-datetime.timedelta(hours=1)
     return outputTimeObj
 
 def __checkifnone(param):
@@ -178,7 +181,7 @@ def computeHVSR(network, station, location, start, end, tzone, dst,
         location    : str
         start       : str or datetime obj. If string, preferred format is YYYY-mm-ddTHH:MM:SS.f (Y=year, m=month, d=day, ). Will be converted to UTC
         end         : str or datetime obj
-        tzone       : str   Only options are 'utc' or 'local'
+        tzone       : str or int  If str, 'utc' is easiest, otherwise, will use local timezone of processing computer; if int, offset from UTC in hours
         dst         : bool True if daylight savings time when data was collected (usualyl True in summers        method      : str
         plot        : bool, str, or list
         ymax        : float
