@@ -36,8 +36,11 @@ def get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     _h1 = math.sqrt(_p1)
     _h2 = math.sqrt(_p2)
 
-    _h = {2: (_h1 + _h2) / 2.0, 3: math.sqrt(_h1 * _h2), 4: math.sqrt(_p1 + _p2), 5: math.sqrt((_p1 + _p2) / 2.0),
-          6: max(_h1, _h2)}
+    _h = {  2: (_h1 + _h2) / 2.0, 
+            3: math.sqrt(_h1 * _h2), 
+            4: math.sqrt(_p1 + _p2), 
+            5: math.sqrt((_p1 + _p2) / 2.0),
+            6: max(_h1, _h2)}
 
     _hvsr = _h[use_method] / _hz
     return _hvsr
