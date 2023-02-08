@@ -118,9 +118,11 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
         folderList = []
         folderPathList = []
         for child in datapath.iterdir():
-            folderPathList.append(child)
-            folderList.append(child.stem.split('.')[0])
+            if child.is_dir():
+                folderPathList.append(child)
+                folderList.append(child.stem.split('.')[0])
         folderList.sort(reverse=True) #Channels in Z, N, E order
+
         if len(folderList) !=3:
             msgLib.error('3 channels needed!', 1)
         else:
