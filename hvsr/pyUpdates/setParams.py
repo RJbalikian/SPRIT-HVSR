@@ -120,6 +120,7 @@ def getShakeMetadata(filepath, station='RAC84', network='AM', channels = ['EHZ',
                     pole = complex(float(poleReal), float(poleItem.text))
                     poleList.append(pole)
                     channelPaz['poles'] = poleList
+                    #channelPaz['poles'] = list(set(poleList))
             else:
                 zeroPathReal = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Real"
                 zeroPathImag = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"PolesZeros/"+prefix+"Zero[@number='"+s+"']/"+prefix+"Imaginary"
@@ -130,7 +131,8 @@ def getShakeMetadata(filepath, station='RAC84', network='AM', channels = ['EHZ',
                     zero = complex(float(zeroReal), float(zeroItem.text))
                     #zero = zeroReal + "+" + zeroItem.text+'j'
                     zeroList.append(zero)
-                    channelPaz['zeros'] = list(set(zeroList))
+                    #channelPaz['zeros'] = list(set(zeroList))
+                    channelPaz['zeros'] = zeroList
 
         paz.append(channelPaz)
     return paz
