@@ -153,7 +153,7 @@ def getHComboMethod(method=4):
     
     #Translate all possible inputs to int for consistency
     if type(method) is str:
-        if method.isnumeric()
+        if method.isnumeric():
             method = int(method)
         elif method not in methodList:
             msgLib.error('method {} for combining H1 & H2 is invalid!'.format(method), 1)

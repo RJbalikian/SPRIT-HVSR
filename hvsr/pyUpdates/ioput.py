@@ -32,7 +32,7 @@ def checkifpath(filepath):
     else:
         try:
             filepath = pathlib.Path(filepath)
-            print('Converted string to pathlib path') #Assume a string was input rather than pathlib object
+            #print('Converted string to pathlib path') #Assume a string was input rather than pathlib object
         except:
             msgLib.error('Input cannot be converted to pathlib path', 0)
     return filepath
@@ -109,6 +109,8 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
         year = date.year
         print("Did not recognize date, using year {} and day {}".format(year, doy))
 
+    print('Day of Year:', doy)
+
     filestart = datetime.datetime(date.year, date.month, date.day,
                                 int(filestart.split(':')[0]), int(filestart.split(':')[1]), int(float(filestart.split(':')[2])))
 
@@ -119,7 +121,6 @@ def fetchdata(datapath, inv, filestart='00:00:00.0', date=datetime.datetime.toda
             folderPathList.append(child)
             folderList.append(child.stem.split('.')[0])
         folderList.sort(reverse=True) #Channels in Z, N, E order
-
         if len(folderList) !=3:
             msgLib.error('3 channels needed!', 1)
         else:
