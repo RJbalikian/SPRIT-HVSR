@@ -46,7 +46,7 @@ def time_it(_t):
         t = t1
     return t
 
-def date_range(_start, _end, _interval):
+def time_range(_start, _end, _interval):
     """Break an interval to date ranges
        this is used to avoid large requests that get rejected.
     """

@@ -149,330 +149,193 @@ def __checkifnone(param):
         sys.exit() 
     return
 
-def computeHVSR(start, end, tzone='utc', dst=True,
-                network='AM', station='RAC84', location='00', channels=['EHZ', 'EHN', 'EHE'], 
-                nSegments=256, method=4, minrank=2, water_level=1.8, outlier_rem=True, verbose=False,
-                plot=True, xtype='frequency', hvsrband=[0.2, 15], hvsr_ymax = 10,
-                **kwargs):
-    """ Main computational function for HVSR
-    -------------------
-    Parameters:
-        start       : str or datetime obj. If string, preferred format is YYYY-mm-ddTHH:MM:SS.f (Y=year, m=month, d=day, ). Will be converted to UTC
-        end         : str or datetime obj
-        tzone       : str='utc', or int  If str, 'utc' is easiest, otherwise, will use local timezone of processing computer; if int, offset from UTC in hours
-        dst         : bool=True     True if daylight savings time when data was collected (usualyl True in summers           network     : str='AM'
-        station     : str='RAC84'
-        location    : str='00'
-        channels    : list=['EHZ', 'EHN', 'EHE']     
-        nSegments   : int=256       Number of segments to break the signal into
-        method      : int or str. Method for combining the horizontal components. If integer, the following 
-        minrank     : float=2 (or int?)
-        water_level : float=1.8
-        outlier_rem : bool = True        
-        verbose     : bool = False
-        plot        : bool, list, or dict
-                        If bool, just says whether or not to plot
-                        If list, should be list of bools saying whether to plot (in the following order):
-                            [0] : Whether to plot anything
-                            [1] : Whether to plot nnm
-                            [2] : Whether to plot Power Spectral Densities
-                            [3] : Whether to plot Probability density functions for each freq. bin (?)
-                            [4] : Whether to plot bad points (?)
-        xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
-        hvsrband    : tuple or 2-item list (?)
-        hvsr_ymax   : float = 10
-        report      : bool=True Whether to print report information to file
-        **kwargs    : Keyword arguments, primarily to be passed as matplotlib plotting parameters
-    """
-    t0 = time.time()
-    display = True
-    plotRows = 4
-    report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=verbose))
+#This may not be needed, but uses baseline to remove outlier data
+def  __removeoutliers(network, station, location, channel, verbose, psd_values):
+    try:
+        baselineFile = open(
+            os.path.join(setParams.baselineDirectory, fileLib.baselineFileName(network, station, location, channel)),
+            'r')
+    except Exception as e:
+        msgLib.error('Failed to read baseline file {}\n'
+                    'Use the getStationChannelBaseline.py script to generate the baseline file or '
+                    'set the parameter removeoutliers=0.'.
+                    format(os.path.join(setParams.baselineDirectory, fileLib.baselineFileName(network,
+                                                                                        station,
+                                                                                        location,
+                                                                                        channel))), 1)
+        sys.exit()
+    x_values = list()
+    pct_low = list()
+    pct_high = list()
+    pct_mid = list()
 
-    # See if we want to reject suspect PSDs.
-    remove_outliers = outlier_rem #from original: bool(int(utilities.get_param(args, 'removeoutliers', msgLib, False)))
+    lines = baselineFile.read()
+    baseline = lines.split('\n')
+    for index_value in range(0, len(baseline)):
+        if len(baseline[index_value].strip()) == 0:
+            continue
+        if baseline[index_value].strip().startswith('#'):
+            values = baseline[index_value].strip().split()
+            percent_low = values[1]
+            percent_mid = values[3]
+            percent_high = values[5]
+            continue
+
+        values = baseline[index_value].split()
+
+        x_values.append(float(values[0]))
+        pct_low.append(float(values[1]))
+        pct_mid.append(float(values[2]))
+        pct_high.append(float(values[3]))
+    baselineFile.close()
+
     if verbose:
-        msgLib.info('remove_outliers: {}'.format(remove_outliers))
+        msgLib.info('CLEAN UP ' + str(len(psd_values)) + ' PSDs')
+    (ok, notok) = utilities.check_y_range(psd_values, pct_low, pct_high)
 
-    # Minimum SESAME 2004 rank to be accepted.
-    min_rank = minrank #from original: float(utilities.get_param(args, 'minrank', msgLib, setParams.minrank))
+    return ok, notok
 
-    # network, station, and location to process.
-    #From original: network = utilities.get_param(args, 'net', msgLib, None)
-    __checkifnone(param=start)
-    __checkifnone(param=end)
-    __checkifnone(param=location)
-    __checkifnone(param=network)
-    __checkifnone(param=station)
-    __checkifnone(param=location)
+# Get daily PSDs from MUSTANG
+#This probably won't be used
+def __getmustangpsds(time_list, verbose, start_hour, end_hour, target, start_time, end_time, plot):
+    day_values = list()
+    day_time_values = list()
+    psd_values = list()
 
-    #Reformat start and end of time window
-    startTimeObj = __formatTime(inputTime=start, tzone=tzone, dst=dst)
-    start_hour = startTimeObj.hour
-    start_time = startTimeObj.time
-
-    endTimeObj = __formatTime(inputTime=end, tzone=tzone, dst=dst)
-    end_hour = endTimeObj.hour
-    end_time = endTimeObj.time
-
-    n = nSegments
-
-    # Method for combining horizontal components h1 & h2.
-    method = setParams.getHComboMethod(method) 
-
-    plotParams = setParams.plotparameters(plot) #returns a dictionary with keys below
-    show_plot = plotParams[0] #from original: int(utilities.get_param(args, 'showplot', msgLib, setParams.plot))
-    plot_nnm = plotParams[1] #from original: int(utilities.get_param(args, 'plotnnm', msgLib, setParams.plotnnm))
-    plot_psd = plotParams[2] #from original: int(utilities.get_param(args, 'plotpsd', msgLib, setParams.plotpsd))
-    plot_pdf = plotParams[3] #from original: int(utilities.get_param(args, 'plotpdf', msgLib, setParams.plotpdf))
-    plot_bad = plotParams[4] #from original: int(utilities.get_param(args, 'plotbad', msgLib, setParams.plotbad))
-
-    day_values_passed = [[], [], []]
-    #From original: water_level = float(utilities.get_param(args, 'waterlevel', msgLib, setParams.waterlevel))
-    #hvsr_ylim = setParams.hvsrylim
-    hvsr_ylim = [0, 10]
-    hvsr_ylim[1] = hvsr_ymax #from originalfloat(utilities.get_param(args, 'ymax', msgLib, setParams.hvsrylim[1]))
-    #From original: xtype = utilities.get_param(args, 'xtype', msgLib, setParams.xtype)
-    #From original: hvsr_band = utilities.get_param(args, 'hvsrband', msgLib, setParams.hvsrband)
-
-    sorted_channel_list = __sortchannels(channels)
-
-    #Get and format header information and plot title info
-    report_header = '.'.join([network, station, location, '-'.join(sorted_channel_list)])
-    station_header = report_header
-    station_header = '{} {} {}'.format(station_header, start, end)
-    report_header += ' {} from {} to {}\nusing {}'.format(report_header, start, end, setParams.methodList[method])
-    plot_title = report_header
-    report_header = '{}\n\n'.format(report_header)
-
-    #Plotting stuff!
-    # Turn off the display requirement if not needed.
-    if not show_plot:
+    # Limit PSD segments starting between starttime (inclusive) and endtime (exclusive)
+    pdf_x = list()
+    pdf_y = list()
+    pdfP = list()
+    for date_index in range(len(time_list) - 1):
+        msgLib.info('Doing {}{} to {}{}'.format(time_list[date_index], start_hour, time_list[date_index + 1], end_hour))
+        URL = '{}target={}&starttime={}{}&endtime={}{}&format=xml&correct=true'.format(setParams.mustangPsdUrl, target,
+                                                                                    time_list[date_index],
+                                                                                    start_hour,
+                                                                                    time_list[date_index + 1],
+                                                                                    end_hour)
         if verbose >= 0:
-            msgLib.info('Plot Off')
-        matplotlib.use('agg')
-    else:
-        from obspy.imaging.cm import pqlx
-        from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
+            msgLib.info('requesting: {}'.format(URL))
+            t0 = utilities.time_it(t0)
+        try:
+            link = urllib.request.urlopen(URL)
+        except Exception as _e:
+            msgLib.error('\n\nReceived HTTP Error code: {}\n{}'.format(_e.code, _e.reason), 1)
+            if _e.code == 404:
+                msgLib.error('Error 404: No PSDs found in the range {}{} to {}{} when requested:\n\n{}'.format(
+                    time_list[date_index], start_hour, time_list[date_index + 1], end_hour, URL), 1)
+                continue
+            elif _e.code == 413:
+                print('Note: Either use the run argument "n" to split the requested date range to smaller intervals'
+                    '\nCurrent "n"" value is: {}. Or request a shorter time interval.'.format(n), flush=True)
+                sys.exit(1)
+            msgLib.error('failed on target {} {}'.format(target, URL), 1)
 
-    ax2 = None
-    # Do one channel at a time.
-    channel_index = -1
-    for channel in sorted_channel_list:
-        channel_index += 1
-        x_values = list()
-        psd_values = list()
-        day_values = list()
-        day_time_values = list()
-        pct_low = list()
-        pct_high = list()
-        pct_mid = list()
+        if verbose:
+            msgLib.info('PSD waiting for reply....')
 
-        target = '.'.join([network, station, location, channel, '*'])
-        label = '.'.join([network, station, location, 'PSDs'])
-        label_hvsr = '.'.join([network, station, location, 'HVSR'])
-        if verbose >= 0:
-            msgLib.info('requesting {} from {} to {}'.format(target, start, end))
+        tree = ET.parse(link)
+        link.close()
+        root = tree.getroot()
 
-        # Baseline files are required if we will remove the outliers. We assume the baseline file has all the periods,
-        # so we use it as a reference.
-        if remove_outliers:
-            try:
-                baselineFile = open(
-                    os.path.join(setParams.baselineDirectory, fileLib.baselineFileName(network, station, location, channel)),
-                    'r')
-            except Exception as e:
-                msgLib.error('Failed to read baseline file {}\n'
-                            'Use the getStationChannelBaseline.py script to generate the baseline file or '
-                            'set the parameter removeoutliers=0.'.
-                            format(os.path.join(setParams.baselineDirectory, fileLib.baselineFileName(network,
-                                                                                                station,
-                                                                                                location,
-                                                                                                channel))), 1)
-                sys.exit()
+        if verbose:
+            requestStart = root.find('RequestedDateRange').find('Start').text
+            requestEnd = root.find('RequestedDateRange').find('End').text
 
-            lines = baselineFile.read()
-            baseline = lines.split('\n')
-            for index_value in range(0, len(baseline)):
-                if len(baseline[index_value].strip()) == 0:
-                    continue
-                if baseline[index_value].strip().startswith('#'):
-                    values = baseline[index_value].strip().split()
-                    percent_low = values[1]
-                    percent_mid = values[3]
-                    percent_high = values[5]
-                    continue
+        psds = root.find('Psds')
 
-                values = baseline[index_value].split()
+        all_psds = psds.findall('Psd')
+        if verbose:
+            msgLib.info('PSD: {}'.format(str(len(all_psds))))
+            t0 = utilities.time_it(t0)
 
-                x_values.append(float(values[0]))
-                pct_low.append(float(values[1]))
-                pct_mid.append(float(values[2]))
-                pct_high.append(float(values[3]))
-            baselineFile.close()
+        for psd in all_psds:
+            day = psd.attrib['start'].split('T')[0]
+            psdTime = time.strptime(day, '%Y-%m-%d')
+            if (start_time != end_time and (psdTime < start_time or psdTime >= end_time)) or \
+                    (start_time == end_time and psdTime != start_time):
+                if verbose >= 0:
+                    msgLib.warning(sys.argv[0], 'Rejected, PSD of {} is outside the  window {} to {}'.
+                                format(psd.attrib['start'],
+                                        time.strftime('%Y-%m-%dT%H:%M:%S', start_time),
+                                        time.strftime('%Y-%m-%dT%H:%M:%S', end_time)))
+                continue
+            allValues = psd.findall('value')
 
-        # Get daily PSDs from MUSTANG.
-        # Limit PSD segments starting between starttime (inclusive) and endtime (exclusive)
-        pdf_x = list()
-        pdf_y = list()
-        pdfP = list()
-        for date_index in range(len(date_list) - 1):
-            msgLib.info('Doing {}{} to {}{}'.format(date_list[date_index], start_hour, date_list[date_index + 1], end_hour))
-            URL = '{}target={}&starttime={}{}&endtime={}{}&format=xml&correct=true'.format(setParams.mustangPsdUrl, target,
-                                                                                        date_list[date_index],
-                                                                                        start_hour,
-                                                                                        date_list[date_index + 1],
-                                                                                        end_hour)
-            if verbose >= 0:
-                msgLib.info('requesting: {}'.format(URL))
-                t0 = utilities.time_it(t0)
-            try:
-                link = urllib.request.urlopen(URL)
-            except Exception as _e:
-                msgLib.error('\n\nReceived HTTP Error code: {}\n{}'.format(_e.code, _e.reason), 1)
-                if _e.code == 404:
-                    msgLib.error('Error 404: No PSDs found in the range {}{} to {}{} when requested:\n\n{}'.format(
-                        date_list[date_index], start_hour, date_list[date_index + 1], end_hour, URL), 1)
-                    continue
-                elif _e.code == 413:
-                    print('Note: Either use the run argument "n" to split the requested date range to smaller intervals'
-                        '\nCurrent "n"" value is: {}. Or request a shorter time interval.'.format(n), flush=True)
-                    sys.exit(1)
-                msgLib.error('failed on target {} {}'.format(target, URL), 1)
+            X = list()
+            Y = list()
+            for value in allValues:
+                X.append(float(value.attrib['freq']))
+                Y.append(float(value.attrib['power']))
 
-            if verbose:
-                msgLib.info('PSD waiting for reply....')
-
-            tree = ET.parse(link)
-            link.close()
-            root = tree.getroot()
-
-            if verbose:
-                requestStart = root.find('RequestedDateRange').find('Start').text
-                requestEnd = root.find('RequestedDateRange').find('End').text
-
-            psds = root.find('Psds')
-
-            all_psds = psds.findall('Psd')
-            if verbose:
-                msgLib.info('PSD: {}'.format(str(len(all_psds))))
-                t0 = utilities.time_it(t0)
-
-            for psd in all_psds:
-                day = psd.attrib['start'].split('T')[0]
-                psdTime = time.strptime(day, '%Y-%m-%d')
-                if (start_time != end_time and (psdTime < start_time or psdTime >= end_time)) or \
-                        (start_time == end_time and psdTime != start_time):
-                    if verbose >= 0:
-                        msgLib.warning(sys.argv[0], 'Rejected, PSD of {} is outside the  window {} to {}'.
-                                    format(psd.attrib['start'],
-                                            time.strftime('%Y-%m-%dT%H:%M:%S', start_time),
-                                            time.strftime('%Y-%m-%dT%H:%M:%S', end_time)))
-                    continue
-                allValues = psd.findall('value')
-
-                X = list()
-                Y = list()
-                for value in allValues:
-                    X.append(float(value.attrib['freq']))
-                    Y.append(float(value.attrib['power']))
-
-                # We follow a simple logic, the X values must match. We take the first one to be the sequence we want.
-                if not x_values:
-                    x_values = list(X)
-
-                if X != x_values:
-                    if verbose:
-                        msgLib.warning(sys.argv[0], 'Rejected {} {} {} for bad X'.format(target, date_list[date_index],
-                                                                                        date_list[date_index + 1]))
-                else:
-                    # Store the PSD values and at the same time keep track of their day and time.
-                    day_values.append(day)
-                    day_time_values.append(psd.attrib['start'])
-                    psd_values.append(Y)
-
-            if plot_pdf:
-                (thisX, thisY, thisP) = hvsrCalcs.get_pdf('{}target={}&starttime={}{}&endtime={}{}&format=text'.format(
-                    setParams.mustangPdfUrl, target, date_list[date_index], start_hour, date_list[date_index + 1],
-                    end_hour), verbose)
-                pdf_x += thisX
-                pdf_y += thisY
-                pdfP += thisP
+            # We follow a simple logic, the X values must match. We take the first one to be the sequence we want.
+            if not x_values:
+                x_values = list(X)
+            if X != x_values:
                 if verbose:
-                    msgLib.info('PDF: {}'.format(len(pdf_y)))
+                    msgLib.warning(sys.argv[0], 'Rejected {} {} {} for bad X'.format(target, time_list[date_index],
+                                                                                    time_list[date_index + 1]))
+            else:
+                # Store the PSD values and at the same time keep track of their day and time.
+                day_values.append(day)
+                day_time_values.append(psd.attrib['start'])
+                psd_values.append(Y)
+        plot_pdf = plot[3]
+        if plot_pdf:
+            (thisX, thisY, thisP) = hvsrCalcs.get_pdf('{}target={}&starttime={}{}&endtime={}{}&format=text'.format(
+                setParams.mustangPdfUrl, target, time_list[date_index], start_hour, time_list[date_index + 1],
+                end_hour), verbose)
+            pdf_x += thisX
+            pdf_y += thisY
+            pdfP += thisP
+            if verbose:
+                msgLib.info('PDF: {}'.format(len(pdf_y)))
 
         # Must have PSDs.
         if not psd_values:
             msgLib.error('no PSDs found to process between {} and {}'.format(
-                date_list[date_index], date_list[date_index + 1]), 1)
+                time_list[date_index], time_list[date_index + 1]), 1)
             sys.exit()
         else:
             if verbose >= 0:
                 msgLib.info('total PSDs:' + str(len(psd_values)))
                 t0 = utilities.time_it(t0)
 
-        # PSDs:
-        # Initial settings.
-        if channel_index == 0:
-            if show_plot:
-                if verbose >= 0:
-                    msgLib.info('PLOT PSD')
+    return day_values, day_time_values, psd_values, pdf_x, pdf_y, pdfP
 
-                fig = plt.figure(figsize=setParams.imageSize, facecolor='white')
-                ax = list()
-                fig.canvas.set_window_title(label)
-                ax.append(plt.subplot(plotRows, 1, channel_index + 1))
-
-            # [chanZ[day],chan1[day],chan2[day]]
-            daily_psd = [{}, {}, {}]
-            day_time_psd = [{}, {}, {}]
-            median_daily_psd = [{}, {}, {}]
-            equal_daily_energy = [{}, {}, {}]
-        else:
-            if show_plot:
-                ax.append(plt.subplot(plotRows, 1, channel_index + 1, sharex=ax[0]))
-
-        # Go through all PSDs and reject the 'bad' ones based on the station baseline
-        # only done when remove_outliers is True.
-        if remove_outliers:
-            if verbose:
-                msgLib.info('CLEAN UP ' + str(len(psd_values)) + ' PSDs')
-            (ok, notok) = utilities.check_y_range(psd_values, pct_low, pct_high)
-        else:
-            # No cleanup needed, mark them all as OK!
-            notok = list()
-            ok = range(len(psd_values))
-
-        info = ' '.join(
-            ['Channel', channel, str(len(psd_values)), 'PSDs,', str(len(ok)), 'accepted and', str(len(notok)), 'rejected',
-            '\n'])
-        report_header += info
-        print ('[INFO]', info)
-
-        if verbose and notok:
-            t0 = utilities.time_it(t0)
-            msgLib.info('Flag BAD PSDs')
-        for i, index in enumerate(ok):
-            # DAY,DAYTIME: 2018-01-01 2018-01-01T00:00:00.000Z
-            day = day_values[index]
-            day_time = day_time_values[index]
-            psd = psd_values[index]
-
-            # Preserve the individual PSDs (day_time)
-            day_time_psd[channel_index][day_time] = psd
-
-            # Group PSDs into daily bins
-            if day not in daily_psd[channel_index].keys():
-                daily_psd[channel_index][day] = list()
-            daily_psd[channel_index][day].append(psd)
-
-            # Keep track of individual days
-            if day_values[index] not in day_values_passed[channel_index]:
-                day_values_passed[channel_index].append(day)
-        if verbose and notok:
-            t0 = utilities.time_it(t0)
-
+#Set up PSD Plot
+def __setupPSDPlot(channel_index, plot, verbose, label, plotRows):
+    show_plot=plot[0]
+    
+    # PSDs:
+    # Initial settings: Set up plot with first channel pass
+    if channel_index == 0:
         if show_plot:
+            if verbose >= 0:
+                msgLib.info('PLOT PSD')
+
+            fig = plt.figure(figsize=setParams.imageSize, facecolor='white')
+            ax = list()
+            fig.canvas.set_window_title(label)
+            ax.append(plt.subplot(plotRows, 1, channel_index + 1))
+
+    else:
+        #If we are plotting, just add channels
+        if show_plot:
+            ax.append(plt.subplot(plotRows, 1, channel_index + 1, sharex=ax[0]))
+    return fig, ax
+
+#Function to plotPSDS
+def plotPSDs(fig, ax, plot, channel_index, network, station, location, channel,
+            ok, notok, verbose, x_values, psd_values, remove_outliers, pqlx, pdf_x, pdf_y, pdfP, xtype,
+            pct_high, pct_mid, pct_low, percent_high, percent_mid, percent_low):
+    show_plot = plot[0]
+    plot_nnm = plot[1]
+    plot_psd = plot[2]
+    plot_pdf = plot[3]
+    plot_bad = plot[4]
+    if show_plot:
+            from obspy.imaging.cm import pqlx
+            from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
             # Plot the 'bad' PSDs in gray.
             if plot_psd and plot_bad:
                 msgLib.info('[INFO] Plot {} BAD PSDs'.format(len(notok)))
@@ -547,12 +410,200 @@ def computeHVSR(start, end, tzone='utc', dst=True,
                 cbar = fig.colorbar(im, ax2, orientation='vertical')
                 cbar.set_label('Probability (%)', size=9, rotation=270, labelpad=6)
                 plt.clim(setParams.pMin, setParams.pMax)
+    return
 
+def hvsr_setup(start, end, tzone='utc', dst=True,
+                network='AM', station='RAC84', location='00', channels=['EHZ', 'EHN', 'EHE'], 
+                nSegments=256, method=4, minrank=2, water_level=1.8, outlier_rem=True, verbose=False,
+                plot=True, xtype='frequency', hvsrband=[0.2, 15], hvsr_ymax = 10,
+                **kwargs):
+    """ Main function to setup data for HVSR calculation
+    -------------------
+    Parameters:
+        start       : str or datetime obj. If string, preferred format is YYYY-mm-ddTHH:MM:SS.f (Y=year, m=month, d=day, ). Will be converted to UTC
+        end         : str or datetime obj
+        tzone       : str='utc', or int  If str, 'utc' is easiest, otherwise, will use local timezone of processing computer; if int, offset from UTC in hours
+        dst         : bool=True     True if daylight savings time when data was collected (usualyl True in summers           network     : str='AM'
+        station     : str='RAC84'
+        location    : str='00'
+        channels    : list=['EHZ', 'EHN', 'EHE']     
+        nSegments   : int=256       Number of segments to break the signal into
+        method      : int or str. Method for combining the horizontal components. If integer, the following 
+        minrank     : float=2 (or int?)
+        water_level : float=1.8
+        outlier_rem : bool = True        
+        verbose     : bool = False
+        plot        : bool, list, or dict
+                        If bool, just says whether or not to plot
+                        If list, should be list of bools saying whether to plot (in the following order):
+                            [0] : Whether to plot anything
+                            [1] : Whether to plot nnm
+                            [2] : Whether to plot Power Spectral Densities
+                            [3] : Whether to plot Probability density functions for each freq. bin (?)
+                            [4] : Whether to plot bad points (?)
+        xtype       : str {'frequency', 'period'} ('freq', 'f', 'Hz', will also work for frequency; 'per', 'p', or 'T' will also work for period)
+        hvsrband    : tuple or 2-item list (?)
+        hvsr_ymax   : float = 10
+        report      : bool=True Whether to print report information to file
+        **kwargs    : Keyword arguments, primarily to be passed as matplotlib plotting parameters
+    """
+    t0 = time.time()
+    display = True
+    plotRows = 4
+    report_information = int(utilities.get_param(args, 'report_information', msgLib, 1, be_verbose=verbose))
+
+    # See if we want to reject suspect PSDs.
+    remove_outliers = outlier_rem #from original: bool(int(utilities.get_param(args, 'removeoutliers', msgLib, False)))
+    if verbose:
+        msgLib.info('remove_outliers: {}'.format(remove_outliers))
+
+    # Minimum SESAME 2004 rank to be accepted.
+    min_rank = minrank #from original: float(utilities.get_param(args, 'minrank', msgLib, setParams.minrank))
+
+    # network, station, and location to process.
+    #From original: network = utilities.get_param(args, 'net', msgLib, None)
+    __checkifnone(param=start)
+    __checkifnone(param=end)
+    __checkifnone(param=location)
+    __checkifnone(param=network)
+    __checkifnone(param=station)
+    __checkifnone(param=location)
+
+    #Reformat start and end of time window
+    startTimeObj = __formatTime(inputTime=start, tzone=tzone, dst=dst)
+    start_hour = startTimeObj.hour
+    start_time = startTimeObj.time
+
+    endTimeObj = __formatTime(inputTime=end, tzone=tzone, dst=dst)
+    end_hour = endTimeObj.hour
+    end_time = endTimeObj.time
+
+    n = nSegments
+    
+    #PROBABLY DON"T NEED THIS (ONLY FOR MUSTANG CALL)
+    time_list = utilities.time_range(start, end, n)
+
+    # Method for combining horizontal components h1 & h2.
+    method = setParams.getHComboMethod(method) 
+    if method == 'Diffuse Field Assumption':
+        dfa=True
+    else:
+        dfa=False
+
+    plotParams = setParams.plotparameters(plot) #returns a dictionary with keys below
+    show_plot = plotParams[0] #from original: int(utilities.get_param(args, 'showplot', msgLib, setParams.plot))
+    plot_nnm = plotParams[1] #from original: int(utilities.get_param(args, 'plotnnm', msgLib, setParams.plotnnm))
+    plot_psd = plotParams[2] #from original: int(utilities.get_param(args, 'plotpsd', msgLib, setParams.plotpsd))
+    plot_pdf = plotParams[3] #from original: int(utilities.get_param(args, 'plotpdf', msgLib, setParams.plotpdf))
+    plot_bad = plotParams[4] #from original: int(utilities.get_param(args, 'plotbad', msgLib, setParams.plotbad))
+
+    day_values_passed = [[], [], []]
+    #From original: water_level = float(utilities.get_param(args, 'waterlevel', msgLib, setParams.waterlevel))
+    #hvsr_ylim = setParams.hvsrylim
+    hvsr_ylim = [0, 10]
+    hvsr_ylim[1] = hvsr_ymax #from originalfloat(utilities.get_param(args, 'ymax', msgLib, setParams.hvsrylim[1]))
+    #From original: xtype = utilities.get_param(args, 'xtype', msgLib, setParams.xtype)
+    #From original: hvsr_band = utilities.get_param(args, 'hvsrband', msgLib, setParams.hvsrband)
+
+    sorted_channel_list = __sortchannels(channels)
+
+    #Get and format header information and plot title info
+    report_header = '.'.join([network, station, location, '-'.join(sorted_channel_list)])
+    station_header = report_header
+    station_header = '{} {} {}'.format(station_header, start, end)
+    report_header += ' {} from {} to {}\nusing {}'.format(report_header, start, end, setParams.methodList[method])
+    plot_title = report_header
+    report_header = '{}\n\n'.format(report_header)
+
+    #Plotting stuff!
+    # Turn off the display requirement if not needed.
+    if not show_plot:
+        if verbose >= 0:
+            msgLib.info('Plot Off')
+        matplotlib.use('agg')
+    else:
+        from obspy.imaging.cm import pqlx
+        from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
+
+    ax2 = None
+    # Do one channel at a time.
+    channel_index = -1
+    for channel in sorted_channel_list:
+        channel_index += 1
+        x_values = list()
+        psd_values = list()
+        day_values = list()
+        day_time_values = list()
+        pct_low = list()
+        pct_high = list()
+        pct_mid = list()
+
+        target = '.'.join([network, station, location, channel, '*'])
+        label = '.'.join([network, station, location, 'PSDs'])
+        label_hvsr = '.'.join([network, station, location, 'HVSR'])
+        if verbose >= 0:
+            msgLib.info('requesting {} from {} to {}'.format(target, start, end))
+
+        # Baseline files are required if we will remove the outliers. We assume the baseline file has all the periods,
+        # so we use it as a reference.
+
+        day_values, day_time_values, psd_values, pdf_x, pdf_y, pdfP = __getmustangpsds(time_list, verbose, start_hour, end_hour, target, start_time, end_time, plot)
+
+        if remove_outliers:
+            ok, notok = __removeoutliers(network, station, location, channel, verbose, psd_values)
+        else:
+            # No cleanup needed, mark them all as OK!
+            notok = list()
+            ok = range(len(psd_values))
+
+        fig, ax = __setupPSDPlot(channel_index, plot, verbose, label, plotRows)
+
+        # [chanZ[day],chan1[day],chan2[day]]
+        daily_psd = [{}, {}, {}]
+        day_time_psd = [{}, {}, {}]
+        median_daily_psd = [{}, {}, {}]
+        equal_daily_energy = [{}, {}, {}]
+        
+
+        info = ' '.join(
+            ['Channel', channel, str(len(psd_values)), 'PSDs,', str(len(ok)), 'accepted and', str(len(notok)), 'rejected',
+            '\n'])
+        report_header += info
+        print ('[INFO]', info)
+
+        if verbose and notok:
+            t0 = utilities.time_it(t0)
+            msgLib.info('Flag BAD PSDs')
+        for i, index in enumerate(ok):
+            # DAY,DAYTIME: 2018-01-01 2018-01-01T00:00:00.000Z
+            day = day_values[index]
+            day_time = day_time_values[index]
+            psd = psd_values[index]
+
+            # Preserve the individual PSDs (day_time)
+            day_time_psd[channel_index][day_time] = psd
+
+            # Group PSDs into daily bins
+            if day not in daily_psd[channel_index].keys():
+                daily_psd[channel_index][day] = list()
+            daily_psd[channel_index][day].append(psd)
+
+            # Keep track of individual days
+            if day_values[index] not in day_values_passed[channel_index]:
+                day_values_passed[channel_index].append(day)
+        if verbose and notok:
+            t0 = utilities.time_it(t0)
+
+        #Plot PSDs, if plot is True
+        plotPSDs(fig, ax, plot, channel_index, network, station, location, channel,
+            ok, notok, verbose, x_values, psd_values, remove_outliers, pqlx, xtype)
+            #pdf_x, pdf_y, pdfP, pct_high, pct_mid, pct_low, percent_high, percent_mid, percent_low)
 
         # Compute and save the median daily PSD for HVSR computation
         # for non-DFA computation.
         # daily_psd[channel_index][day] is a list of individual PSDs for that channel and day. We compute median
         # along axis=0 to get median of individual frequencies.
+
         if not dfa:
             if verbose:
                 msgLib.info('Save Median Daily')
@@ -561,11 +612,14 @@ def computeHVSR(start, end, tzone='utc', dst=True,
                     print('[INFO] calculating median_daily_psd', flush=True)
                     display = False
                 median_daily_psd[channel_index][day] = np.percentile(daily_psd[channel_index][day], 50, axis=0)
+    return 
 
+def dfa_calc(method, day_time_values, day_time_psd, x_values, equal_daily_energy, median_daily_psd, verbose):
     # Are we doing DFA?
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
     # the same as large ones, so that P1+P2+P3=1
-    if dfa:
+
+    if method == 'Diffuse Field Assumption':
         if display:
             print('[INFO] DFA', flush=True)
             display = False
@@ -641,6 +695,17 @@ def computeHVSR(start, end, tzone='utc', dst=True,
             equal_daily_energy[1][day] = sum_ns_power
             equal_daily_energy[2][day] = sum_ew_power
 
+    return 
+
+def hvsr_compute(network, station, location, start, end, method, 
+                x_values, plot, water_level, hvsr_band, hvsr_ylim,
+                median_daily_psd, equal_daily_energy, verbose):
+    show_plot = plot[0]
+    plot_nnm = plot[1]
+    plot_psd = plot[2]
+    plot_pdf = plot[3]
+    plot_bad = plot[4]
+    
     # HVSR computation
     if verbose:
         msgLib.info('HVSR computation')
@@ -682,7 +747,7 @@ def computeHVSR(start, end, tzone='utc', dst=True,
         for day in sorted(day_values_passed):
 
             # must have all 3 channels, compute HVSR for that day
-            if dfa:
+            if method == 'Diffuse Field Assumption':
                 if day in equal_daily_energy[0].keys() and day in equal_daily_energy[1].keys() and day in \
                         equal_daily_energy[2].keys():
                     hvsr0 = math.sqrt(
@@ -732,7 +797,7 @@ def computeHVSR(start, end, tzone='utc', dst=True,
     for day in sorted(day_values_passed):
         hvsr_tmp = list()
         for j in range(len(x_values) - 1):
-            if dfa > 0:
+            if method == 'Diffuse Field Assumption':
                 if day in equal_daily_energy[0].keys() and day in equal_daily_energy[1].keys() and day in \
                         equal_daily_energy[2].keys():
                     hvsr0 = math.sqrt(
