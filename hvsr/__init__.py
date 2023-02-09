@@ -1,4 +1,4 @@
-from hvsr.pyUpdates import (
+from hvsr.hvsrtools import (
     fileLib,
     hvsrCalcs,
     ioput,
@@ -8,3 +8,5 @@ from hvsr.pyUpdates import (
     setParams,
     utilities
 )
+
+from hvsr import hvsr

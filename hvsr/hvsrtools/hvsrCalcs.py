@@ -7,17 +7,39 @@ import numpy as np
 from scipy.signal import argrelextrema
 
 
-import hvsr.pyUpdates.msgLib as msgLib
-import hvsr.pyUpdates.powspecdens as powspecdens
-import hvsr.pyUpdates.utilities as utilities
-import hvsr.pyUpdates.setParams as setParams
+import hvsr.hvsrtools.msgLib as msgLib
+import hvsr.hvsrtools.powspecdens as powspecdens
+import hvsr.hvsrtools.utilities as utilities
+import hvsr.hvsrtools.setParams as setParams
 
 args = utilities.get_args(sys.argv)
 #target = '.'.join([network, station, location, channel, '*'])
 xtype = utilities.get_param(args, 'xtype', msgLib, setParams.xtype)
 
 
-def get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
+
+def check_y_range(_y, _low, _high):
+    """check the PSD values to see if they are within the range"""
+    _ok = list()
+    _not_ok = list()
+
+    # use subtract operator to see if y and _low/_high are crossing
+    for _i, _value in enumerate(_y):
+        _l = [_a - _b for _a, _b in zip(_value, _low)]
+        if min(_l) < 0:
+            _not_ok.append(_i)
+            continue
+
+        _h = [_a - _b for _a, _b in zip(_value, _high)]
+        if max(_h) > 0:
+            _not_ok.append(_i)
+            continue
+
+        _ok.append(_i)
+
+    return _ok, _not_ok
+
+def __get_hvsr_original(_dbz, _db1, _db2, _x, use_method=4):
     """
     H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
         use_method:
@@ -45,13 +67,93 @@ def get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     _hvsr = _h[use_method] / _hz
     return _hvsr
 
+def get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
+    """
+    H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
+        use_method:
+           (1) DFA
+           (2) arithmetic mean, that is, H ≡ (HN + HE)/2
+           (3) geometric mean, that is, H ≡ √HN · HE, recommended by the SESAME project (2004)
+           (4) vector summation, that is, H ≡ √H2 N + H2 E
+           (5) quadratic mean, that is, H ≡ √(H2 N + H2 E )/2
+           (6) maximum horizontal value, that is, H ≡ max {HN, HE}
+    """
+    _pz = get_power(_dbz, _x)
+    _p1 = get_power(_db1, _x)
+    _p2 = get_power(_db2, _x)
+    #_dx = np.diff(_x)[0]
+
+    #_pz = np.mean(_dbz)
+    #_p1 = np.mean(_db1)
+    #_p2 = np.mean(_db2)
+
+    #_pz = _dbz #powspecdens.get_power(_dbz, _x)
+    #_p1 = _db1 #powspecdens.get_power(_db1, _x)
+    #_p2 = _db2 #powspecdens.get_power(_db2, _x)
+
+    _hz = math.sqrt(_pz)
+    _h1 = math.sqrt(_p1)
+    _h2 = math.sqrt(_p2)
+
+    _h = {  2: (_h1 + _h2) / 2.0, 
+            3: math.sqrt(_h1 * _h2), 
+            4: math.sqrt(_p1 + _p2), 
+            5: math.sqrt((_p1 + _p2) / 2.0),
+            6: max(_h1, _h2)}
+
+    _hvsr = _h[use_method] / _hz
+    return _hvsr
+
+def remove_db(_db_value):
+    """convert dB power to power"""
+    _values = list()
+    for _d in _db_value:
+        _values.append(10 ** (float(_d) / 10.0))
+    return _values
+
+
+def get_power(_db, _x):
+    """calculate HVSR
+      We will undo setp 6 of MUSTANG processing as outlined below:
+          1. Dividing the window into 13 segments having 75% overlap
+          2. For each segment:
+             2.1 Removing the trend and mean
+             2.2 Apply a 10% sine taper
+             2.3 FFT
+          3. Calculate the normalized PSD
+          4. Average the 13 PSDs & scale to compensate for tapering
+          5. Frequency-smooth the averaged PSD over 1-octave intervals at 1/8-octave increments
+          6. Convert power to decibels
+
+    NOTE: PSD is equal to the power divided by the width of the bin
+          PSD = P / W
+          log(PSD) = Log(P) - log(W)
+          log(P) = log(PSD) + log(W)  here W is width in frequency
+          log(P) = log(PSD) - log(Wt) here Wt is width in period
+
+    for each bin perform rectangular integration to compute power
+    power is assigned to the point at the begining of the interval
+         _   _
+        | |_| |
+        |_|_|_|
+
+     Here we are computing power for individual ponts, so, no integration is necessary, just
+     compute area
+    """
+    #print(_db)
+    _dx = np.diff(_x)[0]
+    #print(_dx)
+    #_p = np.mean(remove_db(_db))
+    _p = abs(np.multiply(np.mean(remove_db(_db)), _dx))
+    #_p = np.multiply(np.mean(remove_db(_db)), _dx)
+    #print(_p)
+    return _p
 
 def find_peaks(_y):
     """find peaks"""
     _index_list = argrelextrema(np.array(_y), np.greater)
 
     return _index_list[0]
-
 
 def init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
     """initialize peaks"""
@@ -61,7 +163,6 @@ def init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
             _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
                           'Score': 0, 'Report': {'A0': '', 'Sf': '', 'Sa': '', 'P+': '', 'P-': ''}})
     return _peak
-
 
 def check_clarity(_x, _y, _peak, do_rank=False):
     """
@@ -112,7 +213,6 @@ def check_clarity(_x, _y, _peak, do_rank=False):
                 break
 
     return _peak
-
 
 def check_freq_stability(_peak, _peakm, _peakp):
     """
@@ -168,7 +268,6 @@ def check_freq_stability(_peak, _peakm, _peakp):
                 _peakp[_i]['f0'], '%', _peak[_i]['f0'], ' ')
 
     return _peak
-
 
 def check_stability(_stdf, _peak, _hvsr_log_std, rank):
     """
