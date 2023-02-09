@@ -33,7 +33,7 @@ args = { 'net':'AM',
         'cha': ['EHZ', 'EHN', 'EHE']
         }
 
-def defineInputParameters(network='AM', 
+def input_param(network='AM', 
                         station='RAC84', 
                         loc='00', 
                         channels=['EHZ', 'EHN', 'EHE'],
