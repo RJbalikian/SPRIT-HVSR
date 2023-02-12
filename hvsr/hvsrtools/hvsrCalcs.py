@@ -111,7 +111,6 @@ def remove_db(_db_value):
         _values.append(10 ** (float(_d) / 10.0))
     return _values
 
-
 def get_power(_db, _x):
     """calculate HVSR
       We will undo setp 6 of MUSTANG processing as outlined below:
