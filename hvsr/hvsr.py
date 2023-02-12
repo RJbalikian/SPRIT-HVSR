@@ -7,6 +7,7 @@ import sys
 import tempfile
 
 import obspy
+import numpy as np
 
 import hvsr.hvsrtools.msgLib as msgLib
 
@@ -594,11 +595,32 @@ def generatePPSDs(stream, paz, ppsd_length=60, **kwargs):
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
     return ppsds
 
-def process_hvsr():
+def __check_xvalues(ppsds):
+    xLengths = []
+    for k in ppsds.keys():
+        xLengths.append(len(ppsds[k].period_bin_centers))
+    if len(set(xLengths)) <= 1:
+        pass #This means all channels have same number of period_bin_centers
+    else:
+        print('X-values (periods or frequencies) do not have the same values. \n This may result in computational errors')
+        #Do stuff to fix it?
+    return
+
+def process_hvsr(ppsds):
     """
     This function will have all the stuff needed to process HVSR, as updated from local data
     Based on the notebook
-    """
 
+    -----------------------
+    Parameters:
+        ppsds   : dict  Dictionary with three key-value pairs containing the PPSD outputs from the three channels from the generatePPSDs function
+
+    -----------------------
+    Return:
+
+    """
+    __check_xvalues(ppsds)
+
+    
 
     return
