@@ -199,6 +199,20 @@ def __formatTime(inputDT, tzone='utc', dst=True):
 
     return outputTimeObj
 
+#Sort Channels later
+def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
+    """"
+    Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
+        ----------------
+        Parameters
+            channels    : list = ['EHZ', 'EHN', 'EHE']
+    """
+    channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
+
+    sorted_channel_list = channels.copy()
+    for channel in channels:
+        sorted_channel_list[channel_order[channel[2]]] = channel
+    return sorted_channel_list
 #Define input parameters
 def input_param(network='AM', 
                         station='RAC84', 
@@ -344,7 +358,7 @@ def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ'
     return inv
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN', 'EHZ']):
+def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN', 'EHE']):
     """Get Shake metadata and output as paz parameter needed for PPSD
     Parameters:
         inv     : file, file object or obspy inventory object
@@ -378,9 +392,11 @@ def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN
     sensitivityPath = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"InstrumentSensitivity/"+prefix+"Value"
     gainPath = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"StageGain/"+prefix+"Value"
 
-    paz = []
+    #paz = []
+    paz = {}
     for c in channels:
         channelPaz = {}
+        #channelPaz['channel'] = c
         for item in root.findall(sensitivityPath):
             channelPaz['sensitivity']=float(item.text)
 
@@ -413,7 +429,7 @@ def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN
                     #channelPaz['zeros'] = list(set(zeroList))
                     channelPaz['zeros'] = zeroList
 
-        paz.append(channelPaz)
+        paz[str(c)] = channelPaz
     return paz
 
 #Reads in traces to obspy stream
@@ -522,7 +538,10 @@ def fetchdata(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
             rawDataIN.attach_response(inv)
-
+    if 'Z' in str(rawDataIN.traces[0])[12:15]:
+        pass
+    else:
+        rawDataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
     return rawDataIN
 
 #Trim data 
@@ -544,6 +563,36 @@ def trimdata(stream, start, end):
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     return st_trimmed
+
+#Generate PPSDs for each channel
+def generatePPSDs(stream, paz, ppsd_length=60, **kwargs):
+    """Generates PPSDs for each channel
+        Channels need to be in Z, N, E order
+        Info on PPSD creation here: https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html
+        ---------------------
+        Parameters:
+            stream  :   obspy stream object from which to pull data
+            paz     :   dictionary of dictionaries    a dictionary with dictionaries containing poles and zeros (paz) info for each channel, from inv file
+            ppsd_length:  length of data passed to psd, in seconds. Per obspy: Longer segments increase the upper limit of analyzed periods but decrease the number of analyzed segments.
+            **kwargs:   keyword arguments that can be passed to obspy.signal.PPSD
+
+        ----------------------
+        Returns:
+            ppsds   :   dictionary containing entries with ppsds for each channel
+    """
+    from obspy.imaging.cm import viridis_white_r
+    from obspy.signal import PPSD
+    ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdE.add(stream, verbose=False)
+
+    ppsdN = PPSD(stream.select(channel='EHN').traces[0].stats, paz['EHN'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdN.add(stream, verbose=False)
+
+    ppsdZ = PPSD(stream.select(channel='EHZ').traces[0].stats, paz['EHZ'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdZ.add(stream, verbose=False)
+
+    ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
+    return ppsds
 
 def process_hvsr():
     """
