@@ -1,13 +1,13 @@
 import datetime
-import warnings
-import pathlib
-import xml.etree.ElementTree as ET
 import os
+import pathlib
 import sys
 import tempfile
+import warnings
+import xml.etree.ElementTree as ET
 
-import obspy
 import numpy as np
+import obspy
 
 import hvsr.hvsrtools.msgLib as msgLib
 
@@ -546,13 +546,19 @@ def fetchdata(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
     return rawDataIN
 
 #Trim data 
-def trimdata(stream, start, end):
+def trimdata(stream, start, end, export, exportdir, sitename):
     """Function to trim data to start and end time
         -------------------
         Parameters:
             stream  : obspy.stream object   Stream to be trimmed
-            start   : datetime object   Start time of trim, in UTC
-            end     : datetime object   End time of trim, in UTC
+            start   : datetime object       Start time of trim, in UTC
+            end     : datetime object       End time of trim, in UTC
+            export  : str                   If not specified, does not export. 
+                                                Otherwise, exports trimmed stream using obspy write function in format provided as string
+                                                https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
+            exportdir: str or pathlib obj    Output file to export trimmed data to; 
+            sitename: str                   Name of site for user reference. It is added as prefix to filename when designated.
+                                                If not designated, it is not included.
         ---------------------
         Returns:
             st_trimmed  : obspy.stream object Obpsy Stream trimmed to start and end times
@@ -563,6 +569,28 @@ def trimdata(stream, start, end):
     trimEnd = obspy.UTCDateTime(end)
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
+    #Format export filepath, if exporting
+    if not export:
+        pass
+    else:
+        if not sitename:
+            sitename=''
+        else:
+            sitename = sitename+'_'
+        export = '.'+export
+        net = st_trimmed[0].stats.network
+        sta = st_trimmed[0].stats.station
+        loc = st_trimmed[0].stats.location
+        strtD=str(st_trimmed[0].stats.starttime.date)
+        strtT=str(st_trimmed[0].stats.starttime.time)[0:5]
+        endT = str(st_trimmed[0].stats.endtime.time)[0:5]
+        
+        exportdir = checkifpath(exportdir)
+        exportdir = str(exportdir)
+        filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
+        
+        exportFile = exportdir+'\\'+filename
+        st_trimmed.write(filename=exportFile)
     return st_trimmed
 
 #Generate PPSDs for each channel
