@@ -27,7 +27,8 @@ def mkdir(base_directory, target_directory):
             os.makedirs(_directory)
         return _directory
     except Exception as _er:
-        return msgLib.error(f'failed to create directory {_directory}\n{_er}', None)
+      return #msgLib.error(f'failed to create directory {_directory}\n{_er}', None)
+
 
 
 def baselineFileName(network, station, location, channel):

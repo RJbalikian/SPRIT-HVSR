@@ -42,7 +42,7 @@ def time_it(_t):
     dt = t1 - _t
     t = _t
     if dt > 0.05:
-        print(f'[TIME] {dt:0.1f} s', flush=True)
+        #print(f'[TIME] {dt:0.1f} s', flush=True)
         t = t1
     return t
 
