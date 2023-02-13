@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 import pathlib
 import sys
@@ -6,8 +7,8 @@ import tempfile
 import warnings
 import xml.etree.ElementTree as ET
 
-import numpy as np
 import obspy
+import numpy as np
 
 import hvsr.hvsrtools.msgLib as msgLib
 
@@ -546,7 +547,7 @@ def fetchdata(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
     return rawDataIN
 
 #Trim data 
-def trimdata(stream, start, end, export, exportdir, sitename):
+def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
     """Function to trim data to start and end time
         -------------------
         Parameters:
@@ -556,9 +557,11 @@ def trimdata(stream, start, end, export, exportdir, sitename):
             export  : str                   If not specified, does not export. 
                                                 Otherwise, exports trimmed stream using obspy write function in format provided as string
                                                 https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
-            exportdir: str or pathlib obj    Output file to export trimmed data to; 
+            exportdir: str or pathlib obj   Output file to export trimmed data to; 
             sitename: str                   Name of site for user reference. It is added as prefix to filename when designated.
                                                 If not designated, it is not included.
+            outfile : str                   Exact filename to output
+                                                If not designated, uses default parameters (from input filename in standard seismic file format)
         ---------------------
         Returns:
             st_trimmed  : obspy.stream object Obpsy Stream trimmed to start and end times
@@ -570,9 +573,7 @@ def trimdata(stream, start, end, export, exportdir, sitename):
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     #Format export filepath, if exporting
-    if not export:
-        pass
-    else:
+    if export is not None and sitename is not None and exportdir is not None:
         if not sitename:
             sitename=''
         else:
@@ -582,15 +583,21 @@ def trimdata(stream, start, end, export, exportdir, sitename):
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
         strtD=str(st_trimmed[0].stats.starttime.date)
-        strtT=str(st_trimmed[0].stats.starttime.time)[0:5]
-        endT = str(st_trimmed[0].stats.endtime.time)[0:5]
-        
+        strtT=str(st_trimmed[0].stats.starttime.time)[0:2]
+        strtT=strtT+str(st_trimmed[0].stats.starttime.time)[3:5]
+        endT = str(st_trimmed[0].stats.endtime.time)[0:2]
+        endT = endT+str(st_trimmed[0].stats.endtime.time)[3:5]
+
         exportdir = checkifpath(exportdir)
         exportdir = str(exportdir)
         filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
         
         exportFile = exportdir+'\\'+filename
+
         st_trimmed.write(filename=exportFile)
+    else:
+        pass
+
     return st_trimmed
 
 #Generate PPSDs for each channel
@@ -634,7 +641,7 @@ def __check_xvalues(ppsds):
         #Do stuff to fix it?
     return
 
-def process_hvsr(ppsds):
+def process_hvsr(ppsds, method=4):
     """
     This function will have all the stuff needed to process HVSR, as updated from local data
     Based on the notebook
@@ -649,6 +656,121 @@ def process_hvsr(ppsds):
     """
     __check_xvalues(ppsds)
 
-    
+    for k in ppsds:
+        
+        x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
+        x_periods = np.array(ppsds[k].period_bin_centers)
 
-    return
+        y = np.mean(np.array(ppsds[k].psd_values), axis=0)
+
+    x_freqs = {}
+    x_periods = {}
+
+    psdVals = {}
+    stDev = {}
+    stDevVals = {}
+    for k in ppsds:
+        x_freqs[k] = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
+        x_periods[k] = np.array(ppsds[k].period_bin_centers)
+
+        psdVals[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
+
+        stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
+        stDevVals[k] = np.array(psdVals[k] - stDev[k])
+        stDevVals[k]=np.stack([stDevVals[k], (psdVals[k] + stDev[k])])
+
+        #plt.plot(x_freqs[k], y[k])
+        #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
+        #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
+        #plt.semilogx()
+        #plt.xlim([0.4,40])
+
+    method=4
+    hvsr_tmp = []
+    for j in range(len(x_freqs['EHZ'])-1):
+        psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
+        psd1 = [psdVals['EHE'][j], psdVals['EHE'][j + 1]]
+        psd2 = [psdVals['EHN'][j], psdVals['EHN'][j + 1]]
+        f =    [x_freqs['EHZ'][j], x_freqs['EHZ'][j + 1]]
+
+        #hvsr0 = get_hvsr(psd0, psd1, psd2, f, use_method=method)
+        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
+
+        hvsr_tmp.append(hvsr)
+
+
+    ###MORE TO DO HERE?
+    return hvsr_tmp
+
+#Get HVSR
+def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
+    """
+    H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
+        use_method:
+           (1) DFA
+           (2) arithmetic mean, that is, H ≡ (HN + HE)/2
+           (3) geometric mean, that is, H ≡ √HN · HE, recommended by the SESAME project (2004)
+           (4) vector summation, that is, H ≡ √H2 N + H2 E
+           (5) quadratic mean, that is, H ≡ √(H2 N + H2 E )/2
+           (6) maximum horizontal value, that is, H ≡ max {HN, HE}
+    """
+    _pz = __get_power(_dbz, _x)
+    _p1 = __get_power(_db1, _x)
+    _p2 = __get_power(_db2, _x)
+
+    _hz = math.sqrt(_pz)
+    _h1 = math.sqrt(_p1)
+    _h2 = math.sqrt(_p2)
+
+    _h = {  2: (_h1 + _h2) / 2.0, 
+            3: math.sqrt(_h1 * _h2), 
+            4: math.sqrt(_p1 + _p2), 
+            5: math.sqrt((_p1 + _p2) / 2.0),
+            6: max(_h1, _h2)}
+
+    _hvsr = _h[use_method] / _hz
+    return _hvsr
+
+#Remove decibel scaling
+def __remove_db(_db_value):
+    """convert dB power to power"""
+    _values = list()
+    for _d in _db_value:
+        _values.append(10 ** (float(_d) / 10.0))
+    return _values
+
+##STILL WORKING ON THESE
+def __get_power(_db, _x):
+    """calculate HVSR
+      We will undo setp 6 of MUSTANG processing as outlined below:
+          1. Dividing the window into 13 segments having 75% overlap
+          2. For each segment:
+             2.1 Removing the trend and mean
+             2.2 Apply a 10% sine taper
+             2.3 FFT
+          3. Calculate the normalized PSD
+          4. Average the 13 PSDs & scale to compensate for tapering
+          5. Frequency-smooth the averaged PSD over 1-octave intervals at 1/8-octave increments
+          6. Convert power to decibels
+
+    NOTE: PSD is equal to the power divided by the width of the bin
+          PSD = P / W
+          log(PSD) = Log(P) - log(W)
+          log(P) = log(PSD) + log(W)  here W is width in frequency
+          log(P) = log(PSD) - log(Wt) here Wt is width in period
+
+    for each bin perform rectangular integration to compute power
+    power is assigned to the point at the begining of the interval
+         _   _
+        | |_| |
+        |_|_|_|
+
+     Here we are computing power for individual ponts, so, no integration is necessary, just
+     compute area
+    """
+    #print(_db)
+    _dx = abs(np.diff(_x)[0])
+    #print(_dx)
+    _p = np.multiply(np.mean(__remove_db(_db)), _dx)
+    #print(_p)
+    return _p
