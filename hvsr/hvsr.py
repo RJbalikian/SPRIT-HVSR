@@ -681,7 +681,7 @@ def process_hvsr(ppsds, method=4, site=''):
         stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
         stDevVals[k] = np.array(psdVals[k] - stDev[k])
         stDevVals[k]=np.stack([stDevVals[k], (psdVals[k] + stDev[k])])
-    method=4
+    #method=4
     hvsr_curve = []
     for j in range(len(x_freqs['EHZ'])-1):
         psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
@@ -703,11 +703,13 @@ def process_hvsr(ppsds, method=4, site=''):
                 'stDev':stDev,
                 'stDevVals':stDevVals,
                 'method':methodList[method],
-                'site':site
+                'site':site,
+                'ppsds':ppsds
                 }
 
     return hvsr_out
 
+#Plot HVSR data
 def hvsrPlot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
     """Function to plot calculate HVSR data
        ---------------------
@@ -744,14 +746,19 @@ def hvsrPlot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
     else:
         #Just a single plot
         if 'HVSR' in kind.upper():
-            __plot_hvsr(hvsr_dict, kind, xtype)
+            fig, ax = __plot_hvsr(hvsr_dict, kind, xtype, kwargs=kwargs)
         if 'specgram' in kind.lower() or 'spectrogram' in kind.lower():
-            x = hvsr_dict['EHZ'].current_times_used
-            y = hvsr_dict
+
+            fig, ax = __plot_specgram(hvsr_dict, kwargs=kwargs)
+
+    return fig, ax
     
-    return
-    
+#Plot hvsr curve, private supporting function
 def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
+    """Private function for plotting hvsr curve (or curves with components)
+    """
+    fig, ax = plt.subplots()
+
     if xtype=='x_freqs':
         xlabel = 'Frequency [Hz]'
     else:
@@ -759,15 +766,13 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
         
     x = hvsr_dict[xtype]
     y = hvsr_dict['hvsr_curve']
-    yz= hvsr_dict['psd_values']['EHZ']
-    ye= hvsr_dict['psd_values']['EHE']
-    yn= hvsr_dict['psd_values']['EHN']
     
     for i, k in enumerate(x):
         x[k] = x[k][:-1].copy()
         hvsr_dict['stDev'][k]=hvsr_dict['stDev'][k][:-1].copy()
+    
     x = x['EHZ']
-    plt.plot(x, y)
+    plt.plot(x, y, color='k', label='H/V Ratio', zorder=0)
     if '-s' not in kind.lower():
         sdList = []
         for cSD in hvsr_dict['stDev']:
@@ -781,19 +786,34 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     plt.xlabel(xlabel)
     plt.ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
     plt.title(hvsr_dict['site'])
-    plt.semilogx()
-    plt.xlim([0.2, 50])
-    plt.show()
+    plt.legend(loc='upper right')
     
-    #FIX ALL THIS
     if 'c' in kind.lower():
-    #Plot individual components
-        for k in hvsr_dict['psd_values']:
-            y[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
+        if '+c' in kind.lower():
+            plt.legend()
+            plt.semilogx()
+            plt.xlim([0.2,50])
+            plt.show()
+            fig, ax = plt.subplots()
+            axis = ax
+            linalpha = 1
+            stdalpha = 0.1
+        else:
+            axis = ax.twinx()
+            linalpha = 0.1
+            stdalpha = 0.02
 
-            stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
+        #Plot individual components
+        stDev = {}
+        stDevVals={}
+        y={}
+        for k in hvsr_dict['psd_values']:
+            y[k] = np.array(hvsr_dict['psd_values'][k])
+            y[k] = y[k][:-1]
+
+            stDev[k] = np.std(y[k], axis=0)
             stDevVals[k] = np.array(y[k] - stDev[k])
-            stDevVals[k]=np.stack([stDevVals[k], (y[k] + stDev[k])])
+            stDevVals[k] = np.stack([stDevVals[k], (y[k] + stDev[k])])
             if k == 'EHZ':
                 pltColor = 'k'
             elif k =='EHE':
@@ -801,18 +821,71 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
             elif k == 'EHN':
                 pltColor = 'r'
             
-            plt.plot(x_freqs[k], y[k], c=pltColor, label=k)
-            plt.fill_between(x_freqs[k], stDevVals[k][0], stDevVals[k][1], color=pltColor, alpha=0.1)
+            axis.plot(x, y[k], c=pltColor, label=k, alpha=linalpha)
+            axis.fill_between(x, stDevVals[k][0], stDevVals[k][1], color=pltColor, alpha=stdalpha)
+            #plt.gca(axis)
             #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
             #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
-            plt.legend()
-            plt.semilogx()
-            plt.xlim([0.2,50])
+        plt.legend(loc='upper left')
+    plt.semilogx()
+    plt.xlim([0.2,50])
+    plt.show()
     
-    return
+    return fig, ax
 
-def __plot_specgram():
-    return
+#Plot specgtrogram
+def __plot_specgram(hvsr_dict, **kwargs):
+    """Private function for plotting average spectrogram of all three channels from ppsds
+    """
+    kwargs = kwargs['kwargs']
+    ppsds = hvsr_dict['ppsds']
+    fig, ax = plt.subplots()
+    import matplotlib.dates as mdates
+
+    psdList =[]
+    for k in hvsr_dict['psd_raw']:
+        psdList.append(hvsr_dict['psd_raw'][k])
+    psdArr = np.array(psdList)
+    psdArr = np.mean(psdArr, axis=0)
+    if kwargs['detrend']:
+        psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+
+    xmin = datetime.datetime.strptime(min(ppsds['EHZ'].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmax = datetime.datetime.strptime(max(ppsds['EHZ'].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmin = mdates.date2num(xmin)
+    xmax = mdates.date2num(xmax)
+
+    tTicks = []
+    tLabels = []
+    for i, t in enumerate(ppsds['EHZ'].current_times_used):
+        t1 = datetime.datetime.strptime(t.isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+        tTicks.append(mdates.date2num(t1))
+        day = str(t.date)
+        if i%10==0:
+            tLabels.append(str(t.hour)+':'+str(t.minute))
+        else:
+            tLabels.append('') 
+    extList = [xmin,xmax,min(hvsr_dict['x_freqs']['EHZ']),max(hvsr_dict['x_freqs']['EHZ'])]
+    if 'cmap' in kwargs.keys():
+        cmap=kwargs['cmap']
+    else:
+        cmap='viridis'
+    im = ax.imshow(psdArr.T, origin='lower', extent=extList,aspect=.005, cmap=cmap)
+  
+    ax = plt.gca()
+    fig = plt.gcf()
+
+    FreqTicks = np.arange(1,np.round(max(hvsr_dict['x_freqs']['EHZ']),0), 10)
+    plt.xticks(ticks=tTicks, labels=tLabels)
+    #plt.yticks(np.round(hvsr_calc['x_freqs']['EHZ'],0))
+    plt.yticks(FreqTicks)
+    plt.xlabel('Time \n'+day)
+    plt.ylabel('Frequency [Hz]')
+    plt.semilogy()
+    plt.colorbar(mappable=im)
+    plt.rcParams['figure.dpi'] = 200
+    plt.show()
+    return fig, ax
 
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
