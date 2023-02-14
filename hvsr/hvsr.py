@@ -7,6 +7,7 @@ import tempfile
 import warnings
 import xml.etree.ElementTree as ET
 
+import matplotlib.pyplot as plt
 import obspy
 import numpy as np
 
@@ -574,7 +575,7 @@ def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
 
     #Format export filepath, if exporting
     if export is not None and sitename is not None and exportdir is not None:
-        if not sitename:
+        if sitename is None:
             sitename=''
         else:
             sitename = sitename+'_'
@@ -641,7 +642,7 @@ def __check_xvalues(ppsds):
         #Do stuff to fix it?
     return
 
-def process_hvsr(ppsds, method=4):
+def process_hvsr(ppsds, method=4, site=''):
     """
     This function will have all the stuff needed to process HVSR, as updated from local data
     Based on the notebook
@@ -655,7 +656,7 @@ def process_hvsr(ppsds, method=4):
 
     """
     __check_xvalues(ppsds)
-
+    methodList = ['DFA', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
         
         x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
@@ -669,24 +670,19 @@ def process_hvsr(ppsds, method=4):
     psdVals = {}
     stDev = {}
     stDevVals = {}
+    psdRaw={}
     for k in ppsds:
         x_freqs[k] = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
         x_periods[k] = np.array(ppsds[k].period_bin_centers)
 
+        psdRaw[k] = np.array(ppsds[k].psd_values)
         psdVals[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
 
         stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
         stDevVals[k] = np.array(psdVals[k] - stDev[k])
         stDevVals[k]=np.stack([stDevVals[k], (psdVals[k] + stDev[k])])
-
-        #plt.plot(x_freqs[k], y[k])
-        #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
-        #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
-        #plt.semilogx()
-        #plt.xlim([0.4,40])
-
     method=4
-    hvsr_tmp = []
+    hvsr_curve = []
     for j in range(len(x_freqs['EHZ'])-1):
         psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
         psd1 = [psdVals['EHE'][j], psdVals['EHE'][j + 1]]
@@ -696,11 +692,127 @@ def process_hvsr(ppsds, method=4):
         #hvsr0 = get_hvsr(psd0, psd1, psd2, f, use_method=method)
         hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
 
-        hvsr_tmp.append(hvsr)
+        hvsr_curve.append(hvsr)     
 
+    hvsr_out = {
+                'x_freqs':x_freqs,
+                'hvsr_curve':hvsr_curve,
+                'x_period':x_periods,
+                'psd_values':psdVals,
+                'psd_raw':psdRaw,
+                'stDev':stDev,
+                'stDevVals':stDevVals,
+                'method':methodList[method],
+                'site':site
+                }
 
-    ###MORE TO DO HERE?
-    return hvsr_tmp
+    return hvsr_out
+
+def hvsrPlot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
+    """Function to plot calculate HVSR data
+       ---------------------
+       Parameters:
+            hvsr_dict   : dict                  Dictionary containing output from process_hvsr function
+            kind        : str='HVSR' or list    The kind of plot(s) to plot. If list, will plot all plots listed
+                                'HVSR'  : Standard HVSR plot, including standard deviation
+                                '[HVSR]c' :HVSR plot with each components' spectra
+                                '[HVSR]p' :HVSR plot with picked peaks shown
+                                '[HVSR]-s: HVSR plots don't show standard deviation
+                                'Specgram': Combined spectrogram of all components
+            xtype       : str='freq'    String for what to use between frequency or period
+                                            For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
+                                            For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
+        --------------------
+        Returns:
+            fig, ax
+        
+    """
+    freqList = ['F', 'HZ', 'FREQ', 'FREQUENCY']
+    perList = 'P', 'T', 'S', 'SEC', 'SECOND' 'PER', 'PERIOD'
+    
+    if xtype.upper() in freqList:
+        xtype='x_freqs'
+    elif xtype.upper() in perList:
+        xtype='x_period'
+    else:
+        print('xtype not valid')
+        return
+    
+    if type(kind) is list:
+        #iterate through and plot in separate (sub)plots
+        pass
+    else:
+        #Just a single plot
+        if 'HVSR' in kind.upper():
+            __plot_hvsr(hvsr_dict, kind, xtype)
+        if 'specgram' in kind.lower() or 'spectrogram' in kind.lower():
+            x = hvsr_dict['EHZ'].current_times_used
+            y = hvsr_dict
+    
+    return
+    
+def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
+    if xtype=='x_freqs':
+        xlabel = 'Frequency [Hz]'
+    else:
+        xlabel = 'Period [s]'
+        
+    x = hvsr_dict[xtype]
+    y = hvsr_dict['hvsr_curve']
+    yz= hvsr_dict['psd_values']['EHZ']
+    ye= hvsr_dict['psd_values']['EHE']
+    yn= hvsr_dict['psd_values']['EHN']
+    
+    for i, k in enumerate(x):
+        x[k] = x[k][:-1].copy()
+        hvsr_dict['stDev'][k]=hvsr_dict['stDev'][k][:-1].copy()
+    x = x['EHZ']
+    plt.plot(x, y)
+    if '-s' not in kind.lower():
+        sdList = []
+        for cSD in hvsr_dict['stDev']:
+            sdList.append(hvsr_dict['stDev'][cSD])
+        sdArr = np.array(sdList)
+        sdArr = np.sqrt(np.mean(sdArr, axis=0)) #This is probably not right
+        stArrbelow = np.subtract(y, sdArr)
+        stArrabove = np.add(y, sdArr)
+        
+        plt.fill_between(x, stArrbelow, stArrabove, color='k', alpha=0.1)
+    plt.xlabel(xlabel)
+    plt.ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
+    plt.title(hvsr_dict['site'])
+    plt.semilogx()
+    plt.xlim([0.2, 50])
+    plt.show()
+    
+    #FIX ALL THIS
+    if 'c' in kind.lower():
+    #Plot individual components
+        for k in hvsr_dict['psd_values']:
+            y[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
+
+            stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
+            stDevVals[k] = np.array(y[k] - stDev[k])
+            stDevVals[k]=np.stack([stDevVals[k], (y[k] + stDev[k])])
+            if k == 'EHZ':
+                pltColor = 'k'
+            elif k =='EHE':
+                pltColor = 'b'
+            elif k == 'EHN':
+                pltColor = 'r'
+            
+            plt.plot(x_freqs[k], y[k], c=pltColor, label=k)
+            plt.fill_between(x_freqs[k], stDevVals[k][0], stDevVals[k][1], color=pltColor, alpha=0.1)
+            #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
+            #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
+            plt.legend()
+            plt.semilogx()
+            plt.xlim([0.2,50])
+    
+    return
+
+def __plot_specgram():
+    return
 
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
