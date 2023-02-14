@@ -4,10 +4,10 @@
   <ns0:Sender>RaspberryShake</ns0:Sender>
   <ns0:Module />
   <ns0:ModuleURI />
-  <ns0:Created>2023-02-14 15:56:32.850170</ns0:Created>
+  <ns0:Created>2023-02-14 16:52:07.626265</ns0:Created>
   <ns0:Network code="AM" startDate="2016-01-01T00:00:00.000000Z" restrictedStatus="open">
     <ns0:Description>RASPBERRY SHAKE NETWORK</ns0:Description>
-    <ns0:Station code="RAC84" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 15:56:32.761274" restrictedStatus="open">
+    <ns0:Station code="RAC84" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 16:52:07.520585" restrictedStatus="open">
       <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
       <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
       <ns0:Elevation>755</ns0:Elevation>
@@ -15,7 +15,7 @@
         <ns0:Name>Raspberry Shake Citizen Science Station</ns0:Name>
       </ns0:Site>
       <ns0:CreationDate>2022-03-18T12:47:02.625000Z</ns0:CreationDate>
-      <ns0:Channel code="EHE" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 15:56:32.761274" restrictedStatus="open" locationCode="00">
+      <ns0:Channel code="EHE" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 16:52:07.520585" restrictedStatus="open" locationCode="00">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>
@@ -176,7 +176,7 @@
           </ns0:Stage>
         </ns0:Response>
       </ns0:Channel>
-      <ns0:Channel code="EHN" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 15:56:32.761274" restrictedStatus="open" locationCode="00">
+      <ns0:Channel code="EHN" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 16:52:07.520585" restrictedStatus="open" locationCode="00">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>
@@ -337,7 +337,7 @@
           </ns0:Stage>
         </ns0:Response>
       </ns0:Channel>
-      <ns0:Channel code="EHZ" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 15:56:32.761274" restrictedStatus="open" locationCode="00">
+      <ns0:Channel code="EHZ" startDate="2022-03-18T12:47:02.625000Z" endDate="2023-02-14 16:52:07.520585" restrictedStatus="open" locationCode="00">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>
@@ -499,7 +499,7 @@
         </ns0:Response>
       </ns0:Channel>
     </ns0:Station>
-    <ns0:Station code="RAC84" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" endDate="2023-02-14 15:56:32.761274">
+    <ns0:Station code="RAC84" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" endDate="2023-02-14 16:52:07.520585">
       <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
       <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
       <ns0:Elevation>755</ns0:Elevation>
@@ -507,7 +507,7 @@
         <ns0:Name>Raspberry Shake Citizen Science Station</ns0:Name>
       </ns0:Site>
       <ns0:CreationDate>2022-04-14T00:47:00.906000Z</ns0:CreationDate>
-      <ns0:Channel code="EHE" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 15:56:32.761274">
+      <ns0:Channel code="EHE" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 16:52:07.520585">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>
@@ -668,7 +668,7 @@
           </ns0:Stage>
         </ns0:Response>
       </ns0:Channel>
-      <ns0:Channel code="EHN" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 15:56:32.761274">
+      <ns0:Channel code="EHN" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 16:52:07.520585">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>
@@ -829,7 +829,7 @@
           </ns0:Stage>
         </ns0:Response>
       </ns0:Channel>
-      <ns0:Channel code="EHZ" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 15:56:32.761274">
+      <ns0:Channel code="EHZ" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00" endDate="2023-02-14 16:52:07.520585">
         <ns0:Latitude unit="DEGREES">40.1012122</ns0:Latitude>
         <ns0:Longitude unit="DEGREES">-88.2290526</ns0:Longitude>
         <ns0:Elevation>755</ns0:Elevation>

@@ -732,7 +732,7 @@ def __get_hvsr_curve(x, psd, method=4):
         psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
         psd1 = [psd['EHE'][j], psd['EHE'][j + 1]]
         psd2 = [psd['EHN'][j], psd['EHN'][j + 1]]
-        f =    [x['EHZ'][j], x['EHZ'][j + 1]]
+        f =    [x[j], x[j + 1]]
 
         hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
         hvsr_curve.append(hvsr)  
@@ -740,7 +740,9 @@ def __get_hvsr_curve(x, psd, method=4):
     return hvsr_curve
 
 def __gethvsrparams(hvsr_out):
-    for i, tStep in enumerate(hvsr_out['psd_raw']):
+    count=0
+    #SOMETHING VERY WRONG IS GOING ON HERE!!!!
+    for i, k in enumerate(hvsr_out['psd_raw']):
         peak_water_level = []
         hvsr=[]
         hvsr_std=[]
@@ -752,18 +754,22 @@ def __gethvsrparams(hvsr_out):
         peak_water_level_m=[]
         hvsr_m2=[]
         water_level=1.8 #Make this an input parameter eventually!!!****
-            
+        
         count += 1
+        hvsr_log_std = {}
+        hvsrp2 = {}
+        hvsrm2 = {}
         peak_water_level.append(water_level)    
-        if hvsr_out['psd_raw'].shape[0] > 0:
+        if hvsr_out['psd_raw'][k].shape[0] > 0:
             hvsr=hvsr_out['hvsr_curve']
             hvsr_std = hvsr_out['hvsr_std']
-            hvsr_log_std.append(np.std(np.log10(hvsr_out['psd_raw'])))
+            for tStep in hvsr_out['psd_raw'][k]: #THis does not appear to be right
+                hvsr_log_std[k]=(np.std(np.log10(tStep)))
+                hvsrp2[k] = (hvsr[-1] * math.exp(hvsr_log_std[k][count]))
+                hvsr_m2[k] = (hvsr[-1] / math.exp(hvsr_log_std[k][-1]))
             peak_water_level_p.append(water_level + hvsr_std[-1])
-            hvsrp2.append(hvsr[-1] * math.exp(hvsr_log_std[count]))
             hvsrm.append(hvsr[-1] - hvsr_std[-1])
             peak_water_level_m.append(water_level - hvsr_std[-1])
-            hvsr_m2.append(hvsr[-1] / math.exp(hvsr_log_std[-1]))
         newKeys = ['hvsr_log_std', 'peak_water_level_p', 'peak_water_level_m','hvsrp2','hvsr_m2']
         newVals = [hvsr_log_std,    peak_water_level_p,   peak_water_level_m,  hvsrp2,  hvsr_m2]
         for k in newKeys:
