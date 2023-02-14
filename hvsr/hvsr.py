@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 import obspy
 import numpy as np
+import scipy
 
 import hvsr.hvsrtools.msgLib as msgLib
 
@@ -669,7 +670,8 @@ def process_hvsr(ppsds, method=4, site=''):
 
     psdVals = {}
     stDev = {}
-    stDevVals = {}
+    stDevValsP = {}
+    stDevValsM = {}
     psdRaw={}
     for k in ppsds:
         x_freqs[k] = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
@@ -679,34 +681,93 @@ def process_hvsr(ppsds, method=4, site=''):
         psdVals[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
 
         stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
-        stDevVals[k] = np.array(psdVals[k] - stDev[k])
-        stDevVals[k]=np.stack([stDevVals[k], (psdVals[k] + stDev[k])])
+        stDevValsM[k] = np.array(psdVals[k] - stDev[k])
+        stDevValsP[k] = np.array(psdVals[k] + stDev[k])
     #method=4
-    hvsr_curve = []
-    for j in range(len(x_freqs['EHZ'])-1):
-        psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
-        psd1 = [psdVals['EHE'][j], psdVals['EHE'][j + 1]]
-        psd2 = [psdVals['EHN'][j], psdVals['EHN'][j + 1]]
-        f =    [x_freqs['EHZ'][j], x_freqs['EHZ'][j + 1]]
+    #hvsr_curve = []
+    #for j in range(len(x_freqs['EHZ'])-1):
+    #    psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
+    #    psd1 = [psdVals['EHE'][j], psdVals['EHE'][j + 1]]
+    #    psd2 = [psdVals['EHN'][j], psdVals['EHN'][j + 1]]
+    #    f =    [x_freqs['EHZ'][j], x_freqs['EHZ'][j + 1]]
 
         #hvsr0 = get_hvsr(psd0, psd1, psd2, f, use_method=method)
-        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
+    #    hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
 
-        hvsr_curve.append(hvsr)     
-
+    #    hvsr_curve.append(hvsr)     
+    hvsr_curve = __get_hvsr_curve(x=x_freqs['EHZ'], psd=psdVals, method=4)
     hvsr_out = {
                 'x_freqs':x_freqs,
-                'hvsr_curve':hvsr_curve,
+                'hvsr_curve':np.array(hvsr_curve),
                 'x_period':x_periods,
                 'psd_values':psdVals,
                 'psd_raw':psdRaw,
-                'stDev':stDev,
-                'stDevVals':stDevVals,
+                'hvsr_std':stDev,
+                'hvsr_std_vals_m':stDevValsM,
+                'hvsr_std_vals_p':stDevValsP,
                 'method':methodList[method],
                 'site':site,
                 'ppsds':ppsds
                 }
+    hvsr_out = __gethvsrparams(hvsr_out)
+    hvsrPeaks = []
+    for psd_tStep in hvsr_out['psd_raw']:
+        hvsr_t=__get_hvsr_curve(x=x_freqs['EHZ'], psd=psd_tStep, method=4)
+        hvsrPeaks.append(__find_peaks(hvsr_t))
+        ###Maybe still WORKING HERE!!!???
+    hvsrPeaks = np.array(hvsrPeaks)
+    hvsr_out['ind_peak_ind'] = hvsrPeaks
+    hvsr_out['hvsr_peak_ind'] = __find_peaks(hvsr_out['hvsr_curve'])
+    return hvsr_out
 
+#Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
+def __get_hvsr_curve(x, psd, method=4):
+    """
+    x = x value 
+    psd = 3-component dictionary
+
+    """
+    hvsr_curve = []
+    for j in range(len(x)-1):
+        psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
+        psd1 = [psd['EHE'][j], psd['EHE'][j + 1]]
+        psd2 = [psd['EHN'][j], psd['EHN'][j + 1]]
+        f =    [x['EHZ'][j], x['EHZ'][j + 1]]
+
+        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
+        hvsr_curve.append(hvsr)  
+
+    return hvsr_curve
+
+def __gethvsrparams(hvsr_out):
+    for i, tStep in enumerate(hvsr_out['psd_raw']):
+        peak_water_level = []
+        hvsr=[]
+        hvsr_std=[]
+        hvsr_log_std=[]
+        hvsrp=[]
+        peak_water_level_p=[]
+        hvsrp2=[]
+        hvsrm=[]
+        peak_water_level_m=[]
+        hvsr_m2=[]
+        water_level=1.8 #Make this an input parameter eventually!!!****
+            
+        count += 1
+        peak_water_level.append(water_level)    
+        if hvsr_out['psd_raw'].shape[0] > 0:
+            hvsr=hvsr_out['hvsr_curve']
+            hvsr_std = hvsr_out['hvsr_std']
+            hvsr_log_std.append(np.std(np.log10(hvsr_out['psd_raw'])))
+            peak_water_level_p.append(water_level + hvsr_std[-1])
+            hvsrp2.append(hvsr[-1] * math.exp(hvsr_log_std[count]))
+            hvsrm.append(hvsr[-1] - hvsr_std[-1])
+            peak_water_level_m.append(water_level - hvsr_std[-1])
+            hvsr_m2.append(hvsr[-1] / math.exp(hvsr_log_std[-1]))
+        newKeys = ['hvsr_log_std', 'peak_water_level_p', 'peak_water_level_m','hvsrp2','hvsr_m2']
+        newVals = [hvsr_log_std,    peak_water_level_p,   peak_water_level_m,  hvsrp2,  hvsr_m2]
+        for k in newKeys:
+            hvsr_out[k] = np.array(newVals)
     return hvsr_out
 
 #Plot HVSR data
@@ -769,14 +830,14 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     
     for i, k in enumerate(x):
         x[k] = x[k][:-1].copy()
-        hvsr_dict['stDev'][k]=hvsr_dict['stDev'][k][:-1].copy()
+        hvsr_dict['hvsr_std'][k]=hvsr_dict['hvsr_std'][k][:-1].copy()
     
     x = x['EHZ']
     plt.plot(x, y, color='k', label='H/V Ratio', zorder=0)
     if '-s' not in kind.lower():
         sdList = []
-        for cSD in hvsr_dict['stDev']:
-            sdList.append(hvsr_dict['stDev'][cSD])
+        for cSD in hvsr_dict['hvsr_std']:
+            sdList.append(hvsr_dict['hvsr_std'][cSD])
         sdArr = np.array(sdList)
         sdArr = np.sqrt(np.mean(sdArr, axis=0)) #This is probably not right
         stArrbelow = np.subtract(y, sdArr)
@@ -847,8 +908,10 @@ def __plot_specgram(hvsr_dict, **kwargs):
         psdList.append(hvsr_dict['psd_raw'][k])
     psdArr = np.array(psdList)
     psdArr = np.mean(psdArr, axis=0)
-    if kwargs['detrend']:
-        psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+    if 'detrend' in kwargs:
+        if kwargs['detrend']:
+            psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+        del kwargs['detrend']
 
     xmin = datetime.datetime.strptime(min(ppsds['EHZ'].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
     xmax = datetime.datetime.strptime(max(ppsds['EHZ'].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
@@ -870,7 +933,8 @@ def __plot_specgram(hvsr_dict, **kwargs):
         cmap=kwargs['cmap']
     else:
         cmap='viridis'
-    im = ax.imshow(psdArr.T, origin='lower', extent=extList,aspect=.005, cmap=cmap)
+    print(kwargs)
+    im = ax.imshow(psdArr.T, origin='lower', extent=extList,aspect=.005, **kwargs)#,cmap=cmap)
   
     ax = plt.gca()
     fig = plt.gcf()
@@ -959,3 +1023,10 @@ def __get_power(_db, _x):
     _p = np.multiply(np.mean(__remove_db(_db)), _dx)
     #print(_p)
     return _p
+
+#Find peaks in the hvsr ccruve
+def __find_peaks(_y):
+    """find peaks"""
+    _index_list = scipy.signal.argrelextrema(np.array(_y), np.greater)
+
+    return _index_list[0]
