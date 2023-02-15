@@ -694,8 +694,12 @@ def process_hvsr(ppsds, method=4, site=''):
         #hvsr0 = get_hvsr(psd0, psd1, psd2, f, use_method=method)
     #    hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
 
-    #    hvsr_curve.append(hvsr)     
+    #    hvsr_curve.append(hvsr)
+
+    #This gets the hvsr curve averaged from all time steps     
     hvsr_curve = __get_hvsr_curve(x=x_freqs['EHZ'], psd=psdVals, method=4)
+    
+    #Add some other variables to our output dictionary
     hvsr_out = {
                 'x_freqs':x_freqs,
                 'hvsr_curve':np.array(hvsr_curve),
@@ -709,7 +713,11 @@ def process_hvsr(ppsds, method=4, site=''):
                 'site':site,
                 'ppsds':ppsds
                 }
+    
+    #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
     hvsr_out = __gethvsrparams(hvsr_out)
+
+    #Get hvsr curve from three components at each time step
     hvsrPeaks = []
     for psd_tStep in hvsr_out['psd_raw']:
         hvsr_t=__get_hvsr_curve(x=x_freqs['EHZ'], psd=psd_tStep, method=4)
@@ -722,10 +730,14 @@ def process_hvsr(ppsds, method=4, site=''):
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
 def __get_hvsr_curve(x, psd, method=4):
-    """
-    x = x value 
-    psd = 3-component dictionary
-
+    """ Get an HVSR curve from three components over the same time period/frequency intervals
+    -------------------
+    Parameters:
+        x = x value (frequency or period)
+        psd = 3-component dictionary
+    --------------------
+    Returns:
+        hvsr_curve  :   list containing H/V ratios at each frequency/period in x
     """
     hvsr_curve = []
     for j in range(len(x)-1):
@@ -739,6 +751,7 @@ def __get_hvsr_curve(x, psd, method=4):
 
     return hvsr_curve
 
+#Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
     count=0
     #SOMETHING VERY WRONG IS GOING ON HERE!!!!
