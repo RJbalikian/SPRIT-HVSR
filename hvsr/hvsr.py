@@ -232,9 +232,10 @@ def input_param(network='AM',
                         elevation = 755,
                         depth = 0,
                         dataPath = '',
-                        metaPath = r'resources\raspshake_metadata.inv'
+                        metaPath = r'resources\raspshake_metadata.inv',
+                        hvsr_band = [0.4, 40] 
                         ):
-    #day_of_year = 1#Get day of year
+
     #Reformat time
     if type(date) is datetime.datetime:
         date = str(date.date())
@@ -275,7 +276,7 @@ def input_param(network='AM',
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels,
                     'date':date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
                     'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth,
-                    'dataPath':dataPath, 'metaPath':metaPath
+                    'dataPath':dataPath, 'metaPath':metaPath, 'hvsr_band':hvsr_band
                     }
 
     return inputParamDict
@@ -787,20 +788,23 @@ def __gethvsrparams(hvsr_out):
     count += 1
     hvsr_log_std = {}
 
-    #peak_water_level.append(water_level)
+    peak_water_level.append(water_level)
 
     hvsr=hvsr_out['hvsr_curve']
     if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
+        hvsrp = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
+        hvsrm = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
+
         #ppsd_std = hvsr_out['ppsd_std']
         hvsr_log_std = np.std(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
         hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
         hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
-        
+
         peak_water_level_p = water_level + hvsr_out['ind_hvsr_stdDev']
         peak_water_level_m = water_level - hvsr_out['ind_hvsr_stdDev']
 
-    newKeys = ['hvsr_log_std', 'peak_water_level_p', 'peak_water_level_m','hvsrp2','hvsrm2']
-    newVals = [hvsr_log_std,    peak_water_level_p,   peak_water_level_m,  hvsrp2,  hvsrm2]
+    newKeys = ['hvsr_log_std', 'peak_water_level', 'peak_water_level_p', 'peak_water_level_m','hvsrp','hvsrm', 'hvsrp2','hvsrm2']
+    newVals = [hvsr_log_std,    peak_water_level,   peak_water_level_p,   peak_water_level_m,  hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
     for i, nk in enumerate(newKeys):
         hvsr_out[nk] = np.array(newVals[i])
 
@@ -1024,7 +1028,7 @@ def __remove_db(_db_value):
         _values.append(10 ** (float(_d) / 10.0))
     return _values
 
-##STILL WORKING ON THESE
+#For converting dB scaled data to power units
 def __get_power(_db, _x):
     """calculate HVSR
       We will undo setp 6 of MUSTANG processing as outlined below:
@@ -1068,52 +1072,137 @@ def __find_peaks(_y):
     return _index_list[0]
 
 #Quality checks, stability tests, clarity tests
-def check_peaks(x, y, index_list, hvsr_band, peak_water_level, peak, peakm, peakp, stdf, hvsr_log_std, rank, do_rank=False):
+def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
-    ------------------------
-    Parameters:
-        x
-        y
-        index_list
-        hvsr_band
-        peak_water_level
-        do_rank
-        peak
-        peakm
-        peakp
-        stdf
-        hvsr_log_std
-        rank
-    ------------------------
-    Returns:
-        peak
-        Output file
+    
+    Parameters
+    ----------
+        hvsr            : dict
+            Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
+        x               : list-like obj 
+            List with x-values (frequency or period values)
+        y               : list-like obj 
+            List with hvsr curve values ????
+        index_list      : list-like obj 
+            List with indices of peaks
+        hvsr_band       : tuple or list 
+            2-item tuple or list with lower and upper limit of frequencies to analyze
+        peak_water_level: list-like obj 
+            List containing
+        do_rank         : bool=False    
+            ?????
+        peak            : list
+            List containing a dictionary for each peak identified in previous step
+        peakm           : <generated?>
+        peakp           : <generated?>
+        stdf            : <generated?>
+        hvsr_log_std    : <generated?>
+        rank            : <generated?>
+
+    Returns
+    -------
+        peak            :
+        Output file     :
 
     """
-    #Check these
+    if not hvsr_band:
+        hvsr_band = [0.4,40]
+
+    anyK = list(hvsr['x_freqs'].keys())[0]
+    x = hvsr['x_freqs'][anyK]
+    y = hvsr['hvsr_curve']
+    index_list = hvsr['hvsr_peak_indices']
+    peak_water_level  = hvsr['peak_water_level']
+
+    #Do for hvsr
     peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
-    peak = __check_clarity(x, y, peak, do_rank)
+    peak = __check_clarity(x, y, peak, do_rank=True)
+
+
+    #Do for hvsrp
+    hvsrp = hvsr['hvsrp']
+    # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+    if not np.isnan(np.sum(hvsrp)):
+        index_p = __find_peaks(hvsrp)
+    else:
+        index_p = list()
+
+    peak_water_level_p  = hvsr['peak_water_level_p']
+    peak = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+    peak = __check_clarity(x, hvsrp, peak, do_rank=False)
+
+
+    #Do for hvsrm
+    hvsrm = hvsr['hvsrm']
+    # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+    if not np.isnan(np.sum(hvsrm)):
+        index_m = __find_peaks(hvsrm)
+    else:
+        index_m = list()
+
+    peak_water_level_m  = hvsr['peak_water_level_m']
+
+    peak = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+    peak = __check_clarity(x, hvsrm, peak, do_rank=False)
+
+    hvsr_log_std = hvsr['hvsr_log_std']
+
+    ###########FITURE OUT WHAT HVSRPEAKS IS, RELATIVE TO INDEX_LIST (AND INDEX_LIST??)
+    stdf = __get_stdf(x, index_list, hvsrPeaks)
+
+    peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
     peak = __check_freq_stability(peak, peakm, peakp)
-    peak = __check_stability(stdf, peak, hvsr_log_std, rank)
 
     return peak
 
 #Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
-    """initialize peaks"""
+    """ Initialize peaks.
+        
+        Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
+
+        Parameters
+        ----------
+            x               : list-like obj 
+                List with x-values (frequency or period values)
+            y               : list-like obj 
+                List with hvsr curve values ????
+            index_list      : list-like obj 
+                List with indices of peaks
+            _hvsr_band          :
+            _peak_water_level   :
+        
+        Returns
+        -------
+            _peak               : list of dictionaries, one for each input peak
+    """
     _peak = list()
     for _i in _index_list:
         if _y[_i] > _peak_water_level[_i] and (_hvsr_band[0] <= _x[_i] <= _hvsr_band[1]):
-            _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
+            _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 
+                            'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
                           'Score': 0, 'Report': {'A0': '', 'Sf': '', 'Sa': '', 'P+': '', 'P-': ''}})
     return _peak
 
+#Check clarity of peaks
 def __check_clarity(_x, _y, _peak, do_rank=False):
-    """
-       test peaks for satisfying amplitude clarity conditions as outlined by SESAME 2004:
+    """Check clarity of peak amplitude(s)
+
+       Test peaks for satisfying amplitude clarity conditions as outlined by SESAME 2004:
            - there exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2
            - there exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2
            - A0 > 2
+        ------------------------
+        Parameters:
+            x               : list-like obj 
+                List with x-values (frequency or period values)
+            y               : list-like obj 
+                List with hvsr curve values ????
+            _peak   :
+            do_rank : bool=False
+        ------------------------
+        Returns:
+            peak
     """
     global max_rank
 
@@ -1158,6 +1247,7 @@ def __check_clarity(_x, _y, _peak, do_rank=False):
 
     return _peak
 
+#Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
     """
        test peaks for satisfying stability conditions as outlined by SESAME 2004:
@@ -1213,6 +1303,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
 
     return _peak
 
+#Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
     """
     test peaks for satisfying stability conditions as outlined by SESAME 2004:
@@ -1313,3 +1404,33 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
             else:
                 _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
     return _peak
+
+#Get frequency standard deviation
+def __get_stdf(x_values, indexList, hvsrPeaks):
+    stdf = list()
+    for index in indexList:
+        point = list()
+        for j in range(len(hvsrPeaks)):
+            p = None
+            for k in range(len(hvsrPeaks[j])):
+                if p is None:
+                    p = hvsrPeaks[j][k]
+                else:
+                    if abs(index - hvsrPeaks[j][k]) < abs(index - p):
+                        p = hvsrPeaks[j][k]
+            if p is not None:
+                point.append(p)
+        point.append(index)
+        v = list()
+        for l in range(len(point)):
+            v.append(x_values[point[l]])
+        stdf.append(np.std(v))
+    return stdf
+
+def printreport(export=True):
+    #print statement
+
+    if export:
+        pass
+        #code to write to output file
+    return
