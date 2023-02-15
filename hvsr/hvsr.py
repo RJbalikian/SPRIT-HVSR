@@ -1066,3 +1066,250 @@ def __find_peaks(_y):
     _index_list = scipy.signal.argrelextrema(np.array(_y), np.greater)
 
     return _index_list[0]
+
+#Quality checks, stability tests, clarity tests
+def check_peaks(x, y, index_list, hvsr_band, peak_water_level, peak, peakm, peakp, stdf, hvsr_log_std, rank, do_rank=False):
+    """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
+    ------------------------
+    Parameters:
+        x
+        y
+        index_list
+        hvsr_band
+        peak_water_level
+        do_rank
+        peak
+        peakm
+        peakp
+        stdf
+        hvsr_log_std
+        rank
+    ------------------------
+    Returns:
+        peak
+        Output file
+
+    """
+    #Check these
+    peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
+    peak = __check_clarity(x, y, peak, do_rank)
+    peak = __check_freq_stability(peak, peakm, peakp)
+    peak = __check_stability(stdf, peak, hvsr_log_std, rank)
+
+    return peak
+
+#Initialize peaks
+def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
+    """initialize peaks"""
+    _peak = list()
+    for _i in _index_list:
+        if _y[_i] > _peak_water_level[_i] and (_hvsr_band[0] <= _x[_i] <= _hvsr_band[1]):
+            _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
+                          'Score': 0, 'Report': {'A0': '', 'Sf': '', 'Sa': '', 'P+': '', 'P-': ''}})
+    return _peak
+
+def __check_clarity(_x, _y, _peak, do_rank=False):
+    """
+       test peaks for satisfying amplitude clarity conditions as outlined by SESAME 2004:
+           - there exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2
+           - there exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2
+           - A0 > 2
+    """
+    global max_rank
+
+    # Peaks with A0 > 2.
+    if do_rank:
+        max_rank += 1
+    _a0 = 2.0
+    for _i in range(len(_peak)):
+
+        if float(_peak[_i]['A0']) > _a0:
+            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f %1s' % (_peak[_i]['A0'], _a0, utilities.check_mark())
+            _peak[_i]['Score'] += 1
+        else:
+            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f  ' % (_peak[_i]['A0'], _a0)
+
+    # Test each _peak for clarity.
+    if do_rank:
+        max_rank += 1
+    for _i in range(len(_peak)):
+        _peak[_i]['f-'] = '-'
+        for _j in range(len(_x) - 1, -1, -1):
+
+            # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
+            if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
+                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
+                _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], utilities.check_mark())
+                _peak[_i]['Score'] += 1
+                break
+
+    if do_rank:
+        max_rank += 1
+    for _i in range(len(_peak)):
+        _peak[_i]['f+'] = '-'
+        for _j in range(len(_x) - 1):
+
+            # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
+            if float(_peak[_i]['f0']) * 4.0 >= _x[_j] > float(_peak[_i]['f0']) and \
+                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
+                _peak[_i]['f+'] = '%10.3f %1s' % (_x[_j], utilities.check_mark())
+                _peak[_i]['Score'] += 1
+                break
+
+    return _peak
+
+def __check_freq_stability(_peak, _peakm, _peakp):
+    """
+       test peaks for satisfying stability conditions as outlined by SESAME 2004:
+           - the _peak should appear at the same frequency (within a percentage ± 5%) on the H/V
+             curves corresponding to mean + and – one standard deviation.
+    """
+    global max_rank
+
+    #
+    # check σf and σA
+    #
+    max_rank += 1
+
+    _found_m = list()
+    for _i in range(len(_peak)):
+        _dx = 1000000.
+        _found_m.append(False)
+        _peak[_i]['Report']['P-'] = '- &'
+        for _j in range(len(_peakm)):
+            if abs(_peakm[_j]['f0'] - _peak[_i]['f0']) < _dx:
+                _index = _j
+                _dx = abs(_peakm[_j]['f0'] - _peak[_i]['f0'])
+            if _peak[_i]['f0'] * 0.95 <= _peakm[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
+                _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_j]['f0'], '%',
+                                                                                 _peak[_i]['f0'], '&')
+                _found_m[_i] = True
+                break
+        if _peak[_i]['Report']['P-'] == '-':
+            _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_i]['f0'], '%',
+                                                                             _peak[_i]['f0'], '&')
+
+    _found_p = list()
+    for _i in range(len(_peak)):
+        _dx = 1000000.
+        _found_p.append(False)
+        _peak[_i]['Report']['P+'] = '-'
+        for _j in range(len(_peakp)):
+            if abs(_peakp[_j]['f0'] - _peak[_i]['f0']) < _dx:
+                _index = _j
+                _dx = abs(_peakp[_j]['f0'] - _peak[_i]['f0'])
+            if _peak[_i]['f0'] * 0.95 <= _peakp[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
+                if _found_m[_i]:
+                    _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
+                        _peakp[_j]['f0'], '%', _peak[_i]['f0'], utilities.check_mark())
+                    _peak[_i]['Score'] += 1
+                else:
+                    _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
+                        _peakp[_i]['f0'], '%', _peak[_i]['f0'], ' ')
+                break
+        if _peak[_i]['Report']['P+'] == '-' and len(_peakp) > 0:
+            _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
+                _peakp[_i]['f0'], '%', _peak[_i]['f0'], ' ')
+
+    return _peak
+
+def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
+    """
+    test peaks for satisfying stability conditions as outlined by SESAME 2004:
+       - σf lower than a frequency dependent threshold ε(f)
+       - σA (f0) lower than a frequency dependent threshold θ(f),
+    """
+
+    global max_rank
+
+    #
+    # check σf and σA
+    #
+    if rank:
+        max_rank += 2
+    for _i in range(len(_peak)):
+        _peak[_i]['Sf'] = _stdf[_i]
+        _peak[_i]['Sa'] = _hvsr_log_std[_i]
+        _this_peak = _peak[_i]
+        if _this_peak['f0'] < 0.2:
+            _e = 0.25
+            if _stdf[_i] < _e * _this_peak['f0']:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
+                                                                            utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+
+            _t = 0.48
+            if _hvsr_log_std[_i] < _t:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t,
+                                                                    utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+
+        elif 0.2 <= _this_peak['f0'] < 0.5:
+            _e = 0.2
+            if _stdf[_i] < _e * _this_peak['f0']:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
+                                                                            utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+
+            _t = 0.40
+            if _hvsr_log_std[_i] < _t:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t,
+                                                                    utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+
+        elif 0.5 <= _this_peak['f0'] < 1.0:
+            _e = 0.15
+            if _stdf[_i] < _e * _this_peak['f0']:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
+                                                                            utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+
+            _t = 0.3
+            if _hvsr_log_std[_i] < _t:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+
+        elif 1.0 <= _this_peak['f0'] <= 2.0:
+            _e = 0.1
+            if _stdf[_i] < _e * _this_peak['f0']:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
+                                                                            utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+
+            _t = 0.25
+            if _hvsr_log_std[_i] < _t:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+
+        elif _this_peak['f0'] > 0.2:
+            _e = 0.05
+            if _stdf[_i] < _e * _this_peak['f0']:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
+                                                                            utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+
+            _t = 0.2
+            if _hvsr_log_std[_i] < _t:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _this_peak['Score'] += 1
+            else:
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+    return _peak
