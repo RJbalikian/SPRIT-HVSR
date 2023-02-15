@@ -592,8 +592,11 @@ def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
 
         exportdir = checkifpath(exportdir)
         exportdir = str(exportdir)
-        filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
-        
+        if type(export) is str:
+            filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
+        elif type(export) is bool:
+            filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
+
         exportFile = exportdir+'\\'+filename
 
         st_trimmed.write(filename=exportFile)
@@ -706,26 +709,40 @@ def process_hvsr(ppsds, method=4, site=''):
                 'x_period':x_periods,
                 'psd_values':psdVals,
                 'psd_raw':psdRaw,
-                'hvsr_std':stDev,
-                'hvsr_std_vals_m':stDevValsM,
-                'hvsr_std_vals_p':stDevValsP,
+                'ppsd_std':stDev,
+                'ppsd_std_vals_m':stDevValsM,
+                'ppsd_std_vals_p':stDevValsP,
                 'method':methodList[method],
                 'site':site,
                 'ppsds':ppsds
                 }
     
+    #Get hvsr curve from three components at each time step
+    hvsr_tSteps = []
+    anyK = list(hvsr_out['psd_raw'].keys())[0]
+    for tStep in range(hvsr_out['psd_raw'][anyK].shape[0]):
+        tStepDict = {}
+        for k in hvsr_out['psd_raw']:
+            tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
+        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=method))
+    hvsr_tSteps = np.array(hvsr_tSteps)
+    
+    hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
+    hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_tSteps, axis=0)
+    #hvsr_out['ind_hvsr_stdDev_median'] = np.median(hvsr_tSteps, axis=0)
+
+
+    tStepPeaks = []
+    for tStepHVSR in hvsr_tSteps:
+        tStepPeaks.append(__find_peaks(tStepHVSR))
+    #tStepPeaks = np.array(tStepPeaks) #This is a list of lists, and the individual lists are different sizes
+
+    hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
+    hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+
     #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
     hvsr_out = __gethvsrparams(hvsr_out)
 
-    #Get hvsr curve from three components at each time step
-    hvsrPeaks = []
-    for psd_tStep in hvsr_out['psd_raw']:
-        hvsr_t=__get_hvsr_curve(x=x_freqs['EHZ'], psd=psd_tStep, method=4)
-        hvsrPeaks.append(__find_peaks(hvsr_t))
-        ###Maybe still WORKING HERE!!!???
-    hvsrPeaks = np.array(hvsrPeaks)
-    hvsr_out['ind_peak_ind'] = hvsrPeaks
-    hvsr_out['hvsr_peak_ind'] = __find_peaks(hvsr_out['hvsr_curve'])
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
@@ -755,42 +772,42 @@ def __get_hvsr_curve(x, psd, method=4):
 def __gethvsrparams(hvsr_out):
     count=0
     #SOMETHING VERY WRONG IS GOING ON HERE!!!!
-    for i, k in enumerate(hvsr_out['psd_raw']):
-        peak_water_level = []
-        hvsr=[]
-        hvsr_std=[]
-        hvsr_log_std=[]
-        hvsrp=[]
-        peak_water_level_p=[]
-        hvsrp2=[]
-        hvsrm=[]
-        peak_water_level_m=[]
-        hvsr_m2=[]
-        water_level=1.8 #Make this an input parameter eventually!!!****
+    hvsrp2 = {}
+    hvsrm2 = {}
+    
+    peak_water_level = []
+    hvsr_std=[]
+    #hvsr_log_std=[]
+    peak_water_level_p=[]
+    hvsrp2=[]
+    hvsrm=[]
+    peak_water_level_m=[]
+    water_level=1.8 #Make this an input parameter eventually!!!****
+    
+    count += 1
+    hvsr_log_std = {}
+
+    #peak_water_level.append(water_level)
+
+    hvsr=hvsr_out['hvsr_curve']
+    if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
+        #ppsd_std = hvsr_out['ppsd_std']
+        hvsr_log_std = np.std(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
+        hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
+        hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
         
-        count += 1
-        hvsr_log_std = {}
-        hvsrp2 = {}
-        hvsrm2 = {}
-        peak_water_level.append(water_level)    
-        if hvsr_out['psd_raw'][k].shape[0] > 0:
-            hvsr=hvsr_out['hvsr_curve']
-            hvsr_std = hvsr_out['hvsr_std']
-            for tStep in hvsr_out['psd_raw'][k]: #THis does not appear to be right
-                hvsr_log_std[k]=(np.std(np.log10(tStep)))
-                hvsrp2[k] = (hvsr[-1] * math.exp(hvsr_log_std[k][count]))
-                hvsr_m2[k] = (hvsr[-1] / math.exp(hvsr_log_std[k][-1]))
-            peak_water_level_p.append(water_level + hvsr_std[-1])
-            hvsrm.append(hvsr[-1] - hvsr_std[-1])
-            peak_water_level_m.append(water_level - hvsr_std[-1])
-        newKeys = ['hvsr_log_std', 'peak_water_level_p', 'peak_water_level_m','hvsrp2','hvsr_m2']
-        newVals = [hvsr_log_std,    peak_water_level_p,   peak_water_level_m,  hvsrp2,  hvsr_m2]
-        for k in newKeys:
-            hvsr_out[k] = np.array(newVals)
+        peak_water_level_p = water_level + hvsr_out['ind_hvsr_stdDev']
+        peak_water_level_m = water_level - hvsr_out['ind_hvsr_stdDev']
+
+    newKeys = ['hvsr_log_std', 'peak_water_level_p', 'peak_water_level_m','hvsrp2','hvsrm2']
+    newVals = [hvsr_log_std,    peak_water_level_p,   peak_water_level_m,  hvsrp2,  hvsrm2]
+    for i, nk in enumerate(newKeys):
+        hvsr_out[nk] = np.array(newVals[i])
+
     return hvsr_out
 
 #Plot HVSR data
-def hvsrPlot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
+def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
     """Function to plot calculate HVSR data
        ---------------------
        Parameters:
@@ -833,7 +850,7 @@ def hvsrPlot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
 
     return fig, ax
     
-#Plot hvsr curve, private supporting function
+#Plot hvsr curve, private supporting function for hvplot
 def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
@@ -913,7 +930,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     
     return fig, ax
 
-#Plot specgtrogram
+#Plot specgtrogram, private supporting function for hvplot
 def __plot_specgram(hvsr_dict, **kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
