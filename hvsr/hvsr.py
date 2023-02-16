@@ -261,7 +261,7 @@ def input_param(network='AM',
                         station='RAC84', 
                         loc='00', 
                         channels=['EHZ', 'EHN', 'EHE'],
-                        date=str(datetime.datetime.now().date()),
+                        acq_date=str(datetime.datetime.now().date()),
                         starttime = '00:00:00.00',
                         endtime = '23:59:99.99',
                         tzone = 'America/Chicago', #or 'UTC'
@@ -287,10 +287,12 @@ def input_param(network='AM',
         str(metaPath)
 
     #Reformat time
-    if type(date) is datetime.datetime:
-        date = str(date.date())
-    elif type(date) is datetime.date:
-        date=str(date)
+    if type(acq_date) is datetime.datetime:
+        date = str(acq_date.date())
+    elif type(acq_date) is datetime.date:
+        date=str(acq_date)
+    elif type(acq_date) is str:
+        date = acq_date
 
     if type(starttime) is str:
         if 'T' in starttime:
@@ -318,13 +320,13 @@ def input_param(network='AM',
     endtime = date+"T"+endtime
     endtime = __formatTime(endtime, tzone=tzone, dst=dst)
 
-    date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
+    acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
 
     if metaPath == r'resources\raspshake_metadata.inv':
         metaPath = str(pathlib.Path(os.getcwd()))+'\\'+metaPath
 
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels,
-                    'date':date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
+                    'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
                     'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth, 'site':site,
                     'dataPath':dataPath, 'metaPath':metaPath, 'hvsr_band':hvsr_band
                     }
@@ -332,28 +334,38 @@ def input_param(network='AM',
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
-def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ', 'EHN', 'EHE'], 
-                    startdate=str(datetime.datetime(2022,1,1)), enddate=str(datetime.datetime.today()), 
-                    lon = '-88.2290526', lat = '40.1012122', elevation = '755', depth='0', write=True):
-    """
-    Reads static metadata file provided for Rasp Shake and updates with input parameters
-        --------------
+def updateShakeMetadata(filepath, params, write):
+    """Reads static metadata file provided for Rasp Shake and updates with input parameters
+
         PARAMETERS
-            filepath
-            network
-            station
-            channels
-            startdate
-            enddate
-            lon
-            lat
-            elevation
-            depth
-        -------------
+        ----------
+            filepath    : str or pathlib object
+                Filepath to Raspberry Shake metadata file 
+            params      : dict
+                Dictionary containing necessary keys/values for updating
+                    Necessary keys: 'net', 'sta', 
+                    Optional keys: 'longitude', 'latitude', 'elevation', 'depth'
+            write       : bool or str
+                Whether to write. If not bool, should be filepath to write to
+
         Returns
-        
+        -------
         updated tree, output filepath
     """
+    network = params['net']
+    station = params['sta']
+    optKeys = ['longitude', 'latitude', 'elevation', 'depth']
+    for k in optKeys:
+        if k not in params.keys():
+            params[k] = '0'
+    lon = str(params['longitude'])
+    lat = str(params['latitude'])
+    elevation = str(params['elevation'])
+    depth = str(params['depth'])
+    
+    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day with working code
+    enddate=str(datetime.datetime.today())
+
     filepath = checkifpath(filepath)
 
     parentPath = filepath.parent
@@ -364,13 +376,13 @@ def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ'
 
     prefix= "{http://www.fdsn.org/xml/station/1}"
 
-    #metadata  = list(root)#.getchildren()
-
     for item in root.iter(prefix+'Channel'):
+        item.attrib['startDate'] = startdate
         item.attrib['endDate'] = enddate
 
     for item in root.iter(prefix+'Station'):
         item.attrib['code'] = station
+        item.attrib['startDate'] = startdate
         item.attrib['endDate'] = enddate
 
     for item in root.iter(prefix+'Network'):
@@ -397,8 +409,11 @@ def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ'
 
     outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
 
-    if write:
-        tree.write(outfile, xml_declaration=True, method='xml',encoding='UTF-8')
+    if type(write) is bool:
+        if write:
+            tree.write(outfile, xml_declaration=True, method='xml',encoding='UTF-8')
+    else:
+        tree.write(write, xml_declaration=True, method='xml',encoding='UTF-8')
 
     #Create temporary file for reading into obspy
     tpf = tempfile.NamedTemporaryFile(delete=False)
@@ -407,20 +422,32 @@ def updateShakeMetadata(filepath, network='AM', station='RAC84', channels=['EHZ'
     tpf.close()
 
     inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
+    params['inv'] = inv
 
     os.remove(tpf.name)
-
-    return inv
+    return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN', 'EHE']):
+def getShakeMetadata(params, write=False):
     """Get Shake metadata and output as paz parameter needed for PPSD
     Parameters:
-        inv     : file, file object or obspy inventory object
-        station : str           station name (must be the same as in the inv object or file)
-        network : str           network name (must be the same as in the inv object or file)
-        channels: list of str   channel names (must be the same as in the inv object or file)
+        inv     : str, pathlib path, or obspy inventory object
+        params
+        write
     """
+    invPath = params['metaPath']
+    params = updateShakeMetadata(filepath=invPath, params=params, write=write)
+    inv = params['inv']
+
+    if isinstance(inv, pathlib.PurePath) or type(inv) is str:
+        inv = checkifpath(inv)
+        tree = ET.parse(inv)
+        root = tree.getroot()
+
+    station = params['sta']
+    network = params['net']
+    channels = params['cha']
+
     if isinstance(inv, pathlib.PurePath):
         inv = checkifpath(inv)
         tree = ET.parse(inv)
@@ -485,7 +512,8 @@ def getShakeMetadata(inv, station='RAC84', network='AM', channels = ['EHZ', 'EHN
                     channelPaz['zeros'] = zeroList
 
         paz[str(c)] = channelPaz
-    return paz
+        params['paz'] = paz
+    return params
 
 #Reads in traces to obspy stream
 def fetchdata(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
