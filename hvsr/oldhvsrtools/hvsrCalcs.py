@@ -7,10 +7,10 @@ import numpy as np
 from scipy.signal import argrelextrema
 
 
-import hvsr.hvsrtools.msgLib as msgLib
-import hvsr.hvsrtools.powspecdens as powspecdens
-import hvsr.hvsrtools.utilities as utilities
-import hvsr.hvsrtools.setParams as setParams
+import hvsr.oldhvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.powspecdens as powspecdens
+import hvsr.oldhvsrtools.utilities as utilities
+import hvsr.oldhvsrtools.setParams as setParams
 
 args = utilities.get_args(sys.argv)
 #target = '.'.join([network, station, location, channel, '*'])

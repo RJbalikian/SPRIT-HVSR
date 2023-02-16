@@ -10,10 +10,10 @@ import xml.etree.ElementTree as ET
 
 import obspy
 
-import hvsr.hvsrtools.utilities as utilities
-import hvsr.hvsrtools.fileLib as fileLib
-import hvsr.hvsrtools.msgLib as msgLib
-import hvsr.hvsrtools.setParams as setParams
+import hvsr.oldhvsrtools.utilities as utilities
+import hvsr.oldhvsrtools.fileLib as fileLib
+import hvsr.oldhvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.setParams as setParams
 
 #utilities.get_args(sys.argv) #This is for command-line?
 #args = setParams.args()

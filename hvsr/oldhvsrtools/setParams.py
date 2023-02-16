@@ -23,9 +23,9 @@ import json
 import datetime
 import xml.etree.ElementTree as ET
 
-import hvsr.hvsrtools.ioput as ioput
-import hvsr.hvsrtools.fileLib as fileLib
-import hvsr.hvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.ioput as ioput
+import hvsr.oldhvsrtools.fileLib as fileLib
+import hvsr.oldhvsrtools.msgLib as msgLib
 
 args = { 'net':'AM',
         'sta':'RAC84',

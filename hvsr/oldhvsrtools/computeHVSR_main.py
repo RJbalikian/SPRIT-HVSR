@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import obspy
 
-import hvsr.hvsrtools.fileLib as fileLib
-import hvsr.hvsrtools.msgLib as msgLib
-import hvsr.hvsrtools.hvsrCalcs as hvsrCalcs
-import hvsr.hvsrtools.ioput as ioput
-import hvsr.hvsrtools.powspecdens as powspecdens
-import hvsr.hvsrtools.readhvsr as readhvsr
-import hvsr.hvsrtools.setParams as setParams
-import hvsr.hvsrtools.utilities as utilities
+import hvsr.oldhvsrtools.fileLib as fileLib
+import hvsr.oldhvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.hvsrCalcs as hvsrCalcs
+import hvsr.oldhvsrtools.ioput as ioput
+import hvsr.oldhvsrtools.powspecdens as powspecdens
+import hvsr.oldhvsrtools.readhvsr as readhvsr
+import hvsr.oldhvsrtools.setParams as setParams
+import hvsr.oldhvsrtools.utilities as utilities
 
 #args=setParams.args #From original, not needed anyore
 

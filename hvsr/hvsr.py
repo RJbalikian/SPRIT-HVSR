@@ -12,7 +12,7 @@ import obspy
 import numpy as np
 import scipy
 
-import hvsr.hvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.msgLib as msgLib
 
 """
 This file contains all the updated functions needed
@@ -44,7 +44,6 @@ def get_char(in_char):
     else:
         out_char = in_char.encode(encoding='utf-8')
     return out_char.decode('utf-8')
-
 
 def time_it(_t):
     """Compute elapsed time since the last call."""
@@ -256,6 +255,7 @@ def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
     for channel in channels:
         sorted_channel_list[channel_order[channel[2]]] = channel
     return sorted_channel_list
+
 #Define input parameters
 def input_param(network='AM', 
                         station='RAC84', 
@@ -709,11 +709,11 @@ def process_hvsr(ppsds, method, params):
         method  : int or str
             Method to use for combining the horizontal components
                 0) Diffuse field assumption, or 'DFA' (not currently supported)
-                1) 'Arithmetic Mean'
-                2) 'Geometric Mean'
-                3) 'Vector Summation'
-                4) 'Quadratic Mean'
-                5) 'Maximum Horizontal Value'
+                1) 'Arithmetic Mean': H ≡ (HN + HE)/2
+                2) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)
+                3) 'Vector Summation': H ≡ √H2 N + H2 E
+                4) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2
+                5) 'Maximum Horizontal Value': H ≡ max {HN, HE}
         params  : dict
             Dictionary containing all the parameters input by the user
 
@@ -876,7 +876,7 @@ def __gethvsrparams(hvsr_out):
     return hvsr_out
 
 #Plot HVSR data
-def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
+def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
     """Function to plot calculate HVSR data
        
        Parameters
@@ -899,13 +899,22 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
                 String for what to use between frequency or period
                     For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
                     For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
+            returnfig   : bool
+                Whether to return figure and axis objects
+            save_dir     : str or None
+                Directory in which to save figures
+            save_suffix  : str
+                Suffix to add to end of figure filename(s), if save_dir is used
+            show    : bool
+                Whether to show plot
             **kwargs    : keyword arguments
                 Keyword arguments for matplotlib.pyplot (still working on this)
         Returns
         -------
-            fig, ax
-        
+            fig, ax : returns figure and axis matplotlib.pyplot objects if returnfig=True
+                otherwise, simply plots the figures
     """
+    plt.rcParams['figure.dpi']=600
     freqList = ['F', 'HZ', 'FREQ', 'FREQUENCY']
     perList = 'P', 'T', 'S', 'SEC', 'SECOND' 'PER', 'PERIOD'
 
@@ -919,18 +928,25 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
     
     if type(kind) is list:
         #iterate through and plot in separate (sub)plots
-        pass
+        for k in kind:
+            if 'HVSR' in k.upper():
+                fig, ax = __plot_hvsr(hvsr_dict, kind, xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+            if 'specgram' in k.lower() or 'spectrogram' in k.lower():
+                fig, ax = __plot_specgram(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs) 
     else:
         #Just a single plot
         if 'HVSR' in kind.upper():
-            fig, ax = __plot_hvsr(hvsr_dict, kind, xtype, kwargs=kwargs)
+            fig, ax = __plot_hvsr(hvsr_dict, kind, xtype,  save_dir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
         if 'specgram' in kind.lower() or 'spectrogram' in kind.lower():
-            fig, ax = __plot_specgram(hvsr_dict, kwargs=kwargs)
-
-    return fig, ax
+            fig, ax = __plot_specgram(hvsr_dict,  save_dir=save_dir, save_suffix=save_suffix,show=show, kwargs=kwargs)
+    
+    if returnfig:
+        return fig, ax
+    
+    return
     
 #Plot hvsr curve, private supporting function for hvplot
-def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
+def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
     kwargs = kwargs['kwargs']
@@ -954,7 +970,13 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
         xlabel = 'Frequency [Hz]'
     else:
         xlabel = 'Period [s]'
-        
+
+    if save_dir is not None:
+        filename = hvsr_dict['input_params']['site']
+    else:
+        filename = ""
+
+
     anyKey = list(hvsr_dict[xtype].keys())[0]
     x = hvsr_dict[xtype][anyKey][:-1]
     y = hvsr_dict['hvsr_curve']
@@ -968,21 +990,75 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     plt.semilogx()
     plt.ylim(ylim)
     plt.xlim(xlim)
+    plt.xlabel(xlabel)
+    plt.ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
+    plt.title(hvsr_dict['input_params']['site'])
+    plt.legend(loc='upper right')
+
+    plotSuff='HVSRCurve_'
+
+    if '-s' not in kind.lower():
+        plt.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev')
+    else:
+        plotSuff = plotSuff+'noStdDev_'
 
     if 'p' in kind.lower() and 'all' not in kind.lower():
+        if '+p' in kind.lower():
+            __plot_current_fig(save_dir=save_dir, filename=filename, 
+                        plot_suffix=plotSuff, 
+                        user_suffix=save_suffix, show=show)            
+            fig, ax = plt.subplots()
+            axis = ax
+            plt.gca()            
+            plt.semilogx()
+            plt.legend(loc='upper right')
+            
+            plt.xlim(xlim)
+            plt.ylim(ylim)
+
+            plt.xlabel(xlabel)
+            plt.ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+            plt.title(hvsr_dict['input_params']['site'])
+        
+            plt.plot(x, y, color='k', label='H/V Ratio', zorder=100)
+            plotSuff = 'HVSR_'
+        plotSuff=plotSuff+'BestPeak_'
+
         bestPeakScore = 0
         for i, p in enumerate(hvsr_dict['Peak Report']):
             if p['Score'] > bestPeakScore:
                 bestPeak = p
-                bestPeakIndx = i
 
         plt.vlines(bestPeak['f0'], 0, 50, colors='k', linestyles='dotted', label='Peak')          
         if 'ann' in kind.lower():
             plt.annotate('Peak at '+str(round(bestPeak['f0'],2))+'Hz', (bestPeak['f0'], 0.1), xycoords='data', 
                             horizontalalignment='center', verticalalignment='bottom', 
                             bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+            plotSuff = plotSuff+'ann_'
 
     if 'all' in kind.lower() and 'p' in kind.lower():
+        if '+p' in kind.lower():
+            __plot_current_fig(save_dir=save_dir, filename=filename, 
+                        plot_suffix=plotSuff, 
+                        user_suffix=save_suffix, show=show)
+
+            fig, ax = plt.subplots()
+            axis = ax
+            plt.gca()            
+            plt.semilogx()
+            plt.legend(loc='upper right')
+            
+            plt.xlim(xlim)
+            plt.ylim(ylim)
+
+            plt.xlabel(xlabel)
+            plt.ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+            plt.title(hvsr_dict['input_params']['site'])
+
+            plt.plot(x, y, color='k', label='H/V Ratio', zorder=100)
+            plotSuff = 'HVSR_'
+        plotSuff = plotSuff+'allPeaks_'
+
         plt.vlines(hvsr_dict['hvsr_peak_freqs'], 0, 50, colors='k', linestyles='dotted', label='Peak')          
         if 'ann' in kind.lower():
             for i, p in enumerate(hvsr_dict['hvsr_peak_freqs']):
@@ -990,8 +1066,34 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
                 plt.annotate('Peak at '+str(round(p,2))+'Hz', (p, 0.1), xycoords='data', 
                                 horizontalalignment='center', verticalalignment='bottom', 
                                 bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+            plot_suffix=plotSuff+'ann_'
+            #__plot_current_fig(save_dir=save_dir, filename=filename, 
+            #            plot_suffix=plotSuff+'ann_', 
+            #            user_suffix=save_suffix)
 
     if 't' in kind.lower():
+        if '+t' in kind.lower():
+            __plot_current_fig(save_dir=save_dir, filename=filename, 
+                        plot_suffix=plotSuff, 
+                        user_suffix=save_suffix, show=show)
+
+            fig, ax = plt.subplots()
+            axis = ax
+            plt.gca()            
+            plt.semilogx()
+            plt.legend(loc='upper right')
+            
+            plt.xlim(xlim)
+            plt.ylim(ylim)
+
+            plt.xlabel(xlabel)
+            plt.ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+            plt.title(hvsr_dict['input_params']['site'])
+
+            plt.plot(x, y, color='k', label='H/V Ratio', zorder=100)
+            plotSuff = 'HVSR_'
+        plotSuff = plotSuff+'allTWinCurves_'
+
         for t in hvsr_dict['ind_hvsr_peak_indices']:
             for i, v in enumerate(t):
                 v= x[v]
@@ -1000,31 +1102,21 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
                 else:
                     width = (x[i]-x[i-1])/16
                 plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05)
-
-    if '-s' not in kind.lower():
-        plt.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev')
-
-        #sdList = []
-        #for cSD in hvsr_std:
-        #    sdList.append(hvsr_std[cSD])
-        #sdArr = np.array(sdList)
-        #sdArr = np.sqrt(np.mean(sdArr, axis=0)) #This is probably not right
-        #stArrbelow = np.subtract(y, sdArr)
-        #stArrabove = np.add(y, sdArr)
-        #plt.fill_between(x, stArrbelow, stArrabove, color='k', alpha=0.1)
-    plt.xlabel(xlabel)
-    plt.ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
-    plt.title(hvsr_dict['input_params']['site'])
-    plt.legend(loc='upper right')
-    
+        if '+t' in kind.lower():
+           __plot_current_fig(save_dir=save_dir, filename=filename, 
+                        plot_suffix=plotSuff, 
+                        user_suffix=save_suffix, show=show)
 
     if 'c' in kind.lower():
         if '+c' in kind.lower():
-            plt.legend()
             plt.semilogx()
             plt.xlim(xlim)
             plt.ylim(ylim)
-            plt.show()
+            plt.legend()
+
+            __plot_current_fig(save_dir=save_dir, filename=filename, 
+                        plot_suffix=plotSuff, 
+                        user_suffix=save_suffix, show=show)
 
             fig, ax = plt.subplots()
             axis = ax
@@ -1034,10 +1126,13 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
             plt.xlabel(xlabel)
             plt.ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
             plt.title(hvsr_dict['input_params']['site'])
+            plotSuff = 'IndComponents_'
 
             linalpha = 1
             stdalpha = 0.1
         else:
+            plotSuff = plotSuff+'IndComponents_'
+
             axis = ax.twinx()
             linalpha = 0.1
             stdalpha = 0.02
@@ -1056,17 +1151,24 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
             
             axis.plot(x, y[k], c=pltColor, label=k, alpha=linalpha)
             axis.fill_between(x, hvsr_dict['ppsd_std_vals_m'][k][:-1], hvsr_dict['ppsd_std_vals_p'][k][:-1], color=pltColor, alpha=stdalpha)
-            #plt.gca(axis)
-            #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
-            #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
         plt.legend(loc='upper left')
 
-    plt.show()
-    
+    __plot_current_fig(save_dir=save_dir, filename=filename, 
+                plot_suffix=plotSuff, 
+                user_suffix=save_suffix, show=show)
     return fig, ax
 
+def __plot_current_fig(save_dir, filename, plot_suffix, user_suffix, show):
+    if save_dir is not None:
+        outFile = save_dir+'/'+filename+'_'+plot_suffix+str(datetime.datetime.today().date())+'_'+user_suffix+'.png'
+        plt.savefig(outFile)
+    if show:
+        plt.show()
+        plt.ion()
+    return
+
 #Plot specgtrogram, private supporting function for hvplot
-def __plot_specgram(hvsr_dict, **kwargs):
+def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
     kwargs = kwargs['kwargs']
@@ -1677,6 +1779,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         stdf.append(np.std(v))
     return stdf
 
+#Get or print report
 def printreport(export=''):
     #print statement
 

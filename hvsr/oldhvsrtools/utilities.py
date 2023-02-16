@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 
-import hvsr.hvsrtools.msgLib as msgLib
+import hvsr.oldhvsrtools.msgLib as msgLib
 
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}

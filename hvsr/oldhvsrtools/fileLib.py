@@ -11,7 +11,7 @@
 
 import os
 import sys
-import hvsr.hvsrtools.msgLib
+import hvsr.oldhvsrtools.msgLib
 
 hvsr_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 library_path = os.path.join(hvsr_directory, 'lib')
