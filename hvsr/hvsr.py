@@ -17,6 +17,45 @@ import hvsr.hvsrtools.msgLib as msgLib
 """
 This file contains all the updated functions needed
 """
+
+#Main variables
+greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
+channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
+separator_character = '='
+
+t0 = datetime.datetime.now().time()
+max_rank = 0
+plotRows = 4
+
+
+def check_mark():
+    """The default Windows terminal is not able to display the check mark character correctly.
+       This function returns another displayable character if platform is Windows"""
+    #This does not seem to be a problem for my system at least
+    check = get_char(u'\u2714')
+    #if sys.platform == 'win32':
+    #    check = get_char(u'\u039E')
+    return check
+
+def get_char(in_char):
+    """Output character with proper encoding/decoding"""
+    if in_char in greek_chars.keys():
+        out_char = greek_chars[in_char].encode(encoding='utf-8')
+    else:
+        out_char = in_char.encode(encoding='utf-8')
+    return out_char.decode('utf-8')
+
+
+def time_it(_t):
+    """Compute elapsed time since the last call."""
+    t1 = time.time()
+    dt = t1 - _t
+    t = _t
+    if dt > 0.05:
+        #print(f'[TIME] {dt:0.1f} s', flush=True)
+        t = t1
+    return t
+
 ##msgLib functions
 #Post message
 def message(post_message):
@@ -1072,7 +1111,8 @@ def __find_peaks(_y):
     return _index_list[0]
 
 #Quality checks, stability tests, clarity tests
-def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
+#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
+def check_peaks(hvsrdict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
     
     Parameters
@@ -1082,7 +1122,7 @@ def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, stdf, hvsr_log_std, 
         x               : list-like obj 
             List with x-values (frequency or period values)
         y               : list-like obj 
-            List with hvsr curve values ????
+            List with main hvsr curve values
         index_list      : list-like obj 
             List with indices of peaks
         hvsr_band       : tuple or list 
@@ -1095,6 +1135,8 @@ def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, stdf, hvsr_log_std, 
             List containing a dictionary for each peak identified in previous step
         peakm           : <generated?>
         peakp           : <generated?>
+        hvsr_peaks      : list
+            List of peak indices from the individual hvsr curves from each time step
         stdf            : <generated?>
         hvsr_log_std    : <generated?>
         rank            : <generated?>
@@ -1107,53 +1149,61 @@ def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, stdf, hvsr_log_std, 
     """
     if not hvsr_band:
         hvsr_band = [0.4,40]
+    hvsrdict['hvsr_band'] = hvsr_band
 
-    anyK = list(hvsr['x_freqs'].keys())[0]
-    x = hvsr['x_freqs'][anyK]
-    y = hvsr['hvsr_curve']
-    index_list = hvsr['hvsr_peak_indices']
-    peak_water_level  = hvsr['peak_water_level']
+    anyK = list(hvsrdict['x_freqs'].keys())[0]
+    x = hvsrdict['x_freqs'][anyK]
+    y = hvsrdict['hvsr_curve']
+    index_list = hvsrdict['hvsr_peak_indices']
+    peak_water_level  = hvsrdict['peak_water_level']
+    hvsrp = hvsrdict['hvsrp']
+    peak_water_level_p  = hvsrdict['peak_water_level_p']
+    hvsrm = hvsrdict['hvsrm']
+    hvsrPeaks = hvsrdict['ind_hvsr_peak_indices']
+    hvsr_log_std = hvsrdict['hvsr_log_std']
 
     #Do for hvsr
     peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
+
+    peak = __check_curve_reliability(hvsrdict, peak)
     peak = __check_clarity(x, y, peak, do_rank=True)
 
-
     #Do for hvsrp
-    hvsrp = hvsr['hvsrp']
     # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
     if not np.isnan(np.sum(hvsrp)):
         index_p = __find_peaks(hvsrp)
     else:
         index_p = list()
 
-    peak_water_level_p  = hvsr['peak_water_level_p']
-    peak = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
-    peak = __check_clarity(x, hvsrp, peak, do_rank=False)
-
+    peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+    peakp = __check_clarity(x, hvsrp, peakp, do_rank=False)
 
     #Do for hvsrm
-    hvsrm = hvsr['hvsrm']
-    # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+    # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
     if not np.isnan(np.sum(hvsrm)):
         index_m = __find_peaks(hvsrm)
     else:
         index_m = list()
 
-    peak_water_level_m  = hvsr['peak_water_level_m']
+    peak_water_level_m  = hvsrdict['peak_water_level_m']
 
-    peak = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
-    peak = __check_clarity(x, hvsrm, peak, do_rank=False)
+    peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+    peakm = __check_clarity(x, hvsrm, peakm, do_rank=False)
 
-    hvsr_log_std = hvsr['hvsr_log_std']
 
     ###########FITURE OUT WHAT HVSRPEAKS IS, RELATIVE TO INDEX_LIST (AND INDEX_LIST??)
+    #I think hvsrPeaks is list of peaks from each timestep
+    #index_list is the indices of the main hvsr curve
+    #get_stdf finds the closest peak from each timestep hvsr and uses that to compute a frequency std
+
     stdf = __get_stdf(x, index_list, hvsrPeaks)
 
-    peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
     peak = __check_freq_stability(peak, peakm, peakp)
+    peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
-    return peak
+
+    hvsrdict['Peak Report'] = peak
+    return hvsrdict
 
 #Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
@@ -1178,10 +1228,71 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
     """
     _peak = list()
     for _i in _index_list:
-        if _y[_i] > _peak_water_level[_i] and (_hvsr_band[0] <= _x[_i] <= _hvsr_band[1]):
+        if _y[_i] > _peak_water_level[0] and (_hvsr_band[0] <= _x[_i] <= _hvsr_band[1]):
             _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 
-                            'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
-                          'Score': 0, 'Report': {'A0': '', 'Sf': '', 'Sa': '', 'P+': '', 'P-': ''}})
+                          'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
+                          'Score': 0, 
+                          'Report': {'A0': '', 'P+': '', 'P-': '', 'Sf': '', 'Sa': ''},
+                          'Pass List':{}})
+    return _peak
+
+#Check reliability of HVSR of curve
+def __check_curve_reliability(hvsr_dict, _peak):
+    """Tests to check for reliable H/V curve
+    Tests include:
+        1) Peak frequency is greater than 10 / window length (f0 > 10 / Lw)
+            f0 = peak frequency [Hz]
+            Lw = window length [seconds]
+        2) Number of significant cycles (Nc) is greater than 200 (Nc(f0) > 200)
+            Nc = Lw * Nw * f0
+                Lw = window length [sec]
+                Nw = Number of windows used in analysis
+                f0 = peak frequency [Hz]
+        3) StDev of amplitude of H/V curve is less than 2 at all frequencies between 0.5f0 and 2f0
+            (less than 3 if f0 is less than 0.5 Hz)
+            f0 = peak frequency [Hz]
+            StDev is a measure of the variation of all the H/V curves generated for each time window
+                Our main H/V curve is the median of these
+    Parameters
+    ----------
+    hvsr_dict   : dict
+        Dictionary containing all important information generated about HVSR curve
+    _peak       : list of dicts
+        A list of dictionaries, with each dictionary containing information about each peak
+
+    Returns
+    -------
+    _peak   : same as above, except with information about curve reliability tests added
+    """
+    anyKey = list(hvsr_dict['psd_raw'].keys())[0]#Doesn't matter which channel we use as key
+
+    delta = hvsr_dict['ppsds'][anyKey].delta
+    window_len = (hvsr_dict['ppsds'][anyKey].len * delta) #Window length in seconds
+    window_num = len(hvsr_dict['ppsds'][anyKey].times_processed)    
+
+    for _i in range(len(_peak)):
+        peakFreq= _peak[_i]['f0']
+        test1 = peakFreq > 10/window_len
+        test2 = window_len * window_num * peakFreq > 200
+
+        halfF0 = peakFreq/2
+        doublef0 = peakFreq*2
+        
+        test3 = True
+        failCount = 0
+        for i, freq in enumerate(hvsr_dict['x_freqs'][anyKey]):
+            if freq >= halfF0 and freq <doublef0:
+                if peakFreq >= 0.5:
+                    if hvsr_dict['hvsr_log_std'][i] >= 2:
+                        test3=False
+                        failCount +=1
+                else: #if peak freq is less than 0.5
+                    if hvsr_dict['hvsr_log_std'][i] >= 3:
+                        test3=False
+                        failCount +=1
+        _peak[_i]['Pass List']['Window Length Freq.'] = test1
+        _peak[_i]['Pass List']['Significant Cycles'] = test2
+        _peak[_i]['Pass List']['Low Curve StDev. over time'] = test3
     return _peak
 
 #Check clarity of peaks
@@ -1197,60 +1308,79 @@ def __check_clarity(_x, _y, _peak, do_rank=False):
             x               : list-like obj 
                 List with x-values (frequency or period values)
             y               : list-like obj 
-                List with hvsr curve values ????
-            _peak   :
+                List with hvsr curve values
+            _peak   : list of dicts
+                List with dictionaries for each peak, containing info about that peak
             do_rank : bool=False
+                Include Rank in output
         ------------------------
         Returns:
-            peak
+            _peak   
     """
     global max_rank
 
-    # Peaks with A0 > 2.
+    # Test each _peak for clarity.
+    if do_rank:
+        max_rank += 1
+    for _i in range(len(_peak)):
+        #Initialize as False
+        _peak[_i]['f-'] = 'X'
+        _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False
+        for _j in range(len(_x) - 1, -1, -1):
+
+            # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
+            if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
+                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
+                _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], check_mark())
+                _peak[_i]['Score'] += 1
+                _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = True
+                break
+            else:
+                pass
+    
+    if do_rank:
+        max_rank += 1
+    for _i in range(len(_peak)):
+        #Initialize as False
+        _peak[_i]['f+'] = 'X'
+        _peak[_i]['Pass List']['Peak Freq. Clarity Above'] = False
+        for _j in range(len(_x) - 1):
+
+            # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
+            if float(_peak[_i]['f0']) * 4.0 >= _x[_j] > float(_peak[_i]['f0']) and \
+                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
+                _peak[_i]['f+'] = '%10.3f %1s' % (_x[_j], check_mark())
+                _peak[_i]['Score'] += 1
+                _peak[_i]['Pass List']['Peak Freq. Clarity Above'] = True
+                break
+            else:
+                pass
+#        if False in clarityPass:
+#            _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False
+#        else:
+#            _peak[_i]['Pass List']['Peak Freq. Clarity Above'] = True
+
+    #Amplitude Clarity test
+    # Only peaks with A0 > 2 pass
     if do_rank:
         max_rank += 1
     _a0 = 2.0
     for _i in range(len(_peak)):
 
         if float(_peak[_i]['A0']) > _a0:
-            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f %1s' % (_peak[_i]['A0'], _a0, utilities.check_mark())
+            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f %1s' % (_peak[_i]['A0'], _a0, check_mark())
             _peak[_i]['Score'] += 1
+            _peak[_i]['Pass List']['Peak Amp. Clarity'] = True
         else:
-            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f  ' % (_peak[_i]['A0'], _a0)
-
-    # Test each _peak for clarity.
-    if do_rank:
-        max_rank += 1
-    for _i in range(len(_peak)):
-        _peak[_i]['f-'] = '-'
-        for _j in range(len(_x) - 1, -1, -1):
-
-            # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
-            if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
-                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
-                _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], utilities.check_mark())
-                _peak[_i]['Score'] += 1
-                break
-
-    if do_rank:
-        max_rank += 1
-    for _i in range(len(_peak)):
-        _peak[_i]['f+'] = '-'
-        for _j in range(len(_x) - 1):
-
-            # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
-            if float(_peak[_i]['f0']) * 4.0 >= _x[_j] > float(_peak[_i]['f0']) and \
-                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
-                _peak[_i]['f+'] = '%10.3f %1s' % (_x[_j], utilities.check_mark())
-                _peak[_i]['Score'] += 1
-                break
+            _peak[_i]['Report']['A0'] = '%10.2f > %0.1f %1s' % (_peak[_i]['A0'], _a0, 'X')
+            _peak[_i]['Pass List']['Peak Amp. Clarity'] = False
 
     return _peak
 
 #Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
-    """
-       test peaks for satisfying stability conditions as outlined by SESAME 2004:
+    """Test peaks for satisfying stability conditions 
+        Test as outlined by SESAME 2004:
            - the _peak should appear at the same frequency (within a percentage ± 5%) on the H/V
              curves corresponding to mean + and – one standard deviation.
     """
@@ -1261,29 +1391,31 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     #
     max_rank += 1
 
+    #First check below
     _found_m = list()
     for _i in range(len(_peak)):
         _dx = 1000000.
         _found_m.append(False)
-        _peak[_i]['Report']['P-'] = '- &'
+        _peak[_i]['Report']['P-'] = 'X'
         for _j in range(len(_peakm)):
             if abs(_peakm[_j]['f0'] - _peak[_i]['f0']) < _dx:
                 _index = _j
                 _dx = abs(_peakm[_j]['f0'] - _peak[_i]['f0'])
             if _peak[_i]['f0'] * 0.95 <= _peakm[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
                 _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_j]['f0'], '%',
-                                                                                 _peak[_i]['f0'], '&')
+                                                                                 _peak[_i]['f0'], check_mark())
                 _found_m[_i] = True
                 break
-        if _peak[_i]['Report']['P-'] == '-':
-            _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_i]['f0'], '%',
-                                                                             _peak[_i]['f0'], '&')
+        if _peak[_i]['Report']['P-'] == 'X':
+            _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_j]['f0'], '%', ##changed i to j
+                                                                             _peak[_i]['f0'], 'X')
 
+    #Then Check above
     _found_p = list()
     for _i in range(len(_peak)):
         _dx = 1000000.
         _found_p.append(False)
-        _peak[_i]['Report']['P+'] = '-'
+        _peak[_i]['Report']['P+'] = 'X'
         for _j in range(len(_peakp)):
             if abs(_peakp[_j]['f0'] - _peak[_i]['f0']) < _dx:
                 _index = _j
@@ -1291,28 +1423,31 @@ def __check_freq_stability(_peak, _peakm, _peakp):
             if _peak[_i]['f0'] * 0.95 <= _peakp[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
                 if _found_m[_i]:
                     _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
-                        _peakp[_j]['f0'], '%', _peak[_i]['f0'], utilities.check_mark())
+                        _peakp[_j]['f0'], '%', _peak[_i]['f0'], check_mark())
                     _peak[_i]['Score'] += 1
+                    _peak[_i]['Pass List']['Freq. Stability'] = True
                 else:
                     _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
-                        _peakp[_i]['f0'], '%', _peak[_i]['f0'], ' ')
+                        _peakp[_j]['f0'], '%', _peak[_i]['f0'], 'X')
+                    _peak[_i]['Pass List']['Freq. Stability'] = False
                 break
-        if _peak[_i]['Report']['P+'] == '-' and len(_peakp) > 0:
+        if _peak[_i]['Report']['P+'] == 'X' and len(_peakp) > 0:
             _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
-                _peakp[_i]['f0'], '%', _peak[_i]['f0'], ' ')
+                _peakp[_j]['f0'], '%', _peak[_i]['f0'], 'X')###changed i to j
 
     return _peak
 
 #Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
-    """
-    test peaks for satisfying stability conditions as outlined by SESAME 2004:
+    """Test peaks for satisfying stability conditions as outlined by SESAME 2004
+    This includes:
        - σf lower than a frequency dependent threshold ε(f)
        - σA (f0) lower than a frequency dependent threshold θ(f),
     """
 
     global max_rank
 
+    peakPassList = []
     #
     # check σf and σA
     #
@@ -1326,83 +1461,105 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
             _e = 0.25
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
-                                                                            utilities.check_mark())
+                                                                            check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = True
+
             else:
-                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  %1s' % (_stdf[_i], _e, _this_peak['f0'], 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
 
             _t = 0.48
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t,
-                                                                    utilities.check_mark())
+                                                                    check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = True
             else:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  %1s' % (_hvsr_log_std[_i], _t, 'X')
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = False
 
         elif 0.2 <= _this_peak['f0'] < 0.5:
             _e = 0.2
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
-                                                                            utilities.check_mark())
+                                                                            check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = True
             else:
-                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  %1s' % (_stdf[_i], _e, _this_peak['f0'], 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
 
             _t = 0.40
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t,
-                                                                    utilities.check_mark())
+                                                                    check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = True
             else:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  %1s' % (_hvsr_log_std[_i], _t, 'X')
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = False
 
         elif 0.5 <= _this_peak['f0'] < 1.0:
             _e = 0.15
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
-                                                                            utilities.check_mark())
+                                                                            check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = True
             else:
-                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  %1s' % (_stdf[_i], _e, _this_peak['f0'], 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
 
             _t = 0.3
             if _hvsr_log_std[_i] < _t:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = True
             else:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  %1s' % (_hvsr_log_std[_i], _t, 'X')
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = False
 
         elif 1.0 <= _this_peak['f0'] <= 2.0:
             _e = 0.1
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
-                                                                            utilities.check_mark())
+                                                                            check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = True
             else:
-                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s ' % (_stdf[_i], _e, _this_peak['f0'], 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
 
             _t = 0.25
             if _hvsr_log_std[_i] < _t:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = True
             else:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  %1s' % (_hvsr_log_std[_i], _t, 'X')
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = False
 
         elif _this_peak['f0'] > 0.2:
             _e = 0.05
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f %1s' % (_stdf[_i], _e, _this_peak['f0'],
-                                                                            utilities.check_mark())
+                                                                            check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = True
             else:
-                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  ' % (_stdf[_i], _e, _this_peak['f0'])
+                _peak[_i]['Report']['Sf'] = '%10.4f < %0.2f * %0.3f  %1s' % (_stdf[_i], _e, _this_peak['f0'], 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
 
             _t = 0.2
             if _hvsr_log_std[_i] < _t:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, utilities.check_mark())
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f %1s' % (_hvsr_log_std[_i], _t, check_mark())
                 _this_peak['Score'] += 1
+                _this_peak['Pass List']['Peak Stability (amp. std)'] = True
             else:
-                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  ' % (_hvsr_log_std[_i], _t)
+                _peak[_i]['Report']['Sa'] = '%10.4f < %0.2f  %1s' % (_hvsr_log_std[_i], _t, 'X')
+                _this_peak['Pass List']['Peak Stability (freq. std)'] = False
+
     return _peak
 
 #Get frequency standard deviation
@@ -1416,6 +1573,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
                 if p is None:
                     p = hvsrPeaks[j][k]
                 else:
+                    #Find closest peak in current time to (current) main hvsr peak
                     if abs(index - hvsrPeaks[j][k]) < abs(index - p):
                         p = hvsrPeaks[j][k]
             if p is not None:
@@ -1427,7 +1585,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         stdf.append(np.std(v))
     return stdf
 
-def printreport(export=True):
+def printreport(export=''):
     #print statement
 
     if export:
