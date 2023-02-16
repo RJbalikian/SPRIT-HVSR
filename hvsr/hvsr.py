@@ -272,8 +272,19 @@ def input_param(network='AM',
                         depth = 0,
                         dataPath = '',
                         metaPath = r'resources\raspshake_metadata.inv',
+                        site = 'HVSR SITE',
                         hvsr_band = [0.4, 40] 
                         ):
+
+    #Make Sure metapath is all good
+    if not pathlib.Path(metaPath).exists():
+        print('ERROR: Metadata file does not exist!')
+        repoDir = str(pathlib.Path.cwd())
+        repoDir = repoDir.replace('\\', '/').replace('\\'[0], '/')
+        metaPath=repoDir+'/resources/raspshake_metadata.inv'
+        print('Using default metadata file for Raspberry Shake v.7 contained in repository at\n', metaPath)
+    else:
+        str(metaPath)
 
     #Reformat time
     if type(date) is datetime.datetime:
@@ -314,7 +325,7 @@ def input_param(network='AM',
 
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels,
                     'date':date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
-                    'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth,
+                    'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth, 'site':site,
                     'dataPath':dataPath, 'metaPath':metaPath, 'hvsr_band':hvsr_band
                     }
 
@@ -589,7 +600,7 @@ def fetchdata(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
     return rawDataIN
 
 #Trim data 
-def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
+def trimdata(stream, start, end, exportdir=None, site=None, export=None):
     """Function to trim data to start and end time
         -------------------
         Parameters:
@@ -600,7 +611,7 @@ def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
                                                 Otherwise, exports trimmed stream using obspy write function in format provided as string
                                                 https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
             exportdir: str or pathlib obj   Output file to export trimmed data to; 
-            sitename: str                   Name of site for user reference. It is added as prefix to filename when designated.
+            site: str                   Name of site for user reference. It is added as prefix to filename when designated.
                                                 If not designated, it is not included.
             outfile : str                   Exact filename to output
                                                 If not designated, uses default parameters (from input filename in standard seismic file format)
@@ -615,11 +626,11 @@ def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     #Format export filepath, if exporting
-    if export is not None and sitename is not None and exportdir is not None:
-        if sitename is None:
-            sitename=''
+    if export is not None and site is not None and exportdir is not None:
+        if site is None:
+            site=''
         else:
-            sitename = sitename+'_'
+            site = site+'_'
         export = '.'+export
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
@@ -633,9 +644,9 @@ def trimdata(stream, start, end, exportdir=None, sitename=None, export=None):
         exportdir = checkifpath(exportdir)
         exportdir = str(exportdir)
         if type(export) is str:
-            filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
+            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
         elif type(export) is bool:
-            filename = sitename+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
+            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
 
         exportFile = exportdir+'\\'+filename
 
@@ -686,23 +697,35 @@ def __check_xvalues(ppsds):
         #Do stuff to fix it?
     return
 
-def process_hvsr(ppsds, method=4, site=''):
-    """
-    This function will have all the stuff needed to process HVSR, as updated from local data
-    Based on the notebook
+def process_hvsr(ppsds, method, params):
+    """Process the input data and get HVSR data
+    
+    This data will do the processing of the HVSR data and the data quality checks
 
-    -----------------------
-    Parameters:
-        ppsds   : dict  Dictionary with three key-value pairs containing the PPSD outputs from the three channels from the generatePPSDs function
+    Parameters
+    ----------
+        ppsds   : dict  
+            Dictionary with three key-value pairs containing the PPSD outputs from the three channels from the generatePPSDs function
+        method  : int or str
+            Method to use for combining the horizontal components
+                0) Diffuse field assumption, or 'DFA' (not currently supported)
+                1) 'Arithmetic Mean'
+                2) 'Geometric Mean'
+                3) 'Vector Summation'
+                4) 'Quadratic Mean'
+                5) 'Maximum Horizontal Value'
+        params  : dict
+            Dictionary containing all the parameters input by the user
 
-    -----------------------
-    Return:
+    Returns
+    -------
+        hvsr_out    : dict
+            Dictionary containing all the information about the data, including input parameters
 
     """
     __check_xvalues(ppsds)
     methodList = ['DFA', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
-        
         x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
         x_periods = np.array(ppsds[k].period_bin_centers)
 
@@ -743,7 +766,7 @@ def process_hvsr(ppsds, method=4, site=''):
     hvsr_curve = __get_hvsr_curve(x=x_freqs['EHZ'], psd=psdVals, method=4)
     
     #Add some other variables to our output dictionary
-    hvsr_out = {
+    hvsr_out = {'input_params':params,
                 'x_freqs':x_freqs,
                 'hvsr_curve':np.array(hvsr_curve),
                 'x_period':x_periods,
@@ -753,7 +776,6 @@ def process_hvsr(ppsds, method=4, site=''):
                 'ppsd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
                 'method':methodList[method],
-                'site':site,
                 'ppsds':ppsds
                 }
     
@@ -779,6 +801,10 @@ def process_hvsr(ppsds, method=4, site=''):
 
     hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
     hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+    hvsrPF=[]
+    for p in hvsr_out['hvsr_peak_indices']:
+        hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
+    hvsr_out['hvsr_peak_freqs'] = np.array(hvsrPF)
 
     #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
     hvsr_out = __gethvsrparams(hvsr_out)
@@ -852,26 +878,37 @@ def __gethvsrparams(hvsr_out):
 #Plot HVSR data
 def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
     """Function to plot calculate HVSR data
-       ---------------------
-       Parameters:
-            hvsr_dict   : dict                  Dictionary containing output from process_hvsr function
-            kind        : str='HVSR' or list    The kind of plot(s) to plot. If list, will plot all plots listed
-                                'HVSR'  : Standard HVSR plot, including standard deviation
-                                '[HVSR]c' :HVSR plot with each components' spectra
-                                '[HVSR]p' :HVSR plot with picked peaks shown
-                                '[HVSR]-s: HVSR plots don't show standard deviation
-                                'Specgram': Combined spectrogram of all components
-            xtype       : str='freq'    String for what to use between frequency or period
-                                            For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
-                                            For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
-        --------------------
-        Returns:
+       
+       Parameters
+       ----------
+            hvsr_dict   : dict                  
+                Dictionary containing output from process_hvsr function
+            kind        : str='HVSR' or list    
+                The kind of plot(s) to plot. If list, will plot all plots listed
+                    'HVSR'  : Standard HVSR plot, including standard deviation
+                        '[HVSR] c' :HVSR plot with each components' spectra
+                        '[HVSR] p' :HVSR plot with best peaks shown
+                            '[HVSR] p' : HVSR plot with best picked peak shown                
+                            '[HVSR] p* all' : HVSR plot with all picked peaks shown                
+                            '[HVSR] p* t' : HVSR plot with peaks from all time steps in background                
+                            '[HVSR p* ann]  : Annotates plot with peaks
+                        '[HVSR] -s' : HVSR plots don't show standard deviation
+                        '[HVSR] t'  : HVSR plot with individual hv curves for each time step shown
+                    'Specgram': Combined spectrogram of all components
+            xtype       : str='freq'    
+                String for what to use between frequency or period
+                    For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
+                    For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
+            **kwargs    : keyword arguments
+                Keyword arguments for matplotlib.pyplot (still working on this)
+        Returns
+        -------
             fig, ax
         
     """
     freqList = ['F', 'HZ', 'FREQ', 'FREQUENCY']
     perList = 'P', 'T', 'S', 'SEC', 'SECOND' 'PER', 'PERIOD'
-    
+
     if xtype.upper() in freqList:
         xtype='x_freqs'
     elif xtype.upper() in perList:
@@ -888,7 +925,6 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
         if 'HVSR' in kind.upper():
             fig, ax = __plot_hvsr(hvsr_dict, kind, xtype, kwargs=kwargs)
         if 'specgram' in kind.lower() or 'spectrogram' in kind.lower():
-
             fig, ax = __plot_specgram(hvsr_dict, kwargs=kwargs)
 
     return fig, ax
@@ -897,45 +933,108 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', **kwargs):
 def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
+    kwargs = kwargs['kwargs']
+
+    if 'xlim' not in kwargs.keys():
+        xlim = hvsr_dict['hvsr_band']
+    else:
+        xlim = kwargs['xlim']
+    
+    if 'ylim' not in kwargs.keys():
+        ylim = [0, max(hvsr_dict['hvsrp2'])]
+    else:
+        ylim = kwargs['ylim']
+    
     fig, ax = plt.subplots()
+
+    if 'grid' in kwargs.keys():
+        plt.grid(which=kwargs['grid'], alpha=0.25)
 
     if xtype=='x_freqs':
         xlabel = 'Frequency [Hz]'
     else:
         xlabel = 'Period [s]'
         
-    x = hvsr_dict[xtype]
+    anyKey = list(hvsr_dict[xtype].keys())[0]
+    x = hvsr_dict[xtype][anyKey][:-1]
     y = hvsr_dict['hvsr_curve']
     
-    for i, k in enumerate(x):
-        x[k] = x[k][:-1].copy()
-        hvsr_dict['hvsr_std'][k]=hvsr_dict['hvsr_std'][k][:-1].copy()
-    
-    x = x['EHZ']
-    plt.plot(x, y, color='k', label='H/V Ratio', zorder=0)
+    #hvsr_std={}
+    #for i, k in enumerate(hvsr_dict['hvsr_std']):
+    #    hvsr_std[k]=hvsr_dict['hvsr_std'][k][:-1].copy()
+
+    plt.plot(x, y, color='k', label='H/V Ratio', zorder=100)
+
+    plt.semilogx()
+    plt.ylim(ylim)
+    plt.xlim(xlim)
+
+    if 'p' in kind.lower() and 'all' not in kind.lower():
+        bestPeakScore = 0
+        for i, p in enumerate(hvsr_dict['Peak Report']):
+            if p['Score'] > bestPeakScore:
+                bestPeak = p
+                bestPeakIndx = i
+
+        plt.vlines(bestPeak['f0'], 0, 50, colors='k', linestyles='dotted', label='Peak')          
+        if 'ann' in kind.lower():
+            plt.annotate('Peak at '+str(round(bestPeak['f0'],2))+'Hz', (bestPeak['f0'], 0.1), xycoords='data', 
+                            horizontalalignment='center', verticalalignment='bottom', 
+                            bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+
+    if 'all' in kind.lower() and 'p' in kind.lower():
+        plt.vlines(hvsr_dict['hvsr_peak_freqs'], 0, 50, colors='k', linestyles='dotted', label='Peak')          
+        if 'ann' in kind.lower():
+            for i, p in enumerate(hvsr_dict['hvsr_peak_freqs']):
+                y = hvsr_dict['hvsr_curve'][hvsr_dict['hvsr_peak_indices'][i]]
+                plt.annotate('Peak at '+str(round(p,2))+'Hz', (p, 0.1), xycoords='data', 
+                                horizontalalignment='center', verticalalignment='bottom', 
+                                bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+
+    if 't' in kind.lower():
+        for t in hvsr_dict['ind_hvsr_peak_indices']:
+            for i, v in enumerate(t):
+                v= x[v]
+                if i==0:
+                    width = (x[i+1]-x[i])/16
+                else:
+                    width = (x[i]-x[i-1])/16
+                plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05)
+
     if '-s' not in kind.lower():
-        sdList = []
-        for cSD in hvsr_dict['hvsr_std']:
-            sdList.append(hvsr_dict['hvsr_std'][cSD])
-        sdArr = np.array(sdList)
-        sdArr = np.sqrt(np.mean(sdArr, axis=0)) #This is probably not right
-        stArrbelow = np.subtract(y, sdArr)
-        stArrabove = np.add(y, sdArr)
-        
-        plt.fill_between(x, stArrbelow, stArrabove, color='k', alpha=0.1)
+        plt.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev')
+
+        #sdList = []
+        #for cSD in hvsr_std:
+        #    sdList.append(hvsr_std[cSD])
+        #sdArr = np.array(sdList)
+        #sdArr = np.sqrt(np.mean(sdArr, axis=0)) #This is probably not right
+        #stArrbelow = np.subtract(y, sdArr)
+        #stArrabove = np.add(y, sdArr)
+        #plt.fill_between(x, stArrbelow, stArrabove, color='k', alpha=0.1)
     plt.xlabel(xlabel)
     plt.ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
-    plt.title(hvsr_dict['site'])
+    plt.title(hvsr_dict['input_params']['site'])
     plt.legend(loc='upper right')
     
+
     if 'c' in kind.lower():
         if '+c' in kind.lower():
             plt.legend()
             plt.semilogx()
-            plt.xlim([0.2,50])
+            plt.xlim(xlim)
+            plt.ylim(ylim)
             plt.show()
+
             fig, ax = plt.subplots()
             axis = ax
+            plt.gca()            
+            plt.semilogx()
+            plt.xlim(xlim)
+            plt.xlabel(xlabel)
+            plt.ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+            plt.title(hvsr_dict['input_params']['site'])
+
             linalpha = 1
             stdalpha = 0.1
         else:
@@ -944,16 +1043,10 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
             stdalpha = 0.02
 
         #Plot individual components
-        stDev = {}
-        stDevVals={}
         y={}
         for k in hvsr_dict['psd_values']:
-            y[k] = np.array(hvsr_dict['psd_values'][k])
-            y[k] = y[k][:-1]
+            y[k] = hvsr_dict['psd_values'][k][:-1]
 
-            stDev[k] = np.std(y[k], axis=0)
-            stDevVals[k] = np.array(y[k] - stDev[k])
-            stDevVals[k] = np.stack([stDevVals[k], (y[k] + stDev[k])])
             if k == 'EHZ':
                 pltColor = 'k'
             elif k =='EHE':
@@ -962,13 +1055,12 @@ def __plot_hvsr(hvsr_dict, kind, xtype, **kwargs):
                 pltColor = 'r'
             
             axis.plot(x, y[k], c=pltColor, label=k, alpha=linalpha)
-            axis.fill_between(x, stDevVals[k][0], stDevVals[k][1], color=pltColor, alpha=stdalpha)
+            axis.fill_between(x, hvsr_dict['ppsd_std_vals_m'][k][:-1], hvsr_dict['ppsd_std_vals_p'][k][:-1], color=pltColor, alpha=stdalpha)
             #plt.gca(axis)
             #plt.plot(x_freqs[k], stDevVals[k][0], color='k', alpha=0.5)
             #plt.plot(x_freqs[k], stDevVals[k][1], color='k', alpha=0.5)
         plt.legend(loc='upper left')
-    plt.semilogx()
-    plt.xlim([0.2,50])
+
     plt.show()
     
     return fig, ax
