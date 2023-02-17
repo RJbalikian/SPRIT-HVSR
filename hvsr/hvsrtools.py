@@ -47,7 +47,7 @@ def get_char(in_char):
 
 def time_it(_t):
     """Compute elapsed time since the last call."""
-    t1 = time.time()
+    t1 = datetime.datetime.now().time()
     dt = t1 - _t
     t = _t
     if dt > 0.05:
