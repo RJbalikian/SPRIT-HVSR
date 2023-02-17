@@ -419,9 +419,9 @@ def update_shake_metadata(filepath, params, write):
     tpf = tempfile.NamedTemporaryFile(delete=False)
     stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
     tpf.write(stringRoot)
-    tpf.close()
 
     inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
+    tpf.close()
     params['inv'] = inv
 
     os.remove(tpf.name)
@@ -431,7 +431,6 @@ def update_shake_metadata(filepath, params, write):
 def get_metadata(params, write=False):
     """Get Shake metadata and output as paz parameter needed for PPSD
     Parameters:
-        inv     : str, pathlib path, or obspy inventory object
         params
         write
     """
