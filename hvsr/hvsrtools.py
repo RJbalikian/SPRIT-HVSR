@@ -12,8 +12,6 @@ import obspy
 import numpy as np
 import scipy
 
-import hvsr.oldhvsrtools.msgLib as msgLib
-
 """
 This file contains all the updated functions needed
 """
@@ -89,7 +87,7 @@ def checkifpath(filepath):
             filepath = pathlib.Path(filepath)
             #print('Converted string to pathlib path') #Assume a string was input rather than pathlib object
         except:
-            msgLib.error('Input cannot be converted to pathlib path', 0)
+            error('Input cannot be converted to pathlib path', 0)
     return filepath
 
 #Formats time into desired output
@@ -520,7 +518,7 @@ def get_metadata(params, write=False):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
+def fetch_data(params):
 
     """Fetch ambient seismic data from a source to read into obspy stream
         Parameters
@@ -542,8 +540,11 @@ def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
         rawDataIN : obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
-
+    datapath = params['dataPath']
+    inv = params['inv'], 
+    date=params['acq_date']
     datapath = checkifpath(datapath)
+    inst = params['instrument']
 
     #Need to put dates and times in right formats first
     if type(date) is datetime.datetime:
@@ -555,9 +556,9 @@ def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
         year = date.year
     elif type(date) is tuple:
         if date[0]>366:
-            msgLib.error('First item in date tuple must be day of year (0-366)', 0)
+            error('First item in date tuple must be day of year (0-366)', 0)
         elif date[1] > datetime.datetime.now().year:
-            msgLib.error('Second item in date tuple should be year, but given item is in the future', 0)
+            error('Second item in date tuple should be year, but given item is in the future', 0)
         else:
             doy = date[0]
             year = date[1]
@@ -574,12 +575,12 @@ def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
             doy = date.timetuple().tm_yday
             year = date.year
         elif int(dateSplit[0])<=12 and int(dateSplit[2]) > 31:
-            msgLib.info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Will attempt to parse date.")
+            info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Will attempt to parse date.")
             date = datetime.datetime(int(dateSplit[2]), int(dateSplit[0]), int(dateSplit[1]))
             doy = date.timetuple().tm_yday
             year = date.year
         else:
-            msgLib.info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Cannot parse date.")
+            info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Cannot parse date.")
     else: #FOR NOW, need to update
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
@@ -588,17 +589,31 @@ def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
 
     print('Day of Year:', doy)
 
-    if inst=='raspshake':
-        folderList = []
+    raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    if inst.lower() in raspShakeInstNameList:
+        fileList = []
         folderPathList = []
-        for child in datapath.iterdir():
-            if child.is_dir():
-                folderPathList.append(child)
-                folderList.append(child.stem.split('.')[0])
-        folderList.sort(reverse=True) #Channels in Z, N, E order
+        filesinfolder = False
 
-        if len(folderList) !=3:
-            msgLib.error('3 channels needed!', 1)
+        for child in datapath.iterdir():
+            #print(child.name)
+            if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
+                filesinfolder = True
+                folderPathList.append(datapath)
+                fileList.append(child.name)
+            elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
+                folderPathList.append(child.name)
+                for c in child.iterdir():
+                    if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
+                        fileList.append(child.name)
+
+        fileList.sort(reverse=True)
+        filepaths = []
+        for i, f in enumerate(fileList):
+            filepaths.append(str(folderPathList[i])+'\\'+f)
+
+        if len(folderPathList) !=3:
+            error('3 channels needed!', 1)
         else:
             filepaths = []
             for folder in folderPathList:
@@ -607,14 +622,13 @@ def fetch_data(datapath, inv, date=datetime.datetime.today(), inst='raspshake'):
                         filepaths.append(file)
 
             if len(filepaths) == 0:
-                msgLib.info('No file found for specified day/year. The following days/files exist for specified year in this directory')
+                info('No file found for specified day/year. The following days/files exist for specified year in this directory')
                 doyList = []
                 for j, folder in enumerate(folderPathList):
                     for i, file in enumerate(folder.iterdir()):
                         if j ==0:
                             doyList.append(str(year) + ' ' + str(file.name[-3:]))
                             print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
-
             traceList = []
             for i, f in enumerate(filepaths):
                 with warnings.catch_warnings():
