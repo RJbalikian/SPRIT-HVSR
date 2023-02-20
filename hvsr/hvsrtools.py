@@ -1,3 +1,8 @@
+"""
+This module contains all the functions needed to run the HVSR analysis
+"""
+
+
 import datetime
 import math
 import os
@@ -12,10 +17,6 @@ import obspy
 import numpy as np
 import scipy
 
-"""
-This file contains all the updated functions needed
-"""
-
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -29,14 +30,14 @@ plotRows = 4
 def check_mark():
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
-    #This does not seem to be a problem for my system at least
+    #This does not seem to be a problem for my system at least, so am not using it currently
     check = get_char(u'\u2714')
     #if sys.platform == 'win32':
     #    check = get_char(u'\u039E')
     return check
 
 def get_char(in_char):
-    """Output character with proper encoding/decoding"""
+    """Outputs character with proper encoding/decoding"""
     if in_char in greek_chars.keys():
         out_char = greek_chars[in_char].encode(encoding='utf-8')
     else:
@@ -44,7 +45,7 @@ def get_char(in_char):
     return out_char.decode('utf-8')
 
 def time_it(_t):
-    """Compute elapsed time since the last call."""
+    """Computes elapsed time since the last call."""
     t1 = datetime.datetime.now().time()
     dt = t1 - _t
     t = _t
@@ -56,29 +57,37 @@ def time_it(_t):
 ##msgLib functions
 #Post message
 def message(post_message):
-    """print a run message"""
+    """Prints a run message"""
     bar = "*" * 12
     print("%s %s %s" % (bar, post_message, bar))
 
 #Post error
 def error(err_message, code):
-    """print an error message"""
+    """Prints an error message"""
     print("\n[ERR] %s\n" % err_message, flush=True)
     return code
 
 #Post warning
 def warning(sender, warn_message):
-    """print a warning message"""
+    """Print a warning message"""
     print("[WARN] from %s: %s" % (sender, warn_message), flush=True)
 
 #Post info message
 def info(info_message):
-    """print an informative message"""
+    """Prints an informative message"""
     print("[INFO] %s" % info_message, flush=True)
     return
 
 #Converts filepaths to pathlib paths, if not already
 def checkifpath(filepath):
+    """Support function to check if a filepath is a pathlib.Path object
+
+    Parameters
+    ----------
+    filepath : str or pathlib.Path, or anything
+        Filepath to check. If not a valid filepath, will not convert and raises error
+    """
+
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
@@ -92,19 +101,25 @@ def checkifpath(filepath):
 
 #Formats time into desired output
 def __formatTime(inputDT, tzone='utc', dst=True):
-    """
-    Formats input time to datetime objects in utc
-    --------------
-    Parameters:
-        inputDT : str or datetime obj input datetime. Can include date and time, just date (time inferred to be 00:00:00.00) or just time (if so, date is set as today)
-        tzone   : str='utc' or int {'utc', 'local'} timezone of data entry. 
-                    If string and not utc, assumed to be timezone of computer running the process.
-                    If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT in the United States is -5)
-        dst     : bool=True If any string aside from 'utc' is specified for tzone, this will adjust according to daylight savings time. If tzone is int, no adjustment made
+    """Private function to format time, used in other functions
 
-    --------------
-    Returns:
-        outputTimeObj   : datetime object in UTC
+    Formats input time to datetime objects in utc
+
+    Parameters
+    ----------
+    inputDT : str or datetime obj 
+        Input datetime. Can include date and time, just date (time inferred to be 00:00:00.00) or just time (if so, date is set as today)
+    tzone   : str='utc' or int {'utc', 'local'} 
+        Timezone of data entry. 
+            If string and not utc, assumed to be timezone of computer running the process.
+            If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT in the United States is -5)
+    dst     : bool=True 
+        If any string aside from 'utc' is specified for tzone, this will adjust according to daylight savings time. 
+            If tzone is int, no adjustment is made
+
+    Returns
+    -------
+    outputTimeObj   : datetime object in UTC
 
     """
     if type(inputDT) is str:
@@ -241,11 +256,12 @@ def __formatTime(inputDT, tzone='utc', dst=True):
 
 #Sort Channels later
 def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
-    """"
+    """"Private function to sort channels. Not currently used
+    
     Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
-        ----------------
         Parameters
-            channels    : list = ['EHZ', 'EHN', 'EHE']
+        ----------
+        channels    : list = ['EHZ', 'EHN', 'EHE']
     """
     channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
@@ -334,24 +350,26 @@ def input_param(network='AM',
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
-def update_shake_metadata(filepath, params, write):
+def update_shake_metadata(filepath, params, write_path=''):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters
 
         PARAMETERS
         ----------
-            filepath    : str or pathlib object
-                Filepath to Raspberry Shake metadata file 
-            params      : dict
-                Dictionary containing necessary keys/values for updating
-                    Necessary keys: 'net', 'sta', 
-                    Optional keys: 'longitude', 'latitude', 'elevation', 'depth'
-            write       : bool or str
-                Whether to write. If not bool, should be filepath to write to
+        filepath    : str or pathlib.Path object
+            Filepath to Raspberry Shake metadata file 
+        params      : dict
+            Dictionary containing necessary keys/values for updating
+                Necessary keys: 'net', 'sta', 
+                Optional keys: 'longitude', 'latitude', 'elevation', 'depth'
+        write_path   : str, optional
+            If specified, filepath to write to updated inventory file to
 
         Returns
         -------
-        updated tree, output filepath
+        params : dict
+            Updated params dict with new key:value pair with updated updated obspy.inventory object (key="inv")
     """
+
     network = params['net']
     station = params['sta']
     optKeys = ['longitude', 'latitude', 'elevation', 'depth']
@@ -405,15 +423,11 @@ def update_shake_metadata(filepath, params, write):
         item.text=depth
 
     #Set up (and) export
-    filetag = '_'+str(datetime.datetime.today().date())
+    #filetag = '_'+str(datetime.datetime.today().date())
+    #outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
 
-    outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
-
-    if type(write) is bool:
-        if write:
-            tree.write(outfile, xml_declaration=True, method='xml',encoding='UTF-8')
-    else:
-        tree.write(write, xml_declaration=True, method='xml',encoding='UTF-8')
+    if write_path is not '':
+        tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
 
     #Create temporary file for reading into obspy
     tpf = tempfile.NamedTemporaryFile(delete=False)
@@ -428,11 +442,22 @@ def update_shake_metadata(filepath, params, write):
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write=False):
-    """Get Shake metadata and output as paz parameter needed for PPSD
-    Parameters:
-        params
-        write
+def get_metadata(params, write_path=''):
+    """Get metadata and calculate or get paz parameter needed for PPSD
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary containing all the input and other parameters needed for processing
+            Ouput from input_params() function
+    write_path : str
+        String with output filepath of where to write updated inventory or metadata file
+            If not specified, does not write file 
+
+    Returns
+    -------
+    params : dict
+        Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
     invPath = params['metaPath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
@@ -465,6 +490,9 @@ def get_metadata(params, write=False):
         #Close and remove temporary file
         tpf.close()
         os.remove(tpf.name)
+
+    if write_path is not '':
+        inv.write(write_path)
 
     c=channels[0]
     pzList = [str(n) for n in list(range(7))]
@@ -518,24 +546,25 @@ def get_metadata(params, write=False):
 
 #Reads in traces to obspy stream
 def fetch_data(params):
-
     """Fetch ambient seismic data from a source to read into obspy stream
+        
         Parameters
         ----------
-        datapath : str or pathlib path
+        datapath : str or pathlib.Path
             Path to directory containing data. For Raspberry Shakes, 
-            this is the directory where the channel folders are located.
-        inv     : obspy inventory object containing metadata for instrument that collected data to be fetched
+            this is the directory where either the channel folders or three channel files themeselves are located.
+        inv     : obspy inventory object 
+            Obspy inventory object containing metadata for instrument that collected data to be fetched
         date : str, tuple, or date object
             Date for which to read in the data traces. 
-            If string, will attempt to decode to convert to a date format.
-            If tuple, assumes first item is day of year (DOY) and second item is year 
-            If date object, will read it in directly.
-        inst : str {'raspshake}
+                If string, will attempt to decode to convert to a date format.
+                If tuple, assumes first item is day of year (DOY) and second item is year 
+                If date object, will read it in directly and extract important information
+        inst : str
             The type of instrument from which the data is reading. Currently, only raspberry shake supported
         
         Returns
-        ---------
+        -------
         rawDataIN : obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
@@ -588,81 +617,103 @@ def fetch_data(params):
 
     print('Day of Year:', doy)
 
+    #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if inst.lower() in raspShakeInstNameList:
-        fileList = []
-        folderPathList = []
-        filesinfolder = False
+        rawDataIN = __read_RS_data(datapath, year, doy, inv)
 
-        for child in datapath.iterdir():
-            #print(child.name)
-            if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
-                filesinfolder = True
-                folderPathList.append(datapath)
-                fileList.append(child.name)
-            elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
-                folderPathList.append(child.name)
-                for c in child.iterdir():
-                    if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
-                        fileList.append(child.name)
-
-        fileList.sort(reverse=True)
-        filepaths = []
-        for i, f in enumerate(fileList):
-            filepaths.append(str(folderPathList[i])+'\\'+f)
-
-        if len(folderPathList) !=3:
-            error('3 channels needed!', 1)
-        else:
-            filepaths = []
-            for folder in folderPathList:
-                for file in folder.iterdir():
-                    if str(doy) in str(file.name) and str(year) in str(file.name):
-                        filepaths.append(file)
-
-            if len(filepaths) == 0:
-                info('No file found for specified day/year. The following days/files exist for specified year in this directory')
-                doyList = []
-                for j, folder in enumerate(folderPathList):
-                    for i, file in enumerate(folder.iterdir()):
-                        if j ==0:
-                            doyList.append(str(year) + ' ' + str(file.name[-3:]))
-                            print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
-            traceList = []
-            for i, f in enumerate(filepaths):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    st = obspy.read(str(f))
-                    tr = (st[0])
-                    #tr= obspy.Trace(tr.data,header=meta)
-                    traceList.append(tr)
-            rawDataIN = obspy.Stream(traceList)
-            rawDataIN.attach_response(inv)
-    if 'Z' in str(rawDataIN.traces[0])[12:15]:
+    if 'Z' in str(rawDataIN.traces[0])split('.')[3]:#[12:15]:
         pass
     else:
         rawDataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
     return rawDataIN
 
+def __read_RS_data(datapath, year, doy, inv):
+    """"Private function used by fetch_data() to read in Raspberry Shake data"""
+    fileList = []
+    folderPathList = []
+    filesinfolder = False
+
+    for child in datapath.iterdir():
+        #print(child.name)
+        if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
+            filesinfolder = True
+            folderPathList.append(datapath)
+            fileList.append(child.name)
+        elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
+            folderPathList.append(child.name)
+            for c in child.iterdir():
+                if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
+                    fileList.append(child.name)
+
+    fileList.sort(reverse=True)
+    filepaths = []
+    for i, f in enumerate(fileList):
+        filepaths.append(str(folderPathList[i])+'\\'+f)
+
+    if len(folderPathList) !=3:
+        error('3 channels needed!', 1)
+    else:
+        filepaths = []
+        for folder in folderPathList:
+            for file in folder.iterdir():
+                if str(doy) in str(file.name) and str(year) in str(file.name):
+                    filepaths.append(file)
+
+        if len(filepaths) == 0:
+            info('No file found for specified day/year. The following days/files exist for specified year in this directory')
+            doyList = []
+            for j, folder in enumerate(folderPathList):
+                for i, file in enumerate(folder.iterdir()):
+                    if j ==0:
+                        doyList.append(str(year) + ' ' + str(file.name[-3:]))
+                        print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
+        traceList = []
+        for i, f in enumerate(filepaths):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                st = obspy.read(str(f))
+                tr = (st[0])
+                #tr= obspy.Trace(tr.data,header=meta)
+                traceList.append(tr)
+        rawDataIN = obspy.Stream(traceList)
+        rawDataIN.attach_response(inv)
+    return rawDataIN
+
 #Trim data 
-def trim_data(stream, start, end, exportdir=None, site=None, export=None):
+def trim_data(stream, start, end, export_dir=None, site=None, export_format=None):
     """Function to trim data to start and end time
-        -------------------
-        Parameters:
-            stream  : obspy.stream object   Stream to be trimmed
-            start   : datetime object       Start time of trim, in UTC
-            end     : datetime object       End time of trim, in UTC
-            export  : str                   If not specified, does not export. 
-                                                Otherwise, exports trimmed stream using obspy write function in format provided as string
-                                                https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
-            exportdir: str or pathlib obj   Output file to export trimmed data to; 
-            site: str                   Name of site for user reference. It is added as prefix to filename when designated.
-                                                If not designated, it is not included.
-            outfile : str                   Exact filename to output
-                                                If not designated, uses default parameters (from input filename in standard seismic file format)
-        ---------------------
-        Returns:
-            st_trimmed  : obspy.stream object Obpsy Stream trimmed to start and end times
+
+        Trim data to start and end times so that stream being analyzed only contains wanted data.
+        Can also export data to specified directory using a specified site name and/or export_format
+
+        Parameters
+        ----------
+            stream  : obspy.stream object  
+                Obspy stream to be trimmed
+            start   : datetime object       
+                Start time of trim, in UTC
+            end     : datetime object       
+                End time of trim, in UTC
+            export_dir: str or pathlib obj   
+                Output file to export trimmed data to            
+            site: str                   
+                Name of site for user reference. 
+                    It is added as prefix to filename when designated.
+                    If not designated, it is not included.
+            export_format  : str or True    
+                If not specified, does not export. 
+                    Otherwise, exports trimmed stream using obspy write function in format provided as string
+                    https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
+                If specified as True, defaults to .mseed
+            outfile : str                   
+                Exact filename to output
+                    If not designated, uses default parameters (from input filename in standard seismic file format)
+        
+        Returns
+        -------
+            st_trimmed  : obspy.stream object 
+                Obpsy Stream trimmed to start and end times
     """
     st_trimmed = stream.copy()
 
@@ -671,12 +722,12 @@ def trim_data(stream, start, end, exportdir=None, site=None, export=None):
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     #Format export filepath, if exporting
-    if export is not None and site is not None and exportdir is not None:
+    if export_format is not None and site is not None and exportdir is not None:
         if site is None:
             site=''
         else:
             site = site+'_'
-        export = '.'+export
+        export_format = '.'+export_format
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
@@ -686,14 +737,14 @@ def trim_data(stream, start, end, exportdir=None, site=None, export=None):
         endT = str(st_trimmed[0].stats.endtime.time)[0:2]
         endT = endT+str(st_trimmed[0].stats.endtime.time)[3:5]
 
-        exportdir = checkifpath(exportdir)
-        exportdir = str(exportdir)
-        if type(export) is str:
-            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export
-        elif type(export) is bool:
+        export_dir = checkifpath(export_dir)
+        export_dir = str(export_dir)
+        if type(export_format) is str:
+            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export_format
+        elif type(export_format) is bool:
             filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
 
-        exportFile = exportdir+'\\'+filename
+        exportFile = export_dir+'\\'+filename
 
         st_trimmed.write(filename=exportFile)
     else:
@@ -704,18 +755,25 @@ def trim_data(stream, start, end, exportdir=None, site=None, export=None):
 #Generate PPSDs for each channel
 def generate_ppsds(stream, paz, ppsd_length=60, **kwargs):
     """Generates PPSDs for each channel
+
         Channels need to be in Z, N, E order
         Info on PPSD creation here: https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html
-        ---------------------
-        Parameters:
-            stream  :   obspy stream object from which to pull data
-            paz     :   dictionary of dictionaries    a dictionary with dictionaries containing poles and zeros (paz) info for each channel, from inv file
-            ppsd_length:  length of data passed to psd, in seconds. Per obspy: Longer segments increase the upper limit of analyzed periods but decrease the number of analyzed segments.
-            **kwargs:   keyword arguments that can be passed to obspy.signal.PPSD
+        
+        Parameters
+        ----------
+            stream  :   obspy.stream object 
+                Obspy data stream from which to pull data
+            paz     :   dict
+                Dictionary containing dictionaries containing poles and zeros (paz) info for each channel, from inventory file or other metadata
+            ppsd_length :  int
+                length of data passed to psd, in seconds. Per obspy: Longer segments increase the upper limit of analyzed periods but decrease the number of analyzed segments.
+            **kwargs : dict
+                Dictionary with keyword arguments that can be passed to obspy.signal.PPSD
 
-        ----------------------
-        Returns:
-            ppsds   :   dictionary containing entries with ppsds for each channel
+        Returns
+        -------
+            ppsds   :   dict
+                Dictionary containing entries with ppsds for each channel
     """
     from obspy.imaging.cm import viridis_white_r
     from obspy.signal import PPSD
@@ -745,7 +803,8 @@ def __check_xvalues(ppsds):
 def process_hvsr(ppsds, method, params):
     """Process the input data and get HVSR data
     
-    This data will do the processing of the HVSR data and the data quality checks
+    This is the main function that uses other (private) functions to do 
+    the bulk of processing of the HVSR data and the data quality checks.
 
     Parameters
     ----------
@@ -859,13 +918,17 @@ def process_hvsr(ppsds, method, params):
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
 def __get_hvsr_curve(x, psd, method=4):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
-    -------------------
-    Parameters:
-        x = x value (frequency or period)
+
+    Parameters
+    ----------
+        x   : list or array_like
+            x value (frequency or period)
         psd = 3-component dictionary
-    --------------------
-    Returns:
-        hvsr_curve  :   list containing H/V ratios at each frequency/period in x
+    
+    Returns
+    -------
+        hvsr_curve  : list
+            List containing H/V ratios at each frequency/period in x
     """
     hvsr_curve = []
     for j in range(len(x)-1):
@@ -922,7 +985,7 @@ def __gethvsrparams(hvsr_out):
 
 #Plot HVSR data
 def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
-    """Function to plot calculate HVSR data
+    """Function to plot HVSR data
        
        Parameters
        ----------
@@ -1825,7 +1888,16 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def print_report(export=''):
+def print_report(export='', format='print'):
+    """Print a report of the HVSR analysis (not currently implemented)
+    
+    Parameters
+    ----------
+    export : str
+        Filepath path for export. If not specified, report name is generated automatically and placed in current directory
+    format : {'print', 'docx', '...'}
+        Format in which to print or export the report
+    """
     #print statement
 
     if export:
