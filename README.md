@@ -1,7 +1,6 @@
 # Python HVSR Toolset
 
-- HoVerSpectRa
-- SpRIT (HV): Spectral Ratio Investigation Toolset (Horizontal Vertical Ratio)
+- SpRITe (HV): Spectral Ratio Investigation Toolset (Horizontal Vertical Ratio)
 
 
 This python package is a re-packaged version of the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.[1]
