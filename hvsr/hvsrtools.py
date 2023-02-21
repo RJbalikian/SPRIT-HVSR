@@ -753,7 +753,7 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
     return st_trimmed
 
 #Generate PPSDs for each channel
-def generate_ppsds(stream, paz, ppsd_length=60, **kwargs):
+def generate_ppsds(params, stream, paz, ppsd_length=60, **kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -787,7 +787,8 @@ def generate_ppsds(stream, paz, ppsd_length=60, **kwargs):
     ppsdZ.add(stream, verbose=False)
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
-    return ppsds
+    params['ppsds'] = ppsds
+    return params
 
 def __check_xvalues(ppsds):
     xLengths = []
@@ -800,7 +801,8 @@ def __check_xvalues(ppsds):
         #Do stuff to fix it?
     return
 
-def process_hvsr(ppsds, method, params):
+#Main function for processing HVSR Curve
+def process_hvsr(params, method=4):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -827,8 +829,9 @@ def process_hvsr(ppsds, method, params):
             Dictionary containing all the information about the data, including input parameters
 
     """
+    ppsds=params['ppsds']
     __check_xvalues(ppsds)
-    methodList = ['DFA', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
         x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
         x_periods = np.array(ppsds[k].period_bin_centers)
@@ -869,6 +872,8 @@ def process_hvsr(ppsds, method, params):
     #This gets the hvsr curve averaged from all time steps     
     hvsr_curve = __get_hvsr_curve(x=x_freqs['EHZ'], psd=psdVals, method=4)
     
+    if type(method) is int:
+        method = methodList[method]
     #Add some other variables to our output dictionary
     hvsr_out = {'input_params':params,
                 'x_freqs':x_freqs,
@@ -879,7 +884,7 @@ def process_hvsr(ppsds, method, params):
                 'ppsd_std':stDev,
                 'ppsd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
-                'method':methodList[method],
+                'method':method,
                 'ppsds':ppsds
                 }
     
@@ -915,6 +920,102 @@ def process_hvsr(ppsds, method, params):
 
     return hvsr_out
 
+def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, median_daily_psd, verbose):
+    """Function for performing Diffuse Field Assumption (DFA) analysis
+    
+    """
+    # Are we doing DFA?
+    # Use equal energy for daily PSDs to give small 'events' a chance to contribute
+    # the same as large ones, so that P1+P2+P3=1
+    
+    method=params['method']
+    
+    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+    dfaList = ['dfa', 'diffuse field', 'diffuse field assumption']
+    if type(method) is int:
+        method = methodList[method]
+        
+    if method in dfaList:
+        if verbose:
+            print('[INFO] Diffuse Field Assumption', flush=True)
+            display = False
+        sum_ns_power = list()
+        sum_ew_power = list()
+        sum_z_power = list()
+        daily_psd = [{}, {}, {}]
+        day_values = list()
+
+        # Make sure we have all 3 components for every time sample
+        for day_time in day_time_values:
+            if day_time not in (day_time_psd[0].keys()) or day_time not in (day_time_psd[1].keys()) or day_time not in (
+            day_time_psd[2].keys()):
+                continue
+            day = day_time.split('T')[0]
+            if day not in day_values:
+                day_values.append(day)
+
+            # Initialize the daily PSDs.
+            if day not in daily_psd[0].keys():
+                daily_psd[0][day] = list()
+                daily_psd[1][day] = list()
+                daily_psd[2][day] = list()
+
+            daily_psd[0][day].append(day_time_psd[0][day_time])
+            daily_psd[1][day].append(day_time_psd[1][day_time])
+            daily_psd[2][day].append(day_time_psd[2][day_time])
+
+        # For each day equalize energy
+        for day in day_values:
+
+            # Each PSD for the day
+            for i in range(len(daily_psd[0][day])):
+                Pz = list()
+                P1 = list()
+                P2 = list()
+                sum_pz = 0
+                sum_p1 = 0
+                sum_p2 = 0
+
+                # Each sample of the PSD , convert to power
+                for j in range(len(x_values) - 1):
+                    pz = hvsrCalcs.get_power([daily_psd[0][day][i][j], daily_psd[0][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    Pz.append(pz)
+                    sum_pz += pz
+                    p1 = hvsrCalcs.get_power([daily_psd[1][day][i][j], daily_psd[1][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    P1.append(p1)
+                    sum_p1 += p1
+                    p2 = hvsrCalcs.get_power([daily_psd[2][day][i][j], daily_psd[2][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    P2.append(p2)
+                    sum_p2 += p2
+
+                sum_power = sum_pz + sum_p1 + sum_p2  # total power
+
+                # Mormalized power
+                for j in range(len(x_values) - 1):
+                    # Initialize if this is the first sample of the day
+                    if i == 0:
+                        sum_z_power.append(Pz[j] / sum_power)
+                        sum_ns_power.append(P1[j] / sum_power)
+                        sum_ew_power.append(P2[j] / sum_power)
+                    else:
+                        sum_z_power[j] += (Pz[j] / sum_power)
+                        sum_ns_power[j] += (P1[j] / sum_power)
+                        sum_ew_power[j] += (P2[j] / sum_power)
+            # Average the normalized daily power
+            for j in range(len(x_values) - 1):
+                sum_z_power[j] /= len(daily_psd[0][day])
+                sum_ns_power[j] /= len(daily_psd[0][day])
+                sum_ew_power[j] /= len(daily_psd[0][day])
+
+            equal_daily_energy[0][day] = sum_z_power
+            equal_daily_energy[1][day] = sum_ns_power
+            equal_daily_energy[2][day] = sum_ew_power
+
+    return 
+
+    
+    return
+
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
 def __get_hvsr_curve(x, psd, method=4):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
@@ -930,6 +1031,8 @@ def __get_hvsr_curve(x, psd, method=4):
         hvsr_curve  : list
             List containing H/V ratios at each frequency/period in x
     """
+    if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
+    
     hvsr_curve = []
     for j in range(len(x)-1):
         psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
@@ -1337,7 +1440,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     """
     H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
         use_method:
-           (1) DFA
+           (1) Diffuse Field Assumption (DFA)
            (2) arithmetic mean, that is, H ≡ (HN + HE)/2
            (3) geometric mean, that is, H ≡ √HN · HE, recommended by the SESAME project (2004)
            (4) vector summation, that is, H ≡ √H2 N + H2 E
