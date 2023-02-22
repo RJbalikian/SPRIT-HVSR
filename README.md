@@ -22,3 +22,5 @@ Aside from the modules in the python standard library, the following package dep
 - [1] http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf
 - [2] https://github.com/iris-edu/HVSR
 - [3] http://service.iris.edu/mustang/
+
+Documentation: https://www.youtube.com/watch?v=b4iFyrLQQh4&ab_channel=avcourt

@@ -308,7 +308,10 @@ def input_param(network='AM',
         date=str(acq_date)
     elif type(acq_date) is str:
         date = acq_date
-
+    elif type(acq_date) is int:
+        year=datetime.datetime.today().year
+        date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
+    
     if type(starttime) is str:
         if 'T' in starttime:
             date=starttime.split('T')[0]
@@ -650,16 +653,18 @@ def __read_RS_data(datapath, year, doy, inv):
     fileList.sort(reverse=True)
     filepaths = []
     for i, f in enumerate(fileList):
-        filepaths.append(str(folderPathList[i])+'\\'+f)
+        folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
+        folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
+        filepaths.append(str(folderPathList[i])+'/'+f)
 
     if len(folderPathList) !=3:
         error('3 channels needed!', 1)
     else:
-        filepaths = []
-        for folder in folderPathList:
-            for file in folder.iterdir():
-                if str(doy) in str(file.name) and str(year) in str(file.name):
-                    filepaths.append(file)
+        #filepaths = []
+        #for folder in folderPathList:
+        #    for file in folder.iterdir():
+        #        if str(doy) in str(file.name) and str(year) in str(file.name):
+        #            filepaths.append(file)
 
         if len(filepaths) == 0:
             info('No file found for specified day/year. The following days/files exist for specified year in this directory')
@@ -723,7 +728,7 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
     st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     #Format export filepath, if exporting
-    if export_format is not None and site is not None and exportdir is not None:
+    if export_format is not None and site is not None and export_dir is not None:
         if site is None:
             site=''
         else:
