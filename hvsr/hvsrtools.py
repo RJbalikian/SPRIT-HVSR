@@ -635,7 +635,6 @@ def __read_RS_data(datapath, year, doy, inv):
     filesinfolder = False
 
     for child in datapath.iterdir():
-        #print(child.name)
         if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
             filesinfolder = True
             folderPathList.append(datapath)
@@ -643,8 +642,8 @@ def __read_RS_data(datapath, year, doy, inv):
         elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
             folderPathList.append(child.name)
             for c in child.iterdir():
-                if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
-                    fileList.append(child.name)
+                if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
+                    fileList.append(c.name)
 
     fileList.sort(reverse=True)
     filepaths = []
