@@ -499,8 +499,8 @@ def get_metadata(params, write_path=''):
         tpf.close()
         os.remove(tpf.name)
 
-    if write_path != '':
-        inv.write(write_path)
+    #if write_path != '':
+    #    inv.write(write_path, format='STATIONXML')
 
     c=channels[0]
     pzList = [str(n) for n in list(range(7))]
