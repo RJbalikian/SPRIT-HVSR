@@ -622,7 +622,7 @@ def fetch_data(params):
     if inst.lower() in raspShakeInstNameList:
         rawDataIN = __read_RS_data(datapath, year, doy, inv)
 
-    if 'Z' in str(rawDataIN.traces[0])split('.')[3]:#[12:15]:
+    if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
         pass
     else:
         rawDataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
