@@ -426,7 +426,7 @@ def update_shake_metadata(filepath, params, write_path=''):
     #filetag = '_'+str(datetime.datetime.today().date())
     #outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
 
-    if write_path is not '':
+    if write_path != '':
         tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
 
     #Create temporary file for reading into obspy
@@ -462,7 +462,7 @@ def get_metadata(params, write_path=''):
     invPath = params['metaPath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if params['instrument'].lower() in  raspShakeInstNameList:
-        params = update_shake_metadata(filepath=invPath, params=params, write=write)
+        params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
     inv = params['inv']
 
     if isinstance(inv, pathlib.PurePath) or type(inv) is str:
@@ -491,7 +491,7 @@ def get_metadata(params, write_path=''):
         tpf.close()
         os.remove(tpf.name)
 
-    if write_path is not '':
+    if write_path != '':
         inv.write(write_path)
 
     c=channels[0]
@@ -753,7 +753,7 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
     return st_trimmed
 
 #Generate PPSDs for each channel
-def generate_ppsds(params, stream, paz, ppsd_length=60, **kwargs):
+def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -775,6 +775,7 @@ def generate_ppsds(params, stream, paz, ppsd_length=60, **kwargs):
             ppsds   :   dict
                 Dictionary containing entries with ppsds for each channel
     """
+    paz=params['paz']
     from obspy.imaging.cm import viridis_white_r
     from obspy.signal import PPSD
     ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
@@ -1517,7 +1518,7 @@ def __find_peaks(_y):
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsrdict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
+def check_peaks(hvsr_dict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
     
     Parameters
@@ -1554,23 +1555,23 @@ def check_peaks(hvsrdict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_ra
     """
     if not hvsr_band:
         hvsr_band = [0.4,40]
-    hvsrdict['hvsr_band'] = hvsr_band
+    hvsr_dict['hvsr_band'] = hvsr_band
 
-    anyK = list(hvsrdict['x_freqs'].keys())[0]
-    x = hvsrdict['x_freqs'][anyK]
-    y = hvsrdict['hvsr_curve']
-    index_list = hvsrdict['hvsr_peak_indices']
-    peak_water_level  = hvsrdict['peak_water_level']
-    hvsrp = hvsrdict['hvsrp']
-    peak_water_level_p  = hvsrdict['peak_water_level_p']
-    hvsrm = hvsrdict['hvsrm']
-    hvsrPeaks = hvsrdict['ind_hvsr_peak_indices']
-    hvsr_log_std = hvsrdict['hvsr_log_std']
+    anyK = list(hvsr_dict['x_freqs'].keys())[0]
+    x = hvsr_dict['x_freqs'][anyK]
+    y = hvsr_dict['hvsr_curve']
+    index_list = hvsr_dict['hvsr_peak_indices']
+    peak_water_level  = hvsr_dict['peak_water_level']
+    hvsrp = hvsr_dict['hvsrp']
+    peak_water_level_p  = hvsr_dict['peak_water_level_p']
+    hvsrm = hvsr_dict['hvsrm']
+    hvsrPeaks = hvsr_dict['ind_hvsr_peak_indices']
+    hvsr_log_std = hvsr_dict['hvsr_log_std']
 
     #Do for hvsr
     peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
 
-    peak = __check_curve_reliability(hvsrdict, peak)
+    peak = __check_curve_reliability(hvsr_dict, peak)
     peak = __check_clarity(x, y, peak, do_rank=True)
 
     #Do for hvsrp
@@ -1590,7 +1591,7 @@ def check_peaks(hvsrdict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_ra
     else:
         index_m = list()
 
-    peak_water_level_m  = hvsrdict['peak_water_level_m']
+    peak_water_level_m  = hvsr_dict['peak_water_level_m']
 
     peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
     peakm = __check_clarity(x, hvsrm, peakm, do_rank=False)
@@ -1607,8 +1608,8 @@ def check_peaks(hvsrdict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_ra
     peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
 
-    hvsrdict['Peak Report'] = peak
-    return hvsrdict
+    hvsr_dict['Peak Report'] = peak
+    return hvsr_dict
 
 #Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
