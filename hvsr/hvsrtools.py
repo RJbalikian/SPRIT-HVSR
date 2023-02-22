@@ -687,7 +687,7 @@ def __read_RS_data(datapath, year, doy, inv):
     return rawDataIN
 
 #Trim data 
-def trim_data(stream, start, end, export_dir=None, site=None, export_format=None):
+def trim_data(stream, params, export_dir=None, export_format=None):
     """Function to trim data to start and end time
 
         Trim data to start and end times so that stream being analyzed only contains wanted data.
@@ -697,16 +697,10 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
         ----------
             stream  : obspy.stream object  
                 Obspy stream to be trimmed
-            start   : datetime object       
-                Start time of trim, in UTC
-            end     : datetime object       
-                End time of trim, in UTC
+            params  : dict
+                Dictionary containing input parameters for trimming
             export_dir: str or pathlib obj   
                 Output file to export trimmed data to            
-            site: str                   
-                Name of site for user reference. 
-                    It is added as prefix to filename when designated.
-                    If not designated, it is not included.
             export_format  : str or True    
                 If not specified, does not export. 
                     Otherwise, exports trimmed stream using obspy write function in format provided as string
@@ -721,6 +715,10 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
             st_trimmed  : obspy.stream object 
                 Obpsy Stream trimmed to start and end times
     """
+    start = params['starttime']
+    end = params['endtime']
+    site = params['site']
+
     st_trimmed = stream.copy()
 
     trimStart = obspy.UTCDateTime(start)
@@ -745,12 +743,18 @@ def trim_data(stream, start, end, export_dir=None, site=None, export_format=None
 
         export_dir = checkifpath(export_dir)
         export_dir = str(export_dir)
+        export_dir = export_dir.replace('\\', '/')
+        export_dir = export_dir.replace('\\'[0], '/')
+
         if type(export_format) is str:
             filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export_format
         elif type(export_format) is bool:
             filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
 
-        exportFile = export_dir+'\\'+filename
+        if export_dir[-1]=='/':
+            export_dir=export_dir[:-1]
+        
+        exportFile = export_dir+'/'+filename
 
         st_trimmed.write(filename=exportFile)
     else:
