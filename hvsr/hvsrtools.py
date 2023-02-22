@@ -386,9 +386,6 @@ def update_shake_metadata(filepath, params, write_path=''):
 
     filepath = checkifpath(filepath)
 
-    parentPath = filepath.parent
-    filename = filepath.stem
-
     tree = ET.parse(str(filepath))
     root = tree.getroot()
 
@@ -425,20 +422,25 @@ def update_shake_metadata(filepath, params, write_path=''):
     #Set up (and) export
     #filetag = '_'+str(datetime.datetime.today().date())
     #outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
-
-    if write_path != '':
+    if write_path and sys.platform=='linux':
+        write_path = '/content/Output/updatedInv.xml'
+        tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
+    elif write_path != '':
         tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
 
-    #Create temporary file for reading into obspy
-    tpf = tempfile.NamedTemporaryFile(delete=False)
-    stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
-    tpf.write(stringRoot)
+    if sys.platform != 'linux':
+        #Create temporary file for reading into obspy
+        tpf = tempfile.NamedTemporaryFile(delete=False)
+        stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
+        tpf.write(stringRoot)
 
-    inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
-    tpf.close()
+        inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
+        tpf.close()
+
+        os.remove(tpf.name)
+    else:
+        inv = obspy.read_inventory(write_path, format='STATIONXML', level='response')
     params['inv'] = inv
-
-    os.remove(tpf.name)
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
