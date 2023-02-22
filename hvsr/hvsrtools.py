@@ -1032,7 +1032,7 @@ def __get_hvsr_curve(x, psd, method=4):
             List containing H/V ratios at each frequency/period in x
     """
     if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
-    
+        pass
     hvsr_curve = []
     for j in range(len(x)-1):
         psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
