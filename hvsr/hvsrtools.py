@@ -425,9 +425,11 @@ def update_shake_metadata(filepath, params, write_path=''):
     #Set up (and) export
     #filetag = '_'+str(datetime.datetime.today().date())
     #outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
-    if write_path and sys.platform=='linux':
+    print(sys.platform)
+    if sys.platform=='linux':
         write_path = '/content/Output/updatedInv.xml'
         tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
+        print(write_path)
     elif write_path != '':
         tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
 
@@ -442,6 +444,7 @@ def update_shake_metadata(filepath, params, write_path=''):
 
         os.remove(tpf.name)
     else:
+        print('Got here')
         inv = obspy.read_inventory(write_path, format='STATIONXML', level='response')
     params['inv'] = inv
     return params
