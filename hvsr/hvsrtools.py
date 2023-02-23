@@ -816,7 +816,20 @@ def __check_xvalues(ppsds):
     else:
         print('X-values (periods or frequencies) do not have the same values. \n This may result in computational errors')
         #Do stuff to fix it?
-    return
+    return ppsds
+
+def __check_tsteps(ppsds):
+    tSteps = []
+    for k in ppsds.keys():
+        tSteps.append(np.array(ppsds[k].psd_values).shape[0])
+    if len(set(tSteps)) <= 1:
+        pass #This means all channels have same number of period_bin_centers
+    else:
+        print('There is a different number of time-steps used to calculate HVSR curves. \n This may result in computational errors. Trimming longest.')
+        minTStep = min(tSteps)
+        for k in ppsds.keys():
+            ppsds[k].psd_values = ppsds[k].psd_values[:minTStep]
+    return ppsds
 
 #Main function for processing HVSR Curve
 def process_hvsr(params, method=4):
@@ -847,7 +860,9 @@ def process_hvsr(params, method=4):
 
     """
     ppsds=params['ppsds']
-    __check_xvalues(ppsds)
+    ppsds = __check_xvalues(ppsds)
+    ppsds = __check_tsteps(ppsds)
+
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
         x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
@@ -1690,7 +1705,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
 
     delta = hvsr_dict['ppsds'][anyKey].delta
     window_len = (hvsr_dict['ppsds'][anyKey].len * delta) #Window length in seconds
-    window_num = len(hvsr_dict['ppsds'][anyKey].times_processed)    
+    window_num = np.array(hvsr_dict['ppsds'][anyKey].psd_values).shape[0]
 
     for _i in range(len(_peak)):
         peakFreq= _peak[_i]['f0']
