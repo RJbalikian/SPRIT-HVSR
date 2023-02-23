@@ -827,9 +827,7 @@ def __check_tsteps(ppsds):
     else:
         print('There is a different number of time-steps used to calculate HVSR curves. \n This may result in computational errors. Trimming longest.')
         minTStep = min(tSteps)
-        for k in ppsds.keys():
-            ppsds[k].psd_values = ppsds[k].psd_values[:minTStep]
-    return ppsds
+    return minTStep
 
 #Main function for processing HVSR Curve
 def process_hvsr(params, method=4):
@@ -861,7 +859,7 @@ def process_hvsr(params, method=4):
     """
     ppsds=params['ppsds']
     ppsds = __check_xvalues(ppsds)
-    ppsds = __check_tsteps(ppsds)
+    minTStep = __check_tsteps(ppsds)
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
@@ -923,7 +921,7 @@ def process_hvsr(params, method=4):
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
-    for tStep in range(hvsr_out['psd_raw'][anyK].shape[0]):
+    for tStep in range(minTStep):
         tStepDict = {}
         for k in hvsr_out['psd_raw']:
             tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
