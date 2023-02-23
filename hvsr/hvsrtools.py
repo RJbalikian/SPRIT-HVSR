@@ -552,7 +552,7 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv):
+def fetch_data(params, inv=None):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -640,6 +640,7 @@ def fetch_data(params, inv):
 
 def __read_RS_data(datapath, year, doy, inv, params):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
+    from obspy.core import UTCDateTime
     fileList = []
     folderPathList = []
     filesinfolder = False
@@ -683,7 +684,7 @@ def __read_RS_data(datapath, year, doy, inv, params):
         for i, f in enumerate(filepaths):
             with warnings.catch_warnings():
                 warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                st = obspy.read(str(f), starttime=params['starttime'], endttime=params['endtime'])
+                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']))
                 tr = (st[0])
                 #tr= obspy.Trace(tr.data,header=meta)
                 traceList.append(tr)
