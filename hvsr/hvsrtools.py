@@ -447,6 +447,8 @@ def update_shake_metadata(filepath, params, write_path=''):
 def setup_colab():
     dataDir = '/content/Data/'
     outputDir = '/content/Output'
+    if not os.path.exists(dataDir):
+        os.makedirs(dataDir)
     os.system()
     return
 
@@ -826,6 +828,7 @@ def __check_tsteps(ppsds):
         tSteps.append(np.array(ppsds[k].psd_values).shape[0])
     if len(set(tSteps)) <= 1:
         pass #This means all channels have same number of period_bin_centers
+        minTStep=tSteps[0]
     else:
         print('There is a different number of time-steps used to calculate HVSR curves. \n This may result in computational errors. Trimming longest.')
         minTStep = min(tSteps)
