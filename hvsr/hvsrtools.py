@@ -444,12 +444,39 @@ def update_shake_metadata(filepath, params, write_path=''):
     params['inv'] = inv
     return params
 
-def setup_colab():
+#Code to help setup environment in Google Colab
+def setup_colab(repo_dir):
+
+    import datetime
+    import math
+    import os
+    import pathlib
+    import time
+    import sys
+
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import scipy
+
+    from google.colab import files
+    from zipfile import ZipFile
+    #%matplotlib #Run this line if you want interactive plots
+
+    import obspy
+    #Make directories
     dataDir = '/content/Data/'
     outputDir = '/content/Output'
     if not os.path.exists(dataDir):
         os.makedirs(dataDir)
-    os.system()
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)
+    print('Colab setup complete')
+    os.chdir(dataDir)
+    print('Upload data files: (files will be placed in '+dataDir+')')
+    files.upload() #Upload the 3 data files to be used
+
+    os.chdir(repo_dir)
     return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
@@ -864,7 +891,6 @@ def process_hvsr(params, method=4):
     """
     ppsds=params['ppsds']
     ppsds = __check_xvalues(ppsds)
-    minTStep = __check_tsteps(ppsds)
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
@@ -891,21 +917,10 @@ def process_hvsr(params, method=4):
         stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
         stDevValsM[k] = np.array(psdVals[k] - stDev[k])
         stDevValsP[k] = np.array(psdVals[k] + stDev[k])
-    #method=4
-    #hvsr_curve = []
-    #for j in range(len(x_freqs['EHZ'])-1):
-    #    psd0 = [psdVals['EHZ'][j], psdVals['EHZ'][j + 1]]
-    #    psd1 = [psdVals['EHE'][j], psdVals['EHE'][j + 1]]
-    #    psd2 = [psdVals['EHN'][j], psdVals['EHN'][j + 1]]
-    #    f =    [x_freqs['EHZ'][j], x_freqs['EHZ'][j + 1]]
 
-        #hvsr0 = get_hvsr(psd0, psd1, psd2, f, use_method=method)
-    #    hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
-
-    #    hvsr_curve.append(hvsr)
-
-    #This gets the hvsr curve averaged from all time steps     
-    hvsr_curve = __get_hvsr_curve(x=x_freqs['EHZ'], psd=psdVals, method=4)
+    #This gets the hvsr curve averaged from all time steps
+    anyK = list(x_freqs.keys())[0]
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdVals, method=4)
     
     if type(method) is int:
         method = methodList[method]
