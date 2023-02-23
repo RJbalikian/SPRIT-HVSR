@@ -425,15 +425,11 @@ def update_shake_metadata(filepath, params, write_path=''):
     #Set up (and) export
     #filetag = '_'+str(datetime.datetime.today().date())
     #outfile = str(parentPath)+'\\'+filename+filetag+'.inv'
-    print(sys.platform)
-    if sys.platform=='linux':
-        write_path = '/content/Output/updatedInv.xml'
-        tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
-        print(write_path)
-    elif write_path != '':
-        tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
 
-    if sys.platform != 'linux':
+    if write_path != '':
+        tree.write(write_path, xml_declaration=True, method='xml',encoding='UTF-8')
+        inv = obspy.read_inventory(write_path, format='STATIONXML', level='response')
+    else:
         #Create temporary file for reading into obspy
         tpf = tempfile.NamedTemporaryFile(delete=False)
         stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
@@ -443,11 +439,14 @@ def update_shake_metadata(filepath, params, write_path=''):
         tpf.close()
 
         os.remove(tpf.name)
-    else:
-        print('Got here')
-        inv = obspy.read_inventory(write_path, format='STATIONXML', level='response')
     params['inv'] = inv
     return params
+
+def setup_colab():
+    dataDir = '/content/Data/'
+    outputDir = '/content/Output'
+    os.system()
+    return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
 def get_metadata(params, write_path=''):
@@ -553,7 +552,7 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params):
+def fetch_data(params, inv):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -617,6 +616,9 @@ def fetch_data(params):
             year = date.year
         else:
             info("Preferred date format is 'yyyy-mm-dd' or 'yyyy/mm/dd'. Cannot parse date.")
+    elif type(date) is int:
+        doy = date
+        year = datetime.datetime.today().year
     else: #FOR NOW, need to update
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
@@ -628,7 +630,7 @@ def fetch_data(params):
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if inst.lower() in raspShakeInstNameList:
-        rawDataIN = __read_RS_data(datapath, year, doy, inv)
+        rawDataIN = __read_RS_data(datapath, year, doy, inv, params)
 
     if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
         pass
@@ -636,7 +638,7 @@ def fetch_data(params):
         rawDataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
     return rawDataIN
 
-def __read_RS_data(datapath, year, doy, inv):
+def __read_RS_data(datapath, year, doy, inv, params):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     fileList = []
     folderPathList = []
@@ -681,7 +683,7 @@ def __read_RS_data(datapath, year, doy, inv):
         for i, f in enumerate(filepaths):
             with warnings.catch_warnings():
                 warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                st = obspy.read(str(f))
+                st = obspy.read(str(f), starttime=params['starttime'], endttime=params['endtime'])
                 tr = (st[0])
                 #tr= obspy.Trace(tr.data,header=meta)
                 traceList.append(tr)
