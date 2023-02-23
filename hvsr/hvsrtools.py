@@ -323,7 +323,7 @@ def input_param(network='AM',
         starttime = str(starttime)
     
     starttime = date+"T"+starttime
-    starttime = __formatTime(starttime, tzone=tzone, dst=dst)
+    starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone, dst=dst))
 
     if type(endtime) is str:
         if 'T' in endtime:
@@ -336,13 +336,15 @@ def input_param(network='AM',
         endtime = str(endtime)
 
     endtime = date+"T"+endtime
-    endtime = __formatTime(endtime, tzone=tzone, dst=dst)
+    endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
 
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if instrument.lower() in  raspShakeInstNameList:
-        if metaPath == r'resources\raspshake_metadata.inv':
-            metaPath = str(pathlib.Path(os.getcwd()))+'\\'+metaPath
+        if metaPath == r'resources/raspshake_metadata.inv':
+            metadir = str(pathlib.Path(os.getcwd())).replace('\\', '/')
+            metadir = metadir.replace('\\'[0], '/')
+            metaPath = str(pathlib.Path(os.getcwd()))+'/'+metaPath
 
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
@@ -684,7 +686,7 @@ def __read_RS_data(datapath, year, doy, inv, params):
         for i, f in enumerate(filepaths):
             with warnings.catch_warnings():
                 warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']))
+                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
                 tr = (st[0])
                 #tr= obspy.Trace(tr.data,header=meta)
                 traceList.append(tr)
@@ -921,7 +923,7 @@ def process_hvsr(params, method=4):
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
-    for tStep in range(minTStep):
+    for tStep in range(len(hvsr_out['psd_raw'][anyK])):
         tStepDict = {}
         for k in hvsr_out['psd_raw']:
             tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
