@@ -838,6 +838,7 @@ def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
     params['ppsds'] = ppsds
     return params
 
+#Check the x-values for each cahnnel, to make sure they are all the same length
 def __check_xvalues(ppsds):
     xLengths = []
     for k in ppsds.keys():
@@ -849,6 +850,7 @@ def __check_xvalues(ppsds):
         #Do stuff to fix it?
     return ppsds
 
+#Check to make the number of time-steps are the same for each channel
 def __check_tsteps(ppsds):
     tSteps = []
     for k in ppsds.keys():
@@ -862,7 +864,7 @@ def __check_tsteps(ppsds):
     return minTStep
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4):
+def process_hvsr(params, method=4, smooth=True):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -882,6 +884,10 @@ def process_hvsr(params, method=4):
                 5) 'Maximum Horizontal Value': H ≡ max {HN, HE}
         params  : dict
             Dictionary containing all the parameters input by the user
+        smooth  : bool=True
+            bool or int. 
+                If True, default to smooth data to include 1000 frequency values for the rest of the analysis
+                If int, the number of data points to interpolate/smooth the component psd/HV curve data to.
 
     Returns
     -------
@@ -970,6 +976,7 @@ def process_hvsr(params, method=4):
 
     return hvsr_out
 
+#Diffuse field assumption, not currently implemented
 def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, median_daily_psd, verbose):
     """Function for performing Diffuse Field Assumption (DFA) analysis
     
