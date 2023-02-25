@@ -864,7 +864,7 @@ def __check_tsteps(ppsds):
     return minTStep
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, smooth=True):
+def process_hvsr(params, method=4, resample=True):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -884,10 +884,10 @@ def process_hvsr(params, method=4, smooth=True):
                 5) 'Maximum Horizontal Value': H ≡ max {HN, HE}
         params  : dict
             Dictionary containing all the parameters input by the user
-        smooth  : bool=True
+        resample  : bool=True
             bool or int. 
-                If True, default to smooth data to include 1000 frequency values for the rest of the analysis
-                If int, the number of data points to interpolate/smooth the component psd/HV curve data to.
+                If True, default to resample data to include 1000 frequency values for the rest of the analysis
+                If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
 
     Returns
     -------
@@ -899,12 +899,6 @@ def process_hvsr(params, method=4, smooth=True):
     ppsds = __check_xvalues(ppsds)
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
-    for k in ppsds:
-        x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
-        x_periods = np.array(ppsds[k].period_bin_centers)
-
-        y = np.mean(np.array(ppsds[k].psd_values), axis=0)
-
     x_freqs = {}
     x_periods = {}
 
@@ -912,15 +906,39 @@ def process_hvsr(params, method=4, smooth=True):
     stDev = {}
     stDevValsP = {}
     stDevValsM = {}
-    psdRaw={}
+    psdRaw={}    
+    
     for k in ppsds:
-        x_freqs[k] = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
-        x_periods[k] = np.array(ppsds[k].period_bin_centers)
+        if resample or type(resample) is int:
+            if resample:
+                resample = 1000 #Default smooth value
 
-        psdRaw[k] = np.array(ppsds[k].psd_values)
-        psdVals[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
+            xValMin = min(ppsds[k].period_bin_centers)
+            xValMax = max(ppsds[k].period_bin_centers)
 
-        stDev[k] = np.std(np.array(ppsds[k].psd_values), axis=0)
+            #Resample period bin values
+            x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
+            #Resample raw ppsd values
+            for i, t in enumerate(ppsds[k].psd_values):
+                if i==0:
+                    psdRaw[k] = np.interp(x_periods[k], ppsds[k].period_bin_centers, t)
+                    psdRaw[k] = scipy.signal.savgol_filter( psdRaw[k], 51, 3)
+
+                else:
+                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k].period_bin_centers, t)))
+                    psdRaw[k][i] = scipy.signal.savgol_filter( psdRaw[k][i], 51, 3)
+
+                #print(psdRaw[k].shape)
+        else:
+            #If no resampling desired
+            x_periods[k] = np.array(ppsds[k].period_bin_centers)
+            psdRaw[k] = np.array(ppsds[k].psd_values)
+
+        #Get average psd value across time for each channel (used to calc H/V curve)
+        psdVals[k] = np.mean(np.array(psdRaw[k]), axis=0)
+        x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+
+        stDev[k] = np.std(psdRaw[k], axis=0)
         stDevValsM[k] = np.array(psdVals[k] - stDev[k])
         stDevValsP[k] = np.array(psdVals[k] + stDev[k])
 
@@ -928,12 +946,14 @@ def process_hvsr(params, method=4, smooth=True):
     anyK = list(x_freqs.keys())[0]
     hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdVals, method=4)
     
+    #Get string of method type
     if type(method) is int:
         method = methodList[method]
+
     #Add some other variables to our output dictionary
     hvsr_out = {'input_params':params,
                 'x_freqs':x_freqs,
-                'hvsr_curve':np.array(hvsr_curve),
+                'hvsr_curve':hvsr_curve,
                 'x_period':x_periods,
                 'psd_values':psdVals,
                 'psd_raw':psdRaw,
@@ -1100,7 +1120,7 @@ def __get_hvsr_curve(x, psd, method=4):
         hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
         hvsr_curve.append(hvsr)  
 
-    return hvsr_curve
+    return np.array(hvsr_curve)
 
 #Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
@@ -1730,7 +1750,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
 
     delta = hvsr_dict['ppsds'][anyKey].delta
     window_len = (hvsr_dict['ppsds'][anyKey].len * delta) #Window length in seconds
-    window_num = np.array(hvsr_dict['ppsds'][anyKey].psd_values).shape[0]
+    window_num = np.array(hvsr_dict['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
         peakFreq= _peak[_i]['f0']
