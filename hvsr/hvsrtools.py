@@ -864,7 +864,7 @@ def __check_tsteps(ppsds):
     return minTStep
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, resample=True):
+def process_hvsr(params, method=4, smooth=True, resample=True):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -884,6 +884,10 @@ def process_hvsr(params, method=4, resample=True):
                 5) 'Maximum Horizontal Value': H ≡ max {HN, HE}
         params  : dict
             Dictionary containing all the parameters input by the user
+        smooth  : bool=True
+            bool or int. 
+                If True, default to smooth hvsr curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
+                If int, the length of the window in the savgoy filter. 
         resample  : bool=True
             bool or int. 
                 If True, default to resample data to include 1000 frequency values for the rest of the analysis
@@ -897,6 +901,7 @@ def process_hvsr(params, method=4, resample=True):
     """
     ppsds=params['ppsds']
     ppsds = __check_xvalues(ppsds)
+    resample=True
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     x_freqs = {}
@@ -918,15 +923,25 @@ def process_hvsr(params, method=4, resample=True):
 
             #Resample period bin values
             x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
+
+            if smooth or type(smooth) is int:
+                if smooth:
+                    smooth = 51 #Default smoothing window
+                elif smooth%2==0:
+                    smooth = smooth+1
+
+
             #Resample raw ppsd values
             for i, t in enumerate(ppsds[k].psd_values):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], ppsds[k].period_bin_centers, t)
-                    psdRaw[k] = scipy.signal.savgol_filter( psdRaw[k], 51, 3)
+                    if smooth > 0 :
+                        psdRaw[k] = scipy.signal.savgol_filter( psdRaw[k], smooth, 3)
 
                 else:
                     psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k].period_bin_centers, t)))
-                    psdRaw[k][i] = scipy.signal.savgol_filter( psdRaw[k][i], 51, 3)
+                    if smooth > 0:
+                        psdRaw[k][i] = scipy.signal.savgol_filter( psdRaw[k][i], smooth, 3)
 
                 #print(psdRaw[k].shape)
         else:
