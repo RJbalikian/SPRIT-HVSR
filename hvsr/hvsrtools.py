@@ -900,9 +900,23 @@ def process_hvsr(params, method=4, smooth=True):
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     for k in ppsds:
-        x_freqs = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
-        x_periods = np.array(ppsds[k].period_bin_centers)
+        if smooth or type(smooth) is int:
+            if type(smooth) is int:
+                pass
+            else:
+                smooth = 1000 #Default smooth value
+            smooth = len(ppsds[k].period_bin_centers)
+            xValMin = min(ppsds[k].period_bin_centers)
+            xValMax = max(ppsds[k].period_bin_centers)
+            x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), smooth)
+        else:
+            #If no smoothing desired
+            x_periods[k] = np.array(ppsds[k].period_bin_centers)
 
+        x_freqs[k] = np.divide(np.ones_like(x_periods), x_periods)
+
+
+        #np.interp needed
         y = np.mean(np.array(ppsds[k].psd_values), axis=0)
 
     x_freqs = {}
@@ -913,10 +927,8 @@ def process_hvsr(params, method=4, smooth=True):
     stDevValsP = {}
     stDevValsM = {}
     psdRaw={}
+    
     for k in ppsds:
-        x_freqs[k] = np.divide(np.ones_like(ppsds[k].period_bin_centers), ppsds[k].period_bin_centers)
-        x_periods[k] = np.array(ppsds[k].period_bin_centers)
-
         psdRaw[k] = np.array(ppsds[k].psd_values)
         psdVals[k] = np.mean(np.array(ppsds[k].psd_values), axis=0)
 
