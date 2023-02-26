@@ -1217,7 +1217,9 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
             fig, ax : returns figure and axis matplotlib.pyplot objects if returnfig=True
                 otherwise, simply plots the figures
     """
-    plt.rcParams['figure.dpi']=600
+    plt.rcParams['figure.dpi'] = 500
+    plt.rcParams['figure.figsize'] = (12, 3)
+
     freqList = ['F', 'HZ', 'FREQ', 'FREQUENCY']
     perList = 'P', 'T', 'S', 'SEC', 'SECOND' 'PER', 'PERIOD'
 
@@ -1397,14 +1399,19 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             plotSuff = 'HVSR_'
         plotSuff = plotSuff+'allTWinCurves_'
 
-        for t in hvsr_dict['ind_hvsr_peak_indices']:
-            for i, v in enumerate(t):
-                v= x[v]
-                if i==0:
-                    width = (x[i+1]-x[i])/16
-                else:
-                    width = (x[i]-x[i-1])/16
-                plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05)
+        if 'tp' in kind.lower():
+            for t in hvsr_dict['ind_hvsr_peak_indices']:
+                for i, v in enumerate(t):
+                    v= x[v]
+                    if i==0:
+                        width = (x[i+1]-x[i])/16
+                    else:
+                        width = (x[i]-x[i-1])/16
+                    plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05)
+        
+        for t in hvsr_dict['ind_hvsr_curves']:
+            plt.plot(x, t, color='gray', alpha=0.25, linewidth=0.4)
+
         if '+t' in kind.lower():
            __plot_current_fig(save_dir=save_dir, filename=filename, 
                         plot_suffix=plotSuff, 
@@ -1416,6 +1423,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             plt.xlim(xlim)
             plt.ylim(ylim)
             plt.legend()
+            plt.tight_layout()
 
             __plot_current_fig(save_dir=save_dir, filename=filename, 
                         plot_suffix=plotSuff, 
@@ -1435,8 +1443,15 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             stdalpha = 0.1
         else:
             plotSuff = plotSuff+'IndComponents_'
-
+            
+            plt.rcParams['figure.figsize'] = (12, 3)
+            plt.tight_layout(pad=0.05)
             axis = ax.twinx()
+            plt.gca()
+            plt.gcf()
+            plt.tight_layout(pad=0.05)
+            plt.rcParams['figure.figsize'] = (12, 3)
+
             linalpha = 0.1
             stdalpha = 0.02
 
@@ -1459,12 +1474,19 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
     __plot_current_fig(save_dir=save_dir, filename=filename, 
                 plot_suffix=plotSuff, 
                 user_suffix=save_suffix, show=show)
+    
     return fig, ax
 
 def __plot_current_fig(save_dir, filename, plot_suffix, user_suffix, show):
+    plt.gca()
+    plt.gcf()
+    plt.tight_layout(pad=0.05)
+    plt.margins(0, 0)
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+
     if save_dir is not None:
         outFile = save_dir+'/'+filename+'_'+plot_suffix+str(datetime.datetime.today().date())+'_'+user_suffix+'.png'
-        plt.savefig(outFile)
+        plt.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
     if show:
         plt.show()
         plt.ion()
@@ -1510,20 +1532,20 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     else:
         cmap='viridis'
     print(kwargs)
-    im = ax.imshow(psdArr.T, origin='lower', extent=extList,aspect=.005, **kwargs)#,cmap=cmap)
+    im = ax.imshow(psdArr.T, origin='lower', extent=extList, aspect=.005, **kwargs)#,cmap=cmap)
   
     ax = plt.gca()
     fig = plt.gcf()
 
     FreqTicks = np.arange(1,np.round(max(hvsr_dict['x_freqs']['EHZ']),0), 10)
     plt.xticks(ticks=tTicks, labels=tLabels)
-    #plt.yticks(np.round(hvsr_calc['x_freqs']['EHZ'],0))
+
     plt.yticks(FreqTicks)
     plt.xlabel('Time \n'+day)
     plt.ylabel('Frequency [Hz]')
     plt.semilogy()
     plt.colorbar(mappable=im)
-    plt.rcParams['figure.dpi'] = 200
+    plt.rcParams['figure.dpi'] = 500
     plt.show()
     return fig, ax
 
