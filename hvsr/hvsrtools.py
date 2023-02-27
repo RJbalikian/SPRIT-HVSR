@@ -583,31 +583,34 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None):
+def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='mseed'):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
         ----------
-        datapath : str or pathlib.Path
-            Path to directory containing data. For Raspberry Shakes, 
-            this is the directory where either the channel folders or three channel files themeselves are located.
+        params  : dict
+            Dictionary containing all the necessary params to get data.
+                Parameters defined using input_params() function.
         inv     : obspy inventory object 
             Obspy inventory object containing metadata for instrument that collected data to be fetched
-        date : str, tuple, or date object
-            Date for which to read in the data traces. 
-                If string, will attempt to decode to convert to a date format.
-                If tuple, assumes first item is day of year (DOY) and second item is year 
-                If date object, will read it in directly and extract important information
-        inst : str
-            The type of instrument from which the data is reading. Currently, only raspberry shake supported
+        source  : str='raw'
+            String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
+            If not 'raw', this should be a direct filepath to the data source.
+        trim_dir : bool=False or str or pathlib obj
+            If false, data is not trimmed in this function.
+            Otherwise, this is the directory to save the trimmed and exported data
+        export_format: str='mseed'
+            If trim_dir is not False, this is the format in which to save the data
         
         Returns
         -------
-        rawDataIN : obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+        dataIN : obspy stream
+            Obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
     datapath = params['dataPath']
-    inv = params['inv'], 
+    if inv is None:
+        inv = params['inv'], 
     date=params['acq_date']
     datapath = checkifpath(datapath)
     inst = params['instrument']
@@ -660,15 +663,26 @@ def fetch_data(params, inv=None):
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
-    if inst.lower() in raspShakeInstNameList:
-        rawDataIN = __read_RS_data(datapath, year, doy, inv, params)
+    if source=='raw':
+        if inst.lower() in raspShakeInstNameList:
+            rawDataIN = __read_RS_data(datapath, year, doy, inv, params)
+    else:
+        rawDataIN = obspy.read(source, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
+        rawDataIN.attach_response(inv)
 
     if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
+        dataIN = rawDataIN
+    else:
+        dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
+
+    if not trim_dir:
         pass
     else:
-        rawDataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
-    return rawDataIN
+        dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
+    return dataIN
+
+#Read data from raspberry shake
 def __read_RS_data(datapath, year, doy, inv, params):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     from obspy.core import UTCDateTime
