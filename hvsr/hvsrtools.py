@@ -1307,7 +1307,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
     else:
         plotSuff = plotSuff+'noStdDev_'
 
-    if 'p' in kind.lower() and 'all' not in kind.lower():
+    if ' p ' in kind.lower() and 'all' not in kind.lower():
         if '+p' in kind.lower():
             __plot_current_fig(save_dir=save_dir, filename=filename, 
                         plot_suffix=plotSuff, 
@@ -1341,7 +1341,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
                             bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
             plotSuff = plotSuff+'ann_'
 
-    if 'all' in kind.lower() and 'p' in kind.lower():
+    if 'all' in kind.lower() and ' p ' in kind.lower():
         if '+p' in kind.lower():
             __plot_current_fig(save_dir=save_dir, filename=filename, 
                         plot_suffix=plotSuff, 
@@ -1407,10 +1407,10 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
                         width = (x[i+1]-x[i])/16
                     else:
                         width = (x[i]-x[i-1])/16
-                    plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05)
+                    plt.fill_betweenx([0,50],v-width,v+width, color='r', alpha=0.05, label='Individual H/V Peaks')
         
         for t in hvsr_dict['ind_hvsr_curves']:
-            plt.plot(x, t, color='gray', alpha=0.25, linewidth=0.4)
+            plt.plot(x, t, color='gray', alpha=0.3, linewidth=0.8)
 
         if '+t' in kind.lower():
            __plot_current_fig(save_dir=save_dir, filename=filename, 
