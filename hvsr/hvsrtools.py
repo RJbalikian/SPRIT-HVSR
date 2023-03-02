@@ -286,20 +286,23 @@ def input_param(network='AM',
                         depth = 0,
                         instrument = 'Raspberry Shake',
                         dataPath = '',
-                        metaPath = r'resources\raspshake_metadata.inv',
+                        metaPath = '',
                         site = 'HVSR SITE',
                         hvsr_band = [0.4, 40] 
                         ):
 
     #Make Sure metapath is all good
-    if not pathlib.Path(metaPath).exists():
-        print('ERROR: Metadata file does not exist!')
+    if not pathlib.Path(metaPath).exists() or metaPath=='':
+        if metaPath == '':
+            print('No metadata file specified!')
+        else:
+            print('Specified metadata file cannot be read!')
         repoDir = str(pathlib.Path.cwd())
         repoDir = repoDir.replace('\\', '/').replace('\\'[0], '/')
         metaPath=repoDir+'/resources/raspshake_metadata.inv'
         print('Using default metadata file for Raspberry Shake v.7 contained in repository at\n', metaPath)
     else:
-        str(metaPath)
+        metaPath = str(metaPath)
 
     #Reformat time
     if type(acq_date) is datetime.datetime:
@@ -593,9 +596,9 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
                 Parameters defined using input_params() function.
         inv     : obspy inventory object 
             Obspy inventory object containing metadata for instrument that collected data to be fetched
-        source  : str='raw'
+        source  : str='raw' {'raw', 'direct'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
-            If not 'raw', this should be a direct filepath to the data source.
+                'raw' finds raspberry shake data, either in folder or subfolders; 'direct' reads filepath directly
         trim_dir : bool=False or str or pathlib obj
             If false, data is not trimmed in this function.
             Otherwise, this is the directory to save the trimmed and exported data
@@ -667,7 +670,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_data(datapath, year, doy, inv, params)
     else:
-        rawDataIN = obspy.read(source, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
+        rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.attach_response(inv)
 
     if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
@@ -814,7 +817,8 @@ def trim_data(stream, params, export_dir=None, export_format=None):
     return st_trimmed
 
 #Generate PPSDs for each channel
-def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
+#def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
+def generate_ppsds(params, stream, **kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -837,15 +841,17 @@ def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
                 Dictionary containing entries with ppsds for each channel
     """
     paz=params['paz']
+
     from obspy.imaging.cm import viridis_white_r
     from obspy.signal import PPSD
-    ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], **kwargs)
+    #ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
     ppsdE.add(stream, verbose=False)
 
-    ppsdN = PPSD(stream.select(channel='EHN').traces[0].stats, paz['EHN'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdN = PPSD(stream.select(channel='EHN').traces[0].stats, paz['EHN'], **kwargs)
     ppsdN.add(stream, verbose=False)
 
-    ppsdZ = PPSD(stream.select(channel='EHZ').traces[0].stats, paz['EHZ'], ppsd_length=ppsd_length, kwargs=kwargs)
+    ppsdZ = PPSD(stream.select(channel='EHZ').traces[0].stats, paz['EHZ'], **kwargs)
     ppsdZ.add(stream, verbose=False)
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
