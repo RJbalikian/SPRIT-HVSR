@@ -5,7 +5,7 @@ This module analysis ambient seismic data using the Horizontal to Vertical Spect
 
 #from hvsr import hvsrtools
 
-from hvsr.hvsrtools import(
+from hvsr.sprit import(
     check_mark,
     get_char,
     time_it,
@@ -28,7 +28,7 @@ from hvsr.hvsrtools import(
 )
 
 __all__ =('hvsr',
-    'hvsrtools',
+    'sprit',
     'check_mark',
     'get_char',
     'time_it',
