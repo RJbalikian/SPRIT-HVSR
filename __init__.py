@@ -3,8 +3,8 @@
 This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
 
-from hvsr import hvsrtools
+from hvsr import sprit
 
-__all__=('hvsrtools')
+__all__=('sprit')
 
 __author__ = 'Riley Balikian'
