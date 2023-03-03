@@ -25,8 +25,8 @@ jobs:
           git clone https://github.com/RJbalikian/SPRIT.wiki.git
           mv sprit.html SPRIT.wiki/
           cd SPRIT.wiki/
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "RJbalikian"
+          git config user.email "rileybalikian@outlook.com"
           git add .
           git commit -m "Update documentation"
           git push origin master
