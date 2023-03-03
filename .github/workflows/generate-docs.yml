@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: pip install numpydoc
       - name: Generate documentation
-        run: pydoc -w sprit
+        run: python pydoc -w sprit
       - name: Push to wiki repository
         run: |
           git clone https://github.com/RJbalikian/SPRIT.wiki.git
