@@ -22,13 +22,12 @@ jobs:
         run: python -m pydoc -w sprit
       - name: Push to wiki repository
         run: |
-          git config user.name "$(git --no-pager log --format=format:'%an' -n 1)"
-          git config user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
+          git config user.name "RJbalikian"
+          git config user.email "rileybalikian@outlook.com"
+          
           git clone https://github.com/RJbalikian/SPRIT.wiki.git
           mv docs/hvsrtools.html SPRIT.wiki/
           cd SPRIT.wiki/
-          # git config user.name "RJbalikian"
-          # git config user.email "rileybalikian@outlook.com"
           git add .
           git commit -m "Update wiki documentation"
           git push origin master
