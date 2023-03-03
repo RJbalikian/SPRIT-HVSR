@@ -757,8 +757,7 @@ def trim_data(stream, params, export_dir=None, export_format=None):
                 Output file to export trimmed data to            
             export_format  : str or True    
                 If not specified, does not export. 
-                    Otherwise, exports trimmed stream using obspy write function in format provided as string
-                    https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
+                    Otherwise, exports trimmed stream using obspy write function in format provided as string.
                 If specified as True, defaults to .mseed
             outfile : str                   
                 Exact filename to output
@@ -1201,41 +1200,42 @@ def __gethvsrparams(hvsr_out):
 #Plot HVSR data
 def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
     """Function to plot HVSR data
-       
-       Parameters
-       ----------
-            hvsr_dict   : dict                  
-                Dictionary containing output from process_hvsr function
-            kind        : str='HVSR' or list    
-                The kind of plot(s) to plot. If list, will plot all plots listed
-                    'HVSR'  : Standard HVSR plot, including standard deviation
-                        '[HVSR] c' :HVSR plot with each components' spectra
-                        '[HVSR] p' :HVSR plot with best peaks shown
-                            '[HVSR] p' : HVSR plot with best picked peak shown                
-                            '[HVSR] p* all' : HVSR plot with all picked peaks shown                
-                            '[HVSR] p* t' : HVSR plot with peaks from all time steps in background                
-                            '[HVSR p* ann]  : Annotates plot with peaks
-                        '[HVSR] -s' : HVSR plots don't show standard deviation
-                        '[HVSR] t'  : HVSR plot with individual hv curves for each time step shown
-                    'Specgram': Combined spectrogram of all components
-            xtype       : str='freq'    
-                String for what to use between frequency or period
-                    For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
-                    For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
-            returnfig   : bool
-                Whether to return figure and axis objects
-            save_dir     : str or None
-                Directory in which to save figures
-            save_suffix  : str
-                Suffix to add to end of figure filename(s), if save_dir is used
-            show    : bool
-                Whether to show plot
-            **kwargs    : keyword arguments
-                Keyword arguments for matplotlib.pyplot (still working on this)
+
+        Parameters
+        ----------
+        hvsr_dict   : dict                  
+            Dictionary containing output from process_hvsr function
+        kind        : str='HVSR' or list    
+            The kind of plot(s) to plot. If list, will plot all plots listed
+            'HVSR'  : Standard HVSR plot, including standard deviation
+            - '[HVSR] c' :HVSR plot with each components' spectra
+            - '[HVSR] p' :HVSR plot with best peaks shown
+            - '[HVSR] p' : HVSR plot with best picked peak shown                
+            - '[HVSR] p* all' : HVSR plot with all picked peaks shown                
+            - '[HVSR] p* t' : HVSR plot with peaks from all time steps in background                
+            - '[HVSR p* ann]  : Annotates plot with peaks
+            - '[HVSR] -s' : HVSR plots don't show standard deviation
+            - '[HVSR] t'  : HVSR plot with individual hv curves for each time step shown
+            'Specgram': Combined spectrogram of all components
+        xtype       : str='freq'    
+            String for what to use between frequency or period
+                For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
+                For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
+        returnfig   : bool
+            Whether to return figure and axis objects
+        save_dir     : str or None
+            Directory in which to save figures
+        save_suffix  : str
+            Suffix to add to end of figure filename(s), if save_dir is used
+        show    : bool
+            Whether to show plot
+        **kwargs    : keyword arguments
+            Keyword arguments for matplotlib.pyplot (still working on this)
+
         Returns
         -------
-            fig, ax : returns figure and axis matplotlib.pyplot objects if returnfig=True
-                otherwise, simply plots the figures
+        fig, ax : matplotlib figure and axis objects
+            Returns figure and axis matplotlib.pyplot objects if returnfig=True, otherwise, simply plots the figures
     """
     plt.rcParams['figure.dpi'] = 500
     plt.rcParams['figure.figsize'] = (12, 3)
@@ -1651,41 +1651,26 @@ def __find_peaks(_y):
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsr_dict, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
+def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
-    
-    Parameters
-    ----------
-        hvsr            : dict
-            Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        x               : list-like obj 
-            List with x-values (frequency or period values)
-        y               : list-like obj 
-            List with main hvsr curve values
-        index_list      : list-like obj 
-            List with indices of peaks
-        hvsr_band       : tuple or list 
-            2-item tuple or list with lower and upper limit of frequencies to analyze
-        peak_water_level: list-like obj 
-            List containing
-        do_rank         : bool=False    
-            ?????
-        peak            : list
-            List containing a dictionary for each peak identified in previous step
-        peakm           : <generated?>
-        peakp           : <generated?>
-        hvsr_peaks      : list
-            List of peak indices from the individual hvsr curves from each time step
-        stdf            : <generated?>
-        hvsr_log_std    : <generated?>
-        rank            : <generated?>
 
-    Returns
-    -------
-        peak            :
-        Output file     :
+        Parameters
+        ----------
+            hvsr : dict
+                Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
+            hvsr_band  : tuple or list 
+                2-item tuple or list with lower and upper limit of frequencies to analyze
+            peak_water_level: list-like obj 
+                List containing peak water level
+            do_rank : bool=False    
+                Include peak ranking in output
 
+        Returns
+        -------
+            hvsr_dict   : dict
+                Dictionary containing previous input data, plus information about Peak tests
     """
+
     if not hvsr_band:
         hvsr_band = [0.4,40]
     hvsr_dict['hvsr_band'] = hvsr_band

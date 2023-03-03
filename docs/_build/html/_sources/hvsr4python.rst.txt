@@ -1,0 +1,18 @@
+hvsr4python package
+===================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   hvsr4python.hvsr
+
+Module contents
+---------------
+
+.. automodule:: hvsr4python
+   :members:
+   :undoc-members:
+   :show-inheritance:

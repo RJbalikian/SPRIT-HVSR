@@ -3,8 +3,6 @@
 This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
 
-#from hvsr import hvsrtools
-
 from hvsr.sprit import(
     check_mark,
     get_char,
