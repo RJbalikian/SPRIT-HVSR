@@ -143,10 +143,10 @@ This function returns another displayable character if platform is Windows</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>hvsr</strong> (<em>dict</em>) – Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</p></li>
-<li><p><strong>hvsr_band</strong> (<em>tuple</em><em> or </em><em>list</em>) – 2-item tuple or list with lower and upper limit of frequencies to analyze</p></li>
-<li><p><strong>peak_water_level</strong> (<em>list-like obj</em>) – List containing peak water level</p></li>
-<li><p><strong>do_rank</strong> (<em>bool=False</em>) – Include peak ranking in output</p></li>
+<li><p><strong>hvsr_dict</strong> (<em>dict</em>) – Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</p></li>
+<li><p><strong>hvsr_band</strong> (<em>tuple</em><em> or </em><em>list</em><em>, </em><em>default=</em><em>[</em><em>0.4</em><em>, </em><em>40</em><em>]</em>) – 2-item tuple or list with lower and upper limit of frequencies to analyze</p></li>
+<li><p><strong>peak_water_level</strong> (<em>float</em><em>, </em><em>default=1.8</em>) – Value of peak water level</p></li>
+<li><p><strong>do_rank</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Include peak ranking in output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
