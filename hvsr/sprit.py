@@ -80,12 +80,17 @@ def info(info_message):
 
 #Converts filepaths to pathlib paths, if not already
 def checkifpath(filepath):
-    """Support function to check if a filepath is a pathlib.Path object
+    """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
     ----------
     filepath : str or pathlib.Path, or anything
         Filepath to check. If not a valid filepath, will not convert and raises error
+
+    Returns
+    -------
+    filepath : pathlib.Path
+        pathlib.Path of filepath
     """
 
     # checks if the variable is any instance of pathlib
@@ -498,14 +503,10 @@ def update_shake_metadata(filepath, params, write_path=''):
     return params
 
 #Code to help setup environment in Google Colab
-def setup_colab(iteration=0, repo_dir='/content/SPRIT-main'):
+def setup_colab():
     """Function to help set up Google Colab environment
     
-    Parameters
-    ----------
-    iteration : int {0, 1}
-        This needs to be run twice to fully setup Colab environment
-    repo_dir
+    This needs to be run twice, and at the beginning of the Google Colab notebook. 
 
     """
     import datetime
@@ -562,7 +563,7 @@ def setup_colab(iteration=0, repo_dir='/content/SPRIT-main'):
             os.makedirs(outputDir)
         print('\n**Repository setup complete**\n')
         os.chdir(dataDir)
-        print('\nUpload data files: (files will be placed in '+dataDir+')')
+        print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
         files.upload() #Upload the 3 data files to be used
 
         os.chdir(repo_dir)
@@ -945,6 +946,7 @@ def generate_ppsds(params, stream, **kwargs):
 
 #Check the x-values for each cahnnel, to make sure they are all the same length
 def __check_xvalues(ppsds):
+    """Check x_values of PPSDS to make sure they are all the same length"""
     xLengths = []
     for k in ppsds.keys():
         xLengths.append(len(ppsds[k].period_bin_centers))
@@ -957,6 +959,7 @@ def __check_xvalues(ppsds):
 
 #Check to make the number of time-steps are the same for each channel
 def __check_tsteps(ppsds):
+    """Check time steps of PPSDS to make sure they are all the same length"""
     tSteps = []
     for k in ppsds.keys():
         tSteps.append(np.array(ppsds[k].psd_values).shape[0])
@@ -1120,6 +1123,7 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
 def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, median_daily_psd, verbose):
     """Function for performing Diffuse Field Assumption (DFA) analysis
     
+        This feature is not yet implemented.
     """
     # Are we doing DFA?
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
@@ -1214,14 +1218,17 @@ def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, med
     return
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method=4):
+def __get_hvsr_curve(x, psd, method):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
     ----------
         x   : list or array_like
             x value (frequency or period)
-        psd = 3-component dictionary
+        psd : dict
+            Dictionary with psd values for three components. Usually read in as part of hvsr_dict from process_hvsr
+        method : int or str
+            Integer or string, read in from process_hvsr method parameter
     
     Returns
     -------
@@ -1244,6 +1251,7 @@ def __get_hvsr_curve(x, psd, method=4):
 
 #Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
+    """Private function to get HVSR parameters for later calculations (things like standard deviation, etc)"""
     count=0
     #SOMETHING VERY WRONG IS GOING ON HERE!!!!
     hvsrp2 = {}
@@ -1584,6 +1592,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
     return fig, ax
 
 def __plot_current_fig(save_dir, filename, plot_suffix, user_suffix, show):
+    """Private function to support hvplot, for plotting and showing plots"""
     plt.gca()
     plt.gcf()
     plt.tight_layout(pad=0.05)
@@ -1694,7 +1703,8 @@ def __remove_db(_db_value):
 
 #For converting dB scaled data to power units
 def __get_power(_db, _x):
-    """calculate HVSR
+    """Calculate HVSR
+
       We will undo setp 6 of MUSTANG processing as outlined below:
           1. Dividing the window into 13 segments having 75% overlap
           2. For each segment:
@@ -1706,7 +1716,21 @@ def __get_power(_db, _x):
           5. Frequency-smooth the averaged PSD over 1-octave intervals at 1/8-octave increments
           6. Convert power to decibels
 
-    NOTE: PSD is equal to the power divided by the width of the bin
+    Parameters
+    ----------
+    _db : float
+        Individual power value in decibels
+    _x : float
+        Individual x value (either frequency or period)
+    
+    Returns
+    -------
+    _p : float
+        Individual power value, converted from decibels
+
+    NOTE
+    ----
+        PSD is equal to the power divided by the width of the bin
           PSD = P / W
           log(PSD) = Log(P) - log(W)
           log(P) = log(PSD) + log(W)  here W is width in frequency
@@ -1730,7 +1754,7 @@ def __get_power(_db, _x):
 
 #Find peaks in the hvsr ccruve
 def __find_peaks(_y):
-    """find peaks"""
+    """Finds peaks on hvsr curve"""
     _index_list = scipy.signal.argrelextrema(np.array(_y), np.greater)
 
     return _index_list[0]
@@ -1823,18 +1847,21 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
 
         Parameters
         ----------
-            x               : list-like obj 
-                List with x-values (frequency or period values)
-            y               : list-like obj 
-                List with hvsr curve values ????
-            index_list      : list-like obj 
-                List with indices of peaks
-            _hvsr_band          :
-            _peak_water_level   :
+        x : list-like obj 
+            List with x-values (frequency or period values)
+        y : list-like obj 
+            List with hvsr curve values
+        index_list : list or array_like 
+            List with indices of peaks
+        _hvsr_band : list
+            Two-item list with low and high frequency to limit assessment extent
+        _peak_water_level : float
+            Peak water level value
         
         Returns
         -------
-            _peak               : list of dictionaries, one for each input peak
+        _peak               : list 
+            List of dictionaries, one for each input peak
     """
     _peak = list()
     for _i in _index_list:
@@ -1849,6 +1876,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
 #Check reliability of HVSR of curve
 def __check_curve_reliability(hvsr_dict, _peak):
     """Tests to check for reliable H/V curve
+
     Tests include:
         1) Peak frequency is greater than 10 / window length (f0 > 10 / Lw)
             f0 = peak frequency [Hz]
@@ -1863,16 +1891,18 @@ def __check_curve_reliability(hvsr_dict, _peak):
             f0 = peak frequency [Hz]
             StDev is a measure of the variation of all the H/V curves generated for each time window
                 Our main H/V curve is the median of these
+
     Parameters
     ----------
     hvsr_dict   : dict
         Dictionary containing all important information generated about HVSR curve
-    _peak       : list of dicts
+    _peak       : list
         A list of dictionaries, with each dictionary containing information about each peak
 
     Returns
     -------
-    _peak   : same as above, except with information about curve reliability tests added
+    _peak   : list
+        List of dictionaries, same as above, except with information about curve reliability tests added
     """
     anyKey = list(hvsr_dict['psd_raw'].keys())[0]#Doesn't matter which channel we use as key
 
@@ -1913,19 +1943,22 @@ def __check_clarity(_x, _y, _peak, do_rank=False):
            - there exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2
            - there exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2
            - A0 > 2
-        ------------------------
-        Parameters:
-            x               : list-like obj 
+
+        Parameters
+        ----------
+            x : list-like obj 
                 List with x-values (frequency or period values)
-            y               : list-like obj 
+            y : list-like obj 
                 List with hvsr curve values
-            _peak   : list of dicts
+            _peak : list
                 List with dictionaries for each peak, containing info about that peak
-            do_rank : bool=False
+            do_rank : bool, default=False
                 Include Rank in output
-        ------------------------
-        Returns:
-            _peak   
+
+        Returns
+        -------
+            _peak : list
+                List of dictionaries, each containing the clarity test information for the different peaks that were read in
     """
     global max_rank
 
@@ -1990,9 +2023,24 @@ def __check_clarity(_x, _y, _peak, do_rank=False):
 #Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
     """Test peaks for satisfying stability conditions 
+
         Test as outlined by SESAME 2004:
            - the _peak should appear at the same frequency (within a percentage ± 5%) on the H/V
-             curves corresponding to mean + and – one standard deviation.
+             curves corresponding to mean + and - one standard deviation.
+
+        Parameters
+        ----------
+        _peak : list
+            List of dictionaries containing input information about peak, without freq stability test
+        _peakm : list
+            List of dictionaries containing input information about peakm (peak minus one StDev in freq)
+        _peakp : list
+            List of dictionaries containing input information about peak (peak plus one StDev in freq)  
+
+        Returns
+        -------
+        _peak : list
+            List of dictionaries containing output information about peak test  
     """
     global max_rank
 
@@ -2053,6 +2101,23 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
     This includes:
        - σf lower than a frequency dependent threshold ε(f)
        - σA (f0) lower than a frequency dependent threshold θ(f),
+
+
+    Parameters
+    ----------
+    _stdf : list
+        List with dictionaries containint frequency standard deviation for each peak
+    _peak : list
+        List of dictionaries containing input information about peak, without freq stability test
+    _hvsr_log_std : list
+        List of dictionaries containing log standard deviation along curve
+    rank : int
+        Integer value, higher value is "higher-ranked" peak, helps determine which peak is actual hvsr peak  
+
+    Returns
+    -------
+    _peak : list
+        List of dictionaries containing output information about peak test  
     """
 
     global max_rank
@@ -2174,6 +2239,7 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
 #Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
+    """Private function to get frequency standard deviation, from multiple time-step HVSR curves"""
     stdf = list()
     for index in indexList:
         point = list()
