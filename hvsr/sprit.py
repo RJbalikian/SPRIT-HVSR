@@ -271,14 +271,15 @@ def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
     return sorted_channel_list
 
 #Define input parameters
-def input_param(network='AM', 
-                        station='RAC84', 
+def input_param( site = 'HVSR SITE',
+                        network, 
+                        station, 
                         loc='00', 
                         channels=['EHZ', 'EHN', 'EHE'],
                         acq_date=str(datetime.datetime.now().date()),
                         starttime = '00:00:00.00',
                         endtime = '23:59:99.99',
-                        tzone = 'America/Chicago', #or 'UTC'
+                        tzone = 'UTC',
                         dst = True,
                         lon = -88.2290526,
                         lat =  40.1012122,
@@ -287,10 +288,59 @@ def input_param(network='AM',
                         instrument = 'Raspberry Shake',
                         dataPath = '',
                         metaPath = '',
-                        site = 'HVSR SITE',
                         hvsr_band = [0.4, 40] 
                         ):
+    """Function for designating input parameters for reading in and processing data
+    
+    Parameters
+    ----------
+    site : str
+        Site name as designated by scientist for ease of reference.
+    network : str
+        The network designation of the seismometer. This is necessary for data from Raspberry Shakes.
+    station : str
+        The station name of the seismometer. This is necessary for data from Raspberry Shakes.
+    loc : str, default='00'
+        Location information of the seismometer.
+    channels : list, default=['EHZ', 'EHN', 'EHE']
+        The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary
+    acq_date : str, int, date object, or datetime object
+        If string, preferred format is 'YYYY-MM-DD'. 
+        If int, this will be interpreted as the day of year of current year (e.g., 33 would be Feb 2 of current year)
+        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC.
+    starttime : str, time object, or datetime object, default='00:00:00.00'
+        Start time of data stream. This is necessary for Raspberry Shake data.
+    endttime : str, time obejct, or datetime object, default='23:59:99.99'
+        End time of data stream. This is necessary for Raspberry Shake data.
+    tzone : str or int, default = 'UTC'
+        Timezone of input data. If string, 'UTC' will use the time as input directly. Any other value will assume local time of computer.
+        If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
+        This is necessary for Raspberry Shake data.
+    dst : bool, default=True
+        If str used for timezone, this will adjust for daylight savings time. This is necessary for Raspberry Shake data.
+    lon : float, default=-88.2290526
+        Longitude of data point
+    lat : float, default=40.1012122
+        Latitude of data point
+    elevation : float, default=755
+        Surface elevation of data point.
+    depth : float, default=0
+        Depth of seismometer.
+    instrument : str or list {'Raspberry Shake')
+        Instrument from which the data was acquired. If multiple points are analyzed, a list can designate between different instrument types.
+    dataPath : str or pathlib.Path object
+        Filepath of data
+    metaPath : str or pathlib.Path object
+        Filepath of metadata, in format supported by obspy.read_inventory
+    hvsr_band : list, default=[0.4, 40]
+        Two-element list containing low and high frequencies of processing. This can also be changed later.
+    
+    Returns
+    -------
+    inputParamDict : dict
+        Dictionary containing input parameters, including data file path and metadata path. This will be used as an input to other functions.
 
+    """
     #Make Sure metapath is all good
     if not pathlib.Path(metaPath).exists() or metaPath=='':
         if metaPath == '':
@@ -448,16 +498,24 @@ def update_shake_metadata(filepath, params, write_path=''):
     return params
 
 #Code to help setup environment in Google Colab
-def setup_colab(repo_dir):
+def setup_colab(iteration=0, repo_dir='/content/SPRIT-main'):
+    """Function to help set up Google Colab environment
+    
+    Parameters
+    ----------
+    iteration : int {0, 1}
+        This needs to be run twice to fully setup Colab environment
+    repo_dir
 
+    """
     import datetime
     import math
     import os
     import pathlib
     import time
     import sys
+    import subprocess
 
-    
     import matplotlib.pyplot as plt
     import numpy as np
     import scipy
@@ -466,20 +524,48 @@ def setup_colab(repo_dir):
     from zipfile import ZipFile
     #%matplotlib #Run this line if you want interactive plots
 
-    import obspy
-    #Make directories
-    dataDir = '/content/Data/'
-    outputDir = '/content/Output'
-    if not os.path.exists(dataDir):
-        os.makedirs(dataDir)
-    if not os.path.exists(outputDir):
-        os.makedirs(outputDir)
-    print('Colab setup complete')
-    os.chdir(dataDir)
-    print('Upload data files: (files will be placed in '+dataDir+')')
-    files.upload() #Upload the 3 data files to be used
+    if 'osbpy' not in sys.modules.keys():
+        import os
+        #Capture command suppresses output
+        subprocess.run(['pip', 'install', 'obspy']) 
+        #Kill runtime
+        os.kill(os.getpid(), 9)
+    else:
+        from google.colab import files
+        from zipfile import ZipFile
 
-    os.chdir(repo_dir)
+        os.chdir('/content')
+        print("\nUpload zip file with code repository (will upload to main /content directory):")
+        zipfile_name = files.upload()
+        zipfile_name = list(zipfile_name.keys())[0]
+
+        with ZipFile(zipfile_name, 'r') as zip:
+            zip.extractall()
+
+        if '_' in zipfile_name:
+            repo_name=zipfile_name.split('_')[0]
+        else:
+            repo_name = zipfile_name
+            
+        mPath = '/content/'+repo_name+'/resources/raspshake_metadata.inv'
+        repo_dir = '/content/'+repo_name
+        os.chdir(repo_dir)
+
+        import hvsr        
+        import obspy
+        #Make directories
+        dataDir = '/content/Data/'
+        outputDir = '/content/Output'
+        if not os.path.exists(dataDir):
+            os.makedirs(dataDir)
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+        print('\n**Repository setup complete**\n')
+        os.chdir(dataDir)
+        print('\nUpload data files: (files will be placed in '+dataDir+')')
+        files.upload() #Upload the 3 data files to be used
+
+        os.chdir(repo_dir)
     return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
