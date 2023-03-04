@@ -276,9 +276,9 @@ def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
     return sorted_channel_list
 
 #Define input parameters
-def input_param( site = 'HVSR SITE',
-                        network, 
-                        station, 
+def input_param( site,
+                        network='AM', 
+                        station='RAC84', 
                         loc='00', 
                         channels=['EHZ', 'EHN', 'EHE'],
                         acq_date=str(datetime.datetime.now().date()),
@@ -301,9 +301,9 @@ def input_param( site = 'HVSR SITE',
     ----------
     site : str
         Site name as designated by scientist for ease of reference.
-    network : str
+    network : str, default='AM'
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes.
-    station : str
+    station : str, default='RAC84'
         The station name of the seismometer. This is necessary for data from Raspberry Shakes.
     loc : str, default='00'
         Location information of the seismometer.
