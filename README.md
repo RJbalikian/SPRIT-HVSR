@@ -11,6 +11,9 @@ This python package is built in large part off the Incorporated Research Institu
 
 That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service[3], which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.
 
+# Documentation
+- API Documentation here: https://sprite-hvsr.readthedocs.io/en/latest/modules.html
+
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 - [matplotlib](https://matplotlib.org/): copmrehensive library for creating static, animated, andinteractive visualizationsin python
