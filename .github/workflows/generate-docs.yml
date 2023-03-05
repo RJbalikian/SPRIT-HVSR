@@ -22,11 +22,31 @@ jobs:
         run: python -m pydoc -w sprit
       - name: Push to wiki repository
         run: |
-          git config user.name "RJbalikian"
-          git config user.email "rileybalikian@outlook.com"
-          git clone https://github.com/RJbalikian/SPRIT.wiki.git
+          actions/checkout@v3
+            with:
+              ref: main
+              submodules: recursive
+              repository: RJbalikian/SPRIT
+              token: ***
+              ssh-strict: true
+              persist-credentials: true
+              clean: true
+              fetch-depth: 1
+              lfs: false
+              set-safe-directory: true
+          /usr/bin/git remote add origin https://github.com/RJbalikian/SPRIT
+          /usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+          /usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+          /usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+          /usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+          /usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+          /usr/bin/git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +refs/heads/main*:refs/remotes/origin/main* +refs/tags/main*:refs/tags/main*
+          /usr/bin/git config --global http.https://github.com/.extraheader AUTHORIZATION: basic ***
+          /usr/bin/git config --global --unset-all url.https://github.com/.insteadOf
+          /usr/bin/git config --global --add url.https://github.com/.insteadOf git@github.com:
           mv docs/hvsrtools.html SPRIT.wiki/
           cd SPRIT.wiki/
           git add .
           git commit -m "Update wiki documentation"
           git push origin master
+        
