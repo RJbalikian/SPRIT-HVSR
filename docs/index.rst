@@ -12,7 +12,6 @@ This is a tool for processing and analyzing ambient seismic noise
    :caption: Contents:
 
    modules
-   hvsr
 
 Indices and tables
 ==================
