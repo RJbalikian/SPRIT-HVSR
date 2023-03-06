@@ -8,7 +8,6 @@
 
 import os
 import sys
-
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'SPRIT'
@@ -19,17 +18,25 @@ release = '0.1'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autosummary',
-              'sphinx.ext.autodoc',
+extensions = ['sphinx.ext.autodoc', 
+              'sphinx.ext.autosummary',
+              'sphinx.ext.todo',
               'sphinx.ext.viewcode',
-              'sphinx.ext.extlinks',
-              'sphinx.ext.mathjax',
-              'sphinx.ext.intersphinx',
-              'sphinx.ext.napoleon',
-              'sphinx_rtd_theme']
+              'sphinx.ext.linkcode',
+              'sphinx.ext.napoleon'
+              ]
+
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    filename = info['module'].replace('.', '/')
+    return "https://github.com/RJbalikian/SPRIT/%s.py" % filename
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
 
 
 # -- Options for HTML output -------------------------------------------------

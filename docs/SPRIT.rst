@@ -1,13 +1,13 @@
-hvsr package
-============
+SPRIT package
+=============
 
 Submodules
 ----------
 
-hvsr.sprit module
------------------
+SPRIT.sprit module
+------------------
 
-.. automodule:: hvsr.sprit
+.. automodule:: SPRIT.sprit
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ hvsr.sprit module
 Module contents
 ---------------
 
-.. automodule:: hvsr
+.. automodule:: SPRIT
    :members:
    :undoc-members:
    :show-inheritance:

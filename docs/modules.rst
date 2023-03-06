@@ -1,7 +1,7 @@
-hvsr
-====
+SPRIT
+=====
 
 .. toctree::
    :maxdepth: 4
 
-   index
+   SPRIT
