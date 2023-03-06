@@ -18,7 +18,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="SPRIT package" href="SPRIT.html" />
+    <link rel="next" title="SPRIT package" href="sprit.html" />
     <link rel="prev" title="Welcome to SPRIT’s documentation!" href="index.html" /> 
 </head>
 
@@ -44,10 +44,10 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">SPRIT</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SPRIT.html">SPRIT package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html">SPRIT package</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="SPRIT.html">SPRIT package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sprit.html">SPRIT package</a></li>
 </ul>
 
         </div>
@@ -78,10 +78,30 @@
 <h1>SPRIT<a class="headerlink" href="#sprit" title="Permalink to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="SPRIT.html">SPRIT package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SPRIT.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SPRIT.html#sprit-sprit-module">SPRIT.sprit module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SPRIT.html#module-contents">Module contents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sprit.html">SPRIT package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#module-sprit">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.checkifpath"><code class="docutils literal notranslate"><span class="pre">checkifpath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.dfa"><code class="docutils literal notranslate"><span class="pre">dfa()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.error"><code class="docutils literal notranslate"><span class="pre">error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.generate_ppsds"><code class="docutils literal notranslate"><span class="pre">generate_ppsds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.get_char"><code class="docutils literal notranslate"><span class="pre">get_char()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.get_metadata"><code class="docutils literal notranslate"><span class="pre">get_metadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.hvplot"><code class="docutils literal notranslate"><span class="pre">hvplot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.input_param"><code class="docutils literal notranslate"><span class="pre">input_param()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.message"><code class="docutils literal notranslate"><span class="pre">message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.print_report"><code class="docutils literal notranslate"><span class="pre">print_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.process_hvsr"><code class="docutils literal notranslate"><span class="pre">process_hvsr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.setup_colab"><code class="docutils literal notranslate"><span class="pre">setup_colab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.trim_data"><code class="docutils literal notranslate"><span class="pre">trim_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.update_shake_metadata"><code class="docutils literal notranslate"><span class="pre">update_shake_metadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.html#sprit.warning"><code class="docutils literal notranslate"><span class="pre">warning()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -93,7 +113,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to SPRIT’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="SPRIT.html" class="btn btn-neutral float-right" title="SPRIT package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="sprit.html" class="btn btn-neutral float-right" title="SPRIT package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
