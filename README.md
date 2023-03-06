@@ -12,18 +12,18 @@ This python package is built in large part off the Incorporated Research Institu
 That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service[3], which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.
 
 # Documentation
-- API Documentation here: https://sprite-hvsr.readthedocs.io/en/latest/modules.html
+- API Documentation here: https://sprit.readthedocs.io/en/latest/SPRIT.html
+- See Wiki for more information (in progress): https://github.com/RJbalikian/SPRIT/wiki
+- See examples for examples on how to compute (in progress): https://github.com/RJbalikian/SPRIT/tree/main/examples
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 - [matplotlib](https://matplotlib.org/): copmrehensive library for creating static, animated, andinteractive visualizationsin python
-- numpy
-- obspy
-- scipy
+- [numpy[(https://numpy.org/): "The fundamental package for scientific computing with Python"
+- [obspy](https://docs.obspy.org/): Python framework for processing seismological data
+- [scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
 
 # References
 - [1] http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf
 - [2] https://github.com/iris-edu/HVSR
 - [3] http://service.iris.edu/mustang/
-
-Documentation: https://www.youtube.com/watch?v=b4iFyrLQQh4&ab_channel=avcourt
