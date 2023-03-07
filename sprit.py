@@ -553,8 +553,9 @@ def setup_colab():
             os.chdir(repo_dir)            
             break
     if obspyInstalled:
-        pass
+        print('Obspy already installed')
     else:
+        print('Installing Obspy')
         _system_commands._run_command('pip install obspy', False)
         global obspy
         import obspy
