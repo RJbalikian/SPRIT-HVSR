@@ -13,7 +13,6 @@ import warnings
 import xml.etree.ElementTree as ET
 
 import matplotlib.pyplot as plt
-import obspy
 import numpy as np
 import scipy
 
@@ -346,6 +345,8 @@ def input_param( site,
         Dictionary containing input parameters, including data file path and metadata path. This will be used as an input to other functions.
 
     """
+    import obspy
+
     #Make Sure metapath is all good
     if not pathlib.Path(metaPath).exists() or metaPath=='':
         if metaPath == '':
@@ -529,9 +530,13 @@ def setup_colab():
         import os
         #Capture command suppresses output
         subprocess.run(['pip', 'install', 'obspy']) 
+        print('Obspy Installed')
+        print('Runtime will now be restarted. Please run setup_colab() again.')
         #Kill runtime
         os.kill(os.getpid(), 9)
+        
     else:
+        import obspy
         from google.colab import files
         from zipfile import ZipFile
 
