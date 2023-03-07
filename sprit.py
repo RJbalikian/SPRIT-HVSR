@@ -526,53 +526,45 @@ def setup_colab():
     from zipfile import ZipFile
     #%matplotlib #Run this line if you want interactive plots
 
-    if 'obspy' not in sys.modules.keys():
-        import os
-        env = os.environ.copy()
-        #Capture command suppresses output
-        subprocess.run(['pip', 'install', 'obspy'], shell=True, env=env) 
-        print('Obspy Installed')
-        print('Runtime will now be restarted. Please run setup_colab() again.')
-        #Kill runtime
-        os.kill(os.getpid(), 9)
-        
+    from google.colab import _system_commands
+    pyvers = _system_commands._run_command('python --version', False)
+    pyvers = pyvers.output.split(' ')#+pyvers.output.split('.')[1]
+    pyvers = pyvers[0].lower()+pyvers[1].split('.')[0]+'.'+pyvers[1].split('.')[1]
+
+    packPath = '/usr/local/lib/'+pyvers+'/dist-packages'
+    packPath = pathlib.Path(packPath)
+
+    obspyInstalled=False
+    for f in packPath.iterdir():
+       if 'obspy' in f.name:
+            obspyInstalled = True
+            break
+
+    _system_commands._run_command('pip install obspy', False)
+    import obspy
+
+    #Make directories
+    dataDir = '/content/Data/'
+    outputDir = '/content/Output'
+    if not os.path.exists(dataDir):
+        os.makedirs(dataDir)
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)
+    print('\n**Repository setup complete**\n')
+    os.chdir(dataDir)
+    print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
+    files.upload() #Upload the 3 data files to be used
+    
+    repo_dir = pathlib.Path('/content/SPRIT-main')
+    if repo_dir.is_dir()
+        pass
     else:
-        import obspy
-        from google.colab import files
-        from zipfile import ZipFile
-
-        os.chdir('/content')
-        print("\nUpload zip file with code repository (will upload to main /content directory):")
-        zipfile_name = files.upload()
-        zipfile_name = list(zipfile_name.keys())[0]
-
-        with ZipFile(zipfile_name, 'r') as zip:
-            zip.extractall()
-
-        if '_' in zipfile_name:
-            repo_name=zipfile_name.split('_')[0]
-        else:
-            repo_name = zipfile_name
-            
-        mPath = '/content/'+repo_name+'/resources/raspshake_metadata.inv'
-        repo_dir = '/content/'+repo_name
-        os.chdir(repo_dir)
-
-        import hvsr        
-        import obspy
-        #Make directories
-        dataDir = '/content/Data/'
-        outputDir = '/content/Output'
-        if not os.path.exists(dataDir):
-            os.makedirs(dataDir)
-        if not os.path.exists(outputDir):
-            os.makedirs(outputDir)
-        print('\n**Repository setup complete**\n')
-        os.chdir(dataDir)
-        print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
-        files.upload() #Upload the 3 data files to be used
-
-        os.chdir(repo_dir)
+        for f in pathlib.Path('/content').iterdir():
+            existDirList = ['sample_data', 'Data', 'Output']
+            if f.is_dir() and f.name not in existDirList:
+                repo_dir = f
+    
+    os.chdir(repo_dir)
     return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
