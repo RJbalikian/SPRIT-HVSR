@@ -525,7 +525,7 @@ def setup_colab():
     from google.colab import files
     from zipfile import ZipFile
     #%matplotlib #Run this line if you want interactive plots
-
+    #https://github.com/googlecolab/colabtools/blob/main/google/colab/_system_commands.py
     from google.colab import _system_commands
     pyvers = _system_commands._run_command('python --version', False)
     pyvers = pyvers.output.split(' ')#+pyvers.output.split('.')[1]
