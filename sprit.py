@@ -505,7 +505,7 @@ def update_shake_metadata(filepath, params, write_path=''):
     return params
 
 #Code to help setup environment in Google Colab
-def setup_colab():
+def setup_colab(repo_dir=''):
     """Function to help set up Google Colab environment
     
     This needs to be run twice, and at the beginning of the Google Colab notebook. 
@@ -542,24 +542,17 @@ def setup_colab():
             obspyInstalled=True
             global obspy
             import obspy
-            repo_dir = pathlib.Path('/content/SPRIT-main')
-            if repo_dir.is_dir():
-               pass
-            else:
-                for f in pathlib.Path('/content').iterdir():
-                    existDirList = ['sample_data', 'Data', 'Output']
-                    if f.is_dir() and f.name not in existDirList:
-                        repo_dir = f
-            
-            os.chdir(repo_dir)            
             break
-    if obspyInstalled:
-        print('Obspy has been installed and loaded.')
-    else:
+    if not obspyInstalled:
         print('Installing Obspy')
         _system_commands._run_command('pip install obspy', False)
+        print("Runtime will now be reset to properly load obspy")
+        print('Please run setup_colab(repo_dir) to upload data and enter code environment.')
+        os.kill(os.getpid(), 9)
+    else:
         global obspy
         import obspy
+        print('Obspy has been installed and loaded.')
 
         #Make directories
         dataDir = '/content/Data/'
@@ -572,9 +565,7 @@ def setup_colab():
         os.chdir(dataDir)
         print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
         files.upload() #Upload the 3 data files to be used
-        print("Runtime will now be reset to properly load obspy")
-        print('Please run setup_colab() again')
-        os.kill(os.getpid(), 9)
+        os.chdir(repo_dir)
     return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
