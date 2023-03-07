@@ -785,19 +785,24 @@ def __read_RS_data(datapath, year, doy, inv, params):
     fileList = []
     folderPathList = []
     filesinfolder = False
-
-    for child in datapath.iterdir():
-        if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
-            filesinfolder = True
-            folderPathList.append(datapath)
-            fileList.append(child.name)
-        elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
-            folderPathList.append(child.name)
-            for c in child.iterdir():
-                if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
-                    fileList.append(c.name)
-
-    fileList.sort(reverse=True)
+    
+    #Read RS files
+    if datapath.is_dir(): #If reading from directory, either from raw or with individual day files in there
+        for child in datapath.iterdir():
+            if child.is_file() and child.name.startswith('AM') and child.name.endswith(str(doy).zfill(3)) and str(year) in child.name:
+                filesinfolder = True
+                folderPathList.append(datapath)
+                fileList.append(child.name)
+            elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
+                folderPathList.append(child.name)
+                for c in child.iterdir():
+                    if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
+                        fileList.append(c.name)
+        fileList.sort(reverse=True) # Puts z channel first
+    else:
+        if c.is_file() and 'AM' in c.name and str(doy).zfill(3) in c.name and str(year) in c.name:
+            fileList.append(c.name)    
+    
     filepaths = []
     for i, f in enumerate(fileList):
         folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
@@ -881,11 +886,13 @@ def trim_data(stream, params, export_dir=None, export_format=None):
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
+        yr = str(st_trimmed[0].stats.starttime.year)
         strtD=str(st_trimmed[0].stats.starttime.date)
         strtT=str(st_trimmed[0].stats.starttime.time)[0:2]
         strtT=strtT+str(st_trimmed[0].stats.starttime.time)[3:5]
         endT = str(st_trimmed[0].stats.endtime.time)[0:2]
         endT = endT+str(st_trimmed[0].stats.endtime.time)[3:5]
+        doy = st_trimmed[0].stats.starttime.utctimetuple().tm_yday
 
         export_dir = checkifpath(export_dir)
         export_dir = str(export_dir)
@@ -893,9 +900,9 @@ def trim_data(stream, params, export_dir=None, export_format=None):
         export_dir = export_dir.replace('\\'[0], '/')
 
         if type(export_format) is str:
-            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+export_format
+            filename = site+net+'.'+sta+'.'+loc+'.'+yr+'.'+doy+'_'+strtD+'_'+strtT+'-'+endT+export_format
         elif type(export_format) is bool:
-            filename = site+net+'.'+sta+'.'+loc+'.'+strtD+'_'+strtT+'-'+endT+'.mseed'
+            filename = site+net+'.'+sta+'.'+loc+'.'+yr+'.'+doy+'_'+strtD+'_'+strtT+'-'+endT+'.mseed'
 
         if export_dir[-1]=='/':
             export_dir=export_dir[:-1]
