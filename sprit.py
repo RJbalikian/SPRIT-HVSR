@@ -534,38 +534,45 @@ def setup_colab():
     packPath = '/usr/local/lib/'+pyvers+'/dist-packages'
     packPath = pathlib.Path(packPath)
 
+    
     obspyInstalled=False
     for f in packPath.iterdir():
-       if 'obspy' in f.name:
-            obspyInstalled = True
+        if 'obspy' in f.name:
+            obspyInstalled=True
+            global obspy
+            import obspy
+            repo_dir = pathlib.Path('/content/SPRIT-main')
+            if repo_dir.is_dir():
+               pass
+            else:
+                for f in pathlib.Path('/content').iterdir():
+                    existDirList = ['sample_data', 'Data', 'Output']
+                    if f.is_dir() and f.name not in existDirList:
+                        repo_dir = f
+            
+            os.chdir(repo_dir)            
             break
-
-    _system_commands._run_command('pip install obspy', False)
-    global obspy
-    import obspy
-
-    #Make directories
-    dataDir = '/content/Data/'
-    outputDir = '/content/Output'
-    if not os.path.exists(dataDir):
-        os.makedirs(dataDir)
-    if not os.path.exists(outputDir):
-        os.makedirs(outputDir)
-    print('\n**Repository setup complete**\n')
-    os.chdir(dataDir)
-    print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
-    files.upload() #Upload the 3 data files to be used
-    
-    repo_dir = pathlib.Path('/content/SPRIT-main')
-    if repo_dir.is_dir():
+    if obspyInstalled:
         pass
     else:
-        for f in pathlib.Path('/content').iterdir():
-            existDirList = ['sample_data', 'Data', 'Output']
-            if f.is_dir() and f.name not in existDirList:
-                repo_dir = f
-    
-    os.chdir(repo_dir)
+        _system_commands._run_command('pip install obspy', False)
+        global obspy
+        import obspy
+
+        #Make directories
+        dataDir = '/content/Data/'
+        outputDir = '/content/Output'
+        if not os.path.exists(dataDir):
+            os.makedirs(dataDir)
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+        print('\n**Repository setup complete**\n')
+        os.chdir(dataDir)
+        print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
+        files.upload() #Upload the 3 data files to be used
+        print("Runtime will now be reset to properly load obspy")
+        print('Please run setup_colab() again')
+        os.kill(os.getpid(), 9)
     return
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
