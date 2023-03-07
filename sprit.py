@@ -556,7 +556,7 @@ def setup_colab():
     files.upload() #Upload the 3 data files to be used
     
     repo_dir = pathlib.Path('/content/SPRIT-main')
-    if repo_dir.is_dir()
+    if repo_dir.is_dir():
         pass
     else:
         for f in pathlib.Path('/content').iterdir():
