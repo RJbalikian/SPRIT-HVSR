@@ -505,7 +505,7 @@ def update_shake_metadata(filepath, params, write_path=''):
     return params
 
 #Code to help setup environment in Google Colab
-def setup_colab(repo_dir=''):
+def setup_colab(option='', repo_dir=''):
     """Function to help set up Google Colab environment
     
     This needs to be run twice, and at the beginning of the Google Colab notebook. 
@@ -534,7 +534,14 @@ def setup_colab(repo_dir=''):
 
     packPath = '/usr/local/lib/'+pyvers+'/dist-packages'
     packPath = pathlib.Path(packPath)
-
+    
+    #Make directories
+    dataDir = '/content/Data/'
+    outputDir = '/content/Output'
+    if not os.path.exists(dataDir):
+        os.makedirs(dataDir)
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)    
     
     obspyInstalled=False
     for f in packPath.iterdir():
@@ -543,25 +550,23 @@ def setup_colab(repo_dir=''):
             global obspy
             import obspy
             break
-    if not obspyInstalled:
-        print('Installing Obspy')
-        _system_commands._run_command('pip install obspy', False)
-        print("Runtime will now be reset to properly load obspy")
-        print('Please run setup_colab(repo_dir) to upload data and enter code environment.')
-        os.kill(os.getpid(), 9)
-    else:
+        
+    if 'obspy' in option or option=='':
+        if not obspyInstalled:
+            print('Installing Obspy')
+            _system_commands._run_command('pip install obspy', False)
+            print("Runtime will now be reset to properly load obspy")
+            print('Please run setup_colab() to upload data and enter code environment.')
+            os.kill(os.getpid(), 9)
+        else:
+            global obspy
+            import obspy
+            print('Obspy has been imported.') 
+    elif 'data' in option:
         global obspy
         import obspy
-        print('Obspy has been installed and loaded.')
+        print('Obspy has been installed imported.')
 
-        #Make directories
-        dataDir = '/content/Data/'
-        outputDir = '/content/Output'
-        if not os.path.exists(dataDir):
-            os.makedirs(dataDir)
-        if not os.path.exists(outputDir):
-            os.makedirs(outputDir)
-        print('\n**Repository setup complete**\n')
         os.chdir(dataDir)
         print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
         files.upload() #Upload the 3 data files to be used
