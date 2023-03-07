@@ -833,7 +833,12 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
         for file in datapath.iterdir():
             ext = file.suffix
-            if ext.upper() in obspyFormats or int(ext) > 0 or int(ext)<367:
+            rawFormat = False
+            if ext.isnumeric():
+                if ext > 0 and ext < 367:
+                    rawFormat=True
+            
+            if ext.upper() in obspyFormats or rawFormat:
                 filesinfolder = True
                 folderPathList.append(datapath)
                 fileList.append(file.name)
