@@ -528,8 +528,9 @@ def setup_colab():
 
     if 'obspy' not in sys.modules.keys():
         import os
+        env = os.environ.copy()
         #Capture command suppresses output
-        subprocess.run(['pip', 'install', 'obspy']) 
+        subprocess.run(['pip', 'install', 'obspy'], shell=True, env=env) 
         print('Obspy Installed')
         print('Runtime will now be restarted. Please run setup_colab() again.')
         #Kill runtime
