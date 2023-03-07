@@ -570,6 +570,8 @@ def setup_colab(option='', repo_dir=''):
         os.chdir(dataDir)
         print('\nUpload data file(s): \n(file(s) will be placed in '+dataDir+')')
         files.upload() #Upload the 3 data files to be used
+        if repo_dir == '':
+            repo_dir='/content/SPRIT'
         os.chdir(repo_dir)
     return
 
