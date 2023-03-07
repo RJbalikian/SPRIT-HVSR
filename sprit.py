@@ -690,7 +690,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
                 Parameters defined using input_params() function.
         inv     : obspy inventory object 
             Obspy inventory object containing metadata for instrument that collected data to be fetched
-        source  : str='raw' {'raw', 'direct'}
+        source  : str, {'raw', 'dir', 'file'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, either in folder or subfolders; 'direct' reads filepath directly
         trim_dir : bool=False or str or pathlib obj
@@ -770,6 +770,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.attach_response(inv)
 
+    #Make sure z component is first
     if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
         dataIN = rawDataIN
     else:
@@ -832,7 +833,8 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
     elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
         for file in datapath.iterdir():
-            ext = file.suffix
+            ext = file.suffix[1:]
+            print(ext)
             rawFormat = False
             if ext.isnumeric():
                 if ext > 0 and ext < 367:
@@ -855,6 +857,7 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
         
         if len(rawDataIN)==1:
             rawDataIN = rawDataIN[0]
+        print(rawDataIN)
     elif source=='file':
         rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
         rawDataIN.attach_response(inv)
