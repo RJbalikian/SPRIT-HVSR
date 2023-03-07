@@ -525,7 +525,7 @@ def setup_colab():
     from zipfile import ZipFile
     #%matplotlib #Run this line if you want interactive plots
 
-    if 'osbpy' not in sys.modules.keys():
+    if 'obspy' not in sys.modules.keys():
         import os
         #Capture command suppresses output
         subprocess.run(['pip', 'install', 'obspy']) 
