@@ -762,10 +762,10 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, year, doy, inv, params)
+            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, year, doy, inv, params)        
+            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)        
     elif source=='file':
         rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.attach_response(inv)
@@ -783,7 +783,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
     return dataIN
 
 #Read data from raspberry shake
-def __read_RS_data(datapath, year, doy, inv, params):
+def __read_RS_data(datapath, source, year, doy, inv, params):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     from obspy.core import UTCDateTime
     fileList = []
@@ -791,7 +791,7 @@ def __read_RS_data(datapath, year, doy, inv, params):
     filesinfolder = False
     
     #Read RS files
-    if datapath.is_dir(): #If reading from directory, either from raw or with individual day files in there
+    if source=='raw': #raw data with individual files per trace
         for child in datapath.iterdir():
             if child.is_file() and 'AM' in child.name and str(doy).zfill(3) in child.name and str(year) in child.name:
                 filesinfolder = True
@@ -803,20 +803,14 @@ def __read_RS_data(datapath, year, doy, inv, params):
                     if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
                         fileList.append(c.name)
 
-                if len(folderPathList) !=3:
-                    error('3 channels needed!', 1)
+        if len(folderPathList) !=3:
+            error('3 channels needed!', 1)
 
-                 fileList.sort(reverse=True) # Puts z channel first
-        
-        filepaths = []
-        for i, f in enumerate(fileList):
-            folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
-            folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
-            filepaths.append(str(folderPathList[i])+'/'+f)
-
+        fileList.sort(reverse=True) # Puts z channel first
+        folderPathList.sort(reverse=True)
 
         if len(filepaths) == 0:
-            info('No file found for specified day/year. The following days/files exist for specified year in this directory')
+            info('No file found for specified parameters. The following days/files exist for specified year in this directory')
             doyList = []
             for j, folder in enumerate(folderPathList):
                 for i, file in enumerate(folder.iterdir()):
@@ -824,18 +818,44 @@ def __read_RS_data(datapath, year, doy, inv, params):
                         doyList.append(str(year) + ' ' + str(file.name[-3:]))
                         print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
 
-            traceList = []
-            for i, f in enumerate(filepaths):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
-                    tr = (st[0])
-                    #tr= obspy.Trace(tr.data,header=meta)
-                    traceList.append(tr)
-            rawDataIN = obspy.Stream(traceList)
+        traceList = []
+        for i, f in enumerate(filepaths):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+                tr = (st[0])
+                #tr= obspy.Trace(tr.data,header=meta)
+                traceList.append(tr)
+        rawDataIN = obspy.Stream(traceList)
+        rawDataIN.attach_response(inv)
+        
+    elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
+        obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
+        for file in datapath.iterdir():
+            ext = file.suffix
+            if ext.upper() in obspyFormats or int(ext) > 0 or int(ext)<367:
+                filesinfolder = True
+                folderPathList.append(datapath)
+                fileList.append(file.name)
+                        
+        filepaths = []
+        rawDataIN = []
+        for i, f in enumerate(fileList):
+            folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
+            folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
+            filepaths.append(str(folderPathList[i])+'/'+f)
 
-        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)            
-    rawDataIN.attach_response(inv)
+            rawDataIN.append(obspy.read(filepaths[i], starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True))
+            rawDataIN[i].attach_response(inv)  
+        
+        if len(rawDataIN)==1:
+            rawDataIN = rawDataIN[0]
+    elif source=='file':
+        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
+        rawDataIN.attach_response(inv)
+    elif type(source) is list or type(datapath) is list:
+        pass #Eventually do something
+        rawDataIN.attach_response(inv)
     return rawDataIN
 
 #Trim data 
