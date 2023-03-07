@@ -345,6 +345,7 @@ def input_param( site,
         Dictionary containing input parameters, including data file path and metadata path. This will be used as an input to other functions.
 
     """
+    global obspy
     import obspy
 
     #Make Sure metapath is all good
@@ -770,12 +771,20 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.attach_response(inv)
 
-    #Make sure z component is first
-    if 'Z' in str(rawDataIN.traces[0]).split('.')[3]:#[12:15]:
-        dataIN = rawDataIN
+    if type(rawDataIN) is not list:
+        #Make sure z component is first
+        if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
+            dataIN = rawDataIN
+        else:
+            dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
     else:
-        dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
-
+        dataIN = []
+        for i, st in enumerate(rawDataIN):
+            if 'Z' in st[0].stats['channel']:#).split('.')[3]:#[12:15]:
+                dataIN.append(rawDataIN[i])
+            else:
+                dataIN.append(rawDataIN[i].sort(['channel'], reverse=True)) #z, n, e order            
+        
     if not trim_dir:
         pass
     else:
@@ -834,7 +843,6 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
         for file in datapath.iterdir():
             ext = file.suffix[1:]
-            print(ext)
             rawFormat = False
             if ext.isnumeric():
                 if ext > 0 and ext < 367:
@@ -851,13 +859,15 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
             folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
             folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
             filepaths.append(str(folderPathList[i])+'/'+f)
+            filepaths[i] = pathlib.Path(filepaths[i])
 
-            rawDataIN.append(obspy.read(filepaths[i], starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True))
+            currData = obspy.read(filepaths[i])
+
+            rawDataIN.append(currData)
             rawDataIN[i].attach_response(inv)  
-        
-        if len(rawDataIN)==1:
+
+        if type(rawDataIN) is list and len(rawDataIN)==1:
             rawDataIN = rawDataIN[0]
-        print(rawDataIN)
     elif source=='file':
         rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
         rawDataIN.attach_response(inv)
@@ -902,7 +912,10 @@ def trim_data(stream, params, export_dir=None, export_format=None):
 
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
-    st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
+    if trimStart > st_trimmed[0].stats.endtime or trimEnd < st_trimmed[0].stats.starttime:
+        print('No trim performed on {}, please check start/end times.'.format(params['site']))
+    else:
+        st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
 
     #Format export filepath, if exporting
     if export_format is not None and site is not None and export_dir is not None:
