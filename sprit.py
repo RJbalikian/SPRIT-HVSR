@@ -553,7 +553,7 @@ def setup_colab():
             os.chdir(repo_dir)            
             break
     if obspyInstalled:
-        print('Obspy already installed')
+        print('Obspy has been installed and loaded.')
     else:
         print('Installing Obspy')
         _system_commands._run_command('pip install obspy', False)
@@ -800,43 +800,44 @@ def __read_RS_data(datapath, year, doy, inv, params):
                     if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
                         fileList.append(c.name)
         fileList.sort(reverse=True) # Puts z channel first
-    else:
-        if c.is_file() and 'AM' in c.name and str(doy).zfill(3) in c.name and str(year) in c.name:
-            fileList.append(c.name)    
-    
-    filepaths = []
-    for i, f in enumerate(fileList):
-        folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
-        folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
-        filepaths.append(str(folderPathList[i])+'/'+f)
+        
+        filepaths = []
+        for i, f in enumerate(fileList):
+            folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
+            folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
+            filepaths.append(str(folderPathList[i])+'/'+f)
 
-    if len(folderPathList) !=3:
-        error('3 channels needed!', 1)
-    else:
-        #filepaths = []
-        #for folder in folderPathList:
-        #    for file in folder.iterdir():
-        #        if str(doy) in str(file.name) and str(year) in str(file.name):
-        #            filepaths.append(file)
+        if len(folderPathList) !=3:
+            error('3 channels needed!', 1)
+        else:
+            #filepaths = []
+            #for folder in folderPathList:
+            #    for file in folder.iterdir():
+            #        if str(doy) in str(file.name) and str(year) in str(file.name):
+            #            filepaths.append(file)
 
-        if len(filepaths) == 0:
-            info('No file found for specified day/year. The following days/files exist for specified year in this directory')
-            doyList = []
-            for j, folder in enumerate(folderPathList):
-                for i, file in enumerate(folder.iterdir()):
-                    if j ==0:
-                        doyList.append(str(year) + ' ' + str(file.name[-3:]))
-                        print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
-        traceList = []
-        for i, f in enumerate(filepaths):
-            with warnings.catch_warnings():
-                warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
-                tr = (st[0])
-                #tr= obspy.Trace(tr.data,header=meta)
-                traceList.append(tr)
-        rawDataIN = obspy.Stream(traceList)
-        rawDataIN.attach_response(inv)
+            if len(filepaths) == 0:
+                info('No file found for specified day/year. The following days/files exist for specified year in this directory')
+                doyList = []
+                for j, folder in enumerate(folderPathList):
+                    for i, file in enumerate(folder.iterdir()):
+                        if j ==0:
+                            doyList.append(str(year) + ' ' + str(file.name[-3:]))
+                            print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
+            traceList = []
+            for i, f in enumerate(filepaths):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+                    tr = (st[0])
+                    #tr= obspy.Trace(tr.data,header=meta)
+                    traceList.append(tr)
+            rawDataIN = obspy.Stream(traceList)
+    else:
+        if datapath.is_file() and 'AM' in datapath.name and str(doy).zfill(3) in datapath.name and str(year) in datapath.name:
+            fileList.append(datapath.name)   
+        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True))            
+    rawDataIN.attach_response(inv)
     return rawDataIN
 
 #Trim data 
