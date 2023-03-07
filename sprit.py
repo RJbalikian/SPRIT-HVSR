@@ -541,6 +541,7 @@ def setup_colab():
             break
 
     _system_commands._run_command('pip install obspy', False)
+    global obspy
     import obspy
 
     #Make directories
