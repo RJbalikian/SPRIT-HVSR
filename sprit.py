@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy
 
 #Main variables
@@ -1395,33 +1396,39 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
         return
     
     specgramList = ['spec', 'specgram', 'spectrogram']
-    
+    hvsrList = ['hvsr', 'hv', 'h']
+
     kList = kind.split(' ')
     chartStr = []
     i = 0
     for k in kList:
-        k = k.strip()
-        if i == 0:
+        k = k.strip().lower()
+        if i == 0 and (k in hvsrList or k in specgramList):
             chartType = k        
-        if '+' in k:
+        if '+' in k or (k in hvsrList and i > 0) or (k in specgramList and i > 0):
             if chartType in specgramList:
-                print(chartStr)
-                fig, ax = __plot_specgram(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+                fig, ax = __plot_specgram(hvsr_dict, savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+                i=0
             else:
-                print(chartStr)
                 fig, ax = __plot_hvsr(hvsr_dict, kind=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)                
-            k = k.replace('+', '')
+                i=0
+
+            if '+' in k:
+                k = k.replace('+', '')    
+                chartStr = [k]
+                fig, ax = __plot_hvsr(hvsr_dict, kind=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
             chartStr = [k]
-            i=0
         else:
             i+=1
             chartStr.append(k)
             
     if len(chartStr) > 0:
+        if i == 0 and (k in hvsrList or k in specgramList):
+            chartType = k     
+
         if chartType in specgramList:
             fig, ax = __plot_specgram(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
         else:
-            print(chartStr)
             fig, ax = __plot_hvsr(hvsr_dict, kind=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
 
     if returnfig:
@@ -1497,6 +1504,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             bestPeakScore = 0
             for i, p in enumerate(hvsr_dict['Peak Report']):
                 if p['Score'] > bestPeakScore:
+                    bestPeakScore = p['Score']
                     bestPeak = p
 
             axis.vlines(bestPeak['f0'], 0, 50, colors='k', linestyles='dotted', label='Peak')          
@@ -1536,7 +1544,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             for t in hvsr_dict['ind_hvsr_curves']:
                 axis.plot(x, t, color='gray', alpha=0.3, linewidth=0.8)
 
-        if 'c' in k:
+        if k=='c':
             plotSuff = plotSuff+'IndComponents_'
             
             if len(kind) > 1:
@@ -1640,7 +1648,14 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     fig, ax = plt.subplots()
 
     kwargs = kwargs['kwargs']
-    
+
+    if 'peak_plot' in kwargs.keys():
+        peak_plot=True
+        del kwargs['peak_plot']
+    else:
+        peak_plot=False
+        
+
     if 'grid' in kwargs.keys():
         plt.grid(which=kwargs['grid'], alpha=0.25)
         del kwargs['grid']
@@ -1655,56 +1670,92 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     else:
         ylabel='Frequency [Hz]'
         
+    if 'detrend' in kwargs.keys():
+        detrend= kwargs['detrend']
+        del kwargs['detrend']
+    else:
+        detrend=True
+
+    if 'cmap' in kwargs.keys():
+        pass
+    else:
+        kwargs['cmap'] = 'afmhot'
 
     ppsds = hvsr_dict['ppsds']
     import matplotlib.dates as mdates
-    anyKey = list(ppsds.keys())
+    anyKey = list(ppsds.keys())[0]
 
-    psdList =[]
+    psdHList =[]
+    psdZList =[]
     for k in hvsr_dict['psd_raw']:
-        psdList.append(hvsr_dict['psd_raw'][k])
-    psdArr = np.array(psdList)
-    psdArr = np.mean(psdArr, axis=0)
-    if 'detrend' in kwargs:
-        if kwargs['detrend']:           
-            psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
-        del kwargs['detrend']
+        if 'z' in k.lower():
+            psdZList.append(hvsr_dict['psd_raw'][k])    
+        else:
+            psdHList.append(hvsr_dict['psd_raw'][k])
+    
+    #if detrend:
+    #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+    psdArr = hvsr_dict['ind_hvsr_curves'].T
 
-    xmin = datetime.datetime.strptime(min(ppsds[anyKey].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
-    xmax = datetime.datetime.strptime(max(ppsds[anyKey].current_times_used).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmin = datetime.datetime.strptime(min(ppsds[anyKey].current_times_used[:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmax = datetime.datetime.strptime(max(ppsds[anyKey].current_times_used[:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
     xmin = mdates.date2num(xmin)
     xmax = mdates.date2num(xmax)
 
-    tTicks = []
-    tLabels = []
-    for i, t in enumerate(ppsds[anyKey].current_times_used):
-        t1 = datetime.datetime.strptime(t.isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
-        tTicks.append(mdates.date2num(t1))
-        day = str(t.date)
-        if i%10==0:
-            tLabels.append(str(t.hour)+':'+str(t.minute))
-        else:
-            tLabels.append('') 
-    extList = [xmin,xmax,min(hvsr_dict['x_freqs'][anyKey]),max(hvsr_dict['x_freqs'][anyKey])]
-    if 'cmap' in kwargs.keys():
-        cmap=kwargs['cmap']
-    else:
-        cmap='viridis'
+    tTicks = mdates.MinuteLocator(byminute=range(0,60,5))
+    ax.xaxis.set_major_locator(tTicks)
+    tTicks_minor = mdates.SecondLocator(bysecond=[0])
+    ax.xaxis.set_minor_locator(tTicks_minor)
 
-    im = ax.imshow(psdArr.T, origin='lower', extent=extList, aspect=.005, kwargs=kwargs)#,cmap=cmap)
+    tLabels = mdates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_formatter(tLabels)
+    plt.tick_params(axis='x', labelsize=8)
+
+    if ppsds[anyKey].current_times_used[0].date != ppsds[anyKey].current_times_used[0-1].date:
+        day = str(ppsds[anyKey].current_times_used[0].date)+' - '+str(ppsds[anyKey].current_times_used[1].date)
+    else:
+        day = str(ppsds[anyKey].current_times_used[0].date)
+
+    ymin = hvsr_dict['input_params']['hvsr_band'][0]
+    ymax = hvsr_dict['input_params']['hvsr_band'][1]
+
+    extList = [xmin, xmax, ymin, ymax]
   
     ax = plt.gca()
     fig = plt.gcf()
 
-    FreqTicks = np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
-    plt.xticks(ticks=tTicks, labels=tLabels)
+    freqticks = np.flip(hvsr_dict['x_freqs'][anyKey])
+    yminind = np.argmin(np.abs(ymin-freqticks))
+    ymaxind = np.argmin(np.abs(ymax-freqticks))
+    freqticks = freqticks[yminind:ymaxind]
 
-    plt.yticks(FreqTicks)
-    plt.xlabel('Time \n'+day)
+    #Set up axes, since data is already in semilog
+    axy = ax.twinx()
+    axy.zorder=0
+    ax.zorder=1
+    ax.set_facecolor('#ffffff00') #Create transparent background for front axis
+    plt.sca(axy)
+    im = plt.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
+    plt.tick_params(left=False, right=False)
+    plt.yticks([], labels='')
+    plt.sca(ax)
+    if peak_plot:
+        ax.hlines(hvsr_dict['Best Peak']['f0'], xmin,xmax, colors='k', linestyles='dashed', alpha=0.5)
+
+    #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
+    plt.title(hvsr_dict['input_params']['site']+': Spectrogram')
+    plt.xlabel('UTC Time \n'+day)
+    cbar = plt.colorbar(mappable=im)
+    cbar.set_label('H/V Ratio')
+
     plt.ylabel(ylabel)
+    #plt.yticks(freqticks)
     plt.semilogy()
-    plt.colorbar(mappable=im)
+    plt.ylim(hvsr_dict['input_params']['hvsr_band'])
+
     plt.rcParams['figure.dpi'] = 500
+    plt.rcParams['figure.figsize'] = (12,4)
+    fig.tight_layout()
     plt.show()
     return fig, ax
 
@@ -1805,7 +1856,7 @@ def __find_peaks(_y):
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
+def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -1816,8 +1867,6 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=Fa
             2-item tuple or list with lower and upper limit of frequencies to analyze
         peak_water_level: float, default=1.8
             Value of peak water level
-        do_rank : bool, default=False    
-            Include peak ranking in output
 
         Returns
         -------
@@ -1854,7 +1903,7 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=Fa
         index_p = list()
 
     peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
-    peakp = __check_clarity(x, hvsrp, peakp, do_rank=False)
+    peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
 
     #Do for hvsrm
     # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
@@ -1866,21 +1915,21 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=Fa
     peak_water_level_m  = hvsr_dict['peak_water_level_m']
 
     peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
-    peakm = __check_clarity(x, hvsrm, peakm, do_rank=False)
-
-
-    ###########FITURE OUT WHAT HVSRPEAKS IS, RELATIVE TO INDEX_LIST (AND INDEX_LIST??)
-    #I think hvsrPeaks is list of peaks from each timestep
-    #index_list is the indices of the main hvsr curve
-    #get_stdf finds the closest peak from each timestep hvsr and uses that to compute a frequency std
+    peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
     stdf = __get_stdf(x, index_list, hvsrPeaks)
 
     peak = __check_freq_stability(peak, peakm, peakp)
     peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
-
     hvsr_dict['Peak Report'] = peak
+
+    bestPeakScore = 0
+    for i, p in enumerate(hvsr_dict['Peak Report']):
+        if p['Score'] > bestPeakScore:
+            bestPeakScore = p['Score']
+            bestPeak = p
+    hvsr_dict['Best Peak'] = bestPeak
     return hvsr_dict
 
 #Initialize peaks
