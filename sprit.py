@@ -1676,6 +1676,12 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     else:
         detrend=True
 
+    if 'colorbar' in kwargs.keys():
+        colorbar = kwargs['colorbar']
+        del kwargs['colorbar']
+    else:
+        colorbar=True
+
     if 'cmap' in kwargs.keys():
         pass
     else:
@@ -1745,8 +1751,10 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
     plt.title(hvsr_dict['input_params']['site']+': Spectrogram')
     plt.xlabel('UTC Time \n'+day)
-    cbar = plt.colorbar(mappable=im)
-    cbar.set_label('H/V Ratio')
+    
+    if colorbar:
+        cbar = plt.colorbar(mappable=im)
+        cbar.set_label('H/V Ratio')
 
     plt.ylabel(ylabel)
     #plt.yticks(freqticks)
