@@ -42,9 +42,37 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="modules.html">SPRIT</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">SPRIT</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SPRIT package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-sprit">sprit module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.checkifpath"><code class="docutils literal notranslate"><span class="pre">checkifpath()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.dfa"><code class="docutils literal notranslate"><span class="pre">dfa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.error"><code class="docutils literal notranslate"><span class="pre">error()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.generate_ppsds"><code class="docutils literal notranslate"><span class="pre">generate_ppsds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.get_char"><code class="docutils literal notranslate"><span class="pre">get_char()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.get_metadata"><code class="docutils literal notranslate"><span class="pre">get_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.hvplot"><code class="docutils literal notranslate"><span class="pre">hvplot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.input_param"><code class="docutils literal notranslate"><span class="pre">input_param()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.message"><code class="docutils literal notranslate"><span class="pre">message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.print_report"><code class="docutils literal notranslate"><span class="pre">print_report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.process_hvsr"><code class="docutils literal notranslate"><span class="pre">process_hvsr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.setup_colab"><code class="docutils literal notranslate"><span class="pre">setup_colab()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.trim_data"><code class="docutils literal notranslate"><span class="pre">trim_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.update_shake_metadata"><code class="docutils literal notranslate"><span class="pre">update_shake_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.warning"><code class="docutils literal notranslate"><span class="pre">warning()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">SPRIT package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-sprit">Module contents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-sprit">sprit module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.checkifpath"><code class="docutils literal notranslate"><span class="pre">checkifpath()</span></code></a></li>
@@ -99,7 +127,7 @@
   <section id="sprit-package">
 <h1>SPRIT package<a class="headerlink" href="#sprit-package" title="Permalink to this heading"></a></h1>
 <section id="module-sprit">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-sprit" title="Permalink to this heading"></a></h2>
+<span id="sprit-module"></span><h2>sprit module<a class="headerlink" href="#module-sprit" title="Permalink to this heading"></a></h2>
 <p>This module contains all the functions needed to run the HVSR analysis</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.check_mark">
@@ -110,7 +138,7 @@ This function returns another displayable character if platform is Windows</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.check_peaks">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_water_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.check_peaks" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_water_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.check_peaks" title="Permalink to this definition"></a></dt>
 <dd><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -118,7 +146,6 @@ This function returns another displayable character if platform is Windows</p>
 <li><p><strong>hvsr_dict</strong> (<em>dict</em>) – Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</p></li>
 <li><p><strong>hvsr_band</strong> (<em>tuple</em><em> or </em><em>list</em><em>, </em><em>default=</em><em>[</em><em>0.4</em><em>, </em><em>40</em><em>]</em>) – 2-item tuple or list with lower and upper limit of frequencies to analyze</p></li>
 <li><p><strong>peak_water_level</strong> (<em>float</em><em>, </em><em>default=1.8</em>) – Value of peak water level</p></li>
-<li><p><strong>do_rank</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Include peak ranking in output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -173,7 +200,7 @@ This function returns another displayable character if platform is Windows</p>
 </dl>
 </p></li>
 <li><p><strong>inv</strong> (<em>obspy inventory object</em>) – Obspy inventory object containing metadata for instrument that collected data to be fetched</p></li>
-<li><p><strong>source</strong> (<em>str='raw' {'raw'</em><em>, </em><em>'direct'}</em>) – <dl class="simple">
+<li><p><strong>source</strong> (<em>str</em><em>, </em><em>{'raw'</em><em>, </em><em>'dir'</em><em>, </em><em>'file'}</em>) – <dl class="simple">
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt><dd><p>’raw’ finds raspberry shake data, either in folder or subfolders; ‘direct’ reads filepath directly</p>
 </dd>
 </dl>
@@ -299,7 +326,7 @@ For period, the following are accepted (case does not matter): ‘p’, ‘T’,
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.input_param">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2023-03-06'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00:00:00.00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'23:59:99.99'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metaPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#input_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_param" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2023-03-08'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00:00:00.00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'23:59:59.999'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metaPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#input_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_param" title="Permalink to this definition"></a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -345,13 +372,34 @@ This is necessary for Raspberry Shake data.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.print_report">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">print_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'print'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#print_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.print_report" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">print_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'print'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'peak'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#print_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.print_report" title="Permalink to this definition"></a></dt>
 <dd><p>Print a report of the HVSR analysis (not currently implemented)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>hvsr_data</strong> (<em>dict</em>) – Dictionary containing all the information about the processed hvsr data</p></li>
+<li><p><strong>format</strong> (<em>{'csv'</em><em>, </em><em>'print'</em><em>, </em><em>'docx'}</em>) – Format in which to print or export the report.</p></li>
 <li><p><strong>export</strong> (<em>str</em>) – Filepath path for export. If not specified, report name is generated automatically and placed in current directory</p></li>
-<li><p><strong>format</strong> (<em>{'print'</em><em>, </em><em>'docx'</em><em>, </em><em>'</em><em>...</em><em>'}</em>) – Format in which to print or export the report</p></li>
+<li><p><strong>include</strong> (<em>str</em><em> or </em><em>list</em><em>, </em><em>default='peak'</em>) – <dl class="simple">
+<dt>What to include in the report. By default includes all the following</dt><dd><ul>
+<li><p>Site name</p></li>
+<li><p>Filename</p></li>
+<li><p>Longitude</p></li>
+<li><p>Latitude</p></li>
+<li><p>Elevation</p></li>
+<li><p>Primary peak frequency</p></li>
+<li><p>Primary peak amplitude</p></li>
+<li><p>Whether passed quality tests (x6)</p></li>
+</ul>
+</dd>
+<dt>For docx (not yet implemented), the following are also included:</dt><dd><ul>
+<li><p>Figure with spectrogram</p></li>
+<li><p>Figure with HVSR curve</p></li>
+<li><p>Figure with 3 components</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
 </ul>
 </dd>
 </dl>
@@ -366,7 +414,7 @@ the bulk of processing of the HVSR data and the data quality checks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ppsds</strong> (<em>dict</em>) – Dictionary with three key-value pairs containing the PPSD outputs from the three channels from the genereate_ppsds function</p></li>
+<li><p><strong>params</strong> (<em>dict</em>) – Dictionary containing all the parameters input by the user</p></li>
 <li><p><strong>method</strong> (<em>int</em><em> or </em><em>str</em>) – <dl class="simple">
 <dt>Method to use for combining the horizontal components</dt><dd><ol class="arabic simple" start="0">
 <li><p>Diffuse field assumption, or ‘DFA’ (not currently supported)</p></li>
@@ -379,7 +427,6 @@ the bulk of processing of the HVSR data and the data quality checks.</p>
 </dd>
 </dl>
 </p></li>
-<li><p><strong>params</strong> (<em>dict</em>) – Dictionary containing all the parameters input by the user</p></li>
 <li><p><strong>smooth</strong> (<em>bool=True</em>) – <dl class="simple">
 <dt>bool or int.</dt><dd><p>If True, default to smooth hvsr curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
 If int, the length of the window in the savgoy filter.</p>
@@ -405,7 +452,7 @@ If int, the number of data points to interpolate/resample/smooth the component p
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.setup_colab">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">setup_colab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#setup_colab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.setup_colab" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">setup_colab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repo_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit.html#setup_colab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.setup_colab" title="Permalink to this definition"></a></dt>
 <dd><p>Function to help set up Google Colab environment</p>
 <p>This needs to be run twice, and at the beginning of the Google Colab notebook.</p>
 </dd></dl>
