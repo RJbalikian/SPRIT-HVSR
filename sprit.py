@@ -2029,7 +2029,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
     return _peak
 
 #Check clarity of peaks
-def __check_clarity(_x, _y, _peak, do_rank=False):
+def __check_clarity(_x, _y, _peak, do_rank=True):
     """Check clarity of peak amplitude(s)
 
        Test peaks for satisfying amplitude clarity conditions as outlined by SESAME 2004:
@@ -2058,11 +2058,17 @@ def __check_clarity(_x, _y, _peak, do_rank=False):
     # Test each _peak for clarity.
     if do_rank:
         max_rank += 1
+
+    if np.array(_x).shape[0] == 1000:
+        jstart = len(_x)-2
+    else:
+        jstart = len(_x)-1
+
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f-'] = 'X'
         _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False
-        for _j in range(len(_x) - 1, -1, -1):
+        for _j in range(jstart, -1, -1):
 
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
             if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
