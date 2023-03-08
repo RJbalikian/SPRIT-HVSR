@@ -1229,13 +1229,13 @@ def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, med
 
                 # Each sample of the PSD , convert to power
                 for j in range(len(x_values) - 1):
-                    pz = hvsrCalcs.get_power([daily_psd[0][day][i][j], daily_psd[0][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    pz = __get_power([daily_psd[0][day][i][j], daily_psd[0][day][i][j + 1]], [x_values[j], x_values[j + 1]])
                     Pz.append(pz)
                     sum_pz += pz
-                    p1 = hvsrCalcs.get_power([daily_psd[1][day][i][j], daily_psd[1][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    p1 = __get_power([daily_psd[1][day][i][j], daily_psd[1][day][i][j + 1]], [x_values[j], x_values[j + 1]])
                     P1.append(p1)
                     sum_p1 += p1
-                    p2 = hvsrCalcs.get_power([daily_psd[2][day][i][j], daily_psd[2][day][i][j + 1]], [x_values[j], x_values[j + 1]])
+                    p2 = __get_power([daily_psd[2][day][i][j], daily_psd[2][day][i][j + 1]], [x_values[j], x_values[j + 1]])
                     P2.append(p2)
                     sum_p2 += p2
 
