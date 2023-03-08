@@ -24,15 +24,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.napoleon'
               ]
-
-def linkcode_resolve(domain, info):
-    if domain != 'py':
-        return None
-    if not info['module']:
-        return None
-    filename = info['module'].replace('.', '/')
-    return "https://github.com/RJbalikian/SPRIT/%s.py" % filename
-
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 

@@ -1,8 +1,8 @@
 SPRIT package
 =============
 
-sprit module
-------------------
+Module contents
+---------------
 
 .. automodule:: sprit
    :members:
