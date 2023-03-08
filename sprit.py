@@ -2013,7 +2013,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
         
         test3 = True
         failCount = 0
-        for i, freq in enumerate(hvsr_dict['x_freqs'][anyKey]):
+        for i, freq in enumerate(hvsr_dict['x_freqs'][anyKey][:-1]):
             if freq >= halfF0 and freq <doublef0:
                 if peakFreq >= 0.5:
                     if hvsr_dict['hvsr_log_std'][i] >= 2:
