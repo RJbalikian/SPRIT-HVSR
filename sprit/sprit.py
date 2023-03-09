@@ -1,8 +1,6 @@
 """
 This module contains all the functions needed to run the HVSR analysis
 """
-
-
 import datetime
 import math
 import os
@@ -14,7 +12,6 @@ import xml.etree.ElementTree as ET
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import scipy
 
 #Main variables

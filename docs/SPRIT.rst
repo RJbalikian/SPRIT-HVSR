@@ -1,19 +1,8 @@
-sprit package
+SPRĪT package
 =============
 
-Submodules
-----------
-
-sprit.sprit module
-------------------
-
-.. automodule:: sprit.sprit
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
+Package contents
+---------------_
 
 .. automodule:: sprit
    :members:
