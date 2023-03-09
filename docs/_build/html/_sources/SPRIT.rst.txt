@@ -1,13 +1,13 @@
-SPRIT package
+sprit package
 =============
 
 Submodules
 ----------
 
-SPRIT.sprit module
+sprit.sprit module
 ------------------
 
-.. automodule:: SPRIT.sprit
+.. automodule:: sprit.sprit
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ SPRIT.sprit module
 Module contents
 ---------------
 
-.. automodule:: SPRIT
+.. automodule:: sprit
    :members:
    :undoc-members:
    :show-inheritance:

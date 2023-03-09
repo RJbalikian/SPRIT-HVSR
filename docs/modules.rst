@@ -1,7 +1,7 @@
-SPRIT
+sprit
 =====
 
 .. toctree::
    :maxdepth: 4
 
-   SPRIT
+   sprit
