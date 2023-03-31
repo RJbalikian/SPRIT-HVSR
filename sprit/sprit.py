@@ -1764,6 +1764,116 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     plt.show()
     return fig, ax
 
+def select_times(hvsr_dict):
+    """_summary_
+
+    Parameters
+    ----------
+    hvsr_dict : dict
+        Dictionary containing all the hvsr information.
+
+    Returns
+    -------
+    xWindows : list
+        List of two-item lists containing start and end times of windows to be removed.
+    """
+    from matplotlib.backend_bases import MouseButton
+    import matplotlib.pyplot as plt
+    import matplotlib
+
+    fig, ax = hvplot(hvsr_dict=hvsr_dict, kind='spec', returnfig=True)
+
+    clickNo = 0    
+    xWindows = []
+    pathList = []
+    windowDrawn = []
+    winArtist = []
+    lineArtist = []
+
+    def on_click(event, fig=fig, ax=ax):
+        if event.button is MouseButton.RIGHT:
+            remove_on_right(event)
+        if event.button is MouseButton.LEFT:
+            draw_boxes(event)
+
+    def draw_boxes(event, fig=fig, ax=ax):
+        global clickNo
+        global x0
+        global xWindows
+        global pathList
+        global windowDrawn
+        global winArtist
+        global lineArtist
+
+        if event.inaxes!=ax: return
+        #y0, y1 = ax.get_ylim()
+        y0=0
+        y1=50
+        
+        if clickNo == 0:
+            #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
+            x0 = event.xdata
+            clickNo += 1
+            linArt = plt.axvline(x0, y0, y1, color='k')
+            lineArtist.append([linArt, linArt])
+        else:
+            x1 = event.xdata
+            clickNo = 0
+
+            path_data = [
+                (matplotlib.path.Path.MOVETO, (x0, y0)),
+                (matplotlib.path.Path.LINETO, (x1, y0)),
+                (matplotlib.path.Path.LINETO, (x1, y1)),
+                (matplotlib.path.Path.LINETO, (x0, y1)),
+                (matplotlib.path.Path.LINETO, (x0, y0)),
+                (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
+            ]
+
+            codes, verts = zip(*path_data)
+            path = matplotlib.path.Path(verts, codes)
+
+            x_win = [x0, x1]
+            xWindows.append(x_win)
+            pathList.append(path)
+            windowDrawn.append(False)
+            winArtist.append(None)
+            [lineArtist[-1].pop()]
+            draw_windows(event=event, pathlist=pathList)
+            linArt = plt.axvline(x1, y0, y1, color='k', zorder=100)
+            lineArtist[-1].append(linArt)
+        fig.canvas.draw() 
+
+    def draw_windows(event, pathlist, fig=fig, ax=ax):
+        for i, p in enumerate(pathList):
+            if windowDrawn[i]:
+                pass
+            else:
+                patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.5)
+                winArt = ax.add_patch(patch)
+                windowDrawn[i] = True
+                winArtist[i] = winArt
+        if event.button is MouseButton.RIGHT:
+            fig.canvas.draw() 
+
+    def remove_on_right(event, fig=fig, ax=ax, xWindows=xWindows):
+        if xWindows is not None:
+            for i, xWins in enumerate(xWindows):
+                if event.xdata > xWins[0] and event.xdata < xWins[1]:
+                    xWindows.pop(i)
+                    pathList.pop(i)
+                    winArtist[i].remove()
+                    winArtist.pop(i)
+                    windowDrawn.pop(i)
+                    lineArtist[i][0].remove()
+                    lineArtist[i][1].remove()
+                    lineArtist.pop(i)
+        fig.canvas.draw() 
+        #draw_windows(event, pathlist=pathList)
+
+    fig.canvas.mpl_connect('button_press_event', on_click)
+    plt.show()
+    return xWindows
+
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     """

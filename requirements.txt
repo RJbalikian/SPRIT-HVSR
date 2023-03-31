@@ -2,3 +2,4 @@ matplotlib
 numpy
 obspy
 scipy
+ipykernel

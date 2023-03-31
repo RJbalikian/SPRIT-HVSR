@@ -23,6 +23,7 @@ from sprit.sprit import(
     generate_ppsds,
     process_hvsr,
     hvplot,
+    select_times,
     check_peaks,
     print_report
 )
@@ -45,6 +46,7 @@ __all__ =('sprit',
     'generate_ppsds',
     'process_hvsr',
     'hvplot',
+    'select_times',
     'check_peaks',
     'print_report'
 )
