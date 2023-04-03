@@ -1771,23 +1771,157 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     plt.show()
     return fig, ax
 
-def __plot_specgram_stream(stream, components, stack_type='linear', detrend='mean', return_fig=True):
-    if type(components) is str:
-        components = [components] #Convert to list for compatability
-
-    fig, ax = plt.subplots()
+#Plot spectrogram from stream
+def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9], **kwargs):
+    import matplotlib.dates as mdates
+    import matplotlib
+    og_stream = stream.copy()
 
     traceList = []
-    for comp in components:
-        tr = stream.select(component=comp)
-    plotStream = obspy.Stream(traceList)
-    plotStream.stack(group_by='all', stack_type=stack_type)    
+    maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
+    minEndTime = obspy.UTCDateTime(1e10)
+    for comp in ['E', 'N', 'Z']:
+        tr = stream.select(component=comp).copy()
+        if comp in component:
+            traceList.append(tr[0])
+        if tr[0].stats.starttime > maxStartTime:
+            maxStartTime = tr[0].stats.starttime
+        if tr[0].stats.endtime < minEndTime:
+            minEndTime = tr[0].stats.endtime
 
-    data = plotStream[0].data
+    for tr in traceList:
+        tr.trim(starttime=maxStartTime, endtime=minEndTime)
+    og_stream.trim(starttime=maxStartTime, endtime=minEndTime)      
+
+    stream = obspy.Stream(traceList)
+    stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
+
+    mosaic = [['spec'],['spec'],['spec'],
+              ['spec'],['spec'],['spec'],
+              ['signalz'],['signalz'], ['signaln'], ['signale']]
+    fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
+    
+    #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
+
+    data = stream[0].data
     sample_rate = stream[0].stats.sampling_rate
+    if 'title' in kwargs.keys():
+        title=kwargs['title']
+    else:
+        title=stream[0].id
 
-    fig, ax = plt.specgram(x=data, fs=sample_rate, detrend=detrend, scale_by_freq=True, scale='dB')
+    if 'cmap' in kwargs.keys():
+        cmap=kwargs['cmap']
+    else:
+        cmap='turbo'
 
+    if params is None:
+        hvsr_band = [0.4, 40]
+    else:
+        hvsr_band = params['hvsr_band']
+    ymin = hvsr_band[0]
+    ymax = hvsr_band[1]
+
+    spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale='dB')
+    im.remove()
+
+    difference_array = freqs-ymin
+    for i, d in enumerate(difference_array):
+        if d > 0:
+            minfreq = difference_array[i-1]
+            if i-1 < 0:
+                i=1
+            minfreqInd = i-1
+            break
+            
+    difference_array = freqs-ymax
+    for i, d in enumerate(difference_array):
+        if d > 0:
+            maxfreqInd = i-1
+            maxfreq = difference_array[i-1]
+            break
+
+    array_displayed = spec[minfreqInd:maxfreqInd,:]
+    freqs_displayed = freqs[minfreqInd:maxfreqInd]
+    #im.set_data(array_displayed)
+    vmin = np.percentile(array_displayed, cmap_per[0]*100)
+    vmax = np.percentile(array_displayed, cmap_per[1]*100)
+    
+    sTime = stream[0].stats.starttime
+    timeList = {}
+    mplTimes = {}
+    og_stream.decimate(10)
+    for i, tr in enumerate(og_stream):
+        key = tr.stats.component
+        timeList[key] = []
+        mplTimes[key] = []
+        for t in tr.times():
+            t = sTime + t
+            timeList[key].append(t)
+            mplTimes[key].append(t.matplotlib_date)
+    
+    for i, k in enumerate(mplTimes.keys()):
+        if i == 0:
+            xmin = np.min(mplTimes[k])
+            xmax = np.max(mplTimes[k])
+        else:
+            if xmin > np.min(mplTimes[k]):
+                xmin = np.min(mplTimes[k])
+            if xmax < np.max(mplTimes[k]):
+                xmax = np.max(mplTimes[k])         
+                   
+    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    im = ax['spec'].imshow(array_displayed, norm=norm, cmap=cmap, aspect='auto', interpolation=None, extent=[xmin,xmax,ymax,ymin])
+    plt.gca()
+    ax['spec'].set_xlim([xmin, xmax])
+    ax['spec'].set_ylim([ymin, ymax])
+    ax['spec'].semilogy() 
+    
+    #cbar = plt.colorbar(mappable=im)
+    #cbar.set_label('Power Spectral Density [dB]')
+    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show=False)
+    
+    ax['spec'].xaxis_date()
+    ax['signalz'].xaxis_date()
+    ax['signaln'].xaxis_date()
+    ax['signale'].xaxis_date()
+    #tTicks = mdates.MinuteLocator(interval=5)
+    #ax[0].xaxis.set_major_locator(tTicks)
+    ax['signale'].xaxis.set_major_locator(mdates.MinuteLocator(interval=5))
+    ax['signale'].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax['signale'].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
+    plt.tick_params(axis='x', labelsize=8)
+
+    plotstream = stream.copy()
+    
+    ax['signalz'].plot(mplTimes['Z'],og_stream.select(component='Z')[0].data, color='k', linewidth=0.25)
+    ax['signaln'].plot(mplTimes['N'],og_stream.select(component='N')[0].data, color='k', linewidth=0.1)
+    ax['signale'].plot(mplTimes['E'],og_stream.select(component='E')[0].data, color='k', linewidth=0.1)
+    plt.gca()
+    
+    for comp in mplTimes.keys():
+        stD = np.std(og_stream.select(component=comp)[0].data)
+        dmed = np.nanmedian(og_stream.select(component=comp)[0].data)
+        key = 'signal'+comp.lower()
+        ax[key].set_ylim([dmed-2.5*stD, dmed+2.5*stD])
+    
+    if params is None:
+        plt.suptitle('HVSR Site: Spectrogram')
+    else:
+        plt.suptitle(params['site']+': Spectrogram')
+    
+    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    plt.xlabel('UTC Time \n'+day)
+
+    plt.rcParams['figure.dpi'] = 100
+    plt.rcParams['figure.figsize'] = (5,4)
+    
+    axSpan = fig.add_subplot([0,0,1,0.4])
+    axSpan.set_axis_off()
+    axSpan.set_ylabel('Original signal') 
+    
+    #fig.tight_layout()
+    plt.show()
     if return_fig:
         return fig, ax
     return
@@ -1814,7 +1948,7 @@ def select_times(input):
         fig, ax = hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
         stream = []
     elif isinstance(input, obspy.core.stream.Stream):
-        fig, ax = __plot_specgram_stream(input, components=['Z'])
+        fig, ax = __plot_specgram_stream(input, component=['Z'])
     elif isinstance(input, obspy.core.trace.Trace):
         fig, ax = __plot_specgram_stream(input)
         plt.specgram()
@@ -1834,51 +1968,72 @@ def select_times(input):
             draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist)
 
     def draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, fig=fig, ax=ax):
-        if event.inaxes!=ax: return
+        if len(ax) > 1:
+            multAxes = True
+        else:
+            multAxes = False
+        #if event.inaxes!=ax: return
         #y0, y1 = ax.get_ylim()
-        y0=0
-        y1=50
-        
+        if multAxes:
+            y0 = []
+            y1 = []
+            kList = []
+            for k in ax.keys():
+                kList.append(k)
+                y0.append(ax[k].get_ylim()[0])
+                y1.append(ax[k].get_ylim()[1])
+        else:
+            y0 = [ax.get_ylim()[0]]
+            y1 = [ax.get_ylim()[1]]
+
         if clickNo == 0:
             #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
             x0 = event.xdata
             clickNo += 1
-            linArt = plt.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
-            lineArtist.append([linArt, linArt])
+            for i, v in enumerate(y0):
+                linArt = plt.axvline(x0, y0[i], y1[i], color='k', linewidth=0.5, zorder=100)
+                lineArtist.append([linArt, linArt])
         else:
             x1 = event.xdata
             clickNo = 0
+            path = []
+            for i, v in enumerate(y0):
+                path_data = [
+                    (matplotlib.path.Path.MOVETO, (x0, y0[i])),
+                    (matplotlib.path.Path.LINETO, (x1, y0[i])),
+                    (matplotlib.path.Path.LINETO, (x1, y1[i])),
+                    (matplotlib.path.Path.LINETO, (x0, y1[i])),
+                    (matplotlib.path.Path.LINETO, (x0, y0[i])),
+                    (matplotlib.path.Path.CLOSEPOLY, (x0, y0[i])),
+                ]
 
-            path_data = [
-                (matplotlib.path.Path.MOVETO, (x0, y0)),
-                (matplotlib.path.Path.LINETO, (x1, y0)),
-                (matplotlib.path.Path.LINETO, (x1, y1)),
-                (matplotlib.path.Path.LINETO, (x0, y1)),
-                (matplotlib.path.Path.LINETO, (x0, y0)),
-                (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
-            ]
+                codes, verts = zip(*path_data[i])
+                path.append(matplotlib.path.Path(verts, codes))
 
-            codes, verts = zip(*path_data)
-            path = matplotlib.path.Path(verts, codes)
-
-            x_win = [x0, x1]
-            xWindows.append(x_win)
-            pathList.append(path)
-            windowDrawn.append(False)
-            winArtist.append(None)
-            [lineArtist[-1].pop()]
-            draw_windows(event=event, pathlist=pathList, windowDrawn=windowDrawn, winArtist=winArtist)
-            linArt = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
-            lineArtist[-1].append(linArt)
+                x_win = [x0, x1]
+                xWindows.append(x_win)
+                pathList.append(path)
+                windowDrawn.append(False)
+                winArtist.append(None)
+                [lineArtist[-1].pop()]
+                draw_windows(event=event, pathlist=pathList, windowDrawn=windowDrawn, winArtist=winArtist, mult_axes=multAxes)
+                linArt = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
+                lineArtist[-1].append(linArt)
         fig.canvas.draw() 
 
-    def draw_windows(event, pathlist, windowDrawn, winArtist, fig=fig, ax=ax):
+    def draw_windows(event, pathlist, mult_axes, windowDrawn, winArtist, fig=fig, ax=ax):
         for i, p in enumerate(pathList):
             if windowDrawn[i]:
                 pass
             else:
-                patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.75)
-                winArt = ax.add_patch(patch)
+                patch = matplotlib.patches.PathPatch(p[i], facecolor='k', alpha=0.75)
+                print(patch)
+                if mult_axes:
+                    for a in ax.keys():
+                        winArt = ax[a].add_patch(patch)
+                else:
+                    winArt = ax.add_patch(patch)
+
                 windowDrawn[i] = True
                 winArtist[i] = winArt
         if event.button is MouseButton.RIGHT:
