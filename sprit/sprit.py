@@ -780,7 +780,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
             else:
                 dataIN.append(rawDataIN[i].sort(['channel'], reverse=True)) #z, n, e order            
         
-    if not trim_dir:
+    if trim_dir==False:
         pass
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
@@ -797,43 +797,47 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
     
     #Read RS files
     if source=='raw': #raw data with individual files per trace
-        for child in datapath.iterdir():
-            if child.is_file() and 'AM' in child.name and str(doy).zfill(3) in child.name and str(year) in child.name:
-                filesinfolder = True
-                folderPathList.append(datapath)
-                fileList.append(child.name)
-            elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
-                folderPathList.append(child.name)
-                for c in child.iterdir():
-                    if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
-                        fileList.append(c.name)
+        if datapath.is_dir():
+            for child in datapath.iterdir():
+                if child.is_file() and child.name.startswith('AM') and str(doy).zfill(3) in child.name and str(year) in child.name:
+                    filesinfolder = True
+                    folderPathList.append(datapath)
+                    fileList.append(child)
+                elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
+                    folderPathList.append(child.name)
+                    for c in child.iterdir():
+                        if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
+                            fileList.append(c)
 
-        if len(folderPathList) !=3:
-            error('3 channels needed!', 1)
+            if len(fileList) !=3:
+                error('3 channels needed! {} found.'.format(len(folderPathList)), 1)
+            else:
+                print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
+            fileList.sort(reverse=True) # Puts z channel first
+            folderPathList.sort(reverse=True)
 
-        fileList.sort(reverse=True) # Puts z channel first
-        folderPathList.sort(reverse=True)
+            if len(fileList) == 0:
+                info('No file found for specified parameters. The following days/files exist for specified year in this directory')
+                doyList = []
+                for j, folder in enumerate(folderPathList):
+                    for i, file in enumerate(folder.iterdir()):
+                        if j ==0:
+                            doyList.append(str(year) + ' ' + str(file.name[-3:]))
+                            print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
 
-        if len(filepaths) == 0:
-            info('No file found for specified parameters. The following days/files exist for specified year in this directory')
-            doyList = []
-            for j, folder in enumerate(folderPathList):
-                for i, file in enumerate(folder.iterdir()):
-                    if j ==0:
-                        doyList.append(str(year) + ' ' + str(file.name[-3:]))
-                        print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
-
-        traceList = []
-        for i, f in enumerate(filepaths):
-            with warnings.catch_warnings():
-                warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
-                tr = (st[0])
-                #tr= obspy.Trace(tr.data,header=meta)
-                traceList.append(tr)
-        rawDataIN = obspy.Stream(traceList)
-        rawDataIN.attach_response(inv)
-        
+            traceList = []
+            for i, f in enumerate(fileList):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+                    tr = (st[0])
+                    #tr= obspy.Trace(tr.data,header=meta)
+                    traceList.append(tr)
+            rawDataIN = obspy.Stream(traceList)
+            rawDataIN.attach_response(inv)
+        else:
+            rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
+            rawDataIN.attach_response(inv)
     elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
         for file in datapath.iterdir():
@@ -991,6 +995,7 @@ def generate_ppsds(params, stream, **kwargs):
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
     params['ppsds'] = ppsds
+    params['stream'] = stream
     return params
 
 #Check the x-values for each cahnnel, to make sure they are all the same length
@@ -1163,6 +1168,8 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
 
     #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
     hvsr_out = __gethvsrparams(hvsr_out)
+
+    hvsr_out['stream'] = params['stream']
 
     return hvsr_out
 
@@ -1404,7 +1411,7 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
             chartType = k        
         if '+' in k or (k in hvsrList and i > 0) or (k in specgramList and i > 0):
             if chartType in specgramList:
-                fig, ax = __plot_specgram(hvsr_dict, savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+                fig, ax = __plot_specgram_hvsr(hvsr_dict, savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
                 i=0
             else:
                 fig, ax = __plot_hvsr(hvsr_dict, kind=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)                
@@ -1424,7 +1431,7 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
             chartType = k     
 
         if chartType in specgramList:
-            fig, ax = __plot_specgram(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+            fig, ax = __plot_specgram_hvsr(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
         else:
             fig, ax = __plot_hvsr(hvsr_dict, kind=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
 
@@ -1639,7 +1646,7 @@ def __plot_current_fig(save_dir, filename, plot_suffix, user_suffix, show):
     return
 
 #Plot specgtrogram, private supporting function for hvplot
-def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
+def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
     fig, ax = plt.subplots()
@@ -1764,7 +1771,29 @@ def __plot_specgram(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     plt.show()
     return fig, ax
 
-def select_times(hvsr_dict):
+def __plot_specgram_stream(stream, components, stack_type='linear', detrend='mean', return_fig=True):
+    if type(components) is str:
+        components = [components] #Convert to list for compatability
+
+    fig, ax = plt.subplots()
+
+    traceList = []
+    for comp in components:
+        tr = stream.select(component=comp)
+    plotStream = obspy.Stream(traceList)
+    plotStream.stack(group_by='all', stack_type=stack_type)    
+
+    data = plotStream[0].data
+    sample_rate = stream[0].stats.sampling_rate
+
+    fig, ax = plt.specgram(x=data, fs=sample_rate, detrend=detrend, scale_by_freq=True, scale='dB')
+
+    if return_fig:
+        return fig, ax
+    return
+    
+
+def select_times(input):
     """_summary_
 
     Parameters
@@ -1781,7 +1810,15 @@ def select_times(hvsr_dict):
     import matplotlib.pyplot as plt
     import matplotlib
 
-    fig, ax = hvplot(hvsr_dict=hvsr_dict, kind='spec', returnfig=True)
+    if type(input) is dict:
+        fig, ax = hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
+        stream = []
+    elif isinstance(input, obspy.core.stream.Stream):
+        fig, ax = __plot_specgram_stream(input, components=['Z'])
+    elif isinstance(input, obspy.core.trace.Trace):
+        fig, ax = __plot_specgram_stream(input)
+        plt.specgram()
+        stream = []
 
     clickNo = 0    
     xWindows = []
@@ -1790,21 +1827,13 @@ def select_times(hvsr_dict):
     winArtist = []
     lineArtist = []
 
-    def on_click(event, fig=fig, ax=ax):
+    def on_click(event):
         if event.button is MouseButton.RIGHT:
-            remove_on_right(event)
+            remove_on_right(event, xWindows, pathList, windowDrawn, winArtist, lineArtist)
         if event.button is MouseButton.LEFT:
-            draw_boxes(event)
+            draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist)
 
-    def draw_boxes(event, fig=fig, ax=ax):
-        global clickNo
-        global x0
-        global xWindows
-        global pathList
-        global windowDrawn
-        global winArtist
-        global lineArtist
-
+    def draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, fig=fig, ax=ax):
         if event.inaxes!=ax: return
         #y0, y1 = ax.get_ylim()
         y0=0
@@ -1814,7 +1843,7 @@ def select_times(hvsr_dict):
             #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
             x0 = event.xdata
             clickNo += 1
-            linArt = plt.axvline(x0, y0, y1, color='k')
+            linArt = plt.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
             lineArtist.append([linArt, linArt])
         else:
             x1 = event.xdata
@@ -1838,24 +1867,24 @@ def select_times(hvsr_dict):
             windowDrawn.append(False)
             winArtist.append(None)
             [lineArtist[-1].pop()]
-            draw_windows(event=event, pathlist=pathList)
-            linArt = plt.axvline(x1, y0, y1, color='k', zorder=100)
+            draw_windows(event=event, pathlist=pathList, windowDrawn=windowDrawn, winArtist=winArtist)
+            linArt = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
             lineArtist[-1].append(linArt)
         fig.canvas.draw() 
 
-    def draw_windows(event, pathlist, fig=fig, ax=ax):
+    def draw_windows(event, pathlist, windowDrawn, winArtist, fig=fig, ax=ax):
         for i, p in enumerate(pathList):
             if windowDrawn[i]:
                 pass
             else:
-                patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.5)
+                patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.75)
                 winArt = ax.add_patch(patch)
                 windowDrawn[i] = True
                 winArtist[i] = winArt
         if event.button is MouseButton.RIGHT:
             fig.canvas.draw() 
 
-    def remove_on_right(event, fig=fig, ax=ax, xWindows=xWindows):
+    def remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig=fig, ax=ax):
         if xWindows is not None:
             for i, xWins in enumerate(xWindows):
                 if event.xdata > xWins[0] and event.xdata < xWins[1]:
