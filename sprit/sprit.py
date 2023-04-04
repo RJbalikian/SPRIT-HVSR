@@ -1965,6 +1965,7 @@ def select_windows(input):
         global clickNo
         global x0
         if event.button is MouseButton.RIGHT:
+            #THis no longer works in script page, works in nb just fine though
             global remove_on_right
             def remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig=fig, ax=ax):
                 if xWindows is not None:
