@@ -10,6 +10,8 @@ import tempfile
 import warnings
 import xml.etree.ElementTree as ET
 
+from matplotlib.backend_bases import MouseButton
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
@@ -1924,6 +1926,118 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
         return fig, ax
     return
 
+def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
+    #Create an axis dictionary if it does not already exist so all functions are the same
+    if len(ax) > 1:
+        if type(ax) is not dict:
+            axDict = {}
+            for i, a in enumerate(ax):
+                axDict[str(i)] = a
+            ax = axDict
+    else:
+        ax = {'a':ax}
+    
+    #if event.inaxes!=ax: return
+    #y0, y1 = ax.get_ylim()
+    y0 = []
+    y1 = []
+    kList = []
+    for k in ax.keys():
+        kList.append(k)
+        y0.append(ax[k].get_ylim()[0])
+        y1.append(ax[k].get_ylim()[1])
+    #else:
+    #    y0 = [ax.get_ylim()[0]]
+    #    y1 = [ax.get_ylim()[1]]
+
+    if clickNo == 0:
+        #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
+        x0 = event.xdata
+        clickNo = 1   
+        lineArtist.append([])
+        winNums = len(xWindows)
+        for i, k in enumerate(ax.keys()):
+            linArt = ax[k].axvline(x0, 0, 1, color='k', linewidth=1, zorder=100)
+            lineArtist[winNums].append([linArt, linArt])
+        #else:
+        #    linArt = plt.axvline(x0, y0[i], y1[i], color='k', linewidth=1, zorder=100)
+        #    lineArtist.append([linArt, linArt])
+    else:
+        x1 = event.xdata
+        clickNo = 0
+
+        windowDrawn.append([])
+        winArtist.append([])  
+        pathList.append([])
+        winNums = len(xWindows)
+        for i, key in enumerate(kList):
+            path_data = [
+                (matplotlib.path.Path.MOVETO, (x0, y0[i])),
+                (matplotlib.path.Path.LINETO, (x1, y0[i])),
+                (matplotlib.path.Path.LINETO, (x1, y1[i])),
+                (matplotlib.path.Path.LINETO, (x0, y1[i])),
+                (matplotlib.path.Path.LINETO, (x0, y0[i])),
+                (matplotlib.path.Path.CLOSEPOLY, (x0, y0[i])),
+            ]
+            codes, verts = zip(*path_data)
+            path = matplotlib.path.Path(verts, codes)
+
+            windowDrawn[winNums].append(False)
+            winArtist[winNums].append(None)
+
+            pathList[winNums].append(path)
+            __draw_windows(event=event, pathlist=pathList, ax_key=key, windowDrawn=windowDrawn, winArtist=winArtist, xWindows=xWindows, fig=fig, ax=ax)
+            linArt = plt.axvline(x1, 0, 1, color='k', linewidth=0.5, zorder=100)
+
+            [lineArtist[winNums][i].pop(-1)]
+            lineArtist[winNums][i].append(linArt)
+        x_win = [x0, x1]
+        x_win.sort() #Make sure they are in the right order
+        xWindows.append(x_win)
+    fig.canvas.draw()
+    return clickNo, x0
+
+def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
+    if xWindows is not None:
+        for i, xWins in enumerate(xWindows):
+            if event.xdata > xWins[0] and event.xdata < xWins[1]:
+                print(i)
+                linArtists = lineArtist[i]
+                pathList.pop(i)
+                for j, a in enumerate(linArtists):
+                    winArtist[i][j].remove()#.pop(i)
+                    lineArtist[i][j][0].remove()#.pop(i)#[i].pop(j)
+                    lineArtist[i][j][1].remove()
+                windowDrawn.pop(i)
+                lineArtist.pop(i)#[i].pop(j)
+                winArtist.pop(i)#[i].pop(j)
+                xWindows.pop(i)
+    fig.canvas.draw() 
+
+def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
+    for i, pa in enumerate(pathlist):
+        for j, p in enumerate(pa): 
+            if windowDrawn[i][j]:
+                pass
+            else:
+                patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.75)                            
+                winArt = ax[ax_key].add_patch(patch)
+                windowDrawn[i][j] = True
+                winArtist[i][j] = winArt
+
+    if event.button is MouseButton.RIGHT:
+        fig.canvas.draw()
+
+def __on_click(event):
+    global clickNo
+    global x0
+    if event.button is MouseButton.RIGHT:
+        print(xWindows)     
+        __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist, lineArtist, fig, ax)
+
+    if event.button is MouseButton.LEFT:            
+        clickNo, x0 = __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax)    
+
 def select_windows(input):
     """_summary_
 
@@ -1941,8 +2055,11 @@ def select_windows(input):
     import matplotlib.pyplot as plt
     import matplotlib
 
+    global fig
+    global ax
+
     if type(input) is dict:
-        fig, ax = sprit.hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
+        fig, ax = hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
         stream = []
     elif isinstance(input, obspy.core.stream.Stream):
         fig, ax = __plot_specgram_stream(input, component=['Z'])
@@ -1950,6 +2067,11 @@ def select_windows(input):
         fig, ax = __plot_specgram_stream(input)
         plt.specgram()
 
+    global lineArtist
+    global winArtist
+    global windowDrawn
+    global pathList
+    global xWindows
     global clickNo
     global x0
     x0=0
@@ -1960,127 +2082,7 @@ def select_windows(input):
     winArtist = []
     lineArtist = []
 
-    global on_click
-    def on_click(event):
-        global clickNo
-        global x0
-        if event.button is MouseButton.RIGHT:
-            #THis no longer works in script page, works in nb just fine though
-            global remove_on_right
-            def remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig=fig, ax=ax):
-                if xWindows is not None:
-                    for i, xWins in enumerate(xWindows):
-                        #for j, k in enumerate(ax.keys()):
-                        if event.xdata > xWins[0] and event.xdata < xWins[1]:
-                            linArtists = lineArtist[i]
-                            winArtists = winArtist[i]
-                            pathList.pop(i)
-                            for j, a in enumerate(linArtists):
-                                w = winArtists[j]
-                                winArtist[i][j].remove()#.pop(i)
-                                lineArtist[i][j][0].remove()#.pop(i)#[i].pop(j)
-                                lineArtist[i][j][1].remove()
-                            windowDrawn.pop(i)
-                            lineArtist.pop(i)#[i].pop(j)
-                            winArtist.pop(i)#[i].pop(j)
-                        xWindows.pop(i)
-                fig.canvas.draw() 
-                #draw_windows(event, pathlist=pathList)
-            remove_on_right(event, xWindows, pathList, windowDrawn, winArtist, lineArtist)
-
-        if event.button is MouseButton.LEFT:            
-            def draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, fig=fig, ax=ax, x0=x0):
-                #Create an axis dictionary if it does not already exist so all functions are the same
-                if len(ax) > 1:
-                    multAxes = True
-                    if type(ax) is not dict:
-                        axDict = {}
-                        for i, a in enumerate(ax):
-                            axDict[str(i)] = a
-                        ax = axDict
-                else:
-                    multAxes = False
-                    ax = {'a':ax}
-                
-                #if event.inaxes!=ax: return
-                #y0, y1 = ax.get_ylim()
-                y0 = []
-                y1 = []
-                kList = []
-                for k in ax.keys():
-                    kList.append(k)
-                    y0.append(ax[k].get_ylim()[0])
-                    y1.append(ax[k].get_ylim()[1])
-                #else:
-                #    y0 = [ax.get_ylim()[0]]
-                #    y1 = [ax.get_ylim()[1]]
-
-                if clickNo == 0:
-                    #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
-                    x0 = event.xdata
-                    clickNo = 1   
-                    lineArtist.append([])
-                    winNums = len(xWindows)
-                    for i, k in enumerate(ax.keys()):
-                        linArt = ax[k].axvline(x0, 0, 1, color='k', linewidth=1, zorder=100)
-                        lineArtist[winNums].append([linArt, linArt])
-                    #else:
-                    #    linArt = plt.axvline(x0, y0[i], y1[i], color='k', linewidth=1, zorder=100)
-                    #    lineArtist.append([linArt, linArt])
-                else:
-                    x1 = event.xdata
-                    clickNo = 0
-
-                    windowDrawn.append([])
-                    winArtist.append([])  
-                    pathList.append([])
-                    winNums = len(xWindows)
-                    for i, key in enumerate(kList):
-                        path_data = [
-                            (matplotlib.path.Path.MOVETO, (x0, y0[i])),
-                            (matplotlib.path.Path.LINETO, (x1, y0[i])),
-                            (matplotlib.path.Path.LINETO, (x1, y1[i])),
-                            (matplotlib.path.Path.LINETO, (x0, y1[i])),
-                            (matplotlib.path.Path.LINETO, (x0, y0[i])),
-                            (matplotlib.path.Path.CLOSEPOLY, (x0, y0[i])),
-                        ]
-                        codes, verts = zip(*path_data)
-                        path = matplotlib.path.Path(verts, codes)
-
-                        windowDrawn[winNums].append(False)
-                        winArtist[winNums].append(None)
-
-                        pathList[winNums].append(path)
-                        draw_windows(event=event, pathlist=pathList, ax_key=key, windowDrawn=windowDrawn, winArtist=winArtist)
-                        linArt = plt.axvline(x1, 0, 1, color='k', linewidth=0.5, zorder=100)
-
-                        [lineArtist[winNums][i].pop(-1)]
-                        lineArtist[winNums][i].append(linArt)
-                    x_win = [x0, x1]
-                    x_win.sort() #Make sure they are in the right order
-                    xWindows.append(x_win)
-                fig.canvas.draw()
-                return clickNo, x0
-    
-            global draw_windows
-            def draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, fig=fig, ax=ax):
-                winNums = len(xWindows)
-                for i, pa in enumerate(pathlist):
-                    for j, p in enumerate(pa): 
-                        if windowDrawn[i][j]:
-                            pass
-                        else:
-                            patch = matplotlib.patches.PathPatch(p, facecolor='k', alpha=0.75)                            
-                            winArt = ax[ax_key].add_patch(patch)
-                            windowDrawn[i][j] = True
-                            winArtist[i][j] = winArt
-
-                if event.button is MouseButton.RIGHT:
-                    fig.canvas.draw() 
-            
-            clickNo, x0 = draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0=x0)    
-
-    fig.canvas.mpl_connect('button_press_event', on_click)
+    fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
     plt.show()
     return xWindows
 
