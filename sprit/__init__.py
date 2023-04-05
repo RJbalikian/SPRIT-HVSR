@@ -24,6 +24,7 @@ from sprit.sprit import(
     process_hvsr,
     hvplot,
     select_windows,
+    remove_noise,
     check_peaks,
     print_report
 )
@@ -47,6 +48,7 @@ __all__ =('sprit',
     'process_hvsr',
     'hvplot',
     'select_windows',
+    'remove_noise',
     'check_peaks',
     'print_report'
 )

@@ -10,8 +10,9 @@ import tempfile
 import warnings
 import xml.etree.ElementTree as ET
 
-from matplotlib.backend_bases import MouseButton
 import matplotlib
+from matplotlib.backend_bases import MouseButton
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
@@ -768,7 +769,9 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.attach_response(inv)
 
-    if type(rawDataIN) is not list:
+    if rawDataIN is None:
+        return
+    elif type(rawDataIN) is not list:
         #Make sure z component is first
         if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
             dataIN = rawDataIN
@@ -797,6 +800,8 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
     folderPathList = []
     filesinfolder = False
     
+    datapath = checkifpath(datapath)
+
     #Read RS files
     if source=='raw': #raw data with individual files per trace
         if datapath.is_dir():
@@ -806,7 +811,7 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
                     folderPathList.append(datapath)
                     fileList.append(child)
                 elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
-                    folderPathList.append(child.name)
+                    folderPathList.append(child)
                     for c in child.iterdir():
                         if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
                             fileList.append(c)
@@ -826,7 +831,8 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
                         if j ==0:
                             doyList.append(str(year) + ' ' + str(file.name[-3:]))
                             print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
-
+                return None
+            
             traceList = []
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
@@ -985,14 +991,17 @@ def generate_ppsds(params, stream, **kwargs):
 
     from obspy.imaging.cm import viridis_white_r
     from obspy.signal import PPSD
-    ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], **kwargs)
+
+    eStream = stream.select(component='E')
+    stats = eStream.traces[0].stats
+    ppsdE = PPSD(stats, paz['EHE'], skip_on_gaps=True, **kwargs)
     #ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
     ppsdE.add(stream, verbose=False)
 
-    ppsdN = PPSD(stream.select(channel='EHN').traces[0].stats, paz['EHN'], **kwargs)
+    ppsdN = PPSD(stream.select(component='N').traces[0].stats, paz['EHN'], **kwargs)
     ppsdN.add(stream, verbose=False)
 
-    ppsdZ = PPSD(stream.select(channel='EHZ').traces[0].stats, paz['EHZ'], **kwargs)
+    ppsdZ = PPSD(stream.select(component='Z').traces[0].stats, paz['EHZ'], **kwargs)
     ppsdZ.add(stream, verbose=False)
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
@@ -1387,8 +1396,8 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
         fig, ax : matplotlib figure and axis objects
             Returns figure and axis matplotlib.pyplot objects if returnfig=True, otherwise, simply plots the figures
     """
-    plt.rcParams['figure.dpi'] = 500
-    plt.rcParams['figure.figsize'] = (12, 3)
+    #plt.rcParams['figure.dpi'] = 500
+    #plt.rcParams['figure.figsize'] = (12, 3)
 
     freqList = ['F', 'HZ', 'FREQ', 'FREQUENCY']
     perList = 'P', 'T', 'S', 'SEC', 'SECOND' 'PER', 'PERIOD'
@@ -1775,10 +1784,9 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
 
 #Plot spectrogram from stream
 def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9], **kwargs):
-    import matplotlib.dates as mdates
-    import matplotlib
     og_stream = stream.copy()
 
+    #Get the latest start time and earliest end times of all components
     traceList = []
     maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
     minEndTime = obspy.UTCDateTime(1e10)
@@ -1791,26 +1799,24 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
         if tr[0].stats.endtime < minEndTime:
             minEndTime = tr[0].stats.endtime
 
+    #Trim all traces to the same start/end time
     for tr in traceList:
         tr.trim(starttime=maxStartTime, endtime=minEndTime)
     og_stream.trim(starttime=maxStartTime, endtime=minEndTime)      
 
+    #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
+    #Organize the chart layout
     mosaic = [['spec'],['spec'],['spec'],
               ['spec'],['spec'],['spec'],
               ['signalz'],['signalz'], ['signaln'], ['signale']]
     fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
-    
     #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
 
     data = stream[0].data
     sample_rate = stream[0].stats.sampling_rate
-    if 'title' in kwargs.keys():
-        title=kwargs['title']
-    else:
-        title=stream[0].id
 
     if 'cmap' in kwargs.keys():
         cmap=kwargs['cmap']
@@ -1824,13 +1830,16 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     ymin = hvsr_band[0]
     ymax = hvsr_band[1]
 
-    spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale='dB')
+    if dbscale:
+        scale='dB'
+    else:
+        scale=None
+    spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
     im.remove()
 
     difference_array = freqs-ymin
     for i, d in enumerate(difference_array):
         if d > 0:
-            minfreq = difference_array[i-1]
             if i-1 < 0:
                 i=1
             minfreqInd = i-1
@@ -1840,11 +1849,10 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     for i, d in enumerate(difference_array):
         if d > 0:
             maxfreqInd = i-1
-            maxfreq = difference_array[i-1]
             break
 
     array_displayed = spec[minfreqInd:maxfreqInd,:]
-    freqs_displayed = freqs[minfreqInd:maxfreqInd]
+    #freqs_displayed = freqs[minfreqInd:maxfreqInd]
     #im.set_data(array_displayed)
     vmin = np.percentile(array_displayed, cmap_per[0]*100)
     vmax = np.percentile(array_displayed, cmap_per[1]*100)
@@ -1889,7 +1897,7 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     ax['signale'].xaxis_date()
     #tTicks = mdates.MinuteLocator(interval=5)
     #ax[0].xaxis.set_major_locator(tTicks)
-    ax['signale'].xaxis.set_major_locator(mdates.MinuteLocator(interval=5))
+    ax['signale'].xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,5)))
     ax['signale'].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax['signale'].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
     plt.tick_params(axis='x', labelsize=8)
@@ -1897,6 +1905,11 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     ax['signalz'].plot(mplTimes['Z'],og_stream.select(component='Z')[0].data, color='k', linewidth=0.25)
     ax['signaln'].plot(mplTimes['N'],og_stream.select(component='N')[0].data, color='k', linewidth=0.1)
     ax['signale'].plot(mplTimes['E'],og_stream.select(component='E')[0].data, color='k', linewidth=0.1)
+
+    ax['spec'].set_ylabel('Spectrogram: {}'.format(component))
+    ax['signalz'].set_ylabel('Z')
+    ax['signaln'].set_ylabel('N')
+    ax['signale'].set_ylabel('E')
     plt.gca()
     
     for comp in mplTimes.keys():
@@ -1907,6 +1920,8 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     
     if params is None:
         plt.suptitle('HVSR Site: Spectrogram')
+    elif 'title' in kwargs.keys():
+        plt.suptitle(kwargs['title'])
     else:
         plt.suptitle(params['site']+': Spectrogram')
     
@@ -1915,10 +1930,6 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
 
     plt.rcParams['figure.dpi'] = 100
     plt.rcParams['figure.figsize'] = (5,4)
-    
-    #axSpan = fig.add_subplot([0,0,1,0.4])
-    #axSpan.set_axis_off()
-    #axSpan.set_ylabel('Original signal') 
     
     #fig.tight_layout()
     plt.show()
@@ -2001,7 +2012,6 @@ def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineAr
     if xWindows is not None:
         for i, xWins in enumerate(xWindows):
             if event.xdata > xWins[0] and event.xdata < xWins[1]:
-                print(i)
                 linArtists = lineArtist[i]
                 pathList.pop(i)
                 for j, a in enumerate(linArtists):
@@ -2032,7 +2042,6 @@ def __on_click(event):
     global clickNo
     global x0
     if event.button is MouseButton.RIGHT:
-        print(xWindows)     
         __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist, lineArtist, fig, ax)
 
     if event.button is MouseButton.LEFT:            
@@ -2085,6 +2094,121 @@ def select_windows(input):
     fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
     plt.show()
     return xWindows
+
+#Function to remove noise windows from data
+def remove_noise(input, kind='manual', window_list=None, noise_percentile=0.9, sta=5, lta=50, warmup_time=120):
+    manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
+    autoList = ['auto', 'automatic', 'all', 'a']
+    antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
+    noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
+
+    if kind.lower() in manualList:
+        if isinstance(input, obspy.core.stream.Stream):
+            if window_list is not None:
+                output = __remove_windows(input, window_list, warmup_time)
+            else:
+                print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
+        elif type(input) is dict:
+            pass
+        else:
+            print('Input data type is not supported.')
+    elif kind.lower() in autoList:
+        pass #HERE THIRD (JUST DO NEXT AND SECOND TOGETHER)
+    elif kind.lower() in antitrigger:
+        pass #HERE NEXT
+    elif kind.lower() in noiseThresh:
+        pass #HERE SECOND
+    else:
+        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold'")
+        return
+    return output
+
+#Helper function for removing windows from data, leaving gaps
+def __remove_windows(stream, window_list, warmup_time):
+    og_stream = stream.copy()
+
+    #Find the latest start time and earliest endtime of all traces (in case they aren't consistent)
+    maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
+    minEndTime = obspy.UTCDateTime(1e10)
+    for comp in ['E', 'N', 'Z']:
+        tr = stream.select(component=comp).copy()
+        if tr[0].stats.starttime > maxStartTime:
+            maxStartTime = tr[0].stats.starttime
+        if tr[0].stats.endtime < minEndTime:
+            minEndTime = tr[0].stats.endtime
+
+    #Trim all traces to the same start/end time
+    stream.trim(starttime=maxStartTime, endtime=minEndTime)      
+
+    #Sort windows by the start of the window
+    sorted_window_list = []
+    windowStart = []
+    for i, window in enumerate(window_list):
+        windowStart.append(window[0])
+    sorted_start_list = sorted(windowStart)
+    ranks = [sorted_start_list.index(item) for item in windowStart]
+    for r in ranks:
+        sorted_window_list.append(window_list[r])
+
+    for i, w in enumerate(sorted_window_list):
+        if i < len(sorted_window_list) - 1:
+            if w[1] > sorted_window_list[i+1][0]:
+                print("ERROR: Overlapping windows. Please reselect windows to be removed or use a different noise removal method.")
+                return
+            
+    window_gaps_obspy = []
+    window_gaps = []
+
+    buffer_time = np.ceil((stream[0].stats.endtime-stream[0].stats.starttime)*0.01)
+
+    #Get obspy.UTCDateTime objects for the gap times
+    window_gaps_obspy.append([stream[0].stats.starttime + warmup_time, stream[0].stats.starttime + warmup_time])
+    for i, window in enumerate(sorted_window_list):
+        for j, item in enumerate(window):
+            if j == 0:
+                window_gaps_obspy.append([0,0])
+            window_gaps_obspy[i+1][j] = obspy.UTCDateTime(matplotlib.dates.num2date(item))
+        window_gaps.append((window[1]-window[0])*86400)
+    window_gaps_obspy.append([stream[0].stats.endtime-buffer_time, stream[0].stats.endtime-buffer_time])
+    #Note, we added start and endtimes to obpsy list to help with later functionality
+
+    #Clean up stream windows
+    for i, window in enumerate(window_gaps):
+        newSt = stream.copy()
+        if window_gaps_obspy[i+1][0] - newSt[0].stats.starttime < warmup_time:
+            if window_gaps_obspy[i+1][1] - newSt[0].stats.starttime < warmup_time:
+                window_gaps.pop(i)
+                window_gaps_obspy.pop(i+1)
+                continue
+            else: #if window overlaps the start of the stream after warmup_time
+                window_gaps.pop(i)
+                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] = newSt[0].stats.starttime + warmup_time
+        
+        if stream[0].stats.endtime - window_gaps_obspy[i+1][1] > stream[0].stats.endtime - buffer_time:        
+            if stream[0].stats.endtime - window_gaps_obspy[i+1][0] > stream[0].stats.endtime - buffer_time:
+                window_gaps.pop(i)
+                window_gaps_obspy.pop(i+1)
+            else:  #if end of window overlaps the buffer time, just end it at the start of the window (always end with stream, not gap)
+                window_gaps.pop(i)
+                window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
+   
+    stream_windows = []    
+    for i, window in enumerate(window_gaps):
+        newSt = stream.copy()
+        stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+    i = i+1
+    newSt = stream.copy()
+    stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+
+    for i, st in enumerate(stream_windows):
+        if i == 0:
+            outStream = st.copy()
+        else:
+            newSt = st.copy()
+            gap = window_gaps[i-1]
+            outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
+    outStream.merge()
+    return outStream
 
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
