@@ -965,7 +965,15 @@ def trim_data(stream, params, export_dir=None, export_format=None):
 
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
-def generate_ppsds(params, stream, **kwargs):
+def generate_ppsds(params, stream, remove_outliers=True, 
+                    skip_on_gaps=True, 
+                    db_bins=(-200, -50, 1.0), 
+                    ppsd_length=60,
+                    overlap=0.5,
+                    special_handling=None, 
+                    period_smoothing_width_octaves=1.0, 
+                    period_step_octaves=0.0625, 
+                    period_limits=None, verbose=False, **kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -993,28 +1001,84 @@ def generate_ppsds(params, stream, **kwargs):
     from obspy.signal import PPSD
 
     eStream = stream.select(component='E')
-    stats = eStream.traces[0].stats
-    ppsdE = PPSD(stats, paz['EHE'], skip_on_gaps=True, **kwargs)
+    estats = eStream.traces[0].stats
+    ppsdE = PPSD(estats, paz['EHE'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+                    period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
     #ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
-    ppsdE.add(stream, verbose=False)
+    ppsdE.add(stream, verbose=verbose)
 
-    ppsdN = PPSD(stream.select(component='N').traces[0].stats, paz['EHN'], **kwargs)
-    ppsdN.add(stream, verbose=False)
+    nStream = stream.select(component='N')
+    nstats = nStream.traces[0].stats
+    ppsdN = PPSD(nstats, paz['EHN'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+                    period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
+    ppsdN.add(stream, verbose=verbose)
 
-    ppsdZ = PPSD(stream.select(component='Z').traces[0].stats, paz['EHZ'], **kwargs)
-    ppsdZ.add(stream, verbose=False)
+    zStream = stream.select(component='Z')
+    zstats = nStream.traces[0].stats
+    ppsdZ = PPSD(zstats, paz['EHZ'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+                    period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
+    ppsdZ.add(stream, verbose=verbose)
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
     params['ppsds'] = ppsds
+
+    params['ppsd_dict'] = {}
+
+    members = [mems for mems in dir(params['ppsds']['EHZ']) if not callable(mems) and not mems.startswith("_")]
+    params['ppsd_dict']['EHZ'] = {}
+    params['ppsd_dict']['EHE'] = {}
+    params['ppsd_dict']['EHN'] = {}
+    listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values',]
+    for m in members:
+        params['ppsd_dict']['EHZ'][m] = getattr(params['ppsds']['EHZ'], m)
+        params['ppsd_dict']['EHE'][m] = getattr(params['ppsds']['EHE'], m)
+        params['ppsd_dict']['EHN'][m] = getattr(params['ppsds']['EHN'], m)
+        if m in listList:
+            params['ppsd_dict']['EHZ'][m] = np.array(params['ppsd_dict']['EHZ'][m])
+            params['ppsd_dict']['EHE'][m] = np.array(params['ppsd_dict']['EHE'][m])
+            params['ppsd_dict']['EHN'][m] = np.array(params['ppsd_dict']['EHN'][m])
+
     params['stream'] = stream
+
+    if remove_outliers:
+        params = remove_outlier_ppsds(params)
+
     return params
 
-#Check the x-values for each cahnnel, to make sure they are all the same length
+#Remove outlier ppsds
+def remove_outlier_ppsds(hvsr_dict):
+    ppsds = hvsr_dict['ppsd_dict']
+    newPPsds = {}
+    stds = {}
+    psds_to_rid = []
+
+    for k in ppsds:
+        psdVals = np.array(ppsds[k]['psd_values'])
+        meanArr = np.nanmean(psdVals, axis=1)
+        newPPsds[k] = []
+        totMean = np.nanmean(meanArr)
+        stds[k] = np.std(meanArr)
+
+        for i, m in enumerate(meanArr):
+            if m > totMean + 3*stds[k] or m < totMean - 3*stds[k]:
+                psds_to_rid.append(i)
+    psds_to_rid = np.unique(psds_to_rid)
+
+    for k in hvsr_dict['ppsd_dict']:
+        for i, r in enumerate(psds_to_rid):
+            index = int(r-1)
+            hvsr_dict['ppsd_dict'][k]['psd_values'] = np.delete(hvsr_dict['ppsd_dict'][k]['psd_values'], index, axis=0)
+            hvsr_dict['ppsd_dict'][k]['current_times_used'] = np.delete(hvsr_dict['ppsd_dict'][k]['current_times_used'], index, axis=0)
+            #hvsr_dict['ppsd_dict'][k]['period_bin_centers']
+
+    return hvsr_dict
+
+#Check the x-values for each channel, to make sure they are all the same length
 def __check_xvalues(ppsds):
     """Check x_values of PPSDS to make sure they are all the same length"""
     xLengths = []
     for k in ppsds.keys():
-        xLengths.append(len(ppsds[k].period_bin_centers))
+        xLengths.append(len(ppsds[k]['period_bin_centers']))
     if len(set(xLengths)) <= 1:
         pass #This means all channels have same number of period_bin_centers
     else:
@@ -1023,11 +1087,12 @@ def __check_xvalues(ppsds):
     return ppsds
 
 #Check to make the number of time-steps are the same for each channel
-def __check_tsteps(ppsds):
+def __check_tsteps(hvsr_dict):
     """Check time steps of PPSDS to make sure they are all the same length"""
+    ppsds = hvsr_dict['ppsd_dict']
     tSteps = []
     for k in ppsds.keys():
-        tSteps.append(np.array(ppsds[k].psd_values).shape[0])
+        tSteps.append(np.array(ppsds[k]['psd_values']).shape[0])
     if len(set(tSteps)) <= 1:
         pass #This means all channels have same number of period_bin_centers
         minTStep=tSteps[0]
@@ -1070,7 +1135,7 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
             Dictionary containing all the information about the data, including input parameters
 
     """
-    ppsds=params['ppsds']
+    ppsds = params['ppsd_dict'].copy()#[k]['psd_values']
     ppsds = __check_xvalues(ppsds)
     resample=True
 
@@ -1089,8 +1154,8 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
             if resample:
                 resample = 1000 #Default smooth value
 
-            xValMin = min(ppsds[k].period_bin_centers)
-            xValMax = max(ppsds[k].period_bin_centers)
+            xValMin = min(ppsds[k]['period_bin_centers'])
+            xValMax = max(ppsds[k]['period_bin_centers'])
 
             #Resample period bin values
             x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
@@ -1103,22 +1168,22 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
 
 
             #Resample raw ppsd values
-            for i, t in enumerate(ppsds[k].psd_values):
+            for i, t in enumerate(ppsds[k]['psd_values']):
                 if i==0:
-                    psdRaw[k] = np.interp(x_periods[k], ppsds[k].period_bin_centers, t)
-                    if smooth > 0 :
-                        psdRaw[k] = scipy.signal.savgol_filter( psdRaw[k], smooth, 3)
+                    psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
+                    if smooth is not False:
+                        psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
 
                 else:
-                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k].period_bin_centers, t)))
-                    if smooth > 0:
-                        psdRaw[k][i] = scipy.signal.savgol_filter( psdRaw[k][i], smooth, 3)
+                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)))
+                    if smooth is not False:
+                        psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
                 #print(psdRaw[k].shape)
         else:
             #If no resampling desired
-            x_periods[k] = np.array(ppsds[k].period_bin_centers)
-            psdRaw[k] = np.array(ppsds[k].psd_values)
+            x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
+            psdRaw[k] = np.array(ppsds[k]['psd_values'])
 
         #Get average psd value across time for each channel (used to calc H/V curve)
         psdVals[k] = np.mean(np.array(psdRaw[k]), axis=0)
@@ -1128,14 +1193,19 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
         stDevValsM[k] = np.array(psdVals[k] - stDev[k])
         stDevValsP[k] = np.array(psdVals[k] + stDev[k])
 
-    #This gets the hvsr curve averaged from all time steps
-    anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdVals, method=4)
     
     #Get string of method type
     if type(method) is int:
+        methodInt = method
         method = methodList[method]
 
+    #This gets the hvsr curve averaged from all time steps
+    anyK = list(x_freqs.keys())[0]
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdVals, method=methodInt)
+
+    origPPSD = params['ppsds']
+    del params['ppsd_dict']
+    del params['ppsds']
     #Add some other variables to our output dictionary
     hvsr_out = {'input_params':params,
                 'x_freqs':x_freqs,
@@ -1147,9 +1217,10 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
                 'ppsd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
                 'method':method,
-                'ppsds':ppsds
+                'ppsds':ppsds,
+                'ppsds_orig':origPPSD
                 }
-    
+
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
@@ -1157,13 +1228,12 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
         tStepDict = {}
         for k in hvsr_out['psd_raw']:
             tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=method))
+        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt))
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
     hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_tSteps, axis=0)
     #hvsr_out['ind_hvsr_stdDev_median'] = np.median(hvsr_tSteps, axis=0)
-
 
     tStepPeaks = []
     for tStepHVSR in hvsr_tSteps:
@@ -1283,7 +1353,7 @@ def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, med
     return
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method):
+def __get_hvsr_curve(x, psd, method=4):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -1309,10 +1379,39 @@ def __get_hvsr_curve(x, psd, method):
         psd2 = [psd['EHN'][j], psd['EHN'][j + 1]]
         f =    [x[j], x[j + 1]]
 
-        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=4)
+        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
         hvsr_curve.append(hvsr)  
 
     return np.array(hvsr_curve)
+
+#Get HVSR
+def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
+    """
+    H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
+        use_method:
+           (1) Diffuse Field Assumption (DFA)
+           (2) arithmetic mean, that is, H ≡ (HN + HE)/2
+           (3) geometric mean, that is, H ≡ √HN · HE, recommended by the SESAME project (2004)
+           (4) vector summation, that is, H ≡ √H2 N + H2 E
+           (5) quadratic mean, that is, H ≡ √(H2 N + H2 E )/2
+           (6) maximum horizontal value, that is, H ≡ max {HN, HE}
+    """
+    _pz = __get_power(_dbz, _x)
+    _p1 = __get_power(_db1, _x)
+    _p2 = __get_power(_db2, _x)
+
+    _hz = math.sqrt(_pz)
+    _h1 = math.sqrt(_p1)
+    _h2 = math.sqrt(_p2)
+
+    _h = {  2: (_h1 + _h2) / 2.0, 
+            3: math.sqrt(_h1 * _h2), 
+            4: math.sqrt(_p1 + _p2), 
+            5: math.sqrt((_p1 + _p2) / 2.0),
+            6: max(_h1, _h2)}
+
+    _hvsr = _h[use_method] / _hz
+    return _hvsr
 
 #Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
@@ -1702,7 +1801,7 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     else:
         kwargs['cmap'] = 'afmhot'
 
-    ppsds = hvsr_dict['ppsds']
+    ppsds = hvsr_dict['ppsds']#[k]['current_times_used']
     import matplotlib.dates as mdates
     anyKey = list(ppsds.keys())[0]
 
@@ -1718,8 +1817,8 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
     psdArr = hvsr_dict['ind_hvsr_curves'].T
 
-    xmin = datetime.datetime.strptime(min(ppsds[anyKey].current_times_used[:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
-    xmax = datetime.datetime.strptime(max(ppsds[anyKey].current_times_used[:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmin = datetime.datetime.strptime(min(hvsr_dict['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmax = datetime.datetime.strptime(max(hvsr_dict['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
     xmin = mdates.date2num(xmin)
     xmax = mdates.date2num(xmax)
 
@@ -1732,10 +1831,10 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     ax.xaxis.set_major_formatter(tLabels)
     plt.tick_params(axis='x', labelsize=8)
 
-    if ppsds[anyKey].current_times_used[0].date != ppsds[anyKey].current_times_used[0-1].date:
-        day = str(ppsds[anyKey].current_times_used[0].date)+' - '+str(ppsds[anyKey].current_times_used[1].date)
+    if hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date != hvsr_dict['ppsds'][anyKey]['current_times_used'][-1].date:
+        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
     else:
-        day = str(ppsds[anyKey].current_times_used[0].date)
+        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
 
     ymin = hvsr_dict['input_params']['hvsr_band'][0]
     ymax = hvsr_dict['input_params']['hvsr_band'][1]
@@ -2172,7 +2271,7 @@ def __remove_windows(stream, window_list, warmup_time):
     window_gaps_obspy.append([stream[0].stats.endtime-buffer_time, stream[0].stats.endtime-buffer_time])
     #Note, we added start and endtimes to obpsy list to help with later functionality
 
-    #Clean up stream windows
+    #Clean up stream windows (especially, start and end)
     for i, window in enumerate(window_gaps):
         newSt = stream.copy()
         if window_gaps_obspy[i+1][0] - newSt[0].stats.starttime < warmup_time:
@@ -2192,11 +2291,14 @@ def __remove_windows(stream, window_list, warmup_time):
                 window_gaps.pop(i)
                 window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
    
-    stream_windows = []    
+   #Add streams
+    stream_windows = []
+    j = 0
     for i, window in enumerate(window_gaps):
+        j=i
         newSt = stream.copy()
         stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
-    i = i+1
+    i = j + 1
     newSt = stream.copy()
     stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
 
@@ -2209,35 +2311,6 @@ def __remove_windows(stream, window_list, warmup_time):
             outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
     outStream.merge()
     return outStream
-
-#Get HVSR
-def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
-    """
-    H is computed based on the selected use_method see: https://academic.oup.com/gji/article/194/2/936/597415
-        use_method:
-           (1) Diffuse Field Assumption (DFA)
-           (2) arithmetic mean, that is, H ≡ (HN + HE)/2
-           (3) geometric mean, that is, H ≡ √HN · HE, recommended by the SESAME project (2004)
-           (4) vector summation, that is, H ≡ √H2 N + H2 E
-           (5) quadratic mean, that is, H ≡ √(H2 N + H2 E )/2
-           (6) maximum horizontal value, that is, H ≡ max {HN, HE}
-    """
-    _pz = __get_power(_dbz, _x)
-    _p1 = __get_power(_db1, _x)
-    _p2 = __get_power(_db2, _x)
-
-    _hz = math.sqrt(_pz)
-    _h1 = math.sqrt(_p1)
-    _h2 = math.sqrt(_p2)
-
-    _h = {  2: (_h1 + _h2) / 2.0, 
-            3: math.sqrt(_h1 * _h2), 
-            4: math.sqrt(_p1 + _p2), 
-            5: math.sqrt((_p1 + _p2) / 2.0),
-            6: max(_h1, _h2)}
-
-    _hvsr = _h[use_method] / _hz
-    return _hvsr
 
 #Remove decibel scaling
 def __remove_db(_db_value):
@@ -2380,6 +2453,11 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
         if p['Score'] > bestPeakScore:
             bestPeakScore = p['Score']
             bestPeak = p
+        
+    if len(hvsr_dict['Peak Report']) == 0:
+        bestPeak={}
+        print('No Best Peak identified')
+
     hvsr_dict['Best Peak'] = bestPeak
     return hvsr_dict
 
@@ -2448,10 +2526,10 @@ def __check_curve_reliability(hvsr_dict, _peak):
     _peak   : list
         List of dictionaries, same as above, except with information about curve reliability tests added
     """
-    anyKey = list(hvsr_dict['psd_raw'].keys())[0]#Doesn't matter which channel we use as key
+    anyKey = list(hvsr_dict['ppsds'].keys())[0]#Doesn't matter which channel we use as key
 
-    delta = hvsr_dict['ppsds'][anyKey].delta
-    window_len = (hvsr_dict['ppsds'][anyKey].len * delta) #Window length in seconds
+    delta = hvsr_dict['ppsds'][anyKey]['delta']
+    window_len = (hvsr_dict['ppsds'][anyKey]['len'] * delta) #Window length in seconds
     window_num = np.array(hvsr_dict['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
