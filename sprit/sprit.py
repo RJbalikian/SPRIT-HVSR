@@ -790,7 +790,9 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
-    return dataIN
+    params['stream'] = dataIN
+
+    return params
 
 #Read data from raspberry shake
 def __read_RS_data(datapath, source, year, doy, inv, params):
@@ -963,9 +965,186 @@ def trim_data(stream, params, export_dir=None, export_format=None):
 
     return st_trimmed
 
+#Function to select windows using original stream specgram/plots
+def select_windows(input):
+    """_summary_
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary containing all the hvsr information.
+
+    Returns
+    -------
+    xWindows : list
+        List of two-item lists containing start and end times of windows to be removed.
+    """
+    from matplotlib.backend_bases import MouseButton
+    import matplotlib.pyplot as plt
+    import matplotlib
+
+    global fig
+    global ax
+
+    if type(input) is dict:
+        if 'hvsr_curve' in input.keys():
+            fig, ax = hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
+        else:
+            params = input.copy()
+            input = input['stream']
+    
+    if isinstance(input, obspy.core.stream.Stream):
+        fig, ax = __plot_specgram_stream(input, component=['Z'])
+    elif isinstance(input, obspy.core.trace.Trace):
+        fig, ax = __plot_specgram_stream(input)
+        #plt.specgram()
+
+    global lineArtist
+    global winArtist
+    global windowDrawn
+    global pathList
+    global xWindows
+    global clickNo
+    global x0
+    x0=0
+    clickNo = 0
+    xWindows = []
+    pathList = []
+    windowDrawn = []
+    winArtist = []
+    lineArtist = []
+
+    fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+    plt.show()
+
+    params['xwindows_out'] = xWindows
+    return params
+
+#Function to remove noise windows from data
+def remove_noise(input, kind='manual', window_list=None, noise_percentile=0.9, sta=5, lta=50, warmup_time=120):
+    manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
+    autoList = ['auto', 'automatic', 'all', 'a']
+    antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
+    noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
+
+    if kind.lower() in manualList:
+        inStream = input['stream']
+        window_list = input['xwindows_out']
+        output = input.copy()
+        if isinstance(inStream, obspy.core.stream.Stream):
+            if window_list is not None:
+                output['stream'] = __remove_windows(inStream, window_list, warmup_time)
+            else:
+                print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
+        elif type(input) is dict:
+            pass
+        else:
+            print('Input data type is not supported.')
+    elif kind.lower() in autoList:
+        pass #HERE THIRD (JUST DO NEXT AND SECOND TOGETHER)
+    elif kind.lower() in antitrigger:
+        pass #HERE NEXT
+    elif kind.lower() in noiseThresh:
+        pass #HERE SECOND
+    else:
+        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold'")
+        return
+
+    return output
+
+#Helper function for removing windows from data, leaving gaps
+def __remove_windows(stream, window_list, warmup_time):
+    og_stream = stream.copy()
+
+    #Find the latest start time and earliest endtime of all traces (in case they aren't consistent)
+    maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
+    minEndTime = obspy.UTCDateTime(1e10)
+    for comp in ['E', 'N', 'Z']:
+        tr = stream.select(component=comp).copy()
+        if tr[0].stats.starttime > maxStartTime:
+            maxStartTime = tr[0].stats.starttime
+        if tr[0].stats.endtime < minEndTime:
+            minEndTime = tr[0].stats.endtime
+
+    #Trim all traces to the same start/end time
+    stream.trim(starttime=maxStartTime, endtime=minEndTime)      
+
+    #Sort windows by the start of the window
+    sorted_window_list = []
+    windowStart = []
+    for i, window in enumerate(window_list):
+        windowStart.append(window[0])
+    sorted_start_list = sorted(windowStart)
+    ranks = [sorted_start_list.index(item) for item in windowStart]
+    for r in ranks:
+        sorted_window_list.append(window_list[r])
+
+    for i, w in enumerate(sorted_window_list):
+        if i < len(sorted_window_list) - 1:
+            if w[1] > sorted_window_list[i+1][0]:
+                print("ERROR: Overlapping windows. Please reselect windows to be removed or use a different noise removal method.")
+                return
+            
+    window_gaps_obspy = []
+    window_gaps = []
+
+    buffer_time = np.ceil((stream[0].stats.endtime-stream[0].stats.starttime)*0.01)
+
+    #Get obspy.UTCDateTime objects for the gap times
+    window_gaps_obspy.append([stream[0].stats.starttime + warmup_time, stream[0].stats.starttime + warmup_time])
+    for i, window in enumerate(sorted_window_list):
+        for j, item in enumerate(window):
+            if j == 0:
+                window_gaps_obspy.append([0,0])
+            window_gaps_obspy[i+1][j] = obspy.UTCDateTime(matplotlib.dates.num2date(item))
+        window_gaps.append((window[1]-window[0])*86400)
+    window_gaps_obspy.append([stream[0].stats.endtime-buffer_time, stream[0].stats.endtime-buffer_time])
+    #Note, we added start and endtimes to obpsy list to help with later functionality
+
+    #Clean up stream windows (especially, start and end)
+    for i, window in enumerate(window_gaps):
+        newSt = stream.copy()
+        if window_gaps_obspy[i+1][0] - newSt[0].stats.starttime < warmup_time:
+            if window_gaps_obspy[i+1][1] - newSt[0].stats.starttime < warmup_time:
+                window_gaps.pop(i)
+                window_gaps_obspy.pop(i+1)
+                continue
+            else: #if window overlaps the start of the stream after warmup_time
+                window_gaps.pop(i)
+                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] = newSt[0].stats.starttime + warmup_time
+        
+        if stream[0].stats.endtime - window_gaps_obspy[i+1][1] > stream[0].stats.endtime - buffer_time:        
+            if stream[0].stats.endtime - window_gaps_obspy[i+1][0] > stream[0].stats.endtime - buffer_time:
+                window_gaps.pop(i)
+                window_gaps_obspy.pop(i+1)
+            else:  #if end of window overlaps the buffer time, just end it at the start of the window (always end with stream, not gap)
+                window_gaps.pop(i)
+                window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
+   
+   #Add streams
+    stream_windows = []
+    j = 0
+    for i, window in enumerate(window_gaps):
+        j=i
+        newSt = stream.copy()
+        stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+    i = j + 1
+    newSt = stream.copy()
+    stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+
+    for i, st in enumerate(stream_windows):
+        if i == 0:
+            outStream = st.copy()
+        else:
+            newSt = st.copy()
+            gap = window_gaps[i-1]
+            outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
+    outStream.merge()
+    return outStream
+
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
-def generate_ppsds(params, stream, remove_outliers=True, 
+def generate_ppsds(params, stream, remove_outliers=True, outlier_std=3,
                     skip_on_gaps=True, 
                     db_bins=(-200, -50, 1.0), 
                     ppsd_length=60,
@@ -1014,43 +1193,43 @@ def generate_ppsds(params, stream, remove_outliers=True,
     ppsdN.add(stream, verbose=verbose)
 
     zStream = stream.select(component='Z')
-    zstats = nStream.traces[0].stats
+    zstats = zStream.traces[0].stats
     ppsdZ = PPSD(zstats, paz['EHZ'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
                     period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
     ppsdZ.add(stream, verbose=verbose)
 
     ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
-    params['ppsds'] = ppsds
+    params['ppsds_obspy'] = ppsds
 
-    params['ppsd_dict'] = {}
+    params['ppsds'] = {}
 
-    members = [mems for mems in dir(params['ppsds']['EHZ']) if not callable(mems) and not mems.startswith("_")]
-    params['ppsd_dict']['EHZ'] = {}
-    params['ppsd_dict']['EHE'] = {}
-    params['ppsd_dict']['EHN'] = {}
+    anyKey = list(params['ppsds_obspy'].keys())[0]
+    members = [mems for mems in dir(params['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+    params['ppsds']['EHZ'] = {}
+    params['ppsds']['EHE'] = {}
+    params['ppsds']['EHN'] = {}
     listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values',]
     for m in members:
-        params['ppsd_dict']['EHZ'][m] = getattr(params['ppsds']['EHZ'], m)
-        params['ppsd_dict']['EHE'][m] = getattr(params['ppsds']['EHE'], m)
-        params['ppsd_dict']['EHN'][m] = getattr(params['ppsds']['EHN'], m)
+        params['ppsds']['EHZ'][m] = getattr(params['ppsds_obspy']['EHZ'], m)
+        params['ppsds']['EHE'][m] = getattr(params['ppsds_obspy']['EHE'], m)
+        params['ppsds']['EHN'][m] = getattr(params['ppsds_obspy']['EHN'], m)
         if m in listList:
-            params['ppsd_dict']['EHZ'][m] = np.array(params['ppsd_dict']['EHZ'][m])
-            params['ppsd_dict']['EHE'][m] = np.array(params['ppsd_dict']['EHE'][m])
-            params['ppsd_dict']['EHN'][m] = np.array(params['ppsd_dict']['EHN'][m])
-
-    params['stream'] = stream
+            params['ppsds']['EHZ'][m] = np.array(params['ppsds']['EHZ'][m])
+            params['ppsds']['EHE'][m] = np.array(params['ppsds']['EHE'][m])
+            params['ppsds']['EHN'][m] = np.array(params['ppsds']['EHN'][m])
 
     if remove_outliers:
-        params = remove_outlier_ppsds(params)
+        params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_length)
 
     return params
 
 #Remove outlier ppsds
-def remove_outlier_ppsds(hvsr_dict):
-    ppsds = hvsr_dict['ppsd_dict']
+def remove_outlier_ppsds(params, outlier_std=3, ppsd_length=60):
+    ppsds = params['ppsds']
     newPPsds = {}
     stds = {}
     psds_to_rid = []
+
 
     for k in ppsds:
         psdVals = np.array(ppsds[k]['psd_values'])
@@ -1060,18 +1239,33 @@ def remove_outlier_ppsds(hvsr_dict):
         stds[k] = np.std(meanArr)
 
         for i, m in enumerate(meanArr):
-            if m > totMean + 3*stds[k] or m < totMean - 3*stds[k]:
+            if m > totMean + outlier_std*stds[k] or m < totMean - outlier_std*stds[k]:
                 psds_to_rid.append(i)
+
+        curr_times_mpl = []
+        for i, t in enumerate(ppsds[k]['current_times_used']):
+            curr_times_mpl.append(t.matplotlib_date)
+
+        #Get ppsd length in seconds in matplotlib format
+        ppsd_length_mpl = ppsd_length/86400
+        #Check if any times fall in excluded zone
+        for i, t in enumerate(curr_times_mpl):
+            nextT = t + ppsd_length_mpl
+            for w, win in enumerate(params['xwindows_out']):
+                if t > win[0] and t < win[1]:
+                    psds_to_rid.append(i)
+                elif nextT > win[0] and nextT < win[1]:
+                    psds_to_rid.append(i)
+    
     psds_to_rid = np.unique(psds_to_rid)
 
-    for k in hvsr_dict['ppsd_dict']:
+    for k in params['ppsds']:
         for i, r in enumerate(psds_to_rid):
-            index = int(r-1)
-            hvsr_dict['ppsd_dict'][k]['psd_values'] = np.delete(hvsr_dict['ppsd_dict'][k]['psd_values'], index, axis=0)
-            hvsr_dict['ppsd_dict'][k]['current_times_used'] = np.delete(hvsr_dict['ppsd_dict'][k]['current_times_used'], index, axis=0)
-            #hvsr_dict['ppsd_dict'][k]['period_bin_centers']
+            index = int(r-i)
+            params['ppsds'][k]['psd_values'] = np.delete(params['ppsds'][k]['psd_values'], index, axis=0)
+            params['ppsds'][k]['current_times_used'] = np.delete(params['ppsds'][k]['current_times_used'], index, axis=0)
 
-    return hvsr_dict
+    return params
 
 #Check the x-values for each channel, to make sure they are all the same length
 def __check_xvalues(ppsds):
@@ -1089,7 +1283,7 @@ def __check_xvalues(ppsds):
 #Check to make the number of time-steps are the same for each channel
 def __check_tsteps(hvsr_dict):
     """Check time steps of PPSDS to make sure they are all the same length"""
-    ppsds = hvsr_dict['ppsd_dict']
+    ppsds = hvsr_dict['ppsds']
     tSteps = []
     for k in ppsds.keys():
         tSteps.append(np.array(ppsds[k]['psd_values']).shape[0])
@@ -1102,7 +1296,7 @@ def __check_tsteps(hvsr_dict):
     return minTStep
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, smooth=True, resample=True):
+def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_curves=False, outlier_curve_std=1.75):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -1135,21 +1329,22 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
             Dictionary containing all the information about the data, including input parameters
 
     """
-    ppsds = params['ppsd_dict'].copy()#[k]['psd_values']
+    ppsds = params['ppsds'].copy()#[k]['psd_values']
     ppsds = __check_xvalues(ppsds)
-    resample=True
 
     methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     x_freqs = {}
     x_periods = {}
 
-    psdVals = {}
+    psdValsTAvg = {}
     stDev = {}
     stDevValsP = {}
     stDevValsM = {}
-    psdRaw={}    
+    psdRaw={}
+    currTimesUsed={}
     
     for k in ppsds:
+        #if reasmpling has been selected
         if resample or type(resample) is int:
             if resample:
                 resample = 1000 #Default smooth value
@@ -1166,7 +1361,6 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
                 elif smooth%2==0:
                     smooth = smooth+1
 
-
             #Resample raw ppsd values
             for i, t in enumerate(ppsds[k]['psd_values']):
                 if i==0:
@@ -1179,21 +1373,21 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
                     if smooth is not False:
                         psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
-                #print(psdRaw[k].shape)
         else:
             #If no resampling desired
             x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
             psdRaw[k] = np.array(ppsds[k]['psd_values'])
 
-        #Get average psd value across time for each channel (used to calc H/V curve)
-        psdVals[k] = np.mean(np.array(psdRaw[k]), axis=0)
+        #Get average psd value across time for each channel (used to calc main H/V curve)
+        psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
         x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
 
         stDev[k] = np.std(psdRaw[k], axis=0)
-        stDevValsM[k] = np.array(psdVals[k] - stDev[k])
-        stDevValsP[k] = np.array(psdVals[k] + stDev[k])
+        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
+        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
-    
+        currTimesUsed[k] = ppsds[k]['current_times_used']
+
     #Get string of method type
     if type(method) is int:
         methodInt = method
@@ -1201,26 +1395,28 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
 
     #This gets the hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdVals, method=methodInt)
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt)
 
-    origPPSD = params['ppsds']
-    del params['ppsd_dict']
-    del params['ppsds']
+    origPPSD = params['ppsds_obspy'].copy()
+
     #Add some other variables to our output dictionary
-    hvsr_out = {'input_params':params,
+    hvsr_out = {'input_params':params.copy(),
                 'x_freqs':x_freqs,
                 'hvsr_curve':hvsr_curve,
                 'x_period':x_periods,
-                'psd_values':psdVals,
                 'psd_raw':psdRaw,
+                'current_times_used': currTimesUsed,
+                'psd_values_tavg':psdValsTAvg,
                 'ppsd_std':stDev,
                 'ppsd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
                 'method':method,
                 'ppsds':ppsds,
-                'ppsds_orig':origPPSD
+                'ppsds_obspy':origPPSD,
+                'xwindows_out':params['xwindows_out']
                 }
-
+    del hvsr_out['input_params']['ppsds_obspy']
+    del hvsr_out['input_params']['ppsds']
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
@@ -1232,24 +1428,47 @@ def process_hvsr(params, method=4, smooth=True, resample=True):
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
-    hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_tSteps, axis=0)
-    #hvsr_out['ind_hvsr_stdDev_median'] = np.median(hvsr_tSteps, axis=0)
 
+    #use the standard deviation of each individual curve to determine if it overlapped
+    if remove_outlier_curves:
+        stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
+        std_stdT= np.std(stdT)
+        avg_stdT= np.nanmean(stdT)
+
+        psds_to_rid = []
+        for i,t in enumerate(hvsr_out['ind_hvsr_curves']):
+            if stdT[i] < avg_stdT - std_stdT*outlier_curve_std or stdT[i] > avg_stdT + std_stdT*outlier_curve_std:
+                psds_to_rid.append(i)
+
+        for i, r in enumerate(psds_to_rid):
+            index = int(r-i)
+            hvsr_out['ind_hvsr_curves'] = np.delete(hvsr_out['ind_hvsr_curves'], index, axis=0)
+
+            for k in hvsr_out['ppsds']:
+                hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=1)         
+                hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
+
+    hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_out['ind_hvsr_curves'], axis=0)
+
+    #Get peaks for each time step
     tStepPeaks = []
     for tStepHVSR in hvsr_tSteps:
         tStepPeaks.append(__find_peaks(tStepHVSR))
-    #tStepPeaks = np.array(tStepPeaks) #This is a list of lists, and the individual lists are different sizes
-
     hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
+    #Get peaks of main HV curve
     hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+    
+    #Get frequency values at HV peaks in main curve
     hvsrPF=[]
     for p in hvsr_out['hvsr_peak_indices']:
         hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
     hvsr_out['hvsr_peak_freqs'] = np.array(hvsrPF)
 
+
     #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
     hvsr_out = __gethvsrparams(hvsr_out)
 
+    #Include the original obspy stream in the output
     hvsr_out['stream'] = params['stream']
 
     return hvsr_out
@@ -1372,6 +1591,8 @@ def __get_hvsr_curve(x, psd, method=4):
     """
     if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
         pass
+        print('DFA method not currently supported')
+    
     hvsr_curve = []
     for j in range(len(x)-1):
         psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
@@ -1404,33 +1625,97 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     _h1 = math.sqrt(_p1)
     _h2 = math.sqrt(_p2)
 
-    _h = {  2: (_h1 + _h2) / 2.0, 
-            3: math.sqrt(_h1 * _h2), 
-            4: math.sqrt(_p1 + _p2), 
-            5: math.sqrt((_p1 + _p2) / 2.0),
-            6: max(_h1, _h2)}
-
+    _h = {  2: (_h1 + _h2) / 2.0, #Arithmetic mean
+            3: math.sqrt(_h1 * _h2), #Geometric mean
+            4: math.sqrt(_p1 + _p2), #Vector summation
+            5: math.sqrt((_p1 + _p2) / 2.0), #Quadratic mean
+            6: max(_h1, _h2)} #Max horizontal value
     _hvsr = _h[use_method] / _hz
     return _hvsr
+
+#For converting dB scaled data to power units
+def __get_power(_db, _x):
+    """Calculate HVSR
+
+      We will undo setp 6 of MUSTANG processing as outlined below:
+          1. Dividing the window into 13 segments having 75% overlap
+          2. For each segment:
+             2.1 Removing the trend and mean
+             2.2 Apply a 10% sine taper
+             2.3 FFT
+          3. Calculate the normalized PSD
+          4. Average the 13 PSDs & scale to compensate for tapering
+          5. Frequency-smooth the averaged PSD over 1-octave intervals at 1/8-octave increments
+          6. Convert power to decibels
+
+    Parameters
+    ----------
+    _db : float
+        Individual power value in decibels
+    _x : float
+        Individual x value (either frequency or period)
+    
+    Returns
+    -------
+    _p : float
+        Individual power value, converted from decibels
+
+    NOTE
+    ----
+        PSD is equal to the power divided by the width of the bin
+          PSD = P / W
+          log(PSD) = Log(P) - log(W)
+          log(P) = log(PSD) + log(W)  here W is width in frequency
+          log(P) = log(PSD) - log(Wt) here Wt is width in period
+
+    for each bin perform rectangular integration to compute power
+    power is assigned to the point at the begining of the interval
+         _   _
+        | |_| |
+        |_|_|_|
+
+     Here we are computing power for individual ponts, so, no integration is necessary, just
+     compute area
+    """
+    _dx = abs(np.diff(_x)[0])
+    _p = np.multiply(np.mean(__remove_db(_db)), _dx)
+    return _p
+
+#Remove decibel scaling
+def __remove_db(_db_value):
+    """convert dB power to power"""
+    _values = list()
+    for _d in _db_value:
+        _values.append(10 ** (float(_d) / 10.0))
+    return _values
+
+#Find peaks in the hvsr ccruve
+def __find_peaks(_y):
+    """Finds peaks on hvsr curves
+    Parameters
+    ----------
+    _y : list or array
+        _y input is list or array of a curve.
+          In this case, this is either main hvsr curve or individual time step curves
+    """
+    _index_list = scipy.signal.argrelextrema(np.array(_y), np.greater)
+
+    return _index_list[0]
 
 #Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
     """Private function to get HVSR parameters for later calculations (things like standard deviation, etc)"""
-    count=0
-    #SOMETHING VERY WRONG IS GOING ON HERE!!!!
+
     hvsrp2 = {}
     hvsrm2 = {}
     
     peak_water_level = []
-    hvsr_std=[]
-    #hvsr_log_std=[]
     peak_water_level_p=[]
     hvsrp2=[]
     hvsrm=[]
     peak_water_level_m=[]
     water_level=1.8 #Make this an input parameter eventually!!!****
     
-    count += 1
     hvsr_log_std = {}
 
     peak_water_level.append(water_level)
@@ -1440,7 +1725,6 @@ def __gethvsrparams(hvsr_out):
         hvsrp = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
         hvsrm = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
 
-        #ppsd_std = hvsr_out['ppsd_std']
         hvsr_log_std = np.std(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
         hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
         hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
@@ -1674,7 +1958,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
                 fig = plt.gcf()
             minY = []
             maxY = []
-            for k in hvsr_dict['psd_values']:
+            for k in hvsr_dict['psd_values_tavg']:
                 minY.append(min(hvsr_dict['ppsd_std_vals_m'][k]))
                 maxY.append(max(hvsr_dict['ppsd_std_vals_p'][k]))
             minY = min(minY)
@@ -1696,8 +1980,8 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             
             #Plot individual components
             y={}
-            for k in hvsr_dict['psd_values']:
-                y[k] = hvsr_dict['psd_values'][k][:-1]
+            for k in hvsr_dict['psd_values_tavg']:
+                y[k] = hvsr_dict['psd_values_tavg'][k][:-1]
 
                 if k == 'EHZ':
                     pltColor = 'k'
@@ -1745,14 +2029,14 @@ def __plot_current_fig(save_dir, filename, plot_suffix, user_suffix, show):
     plt.gcf()
     plt.tight_layout()
 
-    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+    #plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
 
     if save_dir is not None:
         outFile = save_dir+'/'+filename+'_'+plot_suffix+str(datetime.datetime.today().date())+'_'+user_suffix+'.png'
         plt.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
     if show:
         plt.show()
-        plt.ion()
+        #plt.ion()
     return
 
 #Plot specgtrogram, private supporting function for hvplot
@@ -1799,7 +2083,7 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     if 'cmap' in kwargs.keys():
         pass
     else:
-        kwargs['cmap'] = 'afmhot'
+        kwargs['cmap'] = 'turbo'
 
     ppsds = hvsr_dict['ppsds']#[k]['current_times_used']
     import matplotlib.dates as mdates
@@ -1875,8 +2159,8 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     plt.semilogy()
     plt.ylim(hvsr_dict['input_params']['hvsr_band'])
 
-    plt.rcParams['figure.dpi'] = 500
-    plt.rcParams['figure.figsize'] = (12,4)
+    #plt.rcParams['figure.dpi'] = 500
+    #plt.rcParams['figure.figsize'] = (12,4)
     fig.tight_layout()
     plt.show()
     return fig, ax
@@ -2027,8 +2311,8 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     plt.xlabel('UTC Time \n'+day)
 
-    plt.rcParams['figure.dpi'] = 100
-    plt.rcParams['figure.figsize'] = (5,4)
+    #plt.rcParams['figure.dpi'] = 100
+    #plt.rcParams['figure.figsize'] = (5,4)
     
     #fig.tight_layout()
     plt.show()
@@ -2145,238 +2429,6 @@ def __on_click(event):
 
     if event.button is MouseButton.LEFT:            
         clickNo, x0 = __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax)    
-
-def select_windows(input):
-    """_summary_
-
-    Parameters
-    ----------
-    hvsr_dict : dict
-        Dictionary containing all the hvsr information.
-
-    Returns
-    -------
-    xWindows : list
-        List of two-item lists containing start and end times of windows to be removed.
-    """
-    from matplotlib.backend_bases import MouseButton
-    import matplotlib.pyplot as plt
-    import matplotlib
-
-    global fig
-    global ax
-
-    if type(input) is dict:
-        fig, ax = hvplot(hvsr_dict=input, kind='spec', returnfig=True, cmap='turbo')
-        stream = []
-    elif isinstance(input, obspy.core.stream.Stream):
-        fig, ax = __plot_specgram_stream(input, component=['Z'])
-    elif isinstance(input, obspy.core.trace.Trace):
-        fig, ax = __plot_specgram_stream(input)
-        plt.specgram()
-
-    global lineArtist
-    global winArtist
-    global windowDrawn
-    global pathList
-    global xWindows
-    global clickNo
-    global x0
-    x0=0
-    clickNo = 0
-    xWindows = []
-    pathList = []
-    windowDrawn = []
-    winArtist = []
-    lineArtist = []
-
-    fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
-    plt.show()
-    return xWindows
-
-#Function to remove noise windows from data
-def remove_noise(input, kind='manual', window_list=None, noise_percentile=0.9, sta=5, lta=50, warmup_time=120):
-    manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
-    autoList = ['auto', 'automatic', 'all', 'a']
-    antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
-    noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
-
-    if kind.lower() in manualList:
-        if isinstance(input, obspy.core.stream.Stream):
-            if window_list is not None:
-                output = __remove_windows(input, window_list, warmup_time)
-            else:
-                print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
-        elif type(input) is dict:
-            pass
-        else:
-            print('Input data type is not supported.')
-    elif kind.lower() in autoList:
-        pass #HERE THIRD (JUST DO NEXT AND SECOND TOGETHER)
-    elif kind.lower() in antitrigger:
-        pass #HERE NEXT
-    elif kind.lower() in noiseThresh:
-        pass #HERE SECOND
-    else:
-        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold'")
-        return
-    return output
-
-#Helper function for removing windows from data, leaving gaps
-def __remove_windows(stream, window_list, warmup_time):
-    og_stream = stream.copy()
-
-    #Find the latest start time and earliest endtime of all traces (in case they aren't consistent)
-    maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
-    minEndTime = obspy.UTCDateTime(1e10)
-    for comp in ['E', 'N', 'Z']:
-        tr = stream.select(component=comp).copy()
-        if tr[0].stats.starttime > maxStartTime:
-            maxStartTime = tr[0].stats.starttime
-        if tr[0].stats.endtime < minEndTime:
-            minEndTime = tr[0].stats.endtime
-
-    #Trim all traces to the same start/end time
-    stream.trim(starttime=maxStartTime, endtime=minEndTime)      
-
-    #Sort windows by the start of the window
-    sorted_window_list = []
-    windowStart = []
-    for i, window in enumerate(window_list):
-        windowStart.append(window[0])
-    sorted_start_list = sorted(windowStart)
-    ranks = [sorted_start_list.index(item) for item in windowStart]
-    for r in ranks:
-        sorted_window_list.append(window_list[r])
-
-    for i, w in enumerate(sorted_window_list):
-        if i < len(sorted_window_list) - 1:
-            if w[1] > sorted_window_list[i+1][0]:
-                print("ERROR: Overlapping windows. Please reselect windows to be removed or use a different noise removal method.")
-                return
-            
-    window_gaps_obspy = []
-    window_gaps = []
-
-    buffer_time = np.ceil((stream[0].stats.endtime-stream[0].stats.starttime)*0.01)
-
-    #Get obspy.UTCDateTime objects for the gap times
-    window_gaps_obspy.append([stream[0].stats.starttime + warmup_time, stream[0].stats.starttime + warmup_time])
-    for i, window in enumerate(sorted_window_list):
-        for j, item in enumerate(window):
-            if j == 0:
-                window_gaps_obspy.append([0,0])
-            window_gaps_obspy[i+1][j] = obspy.UTCDateTime(matplotlib.dates.num2date(item))
-        window_gaps.append((window[1]-window[0])*86400)
-    window_gaps_obspy.append([stream[0].stats.endtime-buffer_time, stream[0].stats.endtime-buffer_time])
-    #Note, we added start and endtimes to obpsy list to help with later functionality
-
-    #Clean up stream windows (especially, start and end)
-    for i, window in enumerate(window_gaps):
-        newSt = stream.copy()
-        if window_gaps_obspy[i+1][0] - newSt[0].stats.starttime < warmup_time:
-            if window_gaps_obspy[i+1][1] - newSt[0].stats.starttime < warmup_time:
-                window_gaps.pop(i)
-                window_gaps_obspy.pop(i+1)
-                continue
-            else: #if window overlaps the start of the stream after warmup_time
-                window_gaps.pop(i)
-                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] = newSt[0].stats.starttime + warmup_time
-        
-        if stream[0].stats.endtime - window_gaps_obspy[i+1][1] > stream[0].stats.endtime - buffer_time:        
-            if stream[0].stats.endtime - window_gaps_obspy[i+1][0] > stream[0].stats.endtime - buffer_time:
-                window_gaps.pop(i)
-                window_gaps_obspy.pop(i+1)
-            else:  #if end of window overlaps the buffer time, just end it at the start of the window (always end with stream, not gap)
-                window_gaps.pop(i)
-                window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
-   
-   #Add streams
-    stream_windows = []
-    j = 0
-    for i, window in enumerate(window_gaps):
-        j=i
-        newSt = stream.copy()
-        stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
-    i = j + 1
-    newSt = stream.copy()
-    stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
-
-    for i, st in enumerate(stream_windows):
-        if i == 0:
-            outStream = st.copy()
-        else:
-            newSt = st.copy()
-            gap = window_gaps[i-1]
-            outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
-    outStream.merge()
-    return outStream
-
-#Remove decibel scaling
-def __remove_db(_db_value):
-    """convert dB power to power"""
-    _values = list()
-    for _d in _db_value:
-        _values.append(10 ** (float(_d) / 10.0))
-    return _values
-
-#For converting dB scaled data to power units
-def __get_power(_db, _x):
-    """Calculate HVSR
-
-      We will undo setp 6 of MUSTANG processing as outlined below:
-          1. Dividing the window into 13 segments having 75% overlap
-          2. For each segment:
-             2.1 Removing the trend and mean
-             2.2 Apply a 10% sine taper
-             2.3 FFT
-          3. Calculate the normalized PSD
-          4. Average the 13 PSDs & scale to compensate for tapering
-          5. Frequency-smooth the averaged PSD over 1-octave intervals at 1/8-octave increments
-          6. Convert power to decibels
-
-    Parameters
-    ----------
-    _db : float
-        Individual power value in decibels
-    _x : float
-        Individual x value (either frequency or period)
-    
-    Returns
-    -------
-    _p : float
-        Individual power value, converted from decibels
-
-    NOTE
-    ----
-        PSD is equal to the power divided by the width of the bin
-          PSD = P / W
-          log(PSD) = Log(P) - log(W)
-          log(P) = log(PSD) + log(W)  here W is width in frequency
-          log(P) = log(PSD) - log(Wt) here Wt is width in period
-
-    for each bin perform rectangular integration to compute power
-    power is assigned to the point at the begining of the interval
-         _   _
-        | |_| |
-        |_|_|_|
-
-     Here we are computing power for individual ponts, so, no integration is necessary, just
-     compute area
-    """
-    #print(_db)
-    _dx = abs(np.diff(_x)[0])
-    #print(_dx)
-    _p = np.multiply(np.mean(__remove_db(_db)), _dx)
-    #print(_p)
-    return _p
-
-#Find peaks in the hvsr ccruve
-def __find_peaks(_y):
-    """Finds peaks on hvsr curve"""
-    _index_list = scipy.signal.argrelextrema(np.array(_y), np.greater)
-
-    return _index_list[0]
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
