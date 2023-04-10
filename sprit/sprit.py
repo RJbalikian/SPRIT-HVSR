@@ -679,7 +679,7 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='mseed'):
+def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='mseed', detrend='spline', detrend_order=2):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -789,6 +789,9 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         pass
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
+
+    for tr in dataIN:
+        tr.detrend(type=detrend, order=detrend_order, dspline=1000)
 
     params['stream'] = dataIN
 
@@ -1083,8 +1086,9 @@ def __remove_windows(stream, window_list, warmup_time):
         if i < len(sorted_window_list) - 1:
             if w[1] > sorted_window_list[i+1][0]:
                 print("ERROR: Overlapping windows. Please reselect windows to be removed or use a different noise removal method.")
+                print(w[1], '>', sorted_window_list[i+1][0])
                 return
-            
+                
     window_gaps_obspy = []
     window_gaps = []
 
@@ -1104,15 +1108,26 @@ def __remove_windows(stream, window_list, warmup_time):
     #Clean up stream windows (especially, start and end)
     for i, window in enumerate(window_gaps):
         newSt = stream.copy()
+        #Check if first window starts before end of warmup time
+        #If the start of the first exclusion window is before the warmup_time is over
         if window_gaps_obspy[i+1][0] - newSt[0].stats.starttime < warmup_time:
+            #If the end of first exclusion window is also before the warmup_time is over
             if window_gaps_obspy[i+1][1] - newSt[0].stats.starttime < warmup_time:
+                #Remove that window completely, it is unnecessary
                 window_gaps.pop(i)
                 window_gaps_obspy.pop(i+1)
+                #...and reset the entire window to start at the warmup_time end
+                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] = newSt[0].stats.starttime + warmup_time
                 continue
             else: #if window overlaps the start of the stream after warmup_time
+                #Remove that window
                 window_gaps.pop(i)
-                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] = newSt[0].stats.starttime + warmup_time
-        
+                #...and reset the start of the window to be the end of warm up time
+                #...and  remove that first window from the obspy list
+                window_gaps_obspy[0][0] = window_gaps_obspy[0][1] =  window_gaps_obspy[i+1][1]#newSt[0].stats.starttime + warmup_time
+                window_gaps_obspy.pop(i+1)
+
+
         if stream[0].stats.endtime - window_gaps_obspy[i+1][1] > stream[0].stats.endtime - buffer_time:        
             if stream[0].stats.endtime - window_gaps_obspy[i+1][0] > stream[0].stats.endtime - buffer_time:
                 window_gaps.pop(i)
@@ -1121,7 +1136,8 @@ def __remove_windows(stream, window_list, warmup_time):
                 window_gaps.pop(i)
                 window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
    
-   #Add streams
+    print(window_gaps_obspy)
+    #Add streams
     stream_windows = []
     j = 0
     for i, window in enumerate(window_gaps):
@@ -1417,6 +1433,12 @@ def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_cu
                 }
     del hvsr_out['input_params']['ppsds_obspy']
     del hvsr_out['input_params']['ppsds']
+
+
+    #ADD SMOOTHING
+    #ppsd_data = ppsd.psd_values
+    #smoothed_ppsd_data = konno_ohmachi_smoothing(ppsd_data.T, ppsd.period_bin_centers).T
+
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
