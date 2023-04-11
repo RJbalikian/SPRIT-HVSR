@@ -532,6 +532,9 @@ def setup_colab(option='', repo_dir=''):
     pyvers = pyvers.output.split(' ')#+pyvers.output.split('.')[1]
     pyvers = pyvers[0].lower()+pyvers[1].split('.')[0]+'.'+pyvers[1].split('.')[1]
 
+    #Setup matplotlib too?
+    #_system_commands._run_command('matplotlib qt', False)
+
     packPath = '/usr/local/lib/'+pyvers+'/dist-packages'
     packPath = pathlib.Path(packPath)
     
@@ -985,7 +988,7 @@ def select_windows(input):
     from matplotlib.backend_bases import MouseButton
     import matplotlib.pyplot as plt
     import matplotlib
-
+    import time
     global fig
     global ax
 
@@ -1017,38 +1020,52 @@ def select_windows(input):
     winArtist = []
     lineArtist = []
 
-    fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
-    plt.show()
+    global fig_closed
+    fig_closed = False
+    while fig_closed is False:
+        fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+        fig.canvas.mpl_connect('close_event', __on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+        plt.pause(1)
 
     params['xwindows_out'] = xWindows
     return params
 
+def __on_fig_close(event):
+    global fig_closed
+    fig_closed = True
+    return
+
 #Function to remove noise windows from data
-def remove_noise(input, kind='manual', window_list=None, noise_percentile=0.9, sta=5, lta=50, warmup_time=120):
+def remove_noise(input, kind='manual', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_windows=False, warmup_time=120):
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
 
+    inStream = input['stream']
+    output = input.copy()
     if kind.lower() in manualList:
-        inStream = input['stream']
-        window_list = input['xwindows_out']
-        output = input.copy()
+        if 'xwindows_out' in output.keys():
+            pass
+        else:
+            output = select_windows(output)
+        window_list = output['xwindows_out']
         if isinstance(inStream, obspy.core.stream.Stream):
             if window_list is not None:
                 output['stream'] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
-        elif type(input) is dict:
+        elif type(output) is dict:
             pass
         else:
             print('Input data type is not supported.')
     elif kind.lower() in autoList:
-        pass #HERE THIRD (JUST DO NEXT AND SECOND TOGETHER)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_windows=show_windows)
+        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh, show_windows=show_windows)
     elif kind.lower() in antitrigger:
-        pass #HERE NEXT
+        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh, show_windows=show_windows)
     elif kind.lower() in noiseThresh:
-        pass #HERE SECOND
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_windows=show_windows)
     else:
         print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold'")
         return
@@ -1077,8 +1094,10 @@ def __remove_windows(stream, window_list, warmup_time):
     windowStart = []
     for i, window in enumerate(window_list):
         windowStart.append(window[0])
-    sorted_start_list = sorted(windowStart)
-    ranks = [sorted_start_list.index(item) for item in windowStart]
+    windowStart_og = windowStart.copy()
+    windowStart.sort()
+    sorted_start_list = windowStart
+    ranks = [windowStart_og.index(item) for item in sorted_start_list]
     for r in ranks:
         sorted_window_list.append(window_list[r])
 
@@ -1136,7 +1155,6 @@ def __remove_windows(stream, window_list, warmup_time):
                 window_gaps.pop(i)
                 window_gaps_obspy[-1][0] = window_gaps_obspy[-1][1] = newSt[0].stats.endtime - buffer_time
    
-    print(window_gaps_obspy)
     #Add streams
     stream_windows = []
     j = 0
@@ -1158,9 +1176,127 @@ def __remove_windows(stream, window_list, warmup_time):
     outStream.merge()
     return outStream
 
+def __remove_anti_stalta(stream, sta=1, lta=30, thresh=[0.5, 5], show_windows=False):
+    from obspy.signal.trigger import classic_sta_lta
+
+    sampleRate = float(stream[0].stats.delta)
+
+    sta_samples = sta / sampleRate #Convert to samples
+    lta_samples = lta / sampleRate #Convert to samples
+    staltaStream = stream.copy()
+
+    for tr in staltaStream:
+        characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+    if show_windows:
+        obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
+    windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
+    
+    startT = stream[0].stats.starttime
+    endT = stream[0].stats.endtime
+    window_UTC = []
+    window_MPL = []
+    window_UTC.append([startT, startT])
+    for w, win in enumerate(windows_samples):
+        for i, t in enumerate(win):
+            if i == 0:
+                window_UTC.append([])
+                window_MPL.append([])
+            trigShift = sta
+            if trigShift > t * sampleRate:
+                trigShift = 0
+            tSec = t * sampleRate - trigShift
+            window_UTC[w+1].append(startT+tSec)
+            window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+    
+    window_UTC.append([endT, endT])
+    #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+    outStream = __remove_gaps(stream, window_UTC)
+    return outStream
+
+def __remove_gaps(stream, window_gaps_obspy):
+    #Add streams
+    window_gaps_s = []
+    for w, win in enumerate(window_gaps_obspy):
+        if w == 0:
+            pass
+        elif w == len(window_gaps_obspy)-1:
+            pass
+        else:
+            window_gaps_s.append(win[1]-win[0])
+
+    stream_windows = []
+    j = 0
+    for i, window in enumerate(window_gaps_s):
+        j=i
+        newSt = stream.copy()
+        stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+    i = j + 1
+    newSt = stream.copy()
+    stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+
+    for i, st in enumerate(stream_windows):
+        if i == 0:
+            outStream = st.copy()
+        else:
+            newSt = st.copy()
+            gap = window_gaps_s[i-1]
+            outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
+    outStream.merge()
+    return outStream
+
+def __remove_noise_thresh(stream, noise_percent, show_windows):
+    if noise_percent > 1:
+        noise_percent = noise_percent / 100
+
+    removeInd = np.array([])
+    for trace in stream:
+        data = trace.data
+        maxAmp = max(np.absolute(data, where = not None))
+        cond = np.nonzero(np.absolute(data, where=not None) > (noise_percent * maxAmp))[0]
+        removeInd = np.hstack([removeInd, cond])
+        #trace.data = np.ma.where(np.absolute(data, where = not None) > (noise_percent * maxAmp), None, data)
+    removeInd = np.unique(removeInd)
+
+    removeWindowSize = 10
+    removeList = [[0,0]]
+    j=0
+    for i, val in enumerate(removeInd):
+        if i != 0:
+            if val - removeInd[i-1] < removeWindowSize:
+                removeList[j][1] = val + removeWindowSize//2
+            else:
+                startInd = val - removeWindowSize//2 #removeInd[i-1]+1
+                endInd = val + removeWindowSize//2
+                removeList.append([int(startInd), int(endInd)])
+                j+=1
+        else:
+            if val != 0:
+                startInd = val - removeWindowSize//2 
+                endInd = val + removeWindowSize//2
+                removeList.append([int(startInd), int(endInd)])
+                j+=1
+    removeList.append([-1, -1])
+
+    sampleRate = stream[0].stats.delta
+    startT = stream[0].stats.starttime
+    endT = stream[0].stats.endtime
+    removeSec = []
+    removeUTC = []
+    for i, win in enumerate(removeList):
+        removeSec.append(list(np.round(sampleRate * np.array(win),6)))
+        removeUTC.append(list(np.add(startT, removeSec[i])))
+    removeUTC[-1][0] = removeUTC[-1][1] = endT
+
+    outstream  = __remove_gaps(stream, removeUTC)
+
+    if show_windows:
+        outstream.plot()
+
+    return outstream
+
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
-def generate_ppsds(params, stream, remove_outliers=True, outlier_std=3,
+def generate_ppsds(params, remove_outliers=True, outlier_std=3,
                     skip_on_gaps=True, 
                     db_bins=(-200, -50, 1.0), 
                     ppsd_length=60,
@@ -1191,6 +1327,7 @@ def generate_ppsds(params, stream, remove_outliers=True, outlier_std=3,
                 Dictionary containing entries with ppsds for each channel
     """
     paz=params['paz']
+    stream = params['stream']
 
     from obspy.imaging.cm import viridis_white_r
     from obspy.signal import PPSD
@@ -1234,7 +1371,7 @@ def generate_ppsds(params, stream, remove_outliers=True, outlier_std=3,
             params['ppsds']['EHE'][m] = np.array(params['ppsds']['EHE'][m])
             params['ppsds']['EHN'][m] = np.array(params['ppsds']['EHN'][m])
 
-    if remove_outliers:
+    if remove_outliers and 'xwindows_out' in params.keys():
         params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_length)
 
     return params
@@ -1312,7 +1449,7 @@ def __check_tsteps(hvsr_dict):
     return minTStep
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_curves=False, outlier_curve_std=1.75):
+def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=False, outlier_curve_std=1.75):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -1429,15 +1566,37 @@ def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_cu
                 'method':method,
                 'ppsds':ppsds,
                 'ppsds_obspy':origPPSD,
-                'xwindows_out':params['xwindows_out']
                 }
+
+    if 'xwindows_out' in params.keys():
+        hvsr_out['xwindows_out'] = params['xwindows_out']
+    else:
+        hvsr_out['xwindows_out'] = []
+
     del hvsr_out['input_params']['ppsds_obspy']
     del hvsr_out['input_params']['ppsds']
 
+    freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
+    freq_smooth_constant = ['constant', 'const', 'c']
+    freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
 
-    #ADD SMOOTHING
-    #ppsd_data = ppsd.psd_values
-    #smoothed_ppsd_data = konno_ohmachi_smoothing(ppsd_data.T, ppsd.period_bin_centers).T
+    #Frequency Smoothing
+    if freq_smooth is False:
+        print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+    elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
+        from obspy.signal import konnoohmachismoothing
+        for k in hvsr_out['psd_raw']:
+            ppsd_data = hvsr_out['psd_raw'][k]
+            freqs = hvsr_out['x_freqs'][k]
+            smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+            hvsr_out['psd_raw'][k] = smoothed_ppsd_data
+    elif freq_smooth.lower() in freq_smooth_constant:
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind='constant')
+    elif freq_smooth.lower() in freq_smooth_proport:
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind='proportional')
+    else:
+        print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+
 
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
@@ -1467,7 +1626,7 @@ def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_cu
             hvsr_out['ind_hvsr_curves'] = np.delete(hvsr_out['ind_hvsr_curves'], index, axis=0)
 
             for k in hvsr_out['ppsds']:
-                hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=1)         
+                hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=0)         
                 hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
 
     hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_out['ind_hvsr_curves'], axis=0)
@@ -1493,6 +1652,53 @@ def process_hvsr(params, method=4, smooth=True, resample=True, remove_outlier_cu
     #Include the original obspy stream in the output
     hvsr_out['stream'] = params['stream']
 
+    return hvsr_out
+
+def __freq_smooth_window(hvsr_out, f_smooth_width, kind):
+    if kind == 'constant':
+        fwidthHalf = f_smooth_width//2
+    elif kind == 'proportional':
+        anyKey = list(hvsr_out['psd_raw'].keys())[0]
+        freqLength = hvsr_out['psd_raw'][anyKey].shape[1]
+        if f_smooth_width > 1:
+            fwidthHalf = int(f_smooth_width/100 * freqLength)
+        else:
+            fwidthHalf = int(f_smooth_width * freqLength)
+    else:
+        print('Oops, typo somewhere')
+
+    for k in hvsr_out['psd_raw']:
+        newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
+        for t, tPSD in enumerate(hvsr_out['psd_raw'][k]):
+            for i, fVal in enumerate(tPSD):
+                if i < fwidthHalf:
+                    downWin = i
+                    ind = -1*(fwidthHalf-downWin)
+                    windMultiplier_down = np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
+                    windMultiplier_down = windMultiplier_down[:ind]
+                else:
+                    downWin = fwidthHalf
+                    windMultiplier_down =  np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
+                if i + fwidthHalf >= len(tPSD):
+                    upWin = (len(tPSD) - i)
+                    ind = -1 * (fwidthHalf-upWin+1)
+                    windMultiplier_up = np.linspace(1-1/fwidthHalf, 0, fwidthHalf)
+                    windMultiplier_up = windMultiplier_up[:ind]
+
+                else:
+                    upWin = fwidthHalf+1
+                    windMultiplier_up = np.linspace(1 - 1/fwidthHalf, 0, fwidthHalf)
+            
+                windMultiplier = list(np.hstack([windMultiplier_down, windMultiplier_up]))
+                midInd = np.argmax(windMultiplier)
+                if i > 0:
+                    midInd+=1
+                windMultiplier.insert(midInd, 1)
+                smoothVal = np.divide(np.sum(np.multiply(tPSD[i-downWin:i+upWin], windMultiplier)), np.sum(windMultiplier))
+                newTPSD[t][i] = smoothVal
+
+        hvsr_out['psd_raw'][k] = newTPSD
+    
     return hvsr_out
 
 #Diffuse field assumption, not currently implemented
@@ -1639,10 +1845,11 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
            (5) quadratic mean, that is, H ≡ √(H2 N + H2 E )/2
            (6) maximum horizontal value, that is, H ≡ max {HN, HE}
     """
+
     _pz = __get_power(_dbz, _x)
     _p1 = __get_power(_db1, _x)
     _p2 = __get_power(_db2, _x)
-
+    
     _hz = math.sqrt(_pz)
     _h1 = math.sqrt(_p1)
     _h2 = math.sqrt(_p2)
@@ -2318,10 +2525,10 @@ def __plot_specgram_stream(stream, params=None, component='Z', stack_type='linea
     plt.gca()
     
     for comp in mplTimes.keys():
-        stD = np.std(og_stream.select(component=comp)[0].data)
+        stD = np.nanstd(og_stream.select(component=comp)[0].data)
         dmed = np.nanmedian(og_stream.select(component=comp)[0].data)
         key = 'signal'+comp.lower()
-        ax[key].set_ylim([dmed-2.5*stD, dmed+2.5*stD])
+        ax[key].set_ylim([dmed-5*stD, dmed+5*stD])
     
     if params is None:
         plt.suptitle('HVSR Site: Spectrogram')
