@@ -1,2 +1,4 @@
+- Refine report output
+- Export to csv
 - List of data (multi process)
 - Find/enter parameters to determine depth
