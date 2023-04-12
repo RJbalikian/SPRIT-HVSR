@@ -30,7 +30,8 @@ Aside from the modules in the python standard library, the following package dep
 - <a id="2">[2]</a> https://github.com/iris-edu/HVSR
 - <a id="3">[3]</a> http://service.iris.edu/mustang/
 
-# Considerations, summary from SESAME Project (from https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf):
+# Considerations
+Summary from SESAME Project (from https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf):
 In very brief, the main learnings may be summarized as follows: 
 - In situ soil / sensor coupling should be handled with care. Concrete and asphalt provide good results, whereas measuring on soft / irregular soils such as mud, grass, ploughed soil, ice, 
 gravel, not compacted snow, etc. should be avoided. Artificial soil / sensor coupling should be avoided unless it is absolutely necessary, for example, to compensate a strong inclination of 
