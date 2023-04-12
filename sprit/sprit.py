@@ -275,7 +275,8 @@ def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
     return sorted_channel_list
 
 #Define input parameters
-def input_param( site,
+def input_param( dataPath,
+                        site='HVSR Site',
                         network='AM', 
                         station='RAC84', 
                         loc='00', 
@@ -290,7 +291,7 @@ def input_param( site,
                         elevation = 755,
                         depth = 0,
                         instrument = 'Raspberry Shake',
-                        dataPath = '',
+                        
                         metaPath = '',
                         hvsr_band = [0.4, 40] 
                         ):
@@ -758,7 +759,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         year = date.year
         print("Did not recognize date, using year {} and day {}".format(year, doy))
 
-    print('Day of Year:', doy)
+    #print('Day of Year:', doy)
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
@@ -769,7 +770,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)        
     elif source=='file':
-        rawDataIN = obspy.read(datapath, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest=True)
+        rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         rawDataIN.attach_response(inv)
 
     if rawDataIN is None:
@@ -1224,24 +1225,28 @@ def __remove_gaps(stream, window_gaps_obspy):
         else:
             window_gaps_s.append(win[1]-win[0])
 
-    stream_windows = []
-    j = 0
-    for i, window in enumerate(window_gaps_s):
-        j=i
+    if len(window_gaps_s) > 0:
+        stream_windows = []
+        j = 0
+        for i, window in enumerate(window_gaps_s):
+            j=i
+            newSt = stream.copy()
+            stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
+        i = j + 1
         newSt = stream.copy()
         stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
-    i = j + 1
-    newSt = stream.copy()
-    stream_windows.append(newSt.trim(starttime=window_gaps_obspy[i][1], endtime=window_gaps_obspy[i+1][0]))
 
-    for i, st in enumerate(stream_windows):
-        if i == 0:
-            outStream = st.copy()
-        else:
-            newSt = st.copy()
-            gap = window_gaps_s[i-1]
-            outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
-    outStream.merge()
+        for i, st in enumerate(stream_windows):
+            if i == 0:
+                outStream = st.copy()
+            else:
+                newSt = st.copy()
+                gap = window_gaps_s[i-1]
+                outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
+        outStream.merge()
+    else:
+        outStream = stream.copy()
+
     return outStream
 
 def __remove_noise_thresh(stream, noise_percent, show_windows):
