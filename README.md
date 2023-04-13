@@ -1,5 +1,5 @@
 # SPRĪT 
-SpRĪT (HV): Spectral Ratio Investigation Toolset (Horizontal Vertical Ratio)
+SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)
 
 # Introduction
 
