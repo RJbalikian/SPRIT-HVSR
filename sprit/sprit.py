@@ -2005,6 +2005,8 @@ def hvplot(hvsr_dict, kind='HVSR', xtype='freq', returnfig=False,  save_dir=None
             - '[HVSR] -s' : HVSR plots don't show standard deviation
             - '[HVSR] t'  : HVSR plot with individual hv curves for each time step shown
             'Specgram': Combined spectrogram of all components
+            - '[spec]' : basic spectrogram plot of H/V curve
+
         xtype       : str='freq'    
             String for what to use between frequency or period
                 For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
@@ -2392,7 +2394,7 @@ def __plot_specgram_hvsr(hvsr_dict, save_dir=None, save_suffix='',**kwargs):
     plt.yticks([], labels='')
     plt.sca(ax)
     if peak_plot:
-        ax.hlines(hvsr_dict['Best Peak']['f0'], xmin,xmax, colors='k', linestyles='dashed', alpha=0.5)
+        ax.hlines(hvsr_dict['Best Peak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
     plt.title(hvsr_dict['input_params']['site']+': Spectrogram')
