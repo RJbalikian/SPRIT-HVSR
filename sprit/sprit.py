@@ -230,9 +230,12 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             elif int(timeStrList[0]) > 23:
                 timeStrList[0] = timeStrList[0][-1:]
             
-            if '.' in timeStrList[2]:
-                microS = int(timeStrList[2].split('.')[1])
-                timeStrList[2] = timeStrList[2].split('.')[0]
+            if len(timeStrList) == 3:
+                if '.' in timeStrList[2]:
+                    microS = int(timeStrList[2].split('.')[1])
+                    timeStrList[2] = timeStrList[2].split('.')[0]
+            elif len(timeStrList) == 2:
+                timeStrList.append('00')
 
             hour = int(timeStrList[0])
             minute=int(timeStrList[1])
@@ -264,9 +267,16 @@ def __sortchannels(channels=['Z', 'N', 'E']):
     """"Private function to sort channels. Not currently used
     
     Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
-        Parameters
-        ----------
-        channels    : list = ['Z', 'N', 'E']
+    
+    Parameters
+    ----------
+        channels    : list, default = ['Z', 'N', 'E']
+    
+    Returns
+    -------
+        sorted_channel_list : list
+            Input list, sorted according to: Z, N, E
+
     """
     channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
@@ -292,7 +302,6 @@ def input_param( dataPath,
                         elevation = 755,
                         depth = 0,
                         instrument = 'Raspberry Shake',
-                        
                         metaPath = '',
                         hvsr_band = [0.4, 40] 
                         ):
@@ -300,6 +309,8 @@ def input_param( dataPath,
     
     Parameters
     ----------
+    dataPath : str or pathlib.Path object
+        Filepath of data
     site : str
         Site name as designated by scientist for ease of reference.
     network : str, default='AM'
@@ -316,7 +327,7 @@ def input_param( dataPath,
         If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC.
     starttime : str, time object, or datetime object, default='00:00:00.00'
         Start time of data stream. This is necessary for Raspberry Shake data.
-    endttime : str, time obejct, or datetime object, default='23:59:99.99'
+    endtime : str, time obejct, or datetime object, default='23:59:99.99'
         End time of data stream. This is necessary for Raspberry Shake data.
     tzone : str or int, default = 'UTC'
         Timezone of input data. If string, 'UTC' will use the time as input directly. Any other value will assume local time of computer.
@@ -334,8 +345,6 @@ def input_param( dataPath,
         Depth of seismometer.
     instrument : str or list {'Raspberry Shake')
         Instrument from which the data was acquired. If multiple points are analyzed, a list can designate between different instrument types.
-    dataPath : str or pathlib.Path object
-        Filepath of data
     metaPath : str or pathlib.Path object
         Filepath of metadata, in format supported by obspy.read_inventory
     hvsr_band : list, default=[0.4, 40]
@@ -347,6 +356,8 @@ def input_param( dataPath,
         Dictionary containing input parameters, including data file path and metadata path. This will be used as an input to other functions.
 
     """
+
+    #Declare obspy here instead of at top of file for (for example) colab, where obspy first needs to be installed on environment
     global obspy
     import obspy
 
@@ -363,7 +374,7 @@ def input_param( dataPath,
     else:
         metaPath = str(metaPath)
 
-    #Reformat time
+    #Reformat times
     if type(acq_date) is datetime.datetime:
         date = str(acq_date.date())
     elif type(acq_date) is datetime.date:
@@ -402,12 +413,15 @@ def input_param( dataPath,
 
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    
+    #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
         if metaPath == r'resources/raspshake_metadata.inv':
             metadir = str(pathlib.Path(os.getcwd())).replace('\\', '/')
             metadir = metadir.replace('\\'[0], '/')
             metaPath = str(pathlib.Path(os.getcwd()))+'/'+metaPath
 
+    #Add key/values to input parameter dictionary
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
                     'longitude':lon,'latitude':lat,'elevation':elevation,'depth':depth, 'site':site,
@@ -780,14 +794,14 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
             rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)        
+            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source=='file':
         rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         rawDataIN.attach_response(inv)
 
     if rawDataIN is None:
         return
-    elif type(rawDataIN) is not list:
+    elif isinstance(rawDataIN, obspy.core.stream.Stream):
         #Make sure z component is first
         if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
             dataIN = rawDataIN
@@ -806,8 +820,11 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
-    for tr in dataIN:
-        tr.detrend(type=detrend, order=detrend_order, dspline=1000)
+    if detrend==False:
+        pass
+    else:
+        for tr in dataIN:
+            tr.detrend(type=detrend, order=detrend_order, dspline=1000)
 
     params['stream'] = dataIN
 
@@ -873,7 +890,7 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
             ext = file.suffix[1:]
             rawFormat = False
             if ext.isnumeric():
-                if ext > 0 and ext < 367:
+                if float(ext) >= 0 and float(ext) < 367:
                     rawFormat=True
             
             if ext.upper() in obspyFormats or rawFormat:
@@ -882,18 +899,20 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
                 fileList.append(file.name)
                         
         filepaths = []
-        rawDataIN = []
+        rawDataIN = obspy.Stream()
         for i, f in enumerate(fileList):
             folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
             folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
             filepaths.append(str(folderPathList[i])+'/'+f)
             filepaths[i] = pathlib.Path(filepaths[i])
-
             currData = obspy.read(filepaths[i])
-
-            rawDataIN.append(currData)
-            rawDataIN[i].attach_response(inv)  
-
+            #rawDataIN.append(currData)
+            #if i == 0:
+            #    rawDataIN = currData.copy()
+            if isinstance(currData, obspy.core.stream.Stream):
+                rawDataIN += currData.copy()
+        #rawDataIN = obspy.Stream(rawDataIN)
+        rawDataIN.attach_response(inv)  
         if type(rawDataIN) is list and len(rawDataIN)==1:
             rawDataIN = rawDataIN[0]
     elif source=='file':
@@ -940,10 +959,12 @@ def trim_data(stream, params, export_dir=None, export_format=None):
 
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
-    if trimStart > st_trimmed[0].stats.endtime or trimEnd < st_trimmed[0].stats.starttime:
-        print('No trim performed on {}, please check start/end times.'.format(params['site']))
-    else:
-        st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
+    for tr in st_trimmed:
+        if trimStart > tr.stats.endtime or trimEnd < tr.stats.starttime:
+            pass
+        else:
+            st_trimmed.trim(starttime=trimStart, endtime=trimEnd)
+    st_trimmed.merge(method=1)
 
     #Format export filepath, if exporting
     if export_format is not None and site is not None and export_dir is not None:
