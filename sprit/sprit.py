@@ -2128,7 +2128,9 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             axis.plot(x, y, color='k', label='H/V Ratio', zorder=1000)
             plotSuff='HVSRCurve_'
             if '-s' not in kind:
-                axis.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev')
+                axis.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev',zorder=997)
+                axis.plot(x, hvsr_dict['hvsrm2'], color='k', alpha=0.25, linewidth=0.5, zorder=998)
+                axis.plot(x, hvsr_dict['hvsrp2'], color='k', alpha=0.25, linewidth=0.5, zorder=999)
             else:
                 plotSuff = plotSuff+'noStdDev_'
             break
@@ -2186,7 +2188,7 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
                         else:
                            axis.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
             for t in hvsr_dict['ind_hvsr_curves']:
-                axis.plot(x, t, color='gray', alpha=0.3, linewidth=0.8)
+                axis.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
         if k=='c':
             plotSuff = plotSuff+'IndComponents_'
