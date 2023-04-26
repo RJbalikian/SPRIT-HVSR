@@ -124,7 +124,8 @@ def __formatTime(inputDT, tzone='utc', dst=True):
 
     Returns
     -------
-    outputTimeObj   : datetime object in UTC
+    outputTimeObj : datetime object in UTC
+        Output datetime.datetime object, now in UTC time.
 
     """
     if type(inputDT) is str:
@@ -259,13 +260,13 @@ def __formatTime(inputDT, tzone='utc', dst=True):
     return outputTimeObj
 
 #Sort Channels later
-def __sortchannels(channels=['EHZ', 'EHN', 'EHE']):
+def __sortchannels(channels=['Z', 'N', 'E']):
     """"Private function to sort channels. Not currently used
     
     Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
         Parameters
         ----------
-        channels    : list = ['EHZ', 'EHN', 'EHE']
+        channels    : list = ['Z', 'N', 'E']
     """
     channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
@@ -579,28 +580,7 @@ def setup_colab(option='', repo_dir=''):
         os.chdir(repo_dir)
     return
 
-#Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path=''):
-    """Get metadata and calculate or get paz parameter needed for PPSD
-
-    Parameters
-    ----------
-    params : dict
-        Dictionary containing all the input and other parameters needed for processing
-            Ouput from input_params() function
-    write_path : str
-        String with output filepath of where to write updated inventory or metadata file
-            If not specified, does not write file 
-
-    Returns
-    -------
-    params : dict
-        Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
-    """
-    invPath = params['metaPath']
-    raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
-    if params['instrument'].lower() in  raspShakeInstNameList:
-        params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
+def _read_RS_Metadata(params):
     inv = params['inv']
 
     if isinstance(inv, pathlib.PurePath) or type(inv) is str:
@@ -632,6 +612,7 @@ def get_metadata(params, write_path=''):
     #if write_path != '':
     #    inv.write(write_path, format='STATIONXML')
 
+    #This is specific to RaspShake
     c=channels[0]
     pzList = [str(n) for n in list(range(7))]
     s=pzList[0]
@@ -642,6 +623,7 @@ def get_metadata(params, write_path=''):
     gainPath = "./"+prefix+"Network[@code='"+network+"']/"+prefix+"Station[@code='"+station+"']/"+prefix+"Channel[@code='"+c+"']/"+prefix+"Response/"+prefix+"Stage[@number='1']/"+prefix+"StageGain/"+prefix+"Value"
 
     #paz = []
+    rsCList = ['EHZ', 'EHN', 'EHE']
     paz = {}
     for c in channels:
         channelPaz = {}
@@ -677,9 +659,39 @@ def get_metadata(params, write_path=''):
                     zeroList.append(zero)
                     #channelPaz['zeros'] = list(set(zeroList))
                     channelPaz['zeros'] = zeroList
-
+        if str(c).upper() in rsCList:
+            c = str(c)[-1].upper()
         paz[str(c)] = channelPaz
-        params['paz'] = paz
+    params['paz'] = paz
+    return params
+
+#Gets the metadata for Raspberry Shake, specifically for 3D v.7
+def get_metadata(params, write_path=''):
+    """Get metadata and calculate or get paz parameter needed for PPSD
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary containing all the input and other parameters needed for processing
+            Ouput from input_params() function
+    write_path : str
+        String with output filepath of where to write updated inventory or metadata file
+            If not specified, does not write file 
+
+    Returns
+    -------
+    params : dict
+        Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
+    """
+    invPath = params['metaPath']
+    raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    if params['instrument'].lower() in  raspShakeInstNameList:
+        params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
+        params = _read_RS_Metadata(params)
+    else:
+        print('{} not currently supported\n Returning input params dictionary.'.format(params['instrument']))
+        return params
+    
     return params
 
 #Reads in traces to obspy stream
@@ -1339,42 +1351,42 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3,
 
     eStream = stream.select(component='E')
     estats = eStream.traces[0].stats
-    ppsdE = PPSD(estats, paz['EHE'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+    ppsdE = PPSD(estats, paz['E'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
                     period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
-    #ppsdE = PPSD(stream.select(channel='EHE').traces[0].stats, paz['EHE'], ppsd_length=ppsd_length, kwargs=kwargs)
+    #ppsdE = PPSD(stream.select(component='E').traces[0].stats, paz['E'], ppsd_length=ppsd_length, kwargs=kwargs)
     ppsdE.add(stream, verbose=verbose)
 
     nStream = stream.select(component='N')
     nstats = nStream.traces[0].stats
-    ppsdN = PPSD(nstats, paz['EHN'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+    ppsdN = PPSD(nstats, paz['N'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
                     period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
     ppsdN.add(stream, verbose=verbose)
 
     zStream = stream.select(component='Z')
     zstats = zStream.traces[0].stats
-    ppsdZ = PPSD(zstats, paz['EHZ'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
+    ppsdZ = PPSD(zstats, paz['Z'], skip_on_gaps=skip_on_gaps, db_bins=db_bins, ppsd_length=ppsd_length, overlap=overlap, special_handling=special_handling, 
                     period_smoothing_width_octaves=period_smoothing_width_octaves, period_step_octaves=period_step_octaves, period_limits=period_limits,  kwargs=kwargs)
     ppsdZ.add(stream, verbose=verbose)
 
-    ppsds = {'EHZ':ppsdZ, 'EHN':ppsdN, 'EHE':ppsdE}
+    ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
     params['ppsds_obspy'] = ppsds
 
     params['ppsds'] = {}
 
     anyKey = list(params['ppsds_obspy'].keys())[0]
     members = [mems for mems in dir(params['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-    params['ppsds']['EHZ'] = {}
-    params['ppsds']['EHE'] = {}
-    params['ppsds']['EHN'] = {}
+    params['ppsds']['Z'] = {}
+    params['ppsds']['E'] = {}
+    params['ppsds']['N'] = {}
     listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values',]
     for m in members:
-        params['ppsds']['EHZ'][m] = getattr(params['ppsds_obspy']['EHZ'], m)
-        params['ppsds']['EHE'][m] = getattr(params['ppsds_obspy']['EHE'], m)
-        params['ppsds']['EHN'][m] = getattr(params['ppsds_obspy']['EHN'], m)
+        params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
+        params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
+        params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
         if m in listList:
-            params['ppsds']['EHZ'][m] = np.array(params['ppsds']['EHZ'][m])
-            params['ppsds']['EHE'][m] = np.array(params['ppsds']['EHE'][m])
-            params['ppsds']['EHN'][m] = np.array(params['ppsds']['EHN'][m])
+            params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
+            params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
+            params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
 
     if remove_outliers and 'xwindows_out' in params.keys():
         params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_length)
@@ -1828,9 +1840,9 @@ def __get_hvsr_curve(x, psd, method=4):
     
     hvsr_curve = []
     for j in range(len(x)-1):
-        psd0 = [psd['EHZ'][j], psd['EHZ'][j + 1]]
-        psd1 = [psd['EHE'][j], psd['EHE'][j + 1]]
-        psd2 = [psd['EHN'][j], psd['EHN'][j + 1]]
+        psd0 = [psd['Z'][j], psd['Z'][j + 1]]
+        psd1 = [psd['E'][j], psd['E'][j + 1]]
+        psd2 = [psd['N'][j], psd['N'][j + 1]]
         f =    [x[j], x[j + 1]]
 
         hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
@@ -2217,11 +2229,11 @@ def __plot_hvsr(hvsr_dict, kind, xtype, save_dir=None, save_suffix='', show=True
             for k in hvsr_dict['psd_values_tavg']:
                 y[k] = hvsr_dict['psd_values_tavg'][k][:-1]
 
-                if k == 'EHZ':
+                if k == 'Z':
                     pltColor = 'k'
-                elif k =='EHE':
+                elif k =='E':
                     pltColor = 'b'
-                elif k == 'EHN':
+                elif k == 'N':
                     pltColor = 'r'
 
                 if len(kind) > 1:
