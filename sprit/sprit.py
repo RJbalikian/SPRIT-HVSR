@@ -310,11 +310,11 @@ def input_param( dataPath,
     Parameters
     ----------
     dataPath : str or pathlib.Path object
-        Filepath of data
+        Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
     site : str
-        Site name as designated by scientist for ease of reference.
+        Site name as designated by scientist for ease of reference. Used for plotting titles, etc.
     network : str, default='AM'
-        The network designation of the seismometer. This is necessary for data from Raspberry Shakes.
+        The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
     station : str, default='RAC84'
         The station name of the seismometer. This is necessary for data from Raspberry Shakes.
     loc : str, default='00'
@@ -324,31 +324,31 @@ def input_param( dataPath,
     acq_date : str, int, date object, or datetime object
         If string, preferred format is 'YYYY-MM-DD'. 
         If int, this will be interpreted as the day of year of current year (e.g., 33 would be Feb 2 of current year)
-        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC.
+        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following day, use the UTC day).
     starttime : str, time object, or datetime object, default='00:00:00.00'
-        Start time of data stream. This is necessary for Raspberry Shake data.
+        Start time of data stream. This is necessary for Raspberry Shake data. Format can be either 'HH:MM:SS.micros' or 'HH:MM' at minimum.
     endtime : str, time obejct, or datetime object, default='23:59:99.99'
-        End time of data stream. This is necessary for Raspberry Shake data.
+        End time of data stream. This is necessary for Raspberry Shake data. Same format as starttime
     tzone : str or int, default = 'UTC'
-        Timezone of input data. If string, 'UTC' will use the time as input directly. Any other value will assume local time of computer.
+        Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value will assume local time of computer.
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
         This is necessary for Raspberry Shake data.
     dst : bool, default=True
-        If str used for timezone, this will adjust for daylight savings time. This is necessary for Raspberry Shake data.
+        If str used for tzone parameter, this will adjust for daylight savings time. If int is passed to tzone parameter, this is not used. This is necessary for Raspberry Shake data.
     lon : float, default=-88.2290526
-        Longitude of data point
+        Longitude of data point. Not currently used, but will likely be used in future.
     lat : float, default=40.1012122
-        Latitude of data point
+        Latitude of data point. Not currently used, but will likely be used in the future.
     elevation : float, default=755
-        Surface elevation of data point.
+        Surface elevation of data point. Not currently used, but will likely be used in the future.
     depth : float, default=0
-        Depth of seismometer.
+        Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str or list {'Raspberry Shake')
-        Instrument from which the data was acquired. If multiple points are analyzed, a list can designate between different instrument types.
-    metaPath : str or pathlib.Path object
-        Filepath of metadata, in format supported by obspy.read_inventory
+        Instrument from which the data was acquired. 
+    metaPath : str or pathlib.Path object, default=''
+        Filepath of metadata, in format supported by obspy.read_inventory. If default value of '', will read from resources folder of repository (only supported for Raspberry Shake).
     hvsr_band : list, default=[0.4, 40]
-        Two-element list containing low and high frequencies of processing. This can also be changed later.
+        Two-element list containing low and high "corner" frequencies for processing. This can specified again later.
     
     Returns
     -------
@@ -432,18 +432,18 @@ def input_param( dataPath,
 
 #Read in metadata .inv file, specifically for RaspShake
 def update_shake_metadata(filepath, params, write_path=''):
-    """Reads static metadata file provided for Rasp Shake and updates with input parameters
+    """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
         PARAMETERS
         ----------
-        filepath    : str or pathlib.Path object
-            Filepath to Raspberry Shake metadata file 
-        params      : dict
-            Dictionary containing necessary keys/values for updating
+        filepath : str or pathlib.Path object
+            Filepath to metadata file. Should be a file format supported by obspy.read_inventory().
+        params : dict
+            Dictionary containing necessary keys/values for updating, currently only supported for STATIONXML with Raspberry Shakes.
                 Necessary keys: 'net', 'sta', 
                 Optional keys: 'longitude', 'latitude', 'elevation', 'depth'
-        write_path   : str, optional
-            If specified, filepath to write to updated inventory file to
+        write_path   : str, default=''
+            If specified, filepath to write to updated inventory file to.
 
         Returns
         -------
@@ -524,7 +524,22 @@ def update_shake_metadata(filepath, params, write_path=''):
 def setup_colab(option='', repo_dir=''):
     """Function to help set up Google Colab environment
     
-    This needs to be run twice, and at the beginning of the Google Colab notebook. 
+    This is designed to be run twice in a Google Colab environment without any parameters, and at the beginning of the Google Colab notebook. 
+    The first run will install obspy (which is not installed on Colab by default), then restart the kernel (necessary for Colab to run obspy effectively).
+    The second run will "install" the repository. 
+    
+    This will be changed dramatically once the repository is ready for distrubution via pypi.
+    
+    Parameters
+    ----------
+    option : str, default=''
+        Which iteration to run of setup_colab. Be default, this function can determine which "iteration" it needs to run, but it can be specified manually.
+    repo_dir : str or pathlib.Path, default=''
+        Where the repository has been "installed"/extracted in the Colab folder structure.
+        
+    Returns
+    -------
+    None
 
     """
     import datetime
@@ -594,7 +609,21 @@ def setup_colab(option='', repo_dir=''):
         os.chdir(repo_dir)
     return
 
+#Support function for get_metadata()
 def _read_RS_Metadata(params):
+    """Function to read the metadata from Raspberry Shake using the StationXML file provided by the company.
+    Intended to be used within the get_metadata() function.
+
+    Parameters
+    ----------
+    params : dict
+        The parameter dictionary output from input_params() and read into get_metadata()
+
+    Returns
+    -------
+    params : dict
+        Further modified parameter dictionary
+    """
     inv = params['inv']
 
     if isinstance(inv, pathlib.PurePath) or type(inv) is str:
@@ -717,16 +746,23 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         params  : dict
             Dictionary containing all the necessary params to get data.
                 Parameters defined using input_params() function.
-        inv     : obspy inventory object 
-            Obspy inventory object containing metadata for instrument that collected data to be fetched
+        inv     : obspy inventory object, default=None
+            Obspy inventory object containing metadata for instrument that collected data to be fetched. By default, the inventory object is read from params['inv'], but this can be manually specified here too.
         source  : str, {'raw', 'dir', 'file'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
-                'raw' finds raspberry shake data, either in folder or subfolders; 'direct' reads filepath directly
-        trim_dir : bool=False or str or pathlib obj
+                'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
+                'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+                'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+        trim_dir : bool or str or pathlib obj, default=False
             If false, data is not trimmed in this function.
-            Otherwise, this is the directory to save the trimmed and exported data
+            Otherwise, this is the directory to save trimmed and exported data.
         export_format: str='mseed'
             If trim_dir is not False, this is the format in which to save the data
+        detrend : str or bool, default='spline'
+            If False, data is not detrended.
+            Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
+        detrend_order : int, default=2
+            If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
         
         Returns
         -------
@@ -822,9 +858,12 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
 
     if detrend==False:
         pass
+    elif detrend==True:
+        for tr in dataIN:
+            tr.detrend(type='spline', order=detrend_order)        
     else:
         for tr in dataIN:
-            tr.detrend(type=detrend, order=detrend_order, dspline=1000)
+            tr.detrend(type=detrend, order=detrend_order)
 
     params['stream'] = dataIN
 
