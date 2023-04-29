@@ -3057,8 +3057,9 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
             _peak.append({'f0': float(_x[_i]), 'A0': float(_y[_i]), 
                           'f-': None, 'f+': None, 'Sf': None, 'Sa': None,
                           'Score': 0, 
-                          'Report': {'A0': '', 'P+': '', 'P-': '', 'Sf': '', 'Sa': ''},
-                          'Pass List':{}})
+                          'Report': {'Lw':'', 'Nc':'', 'σ_A(f)':'', 'A(f-)':'', 'A(f+)':'', 'A0': '', 'P+': '', 'P-': '', 'Sf': '', 'Sa': ''},
+                          'Pass List':{},
+                          'Peak Passes':False})
     return _peak
 
 #Check reliability of HVSR of curve
@@ -3101,7 +3102,9 @@ def __check_curve_reliability(hvsr_dict, _peak):
     for _i in range(len(_peak)):
         peakFreq= _peak[_i]['f0']
         test1 = peakFreq > 10/window_len
-        test2 = window_len * window_num * peakFreq > 200
+
+        nc = window_len * window_num * peakFreq
+        test2 = nc > 200
 
         halfF0 = peakFreq/2
         doublef0 = peakFreq*2
@@ -3109,6 +3112,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
         test3 = True
         failCount = 0
         for i, freq in enumerate(hvsr_dict['x_freqs'][anyKey][:-1]):
+            ###IS THIS RIGHT???
             if freq >= halfF0 and freq <doublef0:
                 if peakFreq >= 0.5:
                     if hvsr_dict['hvsr_log_std'][i] >= 2:
@@ -3118,6 +3122,26 @@ def __check_curve_reliability(hvsr_dict, _peak):
                     if hvsr_dict['hvsr_log_std'][i] >= 3:
                         test3=False
                         failCount +=1
+
+        if test1:
+            _peak[_i]['Report']['Lw'] = '{} > 10 / {}  {}'.format(round(peakFreq,3), int(window_len), check_mark())
+        else:
+            _peak[_i]['Report']['Lw'] = '{} > 10 / {}  {}'.format(round(peakFreq,3), int(window_len), 'X')
+
+        if test2:
+            _peak[_i]['Report']['Nc'] = '{} > 200  {}'.format(round(nc,0), check_mark())
+        else:
+            _peak[_i]['Report']['Nc'] = '{} > 200  {}'.format(round(nc,0), 'X'())
+
+        if test3:
+            if peakFreq >= 0.5:
+                compVal = 2
+            else:
+                compVal = 3
+            _peak[_i]['Report']['σ_A(f)'] = 'σ_A for all freqs {}-{} < {}  {}'.format(round(peakFreq*0.5, 3), round(peakFreq*2, 3), compVal, check_mark())
+        else:
+            _peak[_i]['Report']['σ_A(f)'] = 'σ_A for all freqs {}-{} < {}  {}'.format(round(peakFreq*0.5, 3), round(peakFreq*2, 3), compVal, 'X')
+
         _peak[_i]['Pass List']['Window Length Freq.'] = test1
         _peak[_i]['Pass List']['Significant Cycles'] = test2
         _peak[_i]['Pass List']['Low Curve StDev. over time'] = test3
@@ -3162,14 +3186,16 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f-'] = 'X'
+        _peak[_i]['Report']['A(f-)'] = 'No A_h/v in freqs {}-{} < {}  {}'.format(round(_peak[_i]['A0']/4, 3), round(_peak[_i]['A0'], 3), round(_peak[_i]['A0']/2, 3), 'X')
         _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False
         for _j in range(jstart, -1, -1):
 
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
             if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
                     float(_peak[_i]['A0']) / _y[_j] > 2.0:
-                _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], check_mark())
                 _peak[_i]['Score'] += 1
+                _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], check_mark())
+                _peak[_i]['Report']['A(f-)'] = 'A({}): {} < {}  {}'.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i]['A0']/2,3), check_mark())
                 _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = True
                 break
             else:
@@ -3180,14 +3206,16 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f+'] = 'X'
+        _peak[_i]['Report']['A(f+)'] = 'No A_h/v in freqs {}-{} < {}  {}'.format(round(_peak[_i]['A0'], 3), round(_peak[_i]['A0']*4, 3), round(_peak[_i]['A0']/2, 3), 'X')
         _peak[_i]['Pass List']['Peak Freq. Clarity Above'] = False
         for _j in range(len(_x) - 1):
 
             # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
             if float(_peak[_i]['f0']) * 4.0 >= _x[_j] > float(_peak[_i]['f0']) and \
                     float(_peak[_i]['A0']) / _y[_j] > 2.0:
-                _peak[_i]['f+'] = '%10.3f %1s' % (_x[_j], check_mark())
                 _peak[_i]['Score'] += 1
+                _peak[_i]['f+'] = '%10.3f %1s' % (_x[_j], check_mark())
+                _peak[_i]['Report']['A(f+)'] = 'A({}): {} < {}  {}'.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i]['A0']/2,3), check_mark())
                 _peak[_i]['Pass List']['Peak Freq. Clarity Above'] = True
                 break
             else:
