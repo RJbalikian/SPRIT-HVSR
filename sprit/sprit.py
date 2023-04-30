@@ -3014,12 +3014,35 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
 
     hvsr_dict['Peak Report'] = peak
 
+    #Iterate through peaks and 
+    #   Get the best peak based on the peak score
+    #   Calculate whether each peak passes enough tests
+    curveTests = ['Window Length Freq.','Significant Cycles', 'Low Curve StDev. over time']
+    peakTests = ['Peak Freq. Clarity Below', 'Peak Freq. Clarity Above', 'Peak Amp. Clarity', 'Freq. Stability', 'Peak Stability (freq. std)', 'Peak Stability (amp. std)']
     bestPeakScore = 0
-    for i, p in enumerate(hvsr_dict['Peak Report']):
+    for p in hvsr_dict['Peak Report']:
+        #Get best peak
         if p['Score'] > bestPeakScore:
             bestPeakScore = p['Score']
             bestPeak = p
+
+        #Calculate if peak passes criteria
+        cTestsPass = 0
+        pTestsPass = 0
+        for testName in p['Pass List'].keys():
+            if testName in curveTests:
+                if p['Pass List'][testName]:
+                    cTestsPass += 1
+            elif testName in peakTests:
+                if p['Pass List'][testName]:
+                    pTestsPass += 1
+
+        if cTestsPass == 3 and pTestsPass >= 5:
+            p['Peak Passes'] = True
+        else:
+            p['Peak Passes'] = False
         
+    #Designate best peak in output dict
     if len(hvsr_dict['Peak Report']) == 0:
         bestPeak={}
         print('No Best Peak identified')
@@ -3131,7 +3154,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
         if test2:
             _peak[_i]['Report']['Nc'] = '{} > 200  {}'.format(round(nc,0), check_mark())
         else:
-            _peak[_i]['Report']['Nc'] = '{} > 200  {}'.format(round(nc,0), 'X'())
+            _peak[_i]['Report']['Nc'] = '{} > 200  {}'.format(round(nc,0), 'X')
 
         if test3:
             if peakFreq >= 0.5:
@@ -3484,7 +3507,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def print_report(hvsr_data, export='', format='print', include='peak'):
+def print_report(hvsr_data, export='', format='print', include='peak', save_figs=None):
     """Print a report of the HVSR analysis (not currently implemented)
     
     NOT YET IMPLEMENTED!
@@ -3500,12 +3523,11 @@ def print_report(hvsr_data, export='', format='print', include='peak'):
     include : str or list, default='peak'
         What to include in the report. By default includes all the following
             - Site name
-            - Filename
+            - Acquisition Date
             - Longitude
             - Latitude
             - Elevation
             - Primary peak frequency
-            - Primary peak amplitude
             - Whether passed quality tests (x6)
         For docx (not yet implemented), the following are also included:
             - Figure with spectrogram
@@ -3514,10 +3536,45 @@ def print_report(hvsr_data, export='', format='print', include='peak'):
     """
     #print statement
     if format=='print':
-        print(hvsr_data['Peak Report'])
+        print(hvsr_data['input_params']['site'])
+        print(hvsr_data['input_params']['acq_date'])
+        print(hvsr_data['input_params']['longitude'], hvsr_data['input_params']['latitude'])
+        print(hvsr_data['input_params']['elevation'])
+        print(round(hvsr_data['Best Peak']['f0'], 3))
+        for p in hvsr_data['Best Peak']["Pass List"]:
+            print(p, ':',hvsr_data['Best Peak']["Pass List"][p])
+        print('Peak Passes Criteria:',hvsr_data['Best Peak']["Peak Passes"])
+
         hvplot(hvsr_data, kind='HVSR p tp ann')
         hvplot(hvsr_data, kind='HVSR c')
         hvplot(hvsr_data, kind='spec')
+    elif format=='csv':
+        import pandas as pd
+        pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'Peak Frequency', 
+                  'Window Length Freq.','Significant Cycles','Low Curve StDev. over time',
+                  'Peak Freq. Clarity Below','Peak Freq. Clarity Above','Peak Amp. Clarity','Freq. Stability', 'Peak Stability (freq. std)','Peak Stability (amp. std)', 'Peak Passes']
+        d = hvsr_data
+        criteriaList = []
+        for p in hvsr_data['Best Peak']["Pass List"]:
+            criteriaList.append(hvsr_data['Best Peak']["Pass List"][p])
+        criteriaList.append(hvsr_data['Best Peak']["Peak Passes"])
+        dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['Best Peak']['f0'], 3)]]
+        dfList[0].extend(criteriaList)
+        outDF = pd.DataFrame(dfList, columns=pdCols)
+        if export=='':
+            inFile = pathlib.Path(hvsr_data['input_params']['dataPath'])
+            if inFile.is_dir():
+                inFile = inFile.as_posix()
+                if inFile[-1]=='/':
+                    pass
+                else:
+                    inFile = inFile + '/'
+                fname = hvsr_data['input_params']['site']+'_'+str(hvsr_data['input_params']['acq_date'])+'_'+str(hvsr_data['input_params']['starttime'].time)[:5]+'-'+str(hvsr_data['input_params']['endtime'].time)[:5]
+                inFile = inFile + fname +'.csv'
+            elif inFile.is_file():
+                export = inFile.with_suffix('.csv')
+        outDF.to_csv(export, index_label='ID')
+        return outDF
     if export:
         pass
         #code to write to output file
