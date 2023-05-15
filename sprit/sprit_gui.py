@@ -1,0 +1,1608 @@
+import datetime
+import os
+import pathlib
+import pytz
+import sys
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import ttk
+from tkinter.simpledialog import askinteger
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+matplotlib.use('TkAgg')
+from tkcalendar import DateEntry
+
+import sprit
+
+class App:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("SPRIT")
+
+        # Set the theme
+        self.darkthemepath = os.path.abspath("./themes/forest-dark.tcl")
+        self.lightthemepath = os.path.abspath("./themes/forest-light.tcl")
+        
+        # Create the style object
+        self.style = ttk.Style(master)
+        self.style.theme_use('default')
+
+        self.create_menubar()
+        self.create_tabs()
+
+        self.master.rowconfigure(0, weight=1)
+        self.master.columnconfigure(0, weight=1)        
+
+        # Create the dark theme
+        #self.style.theme_create("dark", parent="alt", settings={
+        #    "TLabel": {"configure": {"background": "black", "foreground": "white"}},
+        #    "TButton": {"configure": {"background": "black", "foreground": "white"}},
+        #    # Add more options here to style other widgets
+        #})
+        
+        # Create the light theme
+        #self.style.theme_create("light", parent="alt", settings={
+        #    "TLabel": {"configure": {"background": "white", "foreground": "black"}},
+        #    "TButton": {"configure": {"background": "white", "foreground": "black"}},
+        #    # Add more options here to style other widgets
+        #})
+        
+
+    #Not currently working
+    def manual_label_update(self):
+        for notebook in self.master.winfo_children():
+            if isinstance(notebook, ttk.Notebook):
+                for tab_id in notebook.tabs():
+                    tab_frame = notebook.nametowidget(tab_id)
+                    #print(type(tab_frame))
+                    for frame in tab_frame.winfo_children():
+                        if isinstance(frame, ttk.LabelFrame):
+                            for widget in frame.winfo_children():
+                                if isinstance(widget, ttk.Label):
+                                    # apply the updated style to the label
+                                    
+                                    self.style.layout('CustTLabel', [('Label.border', {'sticky': 'nswe', 'border': '1', 'children': [('Label.padding', {'sticky': 'nswe', 'children': [('Label.text', {'sticky': 'nswe'})]})]})])
+                                    self.style.configure('CustTLabel', background=self.style.lookup('style', 'background'), foreground=self.style.lookup('style', 'background'))
+                                    self.style.map('CustTLabel', {'priority':[('CustTLabel',1)]})
+                                    widget.configure(style='CustTLabel')
+
+    def on_theme_select(self):
+        # Set the theme based on the selected value
+        self.style = ttk.Style()
+        
+        """An attempt to get the backgrounds right
+        def apply_to_all_children(widget, func):
+            Recursively apply a function to all child widgets of a given widget
+            children = widget.winfo_children()
+            for child in children:
+                func(child)
+                apply_to_all_children(child, func)
+            return
+
+        def change_background_color(widget):
+            if isinstance(widget, tk.Label):
+                widget.option_clear()
+                widget.configure(background=None, foreground=None)
+            return
+        
+        apply_to_all_children(self.master, change_background_color)
+        """
+        if 'forest' in self.theme_var.get():
+            if self.theme_var.get()=='forest-dark' and 'forest-dark' not in self.style.theme_names():
+                self.master.tk.call('source', self.darkthemepath)
+            elif self.theme_var.get()=='forest-light' and 'forest-light' not in self.style.theme_names():
+                self.master.tk.call('source', self.lightthemepath)            
+        self.master.tk.call("ttk::style", "theme", "use", self.theme_var.get())
+        #self.master.tk.call("ttk::setTheme", self.theme_var.get())
+
+        #self.style.theme_use(self.theme_var.get())
+        #self.master.tk.call('source', self.lightthemepath)
+        #self.style.theme_use(self.theme_var.get())
+        #self.style.configure("TLabel", background=self.style.lookup('TLabel', 'background'), foreground=self.style.lookup('TLabel', 'background'))
+
+    def create_menubar(self):
+        self.menubar = tk.Menu(self.master)
+        self.master.config(menu=self.menubar)
+        
+        self.sprit_menu = tk.Menu(self.menubar, tearoff=0)
+
+        self.theme_menu = tk.Menu(self.menubar, tearoff=0)
+        self.theme_var = tk.StringVar(value="Default")
+        self.theme_menu.add_radiobutton(label="Default", variable=self.theme_var, value="default", command=self.on_theme_select)
+        self.theme_menu.add_radiobutton(label="Clam", variable=self.theme_var, value="clam", command=self.on_theme_select)
+        self.theme_menu.add_radiobutton(label="Alt", variable=self.theme_var, value="alt", command=self.on_theme_select)
+        self.theme_menu.add_radiobutton(label="Forest Light (buggy)", variable=self.theme_var, value="forest-light", command=self.on_theme_select)
+        self.theme_menu.add_radiobutton(label="Forest Dark (buggy)", variable=self.theme_var, value="forest-dark", command=self.on_theme_select)
+
+        self.sprit_menu.add_cascade(label="Theme", menu=self.theme_menu)
+        self.sprit_menu.add_command(label="Import Parameters", command=self.import_parameters)
+        self.sprit_menu.add_command(label="Export Parameters", command=self.export_parameters)
+        self.sprit_menu.add_separator()
+        self.sprit_menu.add_command(label="Exit", command=self.master.quit)
+        self.settings_menu = tk.Menu(self.menubar, tearoff=0)
+        self.instrument_menu = tk.Menu(self.settings_menu, tearoff=0)
+        self.instrument_var = tk.StringVar(value="Raspberry Shake")
+        self.instrument_menu.add_radiobutton(label="Raspberry Shake", variable=self.instrument_var, value="Raspberry Shake")
+        self.instrument_menu.add_radiobutton(label="Nodes", variable=self.instrument_var, value="Nodes")
+        self.instrument_menu.add_radiobutton(label="Other", variable=self.instrument_var, value="Other")
+        self.settings_menu.add_cascade(label="Instrument", menu=self.instrument_menu)
+        self.settings_menu.add_command(label="Processing Settings", command=lambda: self.tab_control.select(self.settings_tab))
+
+        self.menubar.add_cascade(label="SPRIT", menu=self.sprit_menu)
+        self.menubar.add_cascade(label="Settings", menu=self.settings_menu)
+    
+
+    def create_tabs(self):
+        self.style = ttk.Style(self.master)
+
+        self.tab_control = ttk.Notebook(self.master)
+
+        # INPUT TAB
+        self.input_tab = ttk.Frame(self.tab_control)
+
+        # Configure the row and column of the input_tab to have a non-zero weight
+        hvsrFrame = ttk.LabelFrame(self.input_tab, text="Input Parameters")
+        #hvsrFrame.rowconfigure(0, weight=1)
+        hvsrFrame.columnconfigure(1, weight=1)
+        
+        # Logo and Site Name
+        # Replace "logo.png" with the path to your logo image
+        #self.logo = tk.PhotoImage(file="logo.png")
+        #self.logo_label = ttk.Label(hvsrFrame, image=self.logo)
+        #self.logo_label.grid(row=0, column=0)
+
+        def update_input_params_call():
+            self.input_params_call.configure(text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+                                            '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
+                                            self.network.get(), self.station.get(), self.location.get(),
+                                            self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
+                                            self.starttime.date(), self.starttime, self.endtime, self.utc_offset,
+                                            self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+        #Specify site name        
+        siteLabel = ttk.Label(hvsrFrame, text="Site Name")
+        siteLabel.grid(row=0, column=0, sticky='e', padx=5)
+        self.site_name = tk.StringVar()
+        self.site_name.set('HVSR Site')
+        self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate='focusout', validatecommand=update_input_params_call)
+        self.site_name_entry.grid(row=0, column=1, columnspan=2, sticky='ew', padx=5)
+        
+        #Instrument select
+        ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
+        inst_options = ["Raspberry Shake", "Nodes", "Other"]
+
+        self.instrumentSel = tk.StringVar(value=inst_options[0])
+        self.instrument_dropdown = ttk.OptionMenu(hvsrFrame, self.instrumentSel, inst_options[0], *inst_options, command=self.on_option_select)
+        self.instrument_dropdown.config(width=20)
+        self.instrument_dropdown.grid(row=0, column=7, columnspan=1, sticky='ew')
+
+        # Data Filepath
+        dataLabel= ttk.Label(hvsrFrame, text="Data Filepath")
+        dataLabel.grid(row=1, column=0, sticky='e', padx=5, pady=(5,2.55))
+        self.data_path = tk.StringVar()
+        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=update_input_params_call)
+        self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
+        
+        def browse_data_filepath():
+            fpath = filedialog.askopenfilename()
+            if fpath:
+                self.data_filepath_entry.delete(0, 'end')
+                self.data_filepath_entry.insert(0, fpath)
+            update_input_params_call()
+
+        def browse_data_folder():
+            fpath = filedialog.askdirectory()
+            if fpath:
+                self.data_filepath_entry.delete(0, 'end')
+                self.data_filepath_entry.insert(0, fpath)
+            update_input_params_call()
+
+        buttonFrame = ttk.Frame(hvsrFrame)
+        buttonFrame.grid(row=1, column=7, sticky='ew')
+
+        self.browse_data_filepath_button = ttk.Button(buttonFrame, text="File", command=browse_data_filepath)
+        self.browse_data_filedir_button = ttk.Button(buttonFrame, text="Folder", command=browse_data_folder)
+
+        #self.browse_data_filepath_button.grid(row=1, column=6, sticky='ew')
+        self.browse_data_filepath_button.pack(side="left", fill="x", expand=True, padx=(0,2), pady=(5,2.55))
+        self.browse_data_filedir_button.pack(side="right", fill="x", expand=True, padx=(2, 0), pady=(5,2.55))
+
+        # Metadata Filepath
+        ttk.Label(hvsrFrame, text="Metadata Filepath").grid(row=2, column=0, sticky='e', padx=5, pady=(2.5,5))
+        self.meta_path = tk.StringVar()
+        self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate='focusout', validatecommand=update_input_params_call)
+        self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky='ew', padx=5, pady=(2.5,5))
+        
+        def browse_metadata_filepath():
+            filepath = filedialog.askopenfilename()
+            if filepath:
+                self.metadata_filepath_entry.delete(0, 'end')
+                self.metadata_filepath_entry.insert(0, filepath)
+            update_input_params_call()
+
+        self.browse_metadata_filepath_button = ttk.Button(hvsrFrame, text="Browse", command=browse_metadata_filepath)
+        self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
+
+        # Date and Time           
+        ttk.Label(hvsrFrame, text="Date").grid(row=3, column=1, sticky='e', padx=5)
+        self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', validate='focusout', validatecommand=update_input_params_call)
+        self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
+
+
+        sTimeFrame = ttk.Frame(hvsrFrame)
+        sTimeFrame.grid(row=3, column=4, sticky='ew')
+
+        ttk.Label(hvsrFrame, text="Start Time").grid(row=3, column=3, sticky='e', padx=5) 
+        colonLabel= ttk.Label(sTimeFrame, text=":")#.grid(row=3, column=4, padx=(20,0), sticky='w')
+        self.start_hour = tk.IntVar()
+        self.start_hour.set(00)
+        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate='focusout', validatecommand=update_input_params_call) 
+        self.start_time_hour_entry#.grid(row=3, column=4, sticky='w') 
+        self.start_minute = tk.DoubleVar()
+        self.start_minute.set(00)
+        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate='focusout', validatecommand=update_input_params_call)
+        self.start_time_min_entry#.grid(row=3, column=4, padx=80, sticky='w') 
+
+        #sTLabel.pack(side="left", fill="x", expand=True)
+        self.start_time_hour_entry.pack(side='left', expand=True)
+        colonLabel.pack(side="left", fill="x")
+        self.start_time_min_entry.pack(side='right', expand=True)
+        
+        eTimeFrame = ttk.Frame(hvsrFrame)
+        eTimeFrame.grid(row=3, column=6, sticky='ew')
+        ttk.Label(hvsrFrame, text="End Time").grid(row=3, column=5, sticky='e', padx=5) 
+        colonLabel = ttk.Label(eTimeFrame, text=":")#.grid(row=3, column=6, padx=(20,0), sticky='w')  
+        self.end_hour = tk.IntVar()
+        self.end_hour.set(23)
+        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate='focusout', validatecommand=update_input_params_call) 
+        self.end_time_hour_entry#.grid(row=3, column=+, sticky='w') 
+        self.end_minute = tk.DoubleVar()
+        self.end_minute.set(59)
+        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate='focusout', validatecommand=update_input_params_call)
+        self.end_time_min_entry#.grid(row=3, column=+, padx=80, sticky='w') 
+
+        #eTLabel.pack(side="left", fill="x", expand=True)
+        self.end_time_hour_entry.pack(side='left', expand=True)
+        colonLabel.pack(side="left", fill="x")
+        self.end_time_min_entry.pack(side='right', expand=True)
+
+        self.acq_date = self.date_entry.get_date()
+        self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                        month = self.acq_date.month, 
+                                        day = self.acq_date.day,
+                                        hour = self.start_hour.get(),
+                                        minute = int(self.start_minute.get()))
+
+        # Timezone
+        def get_tz():
+            self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+            # create a datetime object
+
+            # get the UTC offset as a timedelta object
+            self.utc_offset = self.tz.utcoffset(self.starttime).total_seconds()/60/60
+
+            return self.tz
+        
+        self.tz = tk.StringVar()
+        self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode='browse', height=25)
+        self.timezone_optionmenu.insert('end', 'UTC')
+        self.timezone_optionmenu.insert('end', 'US/Central')
+
+        for tz in pytz.all_timezones:
+            if tz !='UTC':
+                self.timezone_optionmenu.insert('end', tz)
+        self.timezone_optionmenu.selection_set(0)
+        ttk.Label(hvsrFrame,text="Timezone").grid(row=3,column=7, sticky='w', padx=5)
+        self.timezone_optionmenu.grid(row=4,column=7, rowspan=26, sticky='nsew', padx=5)
+
+        #ttk.Label(hvsrFrame, text="Timezone").grid(row=3, column=7)
+        #self.timezone_var = tk.StringVar(value="UTC")
+        #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, "UTC", *pytz.all_timezones)
+        #self.timezone_optionmenu.grid(row=3,column=7)
+
+        # UTC Time Output
+        ttk.Label(hvsrFrame,text="UTC Time:").grid(row=4,column=1, sticky='e', padx=5, pady=10)
+        self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
+        self.utc_time_output_label.grid(row=4,column=4)
+
+        self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+        #input_params() call
+        def get_times():
+            self.tz = get_tz()
+
+            #Format starttime as datetime object (in timezone as originally entered)
+            self.acq_date = self.date_entry.get_date()
+            self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                          month = self.acq_date.month, 
+                                          day = self.acq_date.day,
+                                          hour = self.start_hour.get(),
+                                          minute = int(self.start_minute.get()))
+            
+            #Get duration, as originally entered
+            hour_dur = self.end_hour.get() - self.start_hour.get()
+            if hour_dur < 0:
+                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
+            min_dur = self.end_minute.get() - self.start_minute.get()
+            
+            #Convert starttime to utc
+            self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            #Get endttime based on utc starttime and original duration
+            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
+
+            return self.starttime, self.endtime
+
+        self.starttime, self.endtime = get_times()
+
+        # X Y Z CRS Depth
+        ttk.Label(hvsrFrame,text="X").grid(row=5,column=1, sticky='e', padx=5, pady=10)
+        self.x = tk.DoubleVar()
+        self.x.set(0)
+        self.x_entry = ttk.Entry(hvsrFrame, textvariable=self.x, validate='focusout', validatecommand=update_input_params_call)
+        self.x_entry.grid(row=5,column=2, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Y").grid(row=5,column=3, sticky='e', padx=5, pady=10)
+        self.y = tk.DoubleVar()
+        self.y.set(0)
+        self.y_entry = ttk.Entry(hvsrFrame, textvariable=self.y, validate='focusout', validatecommand=update_input_params_call)
+        self.y_entry.grid(row=5, column=4, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Z").grid(row=5,column=5, sticky='e', padx=5, pady=10)
+        self.z = tk.DoubleVar()
+        self.z.set(0)
+        self.z_entry = ttk.Entry(hvsrFrame, textvariable=self.z, validate='focusout', validatecommand=update_input_params_call)
+        self.z_entry.grid(row=5,column=6, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="CRS").grid(row=6,column=1, sticky='e', padx=5, pady=10)
+        self.crs = tk.StringVar()
+        self.crs.set('(not yet supported)')
+        self.crs_entry = ttk.Entry(hvsrFrame, textvariable=self.crs, validate='focusout', validatecommand=update_input_params_call)
+        self.crs_entry.grid(row=6,column=2, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Elevation").grid(row=6,column=3, sticky='e', padx=5, pady=10)
+        self.elevation = tk.DoubleVar()
+        self.elevation.set(0)
+        self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate='focusout', validatecommand=update_input_params_call)
+        self.elevation_entry.grid(row=6, column=4, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Depth").grid(row=6,column=5, sticky='e', padx=5, pady=10)
+        self.depth = tk.DoubleVar()
+        self.depth.set(0)
+        self.depth_entry = ttk.Entry(hvsrFrame,textvariable=self.depth, validate='focusout', validatecommand=update_input_params_call)
+        self.depth_entry.grid(row=6,column=6, sticky='w', padx=0)
+
+        # Network Station Location
+        ttk.Label(hvsrFrame,text="Network").grid(row=7,column=1, sticky='e', padx=5, pady=10)
+        self.network = tk.StringVar()
+        self.network.set('AM')
+        self.network_entry = ttk.Entry(hvsrFrame, textvariable=self.network, validate='focusout', validatecommand=update_input_params_call)
+        self.network_entry.grid(row=7,column=2, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Station").grid(row=7,column=3, sticky='e', padx=5, pady=10)
+        self.station = tk.StringVar()
+        self.station.set('RAC84')
+        self.station_entry = ttk.Entry(hvsrFrame, textvariable=self.station, validate='focusout', validatecommand=update_input_params_call)
+        self.station_entry.grid(row=7,column=4, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="Location").grid(row=7,column=5, sticky='e', padx=5, pady=10)
+        self.location = tk.StringVar()
+        self.location.set('00')
+        self.location_entry = ttk.Entry(hvsrFrame, textvariable=self.location, validate='focusout', validatecommand=update_input_params_call)
+        self.location_entry.grid(row=7,column=6, sticky='w', padx=0)
+
+        # Z N E Channels
+        ttk.Label(hvsrFrame,text="Z Channel").grid(row=8,column=1, sticky='e', padx=5, pady=10)
+        self.z_channel = tk.StringVar()
+        self.z_channel.set('EHZ')
+        self.z_channel_entry = ttk.Entry(hvsrFrame, textvariable=self.z_channel, validate='focusout', validatecommand=update_input_params_call)
+        self.z_channel_entry.grid(row=8,column=2, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="N Channel").grid(row=8,column=3, sticky='e', padx=5, pady=10)
+        self.n_channel = tk.StringVar()
+        self.n_channel.set('EHN')
+        self.n_channel_entry = ttk.Entry(hvsrFrame, textvariable=self.n_channel, validate='focusout', validatecommand=update_input_params_call)
+        self.n_channel_entry.grid(row=8,column=4, sticky='w', padx=0)
+
+        ttk.Label(hvsrFrame,text="E Channel").grid(row=8,column=5, sticky='e', padx=5, pady=10)
+        self.e_channel = tk.StringVar()
+        self.e_channel.set('EHE')
+        self.e_channel_entry = ttk.Entry(hvsrFrame, textvariable=self.e_channel, validate='focusout', validatecommand=update_input_params_call)
+        self.e_channel_entry.grid(row=8,column=6, sticky='w', padx=0)
+
+        # HVSR Band
+        def on_hvsrband_update():
+            try:
+                float(self.hvsrBand_min.get())
+                float(self.hvsrBand_max.get())
+
+                hvsrBandLabel.configure(text='hvsr_band=[{}, {}]'.format(self.hvsrBand_min.get(), self.hvsrBand_max.get()))                
+                update_check_peaks_call(self.checkPeaks_Call)
+                update_input_params_call()
+                return True
+            except ValueError:
+                return False      
+        
+        ttk.Label(hvsrFrame,text="HVSR Band").grid(row=9,column=1, sticky='e', padx=10, pady=10)
+        hvsrbandframe= ttk.Frame(hvsrFrame)
+        hvsrbandframe.grid(row=9, column=2,sticky='w')
+        self.hvsrBand_min = tk.DoubleVar()
+        self.hvsrBand_min.set(0.4)
+        hvsr_band_min_entry = ttk.Entry(hvsrbandframe, width=9, textvariable=self.hvsrBand_min, validate='focusout', validatecommand=on_hvsrband_update)
+        hvsr_band_min_entry.grid(row=0, column=0, sticky='ew', padx=(0,2))
+
+        self.hvsrBand_max = tk.DoubleVar()
+        self.hvsrBand_max.set(40)
+        hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate='focusout', validatecommand=on_hvsrband_update)
+        hvsr_band_max_entry.grid(row=0,column=1, sticky='ew', padx=(2,0))
+
+        separator = ttk.Separator(hvsrFrame, orient='horizontal')
+        separator.grid(row=11, column=0, columnspan=7, sticky='ew', padx=10)
+
+        def update_fetch_call():
+            if self.trim_dir.get()=='':
+                trim_dir = None
+            else:
+                trim_dir = self.trim_dir.get()
+
+            self.fetch_data_call.configure(text="fetch_data(params, source='{}', trim_dir={}, export_format='{}', detrend='{}', detrend_order={})"
+                                            .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
+
+        # source=raw, 
+        def on_source_select():
+            try:
+                str(self.file_source.get())
+                sourceLabel.configure(text="source='{}'".format(self.file_source.get()))
+                update_fetch_call()
+                return True
+            except ValueError:
+                return False
+
+        sourceLabel = ttk.Label(master=hvsrFrame, text="source='raw'")
+
+        ttk.Label(master=hvsrFrame, text='Data Source Type [str]').grid(row=12, column=1, sticky='e', padx=5)
+        sourcFrame= ttk.Frame(hvsrFrame)
+        sourcFrame.grid(row=12, column=2, sticky='w', columnspan=3)
+        self.file_source = tk.StringVar()
+        self.file_source.set('raw')
+        ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=12, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='File', variable=self.file_source, value='file', command=on_source_select).grid(row=12, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=12, column=2, sticky='w', padx=(5, 10))
+
+        #export_format='.mseed'
+        def on_obspyFormatSelect(self):
+            update_fetch_call()
+        ttk.Label(hvsrFrame, text="Data Format").grid(row=13, column=1, sticky='e', padx=5)
+        obspyformats =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+
+        self.export_format = tk.StringVar(value=obspyformats[11])
+        self.data_format_dropdown = ttk.OptionMenu(hvsrFrame, self.export_format, obspyformats[11], *obspyformats, command=on_obspyFormatSelect)
+        self.data_format_dropdown.grid(row=13, column=2, columnspan=3, sticky='ew')
+
+        #detrend='spline'
+        def on_detrend_select():
+            try:
+                str(self.detrend.get())
+                update_fetch_call()
+                return True
+            except ValueError:
+                return False
+
+        sourceLabel = ttk.Label(master=hvsrFrame, text="source='raw'")
+
+        ttk.Label(master=hvsrFrame, text='Detrend type [str]').grid(row=14, column=1, sticky='e', padx=5)
+        detrendFrame= ttk.Frame(hvsrFrame)
+        detrendFrame.grid(row=14, column=2, sticky='w', columnspan=3)
+        self.detrend = tk.StringVar()
+        self.detrend.set('spline')
+        ttk.Radiobutton(master=detrendFrame, text='Spline', variable=self.detrend, value='spline', command=on_detrend_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+
+        #detrend_order=2
+        def on_detrend_order():
+            try:
+                int(self.detrend_order.get())
+                update_fetch_call()
+                return True
+            except ValueError:
+                return False
+                     
+        ttk.Label(hvsrFrame,text="Detrend Order [int]").grid(row=14,column=3, sticky='e', padx=5, pady=10)
+        self.detrend_order = tk.IntVar()
+        self.detrend_order.set(2)
+        self.detrend_order_entry = ttk.Entry(hvsrFrame, textvariable=self.detrend_order, validate='focusout', validatecommand=on_detrend_order)
+        self.detrend_order_entry.grid(row=14,column=4, sticky='w', padx=0)
+        
+        #trim_dir=False
+        def on_trim_dir():
+            try:
+                str(self.trim_dir.get())
+                update_fetch_call()
+                return True
+            except ValueError:
+                return False
+            
+        ttk.Label(hvsrFrame, text="Output Directory (trimmed data)").grid(row=15, column=0, sticky='e', padx=5, pady=(2.5,5))
+        self.trim_dir = tk.StringVar()
+        self.trim_dir_entry = ttk.Entry(hvsrFrame, textvariable=self.trim_dir, validate='focusout', validatecommand=on_trim_dir)
+        self.trim_dir_entry.grid(row=15, column=1, columnspan=5, sticky='ew', padx=5, pady=(2.5,5))
+        
+        def browse_trim_dir_filepath():
+            filepath = filedialog.askdirectory()
+            if filepath:
+                self.trim_dir_entry.delete(0, 'end')
+                self.trim_dir_entry.insert(0, filepath)
+        
+        self.trim_dir_filepath_button = ttk.Button(hvsrFrame, text="Browse", command=browse_trim_dir_filepath)
+        self.trim_dir_filepath_button.grid(row=15, column=6, sticky='ew', padx=0, pady=(2.5,5))
+
+        self.starttime, self.endtime = get_times()
+
+        input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
+        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone={}, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+                                            self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
+                                            self.network.get(), self.station.get(), self.location.get(),
+                                            self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
+                                            self.starttime.date(), self.starttime, self.endtime, self.utc_offset,
+                                            self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+        self.input_params_call.pack(anchor='w', expand=True, padx=20)
+
+        #fetch_data() call
+        fetch_data_LF = ttk.LabelFrame(master=self.input_tab, text='fetch_data() call')
+        self.fetch_data_call = ttk.Label(master=fetch_data_LF, text="fetch_data(params, source={}, trim_dir={}, export_format={}, detrend={}, detrend_order={})"
+                                                                .format(self.file_source.get(), None, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
+        self.fetch_data_call.pack(anchor='w', expand=True, padx=20)
+
+        #Set up frame for reading and running
+        runFrame_hvsr = ttk.Frame(self.input_tab)
+        #FUNCTION TO READ DATA
+        def read_data():
+            print('Reading {} (not yet implemented)'.format(self.data_path.get()))
+            self.tab_control.select(self.preview_data_tab)
+            
+            self.starttime, self.endtime = get_times()
+
+            self.params = sprit.input_params( dataPath=self.data_path.get(),
+                                metaPath = self.meta_path.get(),
+                                site=self.site_name.get(),
+                                network=self.network.get(), 
+                                station=self.station.get(), 
+                                loc=self.location.get(), 
+                                channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
+                                acq_date = self.starttime.date(),
+                                starttime = self.starttime,
+                                endtime = self.endtime,
+                                tzone = 'UTC', #Will always convert before we get to this point
+                                dst = True, #Doesn't matter
+                                lon = self.x.get(),
+                                lat =  self.y.get(),
+                                elevation = self.z.get(),
+                                depth = self.depth.get(),
+                                instrument = self.instrumentSel.get(),
+                                hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+            self.params = sprit.get_metadata(self.params)
+            
+            if self.trim_dir.get()=='':
+                trimDir=None
+            else:
+                trimDir=self.trim_dir.get()
+            self.params = sprit.fetch_data(params=self.params,
+                                           source=self.file_source.get(), 
+                                           trim_dir=trimDir, 
+                                           export_format=self.export_format.get(), 
+                                           detrend=self.detrend.get(), 
+                                           detrend_order=self.detrend_order.get())
+            self.fig_pre, self.ax_pre  = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+
+        #FUNCTION TO PROCESS DATA
+        def process_data():
+            print('processing data (not yet implemented)')
+            self.tab_control.select(self.results_tab)
+
+        self.style.configure(style='Custom.TButton', background='#d49949')
+        self.read_button = ttk.Button(runFrame_hvsr, text="Read Data", command=read_data, width=30, style='Custom.TButton')
+
+        self.style.configure('Run.TButton', background='#8b9685', width=10, height=3)
+        self.run_button = ttk.Button(runFrame_hvsr, text="Run", style='Run.TButton', command=process_data)        
+        self.run_button.pack(side='right', anchor='se', padx=(10,0))
+        self.read_button.pack(side='right', anchor='se')
+
+        hvsrFrame.pack(fill='both', expand=True, side='top')#.grid(row=0, sticky="nsew")
+        runFrame_hvsr.pack(fill='both', side='bottom')
+        input_params_LF.pack(fill='x', side='bottom')
+        fetch_data_LF.pack(fill='x', side='bottom')
+        self.input_tab.pack(fill='both', expand=True)
+        self.tab_control.add(self.input_tab, text="Input Params")
+
+        #INPUT DATA
+        self.preview_data_tab = ttk.Frame(self.tab_control)
+
+        # Configure the row and column of the input_tab to have a non-zero weight
+        self.preview_data_tab.pack(expand=1)
+
+        inputdataFrame = ttk.LabelFrame(self.preview_data_tab, text="Input Data Viewer")
+        inputdataFrame.pack(expand=True, fill='both')
+            
+        inputInfoFrame = ttk.LabelFrame(inputdataFrame, text="Input Data Info")
+        inputInfoFrame.pack(expand=True, fill='both', side='top')
+        
+        inputDataViewFrame = ttk.LabelFrame(inputdataFrame, text="Input Data Plot")
+        inputDataViewFrame.pack(expand=True, fill='both', side='bottom')
+                    
+        ttk.Label(master=inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
+
+        #Set up plot
+        self.fig_pre, self.ax_pre = plt.subplots(nrows=3)
+        canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        canvas_pre.draw()
+        canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        canvasPreWidget.pack(expand=True, fill='both')#.grid(row=1)
+
+        runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
+        self.run_button = ttk.Button(runFrame_dataPrev, text="Run", style='Run.TButton', command=process_data)
+        self.run_button.pack(side='bottom', anchor='e')#.grid(row=2, column=9, columnspan=20, sticky='e')
+        runFrame_dataPrev.pack(side='bottom', anchor='e')#grid(row=1, sticky='e')
+
+        self.tab_control.add(self.preview_data_tab, text="Data Preview")
+
+        # Noise tab
+        self.noise_tab = ttk.Frame(self.tab_control)
+
+        #Set up plot
+        fig_noise = plt.figure()
+        ax_noise = fig_noise.add_subplot(111)
+        
+        canvasFrame = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
+        canvasFrame.pack(fill='both')#.grid(row=0, column=0, sticky="nsew")
+
+        canvas = FigureCanvasTkAgg(fig_noise, master=canvasFrame)
+        canvas.draw()
+        canvasWidget = canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
+
+        #Run button frame
+        runFrame_noise = ttk.Frame(self.noise_tab)
+        self.run_button = ttk.Button(runFrame_noise, text="Run", style='Run.TButton', command=process_data)
+        self.run_button.pack(side='bottom', anchor='e')
+        runFrame_noise.pack(fill='both',side='bottom', anchor='e')    
+
+        #Plot adjustment Frame
+        pltAdjustFrame = ttk.LabelFrame(self.noise_tab, text='Adjust Plot')
+        pltAdjustFrame.pack(fill='both', side='right')#.grid(row=0, column=1, sticky='nsew')
+
+        ttk.Label(master=pltAdjustFrame, text='Adjustment Parameters (in progress)').grid(row=0, column=0)
+
+        noiseFrame = ttk.LabelFrame(self.noise_tab, text='Noise Removal')
+        noiseFrame.pack(fill='both')#.grid(row=1, columnspan=2, sticky='nsew')
+        #self.noise_tab.pack()
+        
+        #Options for manually removing windows
+        windowremoveFrame = ttk.LabelFrame(noiseFrame, text='Manual Window Removal')
+        windowremoveFrame.grid(row=0, column=1, columnspan=1, sticky='nsew')
+        self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
+        manualBool = ttk.Checkbutton(master=windowremoveFrame, text="", variable=self.do_window) # create the Checkbutton widget
+        manualBool.grid(row=0, column=0, sticky='ew')
+        def remove_windows():
+            #Placeholderfunction
+            print('Ok, here we would remove windows')        
+        self.select_windows = ttk.Button(master=windowremoveFrame, text="Remove Windows", command=remove_windows) # create the Checkbutton widget
+        self.select_windows.grid(row=0, column=1, sticky='e')
+
+        #Options for doing stalta antitrigger for noise removal
+        stltaremoveFrame = ttk.LabelFrame(noiseFrame, text='STA/LTA Antitrigger')
+        stltaremoveFrame.grid(row=0, column=0, columnspan=1, sticky='nsew')
+        
+        self.do_stalta = tk.BooleanVar()
+        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text="", variable=self.do_stalta) # create the Checkbutton widget
+        staltaBool.grid(row=0, column=0, sticky='ew')
+        
+        ttk.Label(master=stltaremoveFrame, text="STA [s]").grid(row=0, column=1)
+        self.sta = tk.DoubleVar()
+        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
+        staEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
+
+        ttk.Label(master=stltaremoveFrame, text="LTA [s]").grid(row=0, column=3)
+        self.lta = tk.DoubleVar()
+        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
+        ltaEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
+
+        ttk.Label(master=stltaremoveFrame, text="STA/LTA Thresholds (Low, High)").grid(row=0, column=5)
+        self.thresh_low = tk.DoubleVar()
+        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.thresh_low, width=5) # create the Entry widget
+        staltaLowEntry.grid(row=0, column=6, sticky='ew', padx=(5,0))
+        
+        self.thresh_hi = tk.DoubleVar()
+        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.thresh_hi, width=5) # create the Entry widget
+        staltaHiEntry.grid(row=0, column=7, sticky='ew')
+        
+        #Options for Percentage threshold removal
+        pctThresFrame = ttk.LabelFrame(noiseFrame, text='Percentage Threshold')
+        pctThresFrame.grid(row=1, column=0, sticky='nsew')
+
+        self.do_pctThresh= tk.BooleanVar()
+        pctBool = ttk.Checkbutton(master=pctThresFrame, text="", variable=self.do_pctThresh) # create the Checkbutton widget
+        pctBool.grid(row=0, column=0, sticky='ew')
+ 
+        ttk.Label(master=pctThresFrame, text="Percentage Threshold").grid(row=0, column=1)
+        self.pct = tk.DoubleVar()
+        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
+        pctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
+        pctEntry.delete(0, 'end')
+        pctEntry.insert(0, '0.995')
+
+        #Options for noisy window
+        noisyWindowFrame = ttk.LabelFrame(noiseFrame, text='Noisy Windows')
+        noisyWindowFrame.grid(row=2, column=0, sticky='nsew')
+
+        self.do_noiseWin= tk.BooleanVar()
+        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin) # create the Checkbutton widget
+        winNoiseBool.grid(row=0, column=0, sticky='ew')
+ 
+        ttk.Label(master=noisyWindowFrame, text="Amplitude % Thresh.").grid(row=0, column=1)
+        self.winAmp_pct = tk.DoubleVar()
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.winAmp_pct, width=10) # create the Entry widget
+        winamppctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
+        winamppctEntry.delete(0, 'end')
+        winamppctEntry.insert(0, '0.8')
+
+        ttk.Label(master=noisyWindowFrame, text="Window %").grid(row=0, column=3)
+        self.win_pct = tk.DoubleVar()
+        winpctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_pct, width=10) # create the Entry widget
+        winpctEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
+        winpctEntry.delete(0, 'end')
+        winpctEntry.insert(0, '0.75')
+
+        #Options for warmup
+        warmupFrame = ttk.LabelFrame(noiseFrame, text='Warmup & Cooldown Time')
+        warmupFrame.grid(row=3, column=0, sticky='nsew')
+
+        self.do_warmup= tk.BooleanVar()
+        warmupBool = ttk.Checkbutton(master=warmupFrame, text="", variable=self.do_warmup) # create the Checkbutton widget
+        warmupBool.grid(row=0, column=0, sticky='ew')
+ 
+        ttk.Label(master=warmupFrame, text="Warmup time [s]").grid(row=0, column=1)
+        self.warmup_time = tk.DoubleVar()
+        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10) # create the Entry widget
+        warmupEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
+        warmupEntry.delete(0, 'end')
+        warmupEntry.insert(0, '0')
+ 
+        ttk.Label(master=warmupFrame, text="Cooldown Time [s]").grid(row=0, column=3)
+        self.cooldown_time = tk.DoubleVar()
+        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10) # create the Entry widget
+        cooldownEntry.grid(row=0, column=5, sticky='ew', padx=(5,10))
+        cooldownEntry.delete(0, 'end')
+        cooldownEntry.insert(0, '0')
+
+        #Options for doing stdev noise removal
+        stdremoveFrame = ttk.LabelFrame(noiseFrame, text='Standard Deviation Antitrigger (not yet implemented)')
+        stdremoveFrame.grid(row=1, column=1, columnspan=1, sticky='nsew')
+        
+        self.do_stdev = tk.BooleanVar()
+        stdBool = ttk.Checkbutton(master=stdremoveFrame, text="", variable=self.do_stdev, state='disabled') # create the Checkbutton widget
+        stdBool.grid(row=0, column=0, sticky='ew')
+        
+        ttk.Label(master=stdremoveFrame, text="Std Deviation Ratio (moving stdev/total stdev)").grid(row=0, column=1)
+        self.stdRatio = tk.DoubleVar()
+        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state='disabled') # create the Entry widget
+        stdRatEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
+        stdRatEntry.delete(0, 'end')
+        stdRatEntry.insert(0, '1')
+        
+        ttk.Label(master=stdremoveFrame, text="Window Length [s]").grid(row=0, column=3)
+        self.stdWinLen = tk.DoubleVar()
+        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state='disabled') # create the Entry widget
+        stdWinLenEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
+        stdWinLenEntry.delete(0, 'end')
+        stdWinLenEntry.insert(0, '5')
+
+        #Do all of them?
+        autoFrame = ttk.LabelFrame(noiseFrame, text='Auto Run')
+        autoFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
+
+        def set_auto():
+            if self.do_auto.get():
+                staltaBool.state(['selected'])
+                pctBool.state(['selected'])
+                winNoiseBool.state(['selected'])
+                warmupBool.state(['selected'])
+                stdBool.state(['selected'])
+            else:
+                staltaBool.state(['!selected'])
+                pctBool.state(['!selected'])
+                winNoiseBool.state(['!selected'])
+                warmupBool.state(['!selected'])
+                stdBool.state(['!selected'])
+
+        self.do_auto= tk.BooleanVar()
+        autoBool = ttk.Checkbutton(master=autoFrame, text="", variable=self.do_auto, command=set_auto) # create the Checkbutton widget
+        autoBool.grid(row=0, column=0, sticky='ew')   
+
+        self.noise_tab.pack(expand=1)
+        self.tab_control.add(self.noise_tab, text="Noise")
+
+        # SETTINGS TAB
+        self.settings_tab = ttk.Frame(self.tab_control)
+        
+        self.tab_control.add(self.settings_tab, text="Settings")
+        
+        # Create a new Notebook widget within the Settings tab
+        settings_notebook = ttk.Notebook(self.settings_tab)
+
+        # Create the tabs within the Settings tab
+        #PPSD SETTINGS SUBTAB
+        ppsd_settings_tab = ttk.Frame(settings_notebook)
+        ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Input Settings')#.pack(fill='both')
+        ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Obspy PPSD Parameters')#.pack(fill='both')
+
+        # ppsd_length=60.0
+        def on_ppsd_length():
+            try:
+                float(self.ppsd_length.get())
+                ppsdLenLabel.configure(text='ppsd_length={}'.format(self.ppsd_length.get()))
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text='ppsd_length=60.0 ')#.grid(row=0, column=0)
+        ppsdLenLabel.grid(row=0, column=0, sticky='w', pady=(6,6), padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='PPSD Length (in seconds) [float]').grid(row=0, column=0, sticky='w', padx=5)
+        self.ppsd_length = tk.DoubleVar()
+        self.ppsd_length.set(60)
+        ppsdLenEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.ppsd_length, width=10, validate='focusout', validatecommand=on_ppsd_length)
+        ppsdLenEntry.grid(row=0, column=1, sticky='w', padx=(5, 10))
+
+        # overlap=0.5, 
+        def on_overlap():
+            try:
+                overlap = float(self.overlap.get())
+                if overlap > 1:
+                    self.overlap.set(overlap/100)
+                overlapLabel.configure(text='overlap={}'.format(self.overlap.get()))
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+        overlapLabel = ttk.Label(master=ppsdParamsFrame, text='overlap=0.5 ')#.grid(row=0, column=0)
+        overlapLabel.grid(row=1, column=0, sticky='ew', pady=(6,6), padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Overlap % (0-1) [float]').grid(row=1, column=0, sticky='w', padx=5)
+        self.overlap = tk.DoubleVar()
+        self.overlap.set(0.5)
+        overlapEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.overlap, width=10, validate='focusout', validatecommand=on_overlap)
+        overlapEntry.grid(row=1, column=1, sticky='w', padx=(5, 10))
+
+        # period_step_octaves=0.0625, 
+        def on_per_step_oct():
+            try:
+                float(self.perStepOct.get())
+                
+                pStepOctLabel.configure(text='period_step_octaves={}'.format(self.perStepOct.get()))
+                return True
+                update_ppsd_call(self.ppsd_call)            
+            except ValueError:
+                return False
+        pStepOctLabel = ttk.Label(master=ppsdParamsFrame, text='period_step_octaves=0.0625')#.grid(row=0, column=0)
+        pStepOctLabel.grid(row=2, column=0, sticky='ew', pady=(6,6), padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Period Step Octave [float]').grid(row=2, column=0, sticky='w', padx=5)
+        self.perStepOct = tk.DoubleVar()
+        self.perStepOct.set(0.0625)
+        pStepOctEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.perStepOct, width=10, validate='focusout', validatecommand=on_per_step_oct)
+        pStepOctEntry.grid(row=2, column=1, sticky='w', padx=(5, 10))
+
+        #skip_on_gaps
+        def show_sog():
+            if self.skip_on_gaps.get():
+                sogLabel.configure(text ='skip_on_gaps=True')
+            else:
+                sogLabel.configure(text ='skip_on_gaps=False')
+            update_ppsd_call(self.ppsd_call)
+            
+        self.skip_on_gaps = tk.BooleanVar()
+        ttk.Label(master=ppsdSettingsFrame, text='Skip on Gaps [bool]: ', justify='left').grid(row=3, column=0, sticky='w', padx=5)
+        sogCheckButton = ttk.Checkbutton(master=ppsdSettingsFrame, text='', variable=self.skip_on_gaps, command=show_sog) # create the Entry widget
+        sogCheckButton.grid(row=3, column=1, sticky='ew', padx=(5,10))
+        sogLabel = ttk.Label(master=ppsdParamsFrame, text='skip_on_gaps=False', state='disabled', )
+        sogLabel.grid(row=3, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        # db_bins=(-200, -50, 1.0), 
+        def show_dbbins():
+            try:
+                float(minDB.get())
+                float(maxDB.get())
+                float(dB_step.get())
+                dbbinsLabel.configure(text='db_bins=({}, {}, {})'.format(
+                    minDB.get(), maxDB.get(), dB_step.get()))
+                self.db_bins = (minDB.get(), maxDB.get(), dB_step.get())
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+
+        dbbinsLabel = ttk.Label(master=ppsdParamsFrame,
+                                text='db_bins=(-200, -50, 1.0)', state='disabled')
+        dbbinsLabel.grid(row=4, column=0, sticky='ew', pady=(6,6), padx=5)
+        ttk.Label(master=ppsdSettingsFrame, text='dB Bins (Y Axis) [tuple]', justify='left').grid(row=4, column=0, sticky='w', padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Min. dB').grid(row=4, column=1, sticky='e', padx=5)
+        minDB = tk.DoubleVar()
+        minDB.set(-200)
+        minDBEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=minDB,
+                            validate="focusout", validatecommand=show_dbbins, width=10)
+        minDBEntry.grid(row=4, column=2, sticky='w', padx=(5, 10))
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Max. dB').grid(row=4, column=3, sticky='e', padx=5)
+        maxDB = tk.DoubleVar()
+        maxDB.set(-50)
+        maxDBEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=maxDB,
+                            validate="focusout", validatecommand=show_dbbins, width=10)
+        maxDBEntry.grid(row=4, column=4, sticky='w', padx=(5, 10))
+
+        ttk.Label(master=ppsdSettingsFrame, text='dB Step').grid(row=4, column=5, sticky='e', padx=5)
+        dB_step = tk.DoubleVar()
+        dB_step.set(1.0)
+        stepEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=dB_step,
+                            validate="focusout", validatecommand=(show_dbbins), width=10)
+        stepEntry.grid(row=4, column=6, sticky='w', padx=(5, 10))
+        self.db_bins = (minDB, maxDB, dB_step)
+
+        # period_limits=None,
+        def show_per_lims():
+            try:
+                if minPerLim.get() == 'None':
+                    pass
+                else:
+                    float(minPerLim.get())
+                    
+                if maxPerLim.get() == 'None':
+                    pass
+                else:
+                    float(maxPerLim.get())
+                    
+                if minPerLim.get() == 'None' or maxPerLim.get() == 'None':
+                    perLimsLabel.configure(text='period_limits=None')
+                else:
+                    perLimsLabel.configure(text='period_limits=[{}, {}]'.format(minPerLim.get(), maxPerLim.get()))
+                    self.period_limits = [float(minPerLim.get()), float(maxPerLim.get())]
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+
+        perLimsLabel = ttk.Label(master=ppsdParamsFrame,
+                                text='period_limits=None', state='disabled')
+        perLimsLabel.grid(row=5, column=0, sticky='ew', pady=(6,6), padx=5)
+        ttk.Label(master=ppsdSettingsFrame, text='Period Limits [list of floats or None]', justify='left').grid(row=5, column=0, sticky='w', padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Min. Period Limit').grid(row=5, column=1, sticky='e', padx=5)
+        minPerLim = tk.StringVar()
+        minPerLim.set(None)
+        minPerLimEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=minPerLim,
+                            validate="focusout", validatecommand=(show_per_lims), width=10)
+        minPerLimEntry.grid(row=5, column=2, sticky='w', padx=(5, 10))
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Max. Period Limit').grid(row=5, column=3, sticky='e', padx=5)
+        maxPerLim = tk.StringVar()
+        maxPerLim.set(None)
+        maxPerLimEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=maxPerLim,
+                            validate="focusout", validatecommand=(show_per_lims), width=10)
+        maxPerLimEntry.grid(row=5, column=4, sticky='w', padx=(5, 10))
+
+        self.db_bins = [minPerLim, maxPerLim]
+
+        # period_smoothing_width_octaves=1.0,
+        def on_per_smoothwidth_oct():
+            try:
+                float(self.perSmoothWidthOct.get())
+                
+                pSmoothWidthLabel.configure(text='period_smoothing_width_octaves={}'.format(self.perSmoothWidthOct.get()))
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+        pSmoothWidthLabel = ttk.Label(master=ppsdParamsFrame, text='period_smoothing_width_octaves=1.0')#.grid(row=0, column=0)
+        pSmoothWidthLabel.grid(row=6, column=0, sticky='ew', pady=(6,6), padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='Period Smoothing Width (octaves) [float]').grid(row=6, column=0, sticky='w', padx=5)
+        self.perSmoothWidthOct = tk.DoubleVar()
+        self.perSmoothWidthOct.set(1.0)
+        pSmoothWidthEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.perSmoothWidthOct, width=10, validate='focusout', validatecommand=on_per_smoothwidth_oct)
+        pSmoothWidthEntry.grid(row=6, column=1, sticky='w', padx=(5, 10))
+        
+        # special_handling=None, 
+        def on_special_handling():
+            try:
+                str(self.special_handling.get())
+                if self.special_handling.get() == 'None':
+                    specialHandlingLabel.configure(text="special_handling={}".format(self.special_handling.get()))
+                else:
+                    specialHandlingLabel.configure(text="special_handling='{}'".format(self.special_handling.get()))
+                update_ppsd_call(self.ppsd_call)
+                return True
+            except ValueError:
+                return False
+
+        specialHandlingLabel = ttk.Label(master=ppsdParamsFrame, text="special_handling=None")
+        specialHandlingLabel.grid(row=7, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        ttk.Label(master=ppsdSettingsFrame, text='Special Handling [str]').grid(row=7, column=0, sticky='w', padx=5)
+
+        self.special_handling = tk.StringVar()
+        self.special_handling.set('None')
+        ttk.Radiobutton(master=ppsdSettingsFrame, text='None', variable=self.special_handling, value='None', command=on_special_handling).grid(row=7, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=ppsdSettingsFrame, text='Ringlaser', variable=self.special_handling, value='ringlaser', command=on_special_handling).grid(row=7, column=2, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=ppsdSettingsFrame, text='Hydrophone', variable=self.special_handling, value='hydrophone', command=on_special_handling).grid(row=7, column=3, sticky='w', padx=(5, 10))
+
+        #PPSD Function Call
+        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='obspy.signal.spectral_estimation.PPSD call')#.pack(fill='both')
+        self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
+                  .format('stats', 'metadata', ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
+                          dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
+        self.ppsd_call.pack(anchor='w', padx=(25,0), pady=(10,10))
+
+        def update_ppsd_call(ppsd_call):
+            ppsd_call.configure(text='PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'.format('stats', 'metadata', ppsdLenLabel.cget('text'), 
+                                                                                                    overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
+                          dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
+
+        #Stats from trace(s)
+        obspyStatsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Data Trace Stats')#.pack(fill='both')
+        ttk.Label(obspyStatsFrame, textvariable='Stats').pack(anchor='nw')
+
+        #Metadata (PAZ)
+        obspyMetadataFrame = ttk.LabelFrame(ppsd_settings_tab, text='Metadata Poles and Zeros')#.pack(fill='both')
+        ttk.Label(obspyMetadataFrame, textvariable='Metadata').pack(anchor='nw')
+ 
+        #Run button frame
+        runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
+        self.run_button = ttk.Button(runFrame_set_ppsd, text="Run", style='Run.TButton', command=process_data)
+        self.run_button.pack(side='bottom', anchor='e')
+        
+        runFrame_set_ppsd.pack(fill='both', side='bottom', anchor='e')            
+        obspyMetadataFrame.pack(fill='both', side='bottom',expand=True)#.grid(row=7, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
+        obspyStatsFrame.pack(fill='both', side='bottom',expand=True)#.grid(row=6, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
+        ppsdCallFrame.pack(fill='both', side='bottom',expand=True)#row=5, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
+        ppsdParamsFrame.pack(fill='both', side='right')#.grid(row=0, column=5, rowspan=4, sticky='nsew')#.pack(side='right',fill='both', anchor='n', expand=True)
+        ppsdSettingsFrame.pack(fill='both', expand=True, side='top', anchor='w')#.grid(row=0, column=0, columnspan=4, rowspan=4, sticky='nsew')#.pack(side='left', fill='both', anchor='n', expand=True)
+    
+        ppsd_settings_tab.pack(fill='both', expand=True)
+        settings_notebook.add(ppsd_settings_tab, text="PPSD")
+
+        #HVSR SETTINGS TAB
+        hvsr_settings_tab = ttk.Frame(settings_notebook)
+        
+        hvsrSettingsFrame = ttk.LabelFrame(hvsr_settings_tab, text='H/V Processing Settings')#.pack(fill='both')
+        
+        hvsrParamsFrame = ttk.LabelFrame(hvsr_settings_tab, text='Process HVSR Parameters')#.pack(fill='both')
+        
+        #Method selection, method=2
+        ttk.Label(hvsrSettingsFrame, text="Horizontal Combine Method [int]").grid(row=0, column=0, padx=(5,0), sticky='w')
+        method_options = ["Diffuse Field Assumption (not currently implemented)", 
+                          "Arithmetic Mean H ≡ (N + E)/2",
+                          "Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))",
+                          "Vector Summation: H ≡ √(N^2 + E^2)",
+                          "Quadratic Mean: H ≡ √(N^2 + E^2)/2",
+                          "Maximum Horizontal Value: H ≡ max(N, E)"
+                          ]
+
+        def on_method_select(meth, meth_opts=method_options):
+            self.method_ind = meth_opts.index(meth)
+
+            try:
+                int(self.method_ind)
+                hCombMethodLabel.configure(text="method={}".format(self.method_ind))
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+
+        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text="method=2", width=30)
+        hCombMethodLabel.grid(row=0, column=0, sticky='ew', pady=(6,6), padx=5)
+            
+        self.method_sel = tk.StringVar(value=method_options[2])
+        self.method_ind = method_options.index(self.method_sel.get())        
+        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[2], *method_options, command=on_method_select)
+        self.method_dropdown.config(width=50)
+        self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky='ew')
+        
+        #smooth=True, 
+        def curve_smooth():
+            try:
+                int(self.hvsmooth.get())
+                if not self.hvsmoothbool.get():
+                    hvSmoothLabel.configure(text='smooth={}'.format(self.hvsmoothbool.get()))
+                else:
+                    hvSmoothLabel.configure(text='smooth={}'.format(self.hvsmooth.get()))                
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+            
+        hvSmoothLabel = ttk.Label(master=hvsrParamsFrame, text="smooth=True", width=30)
+        hvSmoothLabel.grid(row=1, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        ttk.Label(master=hvsrSettingsFrame, text='Smooth H/V Curve [bool]').grid(row=1, column=0, padx=(5,0), sticky='w')
+
+        self.hvsmoothbool = tk.BooleanVar()
+        self.hvsmoothbool.set(True)
+        smoothCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.hvsmoothbool, command=curve_smooth) # create the Checkbutton widget
+        smoothCurveBool.grid(row=1, column=1, sticky='w')
+
+        self.hvsmooth = tk.IntVar()
+        self.hvsmooth.set(51)
+        smoothCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvsmooth, width=10, validate='focusout', validatecommand=curve_smooth)
+        smoothCurveSamples.grid(row=1, column=2, sticky='w', padx=(5, 10))
+        ttk.Label(master=hvsrSettingsFrame, text='[int] # pts in smoothing window (default=51)').grid(row=1, column=3, padx=(0,0))
+        
+        #freq_smooth='konno ohmachi', 
+        freqSmoothLabel = ttk.Label(master=hvsrParamsFrame, text="freq_smooth='konno ohmachi'", width=30)
+        freqSmoothLabel.grid(row=2, column=0, sticky='w', pady=(16,16), padx=5)
+
+        def on_freq_smooth():
+            try:
+                str(self.freq_smooth.get())
+                freqSmoothLabel.configure(text="freq_smooth={}".format(self.freq_smooth.get()))
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+
+        self.freq_smooth = tk.StringVar()
+        self.freq_smooth.set('konno ohmachi')
+        ttk.Label(master=hvsrSettingsFrame, text='Frequency Smoothing [str]').grid(row=2, column=0, padx=(5,0), sticky='w')
+        fsmoothOptFrame = ttk.LabelFrame(master=hvsrSettingsFrame, text='Frequency Smoothing Operations')
+        fsmoothOptFrame.grid(row=2, column=1, columnspan=7, padx=5, sticky='nsew')
+        ttk.Radiobutton(master=fsmoothOptFrame, text='Konno-Ohmachi', variable=self.freq_smooth, value='konno ohmachi', command=on_freq_smooth).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=fsmoothOptFrame, text='Constant', variable=self.freq_smooth, value='constant', command=on_freq_smooth).grid(row=0, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=fsmoothOptFrame, text='Proportional', variable=self.freq_smooth, value='proportional', command=on_freq_smooth).grid(row=0, column=2, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=fsmoothOptFrame, text='None', variable=self.freq_smooth, value='None', command=on_freq_smooth).grid(row=0, column=3, sticky='w', padx=(5, 10))
+
+        #f_smooth_width=40, 
+        fSmoothWidthlabel = ttk.Label(master=hvsrParamsFrame, text="f_smooth_width=40", width=30)
+        fSmoothWidthlabel.grid(row=3, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        def on_smooth_width():
+            try:
+                int(self.fSmoothWidth.get())
+                fSmoothWidthlabel.configure(text='f_smooth_width={}'.format(self.fSmoothWidth.get()))                
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+            
+        ttk.Label(master=hvsrSettingsFrame, text='Bandwidth of freq. smoothing [int]').grid(row=3, column=0, padx=(5,0), sticky='w')
+        self.fSmoothWidth = tk.IntVar()
+        self.fSmoothWidth.set(40)
+        fSmoothWidthEntry = ttk.Entry(master=hvsrSettingsFrame, justify='left', textvariable=self.fSmoothWidth, validate='focusout', validatecommand=on_smooth_width, width=10)
+        fSmoothWidthEntry.grid(row=3, column=1, sticky='w', padx=(5, 10))
+        
+        #resample=True, 
+        resampleLabel = ttk.Label(master=hvsrParamsFrame, text="resample=True", width=30)
+        resampleLabel.grid(row=4, column=0, sticky='ew', pady=(6,6), padx=5)
+        def on_curve_resample():
+            try:
+                int(self.hvresample.get())
+                if not self.resamplebool.get():
+                    resampleLabel.configure(text='resample={}'.format(self.resamplebool.get()))
+                else:
+                    resampleLabel.configure(text='resample={}'.format(self.hvresample.get()))                
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+            
+        self.resamplebool = tk.BooleanVar()
+        self.resamplebool.set(True)
+        ttk.Label(master=hvsrSettingsFrame, text='Resample H/V Curve [bool]').grid(row=4, column=0, padx=(5,0), sticky='w')
+        resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
+        resampleCurveBool.grid(row=4, column=1, sticky='w')
+
+        self.hvresample = tk.IntVar()
+        self.hvresample.set(1000)
+        resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate='focusout', validatecommand=on_curve_resample)
+        resampleCurveSamples.grid(row=4, column=2, sticky='w', padx=(5, 10))
+        ttk.Label(master=hvsrSettingsFrame, text='[int] # pts in resampled curve (default=1000)').grid(row=4, column=3, padx=(0,0), sticky='w')
+                        
+        #remove_outlier_curves=True, 
+        outlierRemLabel = ttk.Label(master=hvsrParamsFrame, text="remove_outlier_curves=True", width=30)
+        outlierRemLabel.grid(row=5, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        def on_remove_outlier_curves():
+            try:
+                bool(self.outlierRembool.get())
+                outlierRemLabel.configure(text='remove_outlier_curves={}'.format(self.outlierRembool.get()))
+                #if self.outlierRembool.get():
+                #    outlierRemStDev.state(['active'])
+                #else:
+                #    outlierRemStDev.state(['disabled'])
+
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+            
+        self.outlierRembool = tk.BooleanVar()
+        self.outlierRembool.set(True)
+        ttk.Label(master=hvsrSettingsFrame, text='Remove Outlier H/V Curves [bool]').grid(row=5, column=0, padx=(5,0), sticky='w')
+        resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.outlierRembool, command=on_remove_outlier_curves) # create the Checkbutton widget
+        resampleCurveBool.grid(row=5, column=1, sticky='w')
+
+        #outlier_curve_std=1.75
+        outlierValLabel = ttk.Label(master=hvsrParamsFrame, text="outlier_curve_std=1.75", width=30)
+        outlierValLabel.grid(row=6, column=0, sticky='ew', pady=(6,6), padx=5)        
+
+        def on_outlier_std():
+            try:
+                float(self.outlierRemStDev.get())
+                outlierValLabel.configure(text='resample={}'.format(self.outlierRemStDev.get()))                
+                update_procHVSR_call(self.procHVSR_call)
+                return True
+            except ValueError:
+                return False
+            
+        ttk.Label(master=hvsrSettingsFrame, text='Outlier St. Dev. [float]').grid(row=6, column=0, columnspan=2, padx=(5,0), sticky='w')
+        self.outlierRemStDev = tk.DoubleVar()
+        self.outlierRemStDev.set(1.75)
+        outlierRemStDev = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.outlierRemStDev, width=10, validate='focusout', validatecommand=on_outlier_std)
+        outlierRemStDev.grid(row=6, column=1, sticky='w', padx=(5, 10))
+
+        separator = ttk.Separator(hvsrSettingsFrame, orient='horizontal')
+        separator.grid(row=7, columnspan=7, sticky='ew', pady=10)
+
+        #hvsr_band=[0.4, 40]
+        hvsrBandLabel = ttk.Label(master=hvsrParamsFrame, text="hvsr_band=[0.4,40]", width=30)
+        hvsrBandLabel.grid(row=7, column=0, sticky='w', pady=(20,6), padx=5)
+
+        ttk.Label(hvsrSettingsFrame,text="HVSR Band [Hz]").grid(row=8,column=0, sticky='w', padx=(5,0))
+
+        hvsr_band_min_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.hvsrBand_min, validate='focusout', validatecommand=on_hvsrband_update)
+        hvsr_band_min_settingsEntry.grid(row=8,column=1, sticky='ew')
+
+        hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.hvsrBand_max, validate='focusout', validatecommand=on_hvsrband_update)
+        hvsr_band_max_settingsEntry.grid(row=8,column=2, sticky='ew')
+   
+        #peak_water_level=1.8
+        pwaterLevLabel = ttk.Label(master=hvsrParamsFrame, text="peak_water_level=1.8", width=30)
+        pwaterLevLabel.grid(row=8, column=0, sticky='w', pady=(6,6), padx=5)        
+
+        def on_pwaterlevel_update():
+            try:
+                float(self.peak_water_level.get())
+
+                pwaterLevLabel.configure(text='peak_water_level={}'.format(self.peak_water_level.get()))                
+                update_check_peaks_call(self.checkPeaks_Call)
+                return True
+            except ValueError:
+                return False      
+                
+        ttk.Label(hvsrSettingsFrame,text="Peak Water Level").grid(row=9, column=0, sticky='w', padx=5)
+
+        self.peak_water_level = tk.DoubleVar()
+        self.peak_water_level.set(1.8)
+        pWaterLevelEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peak_water_level, validate='focusout', validatecommand=on_pwaterlevel_update)
+        pWaterLevelEntry.grid(row=9, column=1, sticky='w')
+
+        #Process HVSR Function Call
+        hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit.process_hvsr() Call')#.pack(fill='both')
+        
+        self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})'
+                  .format('params', hCombMethodLabel.cget('text'), hvSmoothLabel.cget('text'), freqSmoothLabel.cget('text'), fSmoothWidthlabel.cget('text'), resampleLabel.cget('text'), 
+                          outlierRemLabel.cget('text'), outlierValLabel.cget('text'), hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
+        self.procHVSR_call.pack(anchor='w', padx=(25,0), pady=(10,10))
+
+        def update_procHVSR_call(procHVSR_call):
+            procHVSR_call.configure(text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})'
+                  .format('params', hCombMethodLabel.cget('text'), hvSmoothLabel.cget('text'), freqSmoothLabel.cget('text'), fSmoothWidthlabel.cget('text'), resampleLabel.cget('text'), 
+                          outlierRemLabel.cget('text'), outlierValLabel.cget('text'), hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
+        
+        #Check Peaks Function Call
+        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit.process_hvsr() Call')#.pack(fill='both')
+
+        self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text='check_peaks({}, {}, {})'
+                  .format('hvsr_data', hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
+        self.checkPeaks_Call.pack(anchor='w', padx=(25,0), pady=(10,10))
+
+        #check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)
+        def update_check_peaks_call(checkPeaks_Call):
+            checkPeaks_Call.configure(text='check_peaks({}, {}, {})'
+                  .format('hvsr_data', hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
+
+
+        #Run button frame
+        runFrame_set_hvsr = ttk.Frame(hvsr_settings_tab)
+        self.run_button = ttk.Button(runFrame_set_hvsr, text="Run", style='Run.TButton', command=process_data)
+        self.run_button.pack(side='bottom', anchor='e')
+
+        #Pack tab
+        runFrame_set_hvsr.pack(fill='both', side='bottom', anchor='e')    
+        checkPeaksCallFrame.pack(fill='both', expand=True, side='bottom')#.grid(row=10, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
+        hvsrCallFrame.pack(fill='both', expand=True, side='bottom')#.grid(row=9, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
+        hvsrParamsFrame.pack(fill='both', side='right')#.grid(row=0, column=6, rowspan=4, sticky='nsew')#.pack(side='right',fill='both', anchor='n', expand=True)
+        hvsrSettingsFrame.pack(fill='both', expand=True, side='top')#.grid(row=0, column=0, columnspan=6, rowspan=4, sticky='nsew')#.pack(fill='both', expand=True)
+        
+        hvsr_settings_tab.pack(fill='both', expand=True)           
+        settings_notebook.add(hvsr_settings_tab, text="HVSR Settings")
+
+        #PLOT SETTINGS TAB
+        plot_settings_tab = ttk.Frame(settings_notebook)
+
+        # Create the Plot Options LabelFrame
+        plot_options_frame = ttk.LabelFrame(plot_settings_tab, text="Plot Options")
+
+        def update_hvplot_call():
+            kindstr = get_kindstr()
+            hvplot_label.configure(text="hvplot({}, kind={}, xtype='{}', {}, {})".format('hvsr_data', kindstr, self.x_type.get(), '[...]', 'kwargs'))
+
+        # Create the Checkbuttons for the plot options
+        ttk.Label(plot_options_frame, text='HVSR Plot', justify='center').grid(row=0, column=1, sticky='ew', padx=(5, 5))
+        ttk.Label(plot_options_frame, text='Components H/V Plot', justify='center').grid(row=0, column=2, sticky='ew', padx=(5, 5))
+        ttk.Label(plot_options_frame, text='Spectrogram Plot', justify='center').grid(row=0, column=3, sticky='ew', padx=(5, 5))
+
+        self.hvsr_chart_bool = tk.BooleanVar()
+        self.hvsr_chart_bool.set(True)
+        ttk.Checkbutton(plot_options_frame, text='', variable=self.hvsr_chart_bool, command=update_hvplot_call).grid(row=1, column=1, sticky='nsew', padx=15, pady=(5, 20))
+        self.ind_comp_chart_bool = tk.BooleanVar()
+        self.ind_comp_chart_bool.set(True)
+        ttk.Checkbutton(plot_options_frame, text='', variable=self.ind_comp_chart_bool, command=update_hvplot_call).grid(row=1, column=2, sticky='nsew', padx=50, pady=(5, 20))
+        self.spec_chart_bool = tk.BooleanVar()
+        self.spec_chart_bool.set(True)
+        ttk.Checkbutton(plot_options_frame, text='', variable=self.spec_chart_bool, command=update_hvplot_call).grid(row=1, column=3, sticky='nsew', padx=25, pady=(5, 20))
+        
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=2, columnspan=5, sticky='ew', pady=5)
+        
+        #Separate component chart: c+
+        ttk.Label(plot_options_frame, text='Show Components on same chart as H/V Curve:').grid(row=3, column=0, sticky='w', padx=5)
+        
+        def disable_comp_buttons():
+            if self.show_comp_with_hv.get():
+                self.annotate_best_peak_comp.set(False)
+                self.show_best_peak_comp.set(False)
+                bestPeakCompButton.config(state="disabled") 
+                bestPeakCompAnnButton.config(state='disabled')
+            else:
+                bestPeakCompButton.config(state="normal") 
+                bestPeakCompAnnButton.config(state='normal')
+            update_hvplot_call()
+
+        self.show_comp_with_hv = tk.BooleanVar()
+        self.show_comp_with_hv.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_comp_with_hv, 
+                        command=disable_comp_buttons).grid(row=3, column=2, sticky="ew", padx=50)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=4, columnspan=5, sticky='ew', pady=5)
+
+        #Show Best Peak: p
+        ttk.Label(plot_options_frame, text='Show Best Peak:').grid(row=5, column=0, sticky='w', padx=5)
+
+        self.show_best_peak_hv = tk.BooleanVar()
+        self.show_best_peak_hv.set(True)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_best_peak_hv, command=update_hvplot_call).grid(row=5, column=1, sticky="ew", padx=15)
+
+        self.show_best_peak_comp = tk.BooleanVar()
+        self.show_best_peak_comp.set(False)
+        bestPeakCompButton=ttk.Checkbutton(plot_options_frame, text="", variable=self.show_best_peak_comp, command=update_hvplot_call)
+        bestPeakCompButton.grid(row=5, column=2, sticky="ew", padx=50)
+
+        self.show_best_peak_spec = tk.BooleanVar()
+        self.show_best_peak_comp.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_best_peak_spec, command=update_hvplot_call).grid(row=5, column=3, sticky="ew", padx=25)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=6, columnspan=5, sticky='ew')
+
+        #Annotate Best Peak: ann
+        ttk.Label(plot_options_frame, text='Annotate Best Peak:').grid(row=7, column=0, sticky='w', padx=5)
+
+        self.annotate_best_peak_hv = tk.BooleanVar()
+        self.annotate_best_peak_hv.set(True)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.annotate_best_peak_hv, command=update_hvplot_call).grid(row=7, column=1, sticky="ew", padx=15)
+
+        self.annotate_best_peak_comp = tk.BooleanVar()
+        self.annotate_best_peak_comp.set(False)
+        bestPeakCompAnnButton=ttk.Checkbutton(plot_options_frame, text="", variable=self.annotate_best_peak_comp, command=update_hvplot_call)
+        bestPeakCompAnnButton.grid(row=7, column=2, sticky="ew", padx=50)
+
+        self.annotate_best_peak_spec = tk.BooleanVar()
+        self.annotate_best_peak_spec.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.annotate_best_peak_spec, command=update_hvplot_call).grid(row=7, column=3, sticky="ew", padx=25)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=8, columnspan=5, sticky='ew')
+
+
+        #Show all peaks (main H/V curve): all
+        ttk.Label(plot_options_frame, text='Show All Peaks (H/V Curve):').grid(row=9, column=0, sticky='w', padx=5)
+
+        self.show_all_peaks_hv = tk.BooleanVar()
+        self.show_all_peaks_hv.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_all_peaks_hv, command=update_hvplot_call).grid(row=9, column=1, sticky="ew", padx=15)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=10, columnspan=5, sticky='ew')
+
+        #Show all curves: t
+        ttk.Label(plot_options_frame, text='Show All H/V Curves:').grid(row=11, column=0, sticky='w', padx=5)
+
+        self.show_ind_curves = tk.BooleanVar()
+        self.show_ind_curves.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_ind_curves, command=update_hvplot_call).grid(row=11, column=1, sticky="ew", padx=15)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=12, columnspan=5, sticky='ew')
+
+        #Show individual peaks (tp): tp
+        ttk.Label(plot_options_frame, text='Show Individual Peaks:').grid(row=13, column=0, sticky='w', padx=5)
+
+        self.show_ind_peaks = tk.BooleanVar()
+        self.show_ind_peaks.set(False)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_ind_peaks, command=update_hvplot_call).grid(row=13, column=1, sticky="ew", padx=15)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=14, columnspan=5, sticky='ew')
+
+        #Show individual peaks (tp): tp
+        ttk.Label(plot_options_frame, text='Show Standard Deviation:').grid(row=15, column=0, sticky='w', padx=5)
+
+        self.show_stDev_hv = tk.BooleanVar()
+        self.show_stDev_hv.set(True)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_stDev_hv, command=update_hvplot_call).grid(row=15, column=1, sticky="ew", padx=15)
+
+        self.show_stDev_comp = tk.BooleanVar()
+        self.show_stDev_comp.set(True)
+        ttk.Checkbutton(plot_options_frame, text="", variable=self.show_stDev_comp, command=update_hvplot_call).grid(row=15, column=2, sticky="ew", padx=50)
+
+        ttk.Separator(plot_options_frame, orient='horizontal').grid(row=16, columnspan=5, sticky='ew')
+
+        #Specify X-Type
+        ttk.Label(plot_options_frame, text='X Type:').grid(row=17, column=0, sticky='w', padx=5, pady=10)
+
+        self.x_type = tk.StringVar()
+        self.x_type.set('freq')
+        ttk.Radiobutton(master=plot_options_frame, text='Frequency', variable=self.x_type, value='freq', command=update_hvplot_call).grid(row=17, column=1, sticky='w', padx=(5, 10), pady=10)
+        ttk.Radiobutton(master=plot_options_frame, text='Period', variable=self.x_type, value='period', command=update_hvplot_call).grid(row=17, column=2, sticky='w', padx=(5, 10), pady=10)
+
+        #kwargs
+        ttk.Label(plot_options_frame, text='Matplotlib Keyword Arguments (not implemented):').grid(row=18, column=0, sticky='w', padx=5, pady=10)
+
+        self.plot_kwargs = tk.StringVar()
+        self.plot_kwargs.set("cmap='turbo'")
+        ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=18, column=1, columnspan=3, sticky="ew", pady=10)
+
+        plot_options_frame.pack(fill='both', expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Create the hvplot Call LabelFrame
+        hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text="hvplot() Call")
+
+        #HVSR
+        def get_kindstr():
+            if self.hvsr_chart_bool.get():
+                kindstr_hv = 'HVSR'
+                if self.show_best_peak_hv.get():
+                    kindstr_hv = kindstr_hv + ' p'
+                if self.annotate_best_peak_hv.get():
+                    kindstr_hv = kindstr_hv + ' ann'
+                if self.show_all_peaks_hv.get():
+                    kindstr_hv = kindstr_hv + ' all'
+                if self.show_ind_curves.get():
+                    kindstr_hv = kindstr_hv + ' t'
+                if self.show_ind_peaks.get():
+                    kindstr_hv = kindstr_hv + 'p'
+                if not self.show_stDev_hv.get():
+                    kindstr_hv = kindstr_hv + ' -s'
+            else:
+                kindstr_hv = ''
+
+            #Comp
+            if self.ind_comp_chart_bool.get():
+                kindstr_c = 'c'
+
+                if not self.show_comp_with_hv.get():
+                    kindstr_c = kindstr_c + '+'
+
+                    if self.show_best_peak_comp.get():
+                        kindstr_c = kindstr_c + ' p'
+                    if self.annotate_best_peak_comp.get():
+                        kindstr_c = kindstr_c + ' ann'
+                if not self.show_stDev_comp.get():
+                    kindstr_c = kindstr_c + ' -s'
+            else:
+                kindstr_c = ''
+
+            #Specgram
+            if self.spec_chart_bool.get():
+                kindstr_spec = 'Spec'
+
+                if self.show_best_peak_spec.get():
+                    kindstr_spec = kindstr_spec + ' p'
+                if self.annotate_best_peak_spec.get():
+                    kindstr_spec = kindstr_spec + ' ann'
+            else:
+                kindstr_spec = ''
+            kindstr = kindstr_hv + ' ' +  kindstr_c + ' ' + kindstr_spec
+            return kindstr
+        
+
+        # Add a Label widget to the hvplot Call Label section
+        hvplot_label = ttk.Label(hvplot_call_frame, text="hvplot({}, kind='{}', xtype='{}', {}, {})".format('hvsr_data', get_kindstr(), self.x_type.get(), '[...]', 'kwargs'))
+
+        #Run button frame
+        runFrame_set_plot = ttk.Frame(plot_settings_tab)
+        self.run_button = ttk.Button(runFrame_set_plot, text="Run", style='Run.TButton', command=process_data)
+        self.run_button.pack(side='bottom', anchor='e')
+        
+        runFrame_set_plot.pack(fill='both', side='bottom', anchor='e')
+        hvplot_label.pack(fill='both', expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky="w")
+        hvplot_call_frame.pack(fill='both', expand=True)#.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
+        plot_settings_tab.pack(fill='both', expand=True)
+        settings_notebook.add(plot_settings_tab, text="Plot Settings")
+
+        # Pack the settings Notebook widget
+        settings_notebook.pack(expand=True, fill='both')
+        self.tab_control.add(self.settings_tab, text="Settings")
+
+        # Batch tab
+        self.batch_tab = ttk.Frame(self.tab_control)
+
+        self.tab_control.add(self.batch_tab, text="Batch")
+
+
+        # RESULTS TAB
+        self.results_tab = ttk.Frame(self.tab_control)
+
+        #export_settings_tab = ttk.Frame(settings_notebook)
+        #settings_notebook.add(export_settings_tab, text="Export Settings")
+
+        #export='', 
+        #format='print', 
+        #include='peak', 
+        #save_figs=None
+
+        # Add tabs to tab control
+        self.tab_control.add(self.results_tab, text="Results")
+
+        # Pack tab control
+        self.tab_control.pack(expand=True, fill="both")
+
+    def import_parameters(self):
+        filepath = filedialog.askopenfilename()
+    
+    def export_parameters(self):
+        filepath = filedialog.asksaveasfilename()
+
+    def on_option_select(self, inst):
+        update_input_params_call()
+        if inst == "Raspberry Shake":
+            self.network_entry.configure(state='normal')
+            self.station_entry.configure(state='normal')
+            self.location_entry.configure(state='normal')
+            
+            self.z_channel_entry.delete(0, 'end')
+            self.e_channel_entry.delete(0, 'end')
+            self.n_channel_entry.delete(0, 'end')
+            
+            self.z_channel_entry.insert(0,"EHZ")
+            self.e_channel_entry.insert(0,"EHE")
+            self.n_channel_entry.insert(0,"EHN")
+
+            self.network_entry.delete(0, 'end')
+            self.network_entry.insert(0,"AM")
+
+            self.station_entry.delete(0, 'end')
+            self.station_entry.insert(0,"RAC84")
+
+            self.location_entry.delete(0, 'end')
+            self.location_entry.insert(0,"00")
+        else:
+            self.network_entry.configure(state='disabled')
+            self.station_entry.configure(state='disabled')
+            self.location_entry.configure(state='disabled')
+
+def on_closing():
+    plt.close('all')
+    exit()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+    root.mainloop()

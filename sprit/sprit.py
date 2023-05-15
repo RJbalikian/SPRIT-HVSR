@@ -286,7 +286,7 @@ def __sortchannels(channels=['Z', 'N', 'E']):
     return sorted_channel_list
 
 #Define input parameters
-def input_param( dataPath,
+def input_params( dataPath,
                         site='HVSR Site',
                         network='AM', 
                         station='RAC84', 
@@ -609,6 +609,23 @@ def setup_colab(option='', repo_dir=''):
         os.chdir(repo_dir)
     return
 
+#Launch the gui
+def gui():
+    #guiPath = pathlib.Path(os.path.realpath(__file__))
+    #print(guiPath.joinpath('gui/tkgui.py').as_posix())
+    from sprit.sprit_gui import App
+    import tkinter as tk
+
+    def on_gui_closing():
+        plt.close('all')
+        gui_root.quit()
+        gui_root.destroy()
+
+    gui_root = tk.Tk()
+    App(master=gui_root) #Open the app with a tk.Tk root
+    gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
+    gui_root.mainloop() #Run the main loop
+    
 #Support function for get_metadata()
 def _read_RS_Metadata(params):
     """Function to read the metadata from Raspberry Shake using the StationXML file provided by the company.
@@ -738,7 +755,7 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='mseed', detrend='spline', detrend_order=2):
+def fetch_data(params, inv=None, source='raw', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -753,8 +770,8 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
                 'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
-        trim_dir : bool or str or pathlib obj, default=False
-            If false, data is not trimmed in this function.
+        trim_dir : None or str or pathlib obj, default=None
+            If None (or False), data is not trimmed in this function.
             Otherwise, this is the directory to save trimmed and exported data.
         export_format: str='mseed'
             If trim_dir is not False, this is the format in which to save the data
@@ -822,7 +839,6 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
         print("Did not recognize date, using year {} and day {}".format(year, doy))
 
     #print('Day of Year:', doy)
-
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if source=='raw':
@@ -851,7 +867,7 @@ def fetch_data(params, inv=None, source='raw', trim_dir=False, export_format='ms
             else:
                 dataIN.append(rawDataIN[i].sort(['channel'], reverse=True)) #z, n, e order            
         
-    if trim_dir==False:
+    if not trim_dir:
         pass
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
@@ -2209,6 +2225,80 @@ def __gethvsrparams(hvsr_out):
 
     return hvsr_out
 
+#Plot Obspy Trace in axis using matplotlib
+def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
+    if fig is None and ax is None:
+        fig, axes = plt.subplots(nrows=3, sharex=True)
+        
+    new_stream = stream.copy()
+    #axis.plot(trace.times, trace.data)
+    
+    sTime = stream[0].stats.starttime
+    timeList = {}
+    mplTimes = {}
+
+    new_stream.decimate(10)
+    ztrace = new_stream.select(component='Z')[0]
+    etrace = new_stream.select(component='E')[0]
+    ntrace = new_stream.select(component='N')[0]
+    traces = [ztrace, etrace, ntrace]
+    for tr in traces:
+        key = tr.stats.component
+        timeList[key] = []
+        mplTimes[key] = []
+        for t in tr.times():
+            t = sTime + t
+            timeList[key].append(t)
+            mplTimes[key].append(t.matplotlib_date)
+
+    for i, k in enumerate(mplTimes.keys()):
+        if i == 0:
+            xmin = np.min(mplTimes[k])
+            xmax = np.max(mplTimes[k])
+        else:
+            if xmin > np.min(mplTimes[k]):
+                xmin = np.min(mplTimes[k])
+            if xmax < np.max(mplTimes[k]):
+                xmax = np.max(mplTimes[k]) 
+
+    axes[0].xaxis_date()
+    axes[1].xaxis_date()
+    axes[2].xaxis_date()
+
+    #tTicks = mdates.MinuteLocator(interval=5)
+    #axis.xaxis.set_major_locator(tTicks)
+    axes[2].xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,5)))
+    axes[2].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    axes[2].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
+    plt.tick_params(axis='x', labelsize=8)
+    
+    axes[0].plot(mplTimes['Z'], stream.select(component='Z')[0].data, color='k', linewidth=0.25)
+    axes[1].plot(mplTimes['N'], stream.select(component='N')[0].data, color='k', linewidth=0.1)
+    axes[2].plot(mplTimes['E'], stream.select(component='E')[0].data, color='k', linewidth=0.1)
+
+    axes[0].set_ylabel('Z')
+    axes[1].set_ylabel('N')
+    axes[2].set_ylabel('E')
+    plt.gca()
+    
+    for i, comp in enumerate(mplTimes.keys()):
+        stD = np.nanstd(stream.select(component=comp)[0].data)
+        dmed = np.nanmedian(stream.select(component=comp)[0].data)
+        axes[i].set_ylim([dmed-5*stD, dmed+5*stD])
+    
+    plt.suptitle(params['site'])
+    
+    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    plt.xlabel('UTC Time \n'+day)
+
+    #plt.rcParams['figure.dpi'] = 100
+    #plt.rcParams['figure.figsize'] = (5,4)
+    
+    #fig.tight_layout()
+    plt.show()
+    if return_fig:
+        return fig, axes
+    return                 
 #Plot HVSR data
 def hvplot(hvsr_dict, kind='HVSR', xtype='freq', return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
     """Function to plot HVSR data
