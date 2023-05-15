@@ -2284,7 +2284,8 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
         stD = np.nanstd(stream.select(component=comp)[0].data)
         dmed = np.nanmedian(stream.select(component=comp)[0].data)
         axes[i].set_ylim([dmed-2*stD, dmed+2*stD])
-    
+        axes[i].set_xlim([xmin, xmax])
+
     fig.suptitle(params['site'])
     
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
