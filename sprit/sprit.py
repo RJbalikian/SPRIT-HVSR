@@ -2229,7 +2229,7 @@ def __gethvsrparams(hvsr_out):
 def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     if fig is None and ax is None:
         fig, axes = plt.subplots(nrows=3, sharex=True)
-        
+    
     new_stream = stream.copy()
     #axis.plot(trace.times, trace.data)
     
@@ -2272,21 +2272,20 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     axes[2].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
     plt.tick_params(axis='x', labelsize=8)
     
-    axes[0].plot(mplTimes['Z'], stream.select(component='Z')[0].data, color='k', linewidth=0.25)
-    axes[1].plot(mplTimes['N'], stream.select(component='N')[0].data, color='k', linewidth=0.1)
-    axes[2].plot(mplTimes['E'], stream.select(component='E')[0].data, color='k', linewidth=0.1)
+    axes[0].plot(mplTimes['Z'], new_stream.select(component='Z')[0].data, color='k', linewidth=0.25)
+    axes[1].plot(mplTimes['N'], new_stream.select(component='N')[0].data, color='k', linewidth=0.1)
+    axes[2].plot(mplTimes['E'], new_stream.select(component='E')[0].data, color='k', linewidth=0.1)
 
     axes[0].set_ylabel('Z')
     axes[1].set_ylabel('N')
     axes[2].set_ylabel('E')
-    plt.gca()
     
-    for i, comp in enumerate(mplTimes.keys()):
+    for i, comp in enumerate(list(mplTimes.keys())):
         stD = np.nanstd(stream.select(component=comp)[0].data)
         dmed = np.nanmedian(stream.select(component=comp)[0].data)
-        axes[i].set_ylim([dmed-5*stD, dmed+5*stD])
+        axes[i].set_ylim([dmed-2*stD, dmed+2*stD])
     
-    plt.suptitle(params['site'])
+    fig.suptitle(params['site'])
     
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     plt.xlabel('UTC Time \n'+day)
@@ -2294,10 +2293,11 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
     
-    #fig.tight_layout()
-    plt.show()
+    fig.tight_layout()
+
     if return_fig:
         return fig, axes
+    fig.canvas.draw()
     return                 
 #Plot HVSR data
 def hvplot(hvsr_dict, kind='HVSR', xtype='freq', return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):

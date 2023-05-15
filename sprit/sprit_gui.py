@@ -593,6 +593,10 @@ class App:
                                            export_format=self.export_format.get(), 
                                            detrend=self.detrend.get(), 
                                            detrend_order=self.detrend_order.get())
+            
+            self.input_data_label = ttk.Label(self.inputInfoFrame, text=self.data_filepath_entry.get() + '\n' + str(self.params['stream'][0].stats))
+            self.input_data_label.pack(anchor='w', fill='both', expand=True, padx=15)                
+            self.params['stream']
             self.fig_pre, self.ax_pre  = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
         #FUNCTION TO PROCESS DATA
@@ -610,8 +614,8 @@ class App:
 
         hvsrFrame.pack(fill='both', expand=True, side='top')#.grid(row=0, sticky="nsew")
         runFrame_hvsr.pack(fill='both', side='bottom')
-        input_params_LF.pack(fill='x', side='bottom')
         fetch_data_LF.pack(fill='x', side='bottom')
+        input_params_LF.pack(fill='x', side='bottom')
         self.input_tab.pack(fill='both', expand=True)
         self.tab_control.add(self.input_tab, text="Input Params")
 
@@ -621,16 +625,16 @@ class App:
         # Configure the row and column of the input_tab to have a non-zero weight
         self.preview_data_tab.pack(expand=1)
 
-        inputdataFrame = ttk.LabelFrame(self.preview_data_tab, text="Input Data Viewer")
-        inputdataFrame.pack(expand=True, fill='both')
+        self.inputdataFrame = ttk.LabelFrame(self.preview_data_tab, text="Input Data Viewer")
+        self.inputdataFrame.pack(expand=True, fill='both')
             
-        inputInfoFrame = ttk.LabelFrame(inputdataFrame, text="Input Data Info")
-        inputInfoFrame.pack(expand=True, fill='both', side='top')
+        self.inputInfoFrame = ttk.LabelFrame(self.inputdataFrame, text="Input Data Info")
+        self.inputInfoFrame.pack(expand=True, fill='both', side='top')
         
-        inputDataViewFrame = ttk.LabelFrame(inputdataFrame, text="Input Data Plot")
+        inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text="Input Data Plot")
         inputDataViewFrame.pack(expand=True, fill='both', side='bottom')
                     
-        ttk.Label(master=inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
+        ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
         self.fig_pre, self.ax_pre = plt.subplots(nrows=3)
