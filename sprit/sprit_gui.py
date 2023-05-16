@@ -464,10 +464,10 @@ class App:
         sourcFrame= ttk.Frame(hvsrFrame)
         sourcFrame.grid(row=12, column=2, sticky='w', columnspan=3)
         self.file_source = tk.StringVar()
-        self.file_source.set('raw')
-        ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=12, column=0, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text='File', variable=self.file_source, value='file', command=on_source_select).grid(row=12, column=1, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=12, column=2, sticky='w', padx=(5, 10))
+        self.file_source.set('file')
+        ttk.Radiobutton(master=sourcFrame, text='File', variable=self.file_source, value='file', command=on_source_select).grid(row=12, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=12, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=12, column=2, sticky='w', padx=(5, 10))
 
         #export_format='.mseed'
         def on_obspyFormatSelect(self):
@@ -494,9 +494,10 @@ class App:
         detrendFrame= ttk.Frame(hvsrFrame)
         detrendFrame.grid(row=14, column=2, sticky='w', columnspan=3)
         self.detrend = tk.StringVar()
-        self.detrend.set('spline')
-        ttk.Radiobutton(master=detrendFrame, text='Spline', variable=self.detrend, value='spline', command=on_detrend_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+        self.detrend.set('none')
+        ttk.Radiobutton(master=detrendFrame, text='None', variable=self.detrend, value='none', command=on_detrend_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=detrendFrame, text='Spline', variable=self.detrend, value='spline', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
 
         #detrend_order=2
         def on_detrend_order():
@@ -507,11 +508,11 @@ class App:
             except ValueError:
                 return False
                      
-        ttk.Label(hvsrFrame,text="Detrend Order [int]").grid(row=14,column=3, sticky='e', padx=5, pady=10)
+        ttk.Label(hvsrFrame,text="Detrend Order [int]").grid(row=14,column=5, sticky='e', padx=5, pady=10)
         self.detrend_order = tk.IntVar()
         self.detrend_order.set(2)
         self.detrend_order_entry = ttk.Entry(hvsrFrame, textvariable=self.detrend_order, validate='focusout', validatecommand=on_detrend_order)
-        self.detrend_order_entry.grid(row=14,column=4, sticky='w', padx=0)
+        self.detrend_order_entry.grid(row=14,column=6, sticky='w', padx=0)
         
         #trim_dir=False
         def on_trim_dir():
@@ -593,10 +594,9 @@ class App:
                                            export_format=self.export_format.get(), 
                                            detrend=self.detrend.get(), 
                                            detrend_order=self.detrend_order.get())
+
+            self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
             
-            self.input_data_label = ttk.Label(self.inputInfoFrame, text=self.data_filepath_entry.get() + '\n' + str(self.params['stream'][0].stats))
-            self.input_data_label.pack(anchor='w', fill='both', expand=True, padx=15)                
-            self.params['stream']
             self.fig_pre, self.ax_pre  = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
         #FUNCTION TO PROCESS DATA
@@ -629,6 +629,8 @@ class App:
         self.inputdataFrame.pack(expand=True, fill='both')
             
         self.inputInfoFrame = ttk.LabelFrame(self.inputdataFrame, text="Input Data Info")
+        self.input_data_label = ttk.Label(self.inputInfoFrame, text=self.data_filepath_entry.get())
+        self.input_data_label.pack(anchor='w', fill='both', expand=True, padx=15)                
         self.inputInfoFrame.pack(expand=True, fill='both', side='top')
         
         inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text="Input Data Plot")
@@ -637,7 +639,7 @@ class App:
         ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
-        self.fig_pre, self.ax_pre = plt.subplots(nrows=3)
+        self.fig_pre, self.ax_pre = plt.subplots(nrows=3, sharex=True, sharey=False)
         canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
         canvas_pre.draw()
         canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)

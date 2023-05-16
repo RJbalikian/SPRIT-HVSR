@@ -2228,7 +2228,7 @@ def __gethvsrparams(hvsr_out):
 #Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     if fig is None and ax is None:
-        fig, axes = plt.subplots(nrows=3, sharex=True)
+        fig, axes = plt.subplots(nrows=3, sharex=True, sharey=False)
     
     new_stream = stream.copy()
     #axis.plot(trace.times, trace.data)
@@ -2250,7 +2250,6 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
             t = sTime + t
             timeList[key].append(t)
             mplTimes[key].append(t.matplotlib_date)
-
     for i, k in enumerate(mplTimes.keys()):
         if i == 0:
             xmin = np.min(mplTimes[k])
@@ -2272,18 +2271,19 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     axes[2].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
     plt.tick_params(axis='x', labelsize=8)
     
-    axes[0].plot(mplTimes['Z'], new_stream.select(component='Z')[0].data, color='k', linewidth=0.25)
-    axes[1].plot(mplTimes['N'], new_stream.select(component='N')[0].data, color='k', linewidth=0.1)
-    axes[2].plot(mplTimes['E'], new_stream.select(component='E')[0].data, color='k', linewidth=0.1)
+    axes[0].plot(mplTimes['Z'], ztrace.data, color='k', linewidth=0.2)
+    axes[1].plot(mplTimes['N'], ntrace.data, color='b', linewidth=0.2)
+    axes[2].plot(mplTimes['E'], etrace.data, color='r', linewidth=0.2)
 
     axes[0].set_ylabel('Z')
     axes[1].set_ylabel('N')
     axes[2].set_ylabel('E')
     
     for i, comp in enumerate(list(mplTimes.keys())):
-        stD = np.nanstd(stream.select(component=comp)[0].data)
+        stD = np.abs(np.nanstd(stream.select(component=comp)[0].data))
         dmed = np.nanmedian(stream.select(component=comp)[0].data)
-        axes[i].set_ylim([dmed-2*stD, dmed+2*stD])
+
+        axes[i].set_ylim([dmed-0.5*stD, dmed+0.5*stD])
         axes[i].set_xlim([xmin, xmax])
 
     fig.suptitle(params['site'])
