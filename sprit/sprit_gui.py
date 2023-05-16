@@ -1735,7 +1735,7 @@ class App:
                 print('working on individual subplots')
                 for key in self.ax_results.keys():
                     extent = self.ax_results[key].get_tightbbox(self.fig_results.canvas.renderer).transformed(self.fig_results.dpi_scale_trans.inverted())
-                    self.ax_results[key].savefig('Subplot_'+key+'.png', bbox_inches=extent)
+                    self.fig_results.savefig(pathlib.Path(self.results_fig_dir.get()).parent.as_posix()+'/Subplot'+key+'.png',  bbox_inches=extent)
         
         self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_results_fig)
         self.browse_results_fig.grid(row=0, column=7, sticky='ew', padx=2.5)
