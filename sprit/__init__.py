@@ -3,8 +3,6 @@
 This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
 
-import sprit
-
 from sprit.sprit import(
     check_mark,
     get_char,
@@ -24,7 +22,10 @@ from sprit.sprit import(
     generate_ppsds,
     process_hvsr,
     plot_stream,
+    plot_specgram_stream,
     hvplot,
+    plot_hvsr,
+    plot_specgram_hvsr,
     select_windows,
     remove_noise,
     check_peaks,
@@ -50,7 +51,10 @@ __all__ =('sprit',
     'generate_ppsds',
     'process_hvsr',
     'plot_stream',
+    'plot_specgram_stream',
     'hvplot',
+    'plot_hvsr',
+    'plot_specgram_hvsr',
     'select_windows',
     'remove_noise',
     'check_peaks',

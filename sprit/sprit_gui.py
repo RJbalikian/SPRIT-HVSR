@@ -559,7 +559,7 @@ class App:
         runFrame_hvsr = ttk.Frame(self.input_tab)
         #FUNCTION TO READ DATA
         def read_data():
-            print('Reading {} (not yet implemented)'.format(self.data_path.get()))
+            #print('Reading {}'.format(self.data_path.get()))
             self.tab_control.select(self.preview_data_tab)
             
             self.starttime, self.endtime = get_times()
@@ -597,12 +597,47 @@ class App:
 
             self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
             
-            self.fig_pre, self.ax_pre  = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+
 
         #FUNCTION TO PROCESS DATA
         def process_data():
             print('processing data (not yet implemented)')
             self.tab_control.select(self.results_tab)
+   
+            self.params = sprit.generate_ppsds(params=self.params, 
+                                               ppsd_length=self.ppsd_length.get(), 
+                                               overlap=self.overlap.get(), 
+                                               period_step_octaves=self.perStepOct.get(), 
+                                               remove_outliers=self.remove_outliers.get(), 
+                                               outlier_std=self.outlier_std.get(),
+                                               skip_on_gaps=self.skip_on_gaps.get(),
+                                               db_bins=self.db_bins,
+                                               period_limits=self.period_limits,
+                                               period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
+                                               special_handling=special_handling
+                                               )
+
+            self.hvsr_results = sprit.process_hvsr(params=self.params, 
+                                                   method=self.method_ind,
+                                                   smooth=self.hvsmooth_param,
+                                                   freq_smooth=self.freq_smooth.get(),
+                                                   f_smooth_width=self.fSmoothWidth.get(), 
+                                                   resample=self.hvresample, 
+                                                   remove_outlier_curves=self.outlierRembool.get(), 
+                                                   outlier_curve_std=self.outlierRemStDev.get())
+            
+            self.hvsr_results = sprit.check_peaks(hvsr_dict=self.hvsr_results, 
+                                                  hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
+                                                  peak_water_level=self.peak_water_level)
+
+            peakInfoLabel.configure(text=self.hvsr_results['Best Peak']['Report'])
+
+            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+
+
 
         self.style.configure(style='Custom.TButton', background='#d49949')
         self.read_button = ttk.Button(runFrame_hvsr, text="Read Data", command=read_data, width=30, style='Custom.TButton')
@@ -634,17 +669,44 @@ class App:
         self.inputInfoFrame.pack(expand=True, fill='both', side='top')
         
         inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text="Input Data Plot")
-        inputDataViewFrame.pack(expand=True, fill='both', side='bottom')
                     
         ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
-        self.fig_pre, self.ax_pre = plt.subplots(nrows=3, sharex=True, sharey=False)
+        self.fig_pre, self.ax_pre = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
         canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
         canvas_pre.draw()
         canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         canvasPreWidget.pack(expand=True, fill='both')#.grid(row=1)
+        
+        #Save preview figure
+        savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
+        
+        ttk.Label(savePrevFigFrame, text="Export Figure").grid(row=0, column=0, sticky='ew', padx=5)
+        self.previewFig_dir = tk.StringVar()
+        self.previewFig_dir_entry = ttk.Entry(savePrevFigFrame, textvariable=self.previewFig_dir)
+        self.previewFig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
+        
+        def filepath_preview_fig():
+            filepath = filedialog.asksaveasfilename(defaultextension='.png', initialdir=pathlib.Path(self.data_path.get()).parent)
+            if filepath:
+                self.previewFig_dir_entry.delete(0, 'end')
+                self.previewFig_dir_entry.insert(0, filepath)
+        
+        def save_preview_fig():
+            self.fig_pre.savefig(self.previewFig_dir.get())
+        
+        self.browsePreviewFig = ttk.Button(savePrevFigFrame, text="Browse",command=filepath_preview_fig)
+        self.browsePreviewFig.grid(row=0, column=7, sticky='ew', padx=2.5)
+        
+        self.savePreviewFig = ttk.Button(savePrevFigFrame, text="Save",command=save_preview_fig)
+        self.savePreviewFig.grid(row=0, column=8, columnspan=2, sticky='ew', padx=2.5)
 
+        savePrevFigFrame.columnconfigure(1, weight=1)
+
+        savePrevFigFrame.pack(side='bottom', fill='both', expand=True)
+        inputDataViewFrame.pack(expand=True, fill='both', side='bottom')
+        
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
         self.run_button = ttk.Button(runFrame_dataPrev, text="Run", style='Run.TButton', command=process_data)
         self.run_button.pack(side='bottom', anchor='e')#.grid(row=2, column=9, columnspan=20, sticky='e')
@@ -655,22 +717,33 @@ class App:
         # Noise tab
         self.noise_tab = ttk.Frame(self.tab_control)
 
-        #Set up plot
-        fig_noise = plt.figure()
-        ax_noise = fig_noise.add_subplot(111)
-        
-        canvasFrame = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
-        canvasFrame.pack(fill='both')#.grid(row=0, column=0, sticky="nsew")
+        #Set up plot     
+        noise_mosaic = [['spec'],['spec'],['spec'],
+                ['spec'],['spec'],['spec'],
+                ['signalz'],['signalz'], ['signaln'], ['signale']]
+        self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+        canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
+        canvasFrame_noise.pack(fill='both')#.grid(row=0, column=0, sticky="nsew")
 
-        canvas = FigureCanvasTkAgg(fig_noise, master=canvasFrame)
-        canvas.draw()
-        canvasWidget = canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
+        noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
+        noise_canvas.draw()
+        noise_canvasWidget = noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
-        self.run_button = ttk.Button(runFrame_noise, text="Run", style='Run.TButton', command=process_data)
-        self.run_button.pack(side='bottom', anchor='e')
+        
+        def update_noise_windows():
+            print("Updating noise windows (not yet implemented)")
+
+        self.style.configure(style='Noise.TButton', background='#86a5ba')
+        self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
+
+        self.style.configure('Run.TButton', background='#8b9685', width=10, height=3)
+        self.run_button = ttk.Button(runFrame_noise, text="Run", style='Run.TButton', command=process_data)        
+        self.run_button.pack(side='right', anchor='se', padx=(10,0))
+        self.noise_button.pack(side='right', anchor='se')
+
         runFrame_noise.pack(fill='both',side='bottom', anchor='e')    
 
         #Plot adjustment Frame
@@ -681,7 +754,6 @@ class App:
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text='Noise Removal')
         noiseFrame.pack(fill='both')#.grid(row=1, columnspan=2, sticky='nsew')
-        #self.noise_tab.pack()
         
         #Options for manually removing windows
         windowremoveFrame = ttk.LabelFrame(noiseFrame, text='Manual Window Removal')
@@ -840,7 +912,7 @@ class App:
         #PPSD SETTINGS SUBTAB
         ppsd_settings_tab = ttk.Frame(settings_notebook)
         ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Input Settings')#.pack(fill='both')
-        ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Obspy PPSD Parameters')#.pack(fill='both')
+        ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text='PPSD Parameters')#.pack(fill='both')
 
         # ppsd_length=60.0
         def on_ppsd_length():
@@ -886,8 +958,8 @@ class App:
                 float(self.perStepOct.get())
                 
                 pStepOctLabel.configure(text='period_step_octaves={}'.format(self.perStepOct.get()))
-                return True
                 update_ppsd_call(self.ppsd_call)            
+                return True
             except ValueError:
                 return False
         pStepOctLabel = ttk.Label(master=ppsdParamsFrame, text='period_step_octaves=0.0625')#.grid(row=0, column=0)
@@ -911,7 +983,7 @@ class App:
         ttk.Label(master=ppsdSettingsFrame, text='Skip on Gaps [bool]: ', justify='left').grid(row=3, column=0, sticky='w', padx=5)
         sogCheckButton = ttk.Checkbutton(master=ppsdSettingsFrame, text='', variable=self.skip_on_gaps, command=show_sog) # create the Entry widget
         sogCheckButton.grid(row=3, column=1, sticky='ew', padx=(5,10))
-        sogLabel = ttk.Label(master=ppsdParamsFrame, text='skip_on_gaps=False', state='disabled', )
+        sogLabel = ttk.Label(master=ppsdParamsFrame, text='skip_on_gaps=False')
         sogLabel.grid(row=3, column=0, sticky='ew', pady=(6,6), padx=5)
 
         # db_bins=(-200, -50, 1.0), 
@@ -929,7 +1001,7 @@ class App:
                 return False
 
         dbbinsLabel = ttk.Label(master=ppsdParamsFrame,
-                                text='db_bins=(-200, -50, 1.0)', state='disabled')
+                                text='db_bins=(-200, -50, 1.0)')
         dbbinsLabel.grid(row=4, column=0, sticky='ew', pady=(6,6), padx=5)
         ttk.Label(master=ppsdSettingsFrame, text='dB Bins (Y Axis) [tuple]', justify='left').grid(row=4, column=0, sticky='w', padx=5)
         
@@ -953,7 +1025,7 @@ class App:
         stepEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=dB_step,
                             validate="focusout", validatecommand=(show_dbbins), width=10)
         stepEntry.grid(row=4, column=6, sticky='w', padx=(5, 10))
-        self.db_bins = (minDB, maxDB, dB_step)
+        self.db_bins = (minDB.get(), maxDB.get(), dB_step.get())
 
         # period_limits=None,
         def show_per_lims():
@@ -979,7 +1051,7 @@ class App:
                 return False
 
         perLimsLabel = ttk.Label(master=ppsdParamsFrame,
-                                text='period_limits=None', state='disabled')
+                                text='period_limits=None')
         perLimsLabel.grid(row=5, column=0, sticky='ew', pady=(6,6), padx=5)
         ttk.Label(master=ppsdSettingsFrame, text='Period Limits [list of floats or None]', justify='left').grid(row=5, column=0, sticky='w', padx=5)
         
@@ -997,7 +1069,10 @@ class App:
                             validate="focusout", validatecommand=(show_per_lims), width=10)
         maxPerLimEntry.grid(row=5, column=4, sticky='w', padx=(5, 10))
 
-        self.db_bins = [minPerLim, maxPerLim]
+        if minPerLim.get() == 'None' or maxPerLim.get() == 'None':
+            self.period_limits=None
+        else:
+            self.period_limits = [float(minPerLim.get()), float(maxPerLim.get())]
 
         # period_smoothing_width_octaves=1.0,
         def on_per_smoothwidth_oct():
@@ -1024,8 +1099,10 @@ class App:
                 str(self.special_handling.get())
                 if self.special_handling.get() == 'None':
                     specialHandlingLabel.configure(text="special_handling={}".format(self.special_handling.get()))
+                    special_handling = None
                 else:
                     specialHandlingLabel.configure(text="special_handling='{}'".format(self.special_handling.get()))
+                    special_handling = self.special_handling.get()
                 update_ppsd_call(self.ppsd_call)
                 return True
             except ValueError:
@@ -1042,17 +1119,76 @@ class App:
         ttk.Radiobutton(master=ppsdSettingsFrame, text='Ringlaser', variable=self.special_handling, value='ringlaser', command=on_special_handling).grid(row=7, column=2, sticky='w', padx=(5, 10))
         ttk.Radiobutton(master=ppsdSettingsFrame, text='Hydrophone', variable=self.special_handling, value='hydrophone', command=on_special_handling).grid(row=7, column=3, sticky='w', padx=(5, 10))
 
+        if self.special_handling.get()=='None':
+            special_handling = None
+        else:
+            special_handling = self.special_handling.get()
+
+        separator = ttk.Separator(ppsdSettingsFrame, orient='horizontal')
+        separator.grid(row=8, columnspan=8, sticky='ew', pady=10, padx=5)
+
+        separator = ttk.Separator(ppsdParamsFrame, orient='horizontal')
+        separator.grid(row=8, sticky='ew', pady=10, padx=5)
+
+        #remove_outliers
+        def show_rem_outliers():
+            if self.remove_outliers.get():
+                rem_outliers_Label.configure(text ='remove_outliers=True')
+            else:
+                rem_outliers_Label.configure(text ='remove_outliers=False')
+            update_ppsd_call(self.ppsd_call)
+            
+        self.remove_outliers = tk.BooleanVar()
+        self.remove_outliers.set(True)
+        ttk.Label(master=ppsdSettingsFrame, text='Remove outlier curves [bool]: ', justify='left').grid(row=9, column=0, sticky='w', padx=5)
+        rem_outliers_CheckButton = ttk.Checkbutton(master=ppsdSettingsFrame, text='', variable=self.remove_outliers, command=show_rem_outliers) # create the Entry widget
+        rem_outliers_CheckButton.grid(row=9, column=1, sticky='ew', padx=(5,10))
+        rem_outliers_Label = ttk.Label(master=ppsdParamsFrame, text='remove_outliers=True')
+        rem_outliers_Label.grid(row=9, column=0, sticky='ew', pady=(6,6), padx=5)
+
+        # outlier_std=1.5, 
+        def on_outlier_std():
+            try:
+                float(self.outlier_std.get())
+                outlier_std_Label.configure(text='outlier_std={}'.format(self.outlier_std.get()))
+                update_ppsd_call(self.ppsd_call)            
+                return True
+            except ValueError:
+                return False
+        outlier_std_Label = ttk.Label(master=ppsdParamsFrame, text='outlier_std=1.5')#.grid(row=0, column=0)
+        outlier_std_Label.grid(row=10, column=0, sticky='ew', pady=(6,6), padx=5)
+        
+        ttk.Label(master=ppsdSettingsFrame, text='St. Dev. for Outliers [float]').grid(row=10, column=0, sticky='w', padx=5)
+        self.outlier_std = tk.DoubleVar()
+        self.outlier_std.set(1.5)
+        outlier_std_Entry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.outlier_std, width=10, validate='focusout', validatecommand=on_outlier_std)
+        outlier_std_Entry.grid(row=10, column=1, sticky='w', padx=(5, 10))
+
+
         #PPSD Function Call
-        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='obspy.signal.spectral_estimation.PPSD call')#.pack(fill='both')
-        self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
+        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit.generate_ppsds() and obspy PPSD() call')#.pack(fill='both') 
+       
+        self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
                   .format('stats', 'metadata', ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
-        self.ppsd_call.pack(anchor='w', padx=(25,0), pady=(10,10))
+        self.ppsd_call.pack(side='bottom', anchor='w', padx=(25,0), pady=(10,10))
 
+        self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+                  .format('params', self.remove_outliers.get(), self.outlier_std.get(), 
+                          ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
+                          dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
+        self.generate_ppsd_call.pack(side='bottom', anchor='w', padx=(25,0), pady=(10,10))
+        
         def update_ppsd_call(ppsd_call):
-            ppsd_call.configure(text='PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'.format('stats', 'metadata', ppsdLenLabel.cget('text'), 
+            ppsd_call.configure(text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'.format('stats', 'metadata', ppsdLenLabel.cget('text'), 
                                                                                                     overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
+
+            self.generate_ppsd_call.configure(text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+                            .format('params', self.remove_outliers.get(), self.outlier_std.get(), 
+                                    ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
+                                    dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
+                    
 
         #Stats from trace(s)
         obspyStatsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Data Trace Stats')#.pack(fill='both')
@@ -1118,10 +1254,13 @@ class App:
         def curve_smooth():
             try:
                 int(self.hvsmooth.get())
+                bool(self.hvsmoothbool.get())
                 if not self.hvsmoothbool.get():
                     hvSmoothLabel.configure(text='smooth={}'.format(self.hvsmoothbool.get()))
+                    self.hvsmooth_param = False
                 else:
-                    hvSmoothLabel.configure(text='smooth={}'.format(self.hvsmooth.get()))                
+                    hvSmoothLabel.configure(text='smooth={}'.format(self.hvsmooth.get()))
+                    self.hvsmooth_param = self.hvsmooth.get()              
                 update_procHVSR_call(self.procHVSR_call)
                 return True
             except ValueError:
@@ -1134,6 +1273,7 @@ class App:
 
         self.hvsmoothbool = tk.BooleanVar()
         self.hvsmoothbool.set(True)
+        self.hvsmooth_param=True
         smoothCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.hvsmoothbool, command=curve_smooth) # create the Checkbutton widget
         smoothCurveBool.grid(row=1, column=1, sticky='w')
 
@@ -1193,8 +1333,10 @@ class App:
                 int(self.hvresample.get())
                 if not self.resamplebool.get():
                     resampleLabel.configure(text='resample={}'.format(self.resamplebool.get()))
+                    self.hvresample=self.resamplebool.get()
                 else:
-                    resampleLabel.configure(text='resample={}'.format(self.hvresample.get()))                
+                    resampleLabel.configure(text='resample={}'.format(self.hvresample.get()))
+                    self.hvresample=self.hvresample.get()    
                 update_procHVSR_call(self.procHVSR_call)
                 return True
             except ValueError:
@@ -1202,6 +1344,7 @@ class App:
             
         self.resamplebool = tk.BooleanVar()
         self.resamplebool.set(True)
+        self.hvresample=self.resamplebool.get()
         ttk.Label(master=hvsrSettingsFrame, text='Resample H/V Curve [bool]').grid(row=4, column=0, padx=(5,0), sticky='w')
         resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
         resampleCurveBool.grid(row=4, column=1, sticky='w')
@@ -1554,6 +1697,61 @@ class App:
         # RESULTS TAB
         self.results_tab = ttk.Frame(self.tab_control)
 
+        # Create the hvplot Call LabelFrame
+        results_chartFrame = ttk.LabelFrame(self.results_tab, text="HVSR Charts")
+
+        #Set up plot     
+        results_mosaic = [['hvsr'],['comp'],['spec']]
+        self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+
+        reults_canvas = FigureCanvasTkAgg(self.fig_results, master=results_chartFrame)
+        reults_canvas.draw()
+        results_canvasWidget = reults_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        results_canvasWidget.pack(fill='both', expand=True)#.grid(row=0, column=0, sticky='nsew')
+
+        #Peak report
+        results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text="Peak Report")
+        peakInfoLabel = ttk.Label(results_peakInfoFrame, text='Peak Not Yet Calculated')
+        peakInfoLabel.grid()
+        
+        #Export results
+        results_export_Frame = ttk.LabelFrame(self.results_tab, text="Export Results")
+        
+        ttk.Label(results_export_Frame, text="Export Figure").grid(row=0, column=0, sticky='ew', padx=5)
+        self.results_fig_dir = tk.StringVar()
+        self.results_fig_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_fig_dir)
+        self.results_fig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
+        
+        def filepath_results_fig():
+            filepath = filedialog.asksaveasfilename(defaultextension='.png', initialdir=pathlib.Path(self.data_path.get()).parent)
+            if filepath:
+                self.results_fig_dir_entry.delete(0, 'end')
+                self.results_fig_dir_entry.insert(0, filepath)
+        
+        def save_results_fig():
+            if not self.save_ind_subplots.get():
+                self.fig_results.savefig(self.results_fig_dir.get())
+            else:
+                print('working on individual subplots')
+                for key in self.ax_results.keys():
+                    extent = self.ax_results[key].get_tightbbox(self.fig_results.canvas.renderer).transformed(self.fig_results.dpi_scale_trans.inverted())
+                    self.ax_results[key].savefig('Subplot_'+key+'.png', bbox_inches=extent)
+        
+        self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_results_fig)
+        self.browse_results_fig.grid(row=0, column=7, sticky='ew', padx=2.5)
+        
+        self.save_results_fig = ttk.Button(results_export_Frame, text="Save",command=save_results_fig)
+        self.save_results_fig.grid(row=0, column=8, columnspan=2, sticky='ew', padx=2.5)
+
+        #Save subplots individually
+        self.save_ind_subplots = tk.BooleanVar()
+        self.save_ind_subplots.set(False)
+        ttk.Checkbutton(results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=1, column=9, sticky="ew", padx=5)
+
+
+        results_export_Frame.columnconfigure(1, weight=1)
+        results_export_Frame.pack(side='bottom', fill='both')
+
         #export_settings_tab = ttk.Frame(settings_notebook)
         #settings_notebook.add(export_settings_tab, text="Export Settings")
 
@@ -1562,6 +1760,10 @@ class App:
         #include='peak', 
         #save_figs=None
 
+        results_peakInfoFrame.pack(side='right', fill='both')
+        results_chartFrame.pack(side='top', expand=True, fill='both')
+        results_export_Frame.pack(side='bottom', fill='x')
+        
         # Add tabs to tab control
         self.tab_control.add(self.results_tab, text="Results")
 
