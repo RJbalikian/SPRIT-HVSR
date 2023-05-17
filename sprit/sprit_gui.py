@@ -152,7 +152,7 @@ class App:
         #self.logo = tk.PhotoImage(file="logo.png")
         #self.logo_label = ttk.Label(hvsrFrame, image=self.logo)
         #self.logo_label.grid(row=0, column=0)
-
+        self.processingData = False
         #FUNCTION TO READ DATA
         def read_data():
             #print('Reading {}'.format(self.data_path.get()))
@@ -195,6 +195,24 @@ class App:
                                            detrend_order=self.detrend_order.get())
 
             self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
+            
+            
+            self.obspySreamLabel_settings.configure(text=str(self.params['stream']))
+
+            self.sensitivityLabelZ_settings.configure(text=self.params['paz']['Z']['sensitivity'])
+            self.gainLabelZ_settings.configure(text=self.params['paz']['Z']['gain'])
+            self.polesLabelZ_settings.configure(text=self.params['paz']['Z']['poles'])
+            self.zerosLabelZ_settings.configure(text=self.params['paz']['Z']['zeros'])
+            
+            self.sensitivityLabelN_settings.configure(text=self.params['paz']['N']['sensitivity'])
+            self.gainLabelN_settings.configure(text=self.params['paz']['N']['gain'])
+            self.polesLabelN_settings.configure(text=self.params['paz']['N']['poles'])
+            self.zerosLabelN_settings.configure(text=self.params['paz']['N']['zeros'])
+
+            self.sensitivityLabelE_settings.configure(text=self.params['paz']['E']['sensitivity'])
+            self.gainLabelE_settings.configure(text=self.params['paz']['E']['gain'])
+            self.polesLabelE_settings.configure(text=self.params['paz']['E']['poles'])
+            self.zerosLabelE_settings.configure(text=self.params['paz']['E']['zeros'])
             
             self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
@@ -252,7 +270,7 @@ class App:
             if curvePass:
                 totalCurveResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
-                totalCurveResult.configure(text='X', font=("TkDefaultFont", 16, "bold"), foreground='red')
+                totalCurveResult.configure(text='✘', font=("TkDefaultFont", 16, "bold"), foreground='red')
 
             peakTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
             peakTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][-1])
@@ -267,7 +285,7 @@ class App:
             if self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
                 peakTest4Result.configure(text='✔')
             else:
-                peakTest4Result.configure(text='X')
+                peakTest4Result.configure(text='✘')
 
             peakTest5ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][:-1])
             peakTest5Result.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][-1])
@@ -284,12 +302,12 @@ class App:
             if peakPass:
                 totalPeakResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
-                totalPeakResult.configure(text='X', font=("TkDefaultFont", 16, "bold"), foreground='red')
+                totalPeakResult.configure(text='✘', font=("TkDefaultFont", 16, "bold"), foreground='red')
 
             if curvePass and peakPass:
-                totalResult.configure(text='✔', font=("TkDefaultFont", 22, "bold"), foreground='green')
+                totalResult.configure(text='Pass ✔', font=("TkDefaultFont", 22, "bold"), foreground='green')
             else:
-                totalResult.configure(text='X', font=("TkDefaultFont", 22, "bold"), foreground='red')
+                totalResult.configure(text='Fail ✘', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
             sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
 
@@ -1263,12 +1281,64 @@ class App:
 
         #Stats from trace(s)
         obspyStatsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Data Trace Stats')#.pack(fill='both')
-        ttk.Label(obspyStatsFrame, textvariable='Stats').pack(anchor='nw')
+        self.obspySreamLabel_settings = ttk.Label(obspyStatsFrame, text='Stats')
+        self.obspySreamLabel_settings.pack(anchor='nw', padx=5)
 
         #Metadata (PAZ)
         obspyMetadataFrame = ttk.LabelFrame(ppsd_settings_tab, text='Metadata Poles and Zeros')#.pack(fill='both')
-        ttk.Label(obspyMetadataFrame, textvariable='Metadata').pack(anchor='nw')
+
+        self.metadataZ_settings = ttk.Label(obspyMetadataFrame, text='Z: ')
+        self.metadataZ_settings.grid(row=1, column=0, padx=5)
+        self.metadataZ_settings.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+        self.sensitivityLabelZ_settings = ttk.Label(obspyMetadataFrame, text='Sensitivity_Z')
+        self.sensitivityLabelZ_settings.grid(row=1, column=1, padx=5)
+        self.gainLabelZ_settings = ttk.Label(obspyMetadataFrame, text='Gain_Z')
+        self.gainLabelZ_settings.grid(row=1, column=2, padx=5)
+        self.polesLabelZ_settings = ttk.Label(obspyMetadataFrame, text='Poles_Z')
+        self.polesLabelZ_settings.grid(row=1, column=3, padx=5)
+        self.zerosLabelZ_settings = ttk.Label(obspyMetadataFrame, text='Zeros_Z')
+        self.zerosLabelZ_settings.grid(row=1, column=4, padx=5)
  
+        self.metadataN_settings = ttk.Label(obspyMetadataFrame, text='N: ')
+        self.metadataN_settings.grid(row=2, column=0, padx=5)
+        self.metadataN_settings.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+        self.sensitivityLabelN_settings = ttk.Label(obspyMetadataFrame, text='Sensitivity_N')
+        self.sensitivityLabelN_settings.grid(row=2, column=1, padx=5)
+        self.gainLabelN_settings = ttk.Label(obspyMetadataFrame, text='Gain_N')
+        self.gainLabelN_settings.grid(row=2, column=2, padx=5)
+        self.polesLabelN_settings = ttk.Label(obspyMetadataFrame, text='Poles_N')
+        self.polesLabelN_settings.grid(row=2, column=3, padx=5)
+        self.zerosLabelN_settings = ttk.Label(obspyMetadataFrame, text='Zeros_N')
+        self.zerosLabelN_settings.grid(row=2, column=4, padx=5)
+ 
+        self.metadataE_settings = ttk.Label(obspyMetadataFrame, text='E: ')
+        self.metadataE_settings.grid(row=3, column=0, padx=5)
+        self.metadataE_settings.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+        self.sensitivityLabelE_settings = ttk.Label(obspyMetadataFrame, text='Sensitivity_E')
+        self.sensitivityLabelE_settings.grid(row=3, column=1)
+        self.gainLabelE_settings = ttk.Label(obspyMetadataFrame, text='Gain_E')
+        self.gainLabelE_settings.grid(row=3, column=2, padx=5)
+        self.polesLabelE_settings = ttk.Label(obspyMetadataFrame, text='Poles_E')
+        self.polesLabelE_settings.grid(row=3, column=3, padx=5)
+        self.zerosLabelE_settings = ttk.Label(obspyMetadataFrame, text='Zeros_E')
+        self.zerosLabelE_settings.grid(row=3, column=4, padx=5)
+
+        self.metadata_sensitivity = ttk.Label(obspyMetadataFrame, text='Sensitivity')
+        self.metadata_sensitivity.grid(row=0, column=1, padx=5)
+        self.metadata_sensitivity.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+
+        self.metadata_gain = ttk.Label(obspyMetadataFrame, text='Gain')
+        self.metadata_gain.grid(row=0, column=2, padx=5)
+        self.metadata_gain.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+
+        self.metadata_poles = ttk.Label(obspyMetadataFrame, text='Poles')
+        self.metadata_poles.grid(row=0, column=3, padx=5)
+        self.metadata_poles.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+
+        self.metadata_zeros = ttk.Label(obspyMetadataFrame, text='Zeros')
+        self.metadata_zeros.grid(row=0, column=4, padx=5)
+        self.metadata_zeros.configure(font=("TkDefaultFont", 10, 'underline', 'bold'))
+
         #Run button frame
         runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
         self.run_button = ttk.Button(runFrame_set_ppsd, text="Run", style='Run.TButton', command=process_data)
@@ -1839,17 +1909,23 @@ class App:
         curveTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
         curveTest1Label.grid(row=1, sticky='w', padx=5, pady=2.5)
         curveTest1ResultFrame.grid(row=2, sticky='ew', padx=5, pady=2.5)
-        curveTest1ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        curveTest1ResultFrame.columnconfigure(0, weight=1)
+        curveTest1ResultFrame.columnconfigure(1, weight=6)
+        curveTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         curveTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         curveTest2Label.grid(row=3, sticky='w', padx=5, pady=2.5)
-        curveTest2ResultFrame.grid(row=4, sticky='w', padx=5, pady=2.5)
-        curveTest2ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        curveTest2ResultFrame.grid(row=4, sticky='ew', padx=5, pady=2.5)
+        curveTest2ResultFrame.columnconfigure(0, weight=1)
+        curveTest2ResultFrame.columnconfigure(1, weight=6)
+        curveTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         curveTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         curveTest3Label.grid(row=5, sticky='w', padx=5, pady=2.5)
-        curveTest3ResultFrame.grid(row=6, sticky='w', padx=5, pady=2.5)
-        curveTest3ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        curveTest3ResultFrame.grid(row=6, sticky='ew', padx=5, pady=2.5)
+        curveTest3ResultFrame.columnconfigure(0, weight=1)
+        curveTest3ResultFrame.columnconfigure(1, weight=6)
+        curveTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         curveTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         totalCurveResult.grid(row=7, sticky='e', padx=5, pady=10 )
@@ -1858,34 +1934,47 @@ class App:
         
         peakTitleLabel.grid(row=9, sticky='w', padx=5, pady=2.5)
         peakTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
+        
         peakTest1Label.grid(row=11, sticky='w', padx=5, pady=2.5)
-        peakTest1ResultFrame.grid(row=12, sticky='w', padx=5, pady=2.5)
-        peakTest1ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest1ResultFrame.grid(row=12, sticky='ew', padx=5, pady=2.5)
+        peakTest1ResultFrame.columnconfigure(0, weight=1)
+        peakTest1ResultFrame.columnconfigure(1, weight=6)
+        peakTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         peakTest2Label.grid(row=13, sticky='w', padx=5, pady=2.5)
-        peakTest2ResultFrame.grid(row=14, sticky='w', padx=5, pady=2.5)
-        peakTest2ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest2ResultFrame.grid(row=14, sticky='ew', padx=5, pady=2.5)
+        peakTest2ResultFrame.columnconfigure(0, weight=1)
+        peakTest2ResultFrame.columnconfigure(1, weight=6)
+        peakTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         peakTest3Label.grid(row=15, sticky='w', padx=5, pady=2.5)
-        peakTest3ResultFrame.grid(row=16, sticky='w', padx=5, pady=2.5)
-        peakTest3ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest3ResultFrame.grid(row=16, sticky='ew', padx=5, pady=2.5)
+        peakTest3ResultFrame.columnconfigure(0, weight=1)
+        peakTest3ResultFrame.columnconfigure(1, weight=6)
+        peakTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         peakTest4Label.grid(row=17, sticky='w', padx=5, pady=2.5)
-        peakTest4ResultFrame.grid(row=18, sticky='w', padx=5, pady=2.5)
-        peakTest4ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest4ResultFrame.grid(row=18, sticky='ew', padx=5, pady=2.5)
+        peakTest4ResultFrame.columnconfigure(0, weight=1)
+        peakTest4ResultFrame.columnconfigure(1, weight=6)
+        peakTest4ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest4Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         peakTest5Label.grid(row=19, sticky='w', padx=5, pady=2.5)
-        peakTest5ResultFrame.grid(row=20, sticky='w', padx=5, pady=2.5)
-        peakTest5ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest5ResultFrame.grid(row=20, sticky='ew', padx=5, pady=2.5)
+        peakTest5ResultFrame.columnconfigure(0, weight=1)
+        peakTest5ResultFrame.columnconfigure(1, weight=6)
+        peakTest5ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest5Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         peakTest6Label.grid(row=21, sticky='w', padx=5, pady=2.5)
-        peakTest6ResultFrame.grid(row=22, sticky='w', padx=5, pady=2.5)
-        peakTest6ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=2.5)
+        peakTest6ResultFrame.grid(row=22, sticky='ew', padx=5, pady=2.5)
+        peakTest6ResultFrame.columnconfigure(0, weight=1)
+        peakTest6ResultFrame.columnconfigure(1, weight=6)
+        peakTest6ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
         peakTest6Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
         totalPeakResult.grid(row=23, sticky='e', padx=5, pady=10 )
@@ -1926,11 +2015,33 @@ class App:
         #Save subplots individually
         self.save_ind_subplots = tk.BooleanVar()
         self.save_ind_subplots.set(False)
-        ttk.Checkbutton(results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=1, column=9, sticky="ew", padx=5)
-
+        ttk.Checkbutton(results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=0, column=10, sticky="ew", padx=5)
 
         results_export_Frame.columnconfigure(1, weight=1)
         results_export_Frame.pack(side='bottom', fill='both')
+
+        #Export Peak Report        
+        ttk.Label(results_export_Frame, text="Export Peak Report").grid(row=1, column=0, sticky='ew', padx=5)
+        self.results_report_dir = tk.StringVar()
+        self.results_report_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_report_dir)
+        self.results_report_dir_entry.grid(row=1, column=1, columnspan=5, sticky='ew')
+        
+        def filepath_report_fig():
+            filepath = filedialog.asksaveasfilename(defaultextension='.csv', initialdir=pathlib.Path(self.data_path.get()).parent)
+            if filepath:
+                self.results_report_dir_entry.delete(0, 'end')
+                self.results_report_dir_entry.insert(0, filepath)
+        
+        def save_report_fig():
+            sprit.print_report(self.hvsr_results, format='csv', export=self.results_report_dir.get())
+
+        self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_report_fig)
+        self.browse_results_fig.grid(row=1, column=7, sticky='ew', padx=2.5)
+        
+        self.save_results_fig = ttk.Button(results_export_Frame, text="Save",command=save_report_fig)
+        self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky='ew', padx=2.5)
+
+
 
         #export_settings_tab = ttk.Frame(settings_notebook)
         #settings_notebook.add(export_settings_tab, text="Export Settings")
