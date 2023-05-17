@@ -153,6 +153,97 @@ class App:
         #self.logo_label = ttk.Label(hvsrFrame, image=self.logo)
         #self.logo_label.grid(row=0, column=0)
 
+        #FUNCTION TO READ DATA
+        def read_data():
+            #print('Reading {}'.format(self.data_path.get()))
+            if not self.processingData:
+                self.tab_control.select(self.preview_data_tab)
+            
+            self.starttime, self.endtime = get_times()
+
+            self.params = sprit.input_params( dataPath=self.data_path.get(),
+                                metaPath = self.meta_path.get(),
+                                site=self.site_name.get(),
+                                network=self.network.get(), 
+                                station=self.station.get(), 
+                                loc=self.location.get(), 
+                                channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
+                                acq_date = self.starttime.date(),
+                                starttime = self.starttime,
+                                endtime = self.endtime,
+                                tzone = 'UTC', #Will always convert before we get to this point
+                                dst = True, #Doesn't matter
+                                lon = self.x.get(),
+                                lat =  self.y.get(),
+                                elevation = self.z.get(),
+                                depth = self.depth.get(),
+                                instrument = self.instrumentSel.get(),
+                                hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+            
+            self.params = sprit.get_metadata(self.params)
+            
+            if self.trim_dir.get()=='':
+                trimDir=None
+            else:
+                trimDir=self.trim_dir.get()
+
+            self.params = sprit.fetch_data(params=self.params,
+                                           source=self.file_source.get(), 
+                                           trim_dir=trimDir, 
+                                           export_format=self.export_format.get(), 
+                                           detrend=self.detrend.get(), 
+                                           detrend_order=self.detrend_order.get())
+
+            self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
+            
+            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+
+            self.data_read = True
+
+        #FUNCTION TO PROCESS DATA
+        def process_data():
+            self.processingData = True
+            
+            if self.data_read == False:
+                read_data()
+            
+            self.tab_control.select(self.results_tab)
+   
+            self.params = sprit.generate_ppsds(params=self.params, 
+                                               ppsd_length=self.ppsd_length.get(), 
+                                               overlap=self.overlap.get(), 
+                                               period_step_octaves=self.perStepOct.get(), 
+                                               remove_outliers=self.remove_outliers.get(), 
+                                               outlier_std=self.outlier_std.get(),
+                                               skip_on_gaps=self.skip_on_gaps.get(),
+                                               db_bins=self.db_bins,
+                                               period_limits=self.period_limits,
+                                               period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
+                                               special_handling=special_handling
+                                               )
+
+            self.hvsr_results = sprit.process_hvsr(params=self.params, 
+                                                   method=self.method_ind,
+                                                   smooth=self.hvsmooth_param,
+                                                   freq_smooth=self.freq_smooth.get(),
+                                                   f_smooth_width=self.fSmoothWidth.get(), 
+                                                   resample=self.hvresample, 
+                                                   remove_outlier_curves=self.outlierRembool.get(), 
+                                                   outlier_curve_std=self.outlierRemStDev.get())
+            
+            self.hvsr_results = sprit.check_peaks(hvsr_dict=self.hvsr_results, 
+                                                  hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
+                                                  peak_water_level=self.peak_water_level)
+
+            peakInfoLabel.configure(text=self.hvsr_results['Best Peak']['Report'])
+
+            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+
+            self.processingData = False
+
+
         def update_input_params_call():
             self.input_params_call.configure(text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
                                             '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
@@ -181,10 +272,19 @@ class App:
         # Data Filepath
         dataLabel= ttk.Label(hvsrFrame, text="Data Filepath")
         dataLabel.grid(row=1, column=0, sticky='e', padx=5, pady=(5,2.55))
+    
+        #Function to set self.data_read False whenever the data_path is updated
+        def on_data_path_change(data_path, index, trace_mode):
+            #If our data path changes, data is registered as not having been read
+            #This is primarily so that if just the Run button is pushed, it will know to first read the data
+            self.data_read = False
+        
         self.data_path = tk.StringVar()
+        self.data_path.trace('w', on_data_path_change)
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=update_input_params_call)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
-        
+    
+
         def browse_data_filepath():
             fpath = filedialog.askopenfilename()
             if fpath:
@@ -557,87 +657,6 @@ class App:
 
         #Set up frame for reading and running
         runFrame_hvsr = ttk.Frame(self.input_tab)
-        #FUNCTION TO READ DATA
-        def read_data():
-            #print('Reading {}'.format(self.data_path.get()))
-            self.tab_control.select(self.preview_data_tab)
-            
-            self.starttime, self.endtime = get_times()
-
-            self.params = sprit.input_params( dataPath=self.data_path.get(),
-                                metaPath = self.meta_path.get(),
-                                site=self.site_name.get(),
-                                network=self.network.get(), 
-                                station=self.station.get(), 
-                                loc=self.location.get(), 
-                                channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
-                                acq_date = self.starttime.date(),
-                                starttime = self.starttime,
-                                endtime = self.endtime,
-                                tzone = 'UTC', #Will always convert before we get to this point
-                                dst = True, #Doesn't matter
-                                lon = self.x.get(),
-                                lat =  self.y.get(),
-                                elevation = self.z.get(),
-                                depth = self.depth.get(),
-                                instrument = self.instrumentSel.get(),
-                                hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
-            self.params = sprit.get_metadata(self.params)
-            
-            if self.trim_dir.get()=='':
-                trimDir=None
-            else:
-                trimDir=self.trim_dir.get()
-            self.params = sprit.fetch_data(params=self.params,
-                                           source=self.file_source.get(), 
-                                           trim_dir=trimDir, 
-                                           export_format=self.export_format.get(), 
-                                           detrend=self.detrend.get(), 
-                                           detrend_order=self.detrend_order.get())
-
-            self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
-            
-            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
-
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-
-
-        #FUNCTION TO PROCESS DATA
-        def process_data():
-            print('processing data (not yet implemented)')
-            self.tab_control.select(self.results_tab)
-   
-            self.params = sprit.generate_ppsds(params=self.params, 
-                                               ppsd_length=self.ppsd_length.get(), 
-                                               overlap=self.overlap.get(), 
-                                               period_step_octaves=self.perStepOct.get(), 
-                                               remove_outliers=self.remove_outliers.get(), 
-                                               outlier_std=self.outlier_std.get(),
-                                               skip_on_gaps=self.skip_on_gaps.get(),
-                                               db_bins=self.db_bins,
-                                               period_limits=self.period_limits,
-                                               period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
-                                               special_handling=special_handling
-                                               )
-
-            self.hvsr_results = sprit.process_hvsr(params=self.params, 
-                                                   method=self.method_ind,
-                                                   smooth=self.hvsmooth_param,
-                                                   freq_smooth=self.freq_smooth.get(),
-                                                   f_smooth_width=self.fSmoothWidth.get(), 
-                                                   resample=self.hvresample, 
-                                                   remove_outlier_curves=self.outlierRembool.get(), 
-                                                   outlier_curve_std=self.outlierRemStDev.get())
-            
-            self.hvsr_results = sprit.check_peaks(hvsr_dict=self.hvsr_results, 
-                                                  hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
-                                                  peak_water_level=self.peak_water_level)
-
-            peakInfoLabel.configure(text=self.hvsr_results['Best Peak']['Report'])
-
-            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
-
-
 
         self.style.configure(style='Custom.TButton', background='#d49949')
         self.read_button = ttk.Button(runFrame_hvsr, text="Read Data", command=read_data, width=30, style='Custom.TButton')

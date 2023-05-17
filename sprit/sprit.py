@@ -2736,6 +2736,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
         fig.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
     if show:
         fig.canvas.draw()#.show()
+        fig.tight_layout()
         #plt.ion()
     return
 
@@ -2863,8 +2864,8 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
 
     #plt.rcParams['figure.dpi'] = 500
     #plt.rcParams['figure.figsize'] = (12,4)
-    fig.tight_layout()
     fig.canvas.draw()
+    fig.tight_layout()
     #plt.show()
     return fig, ax
 
