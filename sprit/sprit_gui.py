@@ -237,7 +237,59 @@ class App:
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_water_level=self.peak_water_level)
 
-            peakInfoLabel.configure(text=self.hvsr_results['Best Peak']['Report'])
+            curveTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Lw'][:-1])
+            curveTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['Lw'][-1])
+
+            curveTest2ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Nc'][:-1])
+            curveTest2Result.configure(text=self.hvsr_results['Best Peak']['Report']['Nc'][-1])
+
+            curveTest3ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['σ_A(f)'][:-1])
+            curveTest3Result.configure(text=self.hvsr_results['Best Peak']['Report']['σ_A(f)'][-1])
+
+            curvePass = (self.hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
+                                self.hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
+                                self.hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
+            if curvePass:
+                totalCurveResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
+            else:
+                totalCurveResult.configure(text='X', font=("TkDefaultFont", 16, "bold"), foreground='red')
+
+            peakTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
+            peakTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][-1])
+            
+            peakTest2ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f+)'][:-1])
+            peakTest2Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f+)'][-1])
+            
+            peakTest3ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][:-1])
+            peakTest3Result.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][-1])
+            
+            peakTest4ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' +self.hvsr_results['Best Peak']['Report']['P+'][:-1])
+            if self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
+                peakTest4Result.configure(text='✔')
+            else:
+                peakTest4Result.configure(text='X')
+
+            peakTest5ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][:-1])
+            peakTest5Result.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][-1])
+            
+            peakTest6ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Sa'][:-1])
+            peakTest6Result.configure(text=self.hvsr_results['Best Peak']['Report']['Sa'][-1])
+
+            peakPass = (self.hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
+                    self.hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
+                    self.hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
+                    self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
+                    self.hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
+                    self.hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
+            if peakPass:
+                totalPeakResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
+            else:
+                totalPeakResult.configure(text='X', font=("TkDefaultFont", 16, "bold"), foreground='red')
+
+            if curvePass and peakPass:
+                totalResult.configure(text='✔', font=("TkDefaultFont", 22, "bold"), foreground='green')
+            else:
+                totalResult.configure(text='X', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
             sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
 
@@ -1730,9 +1782,118 @@ class App:
 
         #Peak report
         results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text="Peak Report")
-        peakInfoLabel = ttk.Label(results_peakInfoFrame, text='Peak Not Yet Calculated')
-        peakInfoLabel.grid()
+        curveTitleLabel = ttk.Label(results_peakInfoFrame, text='Criteria for Reliable H/V Curve (all 3 must pass)')
+        curveTest1Label = ttk.Label(results_peakInfoFrame, text='Window Length for Frequency')
+        curveTest1ResultFrame = ttk.Frame(results_peakInfoFrame)
+        curveTest1ResultText = ttk.Label(curveTest1ResultFrame, text='')
+        curveTest1Result = ttk.Label(curveTest1ResultFrame, text='')
+
+        curveTest2Label = ttk.Label(results_peakInfoFrame, text='Number of Significant Cycles')
+        curveTest2ResultFrame = ttk.Frame(results_peakInfoFrame)
+        curveTest2ResultText = ttk.Label(curveTest2ResultFrame, text='')
+        curveTest2Result = ttk.Label(curveTest2ResultFrame, text='')
+
+        curveTest3Label = ttk.Label(results_peakInfoFrame, text='Low Curve Standard Deviation for Frequencies Near Peak Over Time')
+        curveTest3ResultFrame = ttk.Frame(results_peakInfoFrame)
+        curveTest3ResultText = ttk.Label(curveTest3ResultFrame, text='')
+        curveTest3Result = ttk.Label(curveTest3ResultFrame, text='')
+
+        totalCurveResult = ttk.Label(results_peakInfoFrame, text='')
+
+        peakTitleLabel = ttk.Label(results_peakInfoFrame, text='Criteria for a Clear H/V Peak (5/6 must pass)')
+        peakTest1Label = ttk.Label(results_peakInfoFrame, text='H/V Amplitude is low Below Peak Frequency')
+        peakTest1ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest1ResultText = ttk.Label(peakTest1ResultFrame, text='')
+        peakTest1Result = ttk.Label(peakTest1ResultFrame, text='')
         
+        peakTest2Label = ttk.Label(results_peakInfoFrame, text='H/V Amplitude is low Above Peak Frequency')
+        peakTest2ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest2ResultText = ttk.Label(peakTest2ResultFrame, text='')
+        peakTest2Result = ttk.Label(peakTest2ResultFrame, text='')
+        
+        peakTest3Label = ttk.Label(results_peakInfoFrame, text='Peak is Prominent')
+        peakTest3ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest3ResultText = ttk.Label(peakTest3ResultFrame, text='')
+        peakTest3Result = ttk.Label(peakTest3ResultFrame, text='')
+        
+        peakTest4Label = ttk.Label(results_peakInfoFrame, text='Frequency of Peak is Stationary Over Time')
+        peakTest4ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest4ResultText = ttk.Label(peakTest4ResultFrame, text='')
+        peakTest4Result = ttk.Label(peakTest4ResultFrame, text='')
+        
+        peakTest5Label = ttk.Label(results_peakInfoFrame, text='Standard Deviation of Peak Frequency is low ')
+        peakTest5ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest5ResultText = ttk.Label(peakTest5ResultFrame, text='')
+        peakTest5Result = ttk.Label(peakTest5ResultFrame, text='')
+        
+        peakTest6Label = ttk.Label(results_peakInfoFrame, text='Standard Deviation of Peak Amplitude is low')
+        peakTest6ResultFrame = ttk.Frame(results_peakInfoFrame)
+        peakTest6ResultText = ttk.Label(peakTest6ResultFrame, text='')
+        peakTest6Result = ttk.Label(peakTest6ResultFrame, text='')
+
+        totalPeakResult = ttk.Label(results_peakInfoFrame, text='')
+
+        totalResult = ttk.Label(results_peakInfoFrame, text='')
+
+        curveTitleLabel.grid(row=0, sticky='w', padx=5, pady=5)
+        curveTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
+        curveTest1Label.grid(row=1, sticky='w', padx=5, pady=5)
+        curveTest1ResultFrame.grid(row=2, sticky='ew', padx=5, pady=5)
+        curveTest1ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        curveTest1Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        curveTest2Label.grid(row=3, sticky='w', padx=5, pady=5)
+        curveTest2ResultFrame.grid(row=4, sticky='w', padx=5, pady=5)
+        curveTest2ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        curveTest2Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        curveTest3Label.grid(row=5, sticky='w', padx=5, pady=5)
+        curveTest3ResultFrame.grid(row=6, sticky='w', padx=5, pady=5)
+        curveTest3ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        curveTest3Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        totalCurveResult.grid(row=7, sticky='e', padx=5, pady=10 )
+
+        ttk.Separator(results_peakInfoFrame).grid(row=8, sticky='ew', pady=5)
+        
+        peakTitleLabel.grid(row=9, sticky='w', padx=5, pady=5)
+        peakTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
+        peakTest1Label.grid(row=11, sticky='w', padx=5, pady=5)
+        peakTest1ResultFrame.grid(row=12, sticky='w', padx=5, pady=5)
+        peakTest1ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest1Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        peakTest2Label.grid(row=13, sticky='w', padx=5, pady=5)
+        peakTest2ResultFrame.grid(row=14, sticky='w', padx=5, pady=5)
+        peakTest2ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest2Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        peakTest3Label.grid(row=15, sticky='w', padx=5, pady=5)
+        peakTest3ResultFrame.grid(row=16, sticky='w', padx=5, pady=5)
+        peakTest3ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest3Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        peakTest4Label.grid(row=17, sticky='w', padx=5, pady=5)
+        peakTest4ResultFrame.grid(row=18, sticky='w', padx=5, pady=5)
+        peakTest4ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest4Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        peakTest5Label.grid(row=19, sticky='w', padx=5, pady=5)
+        peakTest5ResultFrame.grid(row=20, sticky='w', padx=5, pady=5)
+        peakTest5ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest5Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        peakTest6Label.grid(row=21, sticky='w', padx=5, pady=5)
+        peakTest6ResultFrame.grid(row=22, sticky='w', padx=5, pady=5)
+        peakTest6ResultText.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        peakTest6Result.grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        totalPeakResult.grid(row=23, sticky='e', padx=5, pady=10 )
+
+        ttk.Separator(results_peakInfoFrame).grid(row=24, sticky='ew', pady=5)
+
+        totalResult.grid(row=25, sticky='e', padx=5, pady=10 )
+
         #Export results
         results_export_Frame = ttk.LabelFrame(self.results_tab, text="Export Results")
         
