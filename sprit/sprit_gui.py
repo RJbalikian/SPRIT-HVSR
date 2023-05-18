@@ -108,6 +108,12 @@ class App:
         
         self.sprit_menu = tk.Menu(self.menubar, tearoff=0)
 
+        def import_parameters(self):
+            filepath = filedialog.askopenfilename()
+        
+        def export_parameters(self):
+            filepath = filedialog.asksaveasfilename()
+
         self.theme_menu = tk.Menu(self.menubar, tearoff=0)
         self.theme_var = tk.StringVar(value="Default")
         self.theme_menu.add_radiobutton(label="Default", variable=self.theme_var, value="default", command=self.on_theme_select)
@@ -117,8 +123,8 @@ class App:
         self.theme_menu.add_radiobutton(label="Forest Dark (buggy)", variable=self.theme_var, value="forest-dark", command=self.on_theme_select)
 
         self.sprit_menu.add_cascade(label="Theme", menu=self.theme_menu)
-        self.sprit_menu.add_command(label="Import Parameters", command=self.import_parameters)
-        self.sprit_menu.add_command(label="Export Parameters", command=self.export_parameters)
+        self.sprit_menu.add_command(label="Import Parameters", command=import_parameters)
+        self.sprit_menu.add_command(label="Export Parameters", command=export_parameters)
         self.sprit_menu.add_separator()
         self.sprit_menu.add_command(label="Exit", command=self.master.quit)
         self.settings_menu = tk.Menu(self.menubar, tearoff=0)
@@ -146,7 +152,7 @@ class App:
         hvsrFrame = ttk.LabelFrame(self.input_tab, text="Input Parameters")
         #hvsrFrame.rowconfigure(0, weight=1)
         hvsrFrame.columnconfigure(1, weight=1)
-        
+
         # Logo and Site Name
         # Replace "logo.png" with the path to your logo image
         #self.logo = tk.PhotoImage(file="logo.png")
@@ -319,7 +325,7 @@ class App:
                                             '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.starttime.date(), self.starttime, self.endtime, self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
@@ -334,8 +340,37 @@ class App:
         ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
         inst_options = ["Raspberry Shake", "Nodes", "Other"]
 
+
+        def on_option_select(self, inst):
+            update_input_params_call()
+            if inst == "Raspberry Shake":
+                self.network_entry.configure(state='normal')
+                self.station_entry.configure(state='normal')
+                self.location_entry.configure(state='normal')
+                
+                self.z_channel_entry.delete(0, 'end')
+                self.e_channel_entry.delete(0, 'end')
+                self.n_channel_entry.delete(0, 'end')
+                
+                self.z_channel_entry.insert(0,"EHZ")
+                self.e_channel_entry.insert(0,"EHE")
+                self.n_channel_entry.insert(0,"EHN")
+
+                self.network_entry.delete(0, 'end')
+                self.network_entry.insert(0,"AM")
+
+                self.station_entry.delete(0, 'end')
+                self.station_entry.insert(0,"RAC84")
+
+                self.location_entry.delete(0, 'end')
+                self.location_entry.insert(0,"00")
+            else:
+                self.network_entry.configure(state='disabled')
+                self.station_entry.configure(state='disabled')
+                self.location_entry.configure(state='disabled')
+
         self.instrumentSel = tk.StringVar(value=inst_options[0])
-        self.instrument_dropdown = ttk.OptionMenu(hvsrFrame, self.instrumentSel, inst_options[0], *inst_options, command=self.on_option_select)
+        self.instrument_dropdown = ttk.OptionMenu(hvsrFrame, self.instrumentSel, inst_options[0], *inst_options, command=on_option_select)
         self.instrument_dropdown.config(width=20)
         self.instrument_dropdown.grid(row=0, column=7, columnspan=1, sticky='ew')
 
@@ -395,12 +430,19 @@ class App:
         self.browse_metadata_filepath_button = ttk.Button(hvsrFrame, text="Browse", command=browse_metadata_filepath)
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
 
+        def update_acq_date(event):
+            self.acq_date = self.date_entry.get_date()
+            self.day_of_year = self.acq_date.timetuple().tm_yday
+            self.doy_label.configure(text=str(self.day_of_year))
+            update_input_params_call()
+
         # Date and Time           
         ttk.Label(hvsrFrame, text="Date").grid(row=3, column=1, sticky='e', padx=5)
-        self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', validate='focusout', validatecommand=update_input_params_call)
+        self.acq_date = tk.StringVar()
+        self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', textvariable=self.acq_date, validate='focusout')#update_input_params_call)
         self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
-
-
+        self.date_entry.bind("<<DateEntrySelected>>", update_acq_date)
+        
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky='ew')
 
@@ -472,8 +514,15 @@ class App:
         #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, "UTC", *pytz.all_timezones)
         #self.timezone_optionmenu.grid(row=3,column=7)
 
+        # DOY
+        self.day_of_year = self.acq_date.timetuple().tm_yday
+        
+        ttk.Label(hvsrFrame,text="Day of Year:").grid(row=4,column=1, sticky='e', padx=5, pady=10)
+        self.doy_label = ttk.Label(hvsrFrame,text=str(self.day_of_year))
+        self.doy_label.grid(row=4, column=2, sticky='w')
+
         # UTC Time Output
-        ttk.Label(hvsrFrame,text="UTC Time:").grid(row=4,column=1, sticky='e', padx=5, pady=10)
+        ttk.Label(hvsrFrame,text="UTC Time:").grid(row=4, column=3, sticky='e', padx=5, pady=10)
         self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
         self.utc_time_output_label.grid(row=4,column=4)
 
@@ -714,7 +763,7 @@ class App:
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.starttime.date(), self.starttime, self.endtime, self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         self.input_params_call.pack(anchor='w', expand=True, padx=20)
@@ -2061,39 +2110,6 @@ class App:
         # Pack tab control
         self.tab_control.pack(expand=True, fill="both")
 
-    def import_parameters(self):
-        filepath = filedialog.askopenfilename()
-    
-    def export_parameters(self):
-        filepath = filedialog.asksaveasfilename()
-
-    def on_option_select(self, inst):
-        update_input_params_call()
-        if inst == "Raspberry Shake":
-            self.network_entry.configure(state='normal')
-            self.station_entry.configure(state='normal')
-            self.location_entry.configure(state='normal')
-            
-            self.z_channel_entry.delete(0, 'end')
-            self.e_channel_entry.delete(0, 'end')
-            self.n_channel_entry.delete(0, 'end')
-            
-            self.z_channel_entry.insert(0,"EHZ")
-            self.e_channel_entry.insert(0,"EHE")
-            self.n_channel_entry.insert(0,"EHN")
-
-            self.network_entry.delete(0, 'end')
-            self.network_entry.insert(0,"AM")
-
-            self.station_entry.delete(0, 'end')
-            self.station_entry.insert(0,"RAC84")
-
-            self.location_entry.delete(0, 'end')
-            self.location_entry.insert(0,"00")
-        else:
-            self.network_entry.configure(state='disabled')
-            self.station_entry.configure(state='disabled')
-            self.location_entry.configure(state='disabled')
 
 def on_closing():
     plt.close('all')
