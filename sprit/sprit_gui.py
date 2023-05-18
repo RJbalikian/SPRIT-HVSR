@@ -248,6 +248,8 @@ class App:
                                                special_handling=special_handling
                                                )
 
+            self.params = update_noise_windows()
+
             self.hvsr_results = sprit.process_hvsr(params=self.params, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
@@ -872,7 +874,19 @@ class App:
         runFrame_noise = ttk.Frame(self.noise_tab)
         
         def update_noise_windows():
-            print("Updating noise windows (not yet implemented)")
+            if self.do_auto.get():
+                self.params = sprit.remove_noise(input=self.params, kind='auto', noise_percent=0.995, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()], show_plot=False, warmup_time=self.warmup_time.get())
+            else:
+                if self.do_stalta.get():
+                    self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+
+                if self.do_noiseWin.get():
+                    self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get())
+
+                if self.do_warmup.get():
+                    self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+            sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='mpl')
 
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
@@ -899,10 +913,10 @@ class App:
         self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
         manualBool = ttk.Checkbutton(master=windowremoveFrame, text="", variable=self.do_window) # create the Checkbutton widget
         manualBool.grid(row=0, column=0, sticky='ew')
-        def remove_windows():
+        def remove_windows_manually():
             #Placeholderfunction
             print('Ok, here we would remove windows')        
-        self.select_windows = ttk.Button(master=windowremoveFrame, text="Remove Windows", command=remove_windows) # create the Checkbutton widget
+        self.select_windows = ttk.Button(master=windowremoveFrame, text="Remove Windows", command=remove_windows_manually) # create the Checkbutton widget
         self.select_windows.grid(row=0, column=1, sticky='e')
 
         #Options for doing stalta antitrigger for noise removal
@@ -924,12 +938,12 @@ class App:
         ltaEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text="STA/LTA Thresholds (Low, High)").grid(row=0, column=5)
-        self.thresh_low = tk.DoubleVar()
-        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.thresh_low, width=5) # create the Entry widget
+        self.stalta_thresh_low = tk.DoubleVar()
+        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
         staltaLowEntry.grid(row=0, column=6, sticky='ew', padx=(5,0))
         
-        self.thresh_hi = tk.DoubleVar()
-        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.thresh_hi, width=5) # create the Entry widget
+        self.stalta_thresh_hi = tk.DoubleVar()
+        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
         staltaHiEntry.grid(row=0, column=7, sticky='ew')
         
         #Options for Percentage threshold removal
@@ -956,11 +970,11 @@ class App:
         winNoiseBool.grid(row=0, column=0, sticky='ew')
  
         ttk.Label(master=noisyWindowFrame, text="Amplitude % Thresh.").grid(row=0, column=1)
-        self.winAmp_pct = tk.DoubleVar()
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.winAmp_pct, width=10) # create the Entry widget
+        self.noise_amp_pct = tk.DoubleVar()
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
         winamppctEntry.delete(0, 'end')
-        winamppctEntry.insert(0, '0.8')
+        winamppctEntry.insert(0, '0.995')
 
         ttk.Label(master=noisyWindowFrame, text="Window %").grid(row=0, column=3)
         self.win_pct = tk.DoubleVar()

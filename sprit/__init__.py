@@ -28,6 +28,7 @@ from sprit.sprit import(
     plot_specgram_hvsr,
     select_windows,
     remove_noise,
+    show_removed_windows,
     check_peaks,
     print_report
 )
@@ -57,6 +58,7 @@ __all__ =('sprit',
     'plot_specgram_hvsr',
     'select_windows',
     'remove_noise',
+    'show_removed_windows',
     'check_peaks',
     'print_report'
 )

@@ -1101,10 +1101,9 @@ def select_windows(input):
             input = input['stream']
     
     if isinstance(input, obspy.core.stream.Stream):
-        fig, ax = __plot_specgram_stream(input, component=['Z'])
+        fig, ax = plot_specgram_stream(input, component=['Z'])
     elif isinstance(input, obspy.core.trace.Trace):
-        fig, ax = __plot_specgram_stream(input)
-        #plt.specgram()
+        fig, ax = plot_specgram_stream(input)
 
     global lineArtist
     global winArtist
@@ -1138,7 +1137,7 @@ def __on_fig_close(event):
     return
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_windows=False, warmup_time=0):
+def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1151,7 +1150,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
     ----------
     input : dict
         Dictionary containing all the data and parameters for the HVSR analysis
-    kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'noise threshold'}
+    kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'noise threshold', 'warmup'/'buffer'}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
     noise_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
@@ -1162,7 +1161,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
         Long term average (STA) window (in seconds), by default 2.
     stalta_thresh : list, default=[0.5,5]
         Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
-    show_windows : bool, default=False
+    show_plot : bool, default=False
         If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to 'manual' method.
     warmup_time : int, default=0
         Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.
@@ -1177,6 +1176,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
+    warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
     inStream = input['stream']
     output = input.copy()
@@ -1196,17 +1196,136 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
         else:
             print('Input data type is not supported.')
     elif kind.lower() in autoList:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_windows=show_windows)
-        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh, show_windows=show_windows)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_plot=show_plot)
+        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh, show_plot=show_plot)
+        output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     elif kind.lower() in antitrigger:
-        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh, show_windows=show_windows)
+        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh, show_plot=show_plot)
     elif kind.lower() in noiseThresh:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_windows=show_windows)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_plot=show_plot)
+    elif kind.lower() in warmup_cooldown:
+        output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold'")
+        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
         return
 
     return output
+
+def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+
+    if type(input) is dict:
+        stream = input['stream'].copy()
+    else:
+        stream = input.copy()
+
+    #Get masked indices of trace(s)
+    trace = stream[0]
+    windows = []
+    windows.append([0,np.nan])
+
+    lastMaskInd = -1
+    wInd = 0
+    masked_array = trace.data.mask.nonzero()[0]
+    for i, maskInd in enumerate(masked_array):
+        if maskInd-lastMaskInd != 1:
+            windows.append([np.nan, np.nan])
+            windows[wInd][1] = masked_array[i - 1]
+            wInd += 1
+            windows[wInd][0] = masked_array[i]
+
+        lastMaskInd = maskInd    
+    windows[wInd][1] = masked_array[-1]
+
+    #Reformat ax as needed
+    if isinstance(ax, np.ndarray):
+        origAxes = ax.copy()
+        newAx = {}
+        for i, a in enumerate(ax):
+            newAx[i] = a
+        axes = newAx
+    elif isinstance(ax, dict):
+        origAxes = ax
+        axes = ax
+    else:
+        origAxes = ax
+        axes = {'ax':ax}
+
+    samplesList = ['sample', 'samples', 's']
+    utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
+    matplotlibList = ['matplotlib', 'mpl', 'm']    
+
+    for i, a in enumerate(axes.keys()):
+        ax = axes[a]
+        pathList = []
+        #
+        windowDrawn = []
+        winArtist = []
+        lineArtist = []
+        #
+        for winNums, win in enumerate(windows):
+            if time_type.lower() in samplesList:
+                x0 = win[0]
+                x1 = win[1]
+            elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
+                sample_rate = trace.stats.delta
+                x0 = trace.stats.starttime + win[0] * sample_rate
+                x1 = trace.stats.starttime + win[1] * sample_rate
+
+                if time_type.lower() in matplotlibList:
+                    x0 = x0.matplotlib_date
+                    x1 = x1.matplotlib_date
+            else:
+                print('time_type error')
+            
+            y0, y1 = ax.get_ylim()
+
+            path_data = [
+                        (matplotlib.path.Path.MOVETO, (x0, y0)),
+                        (matplotlib.path.Path.LINETO, (x1, y0)),
+                        (matplotlib.path.Path.LINETO, (x1, y1)),
+                        (matplotlib.path.Path.LINETO, (x0, y1)),
+                        (matplotlib.path.Path.LINETO, (x0, y0)),
+                        (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
+                    ]
+            
+            codes, verts = zip(*path_data)
+            path = matplotlib.path.Path(verts, codes)
+
+            #
+            windowDrawn.append(False)
+            winArtist.append(None)
+            lineArtist.append([])
+            linArt0 = ax.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
+            linArt1 = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
+            lineArtist[winNums].append([linArt0, linArt1])
+            #
+            
+            pathList.append(path)
+
+        for i, pa in enumerate(pathList):
+            if windowDrawn[i]:
+                pass
+            else:
+                patch = matplotlib.patches.PathPatch(pa, facecolor='k', alpha=0.75)                            
+                winArt = ax.add_patch(patch)
+                windowDrawn[i] = True
+                winArtist[i] = winArt
+        
+        #Reformat ax as needed
+        if isinstance(origAxes, np.ndarray):
+            origAxes[i] = ax
+        elif isinstance(origAxes, dict):
+            origAxes[a] = ax
+        else:
+            origAxes = ax
+
+    ax = origAxes
+
+    fig.canvas.draw()
+    fig.tight_layout()
+    return fig, ax
 
 #Helper function for removing windows from data, leaving gaps
 def __remove_windows(stream, window_list, warmup_time):
@@ -1328,65 +1447,6 @@ def __remove_windows(stream, window_list, warmup_time):
     outStream.merge()
     return outStream
 
-#Helper function for getting windows to remove noise using stalta antitrigger method
-def __remove_anti_stalta(stream, sta, lta, thresh, show_windows):
-    """Helper function for getting windows to remove noise using stalta antitrigger method
-
-    Parameters
-    ----------
-    stream : obspy.core.stream.Stream object
-        Input stream on which to perform noise removal
-    sta : int
-        Number of seconds to use as short term window, reads from remove_noise() function.
-    lta : int
-        Number of seconds to use as long term window, reads from remove_noise() function.
-    thresh : list
-        Two-item list or tuple with the thresholds for the stalta antitrigger. Reads from remove_noise() function. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
-    show_windows : bool
-        If True, will plot the trigger and stalta values. Reads from remove_noise() function, by default False.
-
-    Returns
-    -------
-    outStream : obspy.core.stream.Stream object
-        Stream with a masked array for the data where 'noise' has been removed
-
-    """
-    from obspy.signal.trigger import classic_sta_lta
-
-    sampleRate = float(stream[0].stats.delta)
-
-    sta_samples = sta / sampleRate #Convert to samples
-    lta_samples = lta / sampleRate #Convert to samples
-    staltaStream = stream.copy()
-
-    for tr in staltaStream:
-        characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
-    if show_windows:
-        obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
-    windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
-    
-    startT = stream[0].stats.starttime
-    endT = stream[0].stats.endtime
-    window_UTC = []
-    window_MPL = []
-    window_UTC.append([startT, startT])
-    for w, win in enumerate(windows_samples):
-        for i, t in enumerate(win):
-            if i == 0:
-                window_UTC.append([])
-                window_MPL.append([])
-            trigShift = sta
-            if trigShift > t * sampleRate:
-                trigShift = 0
-            tSec = t * sampleRate - trigShift
-            window_UTC[w+1].append(startT+tSec)
-            window_MPL[w].append(window_UTC[w][i].matplotlib_date)
-    
-    window_UTC.append([endT, endT])
-    #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
-    outStream = __remove_gaps(stream, window_UTC)
-    return outStream
-
 #Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
@@ -1424,8 +1484,67 @@ def __remove_gaps(stream, window_gaps_obspy):
 
     return outStream
 
+#Helper function for getting windows to remove noise using stalta antitrigger method
+def __remove_anti_stalta(stream, sta, lta, thresh, show_plot):
+    """Helper function for getting windows to remove noise using stalta antitrigger method
+
+    Parameters
+    ----------
+    stream : obspy.core.stream.Stream object
+        Input stream on which to perform noise removal
+    sta : int
+        Number of seconds to use as short term window, reads from remove_noise() function.
+    lta : int
+        Number of seconds to use as long term window, reads from remove_noise() function.
+    thresh : list
+        Two-item list or tuple with the thresholds for the stalta antitrigger. Reads from remove_noise() function. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
+    show_plot : bool
+        If True, will plot the trigger and stalta values. Reads from remove_noise() function, by default False.
+
+    Returns
+    -------
+    outStream : obspy.core.stream.Stream object
+        Stream with a masked array for the data where 'noise' has been removed
+
+    """
+    from obspy.signal.trigger import classic_sta_lta
+
+    sampleRate = float(stream[0].stats.delta)
+
+    sta_samples = sta / sampleRate #Convert to samples
+    lta_samples = lta / sampleRate #Convert to samples
+    staltaStream = stream.copy()
+
+    for tr in staltaStream:
+        characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+    if show_plot:
+        obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
+    windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
+    
+    startT = stream[0].stats.starttime
+    endT = stream[0].stats.endtime
+    window_UTC = []
+    window_MPL = []
+    window_UTC.append([startT, startT])
+    for w, win in enumerate(windows_samples):
+        for i, t in enumerate(win):
+            if i == 0:
+                window_UTC.append([])
+                window_MPL.append([])
+            trigShift = sta
+            if trigShift > t * sampleRate:
+                trigShift = 0
+            tSec = t * sampleRate - trigShift
+            window_UTC[w+1].append(startT+tSec)
+            window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+    
+    window_UTC.append([endT, endT])
+    #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+    outStream = __remove_gaps(stream, window_UTC)
+    return outStream
+
 #Helper function for removing data using the noise threshold input from remove_noise()
-def __remove_noise_thresh(stream, noise_percent, show_windows):
+def __remove_noise_thresh(stream, noise_percent, show_plot):
     """Helper function for removing data using the noise threshold input from remove_noise()
 
     Parameters
@@ -1435,7 +1554,7 @@ def __remove_noise_thresh(stream, noise_percent, show_windows):
     noise_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage. Passed from remove_noise().
-    show_windows : bool, default=False
+    show_plot : bool, default=False
         If True, will plot the data with the new windows removed, by default False. Passed from remove_noise().
     
     Returns
@@ -1487,10 +1606,45 @@ def __remove_noise_thresh(stream, noise_percent, show_windows):
 
     outstream  = __remove_gaps(stream, removeUTC)
 
-    if show_windows:
+    if show_plot:
         outstream.plot()
 
     return outstream
+
+#Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
+def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
+    sampleRate = float(stream[0].stats.delta)
+    outStream = stream.copy()
+
+    warmup_samples = warmup_time / sampleRate #Convert to samples
+    windows_samples=[]
+    for tr in stream:
+        totalSamples = float(tr.stats.endtime - tr.stats.starttime) / tr.stats.delta
+        cooldown_samples = cooldown_time / sampleRate #Convert to samples
+        cooldown_samples = totalSamples - cooldown_samples
+    windows_samples = [[0, warmup_samples],[cooldown_samples, totalSamples]]
+    
+    startT = stream[0].stats.starttime
+    endT = stream[0].stats.endtime
+    window_UTC = []
+    window_MPL = []
+    window_UTC.append([startT, startT])
+
+    for w, win in enumerate(windows_samples):
+
+        for j, tm in enumerate(win):
+
+            if j == 0:
+                window_UTC.append([])
+                window_MPL.append([])
+            tSec = tm * sampleRate
+            window_UTC[w+1].append(startT+tSec)
+            window_MPL[w].append(window_UTC[w][j].matplotlib_date)
+    window_UTC.append([endT, endT])
+
+    #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+    outStream = __remove_gaps(stream, window_UTC)
+    return outStream
 
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
@@ -3059,14 +3213,21 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
 def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
     """Helper function for manual window selection to draw boxes to show where windows have been selected for removal"""
     #Create an axis dictionary if it does not already exist so all functions are the same
+
+    if isinstance(ax, np.ndarray) or isinstance(ax, dict):
+        ax = ax
+    else:
+        ax = {'a':ax}
+
+    
     if len(ax) > 1:
         if type(ax) is not dict:
             axDict = {}
             for i, a in enumerate(ax):
                 axDict[str(i)] = a
             ax = axDict
-    else:
-        ax = {'a':ax}
+    #else:
+    #    ax = {'a':ax}
     
     #if event.inaxes!=ax: return
     #y0, y1 = ax.get_ylim()
