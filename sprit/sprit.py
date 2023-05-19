@@ -1128,6 +1128,8 @@ def select_windows(input):
         plt.pause(1)
 
     params['xwindows_out'] = xWindows
+    params['fig'] = fig
+    params['ax'] = ax
     return params
 
 #Support function to help select_windows run properly
@@ -1137,7 +1139,7 @@ def __on_fig_close(event):
     return
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=10):
+def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=1):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1175,6 +1177,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
+    saturationThresh = ['saturation threshold', 'saturation', 'sat', 's']
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
@@ -1196,13 +1199,16 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
         else:
             print('Input data type is not supported.')
     elif kind.lower() in autoList:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_plot=show_plot)
-        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh, show_plot=show_plot)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh)
+        output['stream'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
         output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     elif kind.lower() in antitrigger:
-        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh, show_plot=show_plot)
+        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
+    elif kind.lower() in saturationThresh:
+        output['stream'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
     elif kind.lower() in noiseThresh:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, show_plot=show_plot, min_win_size=10)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
     elif kind.lower() in warmup_cooldown:
         output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
@@ -1211,6 +1217,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
 
     return output
 
+#Shows windows with Noneon input plot
 def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
     if fig is None and ax is None:
         fig, ax = plt.subplots()
@@ -1225,109 +1232,114 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
     windows = []
     windows.append([0,np.nan])
 
-    mask = np.isnan(trace.data)  # Create a mask for None values
-    masked_array = np.ma.array(trace.data, mask=mask)
+    #mask = np.isnan(trace.data)  # Create a mask for None values
+    #masked_array = np.ma.array(trace.data, mask=mask).copy()
+    masked_array = trace.data.copy()
 
-    lastMaskInd = -1
-    wInd = 0
-    #masked_array = trace.data.mask.nonzero()[0]
-    for i, maskInd in enumerate(masked_array):
-        if maskInd-lastMaskInd != 1:
-            windows.append([np.nan, np.nan])
-            windows[wInd][1] = masked_array[i - 1]
-            wInd += 1
-            windows[wInd][0] = masked_array[i]
+    if isinstance(masked_array, np.ma.MaskedArray):
+        sample_rate = trace.stats.sampling_rate
+        masked_array = masked_array.mask.nonzero()[0]
+        lastMaskInd = masked_array[0]
+        wInd = 0
+        #masked_array = trace.data.mask.nonzero()[0]
+        for i in range(1, len(masked_array)):
+            maskInd = masked_array[i]
+            if maskInd-lastMaskInd > 1:
+                windows.append([np.nan, np.nan])
+                windows[wInd][1] = masked_array[i - 1]
+                wInd += 1
+                windows[wInd][0] = masked_array[i]
 
-        lastMaskInd = maskInd    
-    windows[wInd][1] = masked_array[-1]
-
-    #Reformat ax as needed
-    if isinstance(ax, np.ndarray):
-        origAxes = ax.copy()
-        newAx = {}
-        for i, a in enumerate(ax):
-            newAx[i] = a
-        axes = newAx
-    elif isinstance(ax, dict):
-        origAxes = ax
-        axes = ax
-    else:
-        origAxes = ax
-        axes = {'ax':ax}
-
-    samplesList = ['sample', 'samples', 's']
-    utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
-    matplotlibList = ['matplotlib', 'mpl', 'm']    
-
-    for i, a in enumerate(axes.keys()):
-        ax = axes[a]
-        pathList = []
-        #
-        windowDrawn = []
-        winArtist = []
-        lineArtist = []
-        #
-        for winNums, win in enumerate(windows):
-            if time_type.lower() in samplesList:
-                x0 = win[0]
-                x1 = win[1]
-            elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
-                sample_rate = trace.stats.delta
-                x0 = trace.stats.starttime + win[0] * sample_rate
-                x1 = trace.stats.starttime + win[1] * sample_rate
-
-                if time_type.lower() in matplotlibList:
-                    x0 = x0.matplotlib_date
-                    x1 = x1.matplotlib_date
-            else:
-                print('time_type error')
-            
-            y0, y1 = ax.get_ylim()
-
-            path_data = [
-                        (matplotlib.path.Path.MOVETO, (x0, y0)),
-                        (matplotlib.path.Path.LINETO, (x1, y0)),
-                        (matplotlib.path.Path.LINETO, (x1, y1)),
-                        (matplotlib.path.Path.LINETO, (x0, y1)),
-                        (matplotlib.path.Path.LINETO, (x0, y0)),
-                        (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
-                    ]
-            
-            codes, verts = zip(*path_data)
-            path = matplotlib.path.Path(verts, codes)
-
-            #
-            windowDrawn.append(False)
-            winArtist.append(None)
-            lineArtist.append([])
-            linArt0 = ax.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
-            linArt1 = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
-            lineArtist[winNums].append([linArt0, linArt1])
-            #
-            
-            pathList.append(path)
-
-        for i, pa in enumerate(pathList):
-            if windowDrawn[i]:
-                pass
-            else:
-                patch = matplotlib.patches.PathPatch(pa, facecolor='k', alpha=0.75)                            
-                winArt = ax.add_patch(patch)
-                windowDrawn[i] = True
-                winArtist[i] = winArt
-        
+            lastMaskInd = maskInd    
+        windows[wInd][1] = masked_array[-1]
+        print("windows to show", windows)
         #Reformat ax as needed
-        if isinstance(origAxes, np.ndarray):
-            origAxes[i] = ax
-        elif isinstance(origAxes, dict):
-            origAxes[a] = ax
+        if isinstance(ax, np.ndarray):
+            origAxes = ax.copy()
+            newAx = {}
+            for i, a in enumerate(ax):
+                newAx[i] = a
+            axes = newAx
+        elif isinstance(ax, dict):
+            origAxes = ax
+            axes = ax
         else:
             origAxes = ax
+            axes = {'ax':ax}
 
-    ax = origAxes
+        samplesList = ['sample', 'samples', 's']
+        utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
+        matplotlibList = ['matplotlib', 'mpl', 'm']    
 
-    fig.canvas.draw()
-    fig.tight_layout()
+        for i, a in enumerate(axes.keys()):
+            ax = axes[a]
+            pathList = []
+            #
+            windowDrawn = []
+            winArtist = []
+            lineArtist = []
+            #
+            for winNums, win in enumerate(windows):
+                if time_type.lower() in samplesList:
+                    x0 = win[0]
+                    x1 = win[1]
+                elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
+                    sample_rate = trace.stats.delta
+                    x0 = trace.stats.starttime + win[0] * sample_rate
+                    x1 = trace.stats.starttime + win[1] * sample_rate
+
+                    if time_type.lower() in matplotlibList:
+                        x0 = x0.matplotlib_date
+                        x1 = x1.matplotlib_date
+                else:
+                    print('time_type error')
+                
+                y0, y1 = ax.get_ylim()
+
+                path_data = [
+                            (matplotlib.path.Path.MOVETO, (x0, y0)),
+                            (matplotlib.path.Path.LINETO, (x1, y0)),
+                            (matplotlib.path.Path.LINETO, (x1, y1)),
+                            (matplotlib.path.Path.LINETO, (x0, y1)),
+                            (matplotlib.path.Path.LINETO, (x0, y0)),
+                            (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
+                        ]
+                
+                codes, verts = zip(*path_data)
+                path = matplotlib.path.Path(verts, codes)
+
+                #
+                windowDrawn.append(False)
+                winArtist.append(None)
+                lineArtist.append([])
+                linArt0 = ax.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
+                linArt1 = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
+                lineArtist[winNums].append([linArt0, linArt1])
+                #
+                
+                pathList.append(path)
+
+            for i, pa in enumerate(pathList):
+                if windowDrawn[i]:
+                    pass
+                else:
+                    patch = matplotlib.patches.PathPatch(pa, facecolor='k', alpha=0.75)                            
+                    winArt = ax.add_patch(patch)
+                    windowDrawn[i] = True
+                    winArtist[i] = winArt
+            
+            #Reformat ax as needed
+            if isinstance(origAxes, np.ndarray):
+                origAxes[i] = ax
+            elif isinstance(origAxes, dict):
+                origAxes[a] = ax
+            else:
+                origAxes = ax
+
+        ax = origAxes
+
+        fig.canvas.draw()
+        fig.tight_layout()
     return fig, ax
 
 #Helper function for removing windows from data, leaving gaps
@@ -1453,6 +1465,19 @@ def __remove_windows(stream, window_list, warmup_time):
 #Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
+
+    #combine overlapping windows
+    #Not sure if this part works yet
+    overlapList = []
+    for i in range(len(window_gaps_obspy)-2):
+        if window_gaps_obspy[i][1] > window_gaps_obspy[i+1][0]:
+            overlapList.append(i)
+
+    for i in overlapList:
+        if i < len(window_gaps_obspy)-2:
+            window_gaps_obspy[i][1] = window_gaps_obspy[i+1][1]
+            window_gaps_obspy.pop(i+1)
+
     #Add streams
     window_gaps_s = []
     for w, win in enumerate(window_gaps_obspy):
@@ -1546,8 +1571,77 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot):
     outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
+#Remove noise saturation
+def __remove_noise_saturate(stream, sat_percent, min_win_size):
+    """Function to remove "saturated" data points that exceed a certain percent (sat_percent) of the maximum data value in the stream.  
+
+    Parameters
+    ----------
+    stream : obspy.Stream
+        Obspy Stream of interest
+    sat_percent : float
+        Percentage of the maximum amplitude, which will be used as the saturation threshold above which data points will be excluded
+    min_win_size : float
+        The minumum size a window must be (in seconds) for it to be removed
+
+    Returns
+    -------
+    obspy.Stream
+        Stream with masked array (if data removed) with "saturated" data removed
+    """
+    if sat_percent > 1:
+        sat_percent = sat_percent / 100
+
+    removeInd = np.array([], dtype=int)
+    for trace in stream:
+        dataArr = trace.data.copy()
+
+        sample_rate = trace.stats.delta
+
+        #Get max amplitude value
+        maxAmp = np.max(np.absolute(dataArr, where = not None))
+        thresholdAmp = maxAmp * sat_percent
+        cond = np.nonzero(np.absolute(dataArr, where=not None) > thresholdAmp)[0]
+        removeInd = np.hstack([removeInd, cond])
+        #trace.data = np.ma.where(np.absolute(data, where = not None) > (noise_percent * maxAmp), None, data)
+    #Combine indices from all three traces
+    removeInd = np.unique(removeInd)
+    
+    removeList = []  # initialize
+    min_win_samples = int(min_win_size / sample_rate)
+
+    if len(removeInd) > 0:
+        startInd = removeInd[0]
+        endInd = removeInd[0]
+
+        for i in range(0, len(removeInd)):             
+            if removeInd[i] - removeInd[i-1] > 1:
+                startInd = removeInd[i]
+            endInd = removeInd[i]
+
+            if endInd - startInd >= min_win_samples:
+                removeList.append([int(startInd), int(endInd)])
+
+    removeList.append([-1, -1]) #figure out a way to get rid of this
+    #print(removeList)
+    #Convert removeList from samples to seconds after start to UTCDateTime
+    sampleRate = stream[0].stats.delta
+    startT = stream[0].stats.starttime
+    endT = stream[0].stats.endtime
+    removeSec = []
+    removeUTC = []
+    for i, win in enumerate(removeList):
+        removeSec.append(list(np.round(sampleRate * np.array(win),6)))
+        removeUTC.append(list(np.add(startT, removeSec[i])))
+    removeUTC[-1][0] = removeUTC[-1][1] = endT
+    
+
+    outstream  = __remove_gaps(stream, removeUTC)
+
+    return outstream
+
 #Helper function for removing data using the noise threshold input from remove_noise()
-def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, min_win_size=10):
+def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
     """Helper function for removing data using the noise threshold input from remove_noise()
 
     The purpose of the noise threshold method is to remove noisy windows (e.g., lots of traffic all at once). 
@@ -1563,10 +1657,8 @@ def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, mi
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage. Passed from remove_noise().
     lta : int, default = 30
         Length of lta to use (in seconds)
-    min_win_size : int, default = 10
+    min_win_size : int, default = 1
         Minimum amount of time (in seconds) at which noise is above noise_percent level.
-    show_plot : bool, default=False
-        If True, will plot the data with the new windows removed, by default False. Passed from remove_noise().
     
     Returns
     -------
@@ -1578,7 +1670,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, mi
 
     removeInd = np.array([], dtype=int)
     for trace in stream:
-        dataArr = trace.data
+        dataArr = trace.data.copy()
 
         sample_rate = trace.stats.delta
         lta_samples = int(lta / sample_rate)
@@ -1595,24 +1687,26 @@ def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, mi
         #trace.data = np.ma.where(np.absolute(data, where = not None) > (noise_percent * maxAmp), None, data)
     #Combine indices from all three traces
     removeInd = np.unique(removeInd)
-    
-    #Make sure we're not removing single indices (we only want long )
-    removeWindowSize = min_win_size // sample_rate
-    removeList = []  # initialize
+    print('remove ind', len(removeInd), removeInd)
+    #Make sure we're not removing single indices (we only want longer than min_win_size)
+    removeList = []  # initialize    
+    min_win_samples = int(min_win_size / sample_rate)
 
     if len(removeInd) > 0:
         startInd = removeInd[0]
         endInd = removeInd[0]
 
-        for i in range(1, len(removeInd)):
-
-            if removeInd[i] - removeInd[i-1] >1:#> removeWindowSize:
+        for i in range(0, len(removeInd)):
+            #If indices are non-consecutive... 
+            if removeInd[i] - removeInd[i-1] > 1:
+                #If the indices are non-consecutive and the 
+                if endInd - startInd >= min_win_samples:
+                    removeList.append([int(startInd), int(endInd)])
+                    
+                #Set startInd as the current index
                 startInd = removeInd[i]
             endInd = removeInd[i]
-
-            if endInd - startInd >= removeWindowSize:
-                removeList.append([int(startInd), int(endInd)])
-
+            
     removeList.append([-1, -1])
 
     sampleRate = stream[0].stats.delta
@@ -1624,11 +1718,8 @@ def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, mi
         removeSec.append(list(np.round(sampleRate * np.array(win),6)))
         removeUTC.append(list(np.add(startT, removeSec[i])))
     removeUTC[-1][0] = removeUTC[-1][1] = endT
-
+    print('remove utc', removeUTC)
     outstream  = __remove_gaps(stream, removeUTC)
-
-    if show_plot:
-        outstream.plot()
 
     return outstream
 

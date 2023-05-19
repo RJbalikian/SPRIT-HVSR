@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 matplotlib.use('TkAgg')
+import numpy as np
 from tkcalendar import DateEntry
 
 import sprit
@@ -715,10 +716,10 @@ class App:
         detrendFrame= ttk.Frame(hvsrFrame)
         detrendFrame.grid(row=14, column=2, sticky='w', columnspan=3)
         self.detrend = tk.StringVar()
-        self.detrend.set('none')
-        ttk.Radiobutton(master=detrendFrame, text='None', variable=self.detrend, value='none', command=on_detrend_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=detrendFrame, text='Spline', variable=self.detrend, value='spline', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
+        self.detrend.set('spline')
+        ttk.Radiobutton(master=detrendFrame, text='Spline', variable=self.detrend, value='spline', command=on_detrend_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=detrendFrame, text='None', variable=self.detrend, value='none', command=on_detrend_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
 
         #detrend_order=2
         def on_detrend_order():
@@ -877,15 +878,24 @@ class App:
             if self.do_auto.get():
                 self.params = sprit.remove_noise(input=self.params, kind='auto', noise_percent=0.995, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()], show_plot=False, warmup_time=self.warmup_time.get())
             else:
+                print(self.do_stalta.get(), self.sta.get(), self.lta.get(), [self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
                 if self.do_stalta.get():
                     self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
-                if self.do_noiseWin.get():
-                    self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get())
+                print(self.do_pctThresh.get(), self.pct.get(), self.win_size_sat.get())
+                if self.do_pctThresh.get():
+                    self.params = sprit.remove_noise(input=self.params, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
 
+                print(self.do_noiseWin.get(), self.noise_amp_pct.get(), self.win_size_thresh.get())
+                if self.do_noiseWin.get():
+                    self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                    pass
+                print(self.do_warmup.get(), self.warmup_time.get(), self.lta_noise.get(), self.cooldown_time.get())
                 if self.do_warmup.get():
                     self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
+            print(np.nonzero(self.params['stream'][0].data)[0].shape)
+            print(self.params['stream'][0].data.shape)
             sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='mpl')
 
         self.style.configure(style='Noise.TButton', background='#86a5ba')
@@ -929,11 +939,13 @@ class App:
         
         ttk.Label(master=stltaremoveFrame, text="STA [s]").grid(row=0, column=1)
         self.sta = tk.DoubleVar()
+        self.sta.set(5)
         staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
         staEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text="LTA [s]").grid(row=0, column=3)
         self.lta = tk.DoubleVar()
+        self.sta.set(30)
         ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
         ltaEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
@@ -956,10 +968,15 @@ class App:
  
         ttk.Label(master=pctThresFrame, text="Percentage Threshold").grid(row=0, column=1)
         self.pct = tk.DoubleVar()
+        self.pct.set(0.995)
         pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
         pctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
-        pctEntry.delete(0, 'end')
-        pctEntry.insert(0, '0.995')
+
+        ttk.Label(master=pctThresFrame, text="Min. Window Size [sec]").grid(row=0, column=3)
+        self.win_size_sat = tk.DoubleVar()
+        self.win_size_sat.set(0)
+        win_size_Entry = ttk.Entry(master=pctThresFrame, textvariable=self.win_size_sat, width=10) # create the Entry widget
+        win_size_Entry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
         #Options for noisy window
         noisyWindowFrame = ttk.LabelFrame(noiseFrame, text='Noisy Windows')
@@ -969,19 +986,23 @@ class App:
         winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky='ew')
  
-        ttk.Label(master=noisyWindowFrame, text="Amplitude % Thresh.").grid(row=0, column=1)
+        ttk.Label(master=noisyWindowFrame, text="Max Amp. % Thresh.").grid(row=0, column=1)
         self.noise_amp_pct = tk.DoubleVar()
+        self.noise_amp_pct.set(0.80)
         winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
-        winamppctEntry.delete(0, 'end')
-        winamppctEntry.insert(0, '0.995')
 
-        ttk.Label(master=noisyWindowFrame, text="Window %").grid(row=0, column=3)
-        self.win_pct = tk.DoubleVar()
-        winpctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_pct, width=10) # create the Entry widget
-        winpctEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
-        winpctEntry.delete(0, 'end')
-        winpctEntry.insert(0, '0.75')
+        ttk.Label(master=noisyWindowFrame, text="LTA Length [sec]").grid(row=0, column=3)
+        self.lta_noise = tk.DoubleVar()
+        self.lta_noise.set(30)
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
+        winamppctEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
+
+        ttk.Label(master=noisyWindowFrame, text="Min. Window Size [sec]").grid(row=0, column=5)
+        self.win_size_thresh = tk.DoubleVar()
+        self.win_size_thresh.set(1)
+        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
+        win_size_Entry.grid(row=0, column=6, sticky='ew', padx=(5,10))
 
         #Options for warmup
         warmupFrame = ttk.LabelFrame(noiseFrame, text='Warmup & Cooldown Time')
