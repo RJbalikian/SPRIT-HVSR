@@ -1137,7 +1137,7 @@ def __on_fig_close(event):
     return
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0):
+def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=10):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1202,7 +1202,7 @@ def remove_noise(input, kind='auto', noise_percent=0.995, sta=2, lta=30, stalta_
     elif kind.lower() in antitrigger:
         output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh, show_plot=show_plot)
     elif kind.lower() in noiseThresh:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, show_plot=show_plot)
+        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, show_plot=show_plot, min_win_size=10)
     elif kind.lower() in warmup_cooldown:
         output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
@@ -1225,9 +1225,12 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
     windows = []
     windows.append([0,np.nan])
 
+    mask = np.isnan(trace.data)  # Create a mask for None values
+    masked_array = np.ma.array(trace.data, mask=mask)
+
     lastMaskInd = -1
     wInd = 0
-    masked_array = trace.data.mask.nonzero()[0]
+    #masked_array = trace.data.mask.nonzero()[0]
     for i, maskInd in enumerate(masked_array):
         if maskInd-lastMaskInd != 1:
             windows.append([np.nan, np.nan])
@@ -1544,8 +1547,12 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot):
     return outStream
 
 #Helper function for removing data using the noise threshold input from remove_noise()
-def __remove_noise_thresh(stream, noise_percent, show_plot):
+def __remove_noise_thresh(stream, noise_percent=0.8, show_plot=False, lta=30, min_win_size=10):
     """Helper function for removing data using the noise threshold input from remove_noise()
+
+    The purpose of the noise threshold method is to remove noisy windows (e.g., lots of traffic all at once). 
+    
+    This function uses the lta value (which can be specified here), and finds times where the lta value is at least at the noise_percent level of the max lta value for at least a specified time (min_win_size)
 
     Parameters
     ----------
@@ -1554,6 +1561,10 @@ def __remove_noise_thresh(stream, noise_percent, show_plot):
     noise_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage. Passed from remove_noise().
+    lta : int, default = 30
+        Length of lta to use (in seconds)
+    min_win_size : int, default = 10
+        Minimum amount of time (in seconds) at which noise is above noise_percent level.
     show_plot : bool, default=False
         If True, will plot the data with the new windows removed, by default False. Passed from remove_noise().
     
@@ -1565,33 +1576,43 @@ def __remove_noise_thresh(stream, noise_percent, show_plot):
     if noise_percent > 1:
         noise_percent = noise_percent / 100
 
-    removeInd = np.array([])
+    removeInd = np.array([], dtype=int)
     for trace in stream:
-        data = trace.data
-        maxAmp = max(np.absolute(data, where = not None))
-        cond = np.nonzero(np.absolute(data, where=not None) > (noise_percent * maxAmp))[0]
+        dataArr = trace.data
+
+        sample_rate = trace.stats.delta
+        lta_samples = int(lta / sample_rate)
+
+        #Get lta values across traces data
+        window_size = lta_samples
+        kernel = np.ones(window_size) / window_size
+        maskedArr = np.ma.array(dataArr, dtype=float, fill_value=None)
+        ltaArr = np.convolve(maskedArr, kernel, mode='same')
+        #Get max lta value
+        maxLTA = np.max(ltaArr, where = not None)
+        cond = np.nonzero(np.absolute(ltaArr, where=not None) > (noise_percent * maxLTA))[0]
         removeInd = np.hstack([removeInd, cond])
         #trace.data = np.ma.where(np.absolute(data, where = not None) > (noise_percent * maxAmp), None, data)
+    #Combine indices from all three traces
     removeInd = np.unique(removeInd)
+    
+    #Make sure we're not removing single indices (we only want long )
+    removeWindowSize = min_win_size // sample_rate
+    removeList = []  # initialize
 
-    removeWindowSize = 10
-    removeList = [[0,0]]
-    j=0
-    for i, val in enumerate(removeInd):
-        if i != 0:
-            if val - removeInd[i-1] < removeWindowSize:
-                removeList[j][1] = val + removeWindowSize//2
-            else:
-                startInd = val - removeWindowSize//2 #removeInd[i-1]+1
-                endInd = val + removeWindowSize//2
+    if len(removeInd) > 0:
+        startInd = removeInd[0]
+        endInd = removeInd[0]
+
+        for i in range(1, len(removeInd)):
+
+            if removeInd[i] - removeInd[i-1] >1:#> removeWindowSize:
+                startInd = removeInd[i]
+            endInd = removeInd[i]
+
+            if endInd - startInd >= removeWindowSize:
                 removeList.append([int(startInd), int(endInd)])
-                j+=1
-        else:
-            if val != 0:
-                startInd = val - removeWindowSize//2 
-                endInd = val + removeWindowSize//2
-                removeList.append([int(startInd), int(endInd)])
-                j+=1
+
     removeList.append([-1, -1])
 
     sampleRate = stream[0].stats.delta
