@@ -1252,7 +1252,7 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
 
             lastMaskInd = maskInd    
         windows[wInd][1] = masked_array[-1]
-        print("windows to show", windows)
+
         #Reformat ax as needed
         if isinstance(ax, np.ndarray):
             origAxes = ax.copy()
@@ -1285,6 +1285,7 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
                     x1 = win[1]
                 elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
                     sample_rate = trace.stats.delta
+
                     x0 = trace.stats.starttime + win[0] * sample_rate
                     x1 = trace.stats.starttime + win[1] * sample_rate
 
@@ -1339,7 +1340,7 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
         ax = origAxes
 
         fig.canvas.draw()
-        fig.tight_layout()
+        #fig.tight_layout()
     return fig, ax
 
 #Helper function for removing windows from data, leaving gaps
@@ -1465,15 +1466,14 @@ def __remove_windows(stream, window_list, warmup_time):
 #Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
-
     #combine overlapping windows
-    #Not sure if this part works yet
+    #THIS PART NEEDS WORK!!!!! #!#
     overlapList = []
     for i in range(len(window_gaps_obspy)-2):
         if window_gaps_obspy[i][1] > window_gaps_obspy[i+1][0]:
             overlapList.append(i)
 
-    for i in overlapList:
+    for i, t in enumerate(overlapList):
         if i < len(window_gaps_obspy)-2:
             window_gaps_obspy[i][1] = window_gaps_obspy[i+1][1]
             window_gaps_obspy.pop(i+1)
@@ -1513,7 +1513,7 @@ def __remove_gaps(stream, window_gaps_obspy):
     return outStream
 
 #Helper function for getting windows to remove noise using stalta antitrigger method
-def __remove_anti_stalta(stream, sta, lta, thresh, show_plot):
+def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     """Helper function for getting windows to remove noise using stalta antitrigger method
 
     Parameters
@@ -1616,14 +1616,15 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
 
         for i in range(0, len(removeInd)):             
             if removeInd[i] - removeInd[i-1] > 1:
+                if endInd - startInd >= min_win_samples:
+                    removeList.append([int(startInd), int(endInd)])
                 startInd = removeInd[i]
             endInd = removeInd[i]
 
-            if endInd - startInd >= min_win_samples:
-                removeList.append([int(startInd), int(endInd)])
+
 
     removeList.append([-1, -1]) #figure out a way to get rid of this
-    #print(removeList)
+
     #Convert removeList from samples to seconds after start to UTCDateTime
     sampleRate = stream[0].stats.delta
     startT = stream[0].stats.starttime
@@ -1677,6 +1678,8 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
 
         #Get lta values across traces data
         window_size = lta_samples
+        if window_size == 0:
+            window_size = 1
         kernel = np.ones(window_size) / window_size
         maskedArr = np.ma.array(dataArr, dtype=float, fill_value=None)
         ltaArr = np.convolve(maskedArr, kernel, mode='same')
@@ -1687,7 +1690,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
         #trace.data = np.ma.where(np.absolute(data, where = not None) > (noise_percent * maxAmp), None, data)
     #Combine indices from all three traces
     removeInd = np.unique(removeInd)
-    print('remove ind', len(removeInd), removeInd)
+
     #Make sure we're not removing single indices (we only want longer than min_win_size)
     removeList = []  # initialize    
     min_win_samples = int(min_win_size / sample_rate)
@@ -1718,7 +1721,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
         removeSec.append(list(np.round(sampleRate * np.array(win),6)))
         removeUTC.append(list(np.add(startT, removeSec[i])))
     removeUTC[-1][0] = removeUTC[-1][1] = endT
-    print('remove utc', removeUTC)
+
     outstream  = __remove_gaps(stream, removeUTC)
 
     return outstream

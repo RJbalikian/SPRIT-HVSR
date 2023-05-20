@@ -875,28 +875,19 @@ class App:
         runFrame_noise = ttk.Frame(self.noise_tab)
         
         def update_noise_windows():
-            if self.do_auto.get():
-                self.params = sprit.remove_noise(input=self.params, kind='auto', noise_percent=0.995, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()], show_plot=False, warmup_time=self.warmup_time.get())
-            else:
-                print(self.do_stalta.get(), self.sta.get(), self.lta.get(), [self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                if self.do_stalta.get():
-                    self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+            if self.do_stalta.get():
+                self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
-                print(self.do_pctThresh.get(), self.pct.get(), self.win_size_sat.get())
-                if self.do_pctThresh.get():
-                    self.params = sprit.remove_noise(input=self.params, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+            if self.do_pctThresh.get():
+                self.params = sprit.remove_noise(input=self.params, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
 
-                print(self.do_noiseWin.get(), self.noise_amp_pct.get(), self.win_size_thresh.get())
-                if self.do_noiseWin.get():
-                    self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                    pass
-                print(self.do_warmup.get(), self.warmup_time.get(), self.lta_noise.get(), self.cooldown_time.get())
-                if self.do_warmup.get():
-                    self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+            if self.do_noiseWin.get():
+                self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
 
-            print(np.nonzero(self.params['stream'][0].data)[0].shape)
-            print(self.params['stream'][0].data.shape)
-            sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='mpl')
+            if self.do_warmup.get():
+                self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+            sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
 
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
@@ -945,16 +936,18 @@ class App:
 
         ttk.Label(master=stltaremoveFrame, text="LTA [s]").grid(row=0, column=3)
         self.lta = tk.DoubleVar()
-        self.sta.set(30)
+        self.lta.set(30)
         ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
         ltaEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text="STA/LTA Thresholds (Low, High)").grid(row=0, column=5)
         self.stalta_thresh_low = tk.DoubleVar()
+        self.stalta_thresh_low.set(0.5)
         staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
         staltaLowEntry.grid(row=0, column=6, sticky='ew', padx=(5,0))
         
         self.stalta_thresh_hi = tk.DoubleVar()
+        self.stalta_thresh_hi.set(5)
         staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
         staltaHiEntry.grid(row=0, column=7, sticky='ew')
         
@@ -982,7 +975,7 @@ class App:
         noisyWindowFrame = ttk.LabelFrame(noiseFrame, text='Noisy Windows')
         noisyWindowFrame.grid(row=2, column=0, sticky='nsew')
 
-        self.do_noiseWin= tk.BooleanVar()
+        self.do_noiseWin = tk.BooleanVar()
         winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky='ew')
  
@@ -1054,17 +1047,28 @@ class App:
 
         def set_auto():
             if self.do_auto.get():
-                staltaBool.state(['selected'])
-                pctBool.state(['selected'])
-                winNoiseBool.state(['selected'])
-                warmupBool.state(['selected'])
-                stdBool.state(['selected'])
+
+                self.do_stalta.set(True)
+                self.do_stdev.set(True)
+                self.do_warmup.set(True)
+                self.do_noiseWin.set(True)
+                self.do_pctThresh.set(True)
+                #staltaBool.state(['selected'])
+                #pctBool.state(['selected'])
+                #winNoiseBool.state(['selected'])
+                #warmupBool.state(['selected'])
+                #stdBool.state(['selected'])
             else:
-                staltaBool.state(['!selected'])
-                pctBool.state(['!selected'])
-                winNoiseBool.state(['!selected'])
-                warmupBool.state(['!selected'])
-                stdBool.state(['!selected'])
+                #self.do_stdev.set(False)
+                #self.do_warmup.set(False)
+                #self.do_noiseWin.set(False)
+                #self.do_pctThresh.set(False)
+                pass
+                #staltaBool.state(['!selected'])
+                #pctBool.state(['!selected'])
+                #winNoiseBool.state(['!selected'])
+                #warmupBool.state(['!selected'])
+                #stdBool.state(['!selected'])
 
         self.do_auto= tk.BooleanVar()
         autoBool = ttk.Checkbutton(master=autoFrame, text="", variable=self.do_auto, command=set_auto) # create the Checkbutton widget
@@ -2124,16 +2128,6 @@ class App:
         
         self.save_results_fig = ttk.Button(results_export_Frame, text="Save",command=save_report_fig)
         self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky='ew', padx=2.5)
-
-
-
-        #export_settings_tab = ttk.Frame(settings_notebook)
-        #settings_notebook.add(export_settings_tab, text="Export Settings")
-
-        #export='', 
-        #format='print', 
-        #include='peak', 
-        #save_figs=None
 
         results_peakInfoFrame.pack(side='right', fill='both')
         results_chartFrame.pack(side='top', expand=True, fill='both')
