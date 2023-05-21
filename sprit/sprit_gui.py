@@ -875,6 +875,47 @@ class App:
         runFrame_noise = ttk.Frame(self.noise_tab)
         
         def update_noise_windows():
+            artists_to_keep = {}
+            artists_to_remove = {}
+            for key in self.ax_noise.keys():
+                artists_to_keep[key] = []
+                #artists_to_remove[key] = []
+                for i, child in enumerate(self.ax_noise[key].get_children()):
+                    if isinstance(child, matplotlib.spines.Spine) or isinstance(child, matplotlib.patches.Rectangle):
+                        child.remove()
+                    else:
+                        artists_to_keep[key].append(child)
+                        child.remove()
+                self.ax_noise[key].clear()
+
+                print(key)
+                for i, child in enumerate(self.ax_noise[key].get_children()):
+                    print(child)
+            self.fig_noise.canvas.draw()
+            print(artists_to_keep)
+            print('you are feeling very sleepy')
+            import time
+            time.sleep(5)
+            
+            #Code to re-draw artists in artists_to_keep[key]
+            for key in self.ax_noise:
+                for artist in artists_to_keep[key]:
+                    self.ax_noise[key].add_artist(artist)
+                    print(artist)
+            self.fig_noise.canvas.draw()
+
+            def remove_artists():
+                for i, w in enumerate(self.noise_windows_window_artists):
+                    w.remove()
+                self.noise_windows_window_artists = []
+                
+                for i, lin in enumerate(self.noise_windows_line_artists):
+                    for l in lin:
+                        l[0].remove()
+                        l[1].remove()
+                self.noise_windows_line_artists = []
+                return
+
             if self.do_stalta.get():
                 self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
@@ -887,10 +928,13 @@ class App:
             if self.do_warmup.get():
                 self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
-            sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
+            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
 
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
+
+        self.noise_windows_line_artists = []
+        self.noise_windows_window_artists = []
 
         self.style.configure('Run.TButton', background='#8b9685', width=10, height=3)
         self.run_button = ttk.Button(runFrame_noise, text="Run", style='Run.TButton', command=process_data)        

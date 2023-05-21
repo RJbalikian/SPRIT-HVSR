@@ -838,7 +838,6 @@ def fetch_data(params, inv=None, source='raw', trim_dir=None, export_format='mse
         year = date.year
         print("Did not recognize date, using year {} and day {}".format(year, doy))
 
-    #print('Day of Year:', doy)
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if source=='raw':
@@ -1218,7 +1217,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     return output
 
 #Shows windows with Noneon input plot
-def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
+def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type='matplotlib'):
     if fig is None and ax is None:
         fig, ax = plt.subplots()
 
@@ -1274,11 +1273,16 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
         for i, a in enumerate(axes.keys()):
             ax = axes[a]
             pathList = []
-            #
+            
             windowDrawn = []
             winArtist = []
-            lineArtist = []
-            #
+            if existing_lineArtists == []:
+                lineArtist = []
+            elif len(existing_lineArtists)>=1 and keep_line_artists:
+                lineArtist = existing_lineArtists
+            else:
+                lineArtist = []
+
             for winNums, win in enumerate(windows):
                 if time_type.lower() in samplesList:
                     x0 = win[0]
@@ -1340,13 +1344,13 @@ def show_removed_windows(input, fig=None, ax=None, time_type='matplotlib'):
         ax = origAxes
 
         fig.canvas.draw()
-        #fig.tight_layout()
-    return fig, ax
+
+    return fig, ax, lineArtist, winArtist
 
 #Helper function for removing windows from data, leaving gaps
 def __remove_windows(stream, window_list, warmup_time):
     """Helper function that actually does the work in obspy to remove the windows calculated in the remove_noise function
-
+s
     Parameters
     ----------
     stream : obspy.core.stream.Stream object
