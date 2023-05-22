@@ -522,7 +522,7 @@ def update_shake_metadata(filepath, params, write_path=''):
 
 #Code to help setup environment in Google Colab
 def setup_colab(option='', repo_dir=''):
-    """Function to help set up Google Colab environment
+    """Function to help set up Google Colab environment for SPRIT
     
     This is designed to be run twice in a Google Colab environment without any parameters, and at the beginning of the Google Colab notebook. 
     The first run will install obspy (which is not installed on Colab by default), then restart the kernel (necessary for Colab to run obspy effectively).
@@ -611,6 +611,10 @@ def setup_colab(option='', repo_dir=''):
 
 #Launch the gui
 def gui():
+    """Function to open a window with a graphical user interface (gui)
+    
+    No parameters, no returns; just opens the gui window.
+    """
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath('gui/tkgui.py').as_posix())
     from sprit.sprit_gui import App
@@ -622,7 +626,9 @@ def gui():
         gui_root.destroy()
 
     gui_root = tk.Tk()
+    gui_root.iconbitmap(os.path.join(os.path.dirname(__file__), "../resources/sprit_icon_alpha.ico"))
     App(master=gui_root) #Open the app with a tk.Tk root
+
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
     gui_root.mainloop() #Run the main loop
     
