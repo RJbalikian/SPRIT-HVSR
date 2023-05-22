@@ -14,7 +14,7 @@ That version is intended to read data from the IRIS Data Management Center (DMC)
 For guidelines on acquisition, processing, and interpration of H/V data, see: <http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf>. 
 
 # Documentation
-- API Documentation here [here](https://rjbalikian.github.io/SPRIT/main.html)</a>
+- API Documentation [here](https://rjbalikian.github.io/SPRIT/main.html)</a>
 - See Wiki for more information [here](https://github.com/RJbalikian/SPRIT/wiki) (in progress)
 - See examples for examples on how to compute [here](https://github.com/RJbalikian/SPRIT/tree/main/examples) (in progress): 
 
@@ -22,13 +22,15 @@ For guidelines on acquisition, processing, and interpration of H/V data, see: <h
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 | Dependency | Link                       | Description                                                                                     |
 |------------|----------------------------|-------------------------------------------------------------------------------------------------|
-| Matplolib  | <https://matplotlib.org/>  | Comprehensive library for creating static, animated, andinteractive visualizationsin python     |
+| Matplotlib  | <https://matplotlib.org/>  | Comprehensive library for creating static, animated, andinteractive visualizationsin python     |
 | Numpy      | <https://numpy.org/>       | "The fundamental package for scientific computing with Python"                                  |
 | Obspy      | <https://docs.obspy.org/>  | Python framework for processing seismological data                                              |
 | Scipy      | <https://scipy.org/>       | "Fundamental algorithms for scientific computing in Python"                                     |
 | Pandas     | <https://pandas.pydata.org>| "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"    |
 
-| Optional Dependencies | Link                      | Description                                 | Use                                               |
+## Optional Dependencies
+
+| Dependency | Link                      | Description                                 | Use                                               |
 |-----------------------|---------------------------|---------------------------------------------|---------------------------------------------------|
 | ipykernel             | <https://ipython.org/>    | Python kernel for running Jupyter notebooks | Used to run SpRĪT in Jupyter notebook             |
 | pyqt5                 | <https://pypi.org/project/PyQt5/> | Python binding of Qt GUI toolkit    | Used for manual noise removal windows in Jupyter  |
