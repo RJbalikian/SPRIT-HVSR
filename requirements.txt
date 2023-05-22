@@ -4,4 +4,5 @@ pandas
 obspy
 scipy
 ipykernel
+pyqt5
 tkcalendar
