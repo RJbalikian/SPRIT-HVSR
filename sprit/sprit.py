@@ -1149,7 +1149,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
 
     Parameters
     ----------
-    input : dict
+    input : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
     kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'noise threshold', 'warmup'/'buffer'}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
@@ -1180,40 +1180,57 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
-    inStream = input['stream']
-    output = input.copy()
-    if kind.lower() in manualList:
-        if 'xwindows_out' in output.keys():
-            pass
+    if isinstance(input,dict):
+        if 'stream_edited' in input.keys():
+            inStream = input['stream_edited'].copy()
         else:
-            output = select_windows(output)
-        window_list = output['xwindows_out']
+            inStream = input['stream'].copy()
+        output = input.copy()
+    elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
+        inStream = input.copy()
+        output = inStream.copy()
+    else:
+        print("ERROR: input is not expected type")
+    
+    if kind.lower() in manualList:
+        if isinstance(output, dict):
+            if 'xwindows_out' in output.keys():
+                pass
+            else:
+                output = select_windows(output)
+            window_list = output['xwindows_out']
+
         if isinstance(inStream, obspy.core.stream.Stream):
             if window_list is not None:
                 output['stream_edited'] = __remove_windows(inStream, window_list, warmup_time)
             else:
-                print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
+                output = select_windows(output)
         elif type(output) is dict:
             pass
         else:
-            print('Input data type is not supported.')
+            print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
+            
     elif kind.lower() in autoList:
-        output['stream_edited'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        output['stream_edited'] = __remove_anti_stalta(output['stream_edited'], sta=sta, lta=lta, thresh=stalta_thresh)
-        output['stream_edited'] = __remove_noise_saturate(output['stream_edited'], sat_percent=sat_percent, min_win_size=min_win_size)
-        output['stream_edited'] = __remove_warmup_cooldown(stream=output['stream_edited'], warmup_time=warmup_time, cooldown_time=cooldown_time)
+        outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+        outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+        outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     elif kind.lower() in antitrigger:
-        output['stream_edited'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
+        outStream = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
     elif kind.lower() in saturationThresh:
-        output['stream_edited'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
+        outStream = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
     elif kind.lower() in noiseThresh:
-        output['stream_edited'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
     elif kind.lower() in warmup_cooldown:
-        output['stream_edited'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+        outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
         print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
         return
 
+    if isinstance(input, dict):
+        output['stream_edited'] = outStream
+    elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
+        output = outStream
     return output
 
 #Shows windows with Noneon input plot
@@ -1222,7 +1239,10 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig, ax = plt.subplots()
 
     if type(input) is dict:
-        stream = input['stream_edited'].copy()
+        if 'stream_edited' in input.keys():
+            stream = input['stream_edited'].copy()
+        else:
+            stream = input['stream'].copy()
     else:
         stream = input.copy()
 
@@ -1635,14 +1655,13 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
     endT = stream[0].stats.endtime
     removeSec = []
     removeUTC = []
+    removeUTC.append([startT, startT])
     for i, win in enumerate(removeList):
         removeSec.append(list(np.round(sampleRate * np.array(win),6)))
         removeUTC.append(list(np.add(startT, removeSec[i])))
     removeUTC[-1][0] = removeUTC[-1][1] = endT
     
-
     outstream  = __remove_gaps(stream, removeUTC)
-
     return outstream
 
 #Helper function for removing data using the noise threshold input from remove_noise()
@@ -1721,6 +1740,8 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
     endT = stream[0].stats.endtime
     removeSec = []
     removeUTC = []
+
+    removeUTC.append([startT, startT])
     for i, win in enumerate(removeList):
         removeSec.append(list(np.round(sampleRate * np.array(win),6)))
         removeUTC.append(list(np.add(startT, removeSec[i])))
@@ -1735,34 +1756,39 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
     sampleRate = float(stream[0].stats.delta)
     outStream = stream.copy()
 
-    warmup_samples = warmup_time / sampleRate #Convert to samples
+    warmup_samples = int(warmup_time / sampleRate) #Convert to samples
     windows_samples=[]
     for tr in stream:
-        totalSamples = float(tr.stats.endtime - tr.stats.starttime) / tr.stats.delta
-        cooldown_samples = cooldown_time / sampleRate #Convert to samples
-        cooldown_samples = totalSamples - cooldown_samples
+        totalSamples = len(tr.data)-1#float(tr.stats.endtime - tr.stats.starttime) / tr.stats.delta
+        cooldown_samples = int(totalSamples - (cooldown_time / sampleRate)) #Convert to samples
     windows_samples = [[0, warmup_samples],[cooldown_samples, totalSamples]]
-    
-    startT = stream[0].stats.starttime
-    endT = stream[0].stats.endtime
-    window_UTC = []
-    window_MPL = []
-    window_UTC.append([startT, startT])
+    if cooldown_time==0:
+        windows_samples.pop(1)
+    if warmup_time==0:
+        windows_samples.pop(0)
 
-    for w, win in enumerate(windows_samples):
+    if windows_samples == []:
+        pass
+    else:
+        startT = stream[0].stats.starttime
+        endT = stream[0].stats.endtime
+        window_UTC = []
+        window_MPL = []
+        window_UTC.append([startT, startT])
 
-        for j, tm in enumerate(win):
+        for w, win in enumerate(windows_samples):
+            for j, tm in enumerate(win):
 
-            if j == 0:
-                window_UTC.append([])
-                window_MPL.append([])
-            tSec = tm * sampleRate
-            window_UTC[w+1].append(startT+tSec)
-            window_MPL[w].append(window_UTC[w][j].matplotlib_date)
-    window_UTC.append([endT, endT])
+                if j == 0:
+                    window_UTC.append([])
+                    window_MPL.append([])
+                tSec = tm * sampleRate
+                window_UTC[w+1].append(startT+tSec)
+                window_MPL[w].append(window_UTC[w][j].matplotlib_date)
+        window_UTC.append([endT, endT])
 
-    #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
-    outStream = __remove_gaps(stream, window_UTC)
+        #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
+        outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
 #Generate PPSDs for each channel
@@ -1903,6 +1929,8 @@ def remove_outlier_ppsds(params, outlier_std=3, ppsd_length=60):
 
         #Get ppsd length in seconds in matplotlib format
         ppsd_length_mpl = ppsd_length/86400
+
+        ##UPDATE THIS NOT TO USE xWindows_out (calculate from mask)
         #Check if any times fall in excluded zone
         for i, t in enumerate(curr_times_mpl):
             nextT = t + ppsd_length_mpl

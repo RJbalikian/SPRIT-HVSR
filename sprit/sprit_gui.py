@@ -875,32 +875,13 @@ class App:
         runFrame_noise = ttk.Frame(self.noise_tab)
         
         def update_noise_windows():
-            #artists_to_remove = {}
-            #artists_to_keep = {}
-
-            #for key in self.ax_noise.keys():
-            #    artists_to_keep[key] = []
-            #    artists_to_remove[key] = []
-            #    for i, child in enumerate(self.ax_noise[key].get_children()):
-            #        if isinstance(child, matplotlib.spines.Spine) or isinstance(child, matplotlib.patches.Rectangle):
-            #            artists_to_remove[key].append(child)
-            #        else:
-            #            artists_to_keep[key].append(child)
-            #    self.ax_noise[key].clear()
-
-                #for i, child in enumerate(self.ax_noise[key].get_children()):
-                #    print(child)
-            #artists_to_remove = []
-
-                #for i, child in enumerate(ax.get_children()):
-                    #child = []
-                    #del child
-            
+        
             #Clear everything
             for key in self.ax_noise:
                 self.ax_noise[key].clear()
             self.fig_noise.clear()
-            #REally make sure it's out of memory
+
+            #Really make sure it's out of memory
             self.fig_noise = []
             self.ax_noise = []
             try:
@@ -912,7 +893,7 @@ class App:
             except:
                 pass
 
-            #Reset figure
+            #Reset axes, figure, and canvas widget
             noise_mosaic = [['spec'],['spec'],['spec'],
                     ['spec'],['spec'],['spec'],
                     ['signalz'],['signalz'], ['signaln'], ['signale']]
@@ -926,43 +907,40 @@ class App:
             self.fig_noise.canvas.draw()
             
             self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-            
-            """artists_to_keep = {}
-
-
-            def remove_artists():
-                for i, w in enumerate(self.noise_windows_window_artists):
-                    w.remove()
-                self.noise_windows_window_artists = []
-                
-                for i, lin in enumerate(self.noise_windows_line_artists):
-                    for l in lin:
-                        l[0].remove()
-                        l[1].remove()
-                self.noise_windows_line_artists = []
-                return"""
             self.fig_noise.canvas.draw()
 
+            #Reset edited data every time update_noise_windows is run
+            self.params['stream_edited'] = self.params['stream'].copy()
+
+            #Set initial input
+            input = self.params['stream']
+
+            #print(input[0].stats.starttime)
             if self.do_stalta.get():
-                self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                self.params['stream_edited'] = sprit.remove_noise(input=input, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                input = self.params['stream_edited']
 
             if self.do_pctThresh.get():
-                self.params = sprit.remove_noise(input=self.params, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                self.params['stream_edited'] = sprit.remove_noise(input=input, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                input = self.params['stream_edited']
 
             if self.do_noiseWin.get():
-                self.params = sprit.remove_noise(input=self.params, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-
+                self.params['stream_edited'] = sprit.remove_noise(input=input, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                input = self.params['stream_edited']
+        
             if self.do_warmup.get():
-                self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                self.params['stream_edited'] = sprit.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+            #print(self.params['stream_edited'][0].stats.starttime)
+            #print(self.params['stream_edited'][0].stats.npts)
 
             self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
             
-            #Code to re-draw artists in artists_to_keep[key]
-            #for key in self.ax_noise:
-            #    print(self.ax_noise[key].get_children())
-            #self.fig_noise.subplots_adjust(hspace=0.05)
             self.fig_noise.canvas.draw()
+            return self.params
 
+        #Run area
+        #Update Noise Windows button
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
 
@@ -1036,17 +1014,19 @@ class App:
         pctBool = ttk.Checkbutton(master=pctThresFrame, text="", variable=self.do_pctThresh) # create the Checkbutton widget
         pctBool.grid(row=0, column=0, sticky='ew')
  
-        ttk.Label(master=pctThresFrame, text="Percentage Threshold").grid(row=0, column=1)
+        ttk.Label(master=pctThresFrame, text="Max Instantaneous %").grid(row=0, column=1)
         self.pct = tk.DoubleVar()
         self.pct.set(0.995)
         pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
         pctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
-        ttk.Label(master=pctThresFrame, text="Min. Window Size [sec]").grid(row=0, column=3)
+        ttk.Label(master=pctThresFrame, text="", width=27).grid(row=0, column=3, columnspan=2)
+
+        ttk.Label(master=pctThresFrame, text="Min. Window Size [sec]").grid(row=0, column=5, sticky='e')
         self.win_size_sat = tk.DoubleVar()
         self.win_size_sat.set(0)
         win_size_Entry = ttk.Entry(master=pctThresFrame, textvariable=self.win_size_sat, width=10) # create the Entry widget
-        win_size_Entry.grid(row=0, column=4, sticky='ew', padx=(5,10))
+        win_size_Entry.grid(row=0, column=6, sticky='e', padx=(5,10))
 
         #Options for noisy window
         noisyWindowFrame = ttk.LabelFrame(noiseFrame, text='Noisy Windows')
@@ -1056,13 +1036,13 @@ class App:
         winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky='ew')
  
-        ttk.Label(master=noisyWindowFrame, text="Max Amp. % Thresh.").grid(row=0, column=1)
+        ttk.Label(master=noisyWindowFrame, text="Max Window %").grid(row=0, column=1)
         self.noise_amp_pct = tk.DoubleVar()
         self.noise_amp_pct.set(0.80)
         winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
-        ttk.Label(master=noisyWindowFrame, text="LTA Length [sec]").grid(row=0, column=3)
+        ttk.Label(master=noisyWindowFrame, text="Window Length [sec]").grid(row=0, column=3)
         self.lta_noise = tk.DoubleVar()
         self.lta_noise.set(30)
         winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
@@ -1070,9 +1050,9 @@ class App:
 
         ttk.Label(master=noisyWindowFrame, text="Min. Window Size [sec]").grid(row=0, column=5)
         self.win_size_thresh = tk.DoubleVar()
-        self.win_size_thresh.set(1)
+        self.win_size_thresh.set(0)
         win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
-        win_size_Entry.grid(row=0, column=6, sticky='ew', padx=(5,10))
+        win_size_Entry.grid(row=0, column=6, sticky='e', padx=(5,10))
 
         #Options for warmup
         warmupFrame = ttk.LabelFrame(noiseFrame, text='Warmup & Cooldown Time')
@@ -1118,38 +1098,44 @@ class App:
         stdWinLenEntry.delete(0, 'end')
         stdWinLenEntry.insert(0, '5')
 
-        #Do all of them?
+        #Quick set the auto 
         autoFrame = ttk.LabelFrame(noiseFrame, text='Auto Run')
         autoFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
 
         def set_auto():
             if self.do_auto.get():
-
                 self.do_stalta.set(True)
                 self.do_stdev.set(True)
                 self.do_warmup.set(True)
                 self.do_noiseWin.set(True)
                 self.do_pctThresh.set(True)
-                #staltaBool.state(['selected'])
-                #pctBool.state(['selected'])
-                #winNoiseBool.state(['selected'])
-                #warmupBool.state(['selected'])
-                #stdBool.state(['selected'])
             else:
-                #self.do_stdev.set(False)
-                #self.do_warmup.set(False)
-                #self.do_noiseWin.set(False)
-                #self.do_pctThresh.set(False)
                 pass
-                #staltaBool.state(['!selected'])
-                #pctBool.state(['!selected'])
-                #winNoiseBool.state(['!selected'])
-                #warmupBool.state(['!selected'])
-                #stdBool.state(['!selected'])
 
         self.do_auto= tk.BooleanVar()
         autoBool = ttk.Checkbutton(master=autoFrame, text="", variable=self.do_auto, command=set_auto) # create the Checkbutton widget
         autoBool.grid(row=0, column=0, sticky='ew')   
+
+        #Export noise windows
+        ttk.Label(noiseFrame, text="Export Figure").grid(row=4, column=0, sticky='ew', padx=5)
+        self.results_noise_dir = tk.StringVar()
+        self.results_noise_dir_entry = ttk.Entry(noiseFrame, textvariable=self.results_noise_dir)
+        self.results_noise_dir_entry.grid(row=4, column=0, columnspan=5, sticky='ew', padx=(100,5))
+        
+        def filepath_noise_fig():
+            filepath = filedialog.asksaveasfilename(defaultextension='png', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_noisewindows.png')
+            if filepath:
+                self.results_noise_dir_entry.delete(4, 'end')
+                self.results_noise_dir_entry.insert(4, filepath)
+        
+        def save_noise_fig():
+            self.fig_noise.savefig(self.results_noise_dir.get())
+        
+        self.browse_noise_fig = ttk.Button(noiseFrame, text="Browse",command=filepath_noise_fig)
+        self.browse_noise_fig.grid(row=4, column=7, sticky='ew', padx=2.5)
+        
+        self.save_noise_fig = ttk.Button(noiseFrame, text="Save",command=save_noise_fig)
+        self.save_noise_fig.grid(row=4, column=8, columnspan=2, sticky='ew', padx=2.5)
 
         self.noise_tab.pack(expand=1)
         self.tab_control.add(self.noise_tab, text="Noise")
@@ -2223,6 +2209,8 @@ def on_closing():
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.iconbitmap(os.path.join(os.path.dirname(__file__), "../resources/sprit_icon_alpha.ico"))
+
     app = App(root)
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
