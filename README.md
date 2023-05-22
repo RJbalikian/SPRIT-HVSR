@@ -11,31 +11,39 @@ This python package is built in large part off the Incorporated Research Institu
 
 That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup>[3](#3)</sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.
 
-For guidelines on acquisition, processing, and interpration of H/V data, see: http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf. 
+For guidelines on acquisition, processing, and interpration of H/V data, see: <http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf>. 
 
 # Documentation
-- API Documentation here: https://sprit.readthedocs.io/en/latest/SPRIT.html
-- See Wiki for more information (in progress): https://github.com/RJbalikian/SPRIT/wiki
-- See examples for examples on how to compute (in progress): https://github.com/RJbalikian/SPRIT/tree/main/examples
+- API Documentation here [here](https://rjbalikian.github.io/SPRIT/main.html)</a>
+- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT/wiki) (in progress)
+- See examples for examples on how to compute [here](https://github.com/RJbalikian/SPRIT/tree/main/examples) (in progress): 
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
-- [matplotlib](https://matplotlib.org/): copmrehensive library for creating static, animated, andinteractive visualizationsin python
-- [numpy](https://numpy.org/): "The fundamental package for scientific computing with Python"
-- [obspy](https://docs.obspy.org/): Python framework for processing seismological data
-- [scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
+| Dependency | Link                       | Description                                                                                     |
+|------------|----------------------------|-------------------------------------------------------------------------------------------------|
+| Matplolib  | <https://matplotlib.org/>  | Comprehensive library for creating static, animated, andinteractive visualizationsin python     |
+| Numpy      | <https://numpy.org/>       | "The fundamental package for scientific computing with Python"                                  |
+| Obspy      | <https://docs.obspy.org/>  | Python framework for processing seismological data                                              |
+| Scipy      | <https://scipy.org/>       | "Fundamental algorithms for scientific computing in Python"                                     |
+| Pandas     | <https://pandas.pydata.org>| "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"    |
+
+| Optional Dependencies | Link                      | Description                                 | Use                                               |
+|-----------------------|---------------------------|---------------------------------------------|---------------------------------------------------|
+| ipykernel             | <https://ipython.org/>    | Python kernel for running Jupyter notebooks | Used to run SpRĪT in Jupyter notebook             |
+| pyqt5                 | <https://pypi.org/project/PyQt5/> | Python binding of Qt GUI toolkit    | Used for manual noise removal windows in Jupyter  |
+| tkcalendar            | <https://pypi.org/project/tkcalendar/>| Module for tkinter calendar widget| Used for gui for easy date selection            | 
 
 # References
-- <a id="1">[1]</a> http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf
-- <a id="2">[2]</a> https://github.com/iris-edu/HVSR
-- <a id="3">[3]</a> http://service.iris.edu/mustang/
+- <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>
+- <a id="2">[2]</a> <https://github.com/iris-edu/HVSR>
+- <a id="3">[3]</a> <http://service.iris.edu/mustang/>
 
 # Considerations
-Summary from SESAME Project (from https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf):
+Summary from SESAME Project (from <https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf>):
 In very brief, the main learnings may be summarized as follows: 
-- In situ soil / sensor coupling should be handled with care. Concrete and asphalt provide good results, whereas measuring on soft / irregular soils such as mud, grass, ploughed soil, ice, 
-gravel, not compacted snow, etc. should be avoided. Artificial soil / sensor coupling should be avoided unless it is absolutely necessary, for example, to compensate a strong inclination of 
-the soil. In such a case, either a pile of sand, or a trihedron should be used. This soil/sensor coupling issue proves to be particularly important under windy conditions.
+
+- In situ soil / sensor coupling should be handled with care. Concrete and asphalt provide good results, whereas measuring on soft / irregular soils such as mud, grass, ploughed soil, ice, gravel, not compacted snow, etc. should be avoided. Artificial soil / sensor coupling should be avoided unless it is absolutely necessary, for example, to compensate a strong inclination of the soil. In such a case, either a pile of sand, or a trihedron should be used This soil/sensor coupling issue proves to be particularly important under windy conditions.
 - It is recommended not to measure above underground structures. Nearby surface structures should be considered with care, particularly under windy conditions. 
 - Measurements under wind or strong rain should be avoided. Wind has been found to induce very significant low frequency perturbations. 
 - The proximity of some specific noise sources should be considered with care (or avoided using an anti-trigger window selection to remove the transients): nearby walking, high speed car or truck traffic, industrial machinery, etc. 
