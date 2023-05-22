@@ -1,3 +1,11 @@
+"""This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface
+
+Returns
+-------
+Na
+    No returns
+"""
+
 import datetime
 import os
 import pathlib
@@ -2143,7 +2151,7 @@ class App:
         self.results_fig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
         
         def filepath_results_fig():
-            filepath = filedialog.asksaveasfilename(defaultextension='.png', initialdir=pathlib.Path(self.data_path.get()).parent)
+            filepath = filedialog.asksaveasfilename(defaultextension='png', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_results.png')
             if filepath:
                 self.results_fig_dir_entry.delete(0, 'end')
                 self.results_fig_dir_entry.insert(0, filepath)
@@ -2178,7 +2186,7 @@ class App:
         self.results_report_dir_entry.grid(row=1, column=1, columnspan=5, sticky='ew')
         
         def filepath_report_fig():
-            filepath = filedialog.asksaveasfilename(defaultextension='.csv', initialdir=pathlib.Path(self.data_path.get()).parent)
+            filepath = filedialog.asksaveasfilename(defaultextension='csv', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_peakReport.csv')
             if filepath:
                 self.results_report_dir_entry.delete(0, 'end')
                 self.results_report_dir_entry.insert(0, filepath)
