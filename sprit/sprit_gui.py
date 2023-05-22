@@ -866,43 +866,69 @@ class App:
         canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
         canvasFrame_noise.pack(fill='both')#.grid(row=0, column=0, sticky="nsew")
 
-        noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-        noise_canvas.draw()
-        noise_canvasWidget = noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
+        self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
+        self.noise_canvas.draw()
+        self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
         
         def update_noise_windows():
-            artists_to_keep = {}
-            artists_to_remove = {}
-            for key in self.ax_noise.keys():
-                artists_to_keep[key] = []
-                #artists_to_remove[key] = []
-                for i, child in enumerate(self.ax_noise[key].get_children()):
-                    if isinstance(child, matplotlib.spines.Spine) or isinstance(child, matplotlib.patches.Rectangle):
-                        child.remove()
-                    else:
-                        artists_to_keep[key].append(child)
-                        child.remove()
-                self.ax_noise[key].clear()
+            #artists_to_remove = {}
+            #artists_to_keep = {}
 
-                print(key)
-                for i, child in enumerate(self.ax_noise[key].get_children()):
-                    print(child)
-            self.fig_noise.canvas.draw()
-            print(artists_to_keep)
-            print('you are feeling very sleepy')
-            import time
-            time.sleep(5)
+            #for key in self.ax_noise.keys():
+            #    artists_to_keep[key] = []
+            #    artists_to_remove[key] = []
+            #    for i, child in enumerate(self.ax_noise[key].get_children()):
+            #        if isinstance(child, matplotlib.spines.Spine) or isinstance(child, matplotlib.patches.Rectangle):
+            #            artists_to_remove[key].append(child)
+            #        else:
+            #            artists_to_keep[key].append(child)
+            #    self.ax_noise[key].clear()
+
+                #for i, child in enumerate(self.ax_noise[key].get_children()):
+                #    print(child)
+            #artists_to_remove = []
+
+                #for i, child in enumerate(ax.get_children()):
+                    #child = []
+                    #del child
             
-            #Code to re-draw artists in artists_to_keep[key]
+            #Clear everything
             for key in self.ax_noise:
-                for artist in artists_to_keep[key]:
-                    self.ax_noise[key].add_artist(artist)
-                    print(artist)
+                self.ax_noise[key].clear()
+            self.fig_noise.clear()
+            #REally make sure it's out of memory
+            self.fig_noise = []
+            self.ax_noise = []
+            try:
+                self.fig_noise.get_children()
+            except:
+                pass
+            try:
+                self.ax_noise.get_children()
+            except:
+                pass
+
+            #Reset figure
+            noise_mosaic = [['spec'],['spec'],['spec'],
+                    ['spec'],['spec'],['spec'],
+                    ['signalz'],['signalz'], ['signaln'], ['signale']]
+            self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+            self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
+            self.noise_canvasWidget.destroy()
+            self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
+
+            self.noise_canvas.draw()
             self.fig_noise.canvas.draw()
+            
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            
+            """artists_to_keep = {}
+
 
             def remove_artists():
                 for i, w in enumerate(self.noise_windows_window_artists):
@@ -914,7 +940,8 @@ class App:
                         l[0].remove()
                         l[1].remove()
                 self.noise_windows_line_artists = []
-                return
+                return"""
+            self.fig_noise.canvas.draw()
 
             if self.do_stalta.get():
                 self.params = sprit.remove_noise(input=self.params, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
@@ -929,6 +956,12 @@ class App:
                 self.params = sprit.remove_noise(input=self.params, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
             self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
+            
+            #Code to re-draw artists in artists_to_keep[key]
+            #for key in self.ax_noise:
+            #    print(self.ax_noise[key].get_children())
+            #self.fig_noise.subplots_adjust(hspace=0.05)
+            self.fig_noise.canvas.draw()
 
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')

@@ -1190,7 +1190,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         window_list = output['xwindows_out']
         if isinstance(inStream, obspy.core.stream.Stream):
             if window_list is not None:
-                output['stream'] = __remove_windows(inStream, window_list, warmup_time)
+                output['stream_edited'] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
         elif type(output) is dict:
@@ -1198,18 +1198,18 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         else:
             print('Input data type is not supported.')
     elif kind.lower() in autoList:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        output['stream'] = __remove_anti_stalta(output['stream'], sta=sta, lta=lta, thresh=stalta_thresh)
-        output['stream'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
-        output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+        output['stream_edited'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        output['stream_edited'] = __remove_anti_stalta(output['stream_edited'], sta=sta, lta=lta, thresh=stalta_thresh)
+        output['stream_edited'] = __remove_noise_saturate(output['stream_edited'], sat_percent=sat_percent, min_win_size=min_win_size)
+        output['stream_edited'] = __remove_warmup_cooldown(stream=output['stream_edited'], warmup_time=warmup_time, cooldown_time=cooldown_time)
     elif kind.lower() in antitrigger:
-        output['stream'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
+        output['stream_edited'] = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
     elif kind.lower() in saturationThresh:
-        output['stream'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
+        output['stream_edited'] = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
     elif kind.lower() in noiseThresh:
-        output['stream'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        output['stream_edited'] = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
     elif kind.lower() in warmup_cooldown:
-        output['stream'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+        output['stream_edited'] = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
         print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
         return
@@ -1222,7 +1222,7 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig, ax = plt.subplots()
 
     if type(input) is dict:
-        stream = input['stream'].copy()
+        stream = input['stream_edited'].copy()
     else:
         stream = input.copy()
 
@@ -3249,13 +3249,28 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     vmin = np.percentile(array_displayed, cmap_per[0]*100)
     vmax = np.percentile(array_displayed, cmap_per[1]*100)
     
+    decimation_factor = 10
+
     sTime = stream[0].stats.starttime
     timeList = {}
     mplTimes = {}
-    og_stream.decimate(10)
+    
+    #Decimate data (seems to bring up lots of issues later)
+    #if isinstance(og_stream[0].data, np.ma.MaskedArray):
+    #    for trace in og_stream:
+    #        #unmasked = trace.data[~np.ma.getmask(trace.data)]
+    #        decimated_data = scipy.signal.decimate(trace.data, decimation_factor)
+    #        decimated_mask = trace.data.mask[::decimation_factor]
+    #        print(len(decimated_data))
+    #        print(len(decimated_mask))
+    #        trace.data = np.ma.array(decimated_data, mask=decimated_mask)
+    #        trace.data = np.ma.filled(trace.data, np.nan)
+    #else:
+    #    og_stream.decimate(decimation_factor)
+    og_stream.decimate(decimation_factor)
     for i, tr in enumerate(og_stream):
         key = tr.stats.component
-        timeList[key] = []
+        timeList[key] = [] 
         mplTimes[key] = []
         for t in tr.times():
             t = sTime + t
