@@ -40,10 +40,12 @@ trg_path = src_path.parent # this ends up being current folder, usually
 
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt']
 for t in trg_path.iterdir():
+    print('main folder', t)
     if t.name in keepList:
         pass
     elif t.is_dir():
         for file in t.iterdir():
+            print('second layer', file)
             if file.is_dir():
                 if file.name == 'resources':
                     for f in file.iterdir():
