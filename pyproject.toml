@@ -4,6 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sprit"
+author= "Riley Balikian"
+author_email = "balikian@illinois.edu"
 dynamic = ["readme"]
 license = {file = "LICENSE"}
 version="0.0.3"
@@ -13,6 +15,7 @@ requires-python = ">=3.0"
 dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "ipykernel", "pyqt5", "tkcalendar"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
