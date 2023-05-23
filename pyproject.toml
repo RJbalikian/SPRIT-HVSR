@@ -3,10 +3,10 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "SPRIT-HVSR"
+name = "sprit"
 dynamic = ["readme"]
 license = {file = "LICENSE"}
-version="0.0.2"
+version="0.0.3"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.0"
