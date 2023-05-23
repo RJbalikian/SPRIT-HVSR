@@ -45,12 +45,17 @@ for t in trg_path.iterdir():
     elif t.is_dir():
         for file in t.iterdir():
             if file.is_dir():
-                for f in file.iterdir():
-                    destFilePath = trg_path.joinpath(f.name)
-                    print(destFilePath)
-                    if destFilePath.exists():
-                        os.remove(destFilePath)
-                    f = f.rename(destFilePath)
+                if file.name == 'resources':
+                    for f in file.iterdir():
+                        os.remove(f)
+                else:
+                    print('file', file.name)
+                    for f in file.iterdir():
+                        destFilePath = trg_path.joinpath(f.name)
+                        print(destFilePath)
+                        if destFilePath.exists():
+                            os.remove(destFilePath)
+                        f = f.rename(destFilePath)
                 os.rmdir(file)
             else:
                 destFilePath = trg_path.joinpath(file.name)
@@ -66,7 +71,7 @@ for t in trg_path.iterdir():
     else:
         os.remove(t)
 
-os.rmdir(subdir)
+#os.rmdir(subdir)
 
 repo_path = pathlib.Path('..')
 for each_file in repo_path.iterdir():
