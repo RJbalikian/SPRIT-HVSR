@@ -20,15 +20,13 @@ For guidelines on acquisition, processing, and interpration of H/V data, see: <h
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 
-| Dependency | Link                                  | Description                                                                                      |
-|------------|---------------------------------------|--------------------------------------------------------------------------------------------------|
-| Matplotlib | <https://matplotlib.org/>             | Comprehensive library for creating static, animated, andinteractive visualizationsin python      |
-| Numpy      | <https://numpy.org/>                  | "The fundamental package for scientific computing with Python"                                   |
-| Obspy      | <https://docs.obspy.org/>             | Python framework for processing seismological data                                               |
-| Scipy      | <https://scipy.org/>                  | "Fundamental algorithms for scientific computing in Python"                                      |
-| Pandas     | <https://pandas.pydata.org>           | "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"     |
-| pyqt5      | <https://pypi.org/project/PyQt5/>     | Python binding of Qt GUI toolkit                                                                 |
-| tkcalendar | <https://pypi.org/project/tkcalendar/>| Module for tkinter calendar widget                                                               | 
+- [Obspy](https://docs.obspy.org/): Python framework for processing seismological data
+- [Matplotlib](https://matplotlib.org/): Comprehensive library for creating static, animated, andinteractive visualizationsin python
+- [Numpy](https://matplotlib.org/): "The fundamental package for scientific computing with Python"
+- [Scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
+- [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"
+- [pyqt5](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit
+- [tkcalendar](https://pypi.org/project/tkcalendar/): Module for tkinter calendar widget
 
 # References
 - <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>
