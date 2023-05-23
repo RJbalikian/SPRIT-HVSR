@@ -36,7 +36,7 @@ jobs:
       - name: Build Distribution
         run: python -m build --sdist --wheel --outdir dist/
            
-    publish-test:
+    publish test:
       needs: build
       runs-on: ubuntu-latest
   
@@ -48,7 +48,7 @@ jobs:
             repository-url: https://test.pypi.org/legacy/
             package-dir: ./dist/
 
-    publish-pyp:
+    publish pypi:
       needs: build
       runs-on: ubuntu-latest
       if: startsWith(github.ref, 'refs/tags')
