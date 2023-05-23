@@ -4,8 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sprit"
-author= "Riley Balikian"
-author_email = "balikian@illinois.edu"
 dynamic = ["readme"]
 license = {file = "LICENSE"}
 version="0.0.3"
