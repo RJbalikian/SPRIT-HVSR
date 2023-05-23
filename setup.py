@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="SPRĪT HVSR",
-    version="0.0.1",
+    version="0.0.2",
     install_requires=["obspy", "scipy", "matplotlib", "pandas", "numpy"],
     extras_require={'optional':["ipykernel", "pyqt5", "tkcalendar"]},
     description="A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data",
