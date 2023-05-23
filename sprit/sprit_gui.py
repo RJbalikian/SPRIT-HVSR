@@ -2217,7 +2217,7 @@ def on_closing():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.iconbitmap(os.path.join(os.path.dirname(__file__), "../resources/sprit_icon_alpha.ico"))
+    root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath("/resources/sprit_icon_alpha.ico"))
 
     app = App(root)
 

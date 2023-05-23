@@ -367,12 +367,14 @@ def input_params( dataPath,
             print('No metadata file specified!')
         else:
             print('Specified metadata file cannot be read!')
-        repoDir = str(pathlib.Path.cwd())
-        repoDir = repoDir.replace('\\', '/').replace('\\'[0], '/')
-        metaPath=repoDir+'/resources/raspshake_metadata.inv'
+        repoDir = pathlib.Path(os.path.dirname(__file__).parent)
+        metaPath= repoDir.joinpath('/resources/rs3dv7_metadata.inv').as_posix()
         print('Using default metadata file for Raspberry Shake v.7 contained in repository at\n', metaPath)
     else:
-        metaPath = str(metaPath)
+        if isinstance(metaPath, pathlib.PurePath):
+            metaPath = metaPath.as_posix()
+        else:
+            metaPath = pathlib.Path(metaPath).as_posix()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -416,10 +418,8 @@ def input_params( dataPath,
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
-        if metaPath == r'resources/raspshake_metadata.inv':
-            metadir = str(pathlib.Path(os.getcwd())).replace('\\', '/')
-            metadir = metadir.replace('\\'[0], '/')
-            metaPath = str(pathlib.Path(os.getcwd()))+'/'+metaPath
+        if metaPath == r'resources/rs3dv7_metadata.inv':
+            metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
     #Add key/values to input parameter dictionary
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
@@ -626,7 +626,7 @@ def gui():
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    gui_root.iconbitmap(os.path.join(os.path.dirname(__file__), "../resources/sprit_icon_alpha.ico"))
+    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath("/resources/sprit_icon_alpha.ico"))
     App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
