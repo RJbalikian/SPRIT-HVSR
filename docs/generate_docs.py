@@ -36,25 +36,32 @@ else:
             break
 
 src_path = pathlib.Path(subdir)
-trg_path = src_path.parent # gets the parent of the folder 
+trg_path = src_path.parent # this ends up being current folder, usually
 
-keepList = ['generate_docs', 'conf', 'requirements']
-for f in trg_path.iterdir():
-    if f.stem in keepList or f.is_dir():
+keepList = ['generate_docs.py', 'conf.py', 'requirements.txt']
+for t in trg_path.iterdir():
+    if t.name in keepList:
         pass
+    elif t.is_dir():
+        for file in t.iterdir():
+            if file.is_dir():
+                for f in file.iterdir():
+                    os.remove(f)
+                os.rmdir(file)
+            else:
+                destFilePath = trg_path.joinpath(file.name)
+                if destFilePath.is_file() and file.name not in keepList:
+                    os.remove(destFilePath)
+                file = file.rename(destFilePath)
+                if file.name=='index.html':
+                    mainhtmlFPath = file.parent.parent.joinpath('main.html')
+                    if mainhtmlFPath.is_file():
+                        os.remove(mainhtmlFPath)
+                    file.rename(mainhtmlFPath)      
+        os.rmdir(t)
     else:
-        os.remove(f)
+        os.remove(t)
 
-for each_file in src_path.glob('*.*'): # grabs all files
-    destFilePath = trg_path.joinpath(each_file.name)
-    if destFilePath.is_file():
-        os.remove(destFilePath)
-    each_file = each_file.rename(destFilePath) # moves to parent folder.
-    if each_file.name == 'index.html':
-        mainhtmlFPath = each_file.parent.parent.joinpath('main.html')
-        if mainhtmlFPath.is_file():
-            os.remove(mainhtmlFPath)
-        each_file.rename(mainhtmlFPath)
 os.rmdir(subdir)
 
 repo_path = pathlib.Path('..')

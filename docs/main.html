@@ -98,6 +98,10 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="sprit.resources" href="resources/index.html">sprit.resources</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt><code class="name"><a title="sprit.sprit" href="sprit.html">sprit.sprit</a></code></dt>
 <dd>
 <div class="desc"><p>This module contains all the functions needed to run the HVSR analysis</p></div>
@@ -725,7 +729,7 @@ If not specified, does not write file</dd>
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    gui_root.iconbitmap(os.path.join(os.path.dirname(__file__), &#34;../resources/sprit_icon_alpha.ico&#34;))
+    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath(&#34;/resources/sprit_icon_alpha.ico&#34;))
     App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -930,7 +934,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-05-22', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-05-23', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1067,12 +1071,14 @@ This is necessary for Raspberry Shake data.</dd>
             print(&#39;No metadata file specified!&#39;)
         else:
             print(&#39;Specified metadata file cannot be read!&#39;)
-        repoDir = str(pathlib.Path.cwd())
-        repoDir = repoDir.replace(&#39;\\&#39;, &#39;/&#39;).replace(&#39;\\&#39;[0], &#39;/&#39;)
-        metaPath=repoDir+&#39;/resources/raspshake_metadata.inv&#39;
+        repoDir = pathlib.Path(os.path.dirname(__file__).parent)
+        metaPath= repoDir.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;).as_posix()
         print(&#39;Using default metadata file for Raspberry Shake v.7 contained in repository at\n&#39;, metaPath)
     else:
-        metaPath = str(metaPath)
+        if isinstance(metaPath, pathlib.PurePath):
+            metaPath = metaPath.as_posix()
+        else:
+            metaPath = pathlib.Path(metaPath).as_posix()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -1116,10 +1122,8 @@ This is necessary for Raspberry Shake data.</dd>
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
-        if metaPath == r&#39;resources/raspshake_metadata.inv&#39;:
-            metadir = str(pathlib.Path(os.getcwd())).replace(&#39;\\&#39;, &#39;/&#39;)
-            metadir = metadir.replace(&#39;\\&#39;[0], &#39;/&#39;)
-            metaPath = str(pathlib.Path(os.getcwd()))+&#39;/&#39;+metaPath
+        if metaPath == r&#39;resources/rs3dv7_metadata.inv&#39;:
+            metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
 
     #Add key/values to input parameter dictionary
     inputParamDict = {&#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
@@ -2945,6 +2949,7 @@ If specified, filepath to write to updated inventory file to.</p>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="sprit.resources" href="resources/index.html">sprit.resources</a></code></li>
 <li><code><a title="sprit.sprit" href="sprit.html">sprit.sprit</a></code></li>
 <li><code><a title="sprit.sprit_gui" href="sprit_gui.html">sprit.sprit_gui</a></code></li>
 </ul>
