@@ -16,7 +16,6 @@ For guidelines on acquisition, processing, and interpration of H/V data, see: <h
 # Documentation
 - API Documentation [here](https://rjbalikian.github.io/SPRIT/main.html)</a>
 - See Wiki for more information [here](https://github.com/RJbalikian/SPRIT/wiki) (in progress)
-- See examples for examples on how to compute [here](https://github.com/RJbalikian/SPRIT/tree/main/examples) (in progress): 
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
