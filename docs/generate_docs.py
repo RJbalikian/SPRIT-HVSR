@@ -46,7 +46,11 @@ for t in trg_path.iterdir():
         for file in t.iterdir():
             if file.is_dir():
                 for f in file.iterdir():
-                    os.remove(f)
+                    destFilePath = trg_path.joinpath(f.name)
+                    print(destFilePath)
+                    if destFilePath.exists():
+                        os.remove(destFilePath)
+                    f = f.rename(destFilePath)
                 os.rmdir(file)
             else:
                 destFilePath = trg_path.joinpath(file.name)
