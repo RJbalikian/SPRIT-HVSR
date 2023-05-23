@@ -38,8 +38,7 @@ else:
 src_path = pathlib.Path(subdir)
 trg_path = src_path.parent # gets the parent of the folder 
 
-keepList = ['generate_docs', 'conf']
-
+keepList = ['generate_docs', 'conf', 'requirements']
 for f in trg_path.iterdir():
     if f.stem in keepList or f.is_dir():
         pass

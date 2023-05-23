@@ -1,0 +1,8 @@
+matplotlib
+numpy
+pandas
+obspy
+scipy
+ipykernel
+pyqt5
+tkcalendar
