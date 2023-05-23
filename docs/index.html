@@ -1,65 +1,94 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
-<title>sprit.resources API documentation</title>
-<meta name="description" content="" />
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
-<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
-<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
-</head>
-<body>
-<main>
-<article id="content">
-<header>
-<h1 class="title">Namespace <code>sprit.resources</code></h1>
-</header>
-<section id="section-intro">
-</section>
-<section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="sprit.resources.conf" href="conf.html">sprit.resources.conf</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
-</section>
-<section>
-</section>
-<section>
-</section>
-<section>
-</section>
-</article>
-<nav id="sidebar">
-<h1>Index</h1>
-<div class="toc">
-<ul></ul>
-</div>
-<ul id="index">
-<li><h3>Super-module</h3>
+<h1>SPRĪT</h1>
+<p>SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)</p>
+<h1>Introduction</h1>
+<p>The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.</p>
+<p>This package will allow ambient seismic data to be read in the most common seismic data formats, and will perform Horizontal Vertical Spectral Ratio (HVSR) analysis on the data. H/V analysis was standardized and popularized by the Site EffectS assessment using AMbient Excitations (SESAME) project, with a comprehensive final report issued in 2003.<sup><a href="#1">1</a></sup> This SESAME project and its J-SESAME pacakge were crucial in the developing of the HVSR technique, and the outputs aided in the development of this software package.</p>
+<p>This python package is built in large part off the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.<sup><a href="#2">2</a></sup> Specifically, the computeHVSR.py tools that enable the ability to rank HVSR peaks, calculate data quality and peak quality, and the combining of the horizontal components was adapted directly from that package. Because the SpRĪT package is intended to be used to analyze data from rapid field data acquisitions (less than an hour per site), much of the IRIS package was adapted from daily to HV curve calculations to sub-hourly and even sub-minute HV calculations. Because there is limited data, there is no baseline to compare to, so that element is excluded from this package.</p>
+<p>That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup><a href="#3">3</a></sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.</p>
+<p>For guidelines on acquisition, processing, and interpration of H/V data, see: <a href="http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf">http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf</a>. </p>
+<h1>Documentation</h1>
 <ul>
-<li><code><a title="sprit" href="../index.html">sprit</a></code></li>
+<li>API Documentation <a href="https://rjbalikian.github.io/SPRIT/main.html">here</a></a></li>
+<li>See Wiki for more information <a href="https://github.com/RJbalikian/SPRIT/wiki">here</a> (in progress)</li>
+<li>See examples for examples on how to compute <a href="https://github.com/RJbalikian/SPRIT/tree/main/examples">here</a> (in progress): </li>
 </ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<h1>Dependencies</h1>
+<p>Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
+<table>
+	<tr>
+	<th>Dependency</th>
+ 		<th>Link</th>
+                       		<th>Description</th>
+                                                                                     </tr>
+
+	<tr>
+		<td> Matplotlib  	</td>
+		<td> <a href="https://matplotlib.org/">https://matplotlib.org/</a>  	</td>
+		<td> Comprehensive library for creating static, animated, andinteractive visualizationsin python     	</td>
+	</tr>
+	<tr>
+		<td> Numpy      	</td>
+		<td> <a href="https://numpy.org/">https://numpy.org/</a>       	</td>
+		<td> "The fundamental package for scientific computing with Python"                                  	</td>
+	</tr>
+	<tr>
+		<td> Obspy      	</td>
+		<td> <a href="https://docs.obspy.org/">https://docs.obspy.org/</a>  	</td>
+		<td> Python framework for processing seismological data                                              	</td>
+	</tr>
+	<tr>
+		<td> Scipy      	</td>
+		<td> <a href="https://scipy.org/">https://scipy.org/</a>       	</td>
+		<td> "Fundamental algorithms for scientific computing in Python"                                     	</td>
+	</tr>
+	<tr>
+		<td> Pandas     	</td>
+		<td> <a href="https://pandas.pydata.org">https://pandas.pydata.org</a>	</td>
+		<td> "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"    	</td>
+	</tr>
+</table>
+<h2>Optional Dependencies</h2>
+<table>
+	<tr>
+	<th>Dependency</th>
+ 		<th>Link</th>
+                      		<th>Description</th>
+                                 		<th>Use</th>
+                                               </tr>
+
+	<tr>
+		<td> ipykernel             	</td>
+		<td> <a href="https://ipython.org/">https://ipython.org/</a>    	</td>
+		<td> Python kernel for running Jupyter notebooks 	</td>
+		<td> Used to run SpRĪT in Jupyter notebook             	</td>
+	</tr>
+	<tr>
+		<td> pyqt5                 	</td>
+		<td> <a href="https://pypi.org/project/PyQt5/">https://pypi.org/project/PyQt5/</a> 	</td>
+		<td> Python binding of Qt GUI toolkit    	</td>
+		<td> Used for manual noise removal windows in Jupyter  	</td>
+	</tr>
+	<tr>
+		<td> tkcalendar            	</td>
+		<td> <a href="https://pypi.org/project/tkcalendar/">https://pypi.org/project/tkcalendar/</a>	</td>
+		<td> Module for tkinter calendar widget	</td>
+		<td> Used for gui for easy date selection            	</td>
+	</tr>
+</table>
+<h1>References</h1>
 <ul>
-<li><code><a title="sprit.resources.conf" href="conf.html">sprit.resources.conf</a></code></li>
+<li><a id="1">[1]</a> <a href="http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf">http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf</a></li>
+<li><a id="2">[2]</a> <a href="https://github.com/iris-edu/HVSR">https://github.com/iris-edu/HVSR</a></li>
+<li><a id="3">[3]</a> <a href="http://service.iris.edu/mustang/">http://service.iris.edu/mustang/</a></li>
 </ul>
-</li>
+<h1>Considerations</h1>
+<p>Summary from SESAME Project (from <a href="https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf">https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf</a>):
+In very brief, the main learnings may be summarized as follows: </p>
+<ul>
+<li>In situ soil / sensor coupling should be handled with care. Concrete and asphalt provide good results, whereas measuring on soft / irregular soils such as mud, grass, ploughed soil, ice, gravel, not compacted snow, etc. should be avoided. Artificial soil / sensor coupling should be avoided unless it is absolutely necessary, for example, to compensate a strong inclination of the soil. In such a case, either a pile of sand, or a trihedron should be used This soil/sensor coupling issue proves to be particularly important under windy conditions.</li>
+<li>It is recommended not to measure above underground structures. Nearby surface structures should be considered with care, particularly under windy conditions. </li>
+<li>Measurements under wind or strong rain should be avoided. Wind has been found to induce very significant low frequency perturbations. </li>
+<li>The proximity of some specific noise sources should be considered with care (or avoided using an anti-trigger window selection to remove the transients): nearby walking, high speed car or truck traffic, industrial machinery, etc. </li>
+<li>Results tend to be stable with time (if other parameters, such as weather conditions, etc. are kept constant). </li>
+<li>No matter how strongly a parameter influences H/V amplitudes, the value of the frequency peak is usually not or slightly affected, with the noticeable exception of the wind in certain conditions.</li>
 </ul>
-</nav>
-</main>
-<footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
-</footer>
-</body>
-</html>
