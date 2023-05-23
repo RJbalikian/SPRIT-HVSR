@@ -4,7 +4,7 @@ setup(
     name="SPRĪT HVSR",
     version="0.0.1",
     install_requires=["obspy", "scipy", "matplotlib", "pandas", "numpy"],
-    extras_require={'optional':["ipykernel", "pyqt5", "tkcalendar"]}
+    extras_require={'optional':["ipykernel", "pyqt5", "tkcalendar"]},
     description="A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data",
     author="Riley Balikian",
     author_email="balikian@illinois.edu",
