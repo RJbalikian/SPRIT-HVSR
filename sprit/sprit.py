@@ -626,7 +626,7 @@ def gui():
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath("/resources/sprit_icon_alpha.ico"))
+    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__)).joinpath("/resources/sprit_icon_alpha.ico"))
     App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
