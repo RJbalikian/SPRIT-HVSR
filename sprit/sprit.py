@@ -615,6 +615,7 @@ def gui():
     
     No parameters, no returns; just opens the gui window.
     """
+    import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath('gui/tkgui.py').as_posix())
     from sprit.sprit_gui import App
@@ -626,7 +627,8 @@ def gui():
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__)).joinpath("/resources/sprit_icon_alpha.ico"))
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sprit_icon_alpha.ico'))
+    gui_root.iconbitmap(icon_path)
     App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
