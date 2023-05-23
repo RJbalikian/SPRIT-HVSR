@@ -5,7 +5,7 @@ import datetime
 import math
 import os
 import pathlib
-import sys
+import pkg_resources
 import tempfile
 import warnings
 import xml.etree.ElementTree as ET
@@ -368,8 +368,9 @@ def input_params( dataPath,
         else:
             print('Specified metadata file cannot be read!')
         repoDir = pathlib.Path(os.path.dirname(__file__))
-        metaPath= repoDir.joinpath('/resources/rs3dv7_metadata.inv').as_posix()
-        print('Using default metadata file for Raspberry Shake v.7 contained in repository at\n', metaPath)
+        metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
+        #metaPath= repoDir.joinpath('/resources/rs3dv7_metadata.inv').as_posix()
+        print('Using default metadata file for Raspberry Shake v.7 distributed with package')
     else:
         if isinstance(metaPath, pathlib.PurePath):
             metaPath = metaPath.as_posix()
@@ -419,7 +420,8 @@ def input_params( dataPath,
     #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
         if metaPath == r'resources/rs3dv7_metadata.inv':
-            metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
+            metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
+            #metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
     #Add key/values to input parameter dictionary
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
