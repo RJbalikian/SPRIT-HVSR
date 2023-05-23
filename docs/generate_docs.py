@@ -113,26 +113,6 @@ for each_file in repo_path.iterdir():
             html = html.replace('|', '\t</td>\n\t</tr>\n</table>', 1)
             html = html.replace('</table></p>', '</table>', 1)
 
-            #Optional dependency table
-            html = html.replace('<p>| Dependency', '<table>\n\t<tr>\n\t<th>Dependency</th>\n', 1)
-            html = html.replace('| Link', '\t\t<th>Link</th>\n', 1)
-            html = html.replace('| Description', '\t\t<th>Description</th>\n', 1)
-            html = html.replace('| Use', '\t\t<th>Use</th>\n', 1)
-            html = html.replace('|','</tr>', 1)
-            html = html.replace('|-----------------------|---------------------------|---------------------------------------------|---------------------------------------------------|','')
-
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 3)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
-
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 3)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
-
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 3)
-            html = html.replace('|', '\t</td>\n\t</tr>\n</table>\n', 1)
-            html = html.replace('</table>\n </p>', '</table>', 1)
 
             dst = pathlib.Path('index.html')
             with open(dst, 'w') as f:
