@@ -50,7 +50,7 @@ jobs:
           with:
             password: ${{ secrets.TEST_PYPI_API_TOKEN }}
             repository-url: https://test.pypi.org/legacy/
-            package-dir: ./dist/
+            packages-dir: ./dist/
 
   publish_pypi:
       needs: publish_test
@@ -63,4 +63,4 @@ jobs:
           with:
             password: ${{ secrets.PYPI_API_TOKEN }}
             repository-url: https://upload.pypi.org/legacy/
-            package-dir: ./dist/
+            packages-dir: ./dist/
