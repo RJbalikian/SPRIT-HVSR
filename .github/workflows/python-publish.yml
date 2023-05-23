@@ -40,7 +40,7 @@ jobs:
       - name: Build Distribution
         run: python -m build --sdist --wheel --outdir dist/
            
-    publish_test:
+  publish_test:
       needs: build
       runs-on: ubuntu-latest
   
@@ -52,7 +52,7 @@ jobs:
             repository-url: https://test.pypi.org/legacy/
             package-dir: ./dist/
 
-    publish_pypi:
+  publish_pypi:
       needs: build
       runs-on: ubuntu-latest
       if: startsWith(github.ref, 'refs/tags')
