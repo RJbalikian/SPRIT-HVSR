@@ -367,7 +367,7 @@ def input_params( dataPath,
             print('No metadata file specified!')
         else:
             print('Specified metadata file cannot be read!')
-        repoDir = pathlib.Path(os.path.dirname(__file__).parent)
+        repoDir = pathlib.Path(os.path.dirname(__file__))
         metaPath= repoDir.joinpath('/resources/rs3dv7_metadata.inv').as_posix()
         print('Using default metadata file for Raspberry Shake v.7 contained in repository at\n', metaPath)
     else:
