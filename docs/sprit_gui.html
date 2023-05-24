@@ -43,8 +43,7 @@ Na
 import datetime
 import os
 import pathlib
-import pytz
-import sys
+import pkg_resources
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -55,6 +54,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 matplotlib.use(&#39;TkAgg&#39;)
 import numpy as np
+import pytz
 from tkcalendar import DateEntry
 
 import sprit
@@ -2251,7 +2251,9 @@ def on_closing():
 
 if __name__ == &#34;__main__&#34;:
     root = tk.Tk()
-    root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath(&#34;/resources/sprit_icon_alpha.ico&#34;))
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sprit_icon_alpha.ico&#39;))
+
+    root.iconbitmap(icon_path)
 
     app = App(root)
 

@@ -714,6 +714,7 @@ If not specified, does not write file</dd>
     
     No parameters, no returns; just opens the gui window.
     &#34;&#34;&#34;
+    import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
     from sprit.sprit_gui import App
@@ -725,7 +726,8 @@ If not specified, does not write file</dd>
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    gui_root.iconbitmap(pathlib.Path(os.path.dirname(__file__).parent).joinpath(&#34;/resources/sprit_icon_alpha.ico&#34;))
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sprit_icon_alpha.ico&#39;))
+    gui_root.iconbitmap(icon_path)
     App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -930,7 +932,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-05-23', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-05-24', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1067,9 +1069,10 @@ This is necessary for Raspberry Shake data.</dd>
             print(&#39;No metadata file specified!&#39;)
         else:
             print(&#39;Specified metadata file cannot be read!&#39;)
-        repoDir = pathlib.Path(os.path.dirname(__file__).parent)
-        metaPath= repoDir.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;).as_posix()
-        print(&#39;Using default metadata file for Raspberry Shake v.7 contained in repository at\n&#39;, metaPath)
+        repoDir = pathlib.Path(os.path.dirname(__file__))
+        metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
+        #metaPath= repoDir.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;).as_posix()
+        print(&#39;Using default metadata file for Raspberry Shake v.7 distributed with package&#39;)
     else:
         if isinstance(metaPath, pathlib.PurePath):
             metaPath = metaPath.as_posix()
@@ -1119,7 +1122,8 @@ This is necessary for Raspberry Shake data.</dd>
     #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
         if metaPath == r&#39;resources/rs3dv7_metadata.inv&#39;:
-            metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
+            metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
+            #metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
 
     #Add key/values to input parameter dictionary
     inputParamDict = {&#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,

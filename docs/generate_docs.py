@@ -40,29 +40,31 @@ trg_path = src_path.parent # this ends up being current folder, usually
 
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki']
 for t in trg_path.iterdir():
-    print('main folder', t)
+    #print('main folder', t)
     if t.name in keepList:
         pass
     elif t.is_dir():
         for file in t.iterdir():
-            print('second layer', file)
+            #print('second layer', file)
             if file.is_dir():
                 if file.name == 'resources':
                     for f in file.iterdir():
                         os.remove(f)
+                elif file.name == 'wiki':
+                    pass
                 else:
-                    print('file', file.name)
+                    #print('file', file.name)
                     for f in file.iterdir():
                         destFilePath = trg_path.joinpath(f.name)
                         print(destFilePath)
                         if destFilePath.exists():
                             os.remove(destFilePath)
                         f = f.rename(destFilePath)
-                if file.name not in keepList:
+                if file.name not in keepList and file.parent.name != 'wiki':
                     os.rmdir(file)
             else:
                 destFilePath = trg_path.joinpath(file.name)
-                if destFilePath.is_file() and file.name not in keepList:
+                if destFilePath.is_file() and file.name not in keepList and file.parent.name != 'wiki':
                     os.remove(destFilePath)
                 file = file.rename(destFilePath)
                 if file.name=='index.html':
@@ -73,7 +75,7 @@ for t in trg_path.iterdir():
         if file.name not in keepList:
             os.rmdir(t)
     else:
-        if file.name not in keepList:
+        if t.name not in keepList:
             os.remove(t)
 
 #os.rmdir(subdir)
