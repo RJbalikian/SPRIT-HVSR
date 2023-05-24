@@ -10,8 +10,11 @@
 - [License](#license)
 
 ## Introduction
+SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)
 
-Provide a brief overview of your software, its purpose, and key features.
+The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.
+
+More information [here](https://github.com/RJbalikian/SPRIT/wiki/Introduction)
 
 ## Installation
 
