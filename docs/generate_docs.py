@@ -38,7 +38,7 @@ else:
 src_path = pathlib.Path(subdir)
 trg_path = src_path.parent # this ends up being current folder, usually
 
-keepList = ['generate_docs.py', 'conf.py', 'requirements.txt']
+keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki']
 for t in trg_path.iterdir():
     print('main folder', t)
     if t.name in keepList:
@@ -58,7 +58,8 @@ for t in trg_path.iterdir():
                         if destFilePath.exists():
                             os.remove(destFilePath)
                         f = f.rename(destFilePath)
-                os.rmdir(file)
+                if file.name not in keepList:
+                    os.rmdir(file)
             else:
                 destFilePath = trg_path.joinpath(file.name)
                 if destFilePath.is_file() and file.name not in keepList:
@@ -69,9 +70,11 @@ for t in trg_path.iterdir():
                     if mainhtmlFPath.is_file():
                         os.remove(mainhtmlFPath)
                     file.rename(mainhtmlFPath)      
-        os.rmdir(t)
+        if file.name not in keepList:
+            os.rmdir(t)
     else:
-        os.remove(t)
+        if file.name not in keepList:
+            os.remove(t)
 
 #os.rmdir(subdir)
 
