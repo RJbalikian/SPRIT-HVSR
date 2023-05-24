@@ -9,7 +9,7 @@
 - [Contributing](#contributing)
 - [License](#license)
 
-Just minor updates
+A minor update to trigger wiki update
 
 ## Introduction
 SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)
