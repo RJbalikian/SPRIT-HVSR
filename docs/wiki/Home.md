@@ -9,6 +9,8 @@
 - [Contributing](#contributing)
 - [License](#license)
 
+Just minor updates
+
 ## Introduction
 SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)
 
