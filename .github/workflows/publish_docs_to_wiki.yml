@@ -4,7 +4,7 @@ name: Publish docs to Wiki
 on:
   push:
     paths:
-      - docs/** # This includes all sub folders
+      - docs/wiki/** # This includes all sub folders
     branches:
       - main # This can be changed to any branch of your preference
 
@@ -38,7 +38,7 @@ jobs:
       # 5. Push new Wiki content
       - name: Push content to wiki
         run: |
-          rsync -av --delete docs/ tmp_wiki/ --exclude .git
+          rsync -av --delete docs/wiki tmp_wiki/ --exclude .git
           cd tmp_wiki
           git add .
           git commit -m "Update Wiki content" 
