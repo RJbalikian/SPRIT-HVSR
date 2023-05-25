@@ -6,7 +6,6 @@
   - [Getting Started](#getting-started)
   - [Advanced Features](#advanced-features)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Introduction
@@ -34,10 +33,6 @@ Cover more advanced features or functionality of your software. Explain how user
 
 Address common issues and provide troubleshooting tips. Include frequently asked questions (FAQs) if applicable.
 
-## Contributing
-
-Explain how users can contribute to your software, such as reporting bugs, suggesting improvements, or submitting code contributions.
-
 ## License
 
-Specify the license under which your software is distributed. Include any relevant copyright or attribution information.
+MIT license
