@@ -40,4 +40,4 @@ Explain how users can contribute to your software, such as reporting bugs, sugge
 
 ## License
 
-Specify the license under which your software is distributed. Include any relevant copyright or attribution information.
+MIT license
