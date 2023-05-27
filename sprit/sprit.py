@@ -765,7 +765,7 @@ def get_metadata(params, write_path=''):
     return params
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='raw', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -857,7 +857,33 @@ def fetch_data(params, inv=None, source='raw', trim_dir=None, export_format='mse
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source=='file':
-        rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+        print(datapath)
+        if '}' in datapath.as_posix():
+            datapath = datapath.as_posix().replace('{','')
+            datapath = datapath.split('}')
+        else:
+            datapath = datapath.as_posix().split(' ')
+        for i, d in enumerate(datapath):
+            datapath[i] = d.strip()
+            if datapath[i].startswith('//'):
+                pass
+            elif datapath[i].startswith('/') and datapath[0].startswith('//'):
+                datapath[i] = '/' + datapath[i]
+
+        if isinstance(datapath, list) or isinstance(datapath, tuple):
+            rawTraces = []
+            for datafile in datapath:
+                rawTrace = obspy.read(datafile)
+                rawTrace = rawTrace
+                rawTraces.append(rawTrace)
+            
+            for i, trace in enumerate(rawTraces):
+                if i == 0:
+                    rawDataIN = trace
+                else:
+                    rawDataIN = rawDataIN + trace
+        else:
+            rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         rawDataIN.attach_response(inv)
 
     if rawDataIN is None:
@@ -2538,7 +2564,7 @@ def __gethvsrparams(hvsr_out):
 
 #Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
-    if fig is None and ax is None:
+    if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
     
     new_stream = stream.copy()
