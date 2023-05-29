@@ -764,6 +764,17 @@ def get_metadata(params, write_path=''):
     
     return params
 
+#Check that input strema has Z, E, N channels
+def has_required_channels(stream):
+    channel_set = set()
+    
+    # Extract the channel codes from the traces in the stream
+    for trace in stream:
+        channel_set.add(trace.stats.channel)
+    
+    # Check if Z, E, and N channels are present
+    return {'Z', 'E', 'N'}.issubset(channel_set)
+
 #Reads in traces to obspy stream
 def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2):
     """Fetch ambient seismic data from a source to read into obspy stream
@@ -882,6 +893,19 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         else:
             rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         rawDataIN.attach_response(inv)
+    elif source=='batch':
+        print("Batch read not yet supported")
+        if isinstance(datapath, list) or isinstance(datapath, tuple):
+            for d in datapath:
+                pass
+        else:
+            print('datapath parameter should be list or tuple if batch mode is selected, not {}.'.format(type(datapath)))
+    else:
+        try:
+            rawDataIN = obspy.read(datapath)
+            rawDataIN.attach_response(inv)
+        except:
+            print('Read or source error')
 
     if rawDataIN is None:
         return
@@ -1023,6 +1047,90 @@ def __read_RS_data(datapath, source, year, doy, inv, params):
         pass #Eventually do something
         rawDataIN.attach_response(inv)
     return rawDataIN
+
+def batch_data_read(input_filelist, input_params_list=None, verbose=False):
+    """Function to read list of files and parameters
+
+    Parameters
+    ----------
+    input_filelist : list
+        List of filepaths to read using obspy.read()
+    input_params_list : list, optional
+        List of dictionary with select read parameters, by default None
+    verbose : bool, default = False
+        Whether to print results 
+
+    Returns
+    -------
+    stream_dict : dict
+        Dictionary contiaining unique streams
+    """
+
+    # Dictionary to store the stream objects
+    stream_dict = {}
+
+    # Read and process each MiniSEED file
+    for i, file in enumerate(input_filelist):
+        if input_params_list is None:
+            pass
+        else:
+            read_params = input_params_list[i]
+        
+        # Read the MiniSEED file into a Stream object
+        if isinstance(read_params, dict):
+            stream = obspy.read(file, **read_params)
+        else:
+            stream = obspy.read(file)
+
+        # Get the network, station, and location codes
+        network = stream[0].stats.network
+        station = stream[0].stats.station
+        location = stream[0].stats.location
+        
+        # Create a unique identifier for the network-station-location combination
+        stream_id = f"{network}.{station}.{location}"
+
+        # Check if the stream has a single trace
+        if len(stream) == 1:
+
+            # Check if the stream ID exists in the dictionary
+            if stream_id in stream_dict:
+                if stream[0].stats.channel == 'Z':
+                    stream_dict[stream_id][0] = stream[0]
+                elif stream[0].stats.channel == 'E':
+                    stream_dict[stream_id][1] = stream[0]
+                elif stream[0].stats.channel == 'N':
+                    stream_dict[stream_id][2] = stream[0]
+            else:
+                # Create a new stream object with the first trace and assign Z, E, and N channels
+                new_stream = obspy.Stream(traces=[None, None, None])
+                if stream[0].stats.channel == 'Z':
+                    new_stream[0] = stream[0]
+                elif stream[0].stats.channel == 'E':
+                    new_stream[1] = stream[0]
+                elif stream[0].stats.channel == 'N':
+                    new_stream[2] = stream[0]
+                # Assign network, station, location, etc. to the new_stream as required
+                stream_dict[stream_id] = new_stream
+        else:
+            # Check if the stream has required channels and add it directly to stream_dict
+            if has_required_channels(stream):
+                stream_dict[stream_id] = stream
+
+    # Validate the channels for each stream in stream_dict
+    for stream_id, stream in stream_dict.items():
+        if not has_required_channels(stream):
+            if verbose:
+                print(f"Stream {stream_id} does not have all required channels, removing.")
+            del stream_dict[stream_id]
+
+    if verbose:
+        print("Streams:\n")
+        print(stream_dict.keys())
+        #for k in stream_dict.keys():
+        #    print(k)
+
+    return stream_dict
 
 #Trim data 
 def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):

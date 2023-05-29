@@ -361,6 +361,8 @@ class App:
 
                 if self.file_source.get() == 'raw' or self.file_source.get() == 'dir':
                     self.browse_data_filepath_button.configure(text='Browse Folder')
+                elif self.file_source.get() == 'batch':
+                    self.tab_control.select(self.batch_tab)
                 else:
                     self.browse_data_filepath_button.configure(text='Browse File(s)')
                 return True
@@ -377,6 +379,7 @@ class App:
         ttk.Radiobutton(master=sourcFrame, text='File', variable=self.file_source, value='file', command=on_source_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
         ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
         ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Batch', variable=self.file_source, value='batch', command=on_source_select).grid(row=0, column=3, sticky='w', padx=(5, 10))
 
         #Instrument select
         ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
