@@ -176,7 +176,12 @@ class App:
             
             self.starttime, self.endtime = get_times()
 
-            self.params = sprit.input_params( dataPath=self.data_path.get(),
+            if len(self.fpath) > 1:
+                self.fpath = list(self.fpath)
+            else:
+                self.fpath = self.fpath[0]
+
+            self.params = sprit.input_params(dataPath=self.fpath,
                                 metaPath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
@@ -420,23 +425,32 @@ class App:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
+        def filepath_update():
+            self.fpath = self.data_path.get()
+            update_input_params_call()
+
         self.data_path = tk.StringVar()
         self.data_path.trace('w', on_data_path_change)
-        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=update_input_params_call)
+        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
-    
 
         def browse_data_filepath():
             if self.file_source.get() == 'raw' or self.file_source.get() == 'dir':
-                fpath = filedialog.askdirectory()
-                if fpath:
+                self.fpath = filedialog.askdirectory()
+                if self.fpath:
                     self.data_filepath_entry.delete(0, 'end')
-                    self.data_filepath_entry.insert(0, fpath)
+                    self.data_filepath_entry.insert(0, self.fpath)
             else:
-                fpath = filedialog.askopenfilenames()
-                if fpath:
+                self.fpath = filedialog.askopenfilenames()
+                
+                #fpath will always be tuple
+                self.no_data_files = len(self.fpath)
+                    
+                if self.fpath:
                     self.data_filepath_entry.delete(0, 'end')
-                    self.data_filepath_entry.insert(0, fpath)
+                    for f in self.fpath:
+                        self.data_filepath_entry.insert('end', self.fpath)
+                
             update_input_params_call()
 
 

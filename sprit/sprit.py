@@ -801,7 +801,17 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     if inv is None:
         inv = params['inv'], 
     date=params['acq_date']
-    datapath = checkifpath(datapath)
+
+    if '}' in str(datapath):
+        datapath = datapath.as_posix().replace('{','')
+        datapath = datapath.split('}')
+    
+    if isinstance(datapath,list):
+        for i, d in enumerate(datapath):
+            datapath[i] = checkifpath(str(d).strip())
+    else:
+        datapath = checkifpath(datapath)
+
     inst = params['instrument']
 
     #Need to put dates and times in right formats first
@@ -857,19 +867,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source=='file':
-        print(datapath)
-        if '}' in datapath.as_posix():
-            datapath = datapath.as_posix().replace('{','')
-            datapath = datapath.split('}')
-        else:
-            datapath = datapath.as_posix().split(' ')
-        for i, d in enumerate(datapath):
-            datapath[i] = d.strip()
-            if datapath[i].startswith('//'):
-                pass
-            elif datapath[i].startswith('/') and datapath[0].startswith('//'):
-                datapath[i] = '/' + datapath[i]
-
         if isinstance(datapath, list) or isinstance(datapath, tuple):
             rawTraces = []
             for datafile in datapath:
