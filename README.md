@@ -1,5 +1,5 @@
 # SPRĪT 
-SpRĪT (HVSR): Spectral Ratio Investigation Toolset (Horizontal Vertical Spectral Ratio)
+SpRĪT (HVSR): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio processing, using any data format readable by the Obspy python package.
 
 # Introduction
 
