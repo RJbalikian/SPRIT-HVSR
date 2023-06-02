@@ -143,7 +143,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             hasDate= False
             year = datetime.datetime.today().year
             month = datetime.datetime.today().month
-            day = datetime.datetime.today().day
+            time_int = datetime.datetime.today().time_int
 
         if ':' in inputDT:
             hasTime = True
@@ -159,21 +159,21 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             if len(inputDT.split(div)[0])>2:
                 year = inputDT.split(div)[0]
                 month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
+                time_int = inputDT.split(div)[2].split(timeDiv)[0]
 
             #If last number is 4-dig year            
             elif len(inputDT.split(div)[2].split(timeDiv)[0])>2:
-                #..and first number is day
+                #..and first number is time_int
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%Y'   
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]
+                    time_int = inputDT.split(div)[0]
                 #...and first number is month (like American style)                             
                 else:
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]     
+                    time_int = inputDT.split(div)[1]     
             
             #Another way to catch if first number is (2-digit) year
             elif int(inputDT.split(div)[0])>31:
@@ -184,12 +184,12 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     year = '20'+year
                 else:#...and anything more than current year is from last century
                     year = '19'+year
-                #assumes day will always come last in this instance, as above
+                #assumes time_int will always come last in this instance, as above
                 month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
+                time_int = inputDT.split(div)[2].split(timeDiv)[0]
             #If last digit is (2 digit) year           
             elif int(inputDT.split(div)[2].split(timeDiv)[0])>31:
-                #...and first digit is day
+                #...and first digit is time_int
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%y'       
                     year = inputDT.split(div)[2].split(timeDiv)[0]
@@ -198,8 +198,8 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     else:
                         year = '19'+year
                     month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]                           
-                else: #...and second digit is day
+                    time_int = inputDT.split(div)[0]                           
+                else: #...and second digit is time_int
                     #dateStr = '%m'+div+'%d'+div+'%y'
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     if year < datetime.datetime.today().year:
@@ -207,7 +207,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     else:
                         year = '19'+year
                     month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]                  
+                    time_int = inputDT.split(div)[1]                  
 
         hour=0
         minute=0
@@ -241,7 +241,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             minute=int(timeStrList[1])
             sec = int(timeStrList[2])
 
-        outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
+        outputTimeObj = datetime.datetime(year=int(year),month=int(month), time_int=int(time_int),
                                 hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
 
     elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
@@ -323,8 +323,8 @@ def input_params( dataPath,
         The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary
     acq_date : str, int, date object, or datetime object
         If string, preferred format is 'YYYY-MM-DD'. 
-        If int, this will be interpreted as the day of year of current year (e.g., 33 would be Feb 2 of current year)
-        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following day, use the UTC day).
+        If int, this will be interpreted as the time_int of year of current year (e.g., 33 would be Feb 2 of current year)
+        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following time_int, use the UTC time_int).
     starttime : str, time object, or datetime object, default='00:00:00.00'
         Start time of data stream. This is necessary for Raspberry Shake data. Format can be either 'HH:MM:SS.micros' or 'HH:MM' at minimum.
     endtime : str, time obejct, or datetime object, default='23:59:99.99'
@@ -414,7 +414,7 @@ def input_params( dataPath,
     endtime = date+"T"+endtime
     endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
 
-    acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
+    acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), time_int=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
@@ -464,7 +464,7 @@ def update_shake_metadata(filepath, params, write_path=''):
     elevation = str(params['elevation'])
     depth = str(params['depth'])
     
-    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day with working code
+    startdate = str(datetime.datetime(year=2023, month=2, time_int=15)) #First time_int with working code
     enddate=str(datetime.datetime.today())
 
     filepath = checkifpath(filepath)
@@ -789,7 +789,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         source  : str, {'raw', 'dir', 'file'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
-                'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+                'dir' is used if the time_int's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
@@ -835,7 +835,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         year = date.year
     elif type(date) is tuple:
         if date[0]>366:
-            error('First item in date tuple must be day of year (0-366)', 0)
+            error('First item in date tuple must be time_int of year (0-366)', 0)
         elif date[1] > datetime.datetime.now().year:
             error('Second item in date tuple should be year, but given item is in the future', 0)
         else:
@@ -867,7 +867,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        print("Did not recognize date, using year {} and day {}".format(year, doy))
+        print("Did not recognize date, using year {} and time_int {}".format(year, doy))
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
@@ -2118,6 +2118,104 @@ def __check_tsteps(hvsr_dict):
         minTStep = min(tSteps)
     return minTStep
 
+def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
+    """Function for performing Diffuse Field Assumption (DFA) analysis
+    
+        This feature is not yet implemented.
+    """
+    # Are we doing DFA?
+    # Use equal energy for daily PSDs to give small 'events' a chance to contribute
+    # the same as large ones, so that P1+P2+P3=1
+
+    x_values=params['ppsds']['Z']['period_bin_centers']
+
+    method=params['method']
+    
+    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+    dfaList = ['dfa', 'diffuse field', 'diffuse field assumption']
+    if type(method) is int:
+        method = methodList[method]
+
+    if method in dfaList:
+        if verbose:
+            print('[INFO] Diffuse Field Assumption', flush=True)
+        params['dfa'] = {}
+        params['dfa']['sum_ns_power'] = list()
+        params['dfa']['sum_ew_power'] = list()
+        params['dfa']['sum_z_power'] = list()
+        params['dfa']['time_int_psd'] = {'Z':{}, 'E':{}, 'N':{}}
+        params['dfa']['time_values'] = list()
+        params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
+
+        # Make sure we have all 3 components for every time sample
+        for i, day_time in enumerate(params['ppsds']['Z']['current_times_used']):#day_time_values):
+            #if day_time not in (day_time_psd[0].keys()) or day_time not in (day_time_psd[1].keys()) or day_time not in (day_time_psd[2].keys()):
+            #    continue
+            
+            #Currently the same as day_time, and probably notneeded to redefine
+            time_int = str(params['ppsds']['Z']['current_times_used'][i])#day_time.split('T')[0]
+            if time_int not in params['dfa']['time_values']:
+                params['dfa']['time_values'].append(time_int)
+
+            # Initialize the PSDs.
+            if time_int not in params['dfa']['time_int_psd']['Z'].keys():
+                params['dfa']['time_int_psd']['Z'][time_int] = list()
+                params['dfa']['time_int_psd']['E'][time_int] = list()
+                params['dfa']['time_int_psd']['N'][time_int] = list()
+
+            params['dfa']['time_int_psd']['Z'][time_int].append(params['ppsds']['Z']['psd_values'][i])
+            params['dfa']['time_int_psd']['E'][time_int].append(params['ppsds']['E']['psd_values'][i])
+            params['dfa']['time_int_psd']['N'][time_int].append(params['ppsds']['N']['psd_values'][i])
+
+        # For each time_int equalize energy
+        for time_int in params['dfa']['time_values']:
+
+            # Each PSD for the time_int
+            for k in range(len(params['dfa']['time_int_psd']['Z'][time_int])):
+                Pz = list()
+                P1 = list()
+                P2 = list()
+                sum_pz = 0
+                sum_p1 = 0
+                sum_p2 = 0
+
+                # Each sample of the PSD , convert to power
+                for j in range(len(x_values) - 1):
+                    pz = __get_power([params['dfa']['time_int_psd']['Z'][time_int][k][j], params['dfa']['time_int_psd']['Z'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
+                    Pz.append(pz)
+                    sum_pz += pz
+                    p1 = __get_power([params['dfa']['time_int_psd']['E'][time_int][k][j], params['dfa']['time_int_psd']['E'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
+                    P1.append(p1)
+                    sum_p1 += p1
+                    p2 = __get_power([params['dfa']['time_int_psd']['N'][time_int][k][j], params['dfa']['time_int_psd']['N'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
+                    P2.append(p2)
+                    sum_p2 += p2
+
+                sum_power = sum_pz + sum_p1 + sum_p2  # total power
+
+                # Mormalized power
+                for j in range(len(x_values) - 1):
+                    # Initialize if this is the first sample of the time_int
+                    if k == 0:
+                        params['dfa']['sum_z_power'].append(Pz[j] / sum_power)
+                        params['dfa']['sum_ns_power'].append(P1[j] / sum_power)
+                        params['dfa']['sum_ew_power'].append(P2[j] / sum_power)
+                    else:
+                        params['dfa']['sum_z_power'][j] += (Pz[j] / sum_power)
+                        params['dfa']['sum_ns_power'][j] += (P1[j] / sum_power)
+                        params['dfa']['sum_ew_power'][j] += (P2[j] / sum_power)
+            # Average the normalized daily power
+            for j in range(len(x_values) - 1):
+                params['dfa']['sum_z_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                params['dfa']['sum_ns_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                params['dfa']['sum_ew_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+
+            params['dfa']['equal_interval_energy']['Z'][time_int] = params['dfa']['sum_z_power']
+            params['dfa']['equal_interval_energy']['E'][time_int] = params['dfa']['sum_ns_power']
+            params['dfa']['equal_interval_energy']['N'][time_int] = params['dfa']['sum_ew_power']
+
+    return params
+
 #Main function for processing HVSR Curve
 def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75):
     """Process the input data and get HVSR data
@@ -2231,7 +2329,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
 
     #This gets the hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt)
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params)
 
     origPPSD = params['ppsds_obspy'].copy()
 
@@ -2282,7 +2380,6 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
     else:
         print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
 
-
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
@@ -2290,7 +2387,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
         tStepDict = {}
         for k in hvsr_out['psd_raw']:
             tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt))
+        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out))
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
@@ -2389,106 +2486,8 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind):
     
     return hvsr_out
 
-#Diffuse field assumption, not currently implemented
-def dfa(params, day_time_values, day_time_psd, x_values, equal_daily_energy, median_daily_psd, verbose):
-    """Function for performing Diffuse Field Assumption (DFA) analysis
-    
-        This feature is not yet implemented.
-    """
-    # Are we doing DFA?
-    # Use equal energy for daily PSDs to give small 'events' a chance to contribute
-    # the same as large ones, so that P1+P2+P3=1
-    
-    method=params['method']
-    
-    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
-    dfaList = ['dfa', 'diffuse field', 'diffuse field assumption']
-    if type(method) is int:
-        method = methodList[method]
-        
-    if method in dfaList:
-        if verbose:
-            print('[INFO] Diffuse Field Assumption', flush=True)
-            display = False
-        sum_ns_power = list()
-        sum_ew_power = list()
-        sum_z_power = list()
-        daily_psd = [{}, {}, {}]
-        day_values = list()
-
-        # Make sure we have all 3 components for every time sample
-        for day_time in day_time_values:
-            if day_time not in (day_time_psd[0].keys()) or day_time not in (day_time_psd[1].keys()) or day_time not in (
-            day_time_psd[2].keys()):
-                continue
-            day = day_time.split('T')[0]
-            if day not in day_values:
-                day_values.append(day)
-
-            # Initialize the daily PSDs.
-            if day not in daily_psd[0].keys():
-                daily_psd[0][day] = list()
-                daily_psd[1][day] = list()
-                daily_psd[2][day] = list()
-
-            daily_psd[0][day].append(day_time_psd[0][day_time])
-            daily_psd[1][day].append(day_time_psd[1][day_time])
-            daily_psd[2][day].append(day_time_psd[2][day_time])
-
-        # For each day equalize energy
-        for day in day_values:
-
-            # Each PSD for the day
-            for i in range(len(daily_psd[0][day])):
-                Pz = list()
-                P1 = list()
-                P2 = list()
-                sum_pz = 0
-                sum_p1 = 0
-                sum_p2 = 0
-
-                # Each sample of the PSD , convert to power
-                for j in range(len(x_values) - 1):
-                    pz = __get_power([daily_psd[0][day][i][j], daily_psd[0][day][i][j + 1]], [x_values[j], x_values[j + 1]])
-                    Pz.append(pz)
-                    sum_pz += pz
-                    p1 = __get_power([daily_psd[1][day][i][j], daily_psd[1][day][i][j + 1]], [x_values[j], x_values[j + 1]])
-                    P1.append(p1)
-                    sum_p1 += p1
-                    p2 = __get_power([daily_psd[2][day][i][j], daily_psd[2][day][i][j + 1]], [x_values[j], x_values[j + 1]])
-                    P2.append(p2)
-                    sum_p2 += p2
-
-                sum_power = sum_pz + sum_p1 + sum_p2  # total power
-
-                # Mormalized power
-                for j in range(len(x_values) - 1):
-                    # Initialize if this is the first sample of the day
-                    if i == 0:
-                        sum_z_power.append(Pz[j] / sum_power)
-                        sum_ns_power.append(P1[j] / sum_power)
-                        sum_ew_power.append(P2[j] / sum_power)
-                    else:
-                        sum_z_power[j] += (Pz[j] / sum_power)
-                        sum_ns_power[j] += (P1[j] / sum_power)
-                        sum_ew_power[j] += (P2[j] / sum_power)
-            # Average the normalized daily power
-            for j in range(len(x_values) - 1):
-                sum_z_power[j] /= len(daily_psd[0][day])
-                sum_ns_power[j] /= len(daily_psd[0][day])
-                sum_ew_power[j] /= len(daily_psd[0][day])
-
-            equal_daily_energy[0][day] = sum_z_power
-            equal_daily_energy[1][day] = sum_ns_power
-            equal_daily_energy[2][day] = sum_ew_power
-
-    return 
-
-    
-    return
-
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method=4):
+def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -2505,19 +2504,30 @@ def __get_hvsr_curve(x, psd, method=4):
         hvsr_curve  : list
             List containing H/V ratios at each frequency/period in x
     """
-    if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
-        pass
-        print('DFA method not currently supported')
-    
+    params = hvsr_dict
     hvsr_curve = []
+    eie = params['dfa']['equal_interval_energy']
     for j in range(len(x)-1):
-        psd0 = [psd['Z'][j], psd['Z'][j + 1]]
-        psd1 = [psd['E'][j], psd['E'][j + 1]]
-        psd2 = [psd['N'][j], psd['N'][j + 1]]
-        f =    [x[j], x[j + 1]]
+        if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
+            print('DFA method not currently supported')
+            params = dfa(params, verbose=verbose)
+            for time_interval in params['current_times_used']:
+                if time_interval in eie['Z'].keys() and time_interval in eie['E'].keys() and time_interval in eie['N'].keys():
+                    hvsr = math.sqrt(
+                        (eie['E'][time_interval][j] + eie['N'][time_interval][j]) / eie['Z'][time_interval][j])
+                    hvsr_curve.append(hvsr)
+                else:
+                    if verbose > 0:
+                        print(time_interval + ' missing component, skipped!')
+                    continue
+        else:
+            psd0 = [psd['Z'][j], psd['Z'][j + 1]]
+            psd1 = [psd['E'][j], psd['E'][j + 1]]
+            psd2 = [psd['N'][j], psd['N'][j + 1]]
+            f =    [x[j], x[j + 1]]
 
-        hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
-        hvsr_curve.append(hvsr)  
+            hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
+            hvsr_curve.append(hvsr)  
 
     return np.array(hvsr_curve)
 
@@ -2735,8 +2745,8 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
 
     fig.suptitle(params['site'])
     
-    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    axes['E'].set_xlabel('UTC Time \n'+day)
+    time_int = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
+    axes['E'].set_xlabel('UTC Time \n'+time_int)
 
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
@@ -3261,9 +3271,9 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     ax.tick_params(axis='x', labelsize=8)
 
     if hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date != hvsr_dict['ppsds'][anyKey]['current_times_used'][-1].date:
-        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
+        time_int = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
     else:
-        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
+        time_int = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
 
     ymin = hvsr_dict['input_params']['hvsr_band'][0]
     ymax = hvsr_dict['input_params']['hvsr_band'][1]
@@ -3293,7 +3303,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
     ax.set_title(hvsr_dict['input_params']['site']+': Spectrogram')
-    ax.set_xlabel('UTC Time \n'+day)
+    ax.set_xlabel('UTC Time \n'+time_int)
     
     if colorbar:
         cbar = plt.colorbar(mappable=im)
@@ -3500,8 +3510,8 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     else:
         fig.suptitle(params['site']+'Spectrogram and Data')
     
-    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    ax['signale'].set_xlabel('UTC Time \n'+day)
+    time_int = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
+    ax['signale'].set_xlabel('UTC Time \n'+time_int)
 
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
