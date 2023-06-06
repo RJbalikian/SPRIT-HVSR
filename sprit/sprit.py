@@ -143,7 +143,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             hasDate= False
             year = datetime.datetime.today().year
             month = datetime.datetime.today().month
-            time_int = datetime.datetime.today().time_int
+            day = datetime.datetime.today().day
 
         if ':' in inputDT:
             hasTime = True
@@ -159,21 +159,21 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             if len(inputDT.split(div)[0])>2:
                 year = inputDT.split(div)[0]
                 month = inputDT.split(div)[1]
-                time_int = inputDT.split(div)[2].split(timeDiv)[0]
+                day = inputDT.split(div)[2].split(timeDiv)[0]
 
             #If last number is 4-dig year            
             elif len(inputDT.split(div)[2].split(timeDiv)[0])>2:
-                #..and first number is time_int
+                #..and first number is day
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%Y'   
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     month = inputDT.split(div)[1]
-                    time_int = inputDT.split(div)[0]
+                    day = inputDT.split(div)[0]
                 #...and first number is month (like American style)                             
                 else:
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     month = inputDT.split(div)[0]
-                    time_int = inputDT.split(div)[1]     
+                    day = inputDT.split(div)[1]     
             
             #Another way to catch if first number is (2-digit) year
             elif int(inputDT.split(div)[0])>31:
@@ -184,12 +184,13 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     year = '20'+year
                 else:#...and anything more than current year is from last century
                     year = '19'+year
-                #assumes time_int will always come last in this instance, as above
+                #assumes day will always come last in this instance, as above
                 month = inputDT.split(div)[1]
-                time_int = inputDT.split(div)[2].split(timeDiv)[0]
+                day = inputDT.split(div)[2].split(timeDiv)[0]
+
             #If last digit is (2 digit) year           
             elif int(inputDT.split(div)[2].split(timeDiv)[0])>31:
-                #...and first digit is time_int
+                #...and first digit is day
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%y'       
                     year = inputDT.split(div)[2].split(timeDiv)[0]
@@ -198,8 +199,8 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     else:
                         year = '19'+year
                     month = inputDT.split(div)[1]
-                    time_int = inputDT.split(div)[0]                           
-                else: #...and second digit is time_int
+                    day = inputDT.split(div)[0]                           
+                else: #...and second digit is day
                     #dateStr = '%m'+div+'%d'+div+'%y'
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     if year < datetime.datetime.today().year:
@@ -207,7 +208,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
                     else:
                         year = '19'+year
                     month = inputDT.split(div)[0]
-                    time_int = inputDT.split(div)[1]                  
+                    day = inputDT.split(div)[1]                  
 
         hour=0
         minute=0
@@ -241,7 +242,7 @@ def __formatTime(inputDT, tzone='utc', dst=True):
             minute=int(timeStrList[1])
             sec = int(timeStrList[2])
 
-        outputTimeObj = datetime.datetime(year=int(year),month=int(month), time_int=int(time_int),
+        outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
                                 hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
 
     elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
