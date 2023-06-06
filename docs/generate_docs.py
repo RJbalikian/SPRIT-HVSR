@@ -7,6 +7,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
+release_version= '0.0.12'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
@@ -42,24 +43,26 @@ keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki']
 for t in trg_path.iterdir():
     #print('main folder', t)
     if t.name in keepList:
+        #Don't do anything to requirements.txt or wiki folder
         pass
     elif t.is_dir():
         for file in t.iterdir():
-            #print('second layer', file)
             if file.is_dir():
                 if file.name == 'resources':
                     for f in file.iterdir():
+                        #We don't want the resources folder in docs folder, remove all items
                         os.remove(f)
                 elif file.name == 'wiki':
+                    #Keep wiki folder
                     pass
                 else:
                     #print('file', file.name)
                     for f in file.iterdir():
                         destFilePath = trg_path.joinpath(f.name)
-                        print(destFilePath)
                         if destFilePath.exists():
                             os.remove(destFilePath)
                         f = f.rename(destFilePath)
+                        keepList.append(destFilePath.name) #Already deleted and replaced, want to keep it now
                 if file.name not in keepList and file.parent.name != 'wiki':
                     os.rmdir(file)
             else:
@@ -67,19 +70,20 @@ for t in trg_path.iterdir():
                 if destFilePath.is_file() and file.name not in keepList and file.parent.name != 'wiki':
                     os.remove(destFilePath)
                 file = file.rename(destFilePath)
+                keepList.append(destFilePath.name)
                 if file.name=='index.html':
                     mainhtmlFPath = file.parent.parent.joinpath('main.html')
                     if mainhtmlFPath.is_file():
                         os.remove(mainhtmlFPath)
                     file.rename(mainhtmlFPath)      
-        if file.name not in keepList:
+        if t.name not in keepList:
             os.rmdir(t)
     else:
         if t.name not in keepList:
             os.remove(t)
-
 #os.rmdir(subdir)
 
+#Update 
 repo_path = pathlib.Path('..')
 for each_file in repo_path.iterdir():
     if each_file.name == 'README.md':
@@ -122,9 +126,10 @@ for each_file in repo_path.iterdir():
             dst = pathlib.Path('index.html')
             with open(dst, 'w') as f:
                 f.write(html)
-            print(dst)
+            print('hmtl landing page:', dst)
             break
         else:
             #Copy main readme file into docs so github pages will read it
             shutil.copy(src=str(each_file), dst='.')
             break
+
