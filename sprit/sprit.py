@@ -415,7 +415,7 @@ def input_params( dataPath,
     endtime = date+"T"+endtime
     endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
 
-    acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), time_int=int(date.split('-')[2]))
+    acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
