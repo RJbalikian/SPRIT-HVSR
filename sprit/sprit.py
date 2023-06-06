@@ -465,7 +465,7 @@ def update_shake_metadata(filepath, params, write_path=''):
     elevation = str(params['elevation'])
     depth = str(params['depth'])
     
-    startdate = str(datetime.datetime(year=2023, month=2, time_int=15)) #First time_int with working code
+    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day sprit code worked :)
     enddate=str(datetime.datetime.today())
 
     filepath = checkifpath(filepath)
@@ -790,7 +790,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         source  : str, {'raw', 'dir', 'file'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
-                'dir' is used if the time_int's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+                'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
@@ -836,7 +836,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         year = date.year
     elif type(date) is tuple:
         if date[0]>366:
-            error('First item in date tuple must be time_int of year (0-366)', 0)
+            error('First item in date tuple must be day of year (0-366)', 0)
         elif date[1] > datetime.datetime.now().year:
             error('Second item in date tuple should be year, but given item is in the future', 0)
         else:
@@ -868,7 +868,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        print("Did not recognize date, using year {} and time_int {}".format(year, doy))
+        print("Did not recognize date, using year {} and day {}".format(year, doy))
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
@@ -2746,8 +2746,8 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
 
     fig.suptitle(params['site'])
     
-    time_int = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
-    axes['E'].set_xlabel('UTC Time \n'+time_int)
+    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    axes['E'].set_xlabel('UTC Time \n'+ day)
 
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
@@ -3272,9 +3272,9 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     ax.tick_params(axis='x', labelsize=8)
 
     if hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date != hvsr_dict['ppsds'][anyKey]['current_times_used'][-1].date:
-        time_int = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
+        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
     else:
-        time_int = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
+        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
 
     ymin = hvsr_dict['input_params']['hvsr_band'][0]
     ymax = hvsr_dict['input_params']['hvsr_band'][1]
@@ -3304,7 +3304,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
     ax.set_title(hvsr_dict['input_params']['site']+': Spectrogram')
-    ax.set_xlabel('UTC Time \n'+time_int)
+    ax.set_xlabel('UTC Time \n'+day)
     
     if colorbar:
         cbar = plt.colorbar(mappable=im)
@@ -3511,8 +3511,8 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     else:
         fig.suptitle(params['site']+'Spectrogram and Data')
     
-    time_int = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
-    ax['signale'].set_xlabel('UTC Time \n'+time_int)
+    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    ax['signale'].set_xlabel('UTC Time \n'+day)
 
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
