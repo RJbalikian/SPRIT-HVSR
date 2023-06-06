@@ -2218,7 +2218,7 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
     return params
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75):
+def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2330,7 +2330,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
 
     #This gets the hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params)
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
 
     origPPSD = params['ppsds_obspy'].copy()
 
