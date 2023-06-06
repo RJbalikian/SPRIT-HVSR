@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sprit"
+dynamic = ["readme"]
+license = {file = "LICENSE"}
+version="0.0.13"
+description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
+keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
+requires-python = ">=3.0"
+dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyqt5", "tkcalendar"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"]}
+
+[project.urls]
+"Homepage" = "https://github.com/RJbalikian/SPRIT"
+"API Documentation" = "https://rjbalikian.github.io/SPRIT/main.html"

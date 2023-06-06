@@ -210,7 +210,12 @@ class App:
             
             self.starttime, self.endtime = get_times()
 
-            self.params = sprit.input_params( dataPath=self.data_path.get(),
+            if len(self.fpath) &gt; 1:
+                self.fpath = list(self.fpath)
+            else:
+                self.fpath = self.fpath[0]
+
+            self.params = sprit.input_params(dataPath=self.fpath,
                                 metaPath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
@@ -379,12 +384,40 @@ class App:
         self.site_name = tk.StringVar()
         self.site_name.set(&#39;HVSR Site&#39;)
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-        self.site_name_entry.grid(row=0, column=1, columnspan=2, sticky=&#39;ew&#39;, padx=5)
-        
+        self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
+
+        # source=file 
+        def on_source_select():
+            try:
+                str(self.file_source.get())
+                sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
+                update_fetch_call()
+
+                if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+                    self.browse_data_filepath_button.configure(text=&#39;Browse Folder&#39;)
+                elif self.file_source.get() == &#39;batch&#39;:
+                    self.tab_control.select(self.batch_tab)
+                else:
+                    self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
+                return True
+            except ValueError:
+                return False
+
+        sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;file&#39;&#34;)
+
+        ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=0, column=3, sticky=&#39;e&#39;, padx=5)
+        sourcFrame= ttk.Frame(hvsrFrame)
+        sourcFrame.grid(row=0, column=4, sticky=&#39;w&#39;, columnspan=3)
+        self.file_source = tk.StringVar()
+        self.file_source.set(&#39;file&#39;)
+        ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=0, column=0, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=0, column=2, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Batch&#39;, variable=self.file_source, value=&#39;batch&#39;, command=on_source_select).grid(row=0, column=3, sticky=&#39;w&#39;, padx=(5, 10))
+
         #Instrument select
         ttk.Label(hvsrFrame, text=&#34;Instrument&#34;).grid(row=0, column=6, sticky=&#39;e&#39;, padx=5)
         inst_options = [&#34;Raspberry Shake&#34;, &#34;Nodes&#34;, &#34;Other&#34;]
-
 
         def on_option_select(self, inst):
             update_input_params_call()
@@ -429,35 +462,42 @@ class App:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
+        def filepath_update():
+            self.fpath = self.data_path.get()
+            update_input_params_call()
+
         self.data_path = tk.StringVar()
         self.data_path.trace(&#39;w&#39;, on_data_path_change)
-        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
-    
 
         def browse_data_filepath():
-            fpath = filedialog.askopenfilename()
-            if fpath:
-                self.data_filepath_entry.delete(0, &#39;end&#39;)
-                self.data_filepath_entry.insert(0, fpath)
+            if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+                self.fpath = filedialog.askdirectory()
+                if self.fpath:
+                    self.data_filepath_entry.delete(0, &#39;end&#39;)
+                    self.data_filepath_entry.insert(0, self.fpath)
+            else:
+                self.fpath = filedialog.askopenfilenames()
+                
+                #fpath will always be tuple
+                self.no_data_files = len(self.fpath)
+                    
+                if self.fpath:
+                    self.data_filepath_entry.delete(0, &#39;end&#39;)
+                    for f in self.fpath:
+                        self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
+                
             update_input_params_call()
 
-        def browse_data_folder():
-            fpath = filedialog.askdirectory()
-            if fpath:
-                self.data_filepath_entry.delete(0, &#39;end&#39;)
-                self.data_filepath_entry.insert(0, fpath)
-            update_input_params_call()
 
         buttonFrame = ttk.Frame(hvsrFrame)
         buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
 
-        self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;File&#34;, command=browse_data_filepath)
-        self.browse_data_filedir_button = ttk.Button(buttonFrame, text=&#34;Folder&#34;, command=browse_data_folder)
+        self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;Browse File(s)&#34;, command=browse_data_filepath)
 
         #self.browse_data_filepath_button.grid(row=1, column=6, sticky=&#39;ew&#39;)
         self.browse_data_filepath_button.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True, padx=(0,2), pady=(5,2.55))
-        self.browse_data_filedir_button.pack(side=&#34;right&#34;, fill=&#34;x&#34;, expand=True, padx=(2, 0), pady=(5,2.55))
 
         # Metadata Filepath
         ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
@@ -711,27 +751,6 @@ class App:
 
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
-        # source=raw, 
-        def on_source_select():
-            try:
-                str(self.file_source.get())
-                sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
-                update_fetch_call()
-                return True
-            except ValueError:
-                return False
-
-        sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;raw&#39;&#34;)
-
-        ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=12, column=1, sticky=&#39;e&#39;, padx=5)
-        sourcFrame= ttk.Frame(hvsrFrame)
-        sourcFrame.grid(row=12, column=2, sticky=&#39;w&#39;, columnspan=3)
-        self.file_source = tk.StringVar()
-        self.file_source.set(&#39;file&#39;)
-        ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=12, column=0, sticky=&#39;w&#39;, padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=12, column=1, sticky=&#39;w&#39;, padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=12, column=2, sticky=&#39;w&#39;, padx=(5, 10))
 
         #export_format=&#39;.mseed&#39;
         def on_obspyFormatSelect(self):
@@ -2448,7 +2467,12 @@ if __name__ == &#34;__main__&#34;:
             
             self.starttime, self.endtime = get_times()
 
-            self.params = sprit.input_params( dataPath=self.data_path.get(),
+            if len(self.fpath) &gt; 1:
+                self.fpath = list(self.fpath)
+            else:
+                self.fpath = self.fpath[0]
+
+            self.params = sprit.input_params(dataPath=self.fpath,
                                 metaPath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
@@ -2617,12 +2641,40 @@ if __name__ == &#34;__main__&#34;:
         self.site_name = tk.StringVar()
         self.site_name.set(&#39;HVSR Site&#39;)
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-        self.site_name_entry.grid(row=0, column=1, columnspan=2, sticky=&#39;ew&#39;, padx=5)
-        
+        self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
+
+        # source=file 
+        def on_source_select():
+            try:
+                str(self.file_source.get())
+                sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
+                update_fetch_call()
+
+                if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+                    self.browse_data_filepath_button.configure(text=&#39;Browse Folder&#39;)
+                elif self.file_source.get() == &#39;batch&#39;:
+                    self.tab_control.select(self.batch_tab)
+                else:
+                    self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
+                return True
+            except ValueError:
+                return False
+
+        sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;file&#39;&#34;)
+
+        ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=0, column=3, sticky=&#39;e&#39;, padx=5)
+        sourcFrame= ttk.Frame(hvsrFrame)
+        sourcFrame.grid(row=0, column=4, sticky=&#39;w&#39;, columnspan=3)
+        self.file_source = tk.StringVar()
+        self.file_source.set(&#39;file&#39;)
+        ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=0, column=0, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=0, column=2, sticky=&#39;w&#39;, padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text=&#39;Batch&#39;, variable=self.file_source, value=&#39;batch&#39;, command=on_source_select).grid(row=0, column=3, sticky=&#39;w&#39;, padx=(5, 10))
+
         #Instrument select
         ttk.Label(hvsrFrame, text=&#34;Instrument&#34;).grid(row=0, column=6, sticky=&#39;e&#39;, padx=5)
         inst_options = [&#34;Raspberry Shake&#34;, &#34;Nodes&#34;, &#34;Other&#34;]
-
 
         def on_option_select(self, inst):
             update_input_params_call()
@@ -2667,35 +2719,42 @@ if __name__ == &#34;__main__&#34;:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
+        def filepath_update():
+            self.fpath = self.data_path.get()
+            update_input_params_call()
+
         self.data_path = tk.StringVar()
         self.data_path.trace(&#39;w&#39;, on_data_path_change)
-        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
-    
 
         def browse_data_filepath():
-            fpath = filedialog.askopenfilename()
-            if fpath:
-                self.data_filepath_entry.delete(0, &#39;end&#39;)
-                self.data_filepath_entry.insert(0, fpath)
+            if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+                self.fpath = filedialog.askdirectory()
+                if self.fpath:
+                    self.data_filepath_entry.delete(0, &#39;end&#39;)
+                    self.data_filepath_entry.insert(0, self.fpath)
+            else:
+                self.fpath = filedialog.askopenfilenames()
+                
+                #fpath will always be tuple
+                self.no_data_files = len(self.fpath)
+                    
+                if self.fpath:
+                    self.data_filepath_entry.delete(0, &#39;end&#39;)
+                    for f in self.fpath:
+                        self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
+                
             update_input_params_call()
 
-        def browse_data_folder():
-            fpath = filedialog.askdirectory()
-            if fpath:
-                self.data_filepath_entry.delete(0, &#39;end&#39;)
-                self.data_filepath_entry.insert(0, fpath)
-            update_input_params_call()
 
         buttonFrame = ttk.Frame(hvsrFrame)
         buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
 
-        self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;File&#34;, command=browse_data_filepath)
-        self.browse_data_filedir_button = ttk.Button(buttonFrame, text=&#34;Folder&#34;, command=browse_data_folder)
+        self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;Browse File(s)&#34;, command=browse_data_filepath)
 
         #self.browse_data_filepath_button.grid(row=1, column=6, sticky=&#39;ew&#39;)
         self.browse_data_filepath_button.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True, padx=(0,2), pady=(5,2.55))
-        self.browse_data_filedir_button.pack(side=&#34;right&#34;, fill=&#34;x&#34;, expand=True, padx=(2, 0), pady=(5,2.55))
 
         # Metadata Filepath
         ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
@@ -2949,27 +3008,6 @@ if __name__ == &#34;__main__&#34;:
 
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
-        # source=raw, 
-        def on_source_select():
-            try:
-                str(self.file_source.get())
-                sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
-                update_fetch_call()
-                return True
-            except ValueError:
-                return False
-
-        sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;raw&#39;&#34;)
-
-        ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=12, column=1, sticky=&#39;e&#39;, padx=5)
-        sourcFrame= ttk.Frame(hvsrFrame)
-        sourcFrame.grid(row=12, column=2, sticky=&#39;w&#39;, columnspan=3)
-        self.file_source = tk.StringVar()
-        self.file_source.set(&#39;file&#39;)
-        ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=12, column=0, sticky=&#39;w&#39;, padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=12, column=1, sticky=&#39;w&#39;, padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=12, column=2, sticky=&#39;w&#39;, padx=(5, 10))
 
         #export_format=&#39;.mseed&#39;
         def on_obspyFormatSelect(self):
@@ -4567,7 +4605,12 @@ if __name__ == &#34;__main__&#34;:
         
         self.starttime, self.endtime = get_times()
 
-        self.params = sprit.input_params( dataPath=self.data_path.get(),
+        if len(self.fpath) &gt; 1:
+            self.fpath = list(self.fpath)
+        else:
+            self.fpath = self.fpath[0]
+
+        self.params = sprit.input_params(dataPath=self.fpath,
                             metaPath = self.meta_path.get(),
                             site=self.site_name.get(),
                             network=self.network.get(), 
@@ -4736,12 +4779,40 @@ if __name__ == &#34;__main__&#34;:
     self.site_name = tk.StringVar()
     self.site_name.set(&#39;HVSR Site&#39;)
     self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-    self.site_name_entry.grid(row=0, column=1, columnspan=2, sticky=&#39;ew&#39;, padx=5)
-    
+    self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
+
+    # source=file 
+    def on_source_select():
+        try:
+            str(self.file_source.get())
+            sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
+            update_fetch_call()
+
+            if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+                self.browse_data_filepath_button.configure(text=&#39;Browse Folder&#39;)
+            elif self.file_source.get() == &#39;batch&#39;:
+                self.tab_control.select(self.batch_tab)
+            else:
+                self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
+            return True
+        except ValueError:
+            return False
+
+    sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;file&#39;&#34;)
+
+    ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=0, column=3, sticky=&#39;e&#39;, padx=5)
+    sourcFrame= ttk.Frame(hvsrFrame)
+    sourcFrame.grid(row=0, column=4, sticky=&#39;w&#39;, columnspan=3)
+    self.file_source = tk.StringVar()
+    self.file_source.set(&#39;file&#39;)
+    ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=0, column=0, sticky=&#39;w&#39;, padx=(5, 10))
+    ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
+    ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=0, column=2, sticky=&#39;w&#39;, padx=(5, 10))
+    ttk.Radiobutton(master=sourcFrame, text=&#39;Batch&#39;, variable=self.file_source, value=&#39;batch&#39;, command=on_source_select).grid(row=0, column=3, sticky=&#39;w&#39;, padx=(5, 10))
+
     #Instrument select
     ttk.Label(hvsrFrame, text=&#34;Instrument&#34;).grid(row=0, column=6, sticky=&#39;e&#39;, padx=5)
     inst_options = [&#34;Raspberry Shake&#34;, &#34;Nodes&#34;, &#34;Other&#34;]
-
 
     def on_option_select(self, inst):
         update_input_params_call()
@@ -4786,35 +4857,42 @@ if __name__ == &#34;__main__&#34;:
         #This is primarily so that if just the Run button is pushed, it will know to first read the data
         self.data_read = False
     
+    def filepath_update():
+        self.fpath = self.data_path.get()
+        update_input_params_call()
+
     self.data_path = tk.StringVar()
     self.data_path.trace(&#39;w&#39;, on_data_path_change)
-    self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+    self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
     self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
 
-
     def browse_data_filepath():
-        fpath = filedialog.askopenfilename()
-        if fpath:
-            self.data_filepath_entry.delete(0, &#39;end&#39;)
-            self.data_filepath_entry.insert(0, fpath)
+        if self.file_source.get() == &#39;raw&#39; or self.file_source.get() == &#39;dir&#39;:
+            self.fpath = filedialog.askdirectory()
+            if self.fpath:
+                self.data_filepath_entry.delete(0, &#39;end&#39;)
+                self.data_filepath_entry.insert(0, self.fpath)
+        else:
+            self.fpath = filedialog.askopenfilenames()
+            
+            #fpath will always be tuple
+            self.no_data_files = len(self.fpath)
+                
+            if self.fpath:
+                self.data_filepath_entry.delete(0, &#39;end&#39;)
+                for f in self.fpath:
+                    self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
+            
         update_input_params_call()
 
-    def browse_data_folder():
-        fpath = filedialog.askdirectory()
-        if fpath:
-            self.data_filepath_entry.delete(0, &#39;end&#39;)
-            self.data_filepath_entry.insert(0, fpath)
-        update_input_params_call()
 
     buttonFrame = ttk.Frame(hvsrFrame)
     buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
 
-    self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;File&#34;, command=browse_data_filepath)
-    self.browse_data_filedir_button = ttk.Button(buttonFrame, text=&#34;Folder&#34;, command=browse_data_folder)
+    self.browse_data_filepath_button = ttk.Button(buttonFrame, text=&#34;Browse File(s)&#34;, command=browse_data_filepath)
 
     #self.browse_data_filepath_button.grid(row=1, column=6, sticky=&#39;ew&#39;)
     self.browse_data_filepath_button.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True, padx=(0,2), pady=(5,2.55))
-    self.browse_data_filedir_button.pack(side=&#34;right&#34;, fill=&#34;x&#34;, expand=True, padx=(2, 0), pady=(5,2.55))
 
     # Metadata Filepath
     ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
@@ -5068,27 +5146,6 @@ if __name__ == &#34;__main__&#34;:
 
         self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                         .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
-    # source=raw, 
-    def on_source_select():
-        try:
-            str(self.file_source.get())
-            sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
-            update_fetch_call()
-            return True
-        except ValueError:
-            return False
-
-    sourceLabel = ttk.Label(master=hvsrFrame, text=&#34;source=&#39;raw&#39;&#34;)
-
-    ttk.Label(master=hvsrFrame, text=&#39;Data Source Type [str]&#39;).grid(row=12, column=1, sticky=&#39;e&#39;, padx=5)
-    sourcFrame= ttk.Frame(hvsrFrame)
-    sourcFrame.grid(row=12, column=2, sticky=&#39;w&#39;, columnspan=3)
-    self.file_source = tk.StringVar()
-    self.file_source.set(&#39;file&#39;)
-    ttk.Radiobutton(master=sourcFrame, text=&#39;File&#39;, variable=self.file_source, value=&#39;file&#39;, command=on_source_select).grid(row=12, column=0, sticky=&#39;w&#39;, padx=(5, 10))
-    ttk.Radiobutton(master=sourcFrame, text=&#39;Directory&#39;, variable=self.file_source, value=&#39;dir&#39;, command=on_source_select).grid(row=12, column=1, sticky=&#39;w&#39;, padx=(5, 10))
-    ttk.Radiobutton(master=sourcFrame, text=&#39;Raw&#39;, variable=self.file_source, value=&#39;raw&#39;, command=on_source_select).grid(row=12, column=2, sticky=&#39;w&#39;, padx=(5, 10))
 
     #export_format=&#39;.mseed&#39;
     def on_obspyFormatSelect(self):

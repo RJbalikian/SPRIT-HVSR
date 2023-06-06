@@ -46,7 +46,9 @@ from sprit.sprit import(
     setup_colab,
     gui,
     get_metadata,
+    has_required_channels,
     fetch_data,
+    batch_data_read,
     trim_data,
     generate_ppsds,
     process_hvsr,
@@ -76,7 +78,9 @@ __all__ =(&#39;sprit&#39;,
     &#39;setup_colab&#39;,
     &#39;gui&#39;,
     &#39;get_metadata&#39;,
+    &#39;has_required_channels&#39;,
     &#39;fetch_data&#39;,
+    &#39;batch_data_read&#39;,
     &#39;trim_data&#39;,
     &#39;generate_ppsds&#39;,
     &#39;process_hvsr&#39;,
@@ -113,6 +117,114 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="sprit.batch_data_read"><code class="name flex">
+<span>def <span class="ident">batch_data_read</span></span>(<span>input_filelist, input_params_list=None, verbose=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Function to read list of files and parameters</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_filelist</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of filepaths to read using obspy.read()</dd>
+<dt><strong><code>input_params_list</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dd>List of dictionary with select read parameters, by default None</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default <code>= False</code></dt>
+<dd>Whether to print results</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>stream_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary contiaining unique streams</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def batch_data_read(input_filelist, input_params_list=None, verbose=False):
+    &#34;&#34;&#34;Function to read list of files and parameters
+
+    Parameters
+    ----------
+    input_filelist : list
+        List of filepaths to read using obspy.read()
+    input_params_list : list, optional
+        List of dictionary with select read parameters, by default None
+    verbose : bool, default = False
+        Whether to print results 
+
+    Returns
+    -------
+    stream_dict : dict
+        Dictionary contiaining unique streams
+    &#34;&#34;&#34;
+
+    # Dictionary to store the stream objects
+    stream_dict = {}
+
+    # Read and process each MiniSEED file
+    for i, file in enumerate(input_filelist):
+        if input_params_list is None:
+            pass
+        else:
+            read_params = input_params_list[i]
+        
+        # Read the MiniSEED file into a Stream object
+        if isinstance(read_params, dict):
+            stream = obspy.read(file, **read_params)
+        else:
+            stream = obspy.read(file)
+
+        # Get the network, station, and location codes
+        network = stream[0].stats.network
+        station = stream[0].stats.station
+        location = stream[0].stats.location
+        
+        # Create a unique identifier for the network-station-location combination
+        stream_id = f&#34;{network}.{station}.{location}&#34;
+
+        # Check if the stream has a single trace
+        if len(stream) == 1:
+
+            # Check if the stream ID exists in the dictionary
+            if stream_id in stream_dict:
+                if stream[0].stats.channel == &#39;Z&#39;:
+                    stream_dict[stream_id][0] = stream[0]
+                elif stream[0].stats.channel == &#39;E&#39;:
+                    stream_dict[stream_id][1] = stream[0]
+                elif stream[0].stats.channel == &#39;N&#39;:
+                    stream_dict[stream_id][2] = stream[0]
+            else:
+                # Create a new stream object with the first trace and assign Z, E, and N channels
+                new_stream = obspy.Stream(traces=[None, None, None])
+                if stream[0].stats.channel == &#39;Z&#39;:
+                    new_stream[0] = stream[0]
+                elif stream[0].stats.channel == &#39;E&#39;:
+                    new_stream[1] = stream[0]
+                elif stream[0].stats.channel == &#39;N&#39;:
+                    new_stream[2] = stream[0]
+                # Assign network, station, location, etc. to the new_stream as required
+                stream_dict[stream_id] = new_stream
+        else:
+            # Check if the stream has required channels and add it directly to stream_dict
+            if has_required_channels(stream):
+                stream_dict[stream_id] = stream
+
+    # Validate the channels for each stream in stream_dict
+    for stream_id, stream in stream_dict.items():
+        if not has_required_channels(stream):
+            if verbose:
+                print(f&#34;Stream {stream_id} does not have all required channels, removing.&#34;)
+            del stream_dict[stream_id]
+
+    if verbose:
+        print(&#34;Streams:\n&#34;)
+        print(stream_dict.keys())
+        #for k in stream_dict.keys():
+        #    print(k)
+
+    return stream_dict</code></pre>
+</details>
+</dd>
 <dt id="sprit.check_mark"><code class="name flex">
 <span>def <span class="ident">check_mark</span></span>(<span>)</span>
 </code></dt>
@@ -324,7 +436,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.fetch_data"><code class="name flex">
-<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='raw', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2)</span>
+<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Fetch ambient seismic data from a source to read into obspy stream</p>
@@ -341,7 +453,7 @@ This function returns another displayable character if platform is Windows</p></
 : str,</dt>
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt>
 <dt>'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders;</dt>
-<dt>'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
+<dt>'dir' is used if the time_int's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
 <dt>'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.</dt>
 <dt><strong><code>trim_dir</code></strong> :&ensp;<code>None</code> or <code>str</code> or <code>pathlib obj</code>, default=<code>None</code></dt>
 <dd>If None (or False), data is not trimmed in this function.
@@ -363,7 +475,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fetch_data(params, inv=None, source=&#39;raw&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2):
+<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2):
     &#34;&#34;&#34;Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -376,7 +488,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         source  : str, {&#39;raw&#39;, &#39;dir&#39;, &#39;file&#39;}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
-                &#39;dir&#39; is used if the day&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+                &#39;dir&#39; is used if the time_int&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 &#39;file&#39; is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
@@ -399,7 +511,17 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
     if inv is None:
         inv = params[&#39;inv&#39;], 
     date=params[&#39;acq_date&#39;]
-    datapath = checkifpath(datapath)
+
+    if &#39;}&#39; in str(datapath):
+        datapath = datapath.as_posix().replace(&#39;{&#39;,&#39;&#39;)
+        datapath = datapath.split(&#39;}&#39;)
+    
+    if isinstance(datapath,list):
+        for i, d in enumerate(datapath):
+            datapath[i] = checkifpath(str(d).strip())
+    else:
+        datapath = checkifpath(datapath)
+
     inst = params[&#39;instrument&#39;]
 
     #Need to put dates and times in right formats first
@@ -412,7 +534,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         year = date.year
     elif type(date) is tuple:
         if date[0]&gt;366:
-            error(&#39;First item in date tuple must be day of year (0-366)&#39;, 0)
+            error(&#39;First item in date tuple must be time_int of year (0-366)&#39;, 0)
         elif date[1] &gt; datetime.datetime.now().year:
             error(&#39;Second item in date tuple should be year, but given item is in the future&#39;, 0)
         else:
@@ -444,7 +566,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        print(&#34;Did not recognize date, using year {} and day {}&#34;.format(year, doy))
+        print(&#34;Did not recognize date, using year {} and time_int {}&#34;.format(year, doy))
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
@@ -455,8 +577,34 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
     elif source==&#39;file&#39;:
-        rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
+        if isinstance(datapath, list) or isinstance(datapath, tuple):
+            rawTraces = []
+            for datafile in datapath:
+                rawTrace = obspy.read(datafile)
+                rawTrace = rawTrace
+                rawTraces.append(rawTrace)
+            
+            for i, trace in enumerate(rawTraces):
+                if i == 0:
+                    rawDataIN = trace
+                else:
+                    rawDataIN = rawDataIN + trace
+        else:
+            rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
         rawDataIN.attach_response(inv)
+    elif source==&#39;batch&#39;:
+        print(&#34;Batch read not yet supported&#34;)
+        if isinstance(datapath, list) or isinstance(datapath, tuple):
+            for d in datapath:
+                pass
+        else:
+            print(&#39;datapath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(datapath)))
+    else:
+        try:
+            rawDataIN = obspy.read(datapath)
+            rawDataIN.attach_response(inv)
+        except:
+            print(&#39;Read or source error&#39;)
 
     if rawDataIN is None:
         return
@@ -734,6 +882,26 @@ If not specified, does not write file</dd>
     gui_root.mainloop() #Run the main loop</code></pre>
 </details>
 </dd>
+<dt id="sprit.has_required_channels"><code class="name flex">
+<span>def <span class="ident">has_required_channels</span></span>(<span>stream)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def has_required_channels(stream):
+    channel_set = set()
+    
+    # Extract the channel codes from the traces in the stream
+    for trace in stream:
+        channel_set.add(trace.stats.channel)
+    
+    # Check if Z, E, and N channels are present
+    return {&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;}.issubset(channel_set)</code></pre>
+</details>
+</dd>
 <dt id="sprit.hvplot"><code class="name flex">
 <span>def <span class="ident">hvplot</span></span>(<span>hvsr_dict, kind='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, **kwargs)</span>
 </code></dt>
@@ -932,7 +1100,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-05-24', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-06-06', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -952,8 +1120,8 @@ Keyword arguments for matplotlib.pyplot</p>
 <dd>The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary</dd>
 <dt><strong><code>acq_date</code></strong> :&ensp;<code>str, int, date object,</code> or <code>datetime object</code></dt>
 <dd>If string, preferred format is 'YYYY-MM-DD'.
-If int, this will be interpreted as the day of year of current year (e.g., 33 would be Feb 2 of current year)
-If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following day, use the UTC day).</dd>
+If int, this will be interpreted as the time_int of year of current year (e.g., 33 would be Feb 2 of current year)
+If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following time_int, use the UTC time_int).</dd>
 <dt><strong><code>starttime</code></strong> :&ensp;<code>str, time object,</code> or <code>datetime object</code>, default=<code>'00:00:00.00'</code></dt>
 <dd>Start time of data stream. This is necessary for Raspberry Shake data. Format can be either 'HH:MM:SS.micros' or 'HH:MM' at minimum.</dd>
 <dt><strong><code>endtime</code></strong> :&ensp;<code>str, time obejct,</code> or <code>datetime object</code>, default=<code>'23:59:99.99'</code></dt>
@@ -1025,8 +1193,8 @@ This is necessary for Raspberry Shake data.</dd>
         The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary
     acq_date : str, int, date object, or datetime object
         If string, preferred format is &#39;YYYY-MM-DD&#39;. 
-        If int, this will be interpreted as the day of year of current year (e.g., 33 would be Feb 2 of current year)
-        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following day, use the UTC day).
+        If int, this will be interpreted as the time_int of year of current year (e.g., 33 would be Feb 2 of current year)
+        If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following time_int, use the UTC time_int).
     starttime : str, time object, or datetime object, default=&#39;00:00:00.00&#39;
         Start time of data stream. This is necessary for Raspberry Shake data. Format can be either &#39;HH:MM:SS.micros&#39; or &#39;HH:MM&#39; at minimum.
     endtime : str, time obejct, or datetime object, default=&#39;23:59:99.99&#39;
@@ -1116,7 +1284,7 @@ This is necessary for Raspberry Shake data.</dd>
     endtime = date+&#34;T&#34;+endtime
     endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
 
-    acq_date = datetime.date(year=int(date.split(&#39;-&#39;)[0]), month=int(date.split(&#39;-&#39;)[1]), day=int(date.split(&#39;-&#39;)[2]))
+    acq_date = datetime.date(year=int(date.split(&#39;-&#39;)[0]), month=int(date.split(&#39;-&#39;)[1]), time_int=int(date.split(&#39;-&#39;)[2]))
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
@@ -1443,9 +1611,9 @@ This is necessary for Raspberry Shake data.</dd>
     ax.tick_params(axis=&#39;x&#39;, labelsize=8)
 
     if hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date != hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][-1].date:
-        day = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)+&#39; - &#39;+str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][1].date)
+        time_int = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)+&#39; - &#39;+str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][1].date)
     else:
-        day = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)
+        time_int = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)
 
     ymin = hvsr_dict[&#39;input_params&#39;][&#39;hvsr_band&#39;][0]
     ymax = hvsr_dict[&#39;input_params&#39;][&#39;hvsr_band&#39;][1]
@@ -1475,7 +1643,7 @@ This is necessary for Raspberry Shake data.</dd>
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict[&#39;x_freqs&#39;][anyKey]),0), 10)
     ax.set_title(hvsr_dict[&#39;input_params&#39;][&#39;site&#39;]+&#39;: Spectrogram&#39;)
-    ax.set_xlabel(&#39;UTC Time \n&#39;+day)
+    ax.set_xlabel(&#39;UTC Time \n&#39;+time_int)
     
     if colorbar:
         cbar = plt.colorbar(mappable=im)
@@ -1719,8 +1887,8 @@ Only matters if more than one component used.</dd>
     else:
         fig.suptitle(params[&#39;site&#39;]+&#39;Spectrogram and Data&#39;)
     
-    day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
+    time_int = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
+    ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+time_int)
 
     #plt.rcParams[&#39;figure.dpi&#39;] = 100
     #plt.rcParams[&#39;figure.figsize&#39;] = (5,4)
@@ -1742,7 +1910,7 @@ Only matters if more than one component used.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
-    if fig is None and ax is None:
+    if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
     
     new_stream = stream.copy()
@@ -1808,8 +1976,8 @@ Only matters if more than one component used.</dd>
 
     fig.suptitle(params[&#39;site&#39;])
     
-    day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    axes[&#39;E&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
+    time_int = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
+    axes[&#39;E&#39;].set_xlabel(&#39;UTC Time \n&#39;+time_int)
 
     #plt.rcParams[&#39;figure.dpi&#39;] = 100
     #plt.rcParams[&#39;figure.figsize&#39;] = (5,4)
@@ -2097,7 +2265,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 
     #This gets the hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt)
+    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params)
 
     origPPSD = params[&#39;ppsds_obspy&#39;].copy()
 
@@ -2148,7 +2316,6 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     else:
         print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
 
-
     #Get hvsr curve from three components at each time step
     hvsr_tSteps = []
     anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
@@ -2156,7 +2323,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         tStepDict = {}
         for k in hvsr_out[&#39;psd_raw&#39;]:
             tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt))
+        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out))
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out[&#39;ind_hvsr_curves&#39;] = hvsr_tSteps
@@ -2863,7 +3030,7 @@ If specified, filepath to write to updated inventory file to.</p>
     elevation = str(params[&#39;elevation&#39;])
     depth = str(params[&#39;depth&#39;])
     
-    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day with working code
+    startdate = str(datetime.datetime(year=2023, month=2, time_int=15)) #First time_int with working code
     enddate=str(datetime.datetime.today())
 
     filepath = checkifpath(filepath)
@@ -2955,6 +3122,7 @@ If specified, filepath to write to updated inventory file to.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="sprit.batch_data_read" href="#sprit.batch_data_read">batch_data_read</a></code></li>
 <li><code><a title="sprit.check_mark" href="#sprit.check_mark">check_mark</a></code></li>
 <li><code><a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks</a></code></li>
 <li><code><a title="sprit.checkifpath" href="#sprit.checkifpath">checkifpath</a></code></li>
@@ -2964,6 +3132,7 @@ If specified, filepath to write to updated inventory file to.</p>
 <li><code><a title="sprit.get_char" href="#sprit.get_char">get_char</a></code></li>
 <li><code><a title="sprit.get_metadata" href="#sprit.get_metadata">get_metadata</a></code></li>
 <li><code><a title="sprit.gui" href="#sprit.gui">gui</a></code></li>
+<li><code><a title="sprit.has_required_channels" href="#sprit.has_required_channels">has_required_channels</a></code></li>
 <li><code><a title="sprit.hvplot" href="#sprit.hvplot">hvplot</a></code></li>
 <li><code><a title="sprit.info" href="#sprit.info">info</a></code></li>
 <li><code><a title="sprit.input_params" href="#sprit.input_params">input_params</a></code></li>
