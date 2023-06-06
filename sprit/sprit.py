@@ -2388,7 +2388,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
         tStepDict = {}
         for k in hvsr_out['psd_raw']:
             tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out))
+        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose))
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
@@ -2488,7 +2488,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind):
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose):
+def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -2507,10 +2507,10 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose):
     """
     params = hvsr_dict
     hvsr_curve = []
-    eie = params['dfa']['equal_interval_energy']
     for j in range(len(x)-1):
         if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
-            print('DFA method not currently supported')
+            print('DFA method is currently experimental and not supported')
+            eie = params['dfa']['equal_interval_energy']
             params = dfa(params, verbose=verbose)
             for time_interval in params['current_times_used']:
                 if time_interval in eie['Z'].keys() and time_interval in eie['E'].keys() and time_interval in eie['N'].keys():
