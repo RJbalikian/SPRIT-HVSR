@@ -874,10 +874,10 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
     elif source=='file':
         if isinstance(datapath, list) or isinstance(datapath, tuple):
             rawTraces = []
@@ -956,8 +956,60 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     return params
 
+def __read_from_RS(src='SHAKENAME@rs.local:/opt/data/archive/YEAR/AM/STATION/', dest='', opts='az', shakename='myshake', shakepw='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True):
+    src = src.replace('SHAKENAME', shakename)
+    src = src.replace('YEAR', year)
+    src = src.replace('STATION', sta)
+    
+    if verbose:
+        opts = opts + 'v'
+    if save_progress:
+        opts = opts + 'p'   
+
+    #import subprocess
+    #subprocess.run(["rsync", "-"+opts, src, dest])
+    #subprocess.run(["rsync", "-"+opts, src, dest])
+
+    import pty
+    #Test, from https://stackoverflow.com/questions/13041732/ssh-password-through-python-subprocess
+    command = [
+        'rsync',
+        "-"+opts,
+        src,
+        dest
+        #'{0}@{1}'.format(shakename, hostname),
+        #'-o', 'NumberOfPasswordPrompts=1',
+        #'sleep {0}'.format(sleep_time),
+    ]
+
+    # PID = 0 for child, and the PID of the child for the parent    
+    pid, child_fd = pty.fork()
+
+    if not pid: # Child process
+        # Replace child process with our SSH process
+        os.execv(command[0], command)
+
+    while True:
+        output = os.read(child_fd, 1024).strip()
+        lower = output.lower()
+        # Write the password
+        if lower.endswith('password:'):
+            os.write(child_fd, shakepw + '\n')
+            break
+        elif 'are you sure you want to continue connecting' in lower:
+            # Adding key to known_hosts
+            os.write(child_fd, 'yes\n')
+        elif 'company privacy warning' in lower:
+            pass # This is an understood message
+        else:
+            print("SSH Connection Failed",
+                "Encountered unrecognized message when spawning "
+                "the SSH tunnel: '{0}'".format(output))
+
+    return dest
+
 #Read data from raspberry shake
-def __read_RS_data(datapath, source, year, doy, inv, params):
+def __read_RS_file_struct(datapath, source, year, doy, inv, params):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     from obspy.core import UTCDateTime
     fileList = []
