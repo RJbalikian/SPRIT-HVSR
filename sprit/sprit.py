@@ -2204,13 +2204,13 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
     x_values=params['ppsds']['Z']['period_bin_centers']
 
     method=params['method']
-    
-    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+
+    methodList = ['<placeholder>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     dfaList = ['dfa', 'diffuse field', 'diffuse field assumption']
     if type(method) is int:
         method = methodList[method]
 
-    if method in dfaList:
+    if method.lower() in dfaList:
         if verbose:
             print('[INFO] Diffuse Field Assumption', flush=True)
         params['dfa'] = {}
@@ -2291,7 +2291,7 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
     return params
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2303,12 +2303,12 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
         Dictionary containing all the parameters input by the user
     method  : int or str
         Method to use for combining the horizontal components
-            0) Diffuse field assumption, or 'DFA' (not currently implemented)
-            1) 'Arithmetic Mean': H ≡ (HN + HE)/2
-            2) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)
-            3) 'Vector Summation': H ≡ √H2 N + H2 E
-            4) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2
-            5) 'Maximum Horizontal Value': H ≡ max {HN, HE}
+            1) Diffuse field assumption, or 'DFA' (not currently implemented)
+            2) 'Arithmetic Mean': H ≡ (HN + HE)/2
+            3) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)
+            4) 'Vector Summation': H ≡ √H2 N + H2 E
+            5) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2
+            6) 'Maximum Horizontal Value': H ≡ max {HN, HE}
     smooth  : bool=True
         bool or int. 
             If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
@@ -2340,7 +2340,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
     ppsds = params['ppsds'].copy()#[k]['psd_values']
     ppsds = __check_xvalues(ppsds)
 
-    methodList = ['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+    methodList = ['<placeholder_0>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
     x_freqs = {}
     x_periods = {}
 
@@ -2400,7 +2400,7 @@ def process_hvsr(params, method=4, smooth=True, freq_smooth='konno ohmachi', f_s
     if type(method) is int:
         methodInt = method
         method = methodList[method]
-
+    params['method'] = method
     #This gets the hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
     hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
@@ -2580,15 +2580,19 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
     """
     params = hvsr_dict
     hvsr_curve = []
+    if method==1 or method =='dfa' or method=='Diffuse Field Assumption':
+        print('WARNING: DFA method is currently experimental and not supported')
     for j in range(len(x)-1):
-        if method==0 or method =='dfa' or method=='Diffuse Field Assumption':
-            print('DFA method is currently experimental and not supported')
-            eie = params['dfa']['equal_interval_energy']
+        if method==1 or method =='dfa' or method=='Diffuse Field Assumption':
             params = dfa(params, verbose=verbose)
-            for time_interval in params['current_times_used']:
-                if time_interval in eie['Z'].keys() and time_interval in eie['E'].keys() and time_interval in eie['N'].keys():
+            eie = params['dfa']['equal_interval_energy']
+            for time_interval in params['ppsds']['Z']['current_times_used']:
+                #print(eie['Z'][str(time_interval)])
+                #print(params['ppsds']['Z']['current_times_used'])
+                #print(params['ppsds']['Z'][str(time_interval)])
+                if time_interval in list(eie['Z'].keys()) and time_interval in list(eie['E'].keys()) and time_interval in list(eie['N'].keys()):
                     hvsr = math.sqrt(
-                        (eie['E'][time_interval][j] + eie['N'][time_interval][j]) / eie['Z'][time_interval][j])
+                        (eie['Z'][str(time_interval)][j] + eie['N'][str(time_interval)][j]) / eie['Z'][str(time_interval)][j])
                     hvsr_curve.append(hvsr)
                 else:
                     if verbose > 0:
