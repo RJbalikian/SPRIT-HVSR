@@ -2048,6 +2048,8 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
 
     from obspy.signal import PPSD
 
+    print(ppsd_kwargs)
+
     eStream = stream.select(component='E')
     estats = eStream.traces[0].stats
     ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
@@ -2197,7 +2199,6 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
     
         This feature is not yet implemented.
     """
-    # Are we doing DFA?
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
     # the same as large ones, so that P1+P2+P3=1
 
@@ -2222,12 +2223,12 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
         params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
 
         # Make sure we have all 3 components for every time sample
-        for i, day_time in enumerate(params['ppsds']['Z']['current_times_used']):#day_time_values):
+        for i, t_int in enumerate(params['ppsds']['Z']['current_times_used']):#day_time_values):
             #if day_time not in (day_time_psd[0].keys()) or day_time not in (day_time_psd[1].keys()) or day_time not in (day_time_psd[2].keys()):
             #    continue
             
             #Currently the same as day_time, and probably notneeded to redefine
-            time_int = str(params['ppsds']['Z']['current_times_used'][i])#day_time.split('T')[0]
+            time_int = str(t_int)#day_time.split('T')[0]
             if time_int not in params['dfa']['time_values']:
                 params['dfa']['time_values'].append(time_int)
 
@@ -2353,8 +2354,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
     
     for k in ppsds:
         #if reasmpling has been selected
-        if resample or type(resample) is int:
-            if resample:
+        if resample is True or type(resample) is int:
+            if resample is True:
                 resample = 1000 #Default smooth value
 
             xValMin = min(ppsds[k]['period_bin_centers'])
@@ -2401,10 +2402,12 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         methodInt = method
         method = methodList[method]
     params['method'] = method
-    #This gets the hvsr curve averaged from all time steps
-    anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
 
+    #This gets the main hvsr curve averaged from all time steps
+    anyK = list(x_freqs.keys())[0]
+    print('Getting main curve')
+    hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
+    print(hvsr_curve.shape)
     origPPSD = params['ppsds_obspy'].copy()
 
     #Add some other variables to our output dictionary
@@ -2424,11 +2427,13 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 'tsteps_used': params['tsteps_used'].copy()
                 }
 
+    #This is if manual editing was used (should probably be updated at some point to just use masks)
     if 'xwindows_out' in params.keys():
         hvsr_out['xwindows_out'] = params['xwindows_out']
     else:
         hvsr_out['xwindows_out'] = []
 
+    #These are in other places in the hvsr_out dict, so are redudant
     del hvsr_out['input_params']['ppsds_obspy']
     del hvsr_out['input_params']['ppsds']
     del hvsr_out['input_params']['tsteps_used']
@@ -2455,13 +2460,19 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
 
     #Get hvsr curve from three components at each time step
-    hvsr_tSteps = []
     anyK = list(hvsr_out['psd_raw'].keys())[0]
-    for tStep in range(len(hvsr_out['psd_raw'][anyK])):
-        tStepDict = {}
-        for k in hvsr_out['psd_raw']:
-            tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose))
+    print('Getting HVSR Curve time steps')
+    if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
+        pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+    else:
+        hvsr_tSteps = []
+        for tStep in range(len(hvsr_out['psd_raw'][anyK])):
+            tStepDict = {}
+            for k in hvsr_out['psd_raw']:
+                tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
+            print(tStep)
+            _, hvsr_tstep = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+            hvsr_tSteps.append(hvsr_tstep)
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
@@ -2578,27 +2589,31 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
         hvsr_curve  : list
             List containing H/V ratios at each frequency/period in x
     """
-    params = hvsr_dict
     hvsr_curve = []
-    if method==1 or method =='dfa' or method=='Diffuse Field Assumption':
+    hvsr_tSteps = []
+
+    params = hvsr_dict
+    if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
         print('WARNING: DFA method is currently experimental and not supported')
-    for j in range(len(x)-1):
-        if method==1 or method =='dfa' or method=='Diffuse Field Assumption':
-            params = dfa(params, verbose=verbose)
-            eie = params['dfa']['equal_interval_energy']
+        print(len(x))
+        for j in range(len(x)-1):
             for time_interval in params['ppsds']['Z']['current_times_used']:
-                #print(eie['Z'][str(time_interval)])
-                #print(params['ppsds']['Z']['current_times_used'])
-                #print(params['ppsds']['Z'][str(time_interval)])
+                hvsr_curve_tinterval = []
+                print(j)
+                params = dfa(params, verbose=verbose)
+                eie = params['dfa']['equal_interval_energy']
                 if time_interval in list(eie['Z'].keys()) and time_interval in list(eie['E'].keys()) and time_interval in list(eie['N'].keys()):
                     hvsr = math.sqrt(
                         (eie['Z'][str(time_interval)][j] + eie['N'][str(time_interval)][j]) / eie['Z'][str(time_interval)][j])
-                    hvsr_curve.append(hvsr)
+                    hvsr_curve_tinterval.append(hvsr)
                 else:
                     if verbose > 0:
-                        print(time_interval + ' missing component, skipped!')
+                        print('WARNING: '+ time_interval + ' missing component, skipped!')
                     continue
-        else:
+            hvsr_curve.append(np.mean(hvsr_curve_tinterval))
+            hvsr_tSteps.append(hvsr_curve_tinterval)
+    else:
+        for j in range(len(x)-1):
             psd0 = [psd['Z'][j], psd['Z'][j + 1]]
             psd1 = [psd['E'][j], psd['E'][j + 1]]
             psd2 = [psd['N'][j], psd['N'][j + 1]]
@@ -2607,7 +2622,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
             hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
             hvsr_curve.append(hvsr)  
 
-    return np.array(hvsr_curve)
+    return np.array(hvsr_curve), hvsr_tSteps
 
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
