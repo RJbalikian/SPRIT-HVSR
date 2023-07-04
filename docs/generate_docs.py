@@ -7,7 +7,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.0.12'
+release_version= '0.0.20'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'

@@ -453,7 +453,7 @@ This function returns another displayable character if platform is Windows</p></
 : str,</dt>
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt>
 <dt>'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders;</dt>
-<dt>'dir' is used if the time_int's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
+<dt>'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
 <dt>'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.</dt>
 <dt><strong><code>trim_dir</code></strong> :&ensp;<code>None</code> or <code>str</code> or <code>pathlib obj</code>, default=<code>None</code></dt>
 <dd>If None (or False), data is not trimmed in this function.
@@ -488,7 +488,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         source  : str, {&#39;raw&#39;, &#39;dir&#39;, &#39;file&#39;}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
-                &#39;dir&#39; is used if the time_int&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+                &#39;dir&#39; is used if the day&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 &#39;file&#39; is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
@@ -534,7 +534,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         year = date.year
     elif type(date) is tuple:
         if date[0]&gt;366:
-            error(&#39;First item in date tuple must be time_int of year (0-366)&#39;, 0)
+            error(&#39;First item in date tuple must be day of year (0-366)&#39;, 0)
         elif date[1] &gt; datetime.datetime.now().year:
             error(&#39;Second item in date tuple should be year, but given item is in the future&#39;, 0)
         else:
@@ -566,16 +566,16 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        print(&#34;Did not recognize date, using year {} and time_int {}&#34;.format(year, doy))
+        print(&#34;Did not recognize date, using year {} and day {}&#34;.format(year, doy))
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     if source==&#39;raw&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
     elif source==&#39;dir&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_data(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
     elif source==&#39;file&#39;:
         if isinstance(datapath, list) or isinstance(datapath, tuple):
             rawTraces = []
@@ -725,6 +725,8 @@ If the following keywords are not specified, their defaults are amended in this 
         ppsd_kwargs[&#39;period_step_octaves&#39;] = 0.03125
 
     from obspy.signal import PPSD
+
+    print(ppsd_kwargs)
 
     eStream = stream.select(component=&#39;E&#39;)
     estats = eStream.traces[0].stats
@@ -1100,7 +1102,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-06-06', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-04', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1284,7 +1286,7 @@ This is necessary for Raspberry Shake data.</dd>
     endtime = date+&#34;T&#34;+endtime
     endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
 
-    acq_date = datetime.date(year=int(date.split(&#39;-&#39;)[0]), month=int(date.split(&#39;-&#39;)[1]), time_int=int(date.split(&#39;-&#39;)[2]))
+    acq_date = datetime.date(year=int(date.split(&#39;-&#39;)[0]), month=int(date.split(&#39;-&#39;)[1]), day=int(date.split(&#39;-&#39;)[2]))
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
@@ -1611,9 +1613,9 @@ This is necessary for Raspberry Shake data.</dd>
     ax.tick_params(axis=&#39;x&#39;, labelsize=8)
 
     if hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date != hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][-1].date:
-        time_int = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)+&#39; - &#39;+str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][1].date)
+        day = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)+&#39; - &#39;+str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][1].date)
     else:
-        time_int = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)
+        day = str(hvsr_dict[&#39;ppsds&#39;][anyKey][&#39;current_times_used&#39;][0].date)
 
     ymin = hvsr_dict[&#39;input_params&#39;][&#39;hvsr_band&#39;][0]
     ymax = hvsr_dict[&#39;input_params&#39;][&#39;hvsr_band&#39;][1]
@@ -1643,7 +1645,7 @@ This is necessary for Raspberry Shake data.</dd>
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_dict[&#39;x_freqs&#39;][anyKey]),0), 10)
     ax.set_title(hvsr_dict[&#39;input_params&#39;][&#39;site&#39;]+&#39;: Spectrogram&#39;)
-    ax.set_xlabel(&#39;UTC Time \n&#39;+time_int)
+    ax.set_xlabel(&#39;UTC Time \n&#39;+day)
     
     if colorbar:
         cbar = plt.colorbar(mappable=im)
@@ -1887,8 +1889,8 @@ Only matters if more than one component used.</dd>
     else:
         fig.suptitle(params[&#39;site&#39;]+&#39;Spectrogram and Data&#39;)
     
-    time_int = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
-    ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+time_int)
+    day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
 
     #plt.rcParams[&#39;figure.dpi&#39;] = 100
     #plt.rcParams[&#39;figure.figsize&#39;] = (5,4)
@@ -1976,8 +1978,8 @@ Only matters if more than one component used.</dd>
 
     fig.suptitle(params[&#39;site&#39;])
     
-    time_int = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.time_int)
-    axes[&#39;E&#39;].set_xlabel(&#39;UTC Time \n&#39;+time_int)
+    day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
+    axes[&#39;E&#39;].set_xlabel(&#39;UTC Time \n&#39;+ day)
 
     #plt.rcParams[&#39;figure.dpi&#39;] = 100
     #plt.rcParams[&#39;figure.figsize&#39;] = (5,4)
@@ -2097,7 +2099,7 @@ For docx (not yet implemented), the following are also included:
 </details>
 </dd>
 <dt id="sprit.process_hvsr"><code class="name flex">
-<span>def <span class="ident">process_hvsr</span></span>(<span>params, method=4, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75)</span>
+<span>def <span class="ident">process_hvsr</span></span>(<span>params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Process the input data and get HVSR data</p>
@@ -2111,12 +2113,12 @@ the bulk of processing of the HVSR data and the data quality checks.</p>
 <dt>method
 : int or str</dt>
 <dt>Method to use for combining the horizontal components</dt>
-<dt>0) Diffuse field assumption, or 'DFA' (not currently implemented)</dt>
-<dt>1) 'Arithmetic Mean': H ≡ (HN + HE)/2</dt>
-<dt>2) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)</dt>
-<dt>3) 'Vector Summation': H ≡ √H2 N + H2 E</dt>
-<dt>4) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2</dt>
-<dt HE HN_="HN,">5) 'Maximum Horizontal Value': H ≡ max</dt>
+<dt>1) Diffuse field assumption, or 'DFA' (not currently implemented)</dt>
+<dt>2) 'Arithmetic Mean': H ≡ (HN + HE)/2</dt>
+<dt>3) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)</dt>
+<dt>4) 'Vector Summation': H ≡ √H2 N + H2 E</dt>
+<dt>5) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2</dt>
+<dt HE HN_="HN,">6) 'Maximum Horizontal Value': H ≡ max</dt>
 <dt>smooth
 : bool=True</dt>
 <dt>bool or int.</dt>
@@ -2153,7 +2155,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def process_hvsr(params, method=4, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75):
+<pre><code class="python">def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
     &#34;&#34;&#34;Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2165,12 +2167,12 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         Dictionary containing all the parameters input by the user
     method  : int or str
         Method to use for combining the horizontal components
-            0) Diffuse field assumption, or &#39;DFA&#39; (not currently implemented)
-            1) &#39;Arithmetic Mean&#39;: H ≡ (HN + HE)/2
-            2) &#39;Geometric Mean&#39;: H ≡ √HN · HE, recommended by the SESAME project (2004)
-            3) &#39;Vector Summation&#39;: H ≡ √H2 N + H2 E
-            4) &#39;Quadratic Mean&#39;: H ≡ √(H2 N + H2 E )/2
-            5) &#39;Maximum Horizontal Value&#39;: H ≡ max {HN, HE}
+            1) Diffuse field assumption, or &#39;DFA&#39; (not currently implemented)
+            2) &#39;Arithmetic Mean&#39;: H ≡ (HN + HE)/2
+            3) &#39;Geometric Mean&#39;: H ≡ √HN · HE, recommended by the SESAME project (2004)
+            4) &#39;Vector Summation&#39;: H ≡ √H2 N + H2 E
+            5) &#39;Quadratic Mean&#39;: H ≡ √(H2 N + H2 E )/2
+            6) &#39;Maximum Horizontal Value&#39;: H ≡ max {HN, HE}
     smooth  : bool=True
         bool or int. 
             If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
@@ -2202,7 +2204,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     ppsds = params[&#39;ppsds&#39;].copy()#[k][&#39;psd_values&#39;]
     ppsds = __check_xvalues(ppsds)
 
-    methodList = [&#39;Diffuse Field Assumption&#39;, &#39;Arithmetic Mean&#39;, &#39;Geometric Mean&#39;, &#39;Vector Summation&#39;, &#39;Quadratic Mean&#39;, &#39;Maximum Horizontal Value&#39;]
+    methodList = [&#39;&lt;placeholder_0&gt;&#39;, &#39;Diffuse Field Assumption&#39;, &#39;Arithmetic Mean&#39;, &#39;Geometric Mean&#39;, &#39;Vector Summation&#39;, &#39;Quadratic Mean&#39;, &#39;Maximum Horizontal Value&#39;]
     x_freqs = {}
     x_periods = {}
 
@@ -2215,8 +2217,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     
     for k in ppsds:
         #if reasmpling has been selected
-        if resample or type(resample) is int:
-            if resample:
+        if resample is True or type(resample) is int:
+            if resample is True:
                 resample = 1000 #Default smooth value
 
             xValMin = min(ppsds[k][&#39;period_bin_centers&#39;])
@@ -2262,11 +2264,13 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     if type(method) is int:
         methodInt = method
         method = methodList[method]
+    params[&#39;method&#39;] = method
 
-    #This gets the hvsr curve averaged from all time steps
+    #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params)
-
+    print(&#39;Getting main curve&#39;)
+    hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
+    print(hvsr_curve.shape)
     origPPSD = params[&#39;ppsds_obspy&#39;].copy()
 
     #Add some other variables to our output dictionary
@@ -2286,11 +2290,13 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 &#39;tsteps_used&#39;: params[&#39;tsteps_used&#39;].copy()
                 }
 
+    #This is if manual editing was used (should probably be updated at some point to just use masks)
     if &#39;xwindows_out&#39; in params.keys():
         hvsr_out[&#39;xwindows_out&#39;] = params[&#39;xwindows_out&#39;]
     else:
         hvsr_out[&#39;xwindows_out&#39;] = []
 
+    #These are in other places in the hvsr_out dict, so are redudant
     del hvsr_out[&#39;input_params&#39;][&#39;ppsds_obspy&#39;]
     del hvsr_out[&#39;input_params&#39;][&#39;ppsds&#39;]
     del hvsr_out[&#39;input_params&#39;][&#39;tsteps_used&#39;]
@@ -2317,13 +2323,19 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
 
     #Get hvsr curve from three components at each time step
-    hvsr_tSteps = []
     anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
-    for tStep in range(len(hvsr_out[&#39;psd_raw&#39;][anyK])):
-        tStepDict = {}
-        for k in hvsr_out[&#39;psd_raw&#39;]:
-            tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
-        hvsr_tSteps.append(__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out))
+    print(&#39;Getting HVSR Curve time steps&#39;)
+    if method==1 or method ==&#39;dfa&#39; or method ==&#39;Diffuse Field Assumption&#39;:
+        pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+    else:
+        hvsr_tSteps = []
+        for tStep in range(len(hvsr_out[&#39;psd_raw&#39;][anyK])):
+            tStepDict = {}
+            for k in hvsr_out[&#39;psd_raw&#39;]:
+                tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
+            print(tStep)
+            _, hvsr_tstep = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+            hvsr_tSteps.append(hvsr_tstep)
     hvsr_tSteps = np.array(hvsr_tSteps)
     
     hvsr_out[&#39;ind_hvsr_curves&#39;] = hvsr_tSteps
@@ -3030,7 +3042,7 @@ If specified, filepath to write to updated inventory file to.</p>
     elevation = str(params[&#39;elevation&#39;])
     depth = str(params[&#39;depth&#39;])
     
-    startdate = str(datetime.datetime(year=2023, month=2, time_int=15)) #First time_int with working code
+    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day sprit code worked :)
     enddate=str(datetime.datetime.today())
 
     filepath = checkifpath(filepath)

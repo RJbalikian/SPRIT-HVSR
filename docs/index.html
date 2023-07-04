@@ -1,0 +1,41 @@
+<h1>SPRĪT</h1>
+<p>SpRĪT (HVSR): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio processing, using any data format readable by the Obspy python package.</p>
+<h1>Introduction</h1>
+<p>The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.</p>
+<p>This package will allow ambient seismic data to be read in the most common seismic data formats, and will perform Horizontal Vertical Spectral Ratio (HVSR) analysis on the data. H/V analysis was standardized and popularized by the Site EffectS assessment using AMbient Excitations (SESAME) project, with a comprehensive final report issued in 2003.<sup><a href="#1">1</a></sup> This SESAME project and its J-SESAME pacakge were crucial in the developing of the HVSR technique, and the outputs aided in the development of this software package.</p>
+<p>This python package is built in large part off the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.<sup><a href="#2">2</a></sup> Specifically, the computeHVSR.py tools that enable the ability to rank HVSR peaks, calculate data quality and peak quality, and the combining of the horizontal components was adapted directly from that package. Because the SpRĪT package is intended to be used to analyze data from rapid field data acquisitions (less than an hour per site), much of the IRIS package was adapted from daily to HV curve calculations to sub-hourly and even sub-minute HV calculations. Because there is limited data, there is no baseline to compare to, so that element is excluded from this package.</p>
+<p>That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup><a href="#3">3</a></sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.</p>
+<p>For guidelines on acquisition, processing, and interpration of H/V data, see: <a href="http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf">http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf</a>. </p>
+<h1>Documentation</h1>
+<ul>
+<li>API Documentation <a href="https://rjbalikian.github.io/SPRIT/main.html">here</a></a></li>
+<li>See Wiki for more information <a href="https://github.com/RJbalikian/SPRIT/wiki">here</a> (in progress)</li>
+</ul>
+<h1>Dependencies</h1>
+<p>Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work</p>
+<ul>
+<li><a href="https://docs.obspy.org/">Obspy</a>: Python framework for processing seismological data</li>
+<li><a href="https://matplotlib.org/">Matplotlib</a>: Comprehensive library for creating static, animated, andinteractive visualizationsin python</li>
+<li><a href="https://matplotlib.org/">Numpy</a>: "The fundamental package for scientific computing with Python"</li>
+<li><a href="https://scipy.org/">Scipy</a>: "Fundamental algorithms for scientific computing in Python"</li>
+<li><a href="https://pandas.pydata.org">Pandas</a>: "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)</li>
+<li><a href="https://pypi.org/project/PyQt5">pyqt5</a>: Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)</li>
+<li><a href="https://pypi.org/project/tkcalendar/">tkcalendar</a>: Module for tkinter calendar widget (used for date selection in the GUI)</li>
+</ul>
+<h1>References</h1>
+<ul>
+<li><a id="1">[1]</a> <a href="http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf">http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf</a></li>
+<li><a id="2">[2]</a> <a href="https://github.com/iris-edu/HVSR">https://github.com/iris-edu/HVSR</a></li>
+<li><a id="3">[3]</a> <a href="http://service.iris.edu/mustang/">http://service.iris.edu/mustang/</a></li>
+</ul>
+<h1>Considerations</h1>
+<p>Summary from SESAME Project (from <a href="https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf">https://www.iitk.ac.in/nicee/wcee/article/13_2207.pdf</a>):
+In very brief, the main learnings may be summarized as follows: </p>
+<ul>
+<li>In situ soil / sensor coupling should be handled with care. Concrete and asphalt provide good results, whereas measuring on soft / irregular soils such as mud, grass, ploughed soil, ice, gravel, not compacted snow, etc. should be avoided. Artificial soil / sensor coupling should be avoided unless it is absolutely necessary, for example, to compensate a strong inclination of the soil. In such a case, either a pile of sand, or a trihedron should be used This soil/sensor coupling issue proves to be particularly important under windy conditions.</li>
+<li>It is recommended not to measure above underground structures. Nearby surface structures should be considered with care, particularly under windy conditions. </li>
+<li>Measurements under wind or strong rain should be avoided. Wind has been found to induce very significant low frequency perturbations. </li>
+<li>The proximity of some specific noise sources should be considered with care (or avoided using an anti-trigger window selection to remove the transients): nearby walking, high speed car or truck traffic, industrial machinery, etc. </li>
+<li>Results tend to be stable with time (if other parameters, such as weather conditions, etc. are kept constant). </li>
+<li>No matter how strongly a parameter influences H/V amplitudes, the value of the frequency peak is usually not or slightly affected, with the noticeable exception of the wind in certain conditions.</li>
+</ul>
