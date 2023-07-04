@@ -14,8 +14,8 @@ That version is intended to read data from the IRIS Data Management Center (DMC)
 For guidelines on acquisition, processing, and interpration of H/V data, see: <http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf>. 
 
 # Documentation
-- API Documentation [here](https://rjbalikian.github.io/SPRIT/main.html)</a>
-- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT/wiki) (in progress)
+- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)</a>
+- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki) (in progress)
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
