@@ -105,7 +105,7 @@ def checkifpath(filepath):
     return filepath
 
 #Formats time into desired output
-def __formatTime(inputDT, tzone='utc', dst=True):
+def __formatTime(inputDT, tzone='UTC', dst=True):
     """Private function to format time, used in other functions
 
     Formats input time to datetime objects in utc
@@ -254,12 +254,17 @@ def __formatTime(inputDT, tzone='utc', dst=True):
     elif type(tzone) is str:
         import zoneinfo
         if tzone in list(map(str.lower, zoneinfo.available_timezones())):
-            outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
+            outputTimeObj = outputTimeObj.replace(tzinfo=zoneinfo.ZoneInfo(tzone))
         else:
             print("ERROR: Timezone {} is not in official list.".format(tzone))
+    elif isinstance(tzone, zoneinfo.ZoneInfo):
+        outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
     else:
         print("ERROR: Timezone must be either str or int")
     
+    #Convert to UTC
+    outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)   
+
     return outputTimeObj
 
 #Sort Channels later
