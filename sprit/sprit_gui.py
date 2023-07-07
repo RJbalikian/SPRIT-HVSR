@@ -14,13 +14,14 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter.simpledialog import askinteger
+import zoneinfo
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 matplotlib.use('TkAgg')
 import numpy as np
-import pytz
+#import pytz
 from tkcalendar import DateEntry
 
 import sprit
@@ -540,7 +541,8 @@ class App:
 
         # Timezone
         def get_tz():
-            self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(tk.ACTIVE))
+            #self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
             # create a datetime object
 
             # get the UTC offset as a timedelta object
@@ -553,7 +555,7 @@ class App:
         self.timezone_optionmenu.insert('end', 'UTC')
         self.timezone_optionmenu.insert('end', 'US/Central')
 
-        for tz in pytz.all_timezones:
+        for tz in zoneinfo.available_timezones():# pytz.all_timezones:
             if tz !='UTC':
                 self.timezone_optionmenu.insert('end', tz)
         self.timezone_optionmenu.selection_set(0)
@@ -577,7 +579,8 @@ class App:
         self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
         self.utc_time_output_label.grid(row=4,column=4)
 
-        self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+        self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(tk.ACTIVE))
+        #self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
         #input_params() call
         def get_times():
             self.tz = get_tz()
@@ -588,7 +591,8 @@ class App:
                                           month = self.acq_date.month, 
                                           day = self.acq_date.day,
                                           hour = self.start_hour.get(),
-                                          minute = int(self.start_minute.get()))
+                                          minute = int(self.start_minute.get()),
+                                          tzinfo=self.tz)
             
             #Get duration, as originally entered
             hour_dur = self.end_hour.get() - self.start_hour.get()
@@ -597,7 +601,9 @@ class App:
             min_dur = self.end_minute.get() - self.start_minute.get()
             
             #Convert starttime to utc
-            self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
+
             #Get endttime based on utc starttime and original duration
             self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
 

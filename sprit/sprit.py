@@ -248,19 +248,18 @@ def __formatTime(inputDT, tzone='utc', dst=True):
     elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
         outputTimeObj = inputDT
 
-    if type(tzone) is int: #Plus/minus needs to be correct there
+    #Add timezone info
+    if type(tzone) is int:
         outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
     elif type(tzone) is str:
-        if tzone != 'utc':
-            utc_time = datetime.datetime.utcnow()
-            localTime = datetime.datetime.now()
-            utcOffset = utc_time-localTime
-            outputTimeObj=outputTimeObj+utcOffset
-            utcOffset = utc_time-localTime
-            outputTimeObj = outputTimeObj+utcOffset
-            if dst:
-                outputTimeObj = outputTimeObj+datetime.timedelta(hours=1)
-
+        import zoneinfo
+        if tzone in list(map(str.lower, zoneinfo.available_timezones())):
+            outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
+        else:
+            print("ERROR: Timezone {} is not in official list.".format(tzone))
+    else:
+        print("ERROR: Timezone must be either str or int")
+    
     return outputTimeObj
 
 #Sort Channels later
@@ -331,7 +330,7 @@ def input_params( dataPath,
     endtime : str, time obejct, or datetime object, default='23:59:99.99'
         End time of data stream. This is necessary for Raspberry Shake data. Same format as starttime
     tzone : str or int, default = 'UTC'
-        Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value will assume local time of computer.
+        Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
         This is necessary for Raspberry Shake data.
     dst : bool, default=True
