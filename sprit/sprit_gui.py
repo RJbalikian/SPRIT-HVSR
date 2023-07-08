@@ -192,7 +192,7 @@ class App:
                                 acq_date = self.starttime.date(),
                                 starttime = self.starttime,
                                 endtime = self.endtime,
-                                tzone = 'UTC', #Will always convert before we get to this point
+                                tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn't matter
                                 lon = self.x.get(),
                                 lat =  self.y.get(),
@@ -342,7 +342,7 @@ class App:
                                             '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection())),
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
@@ -541,8 +541,8 @@ class App:
 
         # Timezone
         def get_tz():
-            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(tk.ACTIVE))
-            #self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
+            #self.tz = pytz.timezone(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
             # create a datetime object
 
             # get the UTC offset as a timedelta object
@@ -550,8 +550,13 @@ class App:
 
             return self.tz
         
-        self.tz = tk.StringVar()
-        self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode='browse', height=25)
+        def onTimezoneSelect(event):
+            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
+            update_input_params_call()
+
+        tzListbox = self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode='browse', height=25)
+        tzListbox.bind('<<ListboxSelect>>', onTimezoneSelect)
+
         self.timezone_optionmenu.insert('end', 'UTC')
         self.timezone_optionmenu.insert('end', 'US/Central')
 
@@ -579,8 +584,8 @@ class App:
         self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
         self.utc_time_output_label.grid(row=4,column=4)
 
-        self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(tk.ACTIVE))
-        #self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+        self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
+        #self.tz = pytz.timezone(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
         #input_params() call
         def get_times():
             self.tz = get_tz()

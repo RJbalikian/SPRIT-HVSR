@@ -9,7 +9,7 @@ license = {file = "LICENSE"}
 version="0.0.19"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
-requires-python = ">=3.0"
+requires-python = ">=3.9"
 dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyqt5", "tkcalendar"]
 classifiers = [
     "Programming Language :: Python :: 3",
