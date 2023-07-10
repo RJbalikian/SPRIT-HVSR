@@ -176,8 +176,10 @@ class App:
                 self.tab_control.select(self.preview_data_tab)
             
             self.starttime, self.endtime = get_times()
-
-            if len(self.fpath) > 1:
+            
+            if isinstance(self.fpath, str):
+                pass
+            elif len(self.fpath) > 1:
                 self.fpath = list(self.fpath)
             else:
                 self.fpath = self.fpath[0]
@@ -342,7 +344,7 @@ class App:
                                             '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection())),
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
@@ -538,39 +540,35 @@ class App:
                                         day = self.acq_date.day,
                                         hour = self.start_hour.get(),
                                         minute = int(self.start_minute.get()))
-
-        # Timezone
-        def get_tz():
-            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
-            #self.tz = pytz.timezone(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
-            # create a datetime object
-
-            # get the UTC offset as a timedelta object
-            self.utc_offset = self.tz.utcoffset(self.starttime).total_seconds()/60/60
-
-            return self.tz
         
         def onTimezoneSelect(event):
-            self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
+            #Listbox "loses" selection and triggers an event sometimes, so need to check if that is just what happened
+            if self.timezone_listbox.curselection():
+                #If it was an actual selection, update timezone
+                self.tz = zoneinfo.ZoneInfo(self.timezone_listbox.get(self.timezone_listbox.curselection()))
+            else:
+                #If it was just the listbox losing the selection, don't change anything
+                pass
             update_input_params_call()
 
-        tzListbox = self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode='browse', height=25)
-        tzListbox.bind('<<ListboxSelect>>', onTimezoneSelect)
+        self.timezone_listbox = tk.Listbox(hvsrFrame, selectmode='browse', height=25)
 
-        self.timezone_optionmenu.insert('end', 'UTC')
-        self.timezone_optionmenu.insert('end', 'US/Central')
+        self.timezone_listbox.insert('end', 'UTC')
+        self.timezone_listbox.insert('end', 'US/Central')
 
         for tz in zoneinfo.available_timezones():# pytz.all_timezones:
             if tz !='UTC':
-                self.timezone_optionmenu.insert('end', tz)
-        self.timezone_optionmenu.selection_set(0)
+                self.timezone_listbox.insert('end', tz)
+        self.timezone_listbox.selection_set(0)
+        self.timezone_listbox.bind('<<ListboxSelect>>', onTimezoneSelect)
+
         ttk.Label(hvsrFrame,text="Timezone").grid(row=3,column=7, sticky='w', padx=5)
-        self.timezone_optionmenu.grid(row=4,column=7, rowspan=26, sticky='nsew', padx=5)
+        self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky='nsew', padx=5)
 
         #ttk.Label(hvsrFrame, text="Timezone").grid(row=3, column=7)
         #self.timezone_var = tk.StringVar(value="UTC")
-        #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, "UTC", *pytz.all_timezones)
-        #self.timezone_optionmenu.grid(row=3,column=7)
+        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, "UTC", *pytz.all_timezones)
+        #self.timezone_listbox.grid(row=3,column=7)
 
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
@@ -584,12 +582,11 @@ class App:
         self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
         self.utc_time_output_label.grid(row=4,column=4)
 
-        self.tz = zoneinfo.ZoneInfo(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
-        #self.tz = pytz.timezone(self.timezone_optionmenu.get(self.timezone_optionmenu.curselection()))
+        #Initialize as UTC
+        self.tz = datetime.timezone.utc
+        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
         #input_params() call
         def get_times():
-            self.tz = get_tz()
-
             #Format starttime as datetime object (in timezone as originally entered)
             self.acq_date = self.date_entry.get_date()
             self.starttime = datetime.datetime(year = self.acq_date.year, 
@@ -800,11 +797,11 @@ class App:
         self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
-        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone={}, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         self.input_params_call.pack(anchor='w', expand=True, padx=20)

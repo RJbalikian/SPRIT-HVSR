@@ -249,11 +249,14 @@ def __formatTime(inputDT, tzone='UTC', dst=True):
         outputTimeObj = inputDT
 
     #Add timezone info
-    if type(tzone) is int:
+    if outputTimeObj.tzinfo is not None and outputTimeObj.tzinfo.utcoffset(outputTimeObj) is not None:
+        #This is already timezone aware
+        pass
+    elif type(tzone) is int:
         outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
     elif type(tzone) is str:
         import zoneinfo
-        if tzone in list(map(str.lower, zoneinfo.available_timezones())):
+        if tzone.lower() in list(map(str.lower, zoneinfo.available_timezones())):
             outputTimeObj = outputTimeObj.replace(tzinfo=zoneinfo.ZoneInfo(tzone))
         else:
             print("ERROR: Timezone {} is not in official list.".format(tzone))
@@ -395,17 +398,20 @@ def input_params( dataPath,
     
     if type(starttime) is str:
         if 'T' in starttime:
-            date=starttime.split('T')[0]
+            #date=starttime.split('T')[0]
             starttime = starttime.split('T')[1]
+        else:
+            pass
+            #starttime = date+'T'+starttime
     elif type(starttime) is datetime.datetime:
-        date = str(starttime.date())
+        #date = str(starttime.date())
         starttime = str(starttime.time())
+        ###HERE IS NEXT
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
-    starttime = date+"T"+starttime
     starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone, dst=dst))
-
+    
     if type(endtime) is str:
         if 'T' in endtime:
             date=endtime.split('T')[0]
@@ -1040,7 +1046,6 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
     fileList = []
     folderPathList = []
     filesinfolder = False
-    
     datapath = checkifpath(datapath)
 
     #Read RS files
@@ -1060,9 +1065,9 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
             if len(fileList) !=3:
                 error('3 channels needed! {} found.'.format(len(folderPathList)), 1)
             else:
+                fileList.sort(reverse=True) # Puts z channel first
+                folderPathList.sort(reverse=True)
                 print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
-            fileList.sort(reverse=True) # Puts z channel first
-            folderPathList.sort(reverse=True)
 
             if len(fileList) == 0:
                 info('No file found for specified parameters. The following days/files exist for specified year in this directory')
@@ -1078,7 +1083,11 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
+                    print(f)
+                    print(params['starttime'])
+                    print(params['endtime'])
                     st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+                    st.merge()
                     tr = (st[0])
                     #tr= obspy.Trace(tr.data,header=meta)
                     traceList.append(tr)
@@ -1104,11 +1113,10 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         filepaths = []
         rawDataIN = obspy.Stream()
         for i, f in enumerate(fileList):
-            folderPathList[i] = str(folderPathList[i]).replace('\\', '/')
-            folderPathList[i] = str(folderPathList[i]).replace('\\'[0], '/')
-            filepaths.append(str(folderPathList[i])+'/'+f)
-            filepaths[i] = pathlib.Path(filepaths[i])
+            filepaths.append(folderPathList[i].joinpath(f))
+            #filepaths[i] = pathlib.Path(filepaths[i])
             currData = obspy.read(filepaths[i])
+            currData.merge()
             #rawDataIN.append(currData)
             #if i == 0:
             #    rawDataIN = currData.copy()
@@ -1119,7 +1127,8 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         if type(rawDataIN) is list and len(rawDataIN)==1:
             rawDataIN = rawDataIN[0]
     elif source=='file':
-        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
+        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+        rawDataIN.merge()   
         rawDataIN.attach_response(inv)
     elif type(source) is list or type(datapath) is list:
         pass #Eventually do something
