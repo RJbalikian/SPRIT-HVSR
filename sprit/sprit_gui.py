@@ -217,8 +217,8 @@ class App:
                                            detrend=self.detrend.get(), 
                                            detrend_order=self.detrend_order.get())
 
+            #Update labels for data preview tab
             self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.params['stream']))
-            
             
             self.obspySreamLabel_settings.configure(text=str(self.params['stream']))
 
@@ -237,8 +237,10 @@ class App:
             self.polesLabelE_settings.configure(text=self.params['paz']['E']['poles'])
             self.zerosLabelE_settings.configure(text=self.params['paz']['E']['zeros'])
             
+            #Plot data in data preview tab
             self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
+            #Plot data in noise preview tab
             self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.data_read = True
@@ -601,7 +603,7 @@ class App:
             if hour_dur < 0:
                 hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
             min_dur = self.end_minute.get() - self.start_minute.get()
-            
+
             #Convert starttime to utc
             #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
             self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
@@ -794,7 +796,7 @@ class App:
         self.trim_dir_filepath_button = ttk.Button(hvsrFrame, text="Browse", command=browse_trim_dir_filepath)
         self.trim_dir_filepath_button.grid(row=15, column=6, sticky='ew', padx=0, pady=(2.5,5))
 
-        self.starttime, self.endtime = get_times()
+        #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
         self.input_params_call = ttk.Label(master=input_params_LF, text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(

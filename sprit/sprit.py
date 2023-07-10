@@ -410,6 +410,7 @@ def input_params( dataPath,
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
+    starttime = date+"T"+starttime
     starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone, dst=dst))
     
     if type(endtime) is str:
@@ -815,8 +816,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         
         Returns
         -------
-        dataIN : obspy stream
-            Obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+        params : dict
+            Same dict as params parameter, but with an additional "strea" key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
     datapath = params['dataPath']
@@ -939,6 +940,11 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
+    
+    if isinstance(dataIN[0].data, np.ma.masked_array):
+        dataIN = dataIN.split()
+        #Need to test to see if this works ok with lots of little windows
+
     if detrend==False:
         pass
     elif detrend==True:
@@ -961,7 +967,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         if detrend=='spline':
             for tr in dataIN:
                 tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
-    
+
+    dataIN = dataIN.merge(method=1)
     params['stream'] = dataIN
 
     return params
@@ -1083,10 +1090,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    print(f)
-                    print(params['starttime'])
-                    print(params['endtime'])
-                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
                     st.merge()
                     tr = (st[0])
                     #tr= obspy.Trace(tr.data,header=meta)
@@ -1253,11 +1257,18 @@ def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
 
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
+
+    #If data is contained in a masked array, split to undo masked array
+    if isinstance(st_trimmed[0].data, np.ma.masked_array):
+        st_trimmed = st_trimmed.split()
+        #This split is undone with the .merge() method a few lines down
+
     for tr in st_trimmed:
         if trimStart > tr.stats.endtime or trimEnd < tr.stats.starttime:
             pass
         else:
             st_trimmed.trim(starttime=trimStart, endtime=trimEnd, **kwargs)
+
     st_trimmed.merge(method=1)
 
     #Format export filepath, if exporting
@@ -2795,28 +2806,42 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     timeList = {}
     mplTimes = {}
 
+    #In case data is masked, need to split, decimate, then merge back together
+    print(new_stream[0].stats)
+    if isinstance(new_stream[0].data, np.ma.masked_array):
+        new_stream = new_stream.split()
+    print(new_stream)
     new_stream.decimate(10)
-    ztrace = new_stream.select(component='Z')[0]
-    etrace = new_stream.select(component='E')[0]
-    ntrace = new_stream.select(component='N')[0]
-    traces = [ztrace, etrace, ntrace]
-    for tr in traces:
-        key = tr.stats.component
+    print(new_stream)
+    print(new_stream.merge()[0].stats)
+
+    zStream = new_stream.select(component='Z')#[0]
+    eStream = new_stream.select(component='E')#[0]
+    nStream = new_stream.select(component='N')#[0]
+    streams = [zStream, nStream, eStream]
+    for st in streams:
+        key = st[0].stats.component
         timeList[key] = []
         mplTimes[key] = []
-        for t in tr.times():
-            t = sTime + t
-            timeList[key].append(t)
-            mplTimes[key].append(t.matplotlib_date)
+        for tr in st:
+            for t in tr.times():
+                t = sTime + t
+                timeList[key].append(t)
+                mplTimes[key].append(t.matplotlib_date)
+
+    #Ensure that the min and max times for each component are the same
     for i, k in enumerate(mplTimes.keys()):
+        currMin = np.min(list(map(np.min, mplTimes[k])))
+        currMax = np.max(list(map(np.max, mplTimes[k])))
+
         if i == 0:
-            xmin = np.min(mplTimes[k])
-            xmax = np.max(mplTimes[k])
+            xmin = currMin
+            xmax = currMax
         else:
-            if xmin > np.min(mplTimes[k]):
-                xmin = np.min(mplTimes[k])
-            if xmax < np.max(mplTimes[k]):
-                xmax = np.max(mplTimes[k]) 
+            if xmin > currMin:
+                xmin = currMin
+            if xmax < currMax:
+                xmax = currMax
 
     axes['Z'].xaxis_date()
     axes['N'].xaxis_date()
@@ -2829,9 +2854,27 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     axes["E"].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
     axes["E"].tick_params(axis='x', labelsize=8)
     
-    axes['Z'].plot(mplTimes['Z'], ztrace.data, color='k', linewidth=0.15)
-    axes['N'].plot(mplTimes['N'], ntrace.data, color='b', linewidth=0.15)
-    axes['E'].plot(mplTimes['E'], etrace.data, color='r', linewidth=0.15)
+
+    streams = [zStream.merge(), 
+               nStream.merge(), 
+               eStream.merge()]
+    print(zStream)
+    print(nStream)
+    print(eStream)
+    for st in streams:
+        for i, tr in enumerate(st):
+            key = tr.stats.component
+            if key == 'Z':
+                C='k'
+            elif key=='N':
+                C='r'
+            else:
+                C='b'
+            print(i)
+            print(len(mplTimes[key]))
+            print(len(tr.data))
+            axes[key].plot(mplTimes[key], tr.data, color=C, linewidth=0.15)
+
 
     axes['Z'].set_ylabel('Z')
     axes['N'].set_ylabel('N')
