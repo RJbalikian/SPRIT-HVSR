@@ -2807,27 +2807,25 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     mplTimes = {}
 
     #In case data is masked, need to split, decimate, then merge back together
-    print(new_stream[0].stats)
     if isinstance(new_stream[0].data, np.ma.masked_array):
         new_stream = new_stream.split()
-    print(new_stream)
     new_stream.decimate(10)
-    print(new_stream)
-    print(new_stream.merge()[0].stats)
+    new_stream.merge()
 
     zStream = new_stream.select(component='Z')#[0]
     eStream = new_stream.select(component='E')#[0]
     nStream = new_stream.select(component='N')#[0]
     streams = [zStream, nStream, eStream]
+
     for st in streams:
         key = st[0].stats.component
         timeList[key] = []
         mplTimes[key] = []
         for tr in st:
-            for t in tr.times():
-                t = sTime + t
-                timeList[key].append(t)
-                mplTimes[key].append(t.matplotlib_date)
+            for t in np.ma.getdata(tr.times()):
+                newt = sTime + t
+                timeList[key].append(newt)
+                mplTimes[key].append(newt.matplotlib_date)
 
     #Ensure that the min and max times for each component are the same
     for i, k in enumerate(mplTimes.keys()):
@@ -2855,12 +2853,10 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     axes["E"].tick_params(axis='x', labelsize=8)
     
 
-    streams = [zStream.merge(), 
-               nStream.merge(), 
-               eStream.merge()]
-    print(zStream)
-    print(nStream)
-    print(eStream)
+    streams = [zStream.merge(method=1), 
+               nStream.merge(method=1), 
+               eStream.merge(method=1)]
+
     for st in streams:
         for i, tr in enumerate(st):
             key = tr.stats.component
@@ -2886,8 +2882,8 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     #stD = max([stDz, stDn, stDe])
     
     for i, comp in enumerate(list(mplTimes.keys())):
-        stD = np.abs(np.nanstd(stream.select(component=comp)[0].data))
-        dmed = np.nanmedian(stream.select(component=comp)[0].data)
+        stD = np.abs(np.nanstd(np.ma.getdata(stream.select(component=comp)[0].data)))
+        dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
         axes[comp].set_ylim([dmed-0.75*stD, dmed+0.75*stD])
         axes[comp].set_xlim([xmin, xmax])
