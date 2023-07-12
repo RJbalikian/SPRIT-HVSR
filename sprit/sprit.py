@@ -2798,7 +2798,7 @@ def __gethvsrparams(hvsr_out):
 def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
-    
+
     new_stream = stream.copy()
     #axis.plot(trace.times, trace.data)
     
@@ -2866,9 +2866,6 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
                 C='r'
             else:
                 C='b'
-            print(i)
-            print(len(mplTimes[key]))
-            print(len(tr.data))
             axes[key].plot(mplTimes[key], tr.data, color=C, linewidth=0.15)
 
 
@@ -2896,11 +2893,11 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     #plt.rcParams['figure.dpi'] = 100
     #plt.rcParams['figure.figsize'] = (5,4)
     
-    fig.tight_layout()
+    #fig.tight_layout()
+    fig.canvas.draw()
 
     if return_fig:
         return fig, axes
-    fig.canvas.draw()
     return                 
 
 def hvplot(hvsr_dict, kind='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
@@ -3498,7 +3495,7 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
         If return_fig is True, matplotlib figure is returned
     ax
         If return_fig is True, matplotlib axis is returned
-    """
+    """ 
     og_stream = stream.copy()
 
     #Get the latest start time and earliest end times of all components
@@ -3506,21 +3503,33 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
     minEndTime = obspy.UTCDateTime(1e10)
     for comp in ['E', 'N', 'Z']:
-        tr = stream.select(component=comp).copy()
+        #Get all traces from selected component in comp_st
+        if isinstance(stream[0].data, np.ma.masked_array):
+            stream = stream.split() 
+        comp_st = stream.select(component=comp).copy()
+        stream.merge()
+        
         if comp in component:
-            traceList.append(tr[0])
-        if tr[0].stats.starttime > maxStartTime:
-            maxStartTime = tr[0].stats.starttime
-        if tr[0].stats.endtime < minEndTime:
-            minEndTime = tr[0].stats.endtime
+            for tr in comp_st:
+                #Get all traces specified for use in one list
+                traceList.append(tr)
 
-    #Trim all traces to the same start/end time
+            if stream[0].stats.starttime > maxStartTime:
+                maxStartTime = stream[0].stats.starttime
+            if stream[0].stats.endtime < minEndTime:
+                minEndTime = stream[0].stats.endtime
+
+            if isinstance(comp_st[0].data, np.ma.masked_array):
+                comp_st = comp_st.split()  
+
+    #Trim all traces to the same start/end time for total
     for tr in traceList:
         tr.trim(starttime=maxStartTime, endtime=minEndTime)
     og_stream.trim(starttime=maxStartTime, endtime=minEndTime)      
 
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
+    stream.merge()
     stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
     if fig is None and ax is None:
@@ -3579,37 +3588,33 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     timeList = {}
     mplTimes = {}
     
-    #Decimate data (seems to bring up lots of issues later)
-    #if isinstance(og_stream[0].data, np.ma.MaskedArray):
-    #    for trace in og_stream:
-    #        #unmasked = trace.data[~np.ma.getmask(trace.data)]
-    #        decimated_data = scipy.signal.decimate(trace.data, decimation_factor)
-    #        decimated_mask = trace.data.mask[::decimation_factor]
-    #        print(len(decimated_data))
-    #        print(len(decimated_mask))
-    #        trace.data = np.ma.array(decimated_data, mask=decimated_mask)
-    #        trace.data = np.ma.filled(trace.data, np.nan)
-    #else:
-    #    og_stream.decimate(decimation_factor)
+    if isinstance(og_stream[0].data, np.ma.masked_array):
+        og_stream = og_stream.split()      
     og_stream.decimate(decimation_factor)
-    for i, tr in enumerate(og_stream):
+    og_stream.merge()
+
+    for tr in og_stream:
         key = tr.stats.component
-        timeList[key] = [] 
+        timeList[key] = []
         mplTimes[key] = []
-        for t in tr.times():
-            t = sTime + t
-            timeList[key].append(t)
-            mplTimes[key].append(t.matplotlib_date)
+        for t in np.ma.getdata(tr.times()):
+            newt = sTime + t
+            timeList[key].append(newt)
+            mplTimes[key].append(newt.matplotlib_date)
     
+    #Ensure that the min and max times for each component are the same
     for i, k in enumerate(mplTimes.keys()):
+        currMin = np.min(list(map(np.min, mplTimes[k])))
+        currMax = np.max(list(map(np.max, mplTimes[k])))
+
         if i == 0:
-            xmin = np.min(mplTimes[k])
-            xmax = np.max(mplTimes[k])
+            xmin = currMin
+            xmax = currMax
         else:
-            if xmin > np.min(mplTimes[k]):
-                xmin = np.min(mplTimes[k])
-            if xmax < np.max(mplTimes[k]):
-                xmax = np.max(mplTimes[k])         
+            if xmin > currMin:
+                xmin = currMin
+            if xmax < currMax:
+                xmax = currMax     
                    
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     im = ax['spec'].imshow(array_displayed, norm=norm, cmap=cmap, aspect='auto', interpolation=None, extent=[xmin,xmax,ymax,ymin])
@@ -3643,8 +3648,8 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     ax['signale'].set_ylabel('E')
     
     for comp in mplTimes.keys():
-        stD = np.nanstd(og_stream.select(component=comp)[0].data)
-        dmed = np.nanmedian(og_stream.select(component=comp)[0].data)
+        stD = np.abs(np.nanstd(np.ma.getdata(og_stream.select(component=comp)[0].data)))
+        dmed = np.nanmedian(np.ma.getdata(og_stream.select(component=comp)[0].data))
         key = 'signal'+comp.lower()
         ax[key].set_ylim([dmed-5*stD, dmed+5*stD])
     
@@ -3653,7 +3658,7 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     elif 'title' in kwargs.keys():
         fig.suptitle(kwargs['title'])
     else:
-        fig.suptitle(params['site']+'Spectrogram and Data')
+        fig.suptitle(params['site']+': Spectrogram and Data')
     
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax['signale'].set_xlabel('UTC Time \n'+day)
@@ -3663,6 +3668,7 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     
     #fig.tight_layout()
     fig.canvas.draw()
+    
     if return_fig:
         return fig, ax
     return

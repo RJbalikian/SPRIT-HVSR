@@ -502,17 +502,48 @@ class App:
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky='ew')
 
+        def get_times():
+            #Format starttime as datetime object (in timezone as originally entered)
+            self.acq_date = self.date_entry.get_date()
+            self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                          month = self.acq_date.month, 
+                                          day = self.acq_date.day,
+                                          hour = self.start_hour.get(),
+                                          minute = int(self.start_minute.get()),
+                                          tzinfo=self.tz)
+            
+            #Get duration, as originally entered
+            hour_dur = self.end_hour.get() - self.start_hour.get()
+            if hour_dur < 0:
+                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
+            min_dur = self.end_minute.get() - self.start_minute.get()
+
+            #Convert starttime to utc
+            #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
+
+            #Get endttime based on utc starttime and original duration
+            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
+
+            return self.starttime, self.endtime
+
+        self.tz = datetime.timezone.utc
+        def any_time_change():
+            self.acq_date = self.date_entry.get_date()
+            self.starttime, self.endtime = get_times()
+            update_input_params_call()
+
         ttk.Label(hvsrFrame, text="Start Time").grid(row=3, column=3, sticky='e', padx=5) 
         colonLabel= ttk.Label(sTimeFrame, text=":")#.grid(row=3, column=4, padx=(20,0), sticky='w')
         self.start_hour = tk.IntVar()
         self.start_hour.set(00)
-        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate='focusout', validatecommand=update_input_params_call) 
+        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate='focusout', validatecommand=any_time_change) 
         self.start_time_hour_entry#.grid(row=3, column=4, sticky='w') 
         self.start_minute = tk.DoubleVar()
         self.start_minute.set(00)
-        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate='focusout', validatecommand=update_input_params_call)
+        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate='focusout', validatecommand=any_time_change)
         self.start_time_min_entry#.grid(row=3, column=4, padx=80, sticky='w') 
-
+        
         #sTLabel.pack(side="left", fill="x", expand=True)
         self.start_time_hour_entry.pack(side='left', expand=True)
         colonLabel.pack(side="left", fill="x")
@@ -524,11 +555,11 @@ class App:
         colonLabel = ttk.Label(eTimeFrame, text=":")#.grid(row=3, column=6, padx=(20,0), sticky='w')  
         self.end_hour = tk.IntVar()
         self.end_hour.set(23)
-        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate='focusout', validatecommand=update_input_params_call) 
+        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate='focusout', validatecommand=any_time_change) 
         self.end_time_hour_entry#.grid(row=3, column=+, sticky='w') 
         self.end_minute = tk.DoubleVar()
         self.end_minute.set(59)
-        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate='focusout', validatecommand=update_input_params_call)
+        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate='focusout', validatecommand=any_time_change)
         self.end_time_min_entry#.grid(row=3, column=+, padx=80, sticky='w') 
 
         #eTLabel.pack(side="left", fill="x", expand=True)
@@ -537,12 +568,8 @@ class App:
         self.end_time_min_entry.pack(side='right', expand=True)
 
         self.acq_date = self.date_entry.get_date()
-        self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                        month = self.acq_date.month, 
-                                        day = self.acq_date.day,
-                                        hour = self.start_hour.get(),
-                                        minute = int(self.start_minute.get()))
-        
+        self.starttime, self.endtime = get_times()
+
         def onTimezoneSelect(event):
             #Listbox "loses" selection and triggers an event sometimes, so need to check if that is just what happened
             if self.timezone_listbox.curselection():
@@ -588,30 +615,6 @@ class App:
         self.tz = datetime.timezone.utc
         #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
         #input_params() call
-        def get_times():
-            #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = self.date_entry.get_date()
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month, 
-                                          day = self.acq_date.day,
-                                          hour = self.start_hour.get(),
-                                          minute = int(self.start_minute.get()),
-                                          tzinfo=self.tz)
-            
-            #Get duration, as originally entered
-            hour_dur = self.end_hour.get() - self.start_hour.get()
-            if hour_dur < 0:
-                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
-            min_dur = self.end_minute.get() - self.start_minute.get()
-
-            #Convert starttime to utc
-            #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
-            self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
-
-            #Get endttime based on utc starttime and original duration
-            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
-
-            return self.starttime, self.endtime
 
         self.starttime, self.endtime = get_times()
 
@@ -852,10 +855,10 @@ class App:
 
         #Set up plot
         self.fig_pre, self.ax_pre = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
-        canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
-        canvas_pre.draw()
-        canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        canvasPreWidget.pack(expand=True, fill='both')#.grid(row=1)
+        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        self.canvas_pre.draw()
+        self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.canvasPreWidget.pack(expand=True, fill='both')#.grid(row=1)
         
         #Save preview figure
         savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
