@@ -1304,6 +1304,14 @@ def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
         
         exportFile = export_dir+'/'+filename
 
+        #Take care of masked arrays for writing purposes
+        if 'fill_value' in kwargs.keys():
+            for tr in st_trimmed:
+                if isinstance(tr.data, np.ma.masked_array):
+                    tr.data = tr.data.filled(kwargs['fill_value'])
+        else:
+            st_trimmed = st_trimmed.split()
+        
         st_trimmed.write(filename=exportFile)
     else:
         pass
@@ -2072,8 +2080,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
 
     from obspy.signal import PPSD
 
-    print(ppsd_kwargs)
-
     eStream = stream.select(component='E')
     estats = eStream.traces[0].stats
     ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
@@ -2429,9 +2435,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    print('Getting main curve')
     hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
-    print(hvsr_curve.shape)
     origPPSD = params['ppsds_obspy'].copy()
 
     #Add some other variables to our output dictionary
@@ -2485,7 +2489,6 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     #Get hvsr curve from three components at each time step
     anyK = list(hvsr_out['psd_raw'].keys())[0]
-    print('Getting HVSR Curve time steps')
     if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
         pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
     else:
@@ -2494,13 +2497,11 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             tStepDict = {}
             for k in hvsr_out['psd_raw']:
                 tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            print(tStep)
-            _, hvsr_tstep = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-            hvsr_tSteps.append(hvsr_tstep)
-    hvsr_tSteps = np.array(hvsr_tSteps)
-    
-    hvsr_out['ind_hvsr_curves'] = hvsr_tSteps
+            hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+            hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
+    hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
+    
     #use the standard deviation of each individual curve to determine if it overlapped
     if remove_outlier_curves:
         stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
@@ -2521,7 +2522,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
         hvsr_out['tsteps_used'][0] = hvsr_out['ppsds'][k]['current_times_used'].shape[0]
 
-    hvsr_out['ind_hvsr_stdDev'] = np.std(hvsr_out['ind_hvsr_curves'], axis=0)
+    hvsr_out['ind_hvsr_stdDev'] = np.nanstd(hvsr_out['ind_hvsr_curves'], axis=0)
 
     #Get peaks for each time step
     tStepPeaks = []
@@ -2610,8 +2611,10 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
     
     Returns
     -------
-        hvsr_curve  : list
-            List containing H/V ratios at each frequency/period in x
+        tuple
+         (hvsr_curve, hvsr_tSteps), both np.arrays. hvsr_curve is a numpy array containing H/V ratios at each frequency/period in x.
+         hvsr_tSteps only used with diffuse field assumption method. 
+
     """
     hvsr_curve = []
     hvsr_tSteps = []
@@ -2619,11 +2622,9 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
     params = hvsr_dict
     if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
         print('WARNING: DFA method is currently experimental and not supported')
-        print(len(x))
         for j in range(len(x)-1):
             for time_interval in params['ppsds']['Z']['current_times_used']:
                 hvsr_curve_tinterval = []
-                print(j)
                 params = dfa(params, verbose=verbose)
                 eie = params['dfa']['equal_interval_energy']
                 if time_interval in list(eie['Z'].keys()) and time_interval in list(eie['E'].keys()) and time_interval in list(eie['N'].keys()):
@@ -2634,6 +2635,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
                     if verbose > 0:
                         print('WARNING: '+ time_interval + ' missing component, skipped!')
                     continue
+            #Average overtime
             hvsr_curve.append(np.mean(hvsr_curve_tinterval))
             hvsr_tSteps.append(hvsr_curve_tinterval)
     else:
@@ -2644,7 +2646,10 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
             f =    [x[j], x[j + 1]]
 
             hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
-            hvsr_curve.append(hvsr)  
+            
+            #hvsr_curve.append(hvsr)
+            hvsr_curve.append(hvsr)
+        hvsr_tSteps= None #Only used for DFA
 
     return np.array(hvsr_curve), hvsr_tSteps
 
@@ -3432,13 +3437,13 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
 
     #Set up axes, since data is already in semilog
     axy = ax.twinx()
+    axy.set_yticks([])
     axy.zorder=0
     ax.zorder=1
     ax.set_facecolor('#ffffff00') #Create transparent background for front axis
     #plt.sca(axy)
     im = ax.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
     ax.tick_params(left=False, right=False)
-    ax.set_yticks([], labels='')
     #plt.sca(ax)
     if peak_plot:
         ax.hlines(hvsr_dict['Best Peak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
@@ -3452,14 +3457,14 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
         cbar.set_label('H/V Ratio')
 
     ax.set_ylabel(ylabel)
-    #plt.yticks(freqticks)
-    #ax.semilogy()
+    ax.set_yticks(freqticks)
+    ax.semilogy()
     ax.set_ylim(hvsr_dict['input_params']['hvsr_band'])
 
     #plt.rcParams['figure.dpi'] = 500
     #plt.rcParams['figure.figsize'] = (12,4)
     fig.canvas.draw()
-    fig.tight_layout()
+    #fig.tight_layout()
     #plt.show()
     return fig, ax
 

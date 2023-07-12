@@ -266,7 +266,7 @@ class App:
                                                period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                special_handling=special_handling
                                                )
-
+            
             self.params = update_noise_windows()
 
             self.hvsr_results = sprit.process_hvsr(params=self.params, 
@@ -1552,14 +1552,15 @@ class App:
         
         hvsrParamsFrame = ttk.LabelFrame(hvsr_settings_tab, text='Process HVSR Parameters')#.pack(fill='both')
         
-        #Method selection, method=2
+        #Method selection, method=4
         ttk.Label(hvsrSettingsFrame, text="Horizontal Combine Method [int]").grid(row=0, column=0, padx=(5,0), sticky='w')
-        method_options = ["Diffuse Field Assumption (not currently implemented)", 
-                          "Arithmetic Mean H ≡ (N + E)/2",
-                          "Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))",
-                          "Vector Summation: H ≡ √(N^2 + E^2)",
-                          "Quadratic Mean: H ≡ √(N^2 + E^2)/2",
-                          "Maximum Horizontal Value: H ≡ max(N, E)"
+        method_options = ['', #Empty to make intuitive and match sprit.py
+                          "1.Diffuse Field Assumption (not currently implemented)", 
+                          "2. Arithmetic Mean H ≡ (N + E)/2",
+                          "3. Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))",
+                          "4. Vector Summation: H ≡ √(N^2 + E^2)",
+                          "5. Quadratic Mean: H ≡ √(N^2 + E^2)/2",
+                          "6. Maximum Horizontal Value: H ≡ max(N, E)"
                           ]
 
         def on_method_select(meth, meth_opts=method_options):
@@ -1573,12 +1574,13 @@ class App:
             except ValueError:
                 return False
 
-        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text="method=2", width=30)
+        defaultMeth=3
+        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text="method={}".format(defaultMeth), width=30)
         hCombMethodLabel.grid(row=0, column=0, sticky='ew', pady=(6,6), padx=5)
-            
-        self.method_sel = tk.StringVar(value=method_options[2])
-        self.method_ind = method_options.index(self.method_sel.get())        
-        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[2], *method_options, command=on_method_select)
+
+        self.method_sel = tk.StringVar(value=method_options[defaultMeth])
+        self.method_ind = method_options.index(self.method_sel.get())       
+        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[defaultMeth], *method_options, command=on_method_select)
         self.method_dropdown.config(width=50)
         self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky='ew')
         
@@ -1662,7 +1664,6 @@ class App:
         resampleLabel.grid(row=4, column=0, sticky='ew', pady=(6,6), padx=5)
         def on_curve_resample():
             try:
-                int(self.hvresample.get())
                 if not self.resamplebool.get():
                     resampleLabel.configure(text='resample={}'.format(self.resamplebool.get()))
                     self.hvresample=self.resamplebool.get()
