@@ -468,8 +468,8 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>dataIN</code></strong> :&ensp;<code>obspy stream</code></dt>
-<dd>Obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)</dd>
+<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Same dict as params parameter, but with an additional "strea" key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -503,8 +503,8 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         
         Returns
         -------
-        dataIN : obspy stream
-            Obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+        params : dict
+            Same dict as params parameter, but with an additional &#34;strea&#34; key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         &#34;&#34;&#34;
     datapath = params[&#39;dataPath&#39;]
@@ -627,6 +627,11 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
+    
+    if isinstance(dataIN[0].data, np.ma.masked_array):
+        dataIN = dataIN.split()
+        #Need to test to see if this works ok with lots of little windows
+
     if detrend==False:
         pass
     elif detrend==True:
@@ -649,7 +654,8 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         if detrend==&#39;spline&#39;:
             for tr in dataIN:
                 tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
-    
+
+    dataIN = dataIN.merge(method=1)
     params[&#39;stream&#39;] = dataIN
 
     return params</code></pre>
@@ -1102,7 +1108,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-04', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-12', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1129,7 +1135,7 @@ If date or datetime object, this will be the date. Make sure to account for time
 <dt><strong><code>endtime</code></strong> :&ensp;<code>str, time obejct,</code> or <code>datetime object</code>, default=<code>'23:59:99.99'</code></dt>
 <dd>End time of data stream. This is necessary for Raspberry Shake data. Same format as starttime</dd>
 <dt><strong><code>tzone</code></strong> :&ensp;<code>str</code> or <code>int</code>, default <code>= 'UTC'</code></dt>
-<dd>Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value will assume local time of computer.
+<dd>Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.</a>
 If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5).
 This is necessary for Raspberry Shake data.</dd>
 <dt><strong><code>dst</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
@@ -1202,7 +1208,7 @@ This is necessary for Raspberry Shake data.</dd>
     endtime : str, time obejct, or datetime object, default=&#39;23:59:99.99&#39;
         End time of data stream. This is necessary for Raspberry Shake data. Same format as starttime
     tzone : str or int, default = &#39;UTC&#39;
-        Timezone of input data. If string, &#39;UTC&#39; will use the time as input directly. Any other string value will assume local time of computer.
+        Timezone of input data. If string, &#39;UTC&#39; will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
         This is necessary for Raspberry Shake data.
     dst : bool, default=True
@@ -1262,17 +1268,21 @@ This is necessary for Raspberry Shake data.</dd>
     
     if type(starttime) is str:
         if &#39;T&#39; in starttime:
-            date=starttime.split(&#39;T&#39;)[0]
+            #date=starttime.split(&#39;T&#39;)[0]
             starttime = starttime.split(&#39;T&#39;)[1]
+        else:
+            pass
+            #starttime = date+&#39;T&#39;+starttime
     elif type(starttime) is datetime.datetime:
-        date = str(starttime.date())
+        #date = str(starttime.date())
         starttime = str(starttime.time())
+        ###HERE IS NEXT
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
     starttime = date+&#34;T&#34;+starttime
     starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone, dst=dst))
-
+    
     if type(endtime) is str:
         if &#39;T&#39; in endtime:
             date=endtime.split(&#39;T&#39;)[0]
@@ -1732,7 +1742,7 @@ Only matters if more than one component used.</dd>
         If return_fig is True, matplotlib figure is returned
     ax
         If return_fig is True, matplotlib axis is returned
-    &#34;&#34;&#34;
+    &#34;&#34;&#34; 
     og_stream = stream.copy()
 
     #Get the latest start time and earliest end times of all components
@@ -1740,21 +1750,33 @@ Only matters if more than one component used.</dd>
     maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
     minEndTime = obspy.UTCDateTime(1e10)
     for comp in [&#39;E&#39;, &#39;N&#39;, &#39;Z&#39;]:
-        tr = stream.select(component=comp).copy()
+        #Get all traces from selected component in comp_st
+        if isinstance(stream[0].data, np.ma.masked_array):
+            stream = stream.split() 
+        comp_st = stream.select(component=comp).copy()
+        stream.merge()
+        
         if comp in component:
-            traceList.append(tr[0])
-        if tr[0].stats.starttime &gt; maxStartTime:
-            maxStartTime = tr[0].stats.starttime
-        if tr[0].stats.endtime &lt; minEndTime:
-            minEndTime = tr[0].stats.endtime
+            for tr in comp_st:
+                #Get all traces specified for use in one list
+                traceList.append(tr)
 
-    #Trim all traces to the same start/end time
+            if stream[0].stats.starttime &gt; maxStartTime:
+                maxStartTime = stream[0].stats.starttime
+            if stream[0].stats.endtime &lt; minEndTime:
+                minEndTime = stream[0].stats.endtime
+
+            if isinstance(comp_st[0].data, np.ma.masked_array):
+                comp_st = comp_st.split()  
+
+    #Trim all traces to the same start/end time for total
     for tr in traceList:
         tr.trim(starttime=maxStartTime, endtime=minEndTime)
     og_stream.trim(starttime=maxStartTime, endtime=minEndTime)      
 
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
+    stream.merge()
     stream.stack(group_by=&#39;all&#39;, npts_tol=200, stack_type=stack_type)  
 
     if fig is None and ax is None:
@@ -1813,37 +1835,33 @@ Only matters if more than one component used.</dd>
     timeList = {}
     mplTimes = {}
     
-    #Decimate data (seems to bring up lots of issues later)
-    #if isinstance(og_stream[0].data, np.ma.MaskedArray):
-    #    for trace in og_stream:
-    #        #unmasked = trace.data[~np.ma.getmask(trace.data)]
-    #        decimated_data = scipy.signal.decimate(trace.data, decimation_factor)
-    #        decimated_mask = trace.data.mask[::decimation_factor]
-    #        print(len(decimated_data))
-    #        print(len(decimated_mask))
-    #        trace.data = np.ma.array(decimated_data, mask=decimated_mask)
-    #        trace.data = np.ma.filled(trace.data, np.nan)
-    #else:
-    #    og_stream.decimate(decimation_factor)
+    if isinstance(og_stream[0].data, np.ma.masked_array):
+        og_stream = og_stream.split()      
     og_stream.decimate(decimation_factor)
-    for i, tr in enumerate(og_stream):
+    og_stream.merge()
+
+    for tr in og_stream:
         key = tr.stats.component
-        timeList[key] = [] 
+        timeList[key] = []
         mplTimes[key] = []
-        for t in tr.times():
-            t = sTime + t
-            timeList[key].append(t)
-            mplTimes[key].append(t.matplotlib_date)
+        for t in np.ma.getdata(tr.times()):
+            newt = sTime + t
+            timeList[key].append(newt)
+            mplTimes[key].append(newt.matplotlib_date)
     
+    #Ensure that the min and max times for each component are the same
     for i, k in enumerate(mplTimes.keys()):
+        currMin = np.min(list(map(np.min, mplTimes[k])))
+        currMax = np.max(list(map(np.max, mplTimes[k])))
+
         if i == 0:
-            xmin = np.min(mplTimes[k])
-            xmax = np.max(mplTimes[k])
+            xmin = currMin
+            xmax = currMax
         else:
-            if xmin &gt; np.min(mplTimes[k]):
-                xmin = np.min(mplTimes[k])
-            if xmax &lt; np.max(mplTimes[k]):
-                xmax = np.max(mplTimes[k])         
+            if xmin &gt; currMin:
+                xmin = currMin
+            if xmax &lt; currMax:
+                xmax = currMax     
                    
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     im = ax[&#39;spec&#39;].imshow(array_displayed, norm=norm, cmap=cmap, aspect=&#39;auto&#39;, interpolation=None, extent=[xmin,xmax,ymax,ymin])
@@ -1877,8 +1895,8 @@ Only matters if more than one component used.</dd>
     ax[&#39;signale&#39;].set_ylabel(&#39;E&#39;)
     
     for comp in mplTimes.keys():
-        stD = np.nanstd(og_stream.select(component=comp)[0].data)
-        dmed = np.nanmedian(og_stream.select(component=comp)[0].data)
+        stD = np.abs(np.nanstd(np.ma.getdata(og_stream.select(component=comp)[0].data)))
+        dmed = np.nanmedian(np.ma.getdata(og_stream.select(component=comp)[0].data))
         key = &#39;signal&#39;+comp.lower()
         ax[key].set_ylim([dmed-5*stD, dmed+5*stD])
     
@@ -1887,7 +1905,7 @@ Only matters if more than one component used.</dd>
     elif &#39;title&#39; in kwargs.keys():
         fig.suptitle(kwargs[&#39;title&#39;])
     else:
-        fig.suptitle(params[&#39;site&#39;]+&#39;Spectrogram and Data&#39;)
+        fig.suptitle(params[&#39;site&#39;]+&#39;: Spectrogram and Data&#39;)
     
     day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
@@ -1897,6 +1915,7 @@ Only matters if more than one component used.</dd>
     
     #fig.tight_layout()
     fig.canvas.draw()
+    
     if return_fig:
         return fig, ax
     return</code></pre>
@@ -1914,7 +1933,7 @@ Only matters if more than one component used.</dd>
 <pre><code class="python">def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-    
+
     new_stream = stream.copy()
     #axis.plot(trace.times, trace.data)
     
@@ -1922,28 +1941,40 @@ Only matters if more than one component used.</dd>
     timeList = {}
     mplTimes = {}
 
+    #In case data is masked, need to split, decimate, then merge back together
+    if isinstance(new_stream[0].data, np.ma.masked_array):
+        new_stream = new_stream.split()
     new_stream.decimate(10)
-    ztrace = new_stream.select(component=&#39;Z&#39;)[0]
-    etrace = new_stream.select(component=&#39;E&#39;)[0]
-    ntrace = new_stream.select(component=&#39;N&#39;)[0]
-    traces = [ztrace, etrace, ntrace]
-    for tr in traces:
-        key = tr.stats.component
+    new_stream.merge()
+
+    zStream = new_stream.select(component=&#39;Z&#39;)#[0]
+    eStream = new_stream.select(component=&#39;E&#39;)#[0]
+    nStream = new_stream.select(component=&#39;N&#39;)#[0]
+    streams = [zStream, nStream, eStream]
+
+    for st in streams:
+        key = st[0].stats.component
         timeList[key] = []
         mplTimes[key] = []
-        for t in tr.times():
-            t = sTime + t
-            timeList[key].append(t)
-            mplTimes[key].append(t.matplotlib_date)
+        for tr in st:
+            for t in np.ma.getdata(tr.times()):
+                newt = sTime + t
+                timeList[key].append(newt)
+                mplTimes[key].append(newt.matplotlib_date)
+
+    #Ensure that the min and max times for each component are the same
     for i, k in enumerate(mplTimes.keys()):
+        currMin = np.min(list(map(np.min, mplTimes[k])))
+        currMax = np.max(list(map(np.max, mplTimes[k])))
+
         if i == 0:
-            xmin = np.min(mplTimes[k])
-            xmax = np.max(mplTimes[k])
+            xmin = currMin
+            xmax = currMax
         else:
-            if xmin &gt; np.min(mplTimes[k]):
-                xmin = np.min(mplTimes[k])
-            if xmax &lt; np.max(mplTimes[k]):
-                xmax = np.max(mplTimes[k]) 
+            if xmin &gt; currMin:
+                xmin = currMin
+            if xmax &lt; currMax:
+                xmax = currMax
 
     axes[&#39;Z&#39;].xaxis_date()
     axes[&#39;N&#39;].xaxis_date()
@@ -1956,9 +1987,22 @@ Only matters if more than one component used.</dd>
     axes[&#34;E&#34;].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
     axes[&#34;E&#34;].tick_params(axis=&#39;x&#39;, labelsize=8)
     
-    axes[&#39;Z&#39;].plot(mplTimes[&#39;Z&#39;], ztrace.data, color=&#39;k&#39;, linewidth=0.15)
-    axes[&#39;N&#39;].plot(mplTimes[&#39;N&#39;], ntrace.data, color=&#39;b&#39;, linewidth=0.15)
-    axes[&#39;E&#39;].plot(mplTimes[&#39;E&#39;], etrace.data, color=&#39;r&#39;, linewidth=0.15)
+
+    streams = [zStream.merge(method=1), 
+               nStream.merge(method=1), 
+               eStream.merge(method=1)]
+
+    for st in streams:
+        for i, tr in enumerate(st):
+            key = tr.stats.component
+            if key == &#39;Z&#39;:
+                C=&#39;k&#39;
+            elif key==&#39;N&#39;:
+                C=&#39;r&#39;
+            else:
+                C=&#39;b&#39;
+            axes[key].plot(mplTimes[key], tr.data, color=C, linewidth=0.15)
+
 
     axes[&#39;Z&#39;].set_ylabel(&#39;Z&#39;)
     axes[&#39;N&#39;].set_ylabel(&#39;N&#39;)
@@ -1970,8 +2014,8 @@ Only matters if more than one component used.</dd>
     #stD = max([stDz, stDn, stDe])
     
     for i, comp in enumerate(list(mplTimes.keys())):
-        stD = np.abs(np.nanstd(stream.select(component=comp)[0].data))
-        dmed = np.nanmedian(stream.select(component=comp)[0].data)
+        stD = np.abs(np.nanstd(np.ma.getdata(stream.select(component=comp)[0].data)))
+        dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
         axes[comp].set_ylim([dmed-0.75*stD, dmed+0.75*stD])
         axes[comp].set_xlim([xmin, xmax])
@@ -1984,11 +2028,11 @@ Only matters if more than one component used.</dd>
     #plt.rcParams[&#39;figure.dpi&#39;] = 100
     #plt.rcParams[&#39;figure.figsize&#39;] = (5,4)
     
-    fig.tight_layout()
+    #fig.tight_layout()
+    fig.canvas.draw()
 
     if return_fig:
         return fig, axes
-    fig.canvas.draw()
     return                 </code></pre>
 </details>
 </dd>
@@ -2938,11 +2982,18 @@ export_format  : str or None, default=None
 
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
+
+    #If data is contained in a masked array, split to undo masked array
+    if isinstance(st_trimmed[0].data, np.ma.masked_array):
+        st_trimmed = st_trimmed.split()
+        #This split is undone with the .merge() method a few lines down
+
     for tr in st_trimmed:
         if trimStart &gt; tr.stats.endtime or trimEnd &lt; tr.stats.starttime:
             pass
         else:
             st_trimmed.trim(starttime=trimStart, endtime=trimEnd, **kwargs)
+
     st_trimmed.merge(method=1)
 
     #Format export filepath, if exporting

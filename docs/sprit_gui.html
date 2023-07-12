@@ -48,13 +48,14 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter.simpledialog import askinteger
+import zoneinfo
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 matplotlib.use(&#39;TkAgg&#39;)
 import numpy as np
-import pytz
+#import pytz
 from tkcalendar import DateEntry
 
 import sprit
@@ -209,8 +210,10 @@ class App:
                 self.tab_control.select(self.preview_data_tab)
             
             self.starttime, self.endtime = get_times()
-
-            if len(self.fpath) &gt; 1:
+            
+            if isinstance(self.fpath, str):
+                pass
+            elif len(self.fpath) &gt; 1:
                 self.fpath = list(self.fpath)
             else:
                 self.fpath = self.fpath[0]
@@ -225,7 +228,7 @@ class App:
                                 acq_date = self.starttime.date(),
                                 starttime = self.starttime,
                                 endtime = self.endtime,
-                                tzone = &#39;UTC&#39;, #Will always convert before we get to this point
+                                tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn&#39;t matter
                                 lon = self.x.get(),
                                 lat =  self.y.get(),
@@ -248,8 +251,8 @@ class App:
                                            detrend=self.detrend.get(), 
                                            detrend_order=self.detrend_order.get())
 
+            #Update labels for data preview tab
             self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
-            
             
             self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
 
@@ -268,8 +271,10 @@ class App:
             self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
             self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             
+            #Plot data in data preview tab
             self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
+            #Plot data in noise preview tab
             self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.data_read = True
@@ -375,7 +380,7 @@ class App:
                                             &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
@@ -531,17 +536,48 @@ class App:
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
+        def get_times():
+            #Format starttime as datetime object (in timezone as originally entered)
+            self.acq_date = self.date_entry.get_date()
+            self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                          month = self.acq_date.month, 
+                                          day = self.acq_date.day,
+                                          hour = self.start_hour.get(),
+                                          minute = int(self.start_minute.get()),
+                                          tzinfo=self.tz)
+            
+            #Get duration, as originally entered
+            hour_dur = self.end_hour.get() - self.start_hour.get()
+            if hour_dur &lt; 0:
+                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
+            min_dur = self.end_minute.get() - self.start_minute.get()
+
+            #Convert starttime to utc
+            #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
+
+            #Get endttime based on utc starttime and original duration
+            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
+
+            return self.starttime, self.endtime
+
+        self.tz = datetime.timezone.utc
+        def any_time_change():
+            self.acq_date = self.date_entry.get_date()
+            self.starttime, self.endtime = get_times()
+            update_input_params_call()
+
         ttk.Label(hvsrFrame, text=&#34;Start Time&#34;).grid(row=3, column=3, sticky=&#39;e&#39;, padx=5) 
         colonLabel= ttk.Label(sTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=4, padx=(20,0), sticky=&#39;w&#39;)
         self.start_hour = tk.IntVar()
         self.start_hour.set(00)
-        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
         self.start_time_hour_entry#.grid(row=3, column=4, sticky=&#39;w&#39;) 
         self.start_minute = tk.DoubleVar()
         self.start_minute.set(00)
-        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
         self.start_time_min_entry#.grid(row=3, column=4, padx=80, sticky=&#39;w&#39;) 
-
+        
         #sTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
         self.start_time_hour_entry.pack(side=&#39;left&#39;, expand=True)
         colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
@@ -553,11 +589,11 @@ class App:
         colonLabel = ttk.Label(eTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=6, padx=(20,0), sticky=&#39;w&#39;)  
         self.end_hour = tk.IntVar()
         self.end_hour.set(23)
-        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
         self.end_time_hour_entry#.grid(row=3, column=+, sticky=&#39;w&#39;) 
         self.end_minute = tk.DoubleVar()
         self.end_minute.set(59)
-        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
         self.end_time_min_entry#.grid(row=3, column=+, padx=80, sticky=&#39;w&#39;) 
 
         #eTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
@@ -566,38 +602,36 @@ class App:
         self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
         self.acq_date = self.date_entry.get_date()
-        self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                        month = self.acq_date.month, 
-                                        day = self.acq_date.day,
-                                        hour = self.start_hour.get(),
-                                        minute = int(self.start_minute.get()))
+        self.starttime, self.endtime = get_times()
 
-        # Timezone
-        def get_tz():
-            self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
-            # create a datetime object
+        def onTimezoneSelect(event):
+            #Listbox &#34;loses&#34; selection and triggers an event sometimes, so need to check if that is just what happened
+            if self.timezone_listbox.curselection():
+                #If it was an actual selection, update timezone
+                self.tz = zoneinfo.ZoneInfo(self.timezone_listbox.get(self.timezone_listbox.curselection()))
+            else:
+                #If it was just the listbox losing the selection, don&#39;t change anything
+                pass
+            update_input_params_call()
 
-            # get the UTC offset as a timedelta object
-            self.utc_offset = self.tz.utcoffset(self.starttime).total_seconds()/60/60
+        self.timezone_listbox = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
 
-            return self.tz
-        
-        self.tz = tk.StringVar()
-        self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
-        self.timezone_optionmenu.insert(&#39;end&#39;, &#39;UTC&#39;)
-        self.timezone_optionmenu.insert(&#39;end&#39;, &#39;US/Central&#39;)
+        self.timezone_listbox.insert(&#39;end&#39;, &#39;UTC&#39;)
+        self.timezone_listbox.insert(&#39;end&#39;, &#39;US/Central&#39;)
 
-        for tz in pytz.all_timezones:
+        for tz in zoneinfo.available_timezones():# pytz.all_timezones:
             if tz !=&#39;UTC&#39;:
-                self.timezone_optionmenu.insert(&#39;end&#39;, tz)
-        self.timezone_optionmenu.selection_set(0)
+                self.timezone_listbox.insert(&#39;end&#39;, tz)
+        self.timezone_listbox.selection_set(0)
+        self.timezone_listbox.bind(&#39;&lt;&lt;ListboxSelect&gt;&gt;&#39;, onTimezoneSelect)
+
         ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
-        self.timezone_optionmenu.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
+        self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
         #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
         #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-        #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-        #self.timezone_optionmenu.grid(row=3,column=7)
+        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
+        #self.timezone_listbox.grid(row=3,column=7)
 
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
@@ -611,31 +645,10 @@ class App:
         self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
         self.utc_time_output_label.grid(row=4,column=4)
 
-        self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+        #Initialize as UTC
+        self.tz = datetime.timezone.utc
+        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
         #input_params() call
-        def get_times():
-            self.tz = get_tz()
-
-            #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = self.date_entry.get_date()
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month, 
-                                          day = self.acq_date.day,
-                                          hour = self.start_hour.get(),
-                                          minute = int(self.start_minute.get()))
-            
-            #Get duration, as originally entered
-            hour_dur = self.end_hour.get() - self.start_hour.get()
-            if hour_dur &lt; 0:
-                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
-            min_dur = self.end_minute.get() - self.start_minute.get()
-            
-            #Convert starttime to utc
-            self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
-            #Get endttime based on utc starttime and original duration
-            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
-
-            return self.starttime, self.endtime
 
         self.starttime, self.endtime = get_times()
 
@@ -820,14 +833,14 @@ class App:
         self.trim_dir_filepath_button = ttk.Button(hvsrFrame, text=&#34;Browse&#34;, command=browse_trim_dir_filepath)
         self.trim_dir_filepath_button.grid(row=15, column=6, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
-        self.starttime, self.endtime = get_times()
+        #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone={}, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
@@ -876,10 +889,10 @@ class App:
 
         #Set up plot
         self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-        canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
-        canvas_pre.draw()
-        canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        self.canvas_pre.draw()
+        self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
         
         #Save preview figure
         savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
@@ -2466,8 +2479,10 @@ if __name__ == &#34;__main__&#34;:
                 self.tab_control.select(self.preview_data_tab)
             
             self.starttime, self.endtime = get_times()
-
-            if len(self.fpath) &gt; 1:
+            
+            if isinstance(self.fpath, str):
+                pass
+            elif len(self.fpath) &gt; 1:
                 self.fpath = list(self.fpath)
             else:
                 self.fpath = self.fpath[0]
@@ -2482,7 +2497,7 @@ if __name__ == &#34;__main__&#34;:
                                 acq_date = self.starttime.date(),
                                 starttime = self.starttime,
                                 endtime = self.endtime,
-                                tzone = &#39;UTC&#39;, #Will always convert before we get to this point
+                                tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn&#39;t matter
                                 lon = self.x.get(),
                                 lat =  self.y.get(),
@@ -2505,8 +2520,8 @@ if __name__ == &#34;__main__&#34;:
                                            detrend=self.detrend.get(), 
                                            detrend_order=self.detrend_order.get())
 
+            #Update labels for data preview tab
             self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
-            
             
             self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
 
@@ -2525,8 +2540,10 @@ if __name__ == &#34;__main__&#34;:
             self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
             self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             
+            #Plot data in data preview tab
             self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
+            #Plot data in noise preview tab
             self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.data_read = True
@@ -2632,7 +2649,7 @@ if __name__ == &#34;__main__&#34;:
                                             &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
@@ -2788,17 +2805,48 @@ if __name__ == &#34;__main__&#34;:
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
+        def get_times():
+            #Format starttime as datetime object (in timezone as originally entered)
+            self.acq_date = self.date_entry.get_date()
+            self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                          month = self.acq_date.month, 
+                                          day = self.acq_date.day,
+                                          hour = self.start_hour.get(),
+                                          minute = int(self.start_minute.get()),
+                                          tzinfo=self.tz)
+            
+            #Get duration, as originally entered
+            hour_dur = self.end_hour.get() - self.start_hour.get()
+            if hour_dur &lt; 0:
+                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
+            min_dur = self.end_minute.get() - self.start_minute.get()
+
+            #Convert starttime to utc
+            #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+            self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
+
+            #Get endttime based on utc starttime and original duration
+            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
+
+            return self.starttime, self.endtime
+
+        self.tz = datetime.timezone.utc
+        def any_time_change():
+            self.acq_date = self.date_entry.get_date()
+            self.starttime, self.endtime = get_times()
+            update_input_params_call()
+
         ttk.Label(hvsrFrame, text=&#34;Start Time&#34;).grid(row=3, column=3, sticky=&#39;e&#39;, padx=5) 
         colonLabel= ttk.Label(sTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=4, padx=(20,0), sticky=&#39;w&#39;)
         self.start_hour = tk.IntVar()
         self.start_hour.set(00)
-        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+        self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
         self.start_time_hour_entry#.grid(row=3, column=4, sticky=&#39;w&#39;) 
         self.start_minute = tk.DoubleVar()
         self.start_minute.set(00)
-        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
         self.start_time_min_entry#.grid(row=3, column=4, padx=80, sticky=&#39;w&#39;) 
-
+        
         #sTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
         self.start_time_hour_entry.pack(side=&#39;left&#39;, expand=True)
         colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
@@ -2810,11 +2858,11 @@ if __name__ == &#34;__main__&#34;:
         colonLabel = ttk.Label(eTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=6, padx=(20,0), sticky=&#39;w&#39;)  
         self.end_hour = tk.IntVar()
         self.end_hour.set(23)
-        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+        self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
         self.end_time_hour_entry#.grid(row=3, column=+, sticky=&#39;w&#39;) 
         self.end_minute = tk.DoubleVar()
         self.end_minute.set(59)
-        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
         self.end_time_min_entry#.grid(row=3, column=+, padx=80, sticky=&#39;w&#39;) 
 
         #eTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
@@ -2823,38 +2871,36 @@ if __name__ == &#34;__main__&#34;:
         self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
         self.acq_date = self.date_entry.get_date()
-        self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                        month = self.acq_date.month, 
-                                        day = self.acq_date.day,
-                                        hour = self.start_hour.get(),
-                                        minute = int(self.start_minute.get()))
+        self.starttime, self.endtime = get_times()
 
-        # Timezone
-        def get_tz():
-            self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
-            # create a datetime object
+        def onTimezoneSelect(event):
+            #Listbox &#34;loses&#34; selection and triggers an event sometimes, so need to check if that is just what happened
+            if self.timezone_listbox.curselection():
+                #If it was an actual selection, update timezone
+                self.tz = zoneinfo.ZoneInfo(self.timezone_listbox.get(self.timezone_listbox.curselection()))
+            else:
+                #If it was just the listbox losing the selection, don&#39;t change anything
+                pass
+            update_input_params_call()
 
-            # get the UTC offset as a timedelta object
-            self.utc_offset = self.tz.utcoffset(self.starttime).total_seconds()/60/60
+        self.timezone_listbox = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
 
-            return self.tz
-        
-        self.tz = tk.StringVar()
-        self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
-        self.timezone_optionmenu.insert(&#39;end&#39;, &#39;UTC&#39;)
-        self.timezone_optionmenu.insert(&#39;end&#39;, &#39;US/Central&#39;)
+        self.timezone_listbox.insert(&#39;end&#39;, &#39;UTC&#39;)
+        self.timezone_listbox.insert(&#39;end&#39;, &#39;US/Central&#39;)
 
-        for tz in pytz.all_timezones:
+        for tz in zoneinfo.available_timezones():# pytz.all_timezones:
             if tz !=&#39;UTC&#39;:
-                self.timezone_optionmenu.insert(&#39;end&#39;, tz)
-        self.timezone_optionmenu.selection_set(0)
+                self.timezone_listbox.insert(&#39;end&#39;, tz)
+        self.timezone_listbox.selection_set(0)
+        self.timezone_listbox.bind(&#39;&lt;&lt;ListboxSelect&gt;&gt;&#39;, onTimezoneSelect)
+
         ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
-        self.timezone_optionmenu.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
+        self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
         #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
         #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-        #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-        #self.timezone_optionmenu.grid(row=3,column=7)
+        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
+        #self.timezone_listbox.grid(row=3,column=7)
 
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
@@ -2868,31 +2914,10 @@ if __name__ == &#34;__main__&#34;:
         self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
         self.utc_time_output_label.grid(row=4,column=4)
 
-        self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+        #Initialize as UTC
+        self.tz = datetime.timezone.utc
+        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
         #input_params() call
-        def get_times():
-            self.tz = get_tz()
-
-            #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = self.date_entry.get_date()
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month, 
-                                          day = self.acq_date.day,
-                                          hour = self.start_hour.get(),
-                                          minute = int(self.start_minute.get()))
-            
-            #Get duration, as originally entered
-            hour_dur = self.end_hour.get() - self.start_hour.get()
-            if hour_dur &lt; 0:
-                hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
-            min_dur = self.end_minute.get() - self.start_minute.get()
-            
-            #Convert starttime to utc
-            self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
-            #Get endttime based on utc starttime and original duration
-            self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
-
-            return self.starttime, self.endtime
 
         self.starttime, self.endtime = get_times()
 
@@ -3077,14 +3102,14 @@ if __name__ == &#34;__main__&#34;:
         self.trim_dir_filepath_button = ttk.Button(hvsrFrame, text=&#34;Browse&#34;, command=browse_trim_dir_filepath)
         self.trim_dir_filepath_button.grid(row=15, column=6, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
-        self.starttime, self.endtime = get_times()
+        #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone={}, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                            self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
@@ -3133,10 +3158,10 @@ if __name__ == &#34;__main__&#34;:
 
         #Set up plot
         self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-        canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
-        canvas_pre.draw()
-        canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        self.canvas_pre.draw()
+        self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
         
         #Save preview figure
         savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
@@ -4604,8 +4629,10 @@ if __name__ == &#34;__main__&#34;:
             self.tab_control.select(self.preview_data_tab)
         
         self.starttime, self.endtime = get_times()
-
-        if len(self.fpath) &gt; 1:
+        
+        if isinstance(self.fpath, str):
+            pass
+        elif len(self.fpath) &gt; 1:
             self.fpath = list(self.fpath)
         else:
             self.fpath = self.fpath[0]
@@ -4620,7 +4647,7 @@ if __name__ == &#34;__main__&#34;:
                             acq_date = self.starttime.date(),
                             starttime = self.starttime,
                             endtime = self.endtime,
-                            tzone = &#39;UTC&#39;, #Will always convert before we get to this point
+                            tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                             dst = True, #Doesn&#39;t matter
                             lon = self.x.get(),
                             lat =  self.y.get(),
@@ -4643,8 +4670,8 @@ if __name__ == &#34;__main__&#34;:
                                        detrend=self.detrend.get(), 
                                        detrend_order=self.detrend_order.get())
 
+        #Update labels for data preview tab
         self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
-        
         
         self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
 
@@ -4663,8 +4690,10 @@ if __name__ == &#34;__main__&#34;:
         self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
         self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
         
+        #Plot data in data preview tab
         self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
+        #Plot data in noise preview tab
         self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
         self.data_read = True
@@ -4770,7 +4799,7 @@ if __name__ == &#34;__main__&#34;:
                                         &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                        self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                        self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                         self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                         self.hvsrBand_min.get(), self.hvsrBand_max.get()))
     #Specify site name        
@@ -4926,17 +4955,48 @@ if __name__ == &#34;__main__&#34;:
     sTimeFrame = ttk.Frame(hvsrFrame)
     sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
+    def get_times():
+        #Format starttime as datetime object (in timezone as originally entered)
+        self.acq_date = self.date_entry.get_date()
+        self.starttime = datetime.datetime(year = self.acq_date.year, 
+                                      month = self.acq_date.month, 
+                                      day = self.acq_date.day,
+                                      hour = self.start_hour.get(),
+                                      minute = int(self.start_minute.get()),
+                                      tzinfo=self.tz)
+        
+        #Get duration, as originally entered
+        hour_dur = self.end_hour.get() - self.start_hour.get()
+        if hour_dur &lt; 0:
+            hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
+        min_dur = self.end_minute.get() - self.start_minute.get()
+
+        #Convert starttime to utc
+        #self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
+        self.starttime  = self.starttime.astimezone(datetime.timezone.utc)
+
+        #Get endttime based on utc starttime and original duration
+        self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
+
+        return self.starttime, self.endtime
+
+    self.tz = datetime.timezone.utc
+    def any_time_change():
+        self.acq_date = self.date_entry.get_date()
+        self.starttime, self.endtime = get_times()
+        update_input_params_call()
+
     ttk.Label(hvsrFrame, text=&#34;Start Time&#34;).grid(row=3, column=3, sticky=&#39;e&#39;, padx=5) 
     colonLabel= ttk.Label(sTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=4, padx=(20,0), sticky=&#39;w&#39;)
     self.start_hour = tk.IntVar()
     self.start_hour.set(00)
-    self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+    self.start_time_hour_entry = ttk.Spinbox(sTimeFrame, from_=0, to=23, width=5, textvariable=self.start_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
     self.start_time_hour_entry#.grid(row=3, column=4, sticky=&#39;w&#39;) 
     self.start_minute = tk.DoubleVar()
     self.start_minute.set(00)
-    self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+    self.start_time_min_entry = ttk.Spinbox(sTimeFrame, from_=0, to=59, width=5, textvariable=self.start_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
     self.start_time_min_entry#.grid(row=3, column=4, padx=80, sticky=&#39;w&#39;) 
-
+    
     #sTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
     self.start_time_hour_entry.pack(side=&#39;left&#39;, expand=True)
     colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
@@ -4948,11 +5008,11 @@ if __name__ == &#34;__main__&#34;:
     colonLabel = ttk.Label(eTimeFrame, text=&#34;:&#34;)#.grid(row=3, column=6, padx=(20,0), sticky=&#39;w&#39;)  
     self.end_hour = tk.IntVar()
     self.end_hour.set(23)
-    self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=update_input_params_call) 
+    self.end_time_hour_entry = ttk.Spinbox(eTimeFrame, from_=0, to=23, width=5, textvariable=self.end_hour, validate=&#39;focusout&#39;, validatecommand=any_time_change) 
     self.end_time_hour_entry#.grid(row=3, column=+, sticky=&#39;w&#39;) 
     self.end_minute = tk.DoubleVar()
     self.end_minute.set(59)
-    self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+    self.end_time_min_entry = ttk.Spinbox(eTimeFrame, from_=0, to=59, width=5, textvariable=self.end_minute, validate=&#39;focusout&#39;, validatecommand=any_time_change)
     self.end_time_min_entry#.grid(row=3, column=+, padx=80, sticky=&#39;w&#39;) 
 
     #eTLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;, expand=True)
@@ -4961,38 +5021,36 @@ if __name__ == &#34;__main__&#34;:
     self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
     self.acq_date = self.date_entry.get_date()
-    self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                    month = self.acq_date.month, 
-                                    day = self.acq_date.day,
-                                    hour = self.start_hour.get(),
-                                    minute = int(self.start_minute.get()))
+    self.starttime, self.endtime = get_times()
 
-    # Timezone
-    def get_tz():
-        self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
-        # create a datetime object
+    def onTimezoneSelect(event):
+        #Listbox &#34;loses&#34; selection and triggers an event sometimes, so need to check if that is just what happened
+        if self.timezone_listbox.curselection():
+            #If it was an actual selection, update timezone
+            self.tz = zoneinfo.ZoneInfo(self.timezone_listbox.get(self.timezone_listbox.curselection()))
+        else:
+            #If it was just the listbox losing the selection, don&#39;t change anything
+            pass
+        update_input_params_call()
 
-        # get the UTC offset as a timedelta object
-        self.utc_offset = self.tz.utcoffset(self.starttime).total_seconds()/60/60
+    self.timezone_listbox = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
 
-        return self.tz
-    
-    self.tz = tk.StringVar()
-    self.timezone_optionmenu = tk.Listbox(hvsrFrame, selectmode=&#39;browse&#39;, height=25)
-    self.timezone_optionmenu.insert(&#39;end&#39;, &#39;UTC&#39;)
-    self.timezone_optionmenu.insert(&#39;end&#39;, &#39;US/Central&#39;)
+    self.timezone_listbox.insert(&#39;end&#39;, &#39;UTC&#39;)
+    self.timezone_listbox.insert(&#39;end&#39;, &#39;US/Central&#39;)
 
-    for tz in pytz.all_timezones:
+    for tz in zoneinfo.available_timezones():# pytz.all_timezones:
         if tz !=&#39;UTC&#39;:
-            self.timezone_optionmenu.insert(&#39;end&#39;, tz)
-    self.timezone_optionmenu.selection_set(0)
+            self.timezone_listbox.insert(&#39;end&#39;, tz)
+    self.timezone_listbox.selection_set(0)
+    self.timezone_listbox.bind(&#39;&lt;&lt;ListboxSelect&gt;&gt;&#39;, onTimezoneSelect)
+
     ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
-    self.timezone_optionmenu.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
+    self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
     #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
     #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-    #self.timezone_optionmenu = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-    #self.timezone_optionmenu.grid(row=3,column=7)
+    #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
+    #self.timezone_listbox.grid(row=3,column=7)
 
     # DOY
     self.day_of_year = self.acq_date.timetuple().tm_yday
@@ -5006,31 +5064,10 @@ if __name__ == &#34;__main__&#34;:
     self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
     self.utc_time_output_label.grid(row=4,column=4)
 
-    self.tz = pytz.timezone(self.timezone_optionmenu.get(tk.ACTIVE))
+    #Initialize as UTC
+    self.tz = datetime.timezone.utc
+    #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
     #input_params() call
-    def get_times():
-        self.tz = get_tz()
-
-        #Format starttime as datetime object (in timezone as originally entered)
-        self.acq_date = self.date_entry.get_date()
-        self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                      month = self.acq_date.month, 
-                                      day = self.acq_date.day,
-                                      hour = self.start_hour.get(),
-                                      minute = int(self.start_minute.get()))
-        
-        #Get duration, as originally entered
-        hour_dur = self.end_hour.get() - self.start_hour.get()
-        if hour_dur &lt; 0:
-            hour_dur = self.end_hour.get() + 24 - self.start_hour.get()
-        min_dur = self.end_minute.get() - self.start_minute.get()
-        
-        #Convert starttime to utc
-        self.starttime = self.tz.normalize(self.tz.localize(self.starttime)).astimezone(pytz.utc)
-        #Get endttime based on utc starttime and original duration
-        self.endtime = self.starttime + datetime.timedelta(hours=hour_dur, minutes=min_dur)
-
-        return self.starttime, self.endtime
 
     self.starttime, self.endtime = get_times()
 
@@ -5215,14 +5252,14 @@ if __name__ == &#34;__main__&#34;:
     self.trim_dir_filepath_button = ttk.Button(hvsrFrame, text=&#34;Browse&#34;, command=browse_trim_dir_filepath)
     self.trim_dir_filepath_button.grid(row=15, column=6, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
-    self.starttime, self.endtime = get_times()
+    #self.starttime, self.endtime = get_times()
 
     input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone={}, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
-                                        self.acq_date, self.starttime.time(), self.endtime.time(), self.utc_offset,
+                                        self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                         self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
                                         self.hvsrBand_min.get(), self.hvsrBand_max.get()))
     self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
@@ -5271,10 +5308,10 @@ if __name__ == &#34;__main__&#34;:
 
     #Set up plot
     self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-    canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
-    canvas_pre.draw()
-    canvasPreWidget = canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+    self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+    self.canvas_pre.draw()
+    self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
     
     #Save preview figure
     savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
