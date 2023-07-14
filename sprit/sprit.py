@@ -1098,7 +1098,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
             rawDataIN = obspy.Stream(traceList)
             rawDataIN.attach_response(inv)
         else:
-            rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)       
+            rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
             rawDataIN.attach_response(inv)
     elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
