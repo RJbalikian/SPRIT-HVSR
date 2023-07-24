@@ -26,7 +26,6 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
-
 def check_mark():
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
@@ -1224,7 +1223,7 @@ def batch_data_read(input_filelist, input_params_list=None, verbose=False):
     return stream_dict
 
 #Trim data 
-def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
+def trim_data(params, stream=None, export_dir=None, export_format=None, **kwargs):
     """Function to trim data to start and end time
 
         Trim data to start and end times so that stream being analyzed only contains wanted data.
@@ -1232,29 +1231,45 @@ def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
 
         Parameters
         ----------
-            stream  : obspy.stream object  
-                Obspy stream to be trimmed
             params  : dict
                 Dictionary containing input parameters for trimming
+            stream  : obspy.stream object  
+                Obspy stream to be trimmed
             export_dir: str or pathlib obj   
                 Output filepath to export trimmed data to. If not specified, does not export. 
             export_format  : str or None, default=None  
                 If None, and export_dir is specified, format defaults to .mseed. Otherwise, exports trimmed stream using obspy.core.stream.Stream.write() method, with export_format being passed to the format argument. 
                 https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
             **kwargs
-                Keyword arguments passed directly to obspy.core.stream.Stream.trim() method. starttime and endtime parameters are already provided through the params parameter, so should not be passed as kwargs.
+                Keyword arguments passed directly to obspy.core.stream.Stream.trim() method.
                 
         Returns
         -------
             st_trimmed  : obspy.stream object 
                 Obpsy Stream trimmed to start and end times
     """
-    start = params['starttime']
-    end = params['endtime']
-    site = params['site']
+    if 'starttime' in kwargs.keys():
+        start = kwargs['starttime']
+    else:
+        start = params['starttime']
+    
+    if 'endtime' in kwargs.keys():
+        end = kwargs['endtime']
+    else:
+        end = params['endtime']
+        
+    if 'site' in kwargs.keys():
+        site = kwargs['site']
+    else:
+        site = params['site']
 
-    st_trimmed = stream.copy()
-
+    if stream is not None:
+        st_trimmed = stream.copy()
+    elif 'stream' in params.keys():
+        st_trimmed = params['stream'].copy()
+    else:
+        raise UnboundLocalError("stream not specified. Must either be specified using stream parameter or as a key in the params parameters (params['stream'])")
+        
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
 
@@ -1271,13 +1286,17 @@ def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
 
     st_trimmed.merge(method=1)
 
+    if export_format is None:
+        export_format = '.mseed'
+
     #Format export filepath, if exporting
-    if export_format is not None and site is not None and export_dir is not None:
+    if export_dir is not None:
         if site is None:
             site=''
         else:
             site = site+'_'
-        export_format = '.'+export_format
+        if '.' not in export_format:
+            export_format = '.'+export_format
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
@@ -1385,7 +1404,7 @@ def __on_fig_close(event):
     return
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=1):
+def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1398,7 +1417,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     ----------
     input : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
-    kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'noise threshold', 'warmup'/'buffer'}
+    kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
     noise_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
@@ -1406,7 +1425,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     sta : int, optional
         Short term average (STA) window (in seconds), by default 2.
     lta : int, optional
-        Long term average (STA) window (in seconds), by default 2.
+        Long term average (STA) window (in seconds), by default 30.
     stalta_thresh : list, default=[0.5,5]
         Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
     show_plot : bool, default=False
@@ -4367,11 +4386,9 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def print_report(hvsr_data, export='', format='print', include='peak', save_figs=None):
+def print_report(hvsr_data, export='', format='print', save_figs=None):
     """Print a report of the HVSR analysis (not currently implemented)
-    
-    NOT YET IMPLEMENTED!
-    
+        
     Parameters
     ----------
     hvsr_data : dict
