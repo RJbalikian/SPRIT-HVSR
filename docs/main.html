@@ -33,6 +33,7 @@ This module analysis ambient seismic data using the Horizontal to Vertical Spect
 &#34;&#34;&#34;
 
 from sprit.sprit import(
+    run,
     check_mark,
     get_char,
     time_it,
@@ -43,7 +44,6 @@ from sprit.sprit import(
     checkifpath,
     input_params,
     update_shake_metadata,
-    setup_colab,
     gui,
     get_metadata,
     has_required_channels,
@@ -65,6 +65,7 @@ from sprit.sprit import(
 )
 
 __all__ =(&#39;sprit&#39;,
+    &#39;run&#39;,
     &#39;check_mark&#39;,
     &#39;get_char&#39;,
     &#39;time_it&#39;,
@@ -75,7 +76,6 @@ __all__ =(&#39;sprit&#39;,
     &#39;checkifpath&#39;,
     &#39;input_params&#39;,
     &#39;update_shake_metadata&#39;,
-    &#39;setup_colab&#39;,
     &#39;gui&#39;,
     &#39;get_metadata&#39;,
     &#39;has_required_channels&#39;,
@@ -507,7 +507,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             Same dict as params parameter, but with an additional &#34;strea&#34; key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         &#34;&#34;&#34;
-    datapath = params[&#39;dataPath&#39;]
+    datapath = params[&#39; datapath&#39;]
     if inv is None:
         inv = params[&#39;inv&#39;], 
     date=params[&#39;acq_date&#39;]
@@ -591,7 +591,10 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
                     rawDataIN = rawDataIN + trace
         else:
             rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
-        rawDataIN.attach_response(inv)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)
+            rawDataIN.attach_response(inv)
     elif source==&#39;batch&#39;:
         print(&#34;Batch read not yet supported&#34;)
         if isinstance(datapath, list) or isinstance(datapath, tuple):
@@ -732,8 +735,6 @@ If the following keywords are not specified, their defaults are amended in this 
 
     from obspy.signal import PPSD
 
-    print(ppsd_kwargs)
-
     eStream = stream.select(component=&#39;E&#39;)
     estats = eStream.traces[0].stats
     ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
@@ -843,7 +844,7 @@ If not specified, does not write file</dd>
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = &#34;paz&#34;)
     &#34;&#34;&#34;
-    invPath = params[&#39;metaPath&#39;]
+    invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     if params[&#39;instrument&#39;].lower() in  raspShakeInstNameList:
         params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
@@ -911,7 +912,7 @@ If not specified, does not write file</dd>
 </details>
 </dd>
 <dt id="sprit.hvplot"><code class="name flex">
-<span>def <span class="ident">hvplot</span></span>(<span>hvsr_dict, kind='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, **kwargs)</span>
+<span>def <span class="ident">hvplot</span></span>(<span>hvsr_dict, plot_type='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot HVSR data</p>
@@ -920,9 +921,9 @@ If not specified, does not write file</dd>
 <dt><strong><code>hvsr_dict</code></strong> :&ensp;<code>dict
 </code></dt>
 <dd>Dictionary containing output from process_hvsr function</dd>
-<dt><strong><code>kind</code></strong> :&ensp;<code>str='HVSR'</code> or <code>list
+<dt><strong><code>plot_type</code></strong> :&ensp;<code>str='HVSR'</code> or <code>list
 </code></dt>
-<dd>The kind of plot(s) to plot. If list, will plot all plots listed
+<dd>The plot_type of plot(s) to plot. If list, will plot all plots listed
 'HVSR' : Standard HVSR plot, including standard deviation
 - '[HVSR] p' : HVSR plot with best peaks shown
 - '[HVSR] p' : HVSR plot with best picked peak shown
@@ -968,15 +969,15 @@ Keyword arguments for matplotlib.pyplot</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def hvplot(hvsr_dict, kind=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True,**kwargs):
+<pre><code class="python">def hvplot(hvsr_dict, plot_type=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True,**kwargs):
     &#34;&#34;&#34;Function to plot HVSR data
 
     Parameters
     ----------
     hvsr_dict : dict                  
         Dictionary containing output from process_hvsr function
-    kind : str=&#39;HVSR&#39; or list    
-        The kind of plot(s) to plot. If list, will plot all plots listed
+    plot_type : str=&#39;HVSR&#39; or list    
+        The plot_type of plot(s) to plot. If list, will plot all plots listed
         &#39;HVSR&#39; : Standard HVSR plot, including standard deviation
         - &#39;[HVSR] p&#39; : HVSR plot with best peaks shown
         - &#39;[HVSR] p&#39; : HVSR plot with best picked peak shown                
@@ -1019,7 +1020,7 @@ Keyword arguments for matplotlib.pyplot</p>
     compInd = np.nan
     specInd = np.nan
 
-    kList = kind.split(&#39; &#39;)
+    kList = plot_type.split(&#39; &#39;)
     for i, k in enumerate(kList):
         kList[i] = k.lower()
 
@@ -1078,10 +1079,10 @@ Keyword arguments for matplotlib.pyplot</p>
             fig, axis = plt.subplots()
             
         if p == &#39;hvsr&#39;:
-            plot_hvsr(hvsr_dict, fig=fig, ax=axis, kind=plotComponents, xtype=&#39;x_freqs&#39;)
+            plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;comp&#39;:
             plotComponents[0] = plotComponents[0][:-1]
-            plot_hvsr(hvsr_dict, fig=fig, ax=axis, kind=plotComponents, xtype=&#39;x_freqs&#39;)
+            plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;spec&#39;:
             plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis)
         else:
@@ -1108,14 +1109,14 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>dataPath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-12', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', dst=True, lon=-88.2290526, lat=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metaPath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-25', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>dataPath</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path object</code></dt>
-<dd>Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()</dd>
+<dt>datapath : str or pathlib.Path object</dt>
+<dt>Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()</dt>
 <dt><strong><code>site</code></strong> :&ensp;<code>str</code></dt>
 <dd>Site name as designated by scientist for ease of reference. Used for plotting titles, etc.</dd>
 <dt><strong><code>network</code></strong> :&ensp;<code>str</code>, default=<code>'AM'</code></dt>
@@ -1138,11 +1139,9 @@ If date or datetime object, this will be the date. Make sure to account for time
 <dd>Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.</a>
 If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5).
 This is necessary for Raspberry Shake data.</dd>
-<dt><strong><code>dst</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
-<dd>If str used for tzone parameter, this will adjust for daylight savings time. If int is passed to tzone parameter, this is not used. This is necessary for Raspberry Shake data.</dd>
-<dt><strong><code>lon</code></strong> :&ensp;<code>float</code>, default=<code>-88.2290526</code></dt>
+<dt><strong><code>xcoord</code></strong> :&ensp;<code>float</code>, default=<code>-88.2290526</code></dt>
 <dd>Longitude of data point. Not currently used, but will likely be used in future.</dd>
-<dt><strong><code>lat</code></strong> :&ensp;<code>float</code>, default=<code>40.1012122</code></dt>
+<dt><strong><code>ycoord</code></strong> :&ensp;<code>float</code>, default=<code>40.1012122</code></dt>
 <dd>Latitude of data point. Not currently used, but will likely be used in the future.</dd>
 <dt><strong><code>elevation</code></strong> :&ensp;<code>float</code>, default=<code>755</code></dt>
 <dd>Surface elevation of data point. Not currently used, but will likely be used in the future.</dd>
@@ -1150,7 +1149,7 @@ This is necessary for Raspberry Shake data.</dd>
 <dd>Depth of seismometer. Not currently used, but will likely be used in the future.</dd>
 <dt><strong><code>instrument</code></strong> :&ensp;<code>str</code> or <code>list {'Raspberry Shake')</code></dt>
 <dd>Instrument from which the data was acquired.</dd>
-<dt><strong><code>metaPath</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path object</code>, default=<code>''</code></dt>
+<dt><strong><code>metapath</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path object</code>, default=<code>''</code></dt>
 <dd>Filepath of metadata, in format supported by obspy.read_inventory. If default value of '', will read from resources folder of repository (only supported for Raspberry Shake).</dd>
 <dt><strong><code>hvsr_band</code></strong> :&ensp;<code>list</code>, default=<code>[0.4, 40]</code></dt>
 <dd>Two-element list containing low and high "corner" frequencies for processing. This can specified again later.</dd>
@@ -1164,30 +1163,29 @@ This is necessary for Raspberry Shake data.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def input_params( dataPath,
-                        site=&#39;HVSR Site&#39;,
-                        network=&#39;AM&#39;, 
-                        station=&#39;RAC84&#39;, 
-                        loc=&#39;00&#39;, 
-                        channels=[&#39;EHZ&#39;, &#39;EHN&#39;, &#39;EHE&#39;],
-                        acq_date=str(datetime.datetime.now().date()),
-                        starttime = &#39;00:00:00.00&#39;,
-                        endtime = &#39;23:59:59.999&#39;,
-                        tzone = &#39;UTC&#39;,
-                        dst = True,
-                        lon = -88.2290526,
-                        lat =  40.1012122,
-                        elevation = 755,
-                        depth = 0,
-                        instrument = &#39;Raspberry Shake&#39;,
-                        metaPath = &#39;&#39;,
-                        hvsr_band = [0.4, 40] 
-                        ):
+<pre><code class="python">def input_params(datapath,
+                site=&#39;HVSR Site&#39;,
+                network=&#39;AM&#39;, 
+                station=&#39;RAC84&#39;, 
+                loc=&#39;00&#39;, 
+                channels=[&#39;EHZ&#39;, &#39;EHN&#39;, &#39;EHE&#39;],
+                acq_date=str(datetime.datetime.now().date()),
+                starttime = &#39;00:00:00.00&#39;,
+                endtime = &#39;23:59:59.999&#39;,
+                tzone = &#39;UTC&#39;,
+                xcoord = -88.2290526,
+                ycoord =  40.1012122,
+                elevation = 755,
+                depth = 0,
+                instrument = &#39;Raspberry Shake&#39;,
+                metapath = &#39;&#39;,
+                hvsr_band = [0.4, 40] 
+                ):
     &#34;&#34;&#34;Function for designating input parameters for reading in and processing data
     
     Parameters
     ----------
-    dataPath : str or pathlib.Path object
+     datapath : str or pathlib.Path object
         Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
     site : str
         Site name as designated by scientist for ease of reference. Used for plotting titles, etc.
@@ -1211,11 +1209,9 @@ This is necessary for Raspberry Shake data.</dd>
         Timezone of input data. If string, &#39;UTC&#39; will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
         This is necessary for Raspberry Shake data.
-    dst : bool, default=True
-        If str used for tzone parameter, this will adjust for daylight savings time. If int is passed to tzone parameter, this is not used. This is necessary for Raspberry Shake data.
-    lon : float, default=-88.2290526
+    xcoord : float, default=-88.2290526
         Longitude of data point. Not currently used, but will likely be used in future.
-    lat : float, default=40.1012122
+    ycoord : float, default=40.1012122
         Latitude of data point. Not currently used, but will likely be used in the future.
     elevation : float, default=755
         Surface elevation of data point. Not currently used, but will likely be used in the future.
@@ -1223,7 +1219,7 @@ This is necessary for Raspberry Shake data.</dd>
         Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str or list {&#39;Raspberry Shake&#39;)
         Instrument from which the data was acquired. 
-    metaPath : str or pathlib.Path object, default=&#39;&#39;
+    metapath : str or pathlib.Path object, default=&#39;&#39;
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of &#39;&#39;, will read from resources folder of repository (only supported for Raspberry Shake).
     hvsr_band : list, default=[0.4, 40]
         Two-element list containing low and high &#34;corner&#34; frequencies for processing. This can specified again later.
@@ -1240,20 +1236,20 @@ This is necessary for Raspberry Shake data.</dd>
     import obspy
 
     #Make Sure metapath is all good
-    if not pathlib.Path(metaPath).exists() or metaPath==&#39;&#39;:
-        if metaPath == &#39;&#39;:
-            print(&#39;No metadata file specified!&#39;)
+    if not pathlib.Path(metapath).exists() or metapath==&#39;&#39;:
+        if metapath == &#39;&#39;:
+            pass
+            #print(&#39;No metadata file specified!&#39;)
         else:
             print(&#39;Specified metadata file cannot be read!&#39;)
         repoDir = pathlib.Path(os.path.dirname(__file__))
-        metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
-        #metaPath= repoDir.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;).as_posix()
-        print(&#39;Using default metadata file for Raspberry Shake v.7 distributed with package&#39;)
+        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
+        #print(&#39;Using default metadata file for Raspberry Shake v.7 distributed with package&#39;)
     else:
-        if isinstance(metaPath, pathlib.PurePath):
-            metaPath = metaPath.as_posix()
+        if isinstance(metapath, pathlib.PurePath):
+            metapath = metapath.as_posix()
         else:
-            metaPath = pathlib.Path(metaPath).as_posix()
+            metapath = pathlib.Path(metapath).as_posix()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -1281,7 +1277,7 @@ This is necessary for Raspberry Shake data.</dd>
         starttime = str(starttime)
     
     starttime = date+&#34;T&#34;+starttime
-    starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone, dst=dst))
+    starttime = obspy.UTCDateTime(__formatTime(starttime, tzone=tzone))
     
     if type(endtime) is str:
         if &#39;T&#39; in endtime:
@@ -1294,22 +1290,22 @@ This is necessary for Raspberry Shake data.</dd>
         endtime = str(endtime)
 
     endtime = date+&#34;T&#34;+endtime
-    endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone, dst=dst))
+    endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone))
 
     acq_date = datetime.date(year=int(date.split(&#39;-&#39;)[0]), month=int(date.split(&#39;-&#39;)[1]), day=int(date.split(&#39;-&#39;)[2]))
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
     if instrument.lower() in  raspShakeInstNameList:
-        if metaPath == r&#39;resources/rs3dv7_metadata.inv&#39;:
-            metaPath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
-            #metaPath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
+        if metapath == r&#39;resources/rs3dv7_metadata.inv&#39;:
+            metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
+            #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
 
     #Add key/values to input parameter dictionary
     inputParamDict = {&#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
                     &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;,
-                    &#39;longitude&#39;:lon,&#39;latitude&#39;:lat,&#39;elevation&#39;:elevation,&#39;depth&#39;:depth, &#39;site&#39;:site,
-                    &#39;dataPath&#39;:dataPath, &#39;metaPath&#39;:metaPath, &#39;hvsr_band&#39;:hvsr_band
+                    &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;depth&#39;:depth, &#39;site&#39;:site,
+                    &#39; datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
                     }
 
     return inputParamDict</code></pre>
@@ -1331,7 +1327,7 @@ This is necessary for Raspberry Shake data.</dd>
 </details>
 </dd>
 <dt id="sprit.plot_hvsr"><code class="name flex">
-<span>def <span class="ident">plot_hvsr</span></span>(<span>hvsr_dict, kind, xtype, fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs)</span>
+<span>def <span class="ident">plot_hvsr</span></span>(<span>hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Private function for plotting hvsr curve (or curves with components)</p></div>
@@ -1339,7 +1335,7 @@ This is necessary for Raspberry Shake data.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_hvsr(hvsr_dict, kind, xtype, fig=None, ax=None, save_dir=None, save_suffix=&#39;&#39;, show=True, **kwargs):
+<pre><code class="python">def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, save_suffix=&#39;&#39;, show=True, **kwargs):
     &#34;&#34;&#34;Private function for plotting hvsr curve (or curves with components)
     &#34;&#34;&#34;
     if &#39;kwargs&#39; in kwargs.keys():
@@ -1382,12 +1378,12 @@ This is necessary for Raspberry Shake data.</dd>
     legendLoc = &#39;upper right&#39;
     
     plotHVSR = False
-    for item in kind:
+    for item in plot_type:
         if item.lower()==&#39;hvsr&#39;:
             plotHVSR=True
             ax.plot(x, y, color=&#39;k&#39;, label=&#39;H/V Ratio&#39;, zorder=1000)
             plotSuff=&#39;HVSRCurve_&#39;
-            if &#39;-s&#39; not in kind:
+            if &#39;-s&#39; not in plot_type:
                 ax.fill_between(x, hvsr_dict[&#39;hvsrm2&#39;], hvsr_dict[&#39;hvsrp2&#39;], color=&#39;k&#39;, alpha=0.2, label=&#39;StDev&#39;,zorder=997)
                 ax.plot(x, hvsr_dict[&#39;hvsrm2&#39;], color=&#39;k&#39;, alpha=0.25, linewidth=0.5, zorder=998)
                 ax.plot(x, hvsr_dict[&#39;hvsrp2&#39;], color=&#39;k&#39;, alpha=0.25, linewidth=0.5, zorder=999)
@@ -1403,8 +1399,8 @@ This is necessary for Raspberry Shake data.</dd>
     ax.set_title(hvsr_dict[&#39;input_params&#39;][&#39;site&#39;])
 
 
-    for k in kind:   
-        if k==&#39;p&#39; and &#39;all&#39; not in kind:
+    for k in plot_type:   
+        if k==&#39;p&#39; and &#39;all&#39; not in plot_type:
             plotSuff=plotSuff+&#39;BestPeak_&#39;
             
             bestPeakScore = 0
@@ -1414,17 +1410,17 @@ This is necessary for Raspberry Shake data.</dd>
                     bestPeak = p
 
             ax.axvline(bestPeak[&#39;f0&#39;],color=&#39;k&#39;, linestyle=&#39;dotted&#39;, label=&#39;Peak&#39;)          
-            if &#39;ann&#39; in kind:
+            if &#39;ann&#39; in plot_type:
                 ax.annotate(&#39;Peak at &#39;+str(round(bestPeak[&#39;f0&#39;],2))+&#39;Hz&#39;, (bestPeak[&#39;f0&#39;], ax.get_ylim()[0]), xycoords=&#39;data&#39;, 
                                 horizontalalignment=&#39;center&#39;, verticalalignment=&#39;bottom&#39;, 
                                 bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
                 plotSuff = plotSuff+&#39;ann_&#39;
 
-        elif k==&#39;p&#39;  and &#39;all&#39; in kind:
+        elif k==&#39;p&#39;  and &#39;all&#39; in plot_type:
             plotSuff = plotSuff+&#39;allPeaks_&#39;
 
             ax.vlines(hvsr_dict[&#39;hvsr_peak_freqs&#39;], ax.get_ylim()[0], ax.get_ylim()[1], colors=&#39;k&#39;, linestyles=&#39;dotted&#39;, label=&#39;Peak&#39;)          
-            if &#39;ann&#39; in kind:
+            if &#39;ann&#39; in plot_type:
                 for i, p in enumerate(hvsr_dict[&#39;hvsr_peak_freqs&#39;]):
                     y = hvsr_dict[&#39;hvsr_curve&#39;][hvsr_dict[&#39;hvsr_peak_indices&#39;][i]]
                     ax.annotate(&#39;Peak at &#39;+str(round(p,2))+&#39;Hz&#39;, (p, 0.1), xycoords=&#39;data&#39;, 
@@ -1453,7 +1449,7 @@ This is necessary for Raspberry Shake data.</dd>
         if &#39;c&#39; in k:
             plotSuff = plotSuff+&#39;IndComponents_&#39;
             
-            if kind[0] != &#39;c&#39;:
+            if plot_type[0] != &#39;c&#39;:
                 fig.tight_layout()
                 axis2 = ax.twinx()
                 compAxis = axis2
@@ -1505,9 +1501,9 @@ This is necessary for Raspberry Shake data.</dd>
                     pltColor = &#39;r&#39;
 
                 compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
-                if &#39;-s&#39; not in kind:
+                if &#39;-s&#39; not in plot_type:
                     compAxis.fill_between(x, hvsr_dict[&#39;ppsd_std_vals_m&#39;][key][:-1], hvsr_dict[&#39;ppsd_std_vals_p&#39;][key][:-1], color=pltColor, alpha=stdalpha)
-                if kind[0] != &#39;c&#39;:
+                if plot_type[0] != &#39;c&#39;:
                     compAxis.legend(loc=legendLoc2)
             else:
                 pass#ax.legend(loc=legendLoc)
@@ -1642,13 +1638,13 @@ This is necessary for Raspberry Shake data.</dd>
 
     #Set up axes, since data is already in semilog
     axy = ax.twinx()
+    axy.set_yticks([])
     axy.zorder=0
     ax.zorder=1
     ax.set_facecolor(&#39;#ffffff00&#39;) #Create transparent background for front axis
     #plt.sca(axy)
     im = ax.imshow(psdArr, origin=&#39;lower&#39;, extent=extList, aspect=&#39;auto&#39;, interpolation=&#39;nearest&#39;, **kwargs)
     ax.tick_params(left=False, right=False)
-    ax.set_yticks([], labels=&#39;&#39;)
     #plt.sca(ax)
     if peak_plot:
         ax.hlines(hvsr_dict[&#39;Best Peak&#39;][&#39;f0&#39;], xmin, xmax, colors=&#39;k&#39;, linestyles=&#39;dashed&#39;, alpha=0.5)
@@ -1662,14 +1658,14 @@ This is necessary for Raspberry Shake data.</dd>
         cbar.set_label(&#39;H/V Ratio&#39;)
 
     ax.set_ylabel(ylabel)
-    #plt.yticks(freqticks)
-    #ax.semilogy()
+    ax.set_yticks(freqticks)
+    ax.semilogy()
     ax.set_ylim(hvsr_dict[&#39;input_params&#39;][&#39;hvsr_band&#39;])
 
     #plt.rcParams[&#39;figure.dpi&#39;] = 500
     #plt.rcParams[&#39;figure.figsize&#39;] = (12,4)
     fig.canvas.draw()
-    fig.tight_layout()
+    #fig.tight_layout()
     #plt.show()
     return fig, ax</code></pre>
 </details>
@@ -2037,11 +2033,10 @@ Only matters if more than one component used.</dd>
 </details>
 </dd>
 <dt id="sprit.print_report"><code class="name flex">
-<span>def <span class="ident">print_report</span></span>(<span>hvsr_data, export='', format='print', include='peak', save_figs=None)</span>
+<span>def <span class="ident">print_report</span></span>(<span>hvsr_data, export='', format='print', save_figs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
-<p>NOT YET IMPLEMENTED!</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
@@ -2068,11 +2063,9 @@ For docx (not yet implemented), the following are also included:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def print_report(hvsr_data, export=&#39;&#39;, format=&#39;print&#39;, include=&#39;peak&#39;, save_figs=None):
+<pre><code class="python">def print_report(hvsr_data, export=&#39;&#39;, format=&#39;print&#39;, save_figs=None):
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
-    
-    NOT YET IMPLEMENTED!
-    
+        
     Parameters
     ----------
     hvsr_data : dict
@@ -2106,9 +2099,9 @@ For docx (not yet implemented), the following are also included:
             print(p, &#39;:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
         print(&#39;Peak Passes Criteria:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
 
-        hvplot(hvsr_data, kind=&#39;HVSR p tp ann&#39;)
-        hvplot(hvsr_data, kind=&#39;HVSR c&#39;)
-        hvplot(hvsr_data, kind=&#39;spec&#39;)
+        hvplot(hvsr_data, plot_type=&#39;HVSR p tp ann&#39;)
+        hvplot(hvsr_data, plot_type=&#39;HVSR c&#39;)
+        hvplot(hvsr_data, plot_type=&#39;spec&#39;)
     elif format==&#39;csv&#39;:
         import pandas as pd
         pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
@@ -2123,7 +2116,7 @@ For docx (not yet implemented), the following are also included:
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
         if export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_data[&#39;input_params&#39;][&#39;dataPath&#39;])
+            inFile = pathlib.Path(hvsr_data[&#39;input_params&#39;][&#39; datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]==&#39;/&#39;:
@@ -2312,9 +2305,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    print(&#39;Getting main curve&#39;)
     hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
-    print(hvsr_curve.shape)
     origPPSD = params[&#39;ppsds_obspy&#39;].copy()
 
     #Add some other variables to our output dictionary
@@ -2360,15 +2351,14 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
             smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
             hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
     elif freq_smooth.lower() in freq_smooth_constant:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind=&#39;constant&#39;)
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
     elif freq_smooth.lower() in freq_smooth_proport:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind=&#39;proportional&#39;)
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;proportional&#39;)
     else:
         print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
 
     #Get hvsr curve from three components at each time step
     anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
-    print(&#39;Getting HVSR Curve time steps&#39;)
     if method==1 or method ==&#39;dfa&#39; or method ==&#39;Diffuse Field Assumption&#39;:
         pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
     else:
@@ -2377,13 +2367,11 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
             tStepDict = {}
             for k in hvsr_out[&#39;psd_raw&#39;]:
                 tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
-            print(tStep)
-            _, hvsr_tstep = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-            hvsr_tSteps.append(hvsr_tstep)
-    hvsr_tSteps = np.array(hvsr_tSteps)
-    
-    hvsr_out[&#39;ind_hvsr_curves&#39;] = hvsr_tSteps
+            hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+            hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
+    hvsr_out[&#39;ind_hvsr_curves&#39;] = np.array(hvsr_tSteps)
+    
     #use the standard deviation of each individual curve to determine if it overlapped
     if remove_outlier_curves:
         stdT = np.std(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=1)
@@ -2404,7 +2392,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 hvsr_out[&#39;current_times_used&#39;][k] = np.delete(hvsr_out[&#39;current_times_used&#39;][k], index)
         hvsr_out[&#39;tsteps_used&#39;][0] = hvsr_out[&#39;ppsds&#39;][k][&#39;current_times_used&#39;].shape[0]
 
-    hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.std(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=0)
+    hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.nanstd(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=0)
 
     #Get peaks for each time step
     tStepPeaks = []
@@ -2431,7 +2419,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 </details>
 </dd>
 <dt id="sprit.remove_noise"><code class="name flex">
-<span>def <span class="ident">remove_noise</span></span>(<span>input, kind='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=1)</span>
+<span>def <span class="ident">remove_noise</span></span>(<span>input, kind='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], warmup_time=0, cooldown_time=0, min_win_size=1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to remove noisy windows from data, using various methods.</p>
@@ -2444,7 +2432,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <dl>
 <dt><strong><code>input</code></strong> :&ensp;<code>dict, obspy.Stream,</code> or <code>obspy.Trace</code></dt>
 <dd>Dictionary containing all the data and parameters for the HVSR analysis</dd>
-<dt><strong><code>kind</code></strong> :&ensp;<code>str, {'auto', 'manual', 'stalta'/'antitrigger', 'noise threshold', 'warmup'/'buffer'}</code></dt>
+<dt><strong><code>kind</code></strong> :&ensp;<code>str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}</code></dt>
 <dd>The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'</dd>
 <dt><strong><code>noise_percent</code></strong> :&ensp;<code>float</code>, default=<code>0.995</code></dt>
 <dd>Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995.
@@ -2452,7 +2440,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 <dt><strong><code>sta</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>Short term average (STA) window (in seconds), by default 2.</dd>
 <dt><strong><code>lta</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Long term average (STA) window (in seconds), by default 2.</dd>
+<dd>Long term average (STA) window (in seconds), by default 30.</dd>
 <dt><strong><code>stalta_thresh</code></strong> :&ensp;<code>list</code>, default=<code>[0.5,5]</code></dt>
 <dd>Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]</dd>
 <dt><strong><code>show_plot</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
@@ -2469,7 +2457,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], show_plot=False, warmup_time=0, cooldown_time=0, min_win_size=1):
+<pre><code class="python">def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
     &#34;&#34;&#34;Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -2482,7 +2470,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     ----------
     input : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
-    kind : str, {&#39;auto&#39;, &#39;manual&#39;, &#39;stalta&#39;/&#39;antitrigger&#39;, &#39;noise threshold&#39;, &#39;warmup&#39;/&#39;buffer&#39;}
+    kind : str, {&#39;auto&#39;, &#39;manual&#39;, &#39;stalta&#39;/&#39;antitrigger&#39;, &#39;saturation&#39;, &#39;noise threshold&#39;, &#39;warmup&#39;/&#39;cooldown&#39;/&#39;buffer&#39;}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default &#39;auto.&#39;
     noise_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
@@ -2490,7 +2478,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     sta : int, optional
         Short term average (STA) window (in seconds), by default 2.
     lta : int, optional
-        Long term average (STA) window (in seconds), by default 2.
+        Long term average (STA) window (in seconds), by default 30.
     stalta_thresh : list, default=[0.5,5]
         Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
     show_plot : bool, default=False
@@ -2565,6 +2553,97 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     return output</code></pre>
 </details>
 </dd>
+<dt id="sprit.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(datapath, source=&#39;file&#39;, kind=&#39;auto&#39;, method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
+
+    #Get the input parameters
+    input_params_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in input_params.__code__.co_varnames}
+    params = input_params(datapath=datapath, hvsr_band=hvsr_band, **input_params_kwargs)
+
+    #Get metadata
+    get_metadata_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in get_metadata.__code__.co_varnames}
+    params = get_metadata(params=params, **get_metadata_kwargs)
+
+    #Fetch Data
+    fetch_data_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
+    dataIN = fetch_data(params=params, source=source, **fetch_data_kwargs)    
+
+    #Remove Noise
+    remove_noise_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in remove_noise.__code__.co_varnames}
+    dataIN = remove_noise(input=dataIN, kind=kind, **remove_noise_kwargs)   
+
+    #Generate PPSDs
+    generate_ppsds_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in generate_ppsds.__code__.co_varnames}
+    from obspy.signal.spectral_estimation import PPSD
+    PPSDkwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in PPSD.__init__.__code__.co_varnames}
+    generate_ppsds_kwargs.update(PPSDkwargs)
+    ppsd_data = generate_ppsds(params=dataIN, **generate_ppsds_kwargs)
+    
+    #Process HVSR Curves
+    process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in process_hvsr.__code__.co_varnames}
+    hvsr_results = process_hvsr(params=ppsd_data, method=method, **process_hvsr_kwargs)
+    
+    #Check peaks
+    check_peaks_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in check_peaks.__code__.co_varnames}
+    hvsr_results = check_peaks(hvsr_dict=hvsr_results, hvsr_band = hvsr_band, **check_peaks_kwargs)
+    
+    #Check if results are good
+    #Curve pass?
+    curvePass = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;]) &gt; 2
+    
+    #Peak Pass?
+    peakPass = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
+        
+    if verbose:
+        #Print results
+        if curvePass and peakPass:
+            print(&#39;✔ Curve at {0:.2f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
+        else:
+            print(&#39;✘ Peak at {0:.2f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
+
+        #Print individual results
+        print(&#39;\tCurve Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+
+
+        print(&#39;\tPeak Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+            res = &#39;✔&#39;
+        else:
+            res = &#39;✘&#39;
+        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+
+    if plot_type != False:
+        if plot_type == True:
+            plot_type = &#39;HVSR p ann t c+ ann p Spec&#39;
+        hvplot_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in hvplot.__code__.co_varnames}
+        hvsr_results[&#39;HV_Plot&#39;] = hvplot(hvsr_results, plot_type=plot_type, **hvplot_kwargs)
+
+    return hvsr_results</code></pre>
+</details>
+</dd>
 <dt id="sprit.select_windows"><code class="name flex">
 <span>def <span class="ident">select_windows</span></span>(<span>input)</span>
 </code></dt>
@@ -2606,7 +2685,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 
     if type(input) is dict:
         if &#39;hvsr_curve&#39; in input.keys():
-            fig, ax = hvplot(hvsr_dict=input, kind=&#39;spec&#39;, returnfig=True, cmap=&#39;turbo&#39;)
+            fig, ax = hvplot(hvsr_dict=input, plot_type=&#39;spec&#39;, returnfig=True, cmap=&#39;turbo&#39;)
         else:
             params = input.copy()
             input = input[&#39;stream&#39;]
@@ -2642,120 +2721,6 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     params[&#39;fig&#39;] = fig
     params[&#39;ax&#39;] = ax
     return params</code></pre>
-</details>
-</dd>
-<dt id="sprit.setup_colab"><code class="name flex">
-<span>def <span class="ident">setup_colab</span></span>(<span>option='', repo_dir='')</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Function to help set up Google Colab environment for SPRIT</p>
-<p>This is designed to be run twice in a Google Colab environment without any parameters, and at the beginning of the Google Colab notebook.
-The first run will install obspy (which is not installed on Colab by default), then restart the kernel (necessary for Colab to run obspy effectively).
-The second run will "install" the repository. </p>
-<p>This will be changed dramatically once the repository is ready for distrubution via pypi.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>option</code></strong> :&ensp;<code>str</code>, default=<code>''</code></dt>
-<dd>Which iteration to run of setup_colab. Be default, this function can determine which "iteration" it needs to run, but it can be specified manually.</dd>
-<dt><strong><code>repo_dir</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path</code>, default=<code>''</code></dt>
-<dd>Where the repository has been "installed"/extracted in the Colab folder structure.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def setup_colab(option=&#39;&#39;, repo_dir=&#39;&#39;):
-    &#34;&#34;&#34;Function to help set up Google Colab environment for SPRIT
-    
-    This is designed to be run twice in a Google Colab environment without any parameters, and at the beginning of the Google Colab notebook. 
-    The first run will install obspy (which is not installed on Colab by default), then restart the kernel (necessary for Colab to run obspy effectively).
-    The second run will &#34;install&#34; the repository. 
-    
-    This will be changed dramatically once the repository is ready for distrubution via pypi.
-    
-    Parameters
-    ----------
-    option : str, default=&#39;&#39;
-        Which iteration to run of setup_colab. Be default, this function can determine which &#34;iteration&#34; it needs to run, but it can be specified manually.
-    repo_dir : str or pathlib.Path, default=&#39;&#39;
-        Where the repository has been &#34;installed&#34;/extracted in the Colab folder structure.
-        
-    Returns
-    -------
-    None
-
-    &#34;&#34;&#34;
-    import datetime
-    import math
-    import os
-    import pathlib
-    import time
-    import sys
-    import subprocess
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import scipy
-
-    from google.colab import files
-    from zipfile import ZipFile
-    #%matplotlib #Run this line if you want interactive plots
-    #https://github.com/googlecolab/colabtools/blob/main/google/colab/_system_commands.py
-    from google.colab import _system_commands
-    pyvers = _system_commands._run_command(&#39;python --version&#39;, False)
-    pyvers = pyvers.output.split(&#39; &#39;)#+pyvers.output.split(&#39;.&#39;)[1]
-    pyvers = pyvers[0].lower()+pyvers[1].split(&#39;.&#39;)[0]+&#39;.&#39;+pyvers[1].split(&#39;.&#39;)[1]
-
-    #Setup matplotlib too?
-    #_system_commands._run_command(&#39;matplotlib qt&#39;, False)
-
-    packPath = &#39;/usr/local/lib/&#39;+pyvers+&#39;/dist-packages&#39;
-    packPath = pathlib.Path(packPath)
-    
-    #Make directories
-    dataDir = &#39;/content/Data/&#39;
-    outputDir = &#39;/content/Output&#39;
-    if not os.path.exists(dataDir):
-        os.makedirs(dataDir)
-    if not os.path.exists(outputDir):
-        os.makedirs(outputDir)    
-    
-    obspyInstalled=False
-    for f in packPath.iterdir():
-        if &#39;obspy&#39; in f.name:
-            obspyInstalled=True
-            global obspy
-            import obspy
-            break
-        
-    if &#39;obspy&#39; in option or option==&#39;&#39;:
-        if not obspyInstalled:
-            print(&#39;Installing Obspy&#39;)
-            _system_commands._run_command(&#39;pip install obspy&#39;, False)
-            print(&#34;Runtime will now be reset to properly load obspy&#34;)
-            print(&#39;Please run setup_colab() to upload data and enter code environment.&#39;)
-            os.kill(os.getpid(), 9)
-        else:
-            global obspy
-            import obspy
-            print(&#39;Obspy has been imported.&#39;) 
-    elif &#39;data&#39; in option:
-        global obspy
-        import obspy
-        print(&#39;Obspy has been installed imported.&#39;)
-
-        os.chdir(dataDir)
-        print(&#39;\nUpload data file(s): \n(file(s) will be placed in &#39;+dataDir+&#39;)&#39;)
-        files.upload() #Upload the 3 data files to be used
-        if repo_dir == &#39;&#39;:
-            repo_dir=&#39;/content/SPRIT&#39;
-        os.chdir(repo_dir)
-    return</code></pre>
 </details>
 </dd>
 <dt id="sprit.show_removed_windows"><code class="name flex">
@@ -2922,24 +2887,24 @@ The second run will "install" the repository. </p>
 </details>
 </dd>
 <dt id="sprit.trim_data"><code class="name flex">
-<span>def <span class="ident">trim_data</span></span>(<span>stream, params, export_dir=None, export_format=None, **kwargs)</span>
+<span>def <span class="ident">trim_data</span></span>(<span>params, stream=None, export_dir=None, export_format=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to trim data to start and end time</p>
 <p>Trim data to start and end times so that stream being analyzed only contains wanted data.
 Can also export data to specified directory using a specified site name and/or export_format</p>
 <h2 id="parameters">Parameters</h2>
-<pre><code>stream  : obspy.stream object  
-    Obspy stream to be trimmed
-params  : dict
+<pre><code>params  : dict
     Dictionary containing input parameters for trimming
+stream  : obspy.stream object  
+    Obspy stream to be trimmed
 export_dir: str or pathlib obj   
     Output filepath to export trimmed data to. If not specified, does not export. 
 export_format  : str or None, default=None  
     If None, and export_dir is specified, format defaults to .mseed. Otherwise, exports trimmed stream using obspy.core.stream.Stream.write() method, with export_format being passed to the format argument. 
     &lt;https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write&gt;
 **kwargs
-    Keyword arguments passed directly to obspy.core.stream.Stream.trim() method. starttime and endtime parameters are already provided through the params parameter, so should not be passed as kwargs.
+    Keyword arguments passed directly to obspy.core.stream.Stream.trim() method.
 </code></pre>
 <h2 id="returns">Returns</h2>
 <pre><code>st_trimmed  : obspy.stream object 
@@ -2949,7 +2914,7 @@ export_format  : str or None, default=None
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def trim_data(stream, params, export_dir=None, export_format=None, **kwargs):
+<pre><code class="python">def trim_data(params, stream=None, export_dir=None, export_format=None, **kwargs):
     &#34;&#34;&#34;Function to trim data to start and end time
 
         Trim data to start and end times so that stream being analyzed only contains wanted data.
@@ -2957,29 +2922,45 @@ export_format  : str or None, default=None
 
         Parameters
         ----------
-            stream  : obspy.stream object  
-                Obspy stream to be trimmed
             params  : dict
                 Dictionary containing input parameters for trimming
+            stream  : obspy.stream object  
+                Obspy stream to be trimmed
             export_dir: str or pathlib obj   
                 Output filepath to export trimmed data to. If not specified, does not export. 
             export_format  : str or None, default=None  
                 If None, and export_dir is specified, format defaults to .mseed. Otherwise, exports trimmed stream using obspy.core.stream.Stream.write() method, with export_format being passed to the format argument. 
                 https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
             **kwargs
-                Keyword arguments passed directly to obspy.core.stream.Stream.trim() method. starttime and endtime parameters are already provided through the params parameter, so should not be passed as kwargs.
+                Keyword arguments passed directly to obspy.core.stream.Stream.trim() method.
                 
         Returns
         -------
             st_trimmed  : obspy.stream object 
                 Obpsy Stream trimmed to start and end times
     &#34;&#34;&#34;
-    start = params[&#39;starttime&#39;]
-    end = params[&#39;endtime&#39;]
-    site = params[&#39;site&#39;]
+    if &#39;starttime&#39; in kwargs.keys():
+        start = kwargs[&#39;starttime&#39;]
+    else:
+        start = params[&#39;starttime&#39;]
+    
+    if &#39;endtime&#39; in kwargs.keys():
+        end = kwargs[&#39;endtime&#39;]
+    else:
+        end = params[&#39;endtime&#39;]
+        
+    if &#39;site&#39; in kwargs.keys():
+        site = kwargs[&#39;site&#39;]
+    else:
+        site = params[&#39;site&#39;]
 
-    st_trimmed = stream.copy()
-
+    if stream is not None:
+        st_trimmed = stream.copy()
+    elif &#39;stream&#39; in params.keys():
+        st_trimmed = params[&#39;stream&#39;].copy()
+    else:
+        raise UnboundLocalError(&#34;stream not specified. Must either be specified using stream parameter or as a key in the params parameters (params[&#39;stream&#39;])&#34;)
+        
     trimStart = obspy.UTCDateTime(start)
     trimEnd = obspy.UTCDateTime(end)
 
@@ -2996,13 +2977,17 @@ export_format  : str or None, default=None
 
     st_trimmed.merge(method=1)
 
+    if export_format is None:
+        export_format = &#39;.mseed&#39;
+
     #Format export filepath, if exporting
-    if export_format is not None and site is not None and export_dir is not None:
+    if export_dir is not None:
         if site is None:
             site=&#39;&#39;
         else:
             site = site+&#39;_&#39;
-        export_format = &#39;.&#39;+export_format
+        if &#39;.&#39; not in export_format:
+            export_format = &#39;.&#39;+export_format
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
@@ -3029,6 +3014,14 @@ export_format  : str or None, default=None
         
         exportFile = export_dir+&#39;/&#39;+filename
 
+        #Take care of masked arrays for writing purposes
+        if &#39;fill_value&#39; in kwargs.keys():
+            for tr in st_trimmed:
+                if isinstance(tr.data, np.ma.masked_array):
+                    tr.data = tr.data.filled(kwargs[&#39;fill_value&#39;])
+        else:
+            st_trimmed = st_trimmed.split()
+        
         st_trimmed.write(filename=exportFile)
     else:
         pass
@@ -3088,8 +3081,8 @@ If specified, filepath to write to updated inventory file to.</p>
     for k in optKeys:
         if k not in params.keys():
             params[k] = &#39;0&#39;
-    lon = str(params[&#39;longitude&#39;])
-    lat = str(params[&#39;latitude&#39;])
+    xcoord = str(params[&#39;longitude&#39;])
+    ycoord = str(params[&#39;latitude&#39;])
     elevation = str(params[&#39;elevation&#39;])
     depth = str(params[&#39;depth&#39;])
     
@@ -3116,10 +3109,10 @@ If specified, filepath to write to updated inventory file to.</p>
         item.attrib[&#39;code&#39;] = network
         
     for item in root.iter(prefix+&#39;Latitude&#39;):
-        item.text = lat
+        item.text = ycoord
 
     for item in root.iter(prefix+&#39;Longitude&#39;):
-        item.text = lon
+        item.text = xcoord
 
     for item in root.iter(prefix+&#39;Created&#39;):
         nowTime = str(datetime.datetime.now())
@@ -3136,9 +3129,21 @@ If specified, filepath to write to updated inventory file to.</p>
     #outfile = str(parentPath)+&#39;\\&#39;+filename+filetag+&#39;.inv&#39;
 
     if write_path != &#39;&#39;:
-        tree.write(write_path, xml_declaration=True, method=&#39;xml&#39;,encoding=&#39;UTF-8&#39;)
-        inv = obspy.read_inventory(write_path, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
-    else:
+        try:
+            write_path = pathlib.Path(write_path)
+            if write_path.isdir():
+                fname = params[&#39;network&#39;]+&#39;_&#39;+params[&#39;station&#39;]+&#39;_&#39;+params[&#39;site&#39;]
+                fname = fname + &#39;_response.xml&#39;
+                write_file = write_path.joinpath(fname)
+            else:
+                write_file=write_path
+            tree.write(write_file, xml_declaration=True, method=&#39;xml&#39;,encoding=&#39;UTF-8&#39;)
+            inv = obspy.read_inventory(write_file, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
+        except:
+            print(&#39;write_path not recognized as filepath, not writing&#39;)
+            write_path=&#39;&#39;
+
+    if write_path==&#39;&#39;:
         #Create temporary file for reading into obspy
         tpf = tempfile.NamedTemporaryFile(delete=False)
         stringRoot = ET.tostring(root, encoding=&#39;UTF-8&#39;, method=&#39;xml&#39;)
@@ -3148,6 +3153,7 @@ If specified, filepath to write to updated inventory file to.</p>
         tpf.close()
 
         os.remove(tpf.name)
+    
     params[&#39;inv&#39;] = inv
     return params</code></pre>
 </details>
@@ -3207,8 +3213,8 @@ If specified, filepath to write to updated inventory file to.</p>
 <li><code><a title="sprit.print_report" href="#sprit.print_report">print_report</a></code></li>
 <li><code><a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr</a></code></li>
 <li><code><a title="sprit.remove_noise" href="#sprit.remove_noise">remove_noise</a></code></li>
+<li><code><a title="sprit.run" href="#sprit.run">run</a></code></li>
 <li><code><a title="sprit.select_windows" href="#sprit.select_windows">select_windows</a></code></li>
-<li><code><a title="sprit.setup_colab" href="#sprit.setup_colab">setup_colab</a></code></li>
 <li><code><a title="sprit.show_removed_windows" href="#sprit.show_removed_windows">show_removed_windows</a></code></li>
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
 <li><code><a title="sprit.trim_data" href="#sprit.trim_data">trim_data</a></code></li>

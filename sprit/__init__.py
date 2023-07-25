@@ -4,6 +4,7 @@ This module analysis ambient seismic data using the Horizontal to Vertical Spect
 """
 
 from sprit.sprit import(
+    run,
     check_mark,
     get_char,
     time_it,
@@ -14,7 +15,6 @@ from sprit.sprit import(
     checkifpath,
     input_params,
     update_shake_metadata,
-    setup_colab,
     gui,
     get_metadata,
     has_required_channels,
@@ -36,6 +36,7 @@ from sprit.sprit import(
 )
 
 __all__ =('sprit',
+    'run',
     'check_mark',
     'get_char',
     'time_it',
@@ -46,7 +47,6 @@ __all__ =('sprit',
     'checkifpath',
     'input_params',
     'update_shake_metadata',
-    'setup_colab',
     'gui',
     'get_metadata',
     'has_required_channels',

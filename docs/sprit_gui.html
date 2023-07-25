@@ -218,8 +218,8 @@ class App:
             else:
                 self.fpath = self.fpath[0]
 
-            self.params = sprit.input_params(dataPath=self.fpath,
-                                metaPath = self.meta_path.get(),
+            self.params = sprit.input_params( datapath=self.fpath,
+                                metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
                                 station=self.station.get(), 
@@ -230,8 +230,8 @@ class App:
                                 endtime = self.endtime,
                                 tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn&#39;t matter
-                                lon = self.x.get(),
-                                lat =  self.y.get(),
+                                xcoord = self.x.get(),
+                                ycoord =  self.y.get(),
                                 elevation = self.z.get(),
                                 depth = self.depth.get(),
                                 instrument = self.instrumentSel.get(),
@@ -300,7 +300,7 @@ class App:
                                                period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                special_handling=special_handling
                                                )
-
+            
             self.params = update_noise_windows()
 
             self.hvsr_results = sprit.process_hvsr(params=self.params, 
@@ -376,7 +376,7 @@ class App:
 
 
         def update_input_params_call():
-            self.input_params_call.configure(text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -836,7 +836,7 @@ class App:
         #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -1586,14 +1586,15 @@ class App:
         
         hvsrParamsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;Process HVSR Parameters&#39;)#.pack(fill=&#39;both&#39;)
         
-        #Method selection, method=2
+        #Method selection, method=4
         ttk.Label(hvsrSettingsFrame, text=&#34;Horizontal Combine Method [int]&#34;).grid(row=0, column=0, padx=(5,0), sticky=&#39;w&#39;)
-        method_options = [&#34;Diffuse Field Assumption (not currently implemented)&#34;, 
-                          &#34;Arithmetic Mean H ≡ (N + E)/2&#34;,
-                          &#34;Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
-                          &#34;Vector Summation: H ≡ √(N^2 + E^2)&#34;,
-                          &#34;Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
-                          &#34;Maximum Horizontal Value: H ≡ max(N, E)&#34;
+        method_options = [&#39;&#39;, #Empty to make intuitive and match sprit.py
+                          &#34;1.Diffuse Field Assumption (not currently implemented)&#34;, 
+                          &#34;2. Arithmetic Mean H ≡ (N + E)/2&#34;,
+                          &#34;3. Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
+                          &#34;4. Vector Summation: H ≡ √(N^2 + E^2)&#34;,
+                          &#34;5. Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
+                          &#34;6. Maximum Horizontal Value: H ≡ max(N, E)&#34;
                           ]
 
         def on_method_select(meth, meth_opts=method_options):
@@ -1607,12 +1608,13 @@ class App:
             except ValueError:
                 return False
 
-        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method=2&#34;, width=30)
+        defaultMeth=3
+        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method={}&#34;.format(defaultMeth), width=30)
         hCombMethodLabel.grid(row=0, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-            
-        self.method_sel = tk.StringVar(value=method_options[2])
-        self.method_ind = method_options.index(self.method_sel.get())        
-        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[2], *method_options, command=on_method_select)
+
+        self.method_sel = tk.StringVar(value=method_options[defaultMeth])
+        self.method_ind = method_options.index(self.method_sel.get())       
+        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[defaultMeth], *method_options, command=on_method_select)
         self.method_dropdown.config(width=50)
         self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky=&#39;ew&#39;)
         
@@ -1696,7 +1698,6 @@ class App:
         resampleLabel.grid(row=4, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
         def on_curve_resample():
             try:
-                int(self.hvresample.get())
                 if not self.resamplebool.get():
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
                     self.hvresample=self.resamplebool.get()
@@ -2487,8 +2488,8 @@ if __name__ == &#34;__main__&#34;:
             else:
                 self.fpath = self.fpath[0]
 
-            self.params = sprit.input_params(dataPath=self.fpath,
-                                metaPath = self.meta_path.get(),
+            self.params = sprit.input_params( datapath=self.fpath,
+                                metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
                                 station=self.station.get(), 
@@ -2499,8 +2500,8 @@ if __name__ == &#34;__main__&#34;:
                                 endtime = self.endtime,
                                 tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn&#39;t matter
-                                lon = self.x.get(),
-                                lat =  self.y.get(),
+                                xcoord = self.x.get(),
+                                ycoord =  self.y.get(),
                                 elevation = self.z.get(),
                                 depth = self.depth.get(),
                                 instrument = self.instrumentSel.get(),
@@ -2569,7 +2570,7 @@ if __name__ == &#34;__main__&#34;:
                                                period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                special_handling=special_handling
                                                )
-
+            
             self.params = update_noise_windows()
 
             self.hvsr_results = sprit.process_hvsr(params=self.params, 
@@ -2645,7 +2646,7 @@ if __name__ == &#34;__main__&#34;:
 
 
         def update_input_params_call():
-            self.input_params_call.configure(text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -3105,7 +3106,7 @@ if __name__ == &#34;__main__&#34;:
         #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -3855,14 +3856,15 @@ if __name__ == &#34;__main__&#34;:
         
         hvsrParamsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;Process HVSR Parameters&#39;)#.pack(fill=&#39;both&#39;)
         
-        #Method selection, method=2
+        #Method selection, method=4
         ttk.Label(hvsrSettingsFrame, text=&#34;Horizontal Combine Method [int]&#34;).grid(row=0, column=0, padx=(5,0), sticky=&#39;w&#39;)
-        method_options = [&#34;Diffuse Field Assumption (not currently implemented)&#34;, 
-                          &#34;Arithmetic Mean H ≡ (N + E)/2&#34;,
-                          &#34;Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
-                          &#34;Vector Summation: H ≡ √(N^2 + E^2)&#34;,
-                          &#34;Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
-                          &#34;Maximum Horizontal Value: H ≡ max(N, E)&#34;
+        method_options = [&#39;&#39;, #Empty to make intuitive and match sprit.py
+                          &#34;1.Diffuse Field Assumption (not currently implemented)&#34;, 
+                          &#34;2. Arithmetic Mean H ≡ (N + E)/2&#34;,
+                          &#34;3. Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
+                          &#34;4. Vector Summation: H ≡ √(N^2 + E^2)&#34;,
+                          &#34;5. Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
+                          &#34;6. Maximum Horizontal Value: H ≡ max(N, E)&#34;
                           ]
 
         def on_method_select(meth, meth_opts=method_options):
@@ -3876,12 +3878,13 @@ if __name__ == &#34;__main__&#34;:
             except ValueError:
                 return False
 
-        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method=2&#34;, width=30)
+        defaultMeth=3
+        hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method={}&#34;.format(defaultMeth), width=30)
         hCombMethodLabel.grid(row=0, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-            
-        self.method_sel = tk.StringVar(value=method_options[2])
-        self.method_ind = method_options.index(self.method_sel.get())        
-        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[2], *method_options, command=on_method_select)
+
+        self.method_sel = tk.StringVar(value=method_options[defaultMeth])
+        self.method_ind = method_options.index(self.method_sel.get())       
+        self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[defaultMeth], *method_options, command=on_method_select)
         self.method_dropdown.config(width=50)
         self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky=&#39;ew&#39;)
         
@@ -3965,7 +3968,6 @@ if __name__ == &#34;__main__&#34;:
         resampleLabel.grid(row=4, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
         def on_curve_resample():
             try:
-                int(self.hvresample.get())
                 if not self.resamplebool.get():
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
                     self.hvresample=self.resamplebool.get()
@@ -4637,8 +4639,8 @@ if __name__ == &#34;__main__&#34;:
         else:
             self.fpath = self.fpath[0]
 
-        self.params = sprit.input_params(dataPath=self.fpath,
-                            metaPath = self.meta_path.get(),
+        self.params = sprit.input_params( datapath=self.fpath,
+                            metapath = self.meta_path.get(),
                             site=self.site_name.get(),
                             network=self.network.get(), 
                             station=self.station.get(), 
@@ -4649,8 +4651,8 @@ if __name__ == &#34;__main__&#34;:
                             endtime = self.endtime,
                             tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
                             dst = True, #Doesn&#39;t matter
-                            lon = self.x.get(),
-                            lat =  self.y.get(),
+                            xcoord = self.x.get(),
+                            ycoord =  self.y.get(),
                             elevation = self.z.get(),
                             depth = self.depth.get(),
                             instrument = self.instrumentSel.get(),
@@ -4719,7 +4721,7 @@ if __name__ == &#34;__main__&#34;:
                                            period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                            special_handling=special_handling
                                            )
-
+        
         self.params = update_noise_windows()
 
         self.hvsr_results = sprit.process_hvsr(params=self.params, 
@@ -4795,7 +4797,7 @@ if __name__ == &#34;__main__&#34;:
 
 
     def update_input_params_call():
-        self.input_params_call.configure(text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                         &#39;.../&#39;+pathlib.Path(self.data_path.get()).name, &#39;.../&#39;+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -5255,7 +5257,7 @@ if __name__ == &#34;__main__&#34;:
     #self.starttime, self.endtime = get_times()
 
     input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params(dataPath=&#39;{}&#39;, metaPath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
+    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -6005,14 +6007,15 @@ if __name__ == &#34;__main__&#34;:
     
     hvsrParamsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;Process HVSR Parameters&#39;)#.pack(fill=&#39;both&#39;)
     
-    #Method selection, method=2
+    #Method selection, method=4
     ttk.Label(hvsrSettingsFrame, text=&#34;Horizontal Combine Method [int]&#34;).grid(row=0, column=0, padx=(5,0), sticky=&#39;w&#39;)
-    method_options = [&#34;Diffuse Field Assumption (not currently implemented)&#34;, 
-                      &#34;Arithmetic Mean H ≡ (N + E)/2&#34;,
-                      &#34;Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
-                      &#34;Vector Summation: H ≡ √(N^2 + E^2)&#34;,
-                      &#34;Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
-                      &#34;Maximum Horizontal Value: H ≡ max(N, E)&#34;
+    method_options = [&#39;&#39;, #Empty to make intuitive and match sprit.py
+                      &#34;1.Diffuse Field Assumption (not currently implemented)&#34;, 
+                      &#34;2. Arithmetic Mean H ≡ (N + E)/2&#34;,
+                      &#34;3. Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))&#34;,
+                      &#34;4. Vector Summation: H ≡ √(N^2 + E^2)&#34;,
+                      &#34;5. Quadratic Mean: H ≡ √(N^2 + E^2)/2&#34;,
+                      &#34;6. Maximum Horizontal Value: H ≡ max(N, E)&#34;
                       ]
 
     def on_method_select(meth, meth_opts=method_options):
@@ -6026,12 +6029,13 @@ if __name__ == &#34;__main__&#34;:
         except ValueError:
             return False
 
-    hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method=2&#34;, width=30)
+    defaultMeth=3
+    hCombMethodLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;method={}&#34;.format(defaultMeth), width=30)
     hCombMethodLabel.grid(row=0, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-        
-    self.method_sel = tk.StringVar(value=method_options[2])
-    self.method_ind = method_options.index(self.method_sel.get())        
-    self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[2], *method_options, command=on_method_select)
+
+    self.method_sel = tk.StringVar(value=method_options[defaultMeth])
+    self.method_ind = method_options.index(self.method_sel.get())       
+    self.method_dropdown = ttk.OptionMenu(hvsrSettingsFrame, self.method_sel, method_options[defaultMeth], *method_options, command=on_method_select)
     self.method_dropdown.config(width=50)
     self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky=&#39;ew&#39;)
     
@@ -6115,7 +6119,6 @@ if __name__ == &#34;__main__&#34;:
     resampleLabel.grid(row=4, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
     def on_curve_resample():
         try:
-            int(self.hvresample.get())
             if not self.resamplebool.get():
                 resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
                 self.hvresample=self.resamplebool.get()

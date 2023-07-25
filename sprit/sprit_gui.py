@@ -184,8 +184,8 @@ class App:
             else:
                 self.fpath = self.fpath[0]
 
-            self.params = sprit.input_params(dataPath=self.fpath,
-                                metaPath = self.meta_path.get(),
+            self.params = sprit.input_params( datapath=self.fpath,
+                                metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
                                 network=self.network.get(), 
                                 station=self.station.get(), 
@@ -196,8 +196,8 @@ class App:
                                 endtime = self.endtime,
                                 tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
                                 dst = True, #Doesn't matter
-                                lon = self.x.get(),
-                                lat =  self.y.get(),
+                                xcoord = self.x.get(),
+                                ycoord =  self.y.get(),
                                 elevation = self.z.get(),
                                 depth = self.depth.get(),
                                 instrument = self.instrumentSel.get(),
@@ -342,7 +342,7 @@ class App:
 
 
         def update_input_params_call():
-            self.input_params_call.configure(text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+            self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
                                             '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -802,7 +802,7 @@ class App:
         #self.starttime, self.endtime = get_times()
 
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
-        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params(dataPath='{}', metaPath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, lat={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
