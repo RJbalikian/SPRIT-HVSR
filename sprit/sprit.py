@@ -74,31 +74,8 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
                 hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
         
     if verbose:
-        #Print results
-        if curvePass and peakPass:
-            print('✔ Curve at {0:.2f} Hz passed quality checks! :D'.format(hvsr_results['Best Peak']['f0']))
-        else:
-            print('✘ Peak at {0:.2f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
-
-        #Print individual results
-        print('\tCurve Tests:')
-        print('\t\t', hvsr_results['Best Peak']['Report']['Lw'][-1], 'Length of processing windows:', hvsr_results['Best Peak']['Report']['Lw'])
-        print('\t\t', hvsr_results['Best Peak']['Report']['Nc'][-1], 'Number of significant cycles:', hvsr_results['Best Peak']['Report']['Nc'])
-        print('\t\t', hvsr_results['Best Peak']['Report']['σ_A(f)'][-1], 'Low StDev. of H/V Curve over time:', hvsr_results['Best Peak']['Report']['σ_A(f)'])
-
-
-        print('\tPeak Tests:')
-        print('\t\t', hvsr_results['Best Peak']['Report']['A(f-)'][-1], 'Clarity Below Peak Frequency:', hvsr_results['Best Peak']['Report']['A(f-)'])
-        print('\t\t', hvsr_results['Best Peak']['Report']['A(f+)'][-1], 'Clarity Above Peak Frequency:',hvsr_results['Best Peak']['Report']['A(f+)'])
-        print('\t\t', hvsr_results['Best Peak']['Report']['A0'][-1], 'Clarity of Peak Amplitude:',hvsr_results['Best Peak']['Report']['A0'])
-        if hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
-            res = '✔'
-        else:
-            res = '✘'
-        print('\t\t', res, 'Stability of Peak Freq. Over time:', hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' + hvsr_results['Best Peak']['Report']['P+'][:-1], res)
-        print('\t\t', hvsr_results['Best Peak']['Report']['Sf'][-1], 'Stability of Peak (Freq. StDev):', hvsr_results['Best Peak']['Report']['Sf'])
-        print('\t\t', hvsr_results['Best Peak']['Report']['Sa'][-1], 'Stability of Peak (Amp. StDev):', hvsr_results['Best Peak']['Report']['Sa'])
-
+        get_report(format='print')
+        
     if plot_type != False:
         if plot_type == True:
             plot_type = 'HVSR p ann t c+ ann p Spec'
@@ -1501,8 +1478,9 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         output = outStream
     return output
 
-#Shows windows with Noneon input plot
-def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type='matplotlib'):
+#Shows windows with None on input plot
+def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type='matplotlib'):
+    """This function is solely for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
 
@@ -1517,28 +1495,30 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
     #Get masked indices of trace(s)
     trace = stream[0]
     windows = []
-    windows.append([0,np.nan])
+    #windows.append([0,np.nan])
 
     #mask = np.isnan(trace.data)  # Create a mask for None values
     #masked_array = np.ma.array(trace.data, mask=mask).copy()
     masked_array = trace.data.copy()
-
     if isinstance(masked_array, np.ma.MaskedArray):
         sample_rate = trace.stats.sampling_rate
         masked_array = masked_array.mask.nonzero()[0]
         lastMaskInd = masked_array[0]
         wInd = 0
         #masked_array = trace.data.mask.nonzero()[0]
-        for i in range(1, len(masked_array)):
+        for i in range(0, len(masked_array)-1):
             maskInd = masked_array[i]
             if maskInd-lastMaskInd > 1:
                 windows.append([np.nan, np.nan])
-                windows[wInd][1] = masked_array[i - 1]
-                wInd += 1
+                if wInd==0:
+                    pass
+                else:
+                    windows[wInd-1][1] = masked_array[i - 1]
                 windows[wInd][0] = masked_array[i]
+                wInd += 1
 
             lastMaskInd = maskInd    
-        windows[wInd][1] = masked_array[-1]
+        windows[wInd-1][1] = masked_array[-1]
 
         #Reformat ax as needed
         if isinstance(ax, np.ndarray):
@@ -1634,6 +1614,83 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig.canvas.draw()
 
     return fig, ax, lineArtist, winArtist
+
+def plot_noise_windows(hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=None,
+                         do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
+                         do_pctThresh=False, sat_percent=0.8, min_win_size=1, 
+                         do_noiseWin=False, noise_percent=0.995, 
+                         do_warmup=False, warmup_time=0, cooldown_time=0, 
+                         return_dict=False, use_tkinter=False):
+    
+    if clear_fig: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
+        #Really make sure it's out of memory
+        fig = []
+        ax = []
+        try:
+            fig.get_children()
+        except:
+            pass
+        try:
+            ax.get_children()
+        except:
+            pass
+
+    if use_tkinter:
+        try:
+            ax=self.ax_noise
+            fig=self.fig_noise
+        except:
+            pass
+
+    #Reset axes, figure, and canvas widget
+    noise_mosaic = [['spec'],['spec'],['spec'],
+            ['spec'],['spec'],['spec'],
+            ['signalz'],['signalz'], ['signaln'], ['signale']]
+    fig, ax = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+    #self.noise_canvas = FigureCanvasTkAgg(fig, master=canvasFrame_noise)
+    #self.noise_canvasWidget.destroy()
+    #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    #self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
+    fig.canvas.draw()
+    
+    fig, ax = plot_specgram_stream(stream=hvsr_dict['stream'], params=hvsr_dict, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+    fig.canvas.draw()
+
+    #Reset edited data every time plot_noise_windows is run
+    hvsr_dict['stream_edited'] = hvsr_dict['stream'].copy()
+
+    #Set initial input
+    input = hvsr_dict['stream']
+
+    #print(input[0].stats.starttime)
+    if do_stalta:
+        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_dict['stream_edited']
+
+    if do_pctThresh:
+        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_dict['stream_edited']
+
+    if do_noiseWin:
+        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_dict['stream_edited']
+
+    if do_warmup:
+        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
+
+    fig, ax, noise_windows_line_artists, noise_windows_window_artists = get_removed_windows(input=hvsr_dict, fig=fig, ax=ax, time_type='matplotlib')
+    
+    fig.canvas.draw()
+    plt.show()
+    if return_dict:
+        hvsr_dict['Windows_Plot'] = (fig, ax)
+        return hvsr_dict
+    return 
 
 #Helper function for removing windows from data, leaving gaps
 def __remove_windows(stream, window_list, warmup_time):
@@ -2499,7 +2556,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         for k in hvsr_out['psd_raw']:
             ppsd_data = hvsr_out['psd_raw'][k]
             freqs = hvsr_out['x_freqs'][k]
-            smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
+                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
             hvsr_out['psd_raw'][k] = smoothed_ppsd_data
     elif freq_smooth.lower() in freq_smooth_constant:
         hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
@@ -2768,6 +2827,9 @@ def __remove_db(_db_value):
     _values = list()
     for _d in _db_value:
         _values.append(10 ** (float(_d) / 10.0))
+    #FIX THIS
+    if _values[1]==0:
+       _values[1]=10e-300
     return _values
 
 #Find peaks in the hvsr ccruve
@@ -2926,7 +2988,7 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
         return fig, axes
     return                 
 
-def hvplot(hvsr_dict, plot_type='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
+def hvplot(hvsr_dict, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -2968,6 +3030,13 @@ def hvplot(hvsr_dict, plot_type='HVSR', use_subplots=True, xtype='freq', fig=Non
     fig, ax : matplotlib figure and axis objects
         Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
     """
+
+    if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
 
     compList = ['c', 'comp', 'component', 'components']
     specgramList = ['spec', 'specgram', 'spectrogram']
@@ -3031,20 +3100,22 @@ def hvplot(hvsr_dict, plot_type='HVSR', use_subplots=True, xtype='freq', fig=Non
             fig, ax = plt.subplot_mosaic(mosaicPlots)
             axis = ax[p]
         elif use_subplots:
+            ax[p].clear()
             axis = ax[p]
         else:
             fig, axis = plt.subplots()
-            
+                
         if p == 'hvsr':
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
         elif p=='comp':
             plotComponents[0] = plotComponents[0][:-1]
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
         elif p=='spec':
-            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis)
+            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis, colorbar=False)
         else:
             print('Error')    
     
+    fig.canvas.draw()
     if return_fig:
         return fig, ax
     return
@@ -3347,7 +3418,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     """Private function to support hvplot, for plotting and showing plots"""
     #plt.gca()
     #plt.gcf()
-    fig.tight_layout()
+    #fig.tight_layout() #May need to uncomment this
 
     #plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
 
@@ -3462,7 +3533,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     axy.zorder=0
     ax.zorder=1
     ax.set_facecolor('#ffffff00') #Create transparent background for front axis
-    #plt.sca(axy)
+    #plt.sca(axy)  
     im = ax.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
@@ -3490,7 +3561,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     return fig, ax
 
 #Plot spectrogram from stream
-def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
+def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
 
     For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html 
@@ -3556,7 +3627,8 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.merge()
-    stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
+    if len(stream)>1:
+        stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
     if fig is None and ax is None:
         #Organize the chart layout
@@ -3565,8 +3637,10 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
                 ['signalz'],['signalz'], ['signaln'], ['signale']]
         fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
         #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
-
+    
     data = stream[0].data
+    if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
+        data = data.filled(fill_gaps)
     sample_rate = stream[0].stats.sampling_rate
 
     if 'cmap' in kwargs.keys():
@@ -3641,7 +3715,7 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
                 xmin = currMin
             if xmax < currMax:
                 xmax = currMax     
-                   
+    
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     im = ax['spec'].imshow(array_displayed, norm=norm, cmap=cmap, aspect='auto', interpolation=None, extent=[xmin,xmax,ymax,ymin])
 
@@ -3684,7 +3758,11 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
     elif 'title' in kwargs.keys():
         fig.suptitle(kwargs['title'])
     else:
-        fig.suptitle(params['site']+': Spectrogram and Data')
+        if 'input_params' in params.keys():
+            sitename = params['input_params']['site']
+        else:
+            sitename = params['site']
+        fig.suptitle('{}: Spectrogram and Data'.format(sitename))
     
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax['signale'].set_xlabel('UTC Time \n'+day)
@@ -4083,20 +4161,19 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         max_rank += 1
 
     if np.array(_x).shape[0] == 1000:
-        jstart = len(_x)-2
+        jstart = len(_y)-2
     else:
-        jstart = len(_x)-1
+        jstart = len(_y)-1
 
+    
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f-'] = '✘'
         _peak[_i]['Report']['A(f-)'] = 'No A_h/v in freqs {}-{} < {}  {}'.format(round(_peak[_i]['A0']/4, 3), round(_peak[_i]['A0'], 3), round(_peak[_i]['A0']/2, 3), '✘')
-        _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False
+        _peak[_i]['Pass List']['Peak Freq. Clarity Below'] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
-
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
-            if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and \
-                    float(_peak[_i]['A0']) / _y[_j] > 2.0:
+            if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and float(_peak[_i]['A0']) / _y[_j] > 2.0:
                 _peak[_i]['Score'] += 1
                 _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], check_mark())
                 _peak[_i]['Report']['A(f-)'] = 'A({}): {} < {}  {}'.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i]['A0']/2,3), check_mark())
@@ -4215,6 +4292,9 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                         _peakp[_j]['f0'], '%', _peak[_i]['f0'], '✘')
                     _peak[_i]['Pass List']['Freq. Stability'] = False
                 break
+            else:
+                _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakp[_j]['f0'], '%', _peak[_i]['f0'], '✘')
+                _peak[_i]['Pass List']['Freq. Stability'] = False                
         if _peak[_i]['Report']['P+'] == '✘' and len(_peakp) > 0:
             _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
                 _peakp[_j]['f0'], '%', _peak[_i]['f0'], '✘')###changed i to j
@@ -4388,12 +4468,12 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def print_report(hvsr_data, export='', format='print', save_figs=None):
+def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None):
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
     ----------
-    hvsr_data : dict
+    hvsr_results : dict
         Dictionary containing all the information about the processed hvsr data
     format : {'csv', 'print', 'docx'}
         Format in which to print or export the report.
@@ -4414,46 +4494,85 @@ def print_report(hvsr_data, export='', format='print', save_figs=None):
             - Figure with 3 components
     """
     #print statement
+    #Check if results are good
+    #Curve pass?
+    curvePass = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
+                         hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
+                         hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
+    
+    #Peak Pass?
+    peakPass = ( hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
+                hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
+                hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
+                hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
+                hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
+                hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
+        
+    
     if format=='print':
-        print(hvsr_data['input_params']['site'])
-        print(hvsr_data['input_params']['acq_date'])
-        print(hvsr_data['input_params']['longitude'], hvsr_data['input_params']['latitude'])
-        print(hvsr_data['input_params']['elevation'])
-        print(round(hvsr_data['Best Peak']['f0'], 3))
-        for p in hvsr_data['Best Peak']["Pass List"]:
-            print(p, ':',hvsr_data['Best Peak']["Pass List"][p])
-        print('Peak Passes Criteria:',hvsr_data['Best Peak']["Peak Passes"])
+        #Print results
+        print('Site:',hvsr_results['input_params']['site'])
+        print('Acquisition Date:', hvsr_results['input_params']['acq_date'])
+        print('Site Location:', hvsr_results['input_params']['longitude'], hvsr_results['input_params']['latitude'])
+        print('Elevation:',hvsr_results['input_params']['elevation'])
+        print()
+        print('{0:.3f} Hz Peak Frequency'.format(hvsr_results['Best Peak']['f0']))        
+        if curvePass and peakPass:
+            print('✔ Curve at {0:.3f} Hz passed quality checks! :D'.format(hvsr_results['Best Peak']['f0']))
+        else:
+            print('✘ Peak at {0:.3f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
 
-        hvplot(hvsr_data, plot_type='HVSR p tp ann')
-        hvplot(hvsr_data, plot_type='HVSR c')
-        hvplot(hvsr_data, plot_type='spec')
+        #Print individual results
+        print('\tCurve Tests:')
+        print('\t\t', hvsr_results['Best Peak']['Report']['Lw'][-1], 'Length of processing windows:', hvsr_results['Best Peak']['Report']['Lw'])
+        print('\t\t', hvsr_results['Best Peak']['Report']['Nc'][-1], 'Number of significant cycles:', hvsr_results['Best Peak']['Report']['Nc'])
+        print('\t\t', hvsr_results['Best Peak']['Report']['σ_A(f)'][-1], 'Low StDev. of H/V Curve over time:', hvsr_results['Best Peak']['Report']['σ_A(f)'])
+
+
+        print('\tPeak Tests:')
+        print('\t\t', hvsr_results['Best Peak']['Report']['A(f-)'][-1], 'Clarity Below Peak Frequency:', hvsr_results['Best Peak']['Report']['A(f-)'])
+        print('\t\t', hvsr_results['Best Peak']['Report']['A(f+)'][-1], 'Clarity Above Peak Frequency:',hvsr_results['Best Peak']['Report']['A(f+)'])
+        print('\t\t', hvsr_results['Best Peak']['Report']['A0'][-1], 'Clarity of Peak Amplitude:',hvsr_results['Best Peak']['Report']['A0'])
+        if hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
+            res = '✔'
+        else:
+            res = '✘'
+        print('\t\t', res, 'Stability of Peak Freq. Over time:', hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' + hvsr_results['Best Peak']['Report']['P+'][:-1], res)
+        print('\t\t', hvsr_results['Best Peak']['Report']['Sf'][-1], 'Stability of Peak (Freq. StDev):', hvsr_results['Best Peak']['Report']['Sf'])
+        print('\t\t', hvsr_results['Best Peak']['Report']['Sa'][-1], 'Stability of Peak (Amp. StDev):', hvsr_results['Best Peak']['Report']['Sa'])
+
     elif format=='csv':
         import pandas as pd
         pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'Peak Frequency', 
                   'Window Length Freq.','Significant Cycles','Low Curve StDev. over time',
                   'Peak Freq. Clarity Below','Peak Freq. Clarity Above','Peak Amp. Clarity','Freq. Stability', 'Peak Stability (freq. std)','Peak Stability (amp. std)', 'Peak Passes']
-        d = hvsr_data
+        d = hvsr_results
         criteriaList = []
-        for p in hvsr_data['Best Peak']["Pass List"]:
-            criteriaList.append(hvsr_data['Best Peak']["Pass List"][p])
-        criteriaList.append(hvsr_data['Best Peak']["Peak Passes"])
+        for p in hvsr_results['Best Peak']["Pass List"]:
+            criteriaList.append(hvsr_results['Best Peak']["Pass List"][p])
+        criteriaList.append(hvsr_results['Best Peak']["Peak Passes"])
         dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['Best Peak']['f0'], 3)]]
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
         if export=='':
-            inFile = pathlib.Path(hvsr_data['input_params'][' datapath'])
+            inFile = pathlib.Path(hvsr_results['input_params'][' datapath'])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]=='/':
                     pass
                 else:
                     inFile = inFile + '/'
-                fname = hvsr_data['input_params']['site']+'_'+str(hvsr_data['input_params']['acq_date'])+'_'+str(hvsr_data['input_params']['starttime'].time)[:5]+'-'+str(hvsr_data['input_params']['endtime'].time)[:5]
+                fname = hvsr_results['input_params']['site']+'_'+str(hvsr_results['input_params']['acq_date'])+'_'+str(hvsr_results['input_params']['starttime'].time)[:5]+'-'+str(hvsr_results['input_params']['endtime'].time)[:5]
                 inFile = inFile + fname +'.csv'
             elif inFile.is_file():
                 export = inFile.with_suffix('.csv')
         outDF.to_csv(export, index_label='ID')
         return outDF
+    elif format=='plot':
+        hvsr_results['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
+        if return_results:
+            return hvsr_results
+
     if export:
         pass
         #code to write to output file

@@ -29,10 +29,11 @@ from sprit.sprit import(
     plot_hvsr,
     plot_specgram_hvsr,
     select_windows,
+    get_removed_windows,
     remove_noise,
-    show_removed_windows,
+    plot_noise_windows,
     check_peaks,
-    print_report
+    get_report
 )
 
 __all__ =('sprit',
@@ -61,10 +62,11 @@ __all__ =('sprit',
     'plot_hvsr',
     'plot_specgram_hvsr',
     'select_windows',
+    'get_removed_windows',
     'remove_noise',
-    'show_removed_windows',
+    'plot_noise_windows',
     'check_peaks',
-    'print_report'
+    'get_report'
 )
 
 __author__ = 'Riley Balikian'

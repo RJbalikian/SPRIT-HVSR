@@ -195,7 +195,6 @@ class App:
                                 starttime = self.starttime,
                                 endtime = self.endtime,
                                 tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
-                                dst = True, #Doesn't matter
                                 xcoord = self.x.get(),
                                 ycoord =  self.y.get(),
                                 elevation = self.z.get(),
@@ -241,13 +240,13 @@ class App:
             self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params['stream'], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
             #Plot data in noise preview tab
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.data_read = True
 
         #FUNCTION TO PROCESS DATA
         def process_data():
-            self.processingData = True
+            self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
@@ -267,14 +266,14 @@ class App:
                                                special_handling=special_handling
                                                )
             
-            self.params = update_noise_windows()
+            self.params = plot_noise_windows()
 
             self.hvsr_results = sprit.process_hvsr(params=self.params, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
                                                    f_smooth_width=self.fSmoothWidth.get(), 
-                                                   resample=self.hvresample, 
+                                                   resample=self.hvresample_int, 
                                                    remove_outlier_curves=self.outlierRembool.get(), 
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
@@ -307,7 +306,7 @@ class App:
             
             peakTest3ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][:-1])
             peakTest3Result.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][-1])
-            
+
             peakTest4ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' +self.hvsr_results['Best Peak']['Report']['P+'][:-1])
             if self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
                 peakTest4Result.configure(text='✔')
@@ -336,7 +335,7 @@ class App:
             else:
                 totalResult.configure(text='Fail ✘', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
-            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
             self.processingData = False
 
@@ -914,7 +913,7 @@ class App:
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
         
-        def update_noise_windows():
+        def plot_noise_windows():
         
             #Clear everything
             for key in self.ax_noise:
@@ -946,10 +945,10 @@ class App:
             self.noise_canvas.draw()
             self.fig_noise.canvas.draw()
             
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             self.fig_noise.canvas.draw()
 
-            #Reset edited data every time update_noise_windows is run
+            #Reset edited data every time plot_noise_windows is run
             self.params['stream_edited'] = self.params['stream'].copy()
 
             #Set initial input
@@ -974,15 +973,14 @@ class App:
             #print(self.params['stream_edited'][0].stats.starttime)
             #print(self.params['stream_edited'][0].stats.npts)
 
-            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
-            
+            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type='matplotlib')
             self.fig_noise.canvas.draw()
             return self.params
 
         #Run area
         #Update Noise Windows button
         self.style.configure(style='Noise.TButton', background='#86a5ba')
-        self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=update_noise_windows, width=30, style='Noise.TButton')
+        self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=plot_noise_windows, width=30, style='Noise.TButton')
 
         self.noise_windows_line_artists = []
         self.noise_windows_window_artists = []
@@ -1194,7 +1192,7 @@ class App:
         ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text='Input Settings')#.pack(fill='both')
         ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text='PPSD Parameters')#.pack(fill='both')
 
-        # ppsd_length=60.0
+        # ppsd_length=30.0
         def on_ppsd_length():
             try:
                 float(self.ppsd_length.get())
@@ -1203,12 +1201,12 @@ class App:
                 return True
             except ValueError:
                 return False
-        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text='ppsd_length=60.0 ')#.grid(row=0, column=0)
+        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text='ppsd_length=30.0 ')#.grid(row=0, column=0)
         ppsdLenLabel.grid(row=0, column=0, sticky='w', pady=(6,6), padx=5)
         
         ttk.Label(master=ppsdSettingsFrame, text='PPSD Length (in seconds) [float]').grid(row=0, column=0, sticky='w', padx=5)
         self.ppsd_length = tk.DoubleVar()
-        self.ppsd_length.set(60)
+        self.ppsd_length.set(30)
         ppsdLenEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.ppsd_length, width=10, validate='focusout', validatecommand=on_ppsd_length)
         ppsdLenEntry.grid(row=0, column=1, sticky='w', padx=(5, 10))
 
@@ -1666,10 +1664,10 @@ class App:
             try:
                 if not self.resamplebool.get():
                     resampleLabel.configure(text='resample={}'.format(self.resamplebool.get()))
-                    self.hvresample=self.resamplebool.get()
+                    self.hvresample_int=self.hvresample.get()
                 else:
                     resampleLabel.configure(text='resample={}'.format(self.hvresample.get()))
-                    self.hvresample=self.hvresample.get()    
+                    self.hvresample_int=self.hvresample.get()    
                 update_procHVSR_call(self.procHVSR_call)
                 return True
             except ValueError:
@@ -1677,13 +1675,13 @@ class App:
             
         self.resamplebool = tk.BooleanVar()
         self.resamplebool.set(True)
-        self.hvresample=self.resamplebool.get()
         ttk.Label(master=hvsrSettingsFrame, text='Resample H/V Curve [bool]').grid(row=4, column=0, padx=(5,0), sticky='w')
         resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text="", compound='left', variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
         resampleCurveBool.grid(row=4, column=1, sticky='w')
 
         self.hvresample = tk.IntVar()
         self.hvresample.set(1000)
+        self.hvresample_int = self.hvresample.get()
         resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate='focusout', validatecommand=on_curve_resample)
         resampleCurveSamples.grid(row=4, column=2, sticky='w', padx=(5, 10))
         ttk.Label(master=hvsrSettingsFrame, text='[int] # pts in resampled curve (default=1000)').grid(row=4, column=3, padx=(0,0), sticky='w')
@@ -2225,7 +2223,7 @@ class App:
                 self.results_report_dir_entry.insert(0, filepath)
         
         def save_report_fig():
-            sprit.print_report(self.hvsr_results, format='csv', export=self.results_report_dir.get())
+            sprit.get_report(self.hvsr_results, format='csv', export=self.results_report_dir.get())
 
         self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_report_fig)
         self.browse_results_fig.grid(row=1, column=7, sticky='ew', padx=2.5)
