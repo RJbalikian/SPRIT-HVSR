@@ -74,7 +74,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
                 hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
         
     if verbose:
-        get_report(format='print')
+        get_report(hvsr_results=hvsr_results, format='print')
         
     if plot_type != False:
         if plot_type == True:
@@ -763,7 +763,7 @@ def has_required_channels(stream):
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -930,21 +930,27 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         for tr in dataIN:
             tr.detrend(type='spline', order=detrend_order, dspline=1000)        
     else:
-        if detrend=='simple':
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend=='linear':
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend=='constant' or detrend=='demean':
-            for tr in dataIN:
-                tr.detrend(type=detrend)                
-        if detrend=='polynomial':
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order)   
-        if detrend=='spline':
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        data_undetrended = dataIN.copy()
+        try:
+            if detrend=='simple':
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend=='linear':
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend=='constant' or detrend=='demean':
+                for tr in dataIN:
+                    tr.detrend(type=detrend)                
+            if detrend=='polynomial':
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order)   
+            if detrend=='spline':
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        except:
+            dataIN = data_undetrended
+            if verbose:
+                print("Detrend error, data not detrended")
 
     dataIN = dataIN.merge(method=1)
     params['stream'] = dataIN
@@ -1368,7 +1374,7 @@ def select_windows(input):
     fig_closed = False
     while fig_closed is False:
         fig.canvas.mpl_connect('button_press_event', __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
-        fig.canvas.mpl_connect('close_event', __on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+        fig.canvas.mpl_connect('close_event', _on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
         plt.pause(1)
 
     params['xwindows_out'] = xWindows
@@ -1377,7 +1383,7 @@ def select_windows(input):
     return params
 
 #Support function to help select_windows run properly
-def __on_fig_close(event):
+def _on_fig_close(event):
     global fig_closed
     fig_closed = True
     return
@@ -1479,7 +1485,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     return output
 
 #Shows windows with None on input plot
-def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type='matplotlib'):
+def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib'):
     """This function is solely for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
@@ -1492,33 +1498,63 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
     else:
         stream = input.copy()
 
+
+    samplesList = ['sample', 'samples', 's']
+    utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
+    matplotlibList = ['matplotlib', 'mpl', 'm']    
+    
     #Get masked indices of trace(s)
     trace = stream[0]
+    sample_rate = trace.stats.delta
     windows = []
     #windows.append([0,np.nan])
-
     #mask = np.isnan(trace.data)  # Create a mask for None values
     #masked_array = np.ma.array(trace.data, mask=mask).copy()
     masked_array = trace.data.copy()
     if isinstance(masked_array, np.ma.MaskedArray):
-        sample_rate = trace.stats.sampling_rate
         masked_array = masked_array.mask.nonzero()[0]
-        lastMaskInd = masked_array[0]
+        lastMaskInd = masked_array[0]-1
         wInd = 0
-        #masked_array = trace.data.mask.nonzero()[0]
         for i in range(0, len(masked_array)-1):
             maskInd = masked_array[i]
-            if maskInd-lastMaskInd > 1:
+            if maskInd-lastMaskInd > 1 or i==0:
                 windows.append([np.nan, np.nan])
-                if wInd==0:
-                    pass
+                if i==0:
+                    windows[wInd][0] = masked_array[i]
                 else:
                     windows[wInd-1][1] = masked_array[i - 1]
                 windows[wInd][0] = masked_array[i]
                 wInd += 1
+            lastMaskInd = maskInd
+        windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
+        winTypeList = ['gaps'] * len(windows)
 
-            lastMaskInd = maskInd    
-        windows[wInd-1][1] = masked_array[-1]
+        #if existing_xWindows != []:
+        #    windows = windows + existing_xWindows
+        #    existWinTypeList = ['removed'] * len(existing_xWindows)
+        #    winTypeList = winTypeList + existWinTypeList
+
+        if len(existing_xWindows) > 0:
+            existWin = []
+            #Check if windows are already being taken care of with the gaps
+            startList = []
+            endList = []
+            for start, end in windows:
+                startList.append((trace.stats.starttime + start*sample_rate).matplotlib_date)
+                endList.append((trace.stats.starttime + end*sample_rate).matplotlib_date)
+            for w in existing_xWindows:
+                removed=False
+                if w[0] in startList and w[1] in endList:
+                    existing_xWindows.remove(w)
+                    print('match')
+                    removed=True                    
+                if exist_win_format.lower() in matplotlibList and not removed:
+                    sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
+                    existWin.append(list(np.round((w - sTimeMPL)*3600*24/sample_rate)))
+                                        
+            windows = windows + existWin
+            existWinTypeList = ['removed'] * len(existWin)
+            winTypeList = winTypeList + existWinTypeList
 
         #Reformat ax as needed
         if isinstance(ax, np.ndarray):
@@ -1533,10 +1569,6 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
         else:
             origAxes = ax
             axes = {'ax':ax}
-
-        samplesList = ['sample', 'samples', 's']
-        utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
-        matplotlibList = ['matplotlib', 'mpl', 'm']    
 
         for i, a in enumerate(axes.keys()):
             ax = axes[a]
@@ -1556,10 +1588,10 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
                     x0 = win[0]
                     x1 = win[1]
                 elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
-                    sample_rate = trace.stats.delta
+                    #sample_rate = trace.stats.delta
 
-                    x0 = trace.stats.starttime + win[0] * sample_rate
-                    x1 = trace.stats.starttime + win[1] * sample_rate
+                    x0 = trace.stats.starttime + (win[0] * sample_rate)
+                    x1 = trace.stats.starttime + (win[1] * sample_rate)
 
                     if time_type.lower() in matplotlibList:
                         x0 = x0.matplotlib_date
@@ -1585,8 +1617,16 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
                 windowDrawn.append(False)
                 winArtist.append(None)
                 lineArtist.append([])
-                linArt0 = ax.axvline(x0, y0, y1, color='k', linewidth=0.5, zorder=100)
-                linArt1 = plt.axvline(x1, y0, y1, color='k', linewidth=0.5, zorder=100)
+                
+                if winTypeList[winNums] == 'gaps':
+                    clr = '#b13d41'
+                elif winTypeList[winNums] == 'removed':
+                    clr = 'k'
+                else:
+                    clr = 'yellow'
+
+                linArt0 = ax.axvline(x0, y0, y1, color=clr, linewidth=0.5, zorder=100)
+                linArt1 = plt.axvline(x1, y0, y1, color=clr, linewidth=0.5, zorder=100)
                 lineArtist[winNums].append([linArt0, linArt1])
                 #
                 
@@ -1596,7 +1636,7 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
                 if windowDrawn[i]:
                     pass
                 else:
-                    patch = matplotlib.patches.PathPatch(pa, facecolor='k', alpha=0.75)                            
+                    patch = matplotlib.patches.PathPatch(pa, facecolor=clr, alpha=0.75)                            
                     winArt = ax.add_patch(patch)
                     windowDrawn[i] = True
                     winArtist[i] = winArt
@@ -3659,7 +3699,9 @@ def plot_specgram_stream(stream, params=None, component='Z', stack_type='linear'
         scale='dB'
     else:
         scale=None
-    spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
     im.remove()
 
     difference_array = freqs-ymin

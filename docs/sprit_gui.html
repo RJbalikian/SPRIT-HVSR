@@ -52,7 +52,9 @@ import zoneinfo
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backend_bases import MouseButton, MouseEvent
+
 matplotlib.use(&#39;TkAgg&#39;)
 import numpy as np
 #import pytz
@@ -229,7 +231,6 @@ class App:
                                 starttime = self.starttime,
                                 endtime = self.endtime,
                                 tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
-                                dst = True, #Doesn&#39;t matter
                                 xcoord = self.x.get(),
                                 ycoord =  self.y.get(),
                                 elevation = self.z.get(),
@@ -244,7 +245,7 @@ class App:
             else:
                 trimDir=self.trim_dir.get()
 
-            self.params = sprit.fetch_data(params=self.params,
+            self.hvsr_data = sprit.fetch_data(params=self.params,
                                            source=self.file_source.get(), 
                                            trim_dir=trimDir, 
                                            export_format=self.export_format.get(), 
@@ -252,43 +253,47 @@ class App:
                                            detrend_order=self.detrend_order.get())
 
             #Update labels for data preview tab
-            self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
+            self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.hvsr_data[&#39;stream&#39;]))
             
-            self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
+            self.obspySreamLabel_settings.configure(text=str(self.hvsr_data[&#39;stream&#39;]))
 
-            self.sensitivityLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
-            self.gainLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
-            self.polesLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
-            self.zerosLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
+            self.gainLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
+            self.polesLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
+            self.zerosLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
             
-            self.sensitivityLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
-            self.gainLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
-            self.polesLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
-            self.zerosLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
+            self.gainLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
+            self.polesLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
+            self.zerosLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
 
-            self.sensitivityLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
-            self.gainLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
-            self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
-            self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
+            self.gainLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
+            self.polesLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
+            self.zerosLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             
             #Plot data in data preview tab
-            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
             #Plot data in noise preview tab
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            select_windows(event=None, initialize=True)
+            plot_noise_windows()
 
             self.data_read = True
 
         #FUNCTION TO PROCESS DATA
         def process_data():
-            self.processingData = True
+            self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
             
             self.tab_control.select(self.results_tab)
+
+            self.hvsr_data = plot_noise_windows()
    
-            self.params = sprit.generate_ppsds(params=self.params, 
+            self.hvsr_data = sprit.generate_ppsds(params=self.hvsr_data, 
                                                ppsd_length=self.ppsd_length.get(), 
                                                overlap=self.overlap.get(), 
                                                period_step_octaves=self.perStepOct.get(), 
@@ -301,14 +306,12 @@ class App:
                                                special_handling=special_handling
                                                )
             
-            self.params = update_noise_windows()
-
-            self.hvsr_results = sprit.process_hvsr(params=self.params, 
+            self.hvsr_results = sprit.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
                                                    f_smooth_width=self.fSmoothWidth.get(), 
-                                                   resample=self.hvresample, 
+                                                   resample=self.hvresample_int, 
                                                    remove_outlier_curves=self.outlierRembool.get(), 
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
@@ -341,7 +344,7 @@ class App:
             
             peakTest3ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][:-1])
             peakTest3Result.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1])
-            
+
             peakTest4ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; +self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1])
             if self.hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
                 peakTest4Result.configure(text=&#39;✔&#39;)
@@ -370,7 +373,8 @@ class App:
             else:
                 totalResult.configure(text=&#39;Fail ✘&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            #plot_noise_windows()
 
             self.processingData = False
 
@@ -469,6 +473,7 @@ class App:
         
         def filepath_update():
             self.fpath = self.data_path.get()
+            self.data_read = False
             update_input_params_call()
 
         self.data_path = tk.StringVar()
@@ -677,11 +682,11 @@ class App:
         self.crs_entry = ttk.Entry(hvsrFrame, textvariable=self.crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
-        ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.elevation = tk.DoubleVar()
-        self.elevation.set(0)
-        self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-        self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
+        #ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
+        #self.elevation = tk.DoubleVar()
+        #self.elevation.set(0)
+        #self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        #self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
         ttk.Label(hvsrFrame,text=&#34;Depth&#34;).grid(row=6,column=5, sticky=&#39;e&#39;, padx=5, pady=10)
         self.depth = tk.DoubleVar()
@@ -869,7 +874,7 @@ class App:
         self.input_tab.pack(fill=&#39;both&#39;, expand=True)
         self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
 
-        #INPUT DATA
+        #Data Preview Tab
         self.preview_data_tab = ttk.Frame(self.tab_control)
 
         # Configure the row and column of the input_tab to have a non-zero weight
@@ -883,19 +888,34 @@ class App:
         self.input_data_label.pack(anchor=&#39;w&#39;, fill=&#39;both&#39;, expand=True, padx=15)                
         self.inputInfoFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;top&#39;)
         
-        inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
+        self.inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
                     
         ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
-        self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        #self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
+        #self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)
+        #self.canvas_pre.draw()
+        #self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        #self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+
+        #Reset axes, figure, and canvas widget
+        self.fig_pre = plt.figure()
+
+        prev_mosaic = [[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]]
+        self.ax_pre = self.fig_pre.subplot_mosaic(prev_mosaic, sharex=True)  
+
+        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)  # A tk.DrawingArea.
         self.canvas_pre.draw()
         self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
-        
+        self.preview_toolbar = NavigationToolbar2Tk(self.canvas_pre, self.inputDataViewFrame, pack_toolbar=False)
+        self.preview_toolbar.update()
+    
+        #self.canvas_pre.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+
         #Save preview figure
-        savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
+        savePrevFigFrame = ttk.Frame(master=self.inputDataViewFrame)
         
         ttk.Label(savePrevFigFrame, text=&#34;Export Figure&#34;).grid(row=0, column=0, sticky=&#39;ew&#39;, padx=5)
         self.previewFig_dir = tk.StringVar()
@@ -919,9 +939,13 @@ class App:
 
         savePrevFigFrame.columnconfigure(1, weight=1)
 
-        savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=True)
-        inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
+        savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=False)
+        self.preview_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+        self.canvasPreWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+        self.inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
         
+        #preview-Run button
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
         self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
         self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
@@ -931,92 +955,296 @@ class App:
 
         # Noise tab
         self.noise_tab = ttk.Frame(self.tab_control)
+        self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
-        #Set up plot     
-        noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-        self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-        canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
-        canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+        #Helper function for updating the canvas and drawing/deleted the boxes
+        def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
+            &#34;&#34;&#34;Helper function for updating the canvas and drawing/deleted the boxes&#34;&#34;&#34;
+            for i, pa in enumerate(pathlist):
+                for j, p in enumerate(pa): 
+                    if windowDrawn[i][j]:
+                        pass
+                    else:
+                        patch = matplotlib.patches.PathPatch(p, facecolor=&#39;k&#39;, alpha=0.75)                            
+                        winArt = ax[ax_key].add_patch(patch)
+                        windowDrawn[i][j] = True
+                        winArtist[i][j] = winArt
 
-        self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-        self.noise_canvas.draw()
-        self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+            if event.button is MouseButton.RIGHT:
+                fig.canvas.draw()
+
+        #Helper function for manual window selection 
+        def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
+            &#34;&#34;&#34;Helper function for manual window selection to draw boxes to show where windows have been selected for removal&#34;&#34;&#34;
+            #Create an axis dictionary if it does not already exist so all functions are the same
+
+            if isinstance(ax, np.ndarray) or isinstance(ax, dict):
+                ax = ax
+            else:
+                ax = {&#39;a&#39;:ax}
+
+            
+            if len(ax) &gt; 1:
+                if type(ax) is not dict:
+                    axDict = {}
+                    for i, a in enumerate(ax):
+                        axDict[str(i)] = a
+                    ax = axDict
+            #else:
+            #    ax = {&#39;a&#39;:ax}
+            
+            #if event.inaxes!=ax: return
+            #y0, y1 = ax.get_ylim()
+            y0 = []
+            y1 = []
+            kList = []
+            for k in ax.keys():
+                kList.append(k)
+                y0.append(ax[k].get_ylim()[0])
+                y1.append(ax[k].get_ylim()[1])
+            #else:
+            #    y0 = [ax.get_ylim()[0]]
+            #    y1 = [ax.get_ylim()[1]]
+
+            if self.clickNo == 0:
+                #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
+                self.x0 = event.xdata
+                self.clickNo = 1   
+                self.lineArtist.append([])
+                winNums = len(self.xWindows)
+                for i, k in enumerate(ax.keys()):
+                    linArt = ax[k].axvline(self.x0, 0, 1, color=&#39;k&#39;, linewidth=1, zorder=100)
+                    self.lineArtist[winNums].append([linArt, linArt])
+                #else:
+                #    linArt = plt.axvline(self.x0, y0[i], y1[i], color=&#39;k&#39;, linewidth=1, zorder=100)
+                #    self.lineArtist.append([linArt, linArt])
+            else:
+                x1 = event.xdata
+                self.clickNo = 0
+
+                windowDrawn.append([])
+                winArtist.append([])  
+                pathList.append([])
+                winNums = len(self.xWindows)
+                for i, key in enumerate(kList):
+                    path_data = [
+                        (matplotlib.path.Path.MOVETO, (self.x0, y0[i])),
+                        (matplotlib.path.Path.LINETO, (x1, y0[i])),
+                        (matplotlib.path.Path.LINETO, (x1, y1[i])),
+                        (matplotlib.path.Path.LINETO, (self.x0, y1[i])),
+                        (matplotlib.path.Path.LINETO, (self.x0, y0[i])),
+                        (matplotlib.path.Path.CLOSEPOLY, (self.x0, y0[i])),
+                    ]
+                    codes, verts = zip(*path_data)
+                    path = matplotlib.path.Path(verts, codes)
+
+                    windowDrawn[winNums].append(False)
+                    winArtist[winNums].append(None)
+
+                    pathList[winNums].append(path)
+                    __draw_windows(event=event, pathlist=pathList, ax_key=key, windowDrawn=windowDrawn, winArtist=winArtist, xWindows=self.xWindows, fig=fig, ax=ax)
+                    linArt = ax[key].axvline(x1, 0, 1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
+
+                    [self.lineArtist[winNums][i].pop(-1)]
+                    self.lineArtist[winNums][i].append(linArt)
+                x_win = [self.x0, x1]
+                x_win.sort() #Make sure they are in the right order
+                self.xWindows.append(x_win)
+            fig.canvas.draw()
+            return self.clickNo, self.x0
+
+        #Helper function for manual window selection to draw boxes to deslect windows for removal
+        def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
+            &#34;&#34;&#34;Helper function for manual window selection to draw boxes to deslect windows for removal&#34;&#34;&#34;
+
+            if self.xWindows is not None:
+                for i, xWins in enumerate(self.xWindows):
+                    if event.xdata &gt; xWins[0] and event.xdata &lt; xWins[1]:
+                        linArtists = self.lineArtist[i]
+                        pathList.pop(i)
+                        for j, a in enumerate(linArtists):
+                            winArtist[i][j].remove()#.pop(i)
+                            self.lineArtist[i][j][0].remove()#.pop(i)#[i].pop(j)
+                            self.lineArtist[i][j][1].remove()
+                        windowDrawn.pop(i)
+                        self.lineArtist.pop(i)#[i].pop(j)
+                        winArtist.pop(i)#[i].pop(j)
+                        self.xWindows.pop(i)
+            fig.canvas.draw() 
+               
+        def select_windows(event, input=None, initialize=False):
+            import obspy
+            &#34;&#34;&#34;Function to manually select windows for exclusion from data.
+
+            Parameters
+            ----------
+            input : dict
+                Dictionary containing all the hvsr information.
+
+            Returns
+            -------
+            self.xWindows : list
+                List of two-item lists containing start and end times of windows to be removed.
+            &#34;&#34;&#34;
+            from matplotlib.backend_bases import MouseButton
+            import matplotlib.pyplot as plt
+            import matplotlib
+            import time
+            
+            #self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #self.fig_noise.canvas.draw()
+            
+            #if &#39;stream&#39; in input.keys():
+            #    self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #else:
+            #    params = input.copy()
+            #    input = input[&#39;stream&#39;]
+            
+            #if isinstance(input, obspy.core.stream.Stream):
+            #    fig, ax = sprit.plot_specgram_stream(input, component=[&#39;Z&#39;])
+            #elif isinstance(input, obspy.core.trace.Trace):
+            #    fig, ax = sprit.plot_specgram_stream(input)
+            if initialize:
+                self.lineArtist = []
+                self.winArtist = []
+                self.windowDrawn = []
+                self.pathList = []
+                self.xWindows = []
+                self.x0 = 0
+                self.clickNo = 0
+            
+            if not initialize:
+                __on_click(event)
+                self.hvsr_data[&#39;xwindows_out&#39;] = self.xWindows
+
+
+                #self.fig_closed
+                #fig_closed = False
+                #while fig_closed is False:
+                #    #fig.canvas.mpl_connect(&#39;button_press_event&#39;, __on_click)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+                #    fig.canvas.mpl_connect(&#39;close_event&#39;, _on_fig_close)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+                #    plt.pause(0.5)
+                
+                #output[&#39;xwindows_out&#39;] = self.xWindows
+                #output[&#39;fig&#39;] = fig
+                #output[&#39;ax&#39;] = ax
+                noEvent = True
+            return self.hvsr_data
+
+        #Support function to help select_windows run properly
+        def _on_fig_close(event):
+            self.fig_closed
+            fig_closed = True
+            return
+
+
+        def __on_click(event):
+
+            if event.button is MouseButton.RIGHT:
+                __remove_on_right(event, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.fig_noise, self.ax_noise)
+
+            if event.button is MouseButton.LEFT:            
+                self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
+
+        def plot_noise_windows(initial_setup=False):
+            if initial_setup:
+                self.xWindows=[]
+
+            if not initial_setup:
+                #Clear everything
+                for key in self.ax_noise:
+                    self.ax_noise[key].clear()
+                self.fig_noise.clear()
+
+                #Really make sure it&#39;s out of memory
+                self.fig_noise = []
+                self.ax_noise = []
+                try:
+                    self.fig_noise.get_children()
+                except:
+                    pass
+                try:
+                    self.ax_noise.get_children()
+                except:
+                    pass
+
+            #Reset axes, figure, and canvas widget
+            self.fig_noise = plt.figure()
+    
+            noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                    [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                    [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+            self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
+
+            if not initial_setup:
+                self.noise_canvasWidget.destroy()
+                self.noise_toolbar.destroy()
+                self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+
+            self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
+            self.noise_canvas.draw()
+            #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            # pack_toolbar=False will make it easier to use a layout manager later on.
+            self.noise_toolbar = NavigationToolbar2Tk(self.noise_canvas, self.canvasFrame_noise, pack_toolbar=False)
+            self.noise_toolbar.update()
+        
+            self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            self.noise_canvas.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+            self.noise_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+            self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+            if not initial_setup:
+                #Reset edited data every time plot_noise_windows is run
+                self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
+
+                #Set initial input
+                input = self.params[&#39;stream&#39;]
+
+                #print(input[0].stats.starttime)
+                if self.do_stalta.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                    input = self.params[&#39;stream_edited&#39;]
+
+                if self.do_pctThresh.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                    input = self.params[&#39;stream_edited&#39;]
+
+                if self.do_noiseWin.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                    input = self.params[&#39;stream_edited&#39;]
+            
+                if self.do_warmup.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+                self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
+                self.fig_noise.canvas.draw()
+                return self.params    
+            self.fig_noise.canvas.draw()
+            return
+
+        plot_noise_windows(initial_setup=True)
+        self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+        #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+        #        [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+        #        [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+        #self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+        #self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
+        #self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+        #self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)
+        #self.noise_canvas.draw()
+        #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        #self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
         
-        def update_noise_windows():
-        
-            #Clear everything
-            for key in self.ax_noise:
-                self.ax_noise[key].clear()
-            self.fig_noise.clear()
-
-            #Really make sure it&#39;s out of memory
-            self.fig_noise = []
-            self.ax_noise = []
-            try:
-                self.fig_noise.get_children()
-            except:
-                pass
-            try:
-                self.ax_noise.get_children()
-            except:
-                pass
-
-            #Reset axes, figure, and canvas widget
-            noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                    [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                    [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-            self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-            self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-            self.noise_canvasWidget.destroy()
-            self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-            self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
-
-            self.noise_canvas.draw()
-            self.fig_noise.canvas.draw()
-            
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-            self.fig_noise.canvas.draw()
-
-            #Reset edited data every time update_noise_windows is run
-            self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
-
-            #Set initial input
-            input = self.params[&#39;stream&#39;]
-
-            #print(input[0].stats.starttime)
-            if self.do_stalta.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                input = self.params[&#39;stream_edited&#39;]
-
-            if self.do_pctThresh.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                input = self.params[&#39;stream_edited&#39;]
-
-            if self.do_noiseWin.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                input = self.params[&#39;stream_edited&#39;]
-        
-            if self.do_warmup.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
-
-            #print(self.params[&#39;stream_edited&#39;][0].stats.starttime)
-            #print(self.params[&#39;stream_edited&#39;][0].stats.npts)
-
-            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type=&#39;matplotlib&#39;)
-            
-            self.fig_noise.canvas.draw()
-            return self.params
-
         #Run area
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
-        self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=update_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
+        self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
 
         self.noise_windows_line_artists = []
         self.noise_windows_window_artists = []
@@ -1045,7 +1273,9 @@ class App:
         manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         def remove_windows_manually():
             #Placeholderfunction
-            print(&#39;Ok, here we would remove windows&#39;)        
+            print(&#39;Ok, this button may not need to do anything&#39;)
+            #Plot data in noise preview tab
+
         self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
         self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
@@ -1228,7 +1458,7 @@ class App:
         ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;Input Settings&#39;)#.pack(fill=&#39;both&#39;)
         ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;PPSD Parameters&#39;)#.pack(fill=&#39;both&#39;)
 
-        # ppsd_length=60.0
+        # ppsd_length=30.0
         def on_ppsd_length():
             try:
                 float(self.ppsd_length.get())
@@ -1237,12 +1467,12 @@ class App:
                 return True
             except ValueError:
                 return False
-        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=60.0 &#39;)#.grid(row=0, column=0)
+        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=30.0 &#39;)#.grid(row=0, column=0)
         ppsdLenLabel.grid(row=0, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)
         
         ttk.Label(master=ppsdSettingsFrame, text=&#39;PPSD Length (in seconds) [float]&#39;).grid(row=0, column=0, sticky=&#39;w&#39;, padx=5)
         self.ppsd_length = tk.DoubleVar()
-        self.ppsd_length.set(60)
+        self.ppsd_length.set(30)
         ppsdLenEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.ppsd_length, width=10, validate=&#39;focusout&#39;, validatecommand=on_ppsd_length)
         ppsdLenEntry.grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
 
@@ -1700,10 +1930,10 @@ class App:
             try:
                 if not self.resamplebool.get():
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
-                    self.hvresample=self.resamplebool.get()
+                    self.hvresample_int=self.hvresample.get()
                 else:
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.hvresample.get()))
-                    self.hvresample=self.hvresample.get()    
+                    self.hvresample_int=self.hvresample.get()    
                 update_procHVSR_call(self.procHVSR_call)
                 return True
             except ValueError:
@@ -1711,13 +1941,13 @@ class App:
             
         self.resamplebool = tk.BooleanVar()
         self.resamplebool.set(True)
-        self.hvresample=self.resamplebool.get()
         ttk.Label(master=hvsrSettingsFrame, text=&#39;Resample H/V Curve [bool]&#39;).grid(row=4, column=0, padx=(5,0), sticky=&#39;w&#39;)
         resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
         resampleCurveBool.grid(row=4, column=1, sticky=&#39;w&#39;)
 
         self.hvresample = tk.IntVar()
         self.hvresample.set(1000)
+        self.hvresample_int = self.hvresample.get()
         resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
         resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
         ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
@@ -1815,7 +2045,7 @@ class App:
                           outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
-        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
+        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
         self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
                   .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
@@ -1898,12 +2128,12 @@ class App:
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_hv, command=update_hvplot_call).grid(row=5, column=1, sticky=&#34;ew&#34;, padx=15)
 
         self.show_best_peak_comp = tk.BooleanVar()
-        self.show_best_peak_comp.set(False)
+        self.show_best_peak_comp.set(True)
         bestPeakCompButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_comp, command=update_hvplot_call)
         bestPeakCompButton.grid(row=5, column=2, sticky=&#34;ew&#34;, padx=50)
 
         self.show_best_peak_spec = tk.BooleanVar()
-        self.show_best_peak_comp.set(False)
+        self.show_best_peak_spec.set(False)
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_spec, command=update_hvplot_call).grid(row=5, column=3, sticky=&#34;ew&#34;, padx=25)
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=6, columnspan=5, sticky=&#39;ew&#39;)
@@ -1916,12 +2146,12 @@ class App:
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_hv, command=update_hvplot_call).grid(row=7, column=1, sticky=&#34;ew&#34;, padx=15)
 
         self.annotate_best_peak_comp = tk.BooleanVar()
-        self.annotate_best_peak_comp.set(False)
+        self.annotate_best_peak_comp.set(True)
         bestPeakCompAnnButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_comp, command=update_hvplot_call)
         bestPeakCompAnnButton.grid(row=7, column=2, sticky=&#34;ew&#34;, padx=50)
 
         self.annotate_best_peak_spec = tk.BooleanVar()
-        self.annotate_best_peak_spec.set(False)
+        self.annotate_best_peak_spec.set(True)
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_spec, command=update_hvplot_call).grid(row=7, column=3, sticky=&#34;ew&#34;, padx=25)
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=8, columnspan=5, sticky=&#39;ew&#39;)
@@ -2041,9 +2271,18 @@ class App:
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
+
         self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+
+        def update_results_plot():
+            self.tab_control.select(self.results_tab)
+            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+
+        self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
+        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+        self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+
         runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
         hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
         hvplot_call_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=2, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
@@ -2065,16 +2304,26 @@ class App:
         self.results_tab = ttk.Frame(self.tab_control)
 
         # Create the hvplot Call LabelFrame
-        results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
+        self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
 
         #Set up plot     
-        results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
-        self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+        #results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+        #self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+        #self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)
+        #self.results_canvas.draw()
+        #self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-        reults_canvas = FigureCanvasTkAgg(self.fig_results, master=results_chartFrame)
-        reults_canvas.draw()
-        results_canvasWidget = reults_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+        self.fig_results = plt.figure()
+        results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+        self.ax_results = self.fig_results.subplot_mosaic(results_mosaic)
+
+        self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)  # A tk.DrawingArea.
+        self.results_canvas.draw()
+        self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.results_toolbar = NavigationToolbar2Tk(self.results_canvas, self.results_chartFrame, pack_toolbar=False)
+        self.results_toolbar.update()
+        self.results_toolbar.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
+        self.results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
         #Peak report
         results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text=&#34;Peak Report&#34;)
@@ -2259,7 +2508,7 @@ class App:
                 self.results_report_dir_entry.insert(0, filepath)
         
         def save_report_fig():
-            sprit.print_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
+            sprit.get_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
 
         self.browse_results_fig = ttk.Button(results_export_Frame, text=&#34;Browse&#34;,command=filepath_report_fig)
         self.browse_results_fig.grid(row=1, column=7, sticky=&#39;ew&#39;, padx=2.5)
@@ -2268,7 +2517,7 @@ class App:
         self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky=&#39;ew&#39;, padx=2.5)
 
         results_peakInfoFrame.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
-        results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
+        self.results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
         results_export_Frame.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
         
         # Add tabs to tab control
@@ -2499,7 +2748,6 @@ if __name__ == &#34;__main__&#34;:
                                 starttime = self.starttime,
                                 endtime = self.endtime,
                                 tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
-                                dst = True, #Doesn&#39;t matter
                                 xcoord = self.x.get(),
                                 ycoord =  self.y.get(),
                                 elevation = self.z.get(),
@@ -2514,7 +2762,7 @@ if __name__ == &#34;__main__&#34;:
             else:
                 trimDir=self.trim_dir.get()
 
-            self.params = sprit.fetch_data(params=self.params,
+            self.hvsr_data = sprit.fetch_data(params=self.params,
                                            source=self.file_source.get(), 
                                            trim_dir=trimDir, 
                                            export_format=self.export_format.get(), 
@@ -2522,43 +2770,47 @@ if __name__ == &#34;__main__&#34;:
                                            detrend_order=self.detrend_order.get())
 
             #Update labels for data preview tab
-            self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
+            self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.hvsr_data[&#39;stream&#39;]))
             
-            self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
+            self.obspySreamLabel_settings.configure(text=str(self.hvsr_data[&#39;stream&#39;]))
 
-            self.sensitivityLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
-            self.gainLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
-            self.polesLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
-            self.zerosLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
+            self.gainLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
+            self.polesLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
+            self.zerosLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
             
-            self.sensitivityLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
-            self.gainLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
-            self.polesLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
-            self.zerosLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
+            self.gainLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
+            self.polesLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
+            self.zerosLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
 
-            self.sensitivityLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
-            self.gainLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
-            self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
-            self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
+            self.sensitivityLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
+            self.gainLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
+            self.polesLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
+            self.zerosLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             
             #Plot data in data preview tab
-            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
             #Plot data in noise preview tab
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            select_windows(event=None, initialize=True)
+            plot_noise_windows()
 
             self.data_read = True
 
         #FUNCTION TO PROCESS DATA
         def process_data():
-            self.processingData = True
+            self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
             
             self.tab_control.select(self.results_tab)
+
+            self.hvsr_data = plot_noise_windows()
    
-            self.params = sprit.generate_ppsds(params=self.params, 
+            self.hvsr_data = sprit.generate_ppsds(params=self.hvsr_data, 
                                                ppsd_length=self.ppsd_length.get(), 
                                                overlap=self.overlap.get(), 
                                                period_step_octaves=self.perStepOct.get(), 
@@ -2571,14 +2823,12 @@ if __name__ == &#34;__main__&#34;:
                                                special_handling=special_handling
                                                )
             
-            self.params = update_noise_windows()
-
-            self.hvsr_results = sprit.process_hvsr(params=self.params, 
+            self.hvsr_results = sprit.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
                                                    f_smooth_width=self.fSmoothWidth.get(), 
-                                                   resample=self.hvresample, 
+                                                   resample=self.hvresample_int, 
                                                    remove_outlier_curves=self.outlierRembool.get(), 
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
@@ -2611,7 +2861,7 @@ if __name__ == &#34;__main__&#34;:
             
             peakTest3ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][:-1])
             peakTest3Result.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1])
-            
+
             peakTest4ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; +self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1])
             if self.hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
                 peakTest4Result.configure(text=&#39;✔&#39;)
@@ -2640,7 +2890,8 @@ if __name__ == &#34;__main__&#34;:
             else:
                 totalResult.configure(text=&#39;Fail ✘&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-            sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            #plot_noise_windows()
 
             self.processingData = False
 
@@ -2739,6 +2990,7 @@ if __name__ == &#34;__main__&#34;:
         
         def filepath_update():
             self.fpath = self.data_path.get()
+            self.data_read = False
             update_input_params_call()
 
         self.data_path = tk.StringVar()
@@ -2947,11 +3199,11 @@ if __name__ == &#34;__main__&#34;:
         self.crs_entry = ttk.Entry(hvsrFrame, textvariable=self.crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
-        ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.elevation = tk.DoubleVar()
-        self.elevation.set(0)
-        self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-        self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
+        #ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
+        #self.elevation = tk.DoubleVar()
+        #self.elevation.set(0)
+        #self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+        #self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
         ttk.Label(hvsrFrame,text=&#34;Depth&#34;).grid(row=6,column=5, sticky=&#39;e&#39;, padx=5, pady=10)
         self.depth = tk.DoubleVar()
@@ -3139,7 +3391,7 @@ if __name__ == &#34;__main__&#34;:
         self.input_tab.pack(fill=&#39;both&#39;, expand=True)
         self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
 
-        #INPUT DATA
+        #Data Preview Tab
         self.preview_data_tab = ttk.Frame(self.tab_control)
 
         # Configure the row and column of the input_tab to have a non-zero weight
@@ -3153,19 +3405,34 @@ if __name__ == &#34;__main__&#34;:
         self.input_data_label.pack(anchor=&#39;w&#39;, fill=&#39;both&#39;, expand=True, padx=15)                
         self.inputInfoFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;top&#39;)
         
-        inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
+        self.inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
                     
         ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
-        self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+        #self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
+        #self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)
+        #self.canvas_pre.draw()
+        #self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        #self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+
+        #Reset axes, figure, and canvas widget
+        self.fig_pre = plt.figure()
+
+        prev_mosaic = [[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]]
+        self.ax_pre = self.fig_pre.subplot_mosaic(prev_mosaic, sharex=True)  
+
+        self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)  # A tk.DrawingArea.
         self.canvas_pre.draw()
         self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
-        
+        self.preview_toolbar = NavigationToolbar2Tk(self.canvas_pre, self.inputDataViewFrame, pack_toolbar=False)
+        self.preview_toolbar.update()
+    
+        #self.canvas_pre.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+
         #Save preview figure
-        savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
+        savePrevFigFrame = ttk.Frame(master=self.inputDataViewFrame)
         
         ttk.Label(savePrevFigFrame, text=&#34;Export Figure&#34;).grid(row=0, column=0, sticky=&#39;ew&#39;, padx=5)
         self.previewFig_dir = tk.StringVar()
@@ -3189,9 +3456,13 @@ if __name__ == &#34;__main__&#34;:
 
         savePrevFigFrame.columnconfigure(1, weight=1)
 
-        savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=True)
-        inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
+        savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=False)
+        self.preview_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+        self.canvasPreWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+        self.inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
         
+        #preview-Run button
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
         self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
         self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
@@ -3201,92 +3472,296 @@ if __name__ == &#34;__main__&#34;:
 
         # Noise tab
         self.noise_tab = ttk.Frame(self.tab_control)
+        self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
-        #Set up plot     
-        noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-        self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-        canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
-        canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+        #Helper function for updating the canvas and drawing/deleted the boxes
+        def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
+            &#34;&#34;&#34;Helper function for updating the canvas and drawing/deleted the boxes&#34;&#34;&#34;
+            for i, pa in enumerate(pathlist):
+                for j, p in enumerate(pa): 
+                    if windowDrawn[i][j]:
+                        pass
+                    else:
+                        patch = matplotlib.patches.PathPatch(p, facecolor=&#39;k&#39;, alpha=0.75)                            
+                        winArt = ax[ax_key].add_patch(patch)
+                        windowDrawn[i][j] = True
+                        winArtist[i][j] = winArt
 
-        self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-        self.noise_canvas.draw()
-        self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+            if event.button is MouseButton.RIGHT:
+                fig.canvas.draw()
+
+        #Helper function for manual window selection 
+        def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
+            &#34;&#34;&#34;Helper function for manual window selection to draw boxes to show where windows have been selected for removal&#34;&#34;&#34;
+            #Create an axis dictionary if it does not already exist so all functions are the same
+
+            if isinstance(ax, np.ndarray) or isinstance(ax, dict):
+                ax = ax
+            else:
+                ax = {&#39;a&#39;:ax}
+
+            
+            if len(ax) &gt; 1:
+                if type(ax) is not dict:
+                    axDict = {}
+                    for i, a in enumerate(ax):
+                        axDict[str(i)] = a
+                    ax = axDict
+            #else:
+            #    ax = {&#39;a&#39;:ax}
+            
+            #if event.inaxes!=ax: return
+            #y0, y1 = ax.get_ylim()
+            y0 = []
+            y1 = []
+            kList = []
+            for k in ax.keys():
+                kList.append(k)
+                y0.append(ax[k].get_ylim()[0])
+                y1.append(ax[k].get_ylim()[1])
+            #else:
+            #    y0 = [ax.get_ylim()[0]]
+            #    y1 = [ax.get_ylim()[1]]
+
+            if self.clickNo == 0:
+                #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
+                self.x0 = event.xdata
+                self.clickNo = 1   
+                self.lineArtist.append([])
+                winNums = len(self.xWindows)
+                for i, k in enumerate(ax.keys()):
+                    linArt = ax[k].axvline(self.x0, 0, 1, color=&#39;k&#39;, linewidth=1, zorder=100)
+                    self.lineArtist[winNums].append([linArt, linArt])
+                #else:
+                #    linArt = plt.axvline(self.x0, y0[i], y1[i], color=&#39;k&#39;, linewidth=1, zorder=100)
+                #    self.lineArtist.append([linArt, linArt])
+            else:
+                x1 = event.xdata
+                self.clickNo = 0
+
+                windowDrawn.append([])
+                winArtist.append([])  
+                pathList.append([])
+                winNums = len(self.xWindows)
+                for i, key in enumerate(kList):
+                    path_data = [
+                        (matplotlib.path.Path.MOVETO, (self.x0, y0[i])),
+                        (matplotlib.path.Path.LINETO, (x1, y0[i])),
+                        (matplotlib.path.Path.LINETO, (x1, y1[i])),
+                        (matplotlib.path.Path.LINETO, (self.x0, y1[i])),
+                        (matplotlib.path.Path.LINETO, (self.x0, y0[i])),
+                        (matplotlib.path.Path.CLOSEPOLY, (self.x0, y0[i])),
+                    ]
+                    codes, verts = zip(*path_data)
+                    path = matplotlib.path.Path(verts, codes)
+
+                    windowDrawn[winNums].append(False)
+                    winArtist[winNums].append(None)
+
+                    pathList[winNums].append(path)
+                    __draw_windows(event=event, pathlist=pathList, ax_key=key, windowDrawn=windowDrawn, winArtist=winArtist, xWindows=self.xWindows, fig=fig, ax=ax)
+                    linArt = ax[key].axvline(x1, 0, 1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
+
+                    [self.lineArtist[winNums][i].pop(-1)]
+                    self.lineArtist[winNums][i].append(linArt)
+                x_win = [self.x0, x1]
+                x_win.sort() #Make sure they are in the right order
+                self.xWindows.append(x_win)
+            fig.canvas.draw()
+            return self.clickNo, self.x0
+
+        #Helper function for manual window selection to draw boxes to deslect windows for removal
+        def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
+            &#34;&#34;&#34;Helper function for manual window selection to draw boxes to deslect windows for removal&#34;&#34;&#34;
+
+            if self.xWindows is not None:
+                for i, xWins in enumerate(self.xWindows):
+                    if event.xdata &gt; xWins[0] and event.xdata &lt; xWins[1]:
+                        linArtists = self.lineArtist[i]
+                        pathList.pop(i)
+                        for j, a in enumerate(linArtists):
+                            winArtist[i][j].remove()#.pop(i)
+                            self.lineArtist[i][j][0].remove()#.pop(i)#[i].pop(j)
+                            self.lineArtist[i][j][1].remove()
+                        windowDrawn.pop(i)
+                        self.lineArtist.pop(i)#[i].pop(j)
+                        winArtist.pop(i)#[i].pop(j)
+                        self.xWindows.pop(i)
+            fig.canvas.draw() 
+               
+        def select_windows(event, input=None, initialize=False):
+            import obspy
+            &#34;&#34;&#34;Function to manually select windows for exclusion from data.
+
+            Parameters
+            ----------
+            input : dict
+                Dictionary containing all the hvsr information.
+
+            Returns
+            -------
+            self.xWindows : list
+                List of two-item lists containing start and end times of windows to be removed.
+            &#34;&#34;&#34;
+            from matplotlib.backend_bases import MouseButton
+            import matplotlib.pyplot as plt
+            import matplotlib
+            import time
+            
+            #self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #self.fig_noise.canvas.draw()
+            
+            #if &#39;stream&#39; in input.keys():
+            #    self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #else:
+            #    params = input.copy()
+            #    input = input[&#39;stream&#39;]
+            
+            #if isinstance(input, obspy.core.stream.Stream):
+            #    fig, ax = sprit.plot_specgram_stream(input, component=[&#39;Z&#39;])
+            #elif isinstance(input, obspy.core.trace.Trace):
+            #    fig, ax = sprit.plot_specgram_stream(input)
+            if initialize:
+                self.lineArtist = []
+                self.winArtist = []
+                self.windowDrawn = []
+                self.pathList = []
+                self.xWindows = []
+                self.x0 = 0
+                self.clickNo = 0
+            
+            if not initialize:
+                __on_click(event)
+                self.hvsr_data[&#39;xwindows_out&#39;] = self.xWindows
+
+
+                #self.fig_closed
+                #fig_closed = False
+                #while fig_closed is False:
+                #    #fig.canvas.mpl_connect(&#39;button_press_event&#39;, __on_click)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+                #    fig.canvas.mpl_connect(&#39;close_event&#39;, _on_fig_close)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+                #    plt.pause(0.5)
+                
+                #output[&#39;xwindows_out&#39;] = self.xWindows
+                #output[&#39;fig&#39;] = fig
+                #output[&#39;ax&#39;] = ax
+                noEvent = True
+            return self.hvsr_data
+
+        #Support function to help select_windows run properly
+        def _on_fig_close(event):
+            self.fig_closed
+            fig_closed = True
+            return
+
+
+        def __on_click(event):
+
+            if event.button is MouseButton.RIGHT:
+                __remove_on_right(event, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.fig_noise, self.ax_noise)
+
+            if event.button is MouseButton.LEFT:            
+                self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
+
+        def plot_noise_windows(initial_setup=False):
+            if initial_setup:
+                self.xWindows=[]
+
+            if not initial_setup:
+                #Clear everything
+                for key in self.ax_noise:
+                    self.ax_noise[key].clear()
+                self.fig_noise.clear()
+
+                #Really make sure it&#39;s out of memory
+                self.fig_noise = []
+                self.ax_noise = []
+                try:
+                    self.fig_noise.get_children()
+                except:
+                    pass
+                try:
+                    self.ax_noise.get_children()
+                except:
+                    pass
+
+            #Reset axes, figure, and canvas widget
+            self.fig_noise = plt.figure()
+    
+            noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                    [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                    [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+            self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
+
+            if not initial_setup:
+                self.noise_canvasWidget.destroy()
+                self.noise_toolbar.destroy()
+                self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+
+            self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
+            self.noise_canvas.draw()
+            #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            # pack_toolbar=False will make it easier to use a layout manager later on.
+            self.noise_toolbar = NavigationToolbar2Tk(self.noise_canvas, self.canvasFrame_noise, pack_toolbar=False)
+            self.noise_toolbar.update()
+        
+            self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            self.noise_canvas.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+            self.noise_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+            self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+            if not initial_setup:
+                #Reset edited data every time plot_noise_windows is run
+                self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
+
+                #Set initial input
+                input = self.params[&#39;stream&#39;]
+
+                #print(input[0].stats.starttime)
+                if self.do_stalta.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                    input = self.params[&#39;stream_edited&#39;]
+
+                if self.do_pctThresh.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                    input = self.params[&#39;stream_edited&#39;]
+
+                if self.do_noiseWin.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                    input = self.params[&#39;stream_edited&#39;]
+            
+                if self.do_warmup.get():
+                    self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+                self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
+                self.fig_noise.canvas.draw()
+                return self.params    
+            self.fig_noise.canvas.draw()
+            return
+
+        plot_noise_windows(initial_setup=True)
+        self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+        #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+        #        [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+        #        [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+        #self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+        #self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
+        #self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+        #self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)
+        #self.noise_canvas.draw()
+        #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        #self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
         
-        def update_noise_windows():
-        
-            #Clear everything
-            for key in self.ax_noise:
-                self.ax_noise[key].clear()
-            self.fig_noise.clear()
-
-            #Really make sure it&#39;s out of memory
-            self.fig_noise = []
-            self.ax_noise = []
-            try:
-                self.fig_noise.get_children()
-            except:
-                pass
-            try:
-                self.ax_noise.get_children()
-            except:
-                pass
-
-            #Reset axes, figure, and canvas widget
-            noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                    [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                    [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-            self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-            self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-            self.noise_canvasWidget.destroy()
-            self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-            self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
-
-            self.noise_canvas.draw()
-            self.fig_noise.canvas.draw()
-            
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-            self.fig_noise.canvas.draw()
-
-            #Reset edited data every time update_noise_windows is run
-            self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
-
-            #Set initial input
-            input = self.params[&#39;stream&#39;]
-
-            #print(input[0].stats.starttime)
-            if self.do_stalta.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                input = self.params[&#39;stream_edited&#39;]
-
-            if self.do_pctThresh.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                input = self.params[&#39;stream_edited&#39;]
-
-            if self.do_noiseWin.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                input = self.params[&#39;stream_edited&#39;]
-        
-            if self.do_warmup.get():
-                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
-
-            #print(self.params[&#39;stream_edited&#39;][0].stats.starttime)
-            #print(self.params[&#39;stream_edited&#39;][0].stats.npts)
-
-            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type=&#39;matplotlib&#39;)
-            
-            self.fig_noise.canvas.draw()
-            return self.params
-
         #Run area
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
-        self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=update_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
+        self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
 
         self.noise_windows_line_artists = []
         self.noise_windows_window_artists = []
@@ -3315,7 +3790,9 @@ if __name__ == &#34;__main__&#34;:
         manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         def remove_windows_manually():
             #Placeholderfunction
-            print(&#39;Ok, here we would remove windows&#39;)        
+            print(&#39;Ok, this button may not need to do anything&#39;)
+            #Plot data in noise preview tab
+
         self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
         self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
@@ -3498,7 +3975,7 @@ if __name__ == &#34;__main__&#34;:
         ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;Input Settings&#39;)#.pack(fill=&#39;both&#39;)
         ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;PPSD Parameters&#39;)#.pack(fill=&#39;both&#39;)
 
-        # ppsd_length=60.0
+        # ppsd_length=30.0
         def on_ppsd_length():
             try:
                 float(self.ppsd_length.get())
@@ -3507,12 +3984,12 @@ if __name__ == &#34;__main__&#34;:
                 return True
             except ValueError:
                 return False
-        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=60.0 &#39;)#.grid(row=0, column=0)
+        ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=30.0 &#39;)#.grid(row=0, column=0)
         ppsdLenLabel.grid(row=0, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)
         
         ttk.Label(master=ppsdSettingsFrame, text=&#39;PPSD Length (in seconds) [float]&#39;).grid(row=0, column=0, sticky=&#39;w&#39;, padx=5)
         self.ppsd_length = tk.DoubleVar()
-        self.ppsd_length.set(60)
+        self.ppsd_length.set(30)
         ppsdLenEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.ppsd_length, width=10, validate=&#39;focusout&#39;, validatecommand=on_ppsd_length)
         ppsdLenEntry.grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
 
@@ -3970,10 +4447,10 @@ if __name__ == &#34;__main__&#34;:
             try:
                 if not self.resamplebool.get():
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
-                    self.hvresample=self.resamplebool.get()
+                    self.hvresample_int=self.hvresample.get()
                 else:
                     resampleLabel.configure(text=&#39;resample={}&#39;.format(self.hvresample.get()))
-                    self.hvresample=self.hvresample.get()    
+                    self.hvresample_int=self.hvresample.get()    
                 update_procHVSR_call(self.procHVSR_call)
                 return True
             except ValueError:
@@ -3981,13 +4458,13 @@ if __name__ == &#34;__main__&#34;:
             
         self.resamplebool = tk.BooleanVar()
         self.resamplebool.set(True)
-        self.hvresample=self.resamplebool.get()
         ttk.Label(master=hvsrSettingsFrame, text=&#39;Resample H/V Curve [bool]&#39;).grid(row=4, column=0, padx=(5,0), sticky=&#39;w&#39;)
         resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
         resampleCurveBool.grid(row=4, column=1, sticky=&#39;w&#39;)
 
         self.hvresample = tk.IntVar()
         self.hvresample.set(1000)
+        self.hvresample_int = self.hvresample.get()
         resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
         resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
         ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
@@ -4085,7 +4562,7 @@ if __name__ == &#34;__main__&#34;:
                           outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
-        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
+        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
         self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
                   .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
@@ -4168,12 +4645,12 @@ if __name__ == &#34;__main__&#34;:
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_hv, command=update_hvplot_call).grid(row=5, column=1, sticky=&#34;ew&#34;, padx=15)
 
         self.show_best_peak_comp = tk.BooleanVar()
-        self.show_best_peak_comp.set(False)
+        self.show_best_peak_comp.set(True)
         bestPeakCompButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_comp, command=update_hvplot_call)
         bestPeakCompButton.grid(row=5, column=2, sticky=&#34;ew&#34;, padx=50)
 
         self.show_best_peak_spec = tk.BooleanVar()
-        self.show_best_peak_comp.set(False)
+        self.show_best_peak_spec.set(False)
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_spec, command=update_hvplot_call).grid(row=5, column=3, sticky=&#34;ew&#34;, padx=25)
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=6, columnspan=5, sticky=&#39;ew&#39;)
@@ -4186,12 +4663,12 @@ if __name__ == &#34;__main__&#34;:
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_hv, command=update_hvplot_call).grid(row=7, column=1, sticky=&#34;ew&#34;, padx=15)
 
         self.annotate_best_peak_comp = tk.BooleanVar()
-        self.annotate_best_peak_comp.set(False)
+        self.annotate_best_peak_comp.set(True)
         bestPeakCompAnnButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_comp, command=update_hvplot_call)
         bestPeakCompAnnButton.grid(row=7, column=2, sticky=&#34;ew&#34;, padx=50)
 
         self.annotate_best_peak_spec = tk.BooleanVar()
-        self.annotate_best_peak_spec.set(False)
+        self.annotate_best_peak_spec.set(True)
         ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_spec, command=update_hvplot_call).grid(row=7, column=3, sticky=&#34;ew&#34;, padx=25)
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=8, columnspan=5, sticky=&#39;ew&#39;)
@@ -4311,9 +4788,18 @@ if __name__ == &#34;__main__&#34;:
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
+
         self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+
+        def update_results_plot():
+            self.tab_control.select(self.results_tab)
+            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+
+        self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
+        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+        self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+
         runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
         hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
         hvplot_call_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=2, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
@@ -4335,16 +4821,26 @@ if __name__ == &#34;__main__&#34;:
         self.results_tab = ttk.Frame(self.tab_control)
 
         # Create the hvplot Call LabelFrame
-        results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
+        self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
 
         #Set up plot     
-        results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
-        self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+        #results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+        #self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+        #self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)
+        #self.results_canvas.draw()
+        #self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-        reults_canvas = FigureCanvasTkAgg(self.fig_results, master=results_chartFrame)
-        reults_canvas.draw()
-        results_canvasWidget = reults_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+        self.fig_results = plt.figure()
+        results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+        self.ax_results = self.fig_results.subplot_mosaic(results_mosaic)
+
+        self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)  # A tk.DrawingArea.
+        self.results_canvas.draw()
+        self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.results_toolbar = NavigationToolbar2Tk(self.results_canvas, self.results_chartFrame, pack_toolbar=False)
+        self.results_toolbar.update()
+        self.results_toolbar.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
+        self.results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
         #Peak report
         results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text=&#34;Peak Report&#34;)
@@ -4529,7 +5025,7 @@ if __name__ == &#34;__main__&#34;:
                 self.results_report_dir_entry.insert(0, filepath)
         
         def save_report_fig():
-            sprit.print_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
+            sprit.get_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
 
         self.browse_results_fig = ttk.Button(results_export_Frame, text=&#34;Browse&#34;,command=filepath_report_fig)
         self.browse_results_fig.grid(row=1, column=7, sticky=&#39;ew&#39;, padx=2.5)
@@ -4538,7 +5034,7 @@ if __name__ == &#34;__main__&#34;:
         self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky=&#39;ew&#39;, padx=2.5)
 
         results_peakInfoFrame.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
-        results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
+        self.results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
         results_export_Frame.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
         
         # Add tabs to tab control
@@ -4650,7 +5146,6 @@ if __name__ == &#34;__main__&#34;:
                             starttime = self.starttime,
                             endtime = self.endtime,
                             tzone = &#39;UTC&#39;, #Will always be converted to UTC before we get to this point when using gui
-                            dst = True, #Doesn&#39;t matter
                             xcoord = self.x.get(),
                             ycoord =  self.y.get(),
                             elevation = self.z.get(),
@@ -4665,7 +5160,7 @@ if __name__ == &#34;__main__&#34;:
         else:
             trimDir=self.trim_dir.get()
 
-        self.params = sprit.fetch_data(params=self.params,
+        self.hvsr_data = sprit.fetch_data(params=self.params,
                                        source=self.file_source.get(), 
                                        trim_dir=trimDir, 
                                        export_format=self.export_format.get(), 
@@ -4673,43 +5168,47 @@ if __name__ == &#34;__main__&#34;:
                                        detrend_order=self.detrend_order.get())
 
         #Update labels for data preview tab
-        self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.params[&#39;stream&#39;]))
+        self.input_data_label.configure(text=self.data_filepath_entry.get() + &#39;\n&#39; + str(self.hvsr_data[&#39;stream&#39;]))
         
-        self.obspySreamLabel_settings.configure(text=str(self.params[&#39;stream&#39;]))
+        self.obspySreamLabel_settings.configure(text=str(self.hvsr_data[&#39;stream&#39;]))
 
-        self.sensitivityLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
-        self.gainLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
-        self.polesLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
-        self.zerosLabelZ_settings.configure(text=self.params[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
+        self.sensitivityLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;sensitivity&#39;])
+        self.gainLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;gain&#39;])
+        self.polesLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;poles&#39;])
+        self.zerosLabelZ_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;Z&#39;][&#39;zeros&#39;])
         
-        self.sensitivityLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
-        self.gainLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
-        self.polesLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
-        self.zerosLabelN_settings.configure(text=self.params[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
+        self.sensitivityLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;sensitivity&#39;])
+        self.gainLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;gain&#39;])
+        self.polesLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;poles&#39;])
+        self.zerosLabelN_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;N&#39;][&#39;zeros&#39;])
 
-        self.sensitivityLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
-        self.gainLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
-        self.polesLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
-        self.zerosLabelE_settings.configure(text=self.params[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
+        self.sensitivityLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;sensitivity&#39;])
+        self.gainLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;gain&#39;])
+        self.polesLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;poles&#39;])
+        self.zerosLabelE_settings.configure(text=self.hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
         
         #Plot data in data preview tab
-        self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+        self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
         #Plot data in noise preview tab
-        self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+        self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data[&#39;stream&#39;], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+        select_windows(event=None, initialize=True)
+        plot_noise_windows()
 
         self.data_read = True
 
     #FUNCTION TO PROCESS DATA
     def process_data():
-        self.processingData = True
+        self.processingData = True #Set to true while data processing algorithm is being run
         
         if self.data_read == False:
             read_data()
         
         self.tab_control.select(self.results_tab)
 
-        self.params = sprit.generate_ppsds(params=self.params, 
+        self.hvsr_data = plot_noise_windows()
+
+        self.hvsr_data = sprit.generate_ppsds(params=self.hvsr_data, 
                                            ppsd_length=self.ppsd_length.get(), 
                                            overlap=self.overlap.get(), 
                                            period_step_octaves=self.perStepOct.get(), 
@@ -4722,14 +5221,12 @@ if __name__ == &#34;__main__&#34;:
                                            special_handling=special_handling
                                            )
         
-        self.params = update_noise_windows()
-
-        self.hvsr_results = sprit.process_hvsr(params=self.params, 
+        self.hvsr_results = sprit.process_hvsr(params=self.hvsr_data, 
                                                method=self.method_ind,
                                                smooth=self.hvsmooth_param,
                                                freq_smooth=self.freq_smooth.get(),
                                                f_smooth_width=self.fSmoothWidth.get(), 
-                                               resample=self.hvresample, 
+                                               resample=self.hvresample_int, 
                                                remove_outlier_curves=self.outlierRembool.get(), 
                                                outlier_curve_std=self.outlierRemStDev.get())
         
@@ -4762,7 +5259,7 @@ if __name__ == &#34;__main__&#34;:
         
         peakTest3ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][:-1])
         peakTest3Result.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1])
-        
+
         peakTest4ResultText.configure(text=self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; +self.hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1])
         if self.hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
             peakTest4Result.configure(text=&#39;✔&#39;)
@@ -4791,7 +5288,8 @@ if __name__ == &#34;__main__&#34;:
         else:
             totalResult.configure(text=&#39;Fail ✘&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-        sprit.hvplot(self.hvsr_results, kind=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True)
+        sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+        #plot_noise_windows()
 
         self.processingData = False
 
@@ -4890,6 +5388,7 @@ if __name__ == &#34;__main__&#34;:
     
     def filepath_update():
         self.fpath = self.data_path.get()
+        self.data_read = False
         update_input_params_call()
 
     self.data_path = tk.StringVar()
@@ -5098,11 +5597,11 @@ if __name__ == &#34;__main__&#34;:
     self.crs_entry = ttk.Entry(hvsrFrame, textvariable=self.crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
     self.crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
-    ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-    self.elevation = tk.DoubleVar()
-    self.elevation.set(0)
-    self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
-    self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
+    #ttk.Label(hvsrFrame,text=&#34;Elevation&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
+    #self.elevation = tk.DoubleVar()
+    #self.elevation.set(0)
+    #self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
+    #self.elevation_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
     ttk.Label(hvsrFrame,text=&#34;Depth&#34;).grid(row=6,column=5, sticky=&#39;e&#39;, padx=5, pady=10)
     self.depth = tk.DoubleVar()
@@ -5290,7 +5789,7 @@ if __name__ == &#34;__main__&#34;:
     self.input_tab.pack(fill=&#39;both&#39;, expand=True)
     self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
 
-    #INPUT DATA
+    #Data Preview Tab
     self.preview_data_tab = ttk.Frame(self.tab_control)
 
     # Configure the row and column of the input_tab to have a non-zero weight
@@ -5304,19 +5803,34 @@ if __name__ == &#34;__main__&#34;:
     self.input_data_label.pack(anchor=&#39;w&#39;, fill=&#39;both&#39;, expand=True, padx=15)                
     self.inputInfoFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;top&#39;)
     
-    inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
+    self.inputDataViewFrame = ttk.LabelFrame(self.inputdataFrame, text=&#34;Input Data Plot&#34;)
                 
     ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
     #Set up plot
-    self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
-    self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=inputDataViewFrame)
+    #self.fig_pre, self.ax_pre = plt.subplot_mosaic([[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]], sharex=True, sharey=False)
+    #self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)
+    #self.canvas_pre.draw()
+    #self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    #self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
+
+    #Reset axes, figure, and canvas widget
+    self.fig_pre = plt.figure()
+
+    prev_mosaic = [[&#39;Z&#39;],[&#39;N&#39;],[&#39;E&#39;]]
+    self.ax_pre = self.fig_pre.subplot_mosaic(prev_mosaic, sharex=True)  
+
+    self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)  # A tk.DrawingArea.
     self.canvas_pre.draw()
     self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    self.canvasPreWidget.pack(expand=True, fill=&#39;both&#39;)#.grid(row=1)
-    
+    self.preview_toolbar = NavigationToolbar2Tk(self.canvas_pre, self.inputDataViewFrame, pack_toolbar=False)
+    self.preview_toolbar.update()
+
+    #self.canvas_pre.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+
     #Save preview figure
-    savePrevFigFrame = ttk.Frame(master=inputDataViewFrame)
+    savePrevFigFrame = ttk.Frame(master=self.inputDataViewFrame)
     
     ttk.Label(savePrevFigFrame, text=&#34;Export Figure&#34;).grid(row=0, column=0, sticky=&#39;ew&#39;, padx=5)
     self.previewFig_dir = tk.StringVar()
@@ -5340,9 +5854,13 @@ if __name__ == &#34;__main__&#34;:
 
     savePrevFigFrame.columnconfigure(1, weight=1)
 
-    savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=True)
-    inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
+    savePrevFigFrame.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, expand=False)
+    self.preview_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+    self.canvasPreWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+    self.inputDataViewFrame.pack(expand=True, fill=&#39;both&#39;, side=&#39;bottom&#39;)
     
+    #preview-Run button
     runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
     self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
     self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
@@ -5352,92 +5870,296 @@ if __name__ == &#34;__main__&#34;:
 
     # Noise tab
     self.noise_tab = ttk.Frame(self.tab_control)
+    self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
-    #Set up plot     
-    noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-            [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-            [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-    self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-    canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
-    canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+    #Helper function for updating the canvas and drawing/deleted the boxes
+    def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
+        &#34;&#34;&#34;Helper function for updating the canvas and drawing/deleted the boxes&#34;&#34;&#34;
+        for i, pa in enumerate(pathlist):
+            for j, p in enumerate(pa): 
+                if windowDrawn[i][j]:
+                    pass
+                else:
+                    patch = matplotlib.patches.PathPatch(p, facecolor=&#39;k&#39;, alpha=0.75)                            
+                    winArt = ax[ax_key].add_patch(patch)
+                    windowDrawn[i][j] = True
+                    winArtist[i][j] = winArt
 
-    self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-    self.noise_canvas.draw()
-    self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+        if event.button is MouseButton.RIGHT:
+            fig.canvas.draw()
+
+    #Helper function for manual window selection 
+    def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
+        &#34;&#34;&#34;Helper function for manual window selection to draw boxes to show where windows have been selected for removal&#34;&#34;&#34;
+        #Create an axis dictionary if it does not already exist so all functions are the same
+
+        if isinstance(ax, np.ndarray) or isinstance(ax, dict):
+            ax = ax
+        else:
+            ax = {&#39;a&#39;:ax}
+
+        
+        if len(ax) &gt; 1:
+            if type(ax) is not dict:
+                axDict = {}
+                for i, a in enumerate(ax):
+                    axDict[str(i)] = a
+                ax = axDict
+        #else:
+        #    ax = {&#39;a&#39;:ax}
+        
+        #if event.inaxes!=ax: return
+        #y0, y1 = ax.get_ylim()
+        y0 = []
+        y1 = []
+        kList = []
+        for k in ax.keys():
+            kList.append(k)
+            y0.append(ax[k].get_ylim()[0])
+            y1.append(ax[k].get_ylim()[1])
+        #else:
+        #    y0 = [ax.get_ylim()[0]]
+        #    y1 = [ax.get_ylim()[1]]
+
+        if self.clickNo == 0:
+            #y = np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 2)
+            self.x0 = event.xdata
+            self.clickNo = 1   
+            self.lineArtist.append([])
+            winNums = len(self.xWindows)
+            for i, k in enumerate(ax.keys()):
+                linArt = ax[k].axvline(self.x0, 0, 1, color=&#39;k&#39;, linewidth=1, zorder=100)
+                self.lineArtist[winNums].append([linArt, linArt])
+            #else:
+            #    linArt = plt.axvline(self.x0, y0[i], y1[i], color=&#39;k&#39;, linewidth=1, zorder=100)
+            #    self.lineArtist.append([linArt, linArt])
+        else:
+            x1 = event.xdata
+            self.clickNo = 0
+
+            windowDrawn.append([])
+            winArtist.append([])  
+            pathList.append([])
+            winNums = len(self.xWindows)
+            for i, key in enumerate(kList):
+                path_data = [
+                    (matplotlib.path.Path.MOVETO, (self.x0, y0[i])),
+                    (matplotlib.path.Path.LINETO, (x1, y0[i])),
+                    (matplotlib.path.Path.LINETO, (x1, y1[i])),
+                    (matplotlib.path.Path.LINETO, (self.x0, y1[i])),
+                    (matplotlib.path.Path.LINETO, (self.x0, y0[i])),
+                    (matplotlib.path.Path.CLOSEPOLY, (self.x0, y0[i])),
+                ]
+                codes, verts = zip(*path_data)
+                path = matplotlib.path.Path(verts, codes)
+
+                windowDrawn[winNums].append(False)
+                winArtist[winNums].append(None)
+
+                pathList[winNums].append(path)
+                __draw_windows(event=event, pathlist=pathList, ax_key=key, windowDrawn=windowDrawn, winArtist=winArtist, xWindows=self.xWindows, fig=fig, ax=ax)
+                linArt = ax[key].axvline(x1, 0, 1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
+
+                [self.lineArtist[winNums][i].pop(-1)]
+                self.lineArtist[winNums][i].append(linArt)
+            x_win = [self.x0, x1]
+            x_win.sort() #Make sure they are in the right order
+            self.xWindows.append(x_win)
+        fig.canvas.draw()
+        return self.clickNo, self.x0
+
+    #Helper function for manual window selection to draw boxes to deslect windows for removal
+    def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
+        &#34;&#34;&#34;Helper function for manual window selection to draw boxes to deslect windows for removal&#34;&#34;&#34;
+
+        if self.xWindows is not None:
+            for i, xWins in enumerate(self.xWindows):
+                if event.xdata &gt; xWins[0] and event.xdata &lt; xWins[1]:
+                    linArtists = self.lineArtist[i]
+                    pathList.pop(i)
+                    for j, a in enumerate(linArtists):
+                        winArtist[i][j].remove()#.pop(i)
+                        self.lineArtist[i][j][0].remove()#.pop(i)#[i].pop(j)
+                        self.lineArtist[i][j][1].remove()
+                    windowDrawn.pop(i)
+                    self.lineArtist.pop(i)#[i].pop(j)
+                    winArtist.pop(i)#[i].pop(j)
+                    self.xWindows.pop(i)
+        fig.canvas.draw() 
+           
+    def select_windows(event, input=None, initialize=False):
+        import obspy
+        &#34;&#34;&#34;Function to manually select windows for exclusion from data.
+
+        Parameters
+        ----------
+        input : dict
+            Dictionary containing all the hvsr information.
+
+        Returns
+        -------
+        self.xWindows : list
+            List of two-item lists containing start and end times of windows to be removed.
+        &#34;&#34;&#34;
+        from matplotlib.backend_bases import MouseButton
+        import matplotlib.pyplot as plt
+        import matplotlib
+        import time
+        
+        #self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+        #self.fig_noise.canvas.draw()
+        
+        #if &#39;stream&#39; in input.keys():
+        #    self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+        #else:
+        #    params = input.copy()
+        #    input = input[&#39;stream&#39;]
+        
+        #if isinstance(input, obspy.core.stream.Stream):
+        #    fig, ax = sprit.plot_specgram_stream(input, component=[&#39;Z&#39;])
+        #elif isinstance(input, obspy.core.trace.Trace):
+        #    fig, ax = sprit.plot_specgram_stream(input)
+        if initialize:
+            self.lineArtist = []
+            self.winArtist = []
+            self.windowDrawn = []
+            self.pathList = []
+            self.xWindows = []
+            self.x0 = 0
+            self.clickNo = 0
+        
+        if not initialize:
+            __on_click(event)
+            self.hvsr_data[&#39;xwindows_out&#39;] = self.xWindows
+
+
+            #self.fig_closed
+            #fig_closed = False
+            #while fig_closed is False:
+            #    #fig.canvas.mpl_connect(&#39;button_press_event&#39;, __on_click)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+            #    fig.canvas.mpl_connect(&#39;close_event&#39;, _on_fig_close)#(self.clickNo, self.xWindows, pathList, windowDrawn, winArtist, lineArtist, self.x0, fig, ax))
+            #    plt.pause(0.5)
+            
+            #output[&#39;xwindows_out&#39;] = self.xWindows
+            #output[&#39;fig&#39;] = fig
+            #output[&#39;ax&#39;] = ax
+            noEvent = True
+        return self.hvsr_data
+
+    #Support function to help select_windows run properly
+    def _on_fig_close(event):
+        self.fig_closed
+        fig_closed = True
+        return
+
+
+    def __on_click(event):
+
+        if event.button is MouseButton.RIGHT:
+            __remove_on_right(event, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.fig_noise, self.ax_noise)
+
+        if event.button is MouseButton.LEFT:            
+            self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
+
+    def plot_noise_windows(initial_setup=False):
+        if initial_setup:
+            self.xWindows=[]
+
+        if not initial_setup:
+            #Clear everything
+            for key in self.ax_noise:
+                self.ax_noise[key].clear()
+            self.fig_noise.clear()
+
+            #Really make sure it&#39;s out of memory
+            self.fig_noise = []
+            self.ax_noise = []
+            try:
+                self.fig_noise.get_children()
+            except:
+                pass
+            try:
+                self.ax_noise.get_children()
+            except:
+                pass
+
+        #Reset axes, figure, and canvas widget
+        self.fig_noise = plt.figure()
+
+        noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+                [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+        self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
+
+        if not initial_setup:
+            self.noise_canvasWidget.destroy()
+            self.noise_toolbar.destroy()
+            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+
+        self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
+        self.noise_canvas.draw()
+        #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        # pack_toolbar=False will make it easier to use a layout manager later on.
+        self.noise_toolbar = NavigationToolbar2Tk(self.noise_canvas, self.canvasFrame_noise, pack_toolbar=False)
+        self.noise_toolbar.update()
+    
+        self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.noise_canvas.mpl_connect(&#34;button_release_event&#34;, select_windows)
+
+        self.noise_toolbar.pack(side=tk.BOTTOM, fill=tk.X)            
+        self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+
+        if not initial_setup:
+            #Reset edited data every time plot_noise_windows is run
+            self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
+
+            #Set initial input
+            input = self.params[&#39;stream&#39;]
+
+            #print(input[0].stats.starttime)
+            if self.do_stalta.get():
+                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                input = self.params[&#39;stream_edited&#39;]
+
+            if self.do_pctThresh.get():
+                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                input = self.params[&#39;stream_edited&#39;]
+
+            if self.do_noiseWin.get():
+                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                input = self.params[&#39;stream_edited&#39;]
+        
+            if self.do_warmup.get():
+                self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+            self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
+            self.fig_noise.canvas.draw()
+            return self.params    
+        self.fig_noise.canvas.draw()
+        return
+
+    plot_noise_windows(initial_setup=True)
+    self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+    #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+    #        [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+    #        [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+    #self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+    #self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
+    #self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
+
+    #self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)
+    #self.noise_canvas.draw()
+    #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    #self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
     #Run button frame
     runFrame_noise = ttk.Frame(self.noise_tab)
     
-    def update_noise_windows():
-    
-        #Clear everything
-        for key in self.ax_noise:
-            self.ax_noise[key].clear()
-        self.fig_noise.clear()
-
-        #Really make sure it&#39;s out of memory
-        self.fig_noise = []
-        self.ax_noise = []
-        try:
-            self.fig_noise.get_children()
-        except:
-            pass
-        try:
-            self.ax_noise.get_children()
-        except:
-            pass
-
-        #Reset axes, figure, and canvas widget
-        noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
-                [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
-        self.fig_noise, self.ax_noise = plt.subplot_mosaic(noise_mosaic, sharex=True)  
-        self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=canvasFrame_noise)
-        self.noise_canvasWidget.destroy()
-        self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
-
-        self.noise_canvas.draw()
-        self.fig_noise.canvas.draw()
-        
-        self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params[&#39;stream&#39;], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-        self.fig_noise.canvas.draw()
-
-        #Reset edited data every time update_noise_windows is run
-        self.params[&#39;stream_edited&#39;] = self.params[&#39;stream&#39;].copy()
-
-        #Set initial input
-        input = self.params[&#39;stream&#39;]
-
-        #print(input[0].stats.starttime)
-        if self.do_stalta.get():
-            self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-            input = self.params[&#39;stream_edited&#39;]
-
-        if self.do_pctThresh.get():
-            self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-            input = self.params[&#39;stream_edited&#39;]
-
-        if self.do_noiseWin.get():
-            self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-            input = self.params[&#39;stream_edited&#39;]
-    
-        if self.do_warmup.get():
-            self.params[&#39;stream_edited&#39;] = sprit.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
-
-        #print(self.params[&#39;stream_edited&#39;][0].stats.starttime)
-        #print(self.params[&#39;stream_edited&#39;][0].stats.npts)
-
-        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.show_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, time_type=&#39;matplotlib&#39;)
-        
-        self.fig_noise.canvas.draw()
-        return self.params
-
     #Run area
     #Update Noise Windows button
     self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
-    self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=update_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
+    self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
 
     self.noise_windows_line_artists = []
     self.noise_windows_window_artists = []
@@ -5466,7 +6188,9 @@ if __name__ == &#34;__main__&#34;:
     manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
     def remove_windows_manually():
         #Placeholderfunction
-        print(&#39;Ok, here we would remove windows&#39;)        
+        print(&#39;Ok, this button may not need to do anything&#39;)
+        #Plot data in noise preview tab
+
     self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
     self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
@@ -5649,7 +6373,7 @@ if __name__ == &#34;__main__&#34;:
     ppsdSettingsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;Input Settings&#39;)#.pack(fill=&#39;both&#39;)
     ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text=&#39;PPSD Parameters&#39;)#.pack(fill=&#39;both&#39;)
 
-    # ppsd_length=60.0
+    # ppsd_length=30.0
     def on_ppsd_length():
         try:
             float(self.ppsd_length.get())
@@ -5658,12 +6382,12 @@ if __name__ == &#34;__main__&#34;:
             return True
         except ValueError:
             return False
-    ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=60.0 &#39;)#.grid(row=0, column=0)
+    ppsdLenLabel = ttk.Label(master=ppsdParamsFrame, text=&#39;ppsd_length=30.0 &#39;)#.grid(row=0, column=0)
     ppsdLenLabel.grid(row=0, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)
     
     ttk.Label(master=ppsdSettingsFrame, text=&#39;PPSD Length (in seconds) [float]&#39;).grid(row=0, column=0, sticky=&#39;w&#39;, padx=5)
     self.ppsd_length = tk.DoubleVar()
-    self.ppsd_length.set(60)
+    self.ppsd_length.set(30)
     ppsdLenEntry = ttk.Entry(master=ppsdSettingsFrame, textvariable=self.ppsd_length, width=10, validate=&#39;focusout&#39;, validatecommand=on_ppsd_length)
     ppsdLenEntry.grid(row=0, column=1, sticky=&#39;w&#39;, padx=(5, 10))
 
@@ -6121,10 +6845,10 @@ if __name__ == &#34;__main__&#34;:
         try:
             if not self.resamplebool.get():
                 resampleLabel.configure(text=&#39;resample={}&#39;.format(self.resamplebool.get()))
-                self.hvresample=self.resamplebool.get()
+                self.hvresample_int=self.hvresample.get()
             else:
                 resampleLabel.configure(text=&#39;resample={}&#39;.format(self.hvresample.get()))
-                self.hvresample=self.hvresample.get()    
+                self.hvresample_int=self.hvresample.get()    
             update_procHVSR_call(self.procHVSR_call)
             return True
         except ValueError:
@@ -6132,13 +6856,13 @@ if __name__ == &#34;__main__&#34;:
         
     self.resamplebool = tk.BooleanVar()
     self.resamplebool.set(True)
-    self.hvresample=self.resamplebool.get()
     ttk.Label(master=hvsrSettingsFrame, text=&#39;Resample H/V Curve [bool]&#39;).grid(row=4, column=0, padx=(5,0), sticky=&#39;w&#39;)
     resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.resamplebool, command=on_curve_resample) # create the Checkbutton widget
     resampleCurveBool.grid(row=4, column=1, sticky=&#39;w&#39;)
 
     self.hvresample = tk.IntVar()
     self.hvresample.set(1000)
+    self.hvresample_int = self.hvresample.get()
     resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
     resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
     ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
@@ -6236,7 +6960,7 @@ if __name__ == &#34;__main__&#34;:
                       outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
     
     #Check Peaks Function Call
-    checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
+    checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
     self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
               .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
@@ -6319,12 +7043,12 @@ if __name__ == &#34;__main__&#34;:
     ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_hv, command=update_hvplot_call).grid(row=5, column=1, sticky=&#34;ew&#34;, padx=15)
 
     self.show_best_peak_comp = tk.BooleanVar()
-    self.show_best_peak_comp.set(False)
+    self.show_best_peak_comp.set(True)
     bestPeakCompButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_comp, command=update_hvplot_call)
     bestPeakCompButton.grid(row=5, column=2, sticky=&#34;ew&#34;, padx=50)
 
     self.show_best_peak_spec = tk.BooleanVar()
-    self.show_best_peak_comp.set(False)
+    self.show_best_peak_spec.set(False)
     ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_best_peak_spec, command=update_hvplot_call).grid(row=5, column=3, sticky=&#34;ew&#34;, padx=25)
 
     ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=6, columnspan=5, sticky=&#39;ew&#39;)
@@ -6337,12 +7061,12 @@ if __name__ == &#34;__main__&#34;:
     ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_hv, command=update_hvplot_call).grid(row=7, column=1, sticky=&#34;ew&#34;, padx=15)
 
     self.annotate_best_peak_comp = tk.BooleanVar()
-    self.annotate_best_peak_comp.set(False)
+    self.annotate_best_peak_comp.set(True)
     bestPeakCompAnnButton=ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_comp, command=update_hvplot_call)
     bestPeakCompAnnButton.grid(row=7, column=2, sticky=&#34;ew&#34;, padx=50)
 
     self.annotate_best_peak_spec = tk.BooleanVar()
-    self.annotate_best_peak_spec.set(False)
+    self.annotate_best_peak_spec.set(True)
     ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.annotate_best_peak_spec, command=update_hvplot_call).grid(row=7, column=3, sticky=&#34;ew&#34;, padx=25)
 
     ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=8, columnspan=5, sticky=&#39;ew&#39;)
@@ -6462,9 +7186,18 @@ if __name__ == &#34;__main__&#34;:
 
     #Run button frame
     runFrame_set_plot = ttk.Frame(plot_settings_tab)
+
     self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-    self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+
+    def update_results_plot():
+        self.tab_control.select(self.results_tab)
+        sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+
+    self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
     
+    self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+    self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+
     runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
     hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
     hvplot_call_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=2, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
@@ -6486,16 +7219,26 @@ if __name__ == &#34;__main__&#34;:
     self.results_tab = ttk.Frame(self.tab_control)
 
     # Create the hvplot Call LabelFrame
-    results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
+    self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;HVSR Charts&#34;)
 
     #Set up plot     
-    results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
-    self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+    #results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+    #self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
+    #self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)
+    #self.results_canvas.draw()
+    #self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-    reults_canvas = FigureCanvasTkAgg(self.fig_results, master=results_chartFrame)
-    reults_canvas.draw()
-    results_canvasWidget = reults_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+    self.fig_results = plt.figure()
+    results_mosaic = [[&#39;hvsr&#39;],[&#39;comp&#39;],[&#39;spec&#39;]]
+    self.ax_results = self.fig_results.subplot_mosaic(results_mosaic)
+
+    self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)  # A tk.DrawingArea.
+    self.results_canvas.draw()
+    self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    self.results_toolbar = NavigationToolbar2Tk(self.results_canvas, self.results_chartFrame, pack_toolbar=False)
+    self.results_toolbar.update()
+    self.results_toolbar.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
+    self.results_canvasWidget.pack(fill=&#39;both&#39;, expand=True)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
 
     #Peak report
     results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text=&#34;Peak Report&#34;)
@@ -6680,7 +7423,7 @@ if __name__ == &#34;__main__&#34;:
             self.results_report_dir_entry.insert(0, filepath)
     
     def save_report_fig():
-        sprit.print_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
+        sprit.get_report(self.hvsr_results, format=&#39;csv&#39;, export=self.results_report_dir.get())
 
     self.browse_results_fig = ttk.Button(results_export_Frame, text=&#34;Browse&#34;,command=filepath_report_fig)
     self.browse_results_fig.grid(row=1, column=7, sticky=&#39;ew&#39;, padx=2.5)
@@ -6689,7 +7432,7 @@ if __name__ == &#34;__main__&#34;:
     self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky=&#39;ew&#39;, padx=2.5)
 
     results_peakInfoFrame.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
-    results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
+    self.results_chartFrame.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
     results_export_Frame.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
     
     # Add tabs to tab control

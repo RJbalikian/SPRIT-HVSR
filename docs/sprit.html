@@ -103,31 +103,8 @@ def run(datapath, source=&#39;file&#39;, kind=&#39;auto&#39;, method=4, hvsr_ban
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
         
     if verbose:
-        #Print results
-        if curvePass and peakPass:
-            print(&#39;✔ Curve at {0:.2f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
-        else:
-            print(&#39;✘ Peak at {0:.2f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
-
-        #Print individual results
-        print(&#39;\tCurve Tests:&#39;)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
-
-
-        print(&#39;\tPeak Tests:&#39;)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
-        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
-            res = &#39;✔&#39;
-        else:
-            res = &#39;✘&#39;
-        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
-
+        get_report(hvsr_results=hvsr_results, format=&#39;print&#39;)
+        
     if plot_type != False:
         if plot_type == True:
             plot_type = &#39;HVSR p ann t c+ ann p Spec&#39;
@@ -815,7 +792,7 @@ def has_required_channels(stream):
     return {&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;}.issubset(channel_set)
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2):
+def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, verbose=False):
     &#34;&#34;&#34;Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -982,21 +959,27 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
         for tr in dataIN:
             tr.detrend(type=&#39;spline&#39;, order=detrend_order, dspline=1000)        
     else:
-        if detrend==&#39;simple&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend==&#39;linear&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)                
-        if detrend==&#39;polynomial&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order)   
-        if detrend==&#39;spline&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        data_undetrended = dataIN.copy()
+        try:
+            if detrend==&#39;simple&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend==&#39;linear&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)                
+            if detrend==&#39;polynomial&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order)   
+            if detrend==&#39;spline&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        except:
+            dataIN = data_undetrended
+            if verbose:
+                print(&#34;Detrend error, data not detrended&#34;)
 
     dataIN = dataIN.merge(method=1)
     params[&#39;stream&#39;] = dataIN
@@ -1420,7 +1403,7 @@ def select_windows(input):
     fig_closed = False
     while fig_closed is False:
         fig.canvas.mpl_connect(&#39;button_press_event&#39;, __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
-        fig.canvas.mpl_connect(&#39;close_event&#39;, __on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+        fig.canvas.mpl_connect(&#39;close_event&#39;, _on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
         plt.pause(1)
 
     params[&#39;xwindows_out&#39;] = xWindows
@@ -1429,7 +1412,7 @@ def select_windows(input):
     return params
 
 #Support function to help select_windows run properly
-def __on_fig_close(event):
+def _on_fig_close(event):
     global fig_closed
     fig_closed = True
     return
@@ -1530,8 +1513,9 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
         output = outStream
     return output
 
-#Shows windows with Noneon input plot
-def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type=&#39;matplotlib&#39;):
+#Shows windows with None on input plot
+def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format=&#39;matplotlib&#39;, keep_line_artists=True, time_type=&#39;matplotlib&#39;):
+    &#34;&#34;&#34;This function is solely for getting Nones from masked arrays and plotting them as windows&#34;&#34;&#34;
     if fig is None and ax is None:
         fig, ax = plt.subplots()
 
@@ -1543,31 +1527,63 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
     else:
         stream = input.copy()
 
+
+    samplesList = [&#39;sample&#39;, &#39;samples&#39;, &#39;s&#39;]
+    utcList = [&#39;utc&#39;, &#39;utcdatetime&#39;, &#39;obspy&#39;, &#39;u&#39;, &#39;o&#39;]
+    matplotlibList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;]    
+    
     #Get masked indices of trace(s)
     trace = stream[0]
+    sample_rate = trace.stats.delta
     windows = []
-    windows.append([0,np.nan])
-
+    #windows.append([0,np.nan])
     #mask = np.isnan(trace.data)  # Create a mask for None values
     #masked_array = np.ma.array(trace.data, mask=mask).copy()
     masked_array = trace.data.copy()
-
     if isinstance(masked_array, np.ma.MaskedArray):
-        sample_rate = trace.stats.sampling_rate
         masked_array = masked_array.mask.nonzero()[0]
-        lastMaskInd = masked_array[0]
+        lastMaskInd = masked_array[0]-1
         wInd = 0
-        #masked_array = trace.data.mask.nonzero()[0]
-        for i in range(1, len(masked_array)):
+        for i in range(0, len(masked_array)-1):
             maskInd = masked_array[i]
-            if maskInd-lastMaskInd &gt; 1:
+            if maskInd-lastMaskInd &gt; 1 or i==0:
                 windows.append([np.nan, np.nan])
-                windows[wInd][1] = masked_array[i - 1]
-                wInd += 1
+                if i==0:
+                    windows[wInd][0] = masked_array[i]
+                else:
+                    windows[wInd-1][1] = masked_array[i - 1]
                 windows[wInd][0] = masked_array[i]
+                wInd += 1
+            lastMaskInd = maskInd
+        windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
+        winTypeList = [&#39;gaps&#39;] * len(windows)
 
-            lastMaskInd = maskInd    
-        windows[wInd][1] = masked_array[-1]
+        #if existing_xWindows != []:
+        #    windows = windows + existing_xWindows
+        #    existWinTypeList = [&#39;removed&#39;] * len(existing_xWindows)
+        #    winTypeList = winTypeList + existWinTypeList
+
+        if len(existing_xWindows) &gt; 0:
+            existWin = []
+            #Check if windows are already being taken care of with the gaps
+            startList = []
+            endList = []
+            for start, end in windows:
+                startList.append((trace.stats.starttime + start*sample_rate).matplotlib_date)
+                endList.append((trace.stats.starttime + end*sample_rate).matplotlib_date)
+            for w in existing_xWindows:
+                removed=False
+                if w[0] in startList and w[1] in endList:
+                    existing_xWindows.remove(w)
+                    print(&#39;match&#39;)
+                    removed=True                    
+                if exist_win_format.lower() in matplotlibList and not removed:
+                    sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
+                    existWin.append(list(np.round((w - sTimeMPL)*3600*24/sample_rate)))
+                                        
+            windows = windows + existWin
+            existWinTypeList = [&#39;removed&#39;] * len(existWin)
+            winTypeList = winTypeList + existWinTypeList
 
         #Reformat ax as needed
         if isinstance(ax, np.ndarray):
@@ -1582,10 +1598,6 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         else:
             origAxes = ax
             axes = {&#39;ax&#39;:ax}
-
-        samplesList = [&#39;sample&#39;, &#39;samples&#39;, &#39;s&#39;]
-        utcList = [&#39;utc&#39;, &#39;utcdatetime&#39;, &#39;obspy&#39;, &#39;u&#39;, &#39;o&#39;]
-        matplotlibList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;]    
 
         for i, a in enumerate(axes.keys()):
             ax = axes[a]
@@ -1605,10 +1617,10 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                     x0 = win[0]
                     x1 = win[1]
                 elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
-                    sample_rate = trace.stats.delta
+                    #sample_rate = trace.stats.delta
 
-                    x0 = trace.stats.starttime + win[0] * sample_rate
-                    x1 = trace.stats.starttime + win[1] * sample_rate
+                    x0 = trace.stats.starttime + (win[0] * sample_rate)
+                    x1 = trace.stats.starttime + (win[1] * sample_rate)
 
                     if time_type.lower() in matplotlibList:
                         x0 = x0.matplotlib_date
@@ -1634,8 +1646,16 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                 windowDrawn.append(False)
                 winArtist.append(None)
                 lineArtist.append([])
-                linArt0 = ax.axvline(x0, y0, y1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
-                linArt1 = plt.axvline(x1, y0, y1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
+                
+                if winTypeList[winNums] == &#39;gaps&#39;:
+                    clr = &#39;#b13d41&#39;
+                elif winTypeList[winNums] == &#39;removed&#39;:
+                    clr = &#39;k&#39;
+                else:
+                    clr = &#39;yellow&#39;
+
+                linArt0 = ax.axvline(x0, y0, y1, color=clr, linewidth=0.5, zorder=100)
+                linArt1 = plt.axvline(x1, y0, y1, color=clr, linewidth=0.5, zorder=100)
                 lineArtist[winNums].append([linArt0, linArt1])
                 #
                 
@@ -1645,7 +1665,7 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                 if windowDrawn[i]:
                     pass
                 else:
-                    patch = matplotlib.patches.PathPatch(pa, facecolor=&#39;k&#39;, alpha=0.75)                            
+                    patch = matplotlib.patches.PathPatch(pa, facecolor=clr, alpha=0.75)                            
                     winArt = ax.add_patch(patch)
                     windowDrawn[i] = True
                     winArtist[i] = winArt
@@ -1663,6 +1683,83 @@ def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig.canvas.draw()
 
     return fig, ax, lineArtist, winArtist
+
+def plot_noise_windows(hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=None,
+                         do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
+                         do_pctThresh=False, sat_percent=0.8, min_win_size=1, 
+                         do_noiseWin=False, noise_percent=0.995, 
+                         do_warmup=False, warmup_time=0, cooldown_time=0, 
+                         return_dict=False, use_tkinter=False):
+    
+    if clear_fig: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
+        #Really make sure it&#39;s out of memory
+        fig = []
+        ax = []
+        try:
+            fig.get_children()
+        except:
+            pass
+        try:
+            ax.get_children()
+        except:
+            pass
+
+    if use_tkinter:
+        try:
+            ax=self.ax_noise
+            fig=self.fig_noise
+        except:
+            pass
+
+    #Reset axes, figure, and canvas widget
+    noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+            [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+            [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+    fig, ax = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+    #self.noise_canvas = FigureCanvasTkAgg(fig, master=canvasFrame_noise)
+    #self.noise_canvasWidget.destroy()
+    #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    #self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+    fig.canvas.draw()
+    
+    fig, ax = plot_specgram_stream(stream=hvsr_dict[&#39;stream&#39;], params=hvsr_dict, fig=fig, ax=ax, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+    fig.canvas.draw()
+
+    #Reset edited data every time plot_noise_windows is run
+    hvsr_dict[&#39;stream_edited&#39;] = hvsr_dict[&#39;stream&#39;].copy()
+
+    #Set initial input
+    input = hvsr_dict[&#39;stream&#39;]
+
+    #print(input[0].stats.starttime)
+    if do_stalta:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;stalta&#39;, sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_pctThresh:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_noiseWin:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_warmup:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=warmup_time, cooldown_time=cooldown_time)
+
+    fig, ax, noise_windows_line_artists, noise_windows_window_artists = get_removed_windows(input=hvsr_dict, fig=fig, ax=ax, time_type=&#39;matplotlib&#39;)
+    
+    fig.canvas.draw()
+    plt.show()
+    if return_dict:
+        hvsr_dict[&#39;Windows_Plot&#39;] = (fig, ax)
+        return hvsr_dict
+    return 
 
 #Helper function for removing windows from data, leaving gaps
 def __remove_windows(stream, window_list, warmup_time):
@@ -2528,7 +2625,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
         for k in hvsr_out[&#39;psd_raw&#39;]:
             ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
             freqs = hvsr_out[&#39;x_freqs&#39;][k]
-            smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
+                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
             hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
     elif freq_smooth.lower() in freq_smooth_constant:
         hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
@@ -2797,6 +2896,9 @@ def __remove_db(_db_value):
     _values = list()
     for _d in _db_value:
         _values.append(10 ** (float(_d) / 10.0))
+    #FIX THIS
+    if _values[1]==0:
+       _values[1]=10e-300
     return _values
 
 #Find peaks in the hvsr ccruve
@@ -2955,7 +3057,7 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
         return fig, axes
     return                 
 
-def hvplot(hvsr_dict, plot_type=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True,**kwargs):
+def hvplot(hvsr_dict, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True, clear_fig=True,**kwargs):
     &#34;&#34;&#34;Function to plot HVSR data
 
     Parameters
@@ -2997,6 +3099,13 @@ def hvplot(hvsr_dict, plot_type=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;fr
     fig, ax : matplotlib figure and axis objects
         Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
     &#34;&#34;&#34;
+
+    if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
 
     compList = [&#39;c&#39;, &#39;comp&#39;, &#39;component&#39;, &#39;components&#39;]
     specgramList = [&#39;spec&#39;, &#39;specgram&#39;, &#39;spectrogram&#39;]
@@ -3060,20 +3169,22 @@ def hvplot(hvsr_dict, plot_type=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;fr
             fig, ax = plt.subplot_mosaic(mosaicPlots)
             axis = ax[p]
         elif use_subplots:
+            ax[p].clear()
             axis = ax[p]
         else:
             fig, axis = plt.subplots()
-            
+                
         if p == &#39;hvsr&#39;:
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;comp&#39;:
             plotComponents[0] = plotComponents[0][:-1]
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;spec&#39;:
-            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis)
+            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis, colorbar=False)
         else:
             print(&#39;Error&#39;)    
     
+    fig.canvas.draw()
     if return_fig:
         return fig, ax
     return
@@ -3376,7 +3487,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     &#34;&#34;&#34;Private function to support hvplot, for plotting and showing plots&#34;&#34;&#34;
     #plt.gca()
     #plt.gcf()
-    fig.tight_layout()
+    #fig.tight_layout() #May need to uncomment this
 
     #plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
 
@@ -3491,7 +3602,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     axy.zorder=0
     ax.zorder=1
     ax.set_facecolor(&#39;#ffffff00&#39;) #Create transparent background for front axis
-    #plt.sca(axy)
+    #plt.sca(axy)  
     im = ax.imshow(psdArr, origin=&#39;lower&#39;, extent=extList, aspect=&#39;auto&#39;, interpolation=&#39;nearest&#39;, **kwargs)
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
@@ -3519,7 +3630,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     return fig, ax
 
 #Plot spectrogram from stream
-def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
+def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, fill_gaps=None, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
     &#34;&#34;&#34;Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
 
     For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html 
@@ -3585,7 +3696,8 @@ def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.merge()
-    stream.stack(group_by=&#39;all&#39;, npts_tol=200, stack_type=stack_type)  
+    if len(stream)&gt;1:
+        stream.stack(group_by=&#39;all&#39;, npts_tol=200, stack_type=stack_type)  
 
     if fig is None and ax is None:
         #Organize the chart layout
@@ -3594,8 +3706,10 @@ def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=
                 [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
         fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
         #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
-
+    
     data = stream[0].data
+    if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
+        data = data.filled(fill_gaps)
     sample_rate = stream[0].stats.sampling_rate
 
     if &#39;cmap&#39; in kwargs.keys():
@@ -3614,7 +3728,9 @@ def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=
         scale=&#39;dB&#39;
     else:
         scale=None
-    spec, freqs, times, im = ax[&#39;spec&#39;].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
+    with warnings.catch_warnings():
+        warnings.simplefilter(&#39;ignore&#39;, category=RuntimeWarning)
+        spec, freqs, times, im = ax[&#39;spec&#39;].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
     im.remove()
 
     difference_array = freqs-ymin
@@ -3670,7 +3786,7 @@ def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=
                 xmin = currMin
             if xmax &lt; currMax:
                 xmax = currMax     
-                   
+    
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     im = ax[&#39;spec&#39;].imshow(array_displayed, norm=norm, cmap=cmap, aspect=&#39;auto&#39;, interpolation=None, extent=[xmin,xmax,ymax,ymin])
 
@@ -3713,7 +3829,11 @@ def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=
     elif &#39;title&#39; in kwargs.keys():
         fig.suptitle(kwargs[&#39;title&#39;])
     else:
-        fig.suptitle(params[&#39;site&#39;]+&#39;: Spectrogram and Data&#39;)
+        if &#39;input_params&#39; in params.keys():
+            sitename = params[&#39;input_params&#39;][&#39;site&#39;]
+        else:
+            sitename = params[&#39;site&#39;]
+        fig.suptitle(&#39;{}: Spectrogram and Data&#39;.format(sitename))
     
     day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
@@ -4112,20 +4232,19 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         max_rank += 1
 
     if np.array(_x).shape[0] == 1000:
-        jstart = len(_x)-2
+        jstart = len(_y)-2
     else:
-        jstart = len(_x)-1
+        jstart = len(_y)-1
 
+    
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i][&#39;f-&#39;] = &#39;✘&#39;
         _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = &#39;No A_h/v in freqs {}-{} &lt; {}  {}&#39;.format(round(_peak[_i][&#39;A0&#39;]/4, 3), round(_peak[_i][&#39;A0&#39;], 3), round(_peak[_i][&#39;A0&#39;]/2, 3), &#39;✘&#39;)
-        _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] = False
+        _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
-
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) &gt; 2.
-            if (float(_peak[_i][&#39;f0&#39;]) / 4.0 &lt;= _x[_j] &lt; float(_peak[_i][&#39;f0&#39;])) and \
-                    float(_peak[_i][&#39;A0&#39;]) / _y[_j] &gt; 2.0:
+            if (float(_peak[_i][&#39;f0&#39;]) / 4.0 &lt;= _x[_j] &lt; float(_peak[_i][&#39;f0&#39;])) and float(_peak[_i][&#39;A0&#39;]) / _y[_j] &gt; 2.0:
                 _peak[_i][&#39;Score&#39;] += 1
                 _peak[_i][&#39;f-&#39;] = &#39;%10.3f %1s&#39; % (_x[_j], check_mark())
                 _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = &#39;A({}): {} &lt; {}  {}&#39;.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i][&#39;A0&#39;]/2,3), check_mark())
@@ -4244,6 +4363,9 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                         _peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)
                     _peak[_i][&#39;Pass List&#39;][&#39;Freq. Stability&#39;] = False
                 break
+            else:
+                _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (_peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)
+                _peak[_i][&#39;Pass List&#39;][&#39;Freq. Stability&#39;] = False                
         if _peak[_i][&#39;Report&#39;][&#39;P+&#39;] == &#39;✘&#39; and len(_peakp) &gt; 0:
             _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (
                 _peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)###changed i to j
@@ -4417,12 +4539,12 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def print_report(hvsr_data, export=&#39;&#39;, format=&#39;print&#39;, save_figs=None):
+def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
     ----------
-    hvsr_data : dict
+    hvsr_results : dict
         Dictionary containing all the information about the processed hvsr data
     format : {&#39;csv&#39;, &#39;print&#39;, &#39;docx&#39;}
         Format in which to print or export the report.
@@ -4443,46 +4565,85 @@ def print_report(hvsr_data, export=&#39;&#39;, format=&#39;print&#39;, save_figs
             - Figure with 3 components
     &#34;&#34;&#34;
     #print statement
+    #Check if results are good
+    #Curve pass?
+    curvePass = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;]) &gt; 2
+    
+    #Peak Pass?
+    peakPass = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
+        
+    
     if format==&#39;print&#39;:
-        print(hvsr_data[&#39;input_params&#39;][&#39;site&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;acq_date&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_data[&#39;input_params&#39;][&#39;latitude&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;elevation&#39;])
-        print(round(hvsr_data[&#39;Best Peak&#39;][&#39;f0&#39;], 3))
-        for p in hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-            print(p, &#39;:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-        print(&#39;Peak Passes Criteria:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
+        #Print results
+        print(&#39;Site:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
+        print(&#39;Acquisition Date:&#39;, hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])
+        print(&#39;Site Location:&#39;, hvsr_results[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_results[&#39;input_params&#39;][&#39;latitude&#39;])
+        print(&#39;Elevation:&#39;,hvsr_results[&#39;input_params&#39;][&#39;elevation&#39;])
+        print()
+        print(&#39;{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
+        if curvePass and peakPass:
+            print(&#39;✔ Curve at {0:.3f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
+        else:
+            print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
 
-        hvplot(hvsr_data, plot_type=&#39;HVSR p tp ann&#39;)
-        hvplot(hvsr_data, plot_type=&#39;HVSR c&#39;)
-        hvplot(hvsr_data, plot_type=&#39;spec&#39;)
+        #Print individual results
+        print(&#39;\tCurve Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+
+
+        print(&#39;\tPeak Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+            res = &#39;✔&#39;
+        else:
+            res = &#39;✘&#39;
+        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+
     elif format==&#39;csv&#39;:
         import pandas as pd
         pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
                   &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
                   &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
-        d = hvsr_data
+        d = hvsr_results
         criteriaList = []
-        for p in hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-            criteriaList.append(hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-        criteriaList.append(hvsr_data[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
+        for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
+            criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
+        criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
         dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
         if export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_data[&#39;input_params&#39;][&#39; datapath&#39;])
+            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]==&#39;/&#39;:
                     pass
                 else:
                     inFile = inFile + &#39;/&#39;
-                fname = hvsr_data[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
+                fname = hvsr_results[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
                 inFile = inFile + fname +&#39;.csv&#39;
             elif inFile.is_file():
                 export = inFile.with_suffix(&#39;.csv&#39;)
         outDF.to_csv(export, index_label=&#39;ID&#39;)
         return outDF
+    elif format==&#39;plot&#39;:
+        hvsr_results[&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+        if return_results:
+            return hvsr_results
+
     if export:
         pass
         #code to write to output file
@@ -4923,7 +5084,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.sprit.fetch_data"><code class="name flex">
-<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2)</span>
+<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Fetch ambient seismic data from a source to read into obspy stream</p>
@@ -4962,7 +5123,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2):
+<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, verbose=False):
     &#34;&#34;&#34;Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -5129,21 +5290,27 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         for tr in dataIN:
             tr.detrend(type=&#39;spline&#39;, order=detrend_order, dspline=1000)        
     else:
-        if detrend==&#39;simple&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend==&#39;linear&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)
-        if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend)                
-        if detrend==&#39;polynomial&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order)   
-        if detrend==&#39;spline&#39;:
-            for tr in dataIN:
-                tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        data_undetrended = dataIN.copy()
+        try:
+            if detrend==&#39;simple&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend==&#39;linear&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)
+            if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend)                
+            if detrend==&#39;polynomial&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order)   
+            if detrend==&#39;spline&#39;:
+                for tr in dataIN:
+                    tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+        except:
+            dataIN = data_undetrended
+            if verbose:
+                print(&#34;Detrend error, data not detrended&#34;)
 
     dataIN = dataIN.merge(method=1)
     params[&#39;stream&#39;] = dataIN
@@ -5343,6 +5510,328 @@ If not specified, does not write file</dd>
     return params</code></pre>
 </details>
 </dd>
+<dt id="sprit.sprit.get_removed_windows"><code class="name flex">
+<span>def <span class="ident">get_removed_windows</span></span>(<span>input, fig=None, ax=None, lineArtist=[], winArtist=[], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function is solely for getting Nones from masked arrays and plotting them as windows</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format=&#39;matplotlib&#39;, keep_line_artists=True, time_type=&#39;matplotlib&#39;):
+    &#34;&#34;&#34;This function is solely for getting Nones from masked arrays and plotting them as windows&#34;&#34;&#34;
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+
+    if type(input) is dict:
+        if &#39;stream_edited&#39; in input.keys():
+            stream = input[&#39;stream_edited&#39;].copy()
+        else:
+            stream = input[&#39;stream&#39;].copy()
+    else:
+        stream = input.copy()
+
+
+    samplesList = [&#39;sample&#39;, &#39;samples&#39;, &#39;s&#39;]
+    utcList = [&#39;utc&#39;, &#39;utcdatetime&#39;, &#39;obspy&#39;, &#39;u&#39;, &#39;o&#39;]
+    matplotlibList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;]    
+    
+    #Get masked indices of trace(s)
+    trace = stream[0]
+    sample_rate = trace.stats.delta
+    windows = []
+    #windows.append([0,np.nan])
+    #mask = np.isnan(trace.data)  # Create a mask for None values
+    #masked_array = np.ma.array(trace.data, mask=mask).copy()
+    masked_array = trace.data.copy()
+    if isinstance(masked_array, np.ma.MaskedArray):
+        masked_array = masked_array.mask.nonzero()[0]
+        lastMaskInd = masked_array[0]-1
+        wInd = 0
+        for i in range(0, len(masked_array)-1):
+            maskInd = masked_array[i]
+            if maskInd-lastMaskInd &gt; 1 or i==0:
+                windows.append([np.nan, np.nan])
+                if i==0:
+                    windows[wInd][0] = masked_array[i]
+                else:
+                    windows[wInd-1][1] = masked_array[i - 1]
+                windows[wInd][0] = masked_array[i]
+                wInd += 1
+            lastMaskInd = maskInd
+        windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
+        winTypeList = [&#39;gaps&#39;] * len(windows)
+
+        #if existing_xWindows != []:
+        #    windows = windows + existing_xWindows
+        #    existWinTypeList = [&#39;removed&#39;] * len(existing_xWindows)
+        #    winTypeList = winTypeList + existWinTypeList
+
+        if len(existing_xWindows) &gt; 0:
+            existWin = []
+            #Check if windows are already being taken care of with the gaps
+            startList = []
+            endList = []
+            for start, end in windows:
+                startList.append((trace.stats.starttime + start*sample_rate).matplotlib_date)
+                endList.append((trace.stats.starttime + end*sample_rate).matplotlib_date)
+            for w in existing_xWindows:
+                removed=False
+                if w[0] in startList and w[1] in endList:
+                    existing_xWindows.remove(w)
+                    print(&#39;match&#39;)
+                    removed=True                    
+                if exist_win_format.lower() in matplotlibList and not removed:
+                    sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
+                    existWin.append(list(np.round((w - sTimeMPL)*3600*24/sample_rate)))
+                                        
+            windows = windows + existWin
+            existWinTypeList = [&#39;removed&#39;] * len(existWin)
+            winTypeList = winTypeList + existWinTypeList
+
+        #Reformat ax as needed
+        if isinstance(ax, np.ndarray):
+            origAxes = ax.copy()
+            newAx = {}
+            for i, a in enumerate(ax):
+                newAx[i] = a
+            axes = newAx
+        elif isinstance(ax, dict):
+            origAxes = ax
+            axes = ax
+        else:
+            origAxes = ax
+            axes = {&#39;ax&#39;:ax}
+
+        for i, a in enumerate(axes.keys()):
+            ax = axes[a]
+            pathList = []
+            
+            windowDrawn = []
+            winArtist = []
+            if existing_lineArtists == []:
+                lineArtist = []
+            elif len(existing_lineArtists)&gt;=1 and keep_line_artists:
+                lineArtist = existing_lineArtists
+            else:
+                lineArtist = []
+
+            for winNums, win in enumerate(windows):
+                if time_type.lower() in samplesList:
+                    x0 = win[0]
+                    x1 = win[1]
+                elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
+                    #sample_rate = trace.stats.delta
+
+                    x0 = trace.stats.starttime + (win[0] * sample_rate)
+                    x1 = trace.stats.starttime + (win[1] * sample_rate)
+
+                    if time_type.lower() in matplotlibList:
+                        x0 = x0.matplotlib_date
+                        x1 = x1.matplotlib_date
+                else:
+                    print(&#39;time_type error&#39;)
+                
+                y0, y1 = ax.get_ylim()
+
+                path_data = [
+                            (matplotlib.path.Path.MOVETO, (x0, y0)),
+                            (matplotlib.path.Path.LINETO, (x1, y0)),
+                            (matplotlib.path.Path.LINETO, (x1, y1)),
+                            (matplotlib.path.Path.LINETO, (x0, y1)),
+                            (matplotlib.path.Path.LINETO, (x0, y0)),
+                            (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
+                        ]
+                
+                codes, verts = zip(*path_data)
+                path = matplotlib.path.Path(verts, codes)
+
+                #
+                windowDrawn.append(False)
+                winArtist.append(None)
+                lineArtist.append([])
+                
+                if winTypeList[winNums] == &#39;gaps&#39;:
+                    clr = &#39;#b13d41&#39;
+                elif winTypeList[winNums] == &#39;removed&#39;:
+                    clr = &#39;k&#39;
+                else:
+                    clr = &#39;yellow&#39;
+
+                linArt0 = ax.axvline(x0, y0, y1, color=clr, linewidth=0.5, zorder=100)
+                linArt1 = plt.axvline(x1, y0, y1, color=clr, linewidth=0.5, zorder=100)
+                lineArtist[winNums].append([linArt0, linArt1])
+                #
+                
+                pathList.append(path)
+
+            for i, pa in enumerate(pathList):
+                if windowDrawn[i]:
+                    pass
+                else:
+                    patch = matplotlib.patches.PathPatch(pa, facecolor=clr, alpha=0.75)                            
+                    winArt = ax.add_patch(patch)
+                    windowDrawn[i] = True
+                    winArtist[i] = winArt
+            
+            #Reformat ax as needed
+            if isinstance(origAxes, np.ndarray):
+                origAxes[i] = ax
+            elif isinstance(origAxes, dict):
+                origAxes[a] = ax
+            else:
+                origAxes = ax
+
+        ax = origAxes
+
+        fig.canvas.draw()
+
+    return fig, ax, lineArtist, winArtist</code></pre>
+</details>
+</dd>
+<dt id="sprit.sprit.get_report"><code class="name flex">
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export='', format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>hvsr_results</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary containing all the information about the processed hvsr data</dd>
+<dt><strong><code>format</code></strong> :&ensp;<code>{'csv', 'print', 'docx'}</code></dt>
+<dd>Format in which to print or export the report.</dd>
+<dt><strong><code>export</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filepath path for export. If not specified, report name is generated automatically and placed in current directory</dd>
+<dt><strong><code>include</code></strong> :&ensp;<code>str</code> or <code>list</code>, default=<code>'peak'</code></dt>
+<dd>What to include in the report. By default includes all the following
+- Site name
+- Acquisition Date
+- Longitude
+- Latitude
+- Elevation
+- Primary peak frequency
+- Whether passed quality tests (x6)
+For docx (not yet implemented), the following are also included:
+- Figure with spectrogram
+- Figure with HVSR curve
+- Figure with 3 components</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
+    &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
+        
+    Parameters
+    ----------
+    hvsr_results : dict
+        Dictionary containing all the information about the processed hvsr data
+    format : {&#39;csv&#39;, &#39;print&#39;, &#39;docx&#39;}
+        Format in which to print or export the report.
+    export : str
+        Filepath path for export. If not specified, report name is generated automatically and placed in current directory
+    include : str or list, default=&#39;peak&#39;
+        What to include in the report. By default includes all the following
+            - Site name
+            - Acquisition Date
+            - Longitude
+            - Latitude
+            - Elevation
+            - Primary peak frequency
+            - Whether passed quality tests (x6)
+        For docx (not yet implemented), the following are also included:
+            - Figure with spectrogram
+            - Figure with HVSR curve
+            - Figure with 3 components
+    &#34;&#34;&#34;
+    #print statement
+    #Check if results are good
+    #Curve pass?
+    curvePass = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;]) &gt; 2
+    
+    #Peak Pass?
+    peakPass = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
+        
+    
+    if format==&#39;print&#39;:
+        #Print results
+        print(&#39;Site:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
+        print(&#39;Acquisition Date:&#39;, hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])
+        print(&#39;Site Location:&#39;, hvsr_results[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_results[&#39;input_params&#39;][&#39;latitude&#39;])
+        print(&#39;Elevation:&#39;,hvsr_results[&#39;input_params&#39;][&#39;elevation&#39;])
+        print()
+        print(&#39;{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
+        if curvePass and peakPass:
+            print(&#39;✔ Curve at {0:.3f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
+        else:
+            print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
+
+        #Print individual results
+        print(&#39;\tCurve Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+
+
+        print(&#39;\tPeak Tests:&#39;)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+            res = &#39;✔&#39;
+        else:
+            res = &#39;✘&#39;
+        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+
+    elif format==&#39;csv&#39;:
+        import pandas as pd
+        pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
+                  &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
+                  &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
+        d = hvsr_results
+        criteriaList = []
+        for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
+            criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
+        criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
+        dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
+        dfList[0].extend(criteriaList)
+        outDF = pd.DataFrame(dfList, columns=pdCols)
+        if export==&#39;&#39;:
+            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
+            if inFile.is_dir():
+                inFile = inFile.as_posix()
+                if inFile[-1]==&#39;/&#39;:
+                    pass
+                else:
+                    inFile = inFile + &#39;/&#39;
+                fname = hvsr_results[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
+                inFile = inFile + fname +&#39;.csv&#39;
+            elif inFile.is_file():
+                export = inFile.with_suffix(&#39;.csv&#39;)
+        outDF.to_csv(export, index_label=&#39;ID&#39;)
+        return outDF
+    elif format==&#39;plot&#39;:
+        hvsr_results[&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+        if return_results:
+            return hvsr_results
+
+    if export:
+        pass
+        #code to write to output file
+    return</code></pre>
+</details>
+</dd>
 <dt id="sprit.sprit.gui"><code class="name flex">
 <span>def <span class="ident">gui</span></span>(<span>)</span>
 </code></dt>
@@ -5399,7 +5888,7 @@ If not specified, does not write file</dd>
 </details>
 </dd>
 <dt id="sprit.sprit.hvplot"><code class="name flex">
-<span>def <span class="ident">hvplot</span></span>(<span>hvsr_dict, plot_type='HVSR', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, **kwargs)</span>
+<span>def <span class="ident">hvplot</span></span>(<span>hvsr_dict, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, clear_fig=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot HVSR data</p>
@@ -5456,7 +5945,7 @@ Keyword arguments for matplotlib.pyplot</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def hvplot(hvsr_dict, plot_type=&#39;HVSR&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True,**kwargs):
+<pre><code class="python">def hvplot(hvsr_dict, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True, clear_fig=True,**kwargs):
     &#34;&#34;&#34;Function to plot HVSR data
 
     Parameters
@@ -5498,6 +5987,13 @@ Keyword arguments for matplotlib.pyplot</p>
     fig, ax : matplotlib figure and axis objects
         Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
     &#34;&#34;&#34;
+
+    if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
 
     compList = [&#39;c&#39;, &#39;comp&#39;, &#39;component&#39;, &#39;components&#39;]
     specgramList = [&#39;spec&#39;, &#39;specgram&#39;, &#39;spectrogram&#39;]
@@ -5561,20 +6057,22 @@ Keyword arguments for matplotlib.pyplot</p>
             fig, ax = plt.subplot_mosaic(mosaicPlots)
             axis = ax[p]
         elif use_subplots:
+            ax[p].clear()
             axis = ax[p]
         else:
             fig, axis = plt.subplots()
-            
+                
         if p == &#39;hvsr&#39;:
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;comp&#39;:
             plotComponents[0] = plotComponents[0][:-1]
             plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
         elif p==&#39;spec&#39;:
-            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis)
+            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis, colorbar=False)
         else:
             print(&#39;Error&#39;)    
     
+    fig.canvas.draw()
     if return_fig:
         return fig, ax
     return</code></pre>
@@ -5596,7 +6094,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-25', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-27', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -6019,6 +6517,93 @@ This is necessary for Raspberry Shake data.</dd>
     return fig, ax</code></pre>
 </details>
 </dd>
+<dt id="sprit.sprit.plot_noise_windows"><code class="name flex">
+<span>def <span class="ident">plot_noise_windows</span></span>(<span>hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=None, do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5, 5], do_pctThresh=False, sat_percent=0.8, min_win_size=1, do_noiseWin=False, noise_percent=0.995, do_warmup=False, warmup_time=0, cooldown_time=0, return_dict=False, use_tkinter=False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_noise_windows(hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=None,
+                         do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
+                         do_pctThresh=False, sat_percent=0.8, min_win_size=1, 
+                         do_noiseWin=False, noise_percent=0.995, 
+                         do_warmup=False, warmup_time=0, cooldown_time=0, 
+                         return_dict=False, use_tkinter=False):
+    
+    if clear_fig: #Intended use for tkinter
+        #Clear everything
+        for key in ax:
+            ax[key].clear()
+        fig.clear()
+
+        #Really make sure it&#39;s out of memory
+        fig = []
+        ax = []
+        try:
+            fig.get_children()
+        except:
+            pass
+        try:
+            ax.get_children()
+        except:
+            pass
+
+    if use_tkinter:
+        try:
+            ax=self.ax_noise
+            fig=self.fig_noise
+        except:
+            pass
+
+    #Reset axes, figure, and canvas widget
+    noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+            [&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
+            [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
+    fig, ax = plt.subplot_mosaic(noise_mosaic, sharex=True)  
+    #self.noise_canvas = FigureCanvasTkAgg(fig, master=canvasFrame_noise)
+    #self.noise_canvasWidget.destroy()
+    #self.noise_canvasWidget = self.noise_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    #self.noise_canvasWidget.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+    fig.canvas.draw()
+    
+    fig, ax = plot_specgram_stream(stream=hvsr_dict[&#39;stream&#39;], params=hvsr_dict, fig=fig, ax=ax, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+    fig.canvas.draw()
+
+    #Reset edited data every time plot_noise_windows is run
+    hvsr_dict[&#39;stream_edited&#39;] = hvsr_dict[&#39;stream&#39;].copy()
+
+    #Set initial input
+    input = hvsr_dict[&#39;stream&#39;]
+
+    #print(input[0].stats.starttime)
+    if do_stalta:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;stalta&#39;, sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_pctThresh:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_noiseWin:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_dict[&#39;stream_edited&#39;]
+
+    if do_warmup:
+        hvsr_dict[&#39;stream_edited&#39;] = remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=warmup_time, cooldown_time=cooldown_time)
+
+    fig, ax, noise_windows_line_artists, noise_windows_window_artists = get_removed_windows(input=hvsr_dict, fig=fig, ax=ax, time_type=&#39;matplotlib&#39;)
+    
+    fig.canvas.draw()
+    plt.show()
+    if return_dict:
+        hvsr_dict[&#39;Windows_Plot&#39;] = (fig, ax)
+        return hvsr_dict
+    return </code></pre>
+</details>
+</dd>
 <dt id="sprit.sprit.plot_specgram_hvsr"><code class="name flex">
 <span>def <span class="ident">plot_specgram_hvsr</span></span>(<span>hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix='', **kwargs)</span>
 </code></dt>
@@ -6129,7 +6714,7 @@ This is necessary for Raspberry Shake data.</dd>
     axy.zorder=0
     ax.zorder=1
     ax.set_facecolor(&#39;#ffffff00&#39;) #Create transparent background for front axis
-    #plt.sca(axy)
+    #plt.sca(axy)  
     im = ax.imshow(psdArr, origin=&#39;lower&#39;, extent=extList, aspect=&#39;auto&#39;, interpolation=&#39;nearest&#39;, **kwargs)
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
@@ -6158,7 +6743,7 @@ This is necessary for Raspberry Shake data.</dd>
 </details>
 </dd>
 <dt id="sprit.sprit.plot_specgram_stream"><code class="name flex">
-<span>def <span class="ident">plot_specgram_stream</span></span>(<span>stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, fig=None, ax=None, cmap_per=[0.1, 0.9], **kwargs)</span>
+<span>def <span class="ident">plot_specgram_stream</span></span>(<span>stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, return_fig=True, fig=None, ax=None, cmap_per=[0.1, 0.9], **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream</p>
@@ -6194,7 +6779,7 @@ Only matters if more than one component used.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
+<pre><code class="python">def plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, fill_gaps=None, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
     &#34;&#34;&#34;Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
 
     For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html 
@@ -6260,7 +6845,8 @@ Only matters if more than one component used.</dd>
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.merge()
-    stream.stack(group_by=&#39;all&#39;, npts_tol=200, stack_type=stack_type)  
+    if len(stream)&gt;1:
+        stream.stack(group_by=&#39;all&#39;, npts_tol=200, stack_type=stack_type)  
 
     if fig is None and ax is None:
         #Organize the chart layout
@@ -6269,8 +6855,10 @@ Only matters if more than one component used.</dd>
                 [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
         fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
         #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
-
+    
     data = stream[0].data
+    if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
+        data = data.filled(fill_gaps)
     sample_rate = stream[0].stats.sampling_rate
 
     if &#39;cmap&#39; in kwargs.keys():
@@ -6289,7 +6877,9 @@ Only matters if more than one component used.</dd>
         scale=&#39;dB&#39;
     else:
         scale=None
-    spec, freqs, times, im = ax[&#39;spec&#39;].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
+    with warnings.catch_warnings():
+        warnings.simplefilter(&#39;ignore&#39;, category=RuntimeWarning)
+        spec, freqs, times, im = ax[&#39;spec&#39;].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
     im.remove()
 
     difference_array = freqs-ymin
@@ -6345,7 +6935,7 @@ Only matters if more than one component used.</dd>
                 xmin = currMin
             if xmax &lt; currMax:
                 xmax = currMax     
-                   
+    
     norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     im = ax[&#39;spec&#39;].imshow(array_displayed, norm=norm, cmap=cmap, aspect=&#39;auto&#39;, interpolation=None, extent=[xmin,xmax,ymax,ymin])
 
@@ -6388,7 +6978,11 @@ Only matters if more than one component used.</dd>
     elif &#39;title&#39; in kwargs.keys():
         fig.suptitle(kwargs[&#39;title&#39;])
     else:
-        fig.suptitle(params[&#39;site&#39;]+&#39;: Spectrogram and Data&#39;)
+        if &#39;input_params&#39; in params.keys():
+            sitename = params[&#39;input_params&#39;][&#39;site&#39;]
+        else:
+            sitename = params[&#39;site&#39;]
+        fig.suptitle(&#39;{}: Spectrogram and Data&#39;.format(sitename))
     
     day = &#34;{}-{}-{}&#34;.format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax[&#39;signale&#39;].set_xlabel(&#39;UTC Time \n&#39;+day)
@@ -6517,109 +7111,6 @@ Only matters if more than one component used.</dd>
     if return_fig:
         return fig, axes
     return                 </code></pre>
-</details>
-</dd>
-<dt id="sprit.sprit.print_report"><code class="name flex">
-<span>def <span class="ident">print_report</span></span>(<span>hvsr_data, export='', format='print', save_figs=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Dictionary containing all the information about the processed hvsr data</dd>
-<dt><strong><code>format</code></strong> :&ensp;<code>{'csv', 'print', 'docx'}</code></dt>
-<dd>Format in which to print or export the report.</dd>
-<dt><strong><code>export</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filepath path for export. If not specified, report name is generated automatically and placed in current directory</dd>
-<dt><strong><code>include</code></strong> :&ensp;<code>str</code> or <code>list</code>, default=<code>'peak'</code></dt>
-<dd>What to include in the report. By default includes all the following
-- Site name
-- Acquisition Date
-- Longitude
-- Latitude
-- Elevation
-- Primary peak frequency
-- Whether passed quality tests (x6)
-For docx (not yet implemented), the following are also included:
-- Figure with spectrogram
-- Figure with HVSR curve
-- Figure with 3 components</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def print_report(hvsr_data, export=&#39;&#39;, format=&#39;print&#39;, save_figs=None):
-    &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
-        
-    Parameters
-    ----------
-    hvsr_data : dict
-        Dictionary containing all the information about the processed hvsr data
-    format : {&#39;csv&#39;, &#39;print&#39;, &#39;docx&#39;}
-        Format in which to print or export the report.
-    export : str
-        Filepath path for export. If not specified, report name is generated automatically and placed in current directory
-    include : str or list, default=&#39;peak&#39;
-        What to include in the report. By default includes all the following
-            - Site name
-            - Acquisition Date
-            - Longitude
-            - Latitude
-            - Elevation
-            - Primary peak frequency
-            - Whether passed quality tests (x6)
-        For docx (not yet implemented), the following are also included:
-            - Figure with spectrogram
-            - Figure with HVSR curve
-            - Figure with 3 components
-    &#34;&#34;&#34;
-    #print statement
-    if format==&#39;print&#39;:
-        print(hvsr_data[&#39;input_params&#39;][&#39;site&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;acq_date&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_data[&#39;input_params&#39;][&#39;latitude&#39;])
-        print(hvsr_data[&#39;input_params&#39;][&#39;elevation&#39;])
-        print(round(hvsr_data[&#39;Best Peak&#39;][&#39;f0&#39;], 3))
-        for p in hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-            print(p, &#39;:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-        print(&#39;Peak Passes Criteria:&#39;,hvsr_data[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
-
-        hvplot(hvsr_data, plot_type=&#39;HVSR p tp ann&#39;)
-        hvplot(hvsr_data, plot_type=&#39;HVSR c&#39;)
-        hvplot(hvsr_data, plot_type=&#39;spec&#39;)
-    elif format==&#39;csv&#39;:
-        import pandas as pd
-        pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
-                  &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
-                  &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
-        d = hvsr_data
-        criteriaList = []
-        for p in hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-            criteriaList.append(hvsr_data[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-        criteriaList.append(hvsr_data[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
-        dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
-        dfList[0].extend(criteriaList)
-        outDF = pd.DataFrame(dfList, columns=pdCols)
-        if export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_data[&#39;input_params&#39;][&#39; datapath&#39;])
-            if inFile.is_dir():
-                inFile = inFile.as_posix()
-                if inFile[-1]==&#39;/&#39;:
-                    pass
-                else:
-                    inFile = inFile + &#39;/&#39;
-                fname = hvsr_data[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_data[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
-                inFile = inFile + fname +&#39;.csv&#39;
-            elif inFile.is_file():
-                export = inFile.with_suffix(&#39;.csv&#39;)
-        outDF.to_csv(export, index_label=&#39;ID&#39;)
-        return outDF
-    if export:
-        pass
-        #code to write to output file
-    return</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit.process_hvsr"><code class="name flex">
@@ -6835,7 +7326,9 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         for k in hvsr_out[&#39;psd_raw&#39;]:
             ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
             freqs = hvsr_out[&#39;x_freqs&#39;][k]
-            smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
+                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
             hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
     elif freq_smooth.lower() in freq_smooth_constant:
         hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
@@ -7189,31 +7682,8 @@ This averages over the entire curve so that curves with very abberant data (ofte
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
         
     if verbose:
-        #Print results
-        if curvePass and peakPass:
-            print(&#39;✔ Curve at {0:.2f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
-        else:
-            print(&#39;✘ Peak at {0:.2f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
-
-        #Print individual results
-        print(&#39;\tCurve Tests:&#39;)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
-
-
-        print(&#39;\tPeak Tests:&#39;)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
-        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
-            res = &#39;✔&#39;
-        else:
-            res = &#39;✘&#39;
-        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
-
+        get_report(hvsr_results=hvsr_results, format=&#39;print&#39;)
+        
     if plot_type != False:
         if plot_type == True:
             plot_type = &#39;HVSR p ann t c+ ann p Spec&#39;
@@ -7293,156 +7763,13 @@ This averages over the entire curve so that curves with very abberant data (ofte
     fig_closed = False
     while fig_closed is False:
         fig.canvas.mpl_connect(&#39;button_press_event&#39;, __on_click)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
-        fig.canvas.mpl_connect(&#39;close_event&#39;, __on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
+        fig.canvas.mpl_connect(&#39;close_event&#39;, _on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
         plt.pause(1)
 
     params[&#39;xwindows_out&#39;] = xWindows
     params[&#39;fig&#39;] = fig
     params[&#39;ax&#39;] = ax
     return params</code></pre>
-</details>
-</dd>
-<dt id="sprit.sprit.show_removed_windows"><code class="name flex">
-<span>def <span class="ident">show_removed_windows</span></span>(<span>input, fig=None, ax=None, lineArtist=[], winArtist=[], existing_lineArtists=[], keep_line_artists=True, time_type='matplotlib')</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def show_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], keep_line_artists=True, time_type=&#39;matplotlib&#39;):
-    if fig is None and ax is None:
-        fig, ax = plt.subplots()
-
-    if type(input) is dict:
-        if &#39;stream_edited&#39; in input.keys():
-            stream = input[&#39;stream_edited&#39;].copy()
-        else:
-            stream = input[&#39;stream&#39;].copy()
-    else:
-        stream = input.copy()
-
-    #Get masked indices of trace(s)
-    trace = stream[0]
-    windows = []
-    windows.append([0,np.nan])
-
-    #mask = np.isnan(trace.data)  # Create a mask for None values
-    #masked_array = np.ma.array(trace.data, mask=mask).copy()
-    masked_array = trace.data.copy()
-
-    if isinstance(masked_array, np.ma.MaskedArray):
-        sample_rate = trace.stats.sampling_rate
-        masked_array = masked_array.mask.nonzero()[0]
-        lastMaskInd = masked_array[0]
-        wInd = 0
-        #masked_array = trace.data.mask.nonzero()[0]
-        for i in range(1, len(masked_array)):
-            maskInd = masked_array[i]
-            if maskInd-lastMaskInd &gt; 1:
-                windows.append([np.nan, np.nan])
-                windows[wInd][1] = masked_array[i - 1]
-                wInd += 1
-                windows[wInd][0] = masked_array[i]
-
-            lastMaskInd = maskInd    
-        windows[wInd][1] = masked_array[-1]
-
-        #Reformat ax as needed
-        if isinstance(ax, np.ndarray):
-            origAxes = ax.copy()
-            newAx = {}
-            for i, a in enumerate(ax):
-                newAx[i] = a
-            axes = newAx
-        elif isinstance(ax, dict):
-            origAxes = ax
-            axes = ax
-        else:
-            origAxes = ax
-            axes = {&#39;ax&#39;:ax}
-
-        samplesList = [&#39;sample&#39;, &#39;samples&#39;, &#39;s&#39;]
-        utcList = [&#39;utc&#39;, &#39;utcdatetime&#39;, &#39;obspy&#39;, &#39;u&#39;, &#39;o&#39;]
-        matplotlibList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;]    
-
-        for i, a in enumerate(axes.keys()):
-            ax = axes[a]
-            pathList = []
-            
-            windowDrawn = []
-            winArtist = []
-            if existing_lineArtists == []:
-                lineArtist = []
-            elif len(existing_lineArtists)&gt;=1 and keep_line_artists:
-                lineArtist = existing_lineArtists
-            else:
-                lineArtist = []
-
-            for winNums, win in enumerate(windows):
-                if time_type.lower() in samplesList:
-                    x0 = win[0]
-                    x1 = win[1]
-                elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
-                    sample_rate = trace.stats.delta
-
-                    x0 = trace.stats.starttime + win[0] * sample_rate
-                    x1 = trace.stats.starttime + win[1] * sample_rate
-
-                    if time_type.lower() in matplotlibList:
-                        x0 = x0.matplotlib_date
-                        x1 = x1.matplotlib_date
-                else:
-                    print(&#39;time_type error&#39;)
-                
-                y0, y1 = ax.get_ylim()
-
-                path_data = [
-                            (matplotlib.path.Path.MOVETO, (x0, y0)),
-                            (matplotlib.path.Path.LINETO, (x1, y0)),
-                            (matplotlib.path.Path.LINETO, (x1, y1)),
-                            (matplotlib.path.Path.LINETO, (x0, y1)),
-                            (matplotlib.path.Path.LINETO, (x0, y0)),
-                            (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
-                        ]
-                
-                codes, verts = zip(*path_data)
-                path = matplotlib.path.Path(verts, codes)
-
-                #
-                windowDrawn.append(False)
-                winArtist.append(None)
-                lineArtist.append([])
-                linArt0 = ax.axvline(x0, y0, y1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
-                linArt1 = plt.axvline(x1, y0, y1, color=&#39;k&#39;, linewidth=0.5, zorder=100)
-                lineArtist[winNums].append([linArt0, linArt1])
-                #
-                
-                pathList.append(path)
-
-            for i, pa in enumerate(pathList):
-                if windowDrawn[i]:
-                    pass
-                else:
-                    patch = matplotlib.patches.PathPatch(pa, facecolor=&#39;k&#39;, alpha=0.75)                            
-                    winArt = ax.add_patch(patch)
-                    windowDrawn[i] = True
-                    winArtist[i] = winArt
-            
-            #Reformat ax as needed
-            if isinstance(origAxes, np.ndarray):
-                origAxes[i] = ax
-            elif isinstance(origAxes, dict):
-                origAxes[a] = ax
-            else:
-                origAxes = ax
-
-        ax = origAxes
-
-        fig.canvas.draw()
-
-    return fig, ax, lineArtist, winArtist</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit.time_it"><code class="name flex">
@@ -7779,6 +8106,8 @@ If specified, filepath to write to updated inventory file to.</p>
 <li><code><a title="sprit.sprit.generate_ppsds" href="#sprit.sprit.generate_ppsds">generate_ppsds</a></code></li>
 <li><code><a title="sprit.sprit.get_char" href="#sprit.sprit.get_char">get_char</a></code></li>
 <li><code><a title="sprit.sprit.get_metadata" href="#sprit.sprit.get_metadata">get_metadata</a></code></li>
+<li><code><a title="sprit.sprit.get_removed_windows" href="#sprit.sprit.get_removed_windows">get_removed_windows</a></code></li>
+<li><code><a title="sprit.sprit.get_report" href="#sprit.sprit.get_report">get_report</a></code></li>
 <li><code><a title="sprit.sprit.gui" href="#sprit.sprit.gui">gui</a></code></li>
 <li><code><a title="sprit.sprit.has_required_channels" href="#sprit.sprit.has_required_channels">has_required_channels</a></code></li>
 <li><code><a title="sprit.sprit.hvplot" href="#sprit.sprit.hvplot">hvplot</a></code></li>
@@ -7786,16 +8115,15 @@ If specified, filepath to write to updated inventory file to.</p>
 <li><code><a title="sprit.sprit.input_params" href="#sprit.sprit.input_params">input_params</a></code></li>
 <li><code><a title="sprit.sprit.message" href="#sprit.sprit.message">message</a></code></li>
 <li><code><a title="sprit.sprit.plot_hvsr" href="#sprit.sprit.plot_hvsr">plot_hvsr</a></code></li>
+<li><code><a title="sprit.sprit.plot_noise_windows" href="#sprit.sprit.plot_noise_windows">plot_noise_windows</a></code></li>
 <li><code><a title="sprit.sprit.plot_specgram_hvsr" href="#sprit.sprit.plot_specgram_hvsr">plot_specgram_hvsr</a></code></li>
 <li><code><a title="sprit.sprit.plot_specgram_stream" href="#sprit.sprit.plot_specgram_stream">plot_specgram_stream</a></code></li>
 <li><code><a title="sprit.sprit.plot_stream" href="#sprit.sprit.plot_stream">plot_stream</a></code></li>
-<li><code><a title="sprit.sprit.print_report" href="#sprit.sprit.print_report">print_report</a></code></li>
 <li><code><a title="sprit.sprit.process_hvsr" href="#sprit.sprit.process_hvsr">process_hvsr</a></code></li>
 <li><code><a title="sprit.sprit.remove_noise" href="#sprit.sprit.remove_noise">remove_noise</a></code></li>
 <li><code><a title="sprit.sprit.remove_outlier_ppsds" href="#sprit.sprit.remove_outlier_ppsds">remove_outlier_ppsds</a></code></li>
 <li><code><a title="sprit.sprit.run" href="#sprit.sprit.run">run</a></code></li>
 <li><code><a title="sprit.sprit.select_windows" href="#sprit.sprit.select_windows">select_windows</a></code></li>
-<li><code><a title="sprit.sprit.show_removed_windows" href="#sprit.sprit.show_removed_windows">show_removed_windows</a></code></li>
 <li><code><a title="sprit.sprit.time_it" href="#sprit.sprit.time_it">time_it</a></code></li>
 <li><code><a title="sprit.sprit.trim_data" href="#sprit.sprit.trim_data">trim_data</a></code></li>
 <li><code><a title="sprit.sprit.update_shake_metadata" href="#sprit.sprit.update_shake_metadata">update_shake_metadata</a></code></li>
