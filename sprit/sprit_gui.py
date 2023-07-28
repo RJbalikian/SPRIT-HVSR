@@ -34,12 +34,14 @@ class App:
         self.master.title("SPRIT")
 
         # Set the theme
-        self.darkthemepath = os.path.abspath("./themes/forest-dark.tcl")
-        self.lightthemepath = os.path.abspath("./themes/forest-light.tcl")
+        self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "/resources/themes/forest-dark.tcl"))
+        self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "/resources/themes/forest-light.tcl"))
         
         # Create the style object
         self.style = ttk.Style(master)
-        self.style.theme_use('default')
+        root.tk.call('source', self.lightthemepath)
+        #self.style.theme_use('default')
+        self.style.theme_use('forest-light')
 
         self.create_menubar()
         self.create_tabs()
