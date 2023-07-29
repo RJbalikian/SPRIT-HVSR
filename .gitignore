@@ -2,3 +2,4 @@ testnotebook.ipynb
 .env
 .venv
 sprit.__pycache__
+docs/pyinstaller
