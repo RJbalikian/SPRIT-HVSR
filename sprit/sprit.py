@@ -4538,17 +4538,19 @@ def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+
     #print statement
     #Check if results are good
     #Curve pass?
-    curvePass = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
+    curvTestsPassed = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
                          hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
-                         hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
+                         hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time'])
+    curvePass = curvTestsPassed > 2
     
     #Peak Pass?
-    peakPass = ( hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
+    peakTestsPassed = ( hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
                 hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
                 hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
                 hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
                 hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
-                hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
+                hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)'])
+    peakPass = peakTestsPassed >= 5
         
     
     if format=='print':
@@ -4565,13 +4567,13 @@ def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+
             print('✘ Peak at {0:.3f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
 
         #Print individual results
-        print('\tCurve Tests:')
+        print('\tCurve Tests: {}/3 passed'.format(curvTestsPassed))
         print('\t\t', hvsr_results['Best Peak']['Report']['Lw'][-1], 'Length of processing windows:', hvsr_results['Best Peak']['Report']['Lw'])
         print('\t\t', hvsr_results['Best Peak']['Report']['Nc'][-1], 'Number of significant cycles:', hvsr_results['Best Peak']['Report']['Nc'])
         print('\t\t', hvsr_results['Best Peak']['Report']['σ_A(f)'][-1], 'Low StDev. of H/V Curve over time:', hvsr_results['Best Peak']['Report']['σ_A(f)'])
 
 
-        print('\tPeak Tests:')
+        print('\tPeak Tests: {}/6 passed'.format(peakTestsPassed))
         print('\t\t', hvsr_results['Best Peak']['Report']['A(f-)'][-1], 'Clarity Below Peak Frequency:', hvsr_results['Best Peak']['Report']['A(f-)'])
         print('\t\t', hvsr_results['Best Peak']['Report']['A(f+)'][-1], 'Clarity Above Peak Frequency:',hvsr_results['Best Peak']['Report']['A(f+)'])
         print('\t\t', hvsr_results['Best Peak']['Report']['A0'][-1], 'Clarity of Peak Amplitude:',hvsr_results['Best Peak']['Report']['A0'])
@@ -4596,7 +4598,9 @@ def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+
         dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['Best Peak']['f0'], 3)]]
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
-        if export=='':
+        if export is None:
+            pass
+        elif export=='':
             inFile = pathlib.Path(hvsr_results['input_params'][' datapath'])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
@@ -4608,7 +4612,10 @@ def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+
                 inFile = inFile + fname +'.csv'
             elif inFile.is_file():
                 export = inFile.with_suffix('.csv')
-        outDF.to_csv(export, index_label='ID')
+            outDF.to_csv(export, index_label='ID')
+        else:
+            outDF.to_csv(export, index_label='ID')
+        hvsr_results['CSV_Report'] = outDF
         return outDF
     elif format=='plot':
         hvsr_results['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
