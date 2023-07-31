@@ -4510,7 +4510,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None):
+def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None):
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -4612,13 +4612,19 @@ def get_report(hvsr_results, export='', format='print', plot_type='HVSR p ann C+
                 inFile = inFile + fname +'.csv'
             elif inFile.is_file():
                 export = inFile.with_suffix('.csv')
-            outDF.to_csv(export, index_label='ID')
+            try:
+                outDF.to_csv(export, index_label='ID')
+            except:
+                warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['Best Peak']['Report']['CSV_Report]".format(export), category=RuntimeWarning)
         else:
-            outDF.to_csv(export, index_label='ID')
-        hvsr_results['CSV_Report'] = outDF
+            try:
+                outDF.to_csv(export, index_label='ID')
+            except:
+                warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['Best Peak']['Report']['CSV_Report]".format(export), category=RuntimeWarning)
+        hvsr_results['Best Peak']['Report']['CSV_Report'] = outDF
         return outDF
     elif format=='plot':
-        hvsr_results['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
+        hvsr_results['Best Peak']['Report']['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
         if return_results:
             return hvsr_results
 
