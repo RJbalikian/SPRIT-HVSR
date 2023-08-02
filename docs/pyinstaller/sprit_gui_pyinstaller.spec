@@ -3,11 +3,10 @@
 
 block_cipher = None
 
-
-a = Analysis(['c:\\Users\\riley\\LocalData\\Github\\SPRIT-HVSR\\docs\\pyinstaller\\sprit_gui_pyinstaller.py'],
+a = Analysis(['sprit_gui_pyinstaller.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('c:/Users/riley/LocalData/Code/Github/SPRIT/sprit/resources', 'data')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -18,6 +17,7 @@ a = Analysis(['c:\\Users\\riley\\LocalData\\Github\\SPRIT-HVSR\\docs\\pyinstalle
     cipher=block_cipher,
     noarchive=False,
 )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(

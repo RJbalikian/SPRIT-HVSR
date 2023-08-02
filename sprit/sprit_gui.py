@@ -34,8 +34,8 @@ class App:
         self.master.title("SPRIT")
 
         # Set the theme
-        self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "/resources/themes/forest-dark.tcl"))
-        self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "/resources/themes/forest-light.tcl"))
+        self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-dark.tcl"))
+        self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-light.tcl"))
         
         # Create the style object
         self.style = ttk.Style(master)
@@ -2501,8 +2501,7 @@ def on_closing():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sprit_icon_alpha.ico'))
-
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
     root.iconbitmap(icon_path)
 
     app = App(root)
