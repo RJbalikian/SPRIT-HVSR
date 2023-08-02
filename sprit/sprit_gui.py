@@ -39,7 +39,7 @@ class App:
         
         # Create the style object
         self.style = ttk.Style(master)
-        root.tk.call('source', self.lightthemepath)
+        self.master.tk.call('source', self.lightthemepath)
         #self.style.theme_use('default')
         self.style.theme_use('forest-light')
 
