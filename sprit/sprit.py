@@ -1123,14 +1123,14 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         rawDataIN.attach_response(inv)
     return rawDataIN
 
-def batch_data_read(input_filelist, input_params_list=None, verbose=False):
+def batch_data_read(input_data, batch_type='csv', param_col='detect', batch_params=None, verbose=False, **input_fetch_kwargs):
     """Function to read list of files and parameters
 
     Parameters
     ----------
-    input_filelist : list
+    input_data : list
         List of filepaths to read using obspy.read()
-    input_params_list : list, optional
+    batch_params : list, optional
         List of dictionary with select read parameters, by default None
     verbose : bool, default = False
         Whether to print results 
@@ -1143,60 +1143,66 @@ def batch_data_read(input_filelist, input_params_list=None, verbose=False):
 
     # Dictionary to store the stream objects
     stream_dict = {}
+    data_dict = {}
 
-    # Read and process each MiniSEED file
-    for i, file in enumerate(input_filelist):
-        if input_params_list is None:
-            pass
-        else:
-            read_params = input_params_list[i]
-        
-        # Read the MiniSEED file into a Stream object
-        if isinstance(read_params, dict):
-            stream = obspy.read(file, **read_params)
-        else:
-            stream = obspy.read(file)
+    if batch_type == 'filelist':
+        # Read and process each MiniSEED file
+        for i, file in enumerate(input_data):
+            if batch_params is None:
+                pass
+            elif isinstance(batch_params, list):
+                read_params = batch_params[i]
+            elif isinstance(batch_params, dict):
+                pass
+                #Update this eventually
 
-        # Get the network, station, and location codes
-        network = stream[0].stats.network
-        station = stream[0].stats.station
-        location = stream[0].stats.location
-        
-        # Create a unique identifier for the network-station-location combination
-        stream_id = f"{network}.{station}.{location}"
-
-        # Check if the stream has a single trace
-        if len(stream) == 1:
-
-            # Check if the stream ID exists in the dictionary
-            if stream_id in stream_dict:
-                if stream[0].stats.channel == 'Z':
-                    stream_dict[stream_id][0] = stream[0]
-                elif stream[0].stats.channel == 'E':
-                    stream_dict[stream_id][1] = stream[0]
-                elif stream[0].stats.channel == 'N':
-                    stream_dict[stream_id][2] = stream[0]
+            
+            # Read the MiniSEED file into a Stream object
+            if isinstance(read_params, dict):
+                stream = obspy.read(file, **read_params)
             else:
-                # Create a new stream object with the first trace and assign Z, E, and N channels
-                new_stream = obspy.Stream(traces=[None, None, None])
-                if stream[0].stats.channel == 'Z':
-                    new_stream[0] = stream[0]
-                elif stream[0].stats.channel == 'E':
-                    new_stream[1] = stream[0]
-                elif stream[0].stats.channel == 'N':
-                    new_stream[2] = stream[0]
-                # Assign network, station, location, etc. to the new_stream as required
-                stream_dict[stream_id] = new_stream
-        else:
-            # Check if the stream has required channels and add it directly to stream_dict
-            if has_required_channels(stream):
-                stream_dict[stream_id] = stream
+                stream = obspy.read(file)
+
+            # Get the network, station, and location codes
+            network = stream[0].stats.network
+            station = stream[0].stats.station
+            location = stream[0].stats.location
+            
+            # Create a unique identifier for the network-station-location combination
+            stream_id = f"{network}.{station}.{location}"
+
+            # Check if the stream has a single trace
+            if len(stream) == 1:
+
+                # Check if the stream ID exists in the dictionary
+                if stream_id in stream_dict:
+                    if stream[0].stats.channel == 'Z':
+                        stream_dict[stream_id][0] = stream[0]
+                    elif stream[0].stats.channel == 'E':
+                        stream_dict[stream_id][1] = stream[0]
+                    elif stream[0].stats.channel == 'N':
+                        stream_dict[stream_id][2] = stream[0]
+                else:
+                    # Create a new stream object with the first trace and assign Z, E, and N channels
+                    new_stream = obspy.Stream(traces=[None, None, None])
+                    if stream[0].stats.channel == 'Z':
+                        new_stream[0] = stream[0]
+                    elif stream[0].stats.channel == 'E':
+                        new_stream[1] = stream[0]
+                    elif stream[0].stats.channel == 'N':
+                        new_stream[2] = stream[0]
+                    # Assign network, station, location, etc. to the new_stream as required
+                    stream_dict[stream_id] = new_stream
+            else:
+                # Check if the stream has required channels and add it directly to stream_dict
+                if has_required_channels(stream):
+                    stream_dict[stream_id] = stream
 
     # Validate the channels for each stream in stream_dict
     for stream_id, stream in stream_dict.items():
         if not has_required_channels(stream):
             if verbose:
-                print(f"Stream {stream_id} does not have all required channels, removing.")
+                print(f"Stream {stream_id} does not have all required channels, removing from analysis.")
             del stream_dict[stream_id]
 
     if verbose:
