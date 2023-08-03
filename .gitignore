@@ -2,5 +2,5 @@ testnotebook.ipynb
 .env
 .venv
 sprit.__pycache__
-docs/pyinstaller/sprit_gui_pyinstaller.exe
+docs/pyinstaller/SPRIT.exe
 docs/pyinstaller/sprit_gui_pyinstaller/sprit_gui_pyinstaller.pkg
