@@ -23,9 +23,6 @@ from matplotlib.backend_bases import MouseButton, MouseEvent
 
 matplotlib.use('TkAgg')
 import numpy as np
-#import pytz
-from tkcalendar import DateEntry
-
 import sprit
 
 class App:
@@ -494,29 +491,64 @@ class App:
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
 
         def update_acq_date(event):
-            self.acq_date = self.date_entry.get_date()
+            aMonth = self.acq_month.get()
+            if str(aMonth)[0]=='0':
+                aMonth = str(aMonth)[-1]
+
+            aDay = self.acq_day.get()
+            if str(aDay)[0]=='0':
+                aDay = str(aDay)[-1]
+
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
             self.day_of_year = self.acq_date.timetuple().tm_yday
             self.doy_label.configure(text=str(self.day_of_year))
             update_input_params_call()
 
-        # Date and Time           
-        ttk.Label(hvsrFrame, text="Date").grid(row=3, column=1, sticky='e', padx=5)
-        self.acq_date = tk.StringVar()
-        self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', textvariable=self.acq_date, validate='focusout')#update_input_params_call)
-        self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
-        self.date_entry.bind("<<DateEntrySelected>>", update_acq_date)
+        # Date and Time
+        dateFrame = ttk.Frame(hvsrFrame)
+        dateFrame.grid(row=3, column=1, columnspan=2, sticky='e', padx=5)
+        ttk.Label(dateFrame, text="Date").grid(row=1, column=1, sticky='e', padx=5)
+
+        self.acq_year = tk.IntVar()
+        self.acq_year.set(int(datetime.datetime.today().year))
+        self.acq_year_entry = ttk.Spinbox(dateFrame, from_=0, to=10000, width=7, textvariable=self.acq_year, validate='focusout', validatecommand=update_acq_date) 
+        self.acq_year_entry.grid(row=1, column=2, sticky='ew', padx=1)
+
+        self.acq_month = tk.IntVar()
+        self.acq_month.set(int(datetime.datetime.today().month))
+        self.acq_month_entry = ttk.Spinbox(dateFrame, from_=0, to=12, width=3, textvariable=self.acq_month, validate='focusout', validatecommand=update_acq_date) 
+        self.acq_month_entry.grid(row=1, column=3, sticky='ew', padx=1)
+
+        self.acq_day = tk.IntVar()
+        self.acq_day.set(int(datetime.datetime.today().day))
+        self.acq_day_entry = ttk.Spinbox(dateFrame, from_=0, to=31, width=3, textvariable=self.acq_day, validate='focusout', validatecommand=update_acq_date) 
+        self.acq_day_entry.grid(row=1, column=4, sticky='ew', padx=1)
+
+        self.acq_date = datetime.date.today()
+        #self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', textvariable=self.acq_date, validate='focusout')#update_input_params_call)
+        #self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
+        #self.date_entry.bind("<<DateEntrySelected>>", update_acq_date)
         
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky='ew')
 
         def get_times():
             #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+
+            sHour = self.start_hour.get()
+            if str(sHour)[0] == '0':
+                sHour = int(str(sHour)[-1])
+
+            sMin = self.start_minute.get()
+            if str(sMin)[0] == '0':
+                sMin = int(str(sMin)[-1])
+
             self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month, 
+                                          month = self.acq_date.month,
                                           day = self.acq_date.day,
-                                          hour = self.start_hour.get(),
-                                          minute = int(self.start_minute.get()),
+                                          hour = sHour,
+                                          minute = sMin,
                                           tzinfo=self.tz)
             
             #Get duration, as originally entered
@@ -574,7 +606,7 @@ class App:
         colonLabel.pack(side="left", fill="x")
         self.end_time_min_entry.pack(side='right', expand=True)
 
-        self.acq_date = self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
         self.starttime, self.endtime = get_times()
 
         def onTimezoneSelect(event):
@@ -2497,7 +2529,10 @@ class App:
 
 def on_closing():
     plt.close('all')
+    root.destroy()
     exit()
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
