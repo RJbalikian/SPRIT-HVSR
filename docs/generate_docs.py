@@ -39,7 +39,7 @@ else:
 src_path = pathlib.Path(subdir)
 trg_path = src_path.parent # this ends up being current folder, usually
 
-keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki']
+keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
 for t in trg_path.iterdir():
     #print('main folder', t)
     if t.name in keepList:

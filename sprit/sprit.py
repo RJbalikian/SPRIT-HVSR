@@ -15,6 +15,7 @@ from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy
 
 #Main variables
@@ -442,7 +443,45 @@ def input_params(datapath,
     elif type(acq_date) is datetime.date:
         date=str(acq_date)
     elif type(acq_date) is str:
-        date = acq_date
+        monthStrs = {'jan':1, 'january':1,
+                    'feb':2, 'february':2,
+                    'mar':3, 'march':3,
+                    'apr':4, 'april':4,
+                    'may':5,
+                    'jun':6, 'june':6,
+                    'jul':7, 'july':7,
+                    'aug':8, 'august':8,
+                    'sep':9, 'sept':9, 'september':9,
+                    'oct':10,'october':10, 
+                    'nov':11,'november':11,
+                    'dec':12,'december':12}
+
+        spelledMonth = False
+        for m in monthStrs.keys():
+            acq_date = acq_date.lower()
+            if m in acq_date:
+                spelledMonth = True
+                break
+
+        if spelledMonth is not False:
+            month = monthStrs[m]
+
+        if '/' in acq_date:
+            sep = '/'
+        elif '.' in acq_date:
+            sep='.'
+        elif ' ' in acq_date:
+            sep = ' '
+            acq_date = acq_date.replace(',', '')
+        else:
+            sep = '-'
+
+        acq_date = acq_date.split(sep)
+        if len(acq_date[2]) > 2: #American format
+            date = '{}-{}-{}'.format(acq_date[2], acq_date[0], acq_date[1])
+        else: #international format, one we're going to use
+            date = '{}-{}-{}'.format(acq_date[0], acq_date[1], acq_date[2])     
+
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
@@ -477,6 +516,7 @@ def input_params(datapath,
     endtime = date+"T"+endtime
     endtime = obspy.UTCDateTime(__formatTime(endtime, tzone=tzone))
 
+
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
@@ -490,7 +530,7 @@ def input_params(datapath,
     inputParamDict = {'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC',
                     'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'depth':depth, 'site':site,
-                    ' datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band
+                    'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band
                     }
 
     return inputParamDict
@@ -777,7 +817,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
                 'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-                'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+                'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
             Otherwise, this is the directory to save trimmed and exported data.
@@ -795,20 +835,19 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             Same dict as params parameter, but with an additional "strea" key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
-    datapath = params[' datapath']
     if inv is None:
         inv = params['inv'], 
     date=params['acq_date']
 
-    if '}' in str(datapath):
-        datapath = datapath.as_posix().replace('{','')
-        datapath = datapath.split('}')
+    if '}' in str(params['datapath']):
+        params['datapath'] = params['datapath'].as_posix().replace('{','')
+        params['datapath'] = params['datapath'].split('}')
     
-    if isinstance(datapath,list):
-        for i, d in enumerate(datapath):
-            datapath[i] = checkifpath(str(d).strip())
+    if isinstance(params['datapath'],list):
+        for i, d in enumerate(params['datapath']):
+            params['datapath'][i] = checkifpath(str(d).strip())
     else:
-        datapath = checkifpath(datapath)
+        dPath = checkifpath(params['datapath'])
 
     inst = params['instrument']
 
@@ -860,14 +899,14 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params)
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params)
     elif source=='file':
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawTraces = []
-            for datafile in datapath:
+            for datafile in dPath:
                 rawTrace = obspy.read(datafile)
                 rawTrace = rawTrace
                 rawTraces.append(rawTrace)
@@ -878,21 +917,21 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                 else:
                     rawDataIN = rawDataIN + trace
         else:
-            rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source=='batch':
         print("Batch read not yet supported")
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
-            for d in datapath:
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
+            for d in dPath:
                 pass
         else:
-            print('datapath parameter should be list or tuple if batch mode is selected, not {}.'.format(type(datapath)))
+            print('dPath parameter should be list or tuple if batch mode is selected, not {}.'.format(type(dPath)))
     else:
         try:
-            rawDataIN = obspy.read(datapath)
+            rawDataIN = obspy.read(dPath)
             rawDataIN.attach_response(inv)
         except:
             print('Read or source error')
@@ -1123,7 +1162,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         rawDataIN.attach_response(inv)
     return rawDataIN
 
-def batch_data_read(input_data, batch_type='csv', param_col='detect', batch_params=None, verbose=False, **input_fetch_kwargs):
+def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=None, verbose=False, **readcsv_input_fetch_kwargs):
     """Function to read list of files and parameters
 
     Parameters
@@ -1144,8 +1183,36 @@ def batch_data_read(input_data, batch_type='csv', param_col='detect', batch_para
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
+    if batch_type == 'csv':
+        #Read csv
+        read_csv_kwargs = {k: v for k, v in locals()['readcsv_input_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
+        dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
 
-    if batch_type == 'filelist':
+        #First figure out columns
+        input_params_params = input_params.__code__.co_varnames
+        get_metadata_params = get_metadata.__code__.co_varnames
+        fetch_data_params = fetch_data.__code__.co_varnames
+
+        param_dict_list = []
+        if param_col is None: #Not a single parameter column
+            for row_ind in range(dataReadInfoDF.shape[0]):
+                for col in dataReadInfoDF.columns:
+                    if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
+                        param_col[col] = dataReadInfoDF.loc[row_ind, col]
+        else:
+            for row in dataReadInfoDF[param_col]:
+                param_dict = {}
+                splitRow = str(row).split(',')
+                for item in splitRow:
+                    param_dict[splitRow.split('=')[0]] = splitRow.split('=')[1]
+                param_dict_list.append(param_dict)
+        #input_params(datapath,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
+        #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
+        #get_metadata(params, write_path)
+
+        #file_setup_kwargs = {k: v for k, v in locals()['keyword_parameters'].items() if k in w4h.file_setup.__code__.co_varnames}
+
+    elif batch_type == 'filelist':
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
             if batch_params is None:
@@ -4607,7 +4674,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
         if export is None:
             pass
         elif export=='':
-            inFile = pathlib.Path(hvsr_results['input_params'][' datapath'])
+            inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]=='/':

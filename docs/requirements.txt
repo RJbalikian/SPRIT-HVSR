@@ -4,4 +4,3 @@ pandas
 obspy
 scipy
 pyqt5
-tkcalendar

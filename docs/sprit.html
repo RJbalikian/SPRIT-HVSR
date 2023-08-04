@@ -1152,14 +1152,14 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         rawDataIN.attach_response(inv)
     return rawDataIN
 
-def batch_data_read(input_filelist, input_params_list=None, verbose=False):
+def batch_data_read(input_data, batch_type=&#39;csv&#39;, param_col=&#39;detect&#39;, batch_params=None, verbose=False, **input_fetch_kwargs):
     &#34;&#34;&#34;Function to read list of files and parameters
 
     Parameters
     ----------
-    input_filelist : list
+    input_data : list
         List of filepaths to read using obspy.read()
-    input_params_list : list, optional
+    batch_params : list, optional
         List of dictionary with select read parameters, by default None
     verbose : bool, default = False
         Whether to print results 
@@ -1172,60 +1172,66 @@ def batch_data_read(input_filelist, input_params_list=None, verbose=False):
 
     # Dictionary to store the stream objects
     stream_dict = {}
+    data_dict = {}
 
-    # Read and process each MiniSEED file
-    for i, file in enumerate(input_filelist):
-        if input_params_list is None:
-            pass
-        else:
-            read_params = input_params_list[i]
-        
-        # Read the MiniSEED file into a Stream object
-        if isinstance(read_params, dict):
-            stream = obspy.read(file, **read_params)
-        else:
-            stream = obspy.read(file)
+    if batch_type == &#39;filelist&#39;:
+        # Read and process each MiniSEED file
+        for i, file in enumerate(input_data):
+            if batch_params is None:
+                pass
+            elif isinstance(batch_params, list):
+                read_params = batch_params[i]
+            elif isinstance(batch_params, dict):
+                pass
+                #Update this eventually
 
-        # Get the network, station, and location codes
-        network = stream[0].stats.network
-        station = stream[0].stats.station
-        location = stream[0].stats.location
-        
-        # Create a unique identifier for the network-station-location combination
-        stream_id = f&#34;{network}.{station}.{location}&#34;
-
-        # Check if the stream has a single trace
-        if len(stream) == 1:
-
-            # Check if the stream ID exists in the dictionary
-            if stream_id in stream_dict:
-                if stream[0].stats.channel == &#39;Z&#39;:
-                    stream_dict[stream_id][0] = stream[0]
-                elif stream[0].stats.channel == &#39;E&#39;:
-                    stream_dict[stream_id][1] = stream[0]
-                elif stream[0].stats.channel == &#39;N&#39;:
-                    stream_dict[stream_id][2] = stream[0]
+            
+            # Read the MiniSEED file into a Stream object
+            if isinstance(read_params, dict):
+                stream = obspy.read(file, **read_params)
             else:
-                # Create a new stream object with the first trace and assign Z, E, and N channels
-                new_stream = obspy.Stream(traces=[None, None, None])
-                if stream[0].stats.channel == &#39;Z&#39;:
-                    new_stream[0] = stream[0]
-                elif stream[0].stats.channel == &#39;E&#39;:
-                    new_stream[1] = stream[0]
-                elif stream[0].stats.channel == &#39;N&#39;:
-                    new_stream[2] = stream[0]
-                # Assign network, station, location, etc. to the new_stream as required
-                stream_dict[stream_id] = new_stream
-        else:
-            # Check if the stream has required channels and add it directly to stream_dict
-            if has_required_channels(stream):
-                stream_dict[stream_id] = stream
+                stream = obspy.read(file)
+
+            # Get the network, station, and location codes
+            network = stream[0].stats.network
+            station = stream[0].stats.station
+            location = stream[0].stats.location
+            
+            # Create a unique identifier for the network-station-location combination
+            stream_id = f&#34;{network}.{station}.{location}&#34;
+
+            # Check if the stream has a single trace
+            if len(stream) == 1:
+
+                # Check if the stream ID exists in the dictionary
+                if stream_id in stream_dict:
+                    if stream[0].stats.channel == &#39;Z&#39;:
+                        stream_dict[stream_id][0] = stream[0]
+                    elif stream[0].stats.channel == &#39;E&#39;:
+                        stream_dict[stream_id][1] = stream[0]
+                    elif stream[0].stats.channel == &#39;N&#39;:
+                        stream_dict[stream_id][2] = stream[0]
+                else:
+                    # Create a new stream object with the first trace and assign Z, E, and N channels
+                    new_stream = obspy.Stream(traces=[None, None, None])
+                    if stream[0].stats.channel == &#39;Z&#39;:
+                        new_stream[0] = stream[0]
+                    elif stream[0].stats.channel == &#39;E&#39;:
+                        new_stream[1] = stream[0]
+                    elif stream[0].stats.channel == &#39;N&#39;:
+                        new_stream[2] = stream[0]
+                    # Assign network, station, location, etc. to the new_stream as required
+                    stream_dict[stream_id] = new_stream
+            else:
+                # Check if the stream has required channels and add it directly to stream_dict
+                if has_required_channels(stream):
+                    stream_dict[stream_id] = stream
 
     # Validate the channels for each stream in stream_dict
     for stream_id, stream in stream_dict.items():
         if not has_required_channels(stream):
             if verbose:
-                print(f&#34;Stream {stream_id} does not have all required channels, removing.&#34;)
+                print(f&#34;Stream {stream_id} does not have all required channels, removing from analysis.&#34;)
             del stream_dict[stream_id]
 
     if verbose:
@@ -4539,7 +4545,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 #Get or print report
-def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
+def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -4567,17 +4573,19 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
     #print statement
     #Check if results are good
     #Curve pass?
-    curvePass = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+    curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
                          hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
-                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;]) &gt; 2
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
+    curvePass = curvTestsPassed &gt; 2
     
     #Peak Pass?
-    peakPass = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+    peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
+    peakPass = peakTestsPassed &gt;= 5
         
     
     if format==&#39;print&#39;:
@@ -4594,13 +4602,13 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
             print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
 
         #Print individual results
-        print(&#39;\tCurve Tests:&#39;)
+        print(&#39;\tCurve Tests: {}/3 passed&#39;.format(curvTestsPassed))
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
 
 
-        print(&#39;\tPeak Tests:&#39;)
+        print(&#39;\tPeak Tests: {}/6 passed&#39;.format(peakTestsPassed))
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
@@ -4625,7 +4633,9 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
         dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
-        if export==&#39;&#39;:
+        if export is None:
+            pass
+        elif export==&#39;&#39;:
             inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
@@ -4637,10 +4647,19 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
                 inFile = inFile + fname +&#39;.csv&#39;
             elif inFile.is_file():
                 export = inFile.with_suffix(&#39;.csv&#39;)
-        outDF.to_csv(export, index_label=&#39;ID&#39;)
+            try:
+                outDF.to_csv(export, index_label=&#39;ID&#39;)
+            except:
+                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+        else:
+            try:
+                outDF.to_csv(export, index_label=&#39;ID&#39;)
+            except:
+                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
         return outDF
     elif format==&#39;plot&#39;:
-        hvsr_results[&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
         if return_results:
             return hvsr_results
 
@@ -4658,15 +4677,15 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sprit.sprit.batch_data_read"><code class="name flex">
-<span>def <span class="ident">batch_data_read</span></span>(<span>input_filelist, input_params_list=None, verbose=False)</span>
+<span>def <span class="ident">batch_data_read</span></span>(<span>input_data, batch_type='csv', param_col='detect', batch_params=None, verbose=False, **input_fetch_kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to read list of files and parameters</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>input_filelist</code></strong> :&ensp;<code>list</code></dt>
+<dt><strong><code>input_data</code></strong> :&ensp;<code>list</code></dt>
 <dd>List of filepaths to read using obspy.read()</dd>
-<dt><strong><code>input_params_list</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dt><strong><code>batch_params</code></strong> :&ensp;<code>list</code>, optional</dt>
 <dd>List of dictionary with select read parameters, by default None</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default <code>= False</code></dt>
 <dd>Whether to print results</dd>
@@ -4680,14 +4699,14 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def batch_data_read(input_filelist, input_params_list=None, verbose=False):
+<pre><code class="python">def batch_data_read(input_data, batch_type=&#39;csv&#39;, param_col=&#39;detect&#39;, batch_params=None, verbose=False, **input_fetch_kwargs):
     &#34;&#34;&#34;Function to read list of files and parameters
 
     Parameters
     ----------
-    input_filelist : list
+    input_data : list
         List of filepaths to read using obspy.read()
-    input_params_list : list, optional
+    batch_params : list, optional
         List of dictionary with select read parameters, by default None
     verbose : bool, default = False
         Whether to print results 
@@ -4700,60 +4719,66 @@ def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_typ
 
     # Dictionary to store the stream objects
     stream_dict = {}
+    data_dict = {}
 
-    # Read and process each MiniSEED file
-    for i, file in enumerate(input_filelist):
-        if input_params_list is None:
-            pass
-        else:
-            read_params = input_params_list[i]
-        
-        # Read the MiniSEED file into a Stream object
-        if isinstance(read_params, dict):
-            stream = obspy.read(file, **read_params)
-        else:
-            stream = obspy.read(file)
+    if batch_type == &#39;filelist&#39;:
+        # Read and process each MiniSEED file
+        for i, file in enumerate(input_data):
+            if batch_params is None:
+                pass
+            elif isinstance(batch_params, list):
+                read_params = batch_params[i]
+            elif isinstance(batch_params, dict):
+                pass
+                #Update this eventually
 
-        # Get the network, station, and location codes
-        network = stream[0].stats.network
-        station = stream[0].stats.station
-        location = stream[0].stats.location
-        
-        # Create a unique identifier for the network-station-location combination
-        stream_id = f&#34;{network}.{station}.{location}&#34;
-
-        # Check if the stream has a single trace
-        if len(stream) == 1:
-
-            # Check if the stream ID exists in the dictionary
-            if stream_id in stream_dict:
-                if stream[0].stats.channel == &#39;Z&#39;:
-                    stream_dict[stream_id][0] = stream[0]
-                elif stream[0].stats.channel == &#39;E&#39;:
-                    stream_dict[stream_id][1] = stream[0]
-                elif stream[0].stats.channel == &#39;N&#39;:
-                    stream_dict[stream_id][2] = stream[0]
+            
+            # Read the MiniSEED file into a Stream object
+            if isinstance(read_params, dict):
+                stream = obspy.read(file, **read_params)
             else:
-                # Create a new stream object with the first trace and assign Z, E, and N channels
-                new_stream = obspy.Stream(traces=[None, None, None])
-                if stream[0].stats.channel == &#39;Z&#39;:
-                    new_stream[0] = stream[0]
-                elif stream[0].stats.channel == &#39;E&#39;:
-                    new_stream[1] = stream[0]
-                elif stream[0].stats.channel == &#39;N&#39;:
-                    new_stream[2] = stream[0]
-                # Assign network, station, location, etc. to the new_stream as required
-                stream_dict[stream_id] = new_stream
-        else:
-            # Check if the stream has required channels and add it directly to stream_dict
-            if has_required_channels(stream):
-                stream_dict[stream_id] = stream
+                stream = obspy.read(file)
+
+            # Get the network, station, and location codes
+            network = stream[0].stats.network
+            station = stream[0].stats.station
+            location = stream[0].stats.location
+            
+            # Create a unique identifier for the network-station-location combination
+            stream_id = f&#34;{network}.{station}.{location}&#34;
+
+            # Check if the stream has a single trace
+            if len(stream) == 1:
+
+                # Check if the stream ID exists in the dictionary
+                if stream_id in stream_dict:
+                    if stream[0].stats.channel == &#39;Z&#39;:
+                        stream_dict[stream_id][0] = stream[0]
+                    elif stream[0].stats.channel == &#39;E&#39;:
+                        stream_dict[stream_id][1] = stream[0]
+                    elif stream[0].stats.channel == &#39;N&#39;:
+                        stream_dict[stream_id][2] = stream[0]
+                else:
+                    # Create a new stream object with the first trace and assign Z, E, and N channels
+                    new_stream = obspy.Stream(traces=[None, None, None])
+                    if stream[0].stats.channel == &#39;Z&#39;:
+                        new_stream[0] = stream[0]
+                    elif stream[0].stats.channel == &#39;E&#39;:
+                        new_stream[1] = stream[0]
+                    elif stream[0].stats.channel == &#39;N&#39;:
+                        new_stream[2] = stream[0]
+                    # Assign network, station, location, etc. to the new_stream as required
+                    stream_dict[stream_id] = new_stream
+            else:
+                # Check if the stream has required channels and add it directly to stream_dict
+                if has_required_channels(stream):
+                    stream_dict[stream_id] = stream
 
     # Validate the channels for each stream in stream_dict
     for stream_id, stream in stream_dict.items():
         if not has_required_channels(stream):
             if verbose:
-                print(f&#34;Stream {stream_id} does not have all required channels, removing.&#34;)
+                print(f&#34;Stream {stream_id} does not have all required channels, removing from analysis.&#34;)
             del stream_dict[stream_id]
 
     if verbose:
@@ -5691,7 +5716,7 @@ If not specified, does not write file</dd>
 </details>
 </dd>
 <dt id="sprit.sprit.get_report"><code class="name flex">
-<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export='', format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None)</span>
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export=None, format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
@@ -5721,7 +5746,7 @@ For docx (not yet implemented), the following are also included:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_report(hvsr_results, export=&#39;&#39;, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
+<pre><code class="python">def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -5749,17 +5774,19 @@ For docx (not yet implemented), the following are also included:
     #print statement
     #Check if results are good
     #Curve pass?
-    curvePass = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+    curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
                          hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
-                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;]) &gt; 2
+                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
+    curvePass = curvTestsPassed &gt; 2
     
     #Peak Pass?
-    peakPass = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+    peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;]) &gt;= 5
+                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
+    peakPass = peakTestsPassed &gt;= 5
         
     
     if format==&#39;print&#39;:
@@ -5776,13 +5803,13 @@ For docx (not yet implemented), the following are also included:
             print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
 
         #Print individual results
-        print(&#39;\tCurve Tests:&#39;)
+        print(&#39;\tCurve Tests: {}/3 passed&#39;.format(curvTestsPassed))
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
 
 
-        print(&#39;\tPeak Tests:&#39;)
+        print(&#39;\tPeak Tests: {}/6 passed&#39;.format(peakTestsPassed))
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
         print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
@@ -5807,7 +5834,9 @@ For docx (not yet implemented), the following are also included:
         dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
         dfList[0].extend(criteriaList)
         outDF = pd.DataFrame(dfList, columns=pdCols)
-        if export==&#39;&#39;:
+        if export is None:
+            pass
+        elif export==&#39;&#39;:
             inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
@@ -5819,10 +5848,19 @@ For docx (not yet implemented), the following are also included:
                 inFile = inFile + fname +&#39;.csv&#39;
             elif inFile.is_file():
                 export = inFile.with_suffix(&#39;.csv&#39;)
-        outDF.to_csv(export, index_label=&#39;ID&#39;)
+            try:
+                outDF.to_csv(export, index_label=&#39;ID&#39;)
+            except:
+                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+        else:
+            try:
+                outDF.to_csv(export, index_label=&#39;ID&#39;)
+            except:
+                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
         return outDF
     elif format==&#39;plot&#39;:
-        hvsr_results[&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
         if return_results:
             return hvsr_results
 
@@ -6094,7 +6132,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-07-27', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-03', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
