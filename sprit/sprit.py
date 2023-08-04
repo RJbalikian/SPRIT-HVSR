@@ -1181,7 +1181,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
     return rawDataIN
 
 #Read data as batch
-def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
+def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
     """Function to read data in data as a batch of multiple data files
 
     Parameters
@@ -1189,13 +1189,15 @@ def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=N
     input_data : filepath or list
         Input data information for how to read in data as batch
     batch_type : str, optional
-        Type of batch read, only 'csv' and 'filelist' accepted. If 'csv', will read data from a file read in using pandas.read_csv(), by default 'csv'
+        Type of batch read, only 'table' and 'filelist' accepted. If 'table', will read data from a file read in using pandas.read_csv(), by default 'table'
     param_col : None or str, optional
-        Name of parameter column from batch information file. Only used if a batch_type='csv' and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None
-    batch_params : dict or list, optional
-        Dictionary containing keyword arguments for pandas.read_csv(), sprit.input_params(), sprit.get_metadata(), and sprit.fetch_data(). Only used iwth batch_type='filelist. If dict, will use same parameters for all files. If list of dicts, needs to be same length as input_data, by default None
+        Name of parameter column from batch information file. Only used if a batch_type='table' and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None
+    batch_params : list, dict, or None, default = None
+        Parameters to be used if batch_type='filelist'. If it is a list, needs to be the same length as input_data. If it is a dict, will be applied to all files in input_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.
     verbose : bool, optional
         Whether to print information to terminal during batch read, by default False
+    **readcsv_getMeta_fetch_kwargs
+        Keyword arguments that will be read into pandas.read_csv(), sprit.input_params, sprit.get_metadata(), and/or sprit.fetch_data()
 
     Returns
     -------
@@ -1208,14 +1210,23 @@ def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=N
         _description_
     """
 
+    #First figure out columns
+    input_params_params = input_params.__code__.co_varnames
+    get_metadata_params = get_metadata.__code__.co_varnames
+    fetch_data_params = fetch_data.__code__.co_varnames
+
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
-    if batch_type == 'csv':
-        #Read csv
-        read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
-        dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
-        #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
+    if batch_type == 'table':
+        if isinstance(input_data, pd.DataFrame):
+            dataReadInfoDF = input_data
+        else:#Read csv
+            read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
+            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
+            if 'datapath' in dataReadInfoDF.columns:
+                filelist = list(dataReadInfoDF['datapath'])
+            #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
 
         default_dict = {'site':'HVSR Site',
                     'network':'AM', 
@@ -1245,10 +1256,6 @@ def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=N
 
         if verbose:
             print(dataReadInfoDF)
-        #First figure out columns
-        input_params_params = input_params.__code__.co_varnames
-        get_metadata_params = get_metadata.__code__.co_varnames
-        fetch_data_params = fetch_data.__code__.co_varnames
 
         param_dict_list = []
         if param_col is None: #Not a single parameter column, each col=parameter
@@ -1281,20 +1288,30 @@ def batch_data_read(input_data, batch_type='csv', param_col=None, batch_params=N
         #get_metadata(params, write_path)
 
     elif batch_type == 'filelist':
+
+        if isinstance(batch_params, list):
+            if len(batch_params) != len(input_data):
+                raise RuntimeError('If batch_params is list, it must be the same length as input_data. len(batch_params)={} != len(input_data)={}'.format(len(batch_params), len(input_data)))
+            param_dict_list = batch_params
+        elif isinstance(batch_params, dict):
+            batch_params.update(readcsv_getMeta_fetch_kwargs)
+            param_dict_list = []
+            for i in range(len(input_data)):
+                param_dict_list.append(batch_params)
+        
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
-            if batch_params is None:
-                pass
-            elif isinstance(batch_params, list):
-                read_params = batch_params[i]
-            elif isinstance(batch_params, dict):
-                pass
-                #Update this eventually
+            if isinstance(file, obspy.core.stream.Stream):
+                print('Reading in a list of Obspy streams is not currently supported')
+                pass 
+            else:
+                param_dict_list[i]['datapath'] = file
 
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0
     for param_dict in param_dict_list:
+        
         # Read the data file into a Stream object
         input_params_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in input_params.__code__.co_varnames}
         input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}

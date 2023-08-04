@@ -44,6 +44,8 @@ from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from pyproj import CRS, Transformer
 import scipy
 
 #Main variables
@@ -390,6 +392,9 @@ def input_params(datapath,
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
                 elevation = 755,
+                input_crs=&#39;EPSG:4326&#39;,#4269 is NAD83, defautling to WGS
+                output_crs=&#39;EPSG:4326&#39;,
+                elev_unit = &#39;feet&#39;,
                 depth = 0,
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = &#39;&#39;,
@@ -471,7 +476,45 @@ def input_params(datapath,
     elif type(acq_date) is datetime.date:
         date=str(acq_date)
     elif type(acq_date) is str:
-        date = acq_date
+        monthStrs = {&#39;jan&#39;:1, &#39;january&#39;:1,
+                    &#39;feb&#39;:2, &#39;february&#39;:2,
+                    &#39;mar&#39;:3, &#39;march&#39;:3,
+                    &#39;apr&#39;:4, &#39;april&#39;:4,
+                    &#39;may&#39;:5,
+                    &#39;jun&#39;:6, &#39;june&#39;:6,
+                    &#39;jul&#39;:7, &#39;july&#39;:7,
+                    &#39;aug&#39;:8, &#39;august&#39;:8,
+                    &#39;sep&#39;:9, &#39;sept&#39;:9, &#39;september&#39;:9,
+                    &#39;oct&#39;:10,&#39;october&#39;:10, 
+                    &#39;nov&#39;:11,&#39;november&#39;:11,
+                    &#39;dec&#39;:12,&#39;december&#39;:12}
+
+        spelledMonth = False
+        for m in monthStrs.keys():
+            acq_date = acq_date.lower()
+            if m in acq_date:
+                spelledMonth = True
+                break
+
+        if spelledMonth is not False:
+            month = monthStrs[m]
+
+        if &#39;/&#39; in acq_date:
+            sep = &#39;/&#39;
+        elif &#39;.&#39; in acq_date:
+            sep=&#39;.&#39;
+        elif &#39; &#39; in acq_date:
+            sep = &#39; &#39;
+            acq_date = acq_date.replace(&#39;,&#39;, &#39;&#39;)
+        else:
+            sep = &#39;-&#39;
+
+        acq_date = acq_date.split(sep)
+        if len(acq_date[2]) &gt; 2: #American format
+            date = &#39;{}-{}-{}&#39;.format(acq_date[2], acq_date[0], acq_date[1])
+        else: #international format, one we&#39;re going to use
+            date = &#39;{}-{}-{}&#39;.format(acq_date[0], acq_date[1], acq_date[2])     
+
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
@@ -515,11 +558,25 @@ def input_params(datapath,
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
 
+    if input_crs is None:
+        xcoord = 0
+        ycoord = 0
+        input_crs = &#39;EPSG:4326&#39;#Default to WGS84
+    elif -180 &lt; xcoord &lt; 180 and -90 &lt; ycoord &lt; 90:
+        input_crs = &#39;EPSG:4326&#39;#Default to WGS84
+    else:        
+        input_crs = CRS.from_user_input(input_crs)
+        output_crs = CRS.from_user_input(output_crs)
+
+        coord_transformer = Transformer.from_crs(input_crs, output_crs, always_xy=True)
+        xcoord, ycoord = coord_transformer.transform(xcoord, ycoord)
+
+
     #Add key/values to input parameter dictionary
-    inputParamDict = {&#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
-                    &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;,
-                    &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;depth&#39;:depth, &#39;site&#39;:site,
-                    &#39; datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
+    inputParamDict = {&#39;site&#39;:site, &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
+                    &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;, #Will be in UTC by this point
+                    &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;input_crs&#39;:input_crs, &#39;output_crs&#39;:output_crs,
+                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
                     }
 
     return inputParamDict
@@ -806,7 +863,7 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
                 &#39;dir&#39; is used if the day&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-                &#39;file&#39; is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+                &#39;file&#39; is used if the params[&#39;datapath&#39;] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
             Otherwise, this is the directory to save trimmed and exported data.
@@ -824,20 +881,19 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
             Same dict as params parameter, but with an additional &#34;strea&#34; key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         &#34;&#34;&#34;
-    datapath = params[&#39; datapath&#39;]
     if inv is None:
         inv = params[&#39;inv&#39;], 
     date=params[&#39;acq_date&#39;]
 
-    if &#39;}&#39; in str(datapath):
-        datapath = datapath.as_posix().replace(&#39;{&#39;,&#39;&#39;)
-        datapath = datapath.split(&#39;}&#39;)
+    if &#39;}&#39; in str(params[&#39;datapath&#39;]):
+        params[&#39;datapath&#39;] = params[&#39;datapath&#39;].as_posix().replace(&#39;{&#39;,&#39;&#39;)
+        params[&#39;datapath&#39;] = params[&#39;datapath&#39;].split(&#39;}&#39;)
     
-    if isinstance(datapath,list):
-        for i, d in enumerate(datapath):
-            datapath[i] = checkifpath(str(d).strip())
+    if isinstance(params[&#39;datapath&#39;],list):
+        for i, d in enumerate(params[&#39;datapath&#39;]):
+            params[&#39;datapath&#39;][i] = checkifpath(str(d).strip())
     else:
-        datapath = checkifpath(datapath)
+        dPath = checkifpath(params[&#39;datapath&#39;])
 
     inst = params[&#39;instrument&#39;]
 
@@ -889,14 +945,14 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     if source==&#39;raw&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
     elif source==&#39;dir&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
     elif source==&#39;file&#39;:
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawTraces = []
-            for datafile in datapath:
+            for datafile in dPath:
                 rawTrace = obspy.read(datafile)
                 rawTrace = rawTrace
                 rawTraces.append(rawTrace)
@@ -907,21 +963,21 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
                 else:
                     rawDataIN = rawDataIN + trace
         else:
-            rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
+            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source==&#39;batch&#39;:
         print(&#34;Batch read not yet supported&#34;)
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
-            for d in datapath:
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
+            for d in dPath:
                 pass
         else:
-            print(&#39;datapath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(datapath)))
+            print(&#39;dPath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(dPath)))
     else:
         try:
-            rawDataIN = obspy.read(datapath)
+            rawDataIN = obspy.read(dPath)
             rawDataIN.attach_response(inv)
         except:
             print(&#39;Read or source error&#39;)
@@ -1060,7 +1116,7 @@ def __read_from_RS(dest, src=&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/S
     return dest
 
 #Read data from raspberry shake
-def __read_RS_file_struct(datapath, source, year, doy, inv, params):
+def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=False):
     &#34;&#34;&#34;&#34;Private function used by fetch_data() to read in Raspberry Shake data&#34;&#34;&#34;
     from obspy.core import UTCDateTime
     fileList = []
@@ -1087,7 +1143,8 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
             else:
                 fileList.sort(reverse=True) # Puts z channel first
                 folderPathList.sort(reverse=True)
-                print(&#39;Reading files: \n\t{}\n\t{}\n\t{}&#39;.format(fileList[0].name, fileList[1].name, fileList[2].name))
+                if verbose:
+                    print(&#39;Reading files: \n\t{}\n\t{}\n\t{}&#39;.format(fileList[0].name, fileList[1].name, fileList[2].name))
 
             if len(fileList) == 0:
                 info(&#39;No file found for specified parameters. The following days/files exist for specified year in this directory&#39;)
@@ -1152,95 +1209,160 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params):
         rawDataIN.attach_response(inv)
     return rawDataIN
 
-def batch_data_read(input_data, batch_type=&#39;csv&#39;, param_col=&#39;detect&#39;, batch_params=None, verbose=False, **input_fetch_kwargs):
-    &#34;&#34;&#34;Function to read list of files and parameters
+#Read data as batch
+def batch_data_read(input_data, batch_type=&#39;table&#39;, param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
+    &#34;&#34;&#34;Function to read data in data as a batch of multiple data files
 
     Parameters
     ----------
-    input_data : list
-        List of filepaths to read using obspy.read()
-    batch_params : list, optional
-        List of dictionary with select read parameters, by default None
-    verbose : bool, default = False
-        Whether to print results 
+    input_data : filepath or list
+        Input data information for how to read in data as batch
+    batch_type : str, optional
+        Type of batch read, only &#39;table&#39; and &#39;filelist&#39; accepted. If &#39;table&#39;, will read data from a file read in using pandas.read_csv(), by default &#39;table&#39;
+    param_col : None or str, optional
+        Name of parameter column from batch information file. Only used if a batch_type=&#39;table&#39; and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None
+    batch_params : list, dict, or None, default = None
+        Parameters to be used if batch_type=&#39;filelist&#39;. If it is a list, needs to be the same length as input_data. If it is a dict, will be applied to all files in input_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.
+    verbose : bool, optional
+        Whether to print information to terminal during batch read, by default False
+    **readcsv_getMeta_fetch_kwargs
+        Keyword arguments that will be read into pandas.read_csv(), sprit.input_params, sprit.get_metadata(), and/or sprit.fetch_data()
 
     Returns
     -------
-    stream_dict : dict
-        Dictionary contiaining unique streams
+    dict
+        Dictionary with each item representing a different file read in, and which consists of its own parameter dictionary to be used by the rest of the processing steps
+
+    Raises
+    ------
+    IndexError
+        _description_
     &#34;&#34;&#34;
+
+    #First figure out columns
+    input_params_params = input_params.__code__.co_varnames
+    get_metadata_params = get_metadata.__code__.co_varnames
+    fetch_data_params = fetch_data.__code__.co_varnames
 
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
+    if batch_type == &#39;table&#39;:
+        if isinstance(input_data, pd.DataFrame):
+            dataReadInfoDF = input_data
+        else:#Read csv
+            read_csv_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in pd.read_csv.__code__.co_varnames}
+            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
+            if &#39;datapath&#39; in dataReadInfoDF.columns:
+                filelist = list(dataReadInfoDF[&#39;datapath&#39;])
+            #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
 
-    if batch_type == &#39;filelist&#39;:
+        default_dict = {&#39;site&#39;:&#39;HVSR Site&#39;,
+                    &#39;network&#39;:&#39;AM&#39;, 
+                    &#39;station&#39;:&#39;RAC84&#39;, 
+                    &#39;loc&#39;:&#39;00&#39;, 
+                    &#39;channels&#39;:[&#39;EHZ&#39;, &#39;EHN&#39;, &#39;EHE&#39;],
+                    &#39;acq_date&#39;:str(datetime.datetime.now().date()),
+                    &#39;starttime&#39; : &#39;00:00:00.00&#39;,
+                    &#39;endtime&#39; : &#39;23:59:59.999&#39;,
+                    &#39;tzone&#39; : &#39;UTC&#39;,
+                    &#39;xcoord&#39; : -88.2290526,
+                    &#39;ycoord&#39; :  40.1012122,
+                    &#39;elevation&#39; : 755,
+                    &#39;input_crs&#39;:&#39;EPSG:4326&#39;,#4269 is NAD83, defautling to WGS
+                    &#39;output_crs&#39;:&#39;EPSG:4326&#39;,
+                    &#39;elev_unit&#39; : &#39;feet&#39;,
+                    &#39;depth&#39; : 0,
+                    &#39;instrument&#39; : &#39;Raspberry Shake&#39;,
+                    &#39;metapath&#39; : &#39;&#39;,
+                    &#39;hvsr_band&#39; : [0.4, 40],
+                    &#39;write_path&#39;:&#39;&#39;,
+                    &#39;source&#39;:&#39;file&#39;, 
+                    &#39;export_format&#39;:&#39;mseed&#39;, 
+                    &#39;detrend&#39;:&#39;spline&#39;, 
+                    &#39;detrend_order&#39;:2, 
+                    &#39;verbose&#39;:False}
+
+        if verbose:
+            print(dataReadInfoDF)
+
+        param_dict_list = []
+        if param_col is None: #Not a single parameter column, each col=parameter
+            for row_ind in range(dataReadInfoDF.shape[0]):
+                param_dict = {}
+                for col in dataReadInfoDF.columns:
+                    if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
+                        currParam = dataReadInfoDF.loc[row_ind, col]
+                        if pd.isna(currParam) or currParam == &#39;nan&#39;:
+                            if col in default_dict.keys():
+                                param_dict[col] = default_dict[col] #Get default value
+                                if verbose:
+                                    print(&#39;Replacing blank value for {} from file with default value {}&#39;.format(col, default_dict[col]))
+                            else:
+                                param_dict[col] = None
+                        else:
+                            param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                param_dict_list.append(param_dict)
+        else:
+            if param_col not in dataReadInfoDF.columns:
+                raise IndexError(&#39;{} is not a column in {} (columns are: {})&#39;.format(param_col, input_data, dataReadInfoDF.columns))
+            for row in dataReadInfoDF[param_col]:
+                param_dict = {}
+                splitRow = str(row).split(&#39;,&#39;)
+                for item in splitRow:
+                    param_dict[item.split(&#39;=&#39;)[0]] = item.split(&#39;=&#39;)[1]
+                param_dict_list.append(param_dict)
+        #input_params(datapath,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
+        #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
+        #get_metadata(params, write_path)
+
+    elif batch_type == &#39;filelist&#39;:
+
+        if isinstance(batch_params, list):
+            if len(batch_params) != len(input_data):
+                raise RuntimeError(&#39;If batch_params is list, it must be the same length as input_data. len(batch_params)={} != len(input_data)={}&#39;.format(len(batch_params), len(input_data)))
+            param_dict_list = batch_params
+        elif isinstance(batch_params, dict):
+            batch_params.update(readcsv_getMeta_fetch_kwargs)
+            param_dict_list = []
+            for i in range(len(input_data)):
+                param_dict_list.append(batch_params)
+        
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
-            if batch_params is None:
-                pass
-            elif isinstance(batch_params, list):
-                read_params = batch_params[i]
-            elif isinstance(batch_params, dict):
-                pass
-                #Update this eventually
-
-            
-            # Read the MiniSEED file into a Stream object
-            if isinstance(read_params, dict):
-                stream = obspy.read(file, **read_params)
+            if isinstance(file, obspy.core.stream.Stream):
+                print(&#39;Reading in a list of Obspy streams is not currently supported&#39;)
+                pass 
             else:
-                stream = obspy.read(file)
+                param_dict_list[i][&#39;datapath&#39;] = file
 
-            # Get the network, station, and location codes
-            network = stream[0].stats.network
-            station = stream[0].stats.station
-            location = stream[0].stats.location
-            
-            # Create a unique identifier for the network-station-location combination
-            stream_id = f&#34;{network}.{station}.{location}&#34;
+    hvsr_metaDict = {}
+    zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
+    i=0
+    for param_dict in param_dict_list:
+        
+        # Read the data file into a Stream object
+        input_params_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in input_params.__code__.co_varnames}
+        input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}
+        input_params_kwargs.update(input_params_kwargs2)
+        params = input_params(**input_params_kwargs)
 
-            # Check if the stream has a single trace
-            if len(stream) == 1:
+        get_metadata_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in get_metadata.__code__.co_varnames}
+        get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
+        get_metadata_kwargs.update(get_metadata_kwargs2)
+        params = get_metadata(params=params, **get_metadata_kwargs)
 
-                # Check if the stream ID exists in the dictionary
-                if stream_id in stream_dict:
-                    if stream[0].stats.channel == &#39;Z&#39;:
-                        stream_dict[stream_id][0] = stream[0]
-                    elif stream[0].stats.channel == &#39;E&#39;:
-                        stream_dict[stream_id][1] = stream[0]
-                    elif stream[0].stats.channel == &#39;N&#39;:
-                        stream_dict[stream_id][2] = stream[0]
-                else:
-                    # Create a new stream object with the first trace and assign Z, E, and N channels
-                    new_stream = obspy.Stream(traces=[None, None, None])
-                    if stream[0].stats.channel == &#39;Z&#39;:
-                        new_stream[0] = stream[0]
-                    elif stream[0].stats.channel == &#39;E&#39;:
-                        new_stream[1] = stream[0]
-                    elif stream[0].stats.channel == &#39;N&#39;:
-                        new_stream[2] = stream[0]
-                    # Assign network, station, location, etc. to the new_stream as required
-                    stream_dict[stream_id] = new_stream
-            else:
-                # Check if the stream has required channels and add it directly to stream_dict
-                if has_required_channels(stream):
-                    stream_dict[stream_id] = stream
+        fetch_data_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
+        fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
+        fetch_data_kwargs.update(fetch_data_kwargs2)
+        params = fetch_data(params=params, **fetch_data_kwargs)
 
-    # Validate the channels for each stream in stream_dict
-    for stream_id, stream in stream_dict.items():
-        if not has_required_channels(stream):
-            if verbose:
-                print(f&#34;Stream {stream_id} does not have all required channels, removing from analysis.&#34;)
-            del stream_dict[stream_id]
-
-    if verbose:
-        print(&#34;Streams:\n&#34;)
-        print(stream_dict.keys())
-        #for k in stream_dict.keys():
-        #    print(k)
-
-    return stream_dict
+        if params[&#39;site&#39;] == default_dict[&#39;site&#39;]: #If site was not designated
+            params[&#39;site&#39;] = &#34;{}_{}&#34;.format(params[&#39;site&#39;], str(i).zfill(zfillDigs))
+            i+=1
+        hvsr_metaDict[params[&#39;site&#39;]] = params
+    
+    return hvsr_metaDict
 
 #Trim data 
 def trim_data(params, stream=None, export_dir=None, export_format=None, **kwargs):
@@ -4636,7 +4758,7 @@ def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39
         if export is None:
             pass
         elif export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
+            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]==&#39;/&#39;:
@@ -4677,117 +4799,192 @@ def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sprit.sprit.batch_data_read"><code class="name flex">
-<span>def <span class="ident">batch_data_read</span></span>(<span>input_data, batch_type='csv', param_col='detect', batch_params=None, verbose=False, **input_fetch_kwargs)</span>
+<span>def <span class="ident">batch_data_read</span></span>(<span>input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to read list of files and parameters</p>
+<div class="desc"><p>Function to read data in data as a batch of multiple data files</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>input_data</code></strong> :&ensp;<code>list</code></dt>
-<dd>List of filepaths to read using obspy.read()</dd>
-<dt><strong><code>batch_params</code></strong> :&ensp;<code>list</code>, optional</dt>
-<dd>List of dictionary with select read parameters, by default None</dd>
-<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default <code>= False</code></dt>
-<dd>Whether to print results</dd>
+<dt><strong><code>input_data</code></strong> :&ensp;<code>filepath</code> or <code>list</code></dt>
+<dd>Input data information for how to read in data as batch</dd>
+<dt><strong><code>batch_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Type of batch read, only 'table' and 'filelist' accepted. If 'table', will read data from a file read in using pandas.read_csv(), by default 'table'</dd>
+<dt><strong><code>param_col</code></strong> :&ensp;<code>None</code> or <code>str</code>, optional</dt>
+<dd>Name of parameter column from batch information file. Only used if a batch_type='table' and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None</dd>
+<dt><strong><code>batch_params</code></strong> :&ensp;<code>list, dict,</code> or <code>None</code>, default <code>= None</code></dt>
+<dd>Parameters to be used if batch_type='filelist'. If it is a list, needs to be the same length as input_data. If it is a dict, will be applied to all files in input_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to print information to terminal during batch read, by default False</dd>
+<dt><strong><code>**readcsv_getMeta_fetch_kwargs</code></strong></dt>
+<dd>Keyword arguments that will be read into pandas.read_csv(), sprit.input_params, sprit.get_metadata(), and/or sprit.fetch_data()</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>stream_dict</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Dictionary contiaining unique streams</dd>
+<dt><code>dict</code></dt>
+<dd>Dictionary with each item representing a different file read in, and which consists of its own parameter dictionary to be used by the rest of the processing steps</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>IndexError</code></dt>
+<dd><em>description</em></dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def batch_data_read(input_data, batch_type=&#39;csv&#39;, param_col=&#39;detect&#39;, batch_params=None, verbose=False, **input_fetch_kwargs):
-    &#34;&#34;&#34;Function to read list of files and parameters
+<pre><code class="python">def batch_data_read(input_data, batch_type=&#39;table&#39;, param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
+    &#34;&#34;&#34;Function to read data in data as a batch of multiple data files
 
     Parameters
     ----------
-    input_data : list
-        List of filepaths to read using obspy.read()
-    batch_params : list, optional
-        List of dictionary with select read parameters, by default None
-    verbose : bool, default = False
-        Whether to print results 
+    input_data : filepath or list
+        Input data information for how to read in data as batch
+    batch_type : str, optional
+        Type of batch read, only &#39;table&#39; and &#39;filelist&#39; accepted. If &#39;table&#39;, will read data from a file read in using pandas.read_csv(), by default &#39;table&#39;
+    param_col : None or str, optional
+        Name of parameter column from batch information file. Only used if a batch_type=&#39;table&#39; and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None
+    batch_params : list, dict, or None, default = None
+        Parameters to be used if batch_type=&#39;filelist&#39;. If it is a list, needs to be the same length as input_data. If it is a dict, will be applied to all files in input_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.
+    verbose : bool, optional
+        Whether to print information to terminal during batch read, by default False
+    **readcsv_getMeta_fetch_kwargs
+        Keyword arguments that will be read into pandas.read_csv(), sprit.input_params, sprit.get_metadata(), and/or sprit.fetch_data()
 
     Returns
     -------
-    stream_dict : dict
-        Dictionary contiaining unique streams
+    dict
+        Dictionary with each item representing a different file read in, and which consists of its own parameter dictionary to be used by the rest of the processing steps
+
+    Raises
+    ------
+    IndexError
+        _description_
     &#34;&#34;&#34;
+
+    #First figure out columns
+    input_params_params = input_params.__code__.co_varnames
+    get_metadata_params = get_metadata.__code__.co_varnames
+    fetch_data_params = fetch_data.__code__.co_varnames
 
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
+    if batch_type == &#39;table&#39;:
+        if isinstance(input_data, pd.DataFrame):
+            dataReadInfoDF = input_data
+        else:#Read csv
+            read_csv_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in pd.read_csv.__code__.co_varnames}
+            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
+            if &#39;datapath&#39; in dataReadInfoDF.columns:
+                filelist = list(dataReadInfoDF[&#39;datapath&#39;])
+            #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
 
-    if batch_type == &#39;filelist&#39;:
+        default_dict = {&#39;site&#39;:&#39;HVSR Site&#39;,
+                    &#39;network&#39;:&#39;AM&#39;, 
+                    &#39;station&#39;:&#39;RAC84&#39;, 
+                    &#39;loc&#39;:&#39;00&#39;, 
+                    &#39;channels&#39;:[&#39;EHZ&#39;, &#39;EHN&#39;, &#39;EHE&#39;],
+                    &#39;acq_date&#39;:str(datetime.datetime.now().date()),
+                    &#39;starttime&#39; : &#39;00:00:00.00&#39;,
+                    &#39;endtime&#39; : &#39;23:59:59.999&#39;,
+                    &#39;tzone&#39; : &#39;UTC&#39;,
+                    &#39;xcoord&#39; : -88.2290526,
+                    &#39;ycoord&#39; :  40.1012122,
+                    &#39;elevation&#39; : 755,
+                    &#39;input_crs&#39;:&#39;EPSG:4326&#39;,#4269 is NAD83, defautling to WGS
+                    &#39;output_crs&#39;:&#39;EPSG:4326&#39;,
+                    &#39;elev_unit&#39; : &#39;feet&#39;,
+                    &#39;depth&#39; : 0,
+                    &#39;instrument&#39; : &#39;Raspberry Shake&#39;,
+                    &#39;metapath&#39; : &#39;&#39;,
+                    &#39;hvsr_band&#39; : [0.4, 40],
+                    &#39;write_path&#39;:&#39;&#39;,
+                    &#39;source&#39;:&#39;file&#39;, 
+                    &#39;export_format&#39;:&#39;mseed&#39;, 
+                    &#39;detrend&#39;:&#39;spline&#39;, 
+                    &#39;detrend_order&#39;:2, 
+                    &#39;verbose&#39;:False}
+
+        if verbose:
+            print(dataReadInfoDF)
+
+        param_dict_list = []
+        if param_col is None: #Not a single parameter column, each col=parameter
+            for row_ind in range(dataReadInfoDF.shape[0]):
+                param_dict = {}
+                for col in dataReadInfoDF.columns:
+                    if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
+                        currParam = dataReadInfoDF.loc[row_ind, col]
+                        if pd.isna(currParam) or currParam == &#39;nan&#39;:
+                            if col in default_dict.keys():
+                                param_dict[col] = default_dict[col] #Get default value
+                                if verbose:
+                                    print(&#39;Replacing blank value for {} from file with default value {}&#39;.format(col, default_dict[col]))
+                            else:
+                                param_dict[col] = None
+                        else:
+                            param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                param_dict_list.append(param_dict)
+        else:
+            if param_col not in dataReadInfoDF.columns:
+                raise IndexError(&#39;{} is not a column in {} (columns are: {})&#39;.format(param_col, input_data, dataReadInfoDF.columns))
+            for row in dataReadInfoDF[param_col]:
+                param_dict = {}
+                splitRow = str(row).split(&#39;,&#39;)
+                for item in splitRow:
+                    param_dict[item.split(&#39;=&#39;)[0]] = item.split(&#39;=&#39;)[1]
+                param_dict_list.append(param_dict)
+        #input_params(datapath,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
+        #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
+        #get_metadata(params, write_path)
+
+    elif batch_type == &#39;filelist&#39;:
+
+        if isinstance(batch_params, list):
+            if len(batch_params) != len(input_data):
+                raise RuntimeError(&#39;If batch_params is list, it must be the same length as input_data. len(batch_params)={} != len(input_data)={}&#39;.format(len(batch_params), len(input_data)))
+            param_dict_list = batch_params
+        elif isinstance(batch_params, dict):
+            batch_params.update(readcsv_getMeta_fetch_kwargs)
+            param_dict_list = []
+            for i in range(len(input_data)):
+                param_dict_list.append(batch_params)
+        
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
-            if batch_params is None:
-                pass
-            elif isinstance(batch_params, list):
-                read_params = batch_params[i]
-            elif isinstance(batch_params, dict):
-                pass
-                #Update this eventually
-
-            
-            # Read the MiniSEED file into a Stream object
-            if isinstance(read_params, dict):
-                stream = obspy.read(file, **read_params)
+            if isinstance(file, obspy.core.stream.Stream):
+                print(&#39;Reading in a list of Obspy streams is not currently supported&#39;)
+                pass 
             else:
-                stream = obspy.read(file)
+                param_dict_list[i][&#39;datapath&#39;] = file
 
-            # Get the network, station, and location codes
-            network = stream[0].stats.network
-            station = stream[0].stats.station
-            location = stream[0].stats.location
-            
-            # Create a unique identifier for the network-station-location combination
-            stream_id = f&#34;{network}.{station}.{location}&#34;
+    hvsr_metaDict = {}
+    zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
+    i=0
+    for param_dict in param_dict_list:
+        
+        # Read the data file into a Stream object
+        input_params_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in input_params.__code__.co_varnames}
+        input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}
+        input_params_kwargs.update(input_params_kwargs2)
+        params = input_params(**input_params_kwargs)
 
-            # Check if the stream has a single trace
-            if len(stream) == 1:
+        get_metadata_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in get_metadata.__code__.co_varnames}
+        get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
+        get_metadata_kwargs.update(get_metadata_kwargs2)
+        params = get_metadata(params=params, **get_metadata_kwargs)
 
-                # Check if the stream ID exists in the dictionary
-                if stream_id in stream_dict:
-                    if stream[0].stats.channel == &#39;Z&#39;:
-                        stream_dict[stream_id][0] = stream[0]
-                    elif stream[0].stats.channel == &#39;E&#39;:
-                        stream_dict[stream_id][1] = stream[0]
-                    elif stream[0].stats.channel == &#39;N&#39;:
-                        stream_dict[stream_id][2] = stream[0]
-                else:
-                    # Create a new stream object with the first trace and assign Z, E, and N channels
-                    new_stream = obspy.Stream(traces=[None, None, None])
-                    if stream[0].stats.channel == &#39;Z&#39;:
-                        new_stream[0] = stream[0]
-                    elif stream[0].stats.channel == &#39;E&#39;:
-                        new_stream[1] = stream[0]
-                    elif stream[0].stats.channel == &#39;N&#39;:
-                        new_stream[2] = stream[0]
-                    # Assign network, station, location, etc. to the new_stream as required
-                    stream_dict[stream_id] = new_stream
-            else:
-                # Check if the stream has required channels and add it directly to stream_dict
-                if has_required_channels(stream):
-                    stream_dict[stream_id] = stream
+        fetch_data_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
+        fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
+        fetch_data_kwargs.update(fetch_data_kwargs2)
+        params = fetch_data(params=params, **fetch_data_kwargs)
 
-    # Validate the channels for each stream in stream_dict
-    for stream_id, stream in stream_dict.items():
-        if not has_required_channels(stream):
-            if verbose:
-                print(f&#34;Stream {stream_id} does not have all required channels, removing from analysis.&#34;)
-            del stream_dict[stream_id]
-
-    if verbose:
-        print(&#34;Streams:\n&#34;)
-        print(stream_dict.keys())
-        #for k in stream_dict.keys():
-        #    print(k)
-
-    return stream_dict</code></pre>
+        if params[&#39;site&#39;] == default_dict[&#39;site&#39;]: #If site was not designated
+            params[&#39;site&#39;] = &#34;{}_{}&#34;.format(params[&#39;site&#39;], str(i).zfill(zfillDigs))
+            i+=1
+        hvsr_metaDict[params[&#39;site&#39;]] = params
+    
+    return hvsr_metaDict</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit.check_mark"><code class="name flex">
@@ -5127,7 +5324,7 @@ This function returns another displayable character if platform is Windows</p></
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt>
 <dt>'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders;</dt>
 <dt>'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
-<dt>'file' is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.</dt>
+<dt>'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.</dt>
 <dt><strong><code>trim_dir</code></strong> :&ensp;<code>None</code> or <code>str</code> or <code>pathlib obj</code>, default=<code>None</code></dt>
 <dd>If None (or False), data is not trimmed in this function.
 Otherwise, this is the directory to save trimmed and exported data.</dd>
@@ -5162,7 +5359,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
                 &#39;dir&#39; is used if the day&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-                &#39;file&#39; is used if the datapath specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+                &#39;file&#39; is used if the params[&#39;datapath&#39;] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
             Otherwise, this is the directory to save trimmed and exported data.
@@ -5180,20 +5377,19 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             Same dict as params parameter, but with an additional &#34;strea&#34; key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         &#34;&#34;&#34;
-    datapath = params[&#39; datapath&#39;]
     if inv is None:
         inv = params[&#39;inv&#39;], 
     date=params[&#39;acq_date&#39;]
 
-    if &#39;}&#39; in str(datapath):
-        datapath = datapath.as_posix().replace(&#39;{&#39;,&#39;&#39;)
-        datapath = datapath.split(&#39;}&#39;)
+    if &#39;}&#39; in str(params[&#39;datapath&#39;]):
+        params[&#39;datapath&#39;] = params[&#39;datapath&#39;].as_posix().replace(&#39;{&#39;,&#39;&#39;)
+        params[&#39;datapath&#39;] = params[&#39;datapath&#39;].split(&#39;}&#39;)
     
-    if isinstance(datapath,list):
-        for i, d in enumerate(datapath):
-            datapath[i] = checkifpath(str(d).strip())
+    if isinstance(params[&#39;datapath&#39;],list):
+        for i, d in enumerate(params[&#39;datapath&#39;]):
+            params[&#39;datapath&#39;][i] = checkifpath(str(d).strip())
     else:
-        datapath = checkifpath(datapath)
+        dPath = checkifpath(params[&#39;datapath&#39;])
 
     inst = params[&#39;instrument&#39;]
 
@@ -5245,14 +5441,14 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     if source==&#39;raw&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
     elif source==&#39;dir&#39;:
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(datapath, source, year, doy, inv, params)
+            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
     elif source==&#39;file&#39;:
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawTraces = []
-            for datafile in datapath:
+            for datafile in dPath:
                 rawTrace = obspy.read(datafile)
                 rawTrace = rawTrace
                 rawTraces.append(rawTrace)
@@ -5263,21 +5459,21 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
                 else:
                     rawDataIN = rawDataIN + trace
         else:
-            rawDataIN = obspy.read(datapath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
+            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source==&#39;batch&#39;:
         print(&#34;Batch read not yet supported&#34;)
-        if isinstance(datapath, list) or isinstance(datapath, tuple):
-            for d in datapath:
+        if isinstance(dPath, list) or isinstance(dPath, tuple):
+            for d in dPath:
                 pass
         else:
-            print(&#39;datapath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(datapath)))
+            print(&#39;dPath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(dPath)))
     else:
         try:
-            rawDataIN = obspy.read(datapath)
+            rawDataIN = obspy.read(dPath)
             rawDataIN.attach_response(inv)
         except:
             print(&#39;Read or source error&#39;)
@@ -5837,7 +6033,7 @@ For docx (not yet implemented), the following are also included:
         if export is None:
             pass
         elif export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39; datapath&#39;])
+            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
             if inFile.is_dir():
                 inFile = inFile.as_posix()
                 if inFile[-1]==&#39;/&#39;:
@@ -6132,7 +6328,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-03', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-04', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -6199,6 +6395,9 @@ This is necessary for Raspberry Shake data.</dd>
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
                 elevation = 755,
+                input_crs=&#39;EPSG:4326&#39;,#4269 is NAD83, defautling to WGS
+                output_crs=&#39;EPSG:4326&#39;,
+                elev_unit = &#39;feet&#39;,
                 depth = 0,
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = &#39;&#39;,
@@ -6280,7 +6479,45 @@ This is necessary for Raspberry Shake data.</dd>
     elif type(acq_date) is datetime.date:
         date=str(acq_date)
     elif type(acq_date) is str:
-        date = acq_date
+        monthStrs = {&#39;jan&#39;:1, &#39;january&#39;:1,
+                    &#39;feb&#39;:2, &#39;february&#39;:2,
+                    &#39;mar&#39;:3, &#39;march&#39;:3,
+                    &#39;apr&#39;:4, &#39;april&#39;:4,
+                    &#39;may&#39;:5,
+                    &#39;jun&#39;:6, &#39;june&#39;:6,
+                    &#39;jul&#39;:7, &#39;july&#39;:7,
+                    &#39;aug&#39;:8, &#39;august&#39;:8,
+                    &#39;sep&#39;:9, &#39;sept&#39;:9, &#39;september&#39;:9,
+                    &#39;oct&#39;:10,&#39;october&#39;:10, 
+                    &#39;nov&#39;:11,&#39;november&#39;:11,
+                    &#39;dec&#39;:12,&#39;december&#39;:12}
+
+        spelledMonth = False
+        for m in monthStrs.keys():
+            acq_date = acq_date.lower()
+            if m in acq_date:
+                spelledMonth = True
+                break
+
+        if spelledMonth is not False:
+            month = monthStrs[m]
+
+        if &#39;/&#39; in acq_date:
+            sep = &#39;/&#39;
+        elif &#39;.&#39; in acq_date:
+            sep=&#39;.&#39;
+        elif &#39; &#39; in acq_date:
+            sep = &#39; &#39;
+            acq_date = acq_date.replace(&#39;,&#39;, &#39;&#39;)
+        else:
+            sep = &#39;-&#39;
+
+        acq_date = acq_date.split(sep)
+        if len(acq_date[2]) &gt; 2: #American format
+            date = &#39;{}-{}-{}&#39;.format(acq_date[2], acq_date[0], acq_date[1])
+        else: #international format, one we&#39;re going to use
+            date = &#39;{}-{}-{}&#39;.format(acq_date[0], acq_date[1], acq_date[2])     
+
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
@@ -6324,11 +6561,25 @@ This is necessary for Raspberry Shake data.</dd>
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
 
+    if input_crs is None:
+        xcoord = 0
+        ycoord = 0
+        input_crs = &#39;EPSG:4326&#39;#Default to WGS84
+    elif -180 &lt; xcoord &lt; 180 and -90 &lt; ycoord &lt; 90:
+        input_crs = &#39;EPSG:4326&#39;#Default to WGS84
+    else:        
+        input_crs = CRS.from_user_input(input_crs)
+        output_crs = CRS.from_user_input(output_crs)
+
+        coord_transformer = Transformer.from_crs(input_crs, output_crs, always_xy=True)
+        xcoord, ycoord = coord_transformer.transform(xcoord, ycoord)
+
+
     #Add key/values to input parameter dictionary
-    inputParamDict = {&#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
-                    &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;,
-                    &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;depth&#39;:depth, &#39;site&#39;:site,
-                    &#39; datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
+    inputParamDict = {&#39;site&#39;:site, &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
+                    &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;, #Will be in UTC by this point
+                    &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;input_crs&#39;:input_crs, &#39;output_crs&#39;:output_crs,
+                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
                     }
 
     return inputParamDict</code></pre>
