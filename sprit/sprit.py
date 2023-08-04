@@ -1009,6 +1009,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                 print("Detrend error, data not detrended")
 
     dataIN = dataIN.merge(method=1)
+    params['batch'] = False
     params['stream'] = dataIN
 
     return params
@@ -1327,6 +1328,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
+        params['batch'] = True
 
         if params['site'] == default_dict['site']: #If site was not designated
             params['site'] = "{}_{}".format(params['site'], str(i).zfill(zfillDigs))
@@ -2284,6 +2286,11 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
+#Support function for running batch
+def _generate_ppsds_batch(**generate_ppsds_kwargs):
+    generate_ppsds(**generate_ppsds_kwargs)
+    return
+
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
 def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
@@ -2313,67 +2320,78 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             ppsds   :   dict
                 Dictionary containing entries with ppsds for each channel
     """
-    paz=params['paz']
-    stream = params['stream']
+    #First, divide up for batch or not
+    orig_args = locals().copy()
+    if params['batch']:
+        for site_name in params.keys():
+            args = orig_args.copy()
+            individual_params = params[site_name]
+            args['params'] = individual_params
+            args['params']['batch'] = False
+            params[site_name] = _generate_ppsds_batch(**args)
+            params[site_name]['batch'] = True
+    else:
+        paz=params['paz']
+        stream = params['stream']
 
-    #Set defaults here that are different than obspy defaults
-    if 'ppsd_length' not in ppsd_kwargs:
-        ppsd_kwargs['ppsd_length'] = 60
-    if 'skip_on_gaps' not in ppsd_kwargs:
-        ppsd_kwargs['skip_on_gaps'] = True
-    if 'period_step_octaves' not in ppsd_kwargs:
-        ppsd_kwargs['period_step_octaves'] = 0.03125
+        #Set defaults here that are different than obspy defaults
+        if 'ppsd_length' not in ppsd_kwargs:
+            ppsd_kwargs['ppsd_length'] = 60
+        if 'skip_on_gaps' not in ppsd_kwargs:
+            ppsd_kwargs['skip_on_gaps'] = True
+        if 'period_step_octaves' not in ppsd_kwargs:
+            ppsd_kwargs['period_step_octaves'] = 0.03125
 
-    from obspy.signal import PPSD
+        from obspy.signal import PPSD
 
-    eStream = stream.select(component='E')
-    estats = eStream.traces[0].stats
-    ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-    #ppsdE = PPSD(stream.select(component='E').traces[0].stats, paz['E'], ppsd_length=ppsd_length, kwargs=kwargs)
-    ppsdE.add(stream, verbose=verbose)
+        eStream = stream.select(component='E')
+        estats = eStream.traces[0].stats
+        ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
+        #ppsdE = PPSD(stream.select(component='E').traces[0].stats, paz['E'], ppsd_length=ppsd_length, kwargs=kwargs)
+        ppsdE.add(stream, verbose=verbose)
 
-    nStream = stream.select(component='N')
-    nstats = nStream.traces[0].stats
-    ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-    ppsdN.add(stream, verbose=verbose)
+        nStream = stream.select(component='N')
+        nstats = nStream.traces[0].stats
+        ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
+        ppsdN.add(stream, verbose=verbose)
 
-    zStream = stream.select(component='Z')
-    zstats = zStream.traces[0].stats
-    ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-    ppsdZ.add(stream, verbose=verbose)
+        zStream = stream.select(component='Z')
+        zstats = zStream.traces[0].stats
+        ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
+        ppsdZ.add(stream, verbose=verbose)
 
-    ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
+        ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
 
-    #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-    params['ppsds_obspy'] = ppsds
-    params['ppsds'] = {}
-    anyKey = list(params['ppsds_obspy'].keys())[0]
-    
-    #Get ppsd class members
-    members = [mems for mems in dir(params['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-    params['ppsds']['Z'] = {}
-    params['ppsds']['E'] = {}
-    params['ppsds']['N'] = {}
-    
-    #Get lists that we may need to manipulate later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
-    listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values']
-    for m in members:
-        params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
-        params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
-        params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
-        if m in listList:
-            params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
-            params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
-            params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
+        #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+        params['ppsds_obspy'] = ppsds
+        params['ppsds'] = {}
+        anyKey = list(params['ppsds_obspy'].keys())[0]
+        
+        #Get ppsd class members
+        members = [mems for mems in dir(params['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+        params['ppsds']['Z'] = {}
+        params['ppsds']['E'] = {}
+        params['ppsds']['N'] = {}
+        
+        #Get lists that we may need to manipulate later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+        listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values']
+        for m in members:
+            params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
+            params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
+            params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
+            if m in listList:
+                params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
+                params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
+                params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
 
-    #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-    params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
-    
-    #Remove outlier ppsds (those derived from data within the windows to be removed)
-    if remove_outliers and 'xwindows_out' in params.keys():
-        params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
-    params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
-    
+        #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+        params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
+        
+        #Remove outlier ppsds (those derived from data within the windows to be removed)
+        if remove_outliers and 'xwindows_out' in params.keys():
+            params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
+        params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
+        
     return params
 
 #Remove outlier ppsds
