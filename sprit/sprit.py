@@ -820,7 +820,7 @@ def has_required_channels(stream):
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -940,12 +940,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             warnings.simplefilter('ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source=='batch':
-        print("Batch read not yet supported")
-        if isinstance(dPath, list) or isinstance(dPath, tuple):
-            for d in dPath:
-                pass
-        else:
-            print('dPath parameter should be list or tuple if batch mode is selected, not {}.'.format(type(dPath)))
+        batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
+        params = batch_data_read(input_data=params['datapath'], **batch_data_read_kwargs)
     else:
         try:
             rawDataIN = obspy.read(dPath)
@@ -2288,8 +2284,10 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
 
 #Support function for running batch
 def _generate_ppsds_batch(**generate_ppsds_kwargs):
-    generate_ppsds(**generate_ppsds_kwargs)
-    return
+    params = process_hvsr(**generate_ppsds_kwargs)
+    if generate_ppsds_kwargs['verbose']:
+        print('\t{} completed'.format(params['site']))
+    return params
 
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
@@ -2321,15 +2319,16 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                 Dictionary containing entries with ppsds for each channel
     """
     #First, divide up for batch or not
-    orig_args = locals().copy()
+    orig_args = locals().copy() #Get the initial arguments
     if params['batch']:
+        #If running batch, we'll loop through each one
         for site_name in params.keys():
-            args = orig_args.copy()
-            individual_params = params[site_name]
-            args['params'] = individual_params
-            args['params']['batch'] = False
-            params[site_name] = _generate_ppsds_batch(**args)
-            params[site_name]['batch'] = True
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = params[site_name] #Get what would normally be the "params" variable for each site
+            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
+            args['params']['batch'] = False #Set to false, since only running this time
+            params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
+            params[site_name]['batch'] = True #Reset batch to true
     else:
         paz=params['paz']
         stream = params['stream']
@@ -2585,6 +2584,13 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
 
     return params
 
+#Helper function for batch version of process_hvsr()
+def _process_hvsr_batch(**process_hvsr_kwargs):
+    params = process_hvsr(**process_hvsr_kwargs)
+    if process_hvsr_kwargs['verbose']:
+        print('\t{} completed'.format(params['site']))
+    return params
+
 #Main function for processing HVSR Curve
 def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
@@ -2632,184 +2638,204 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             Dictionary containing all the information about the data, including input parameters
 
     """
-    ppsds = params['ppsds'].copy()#[k]['psd_values']
-    ppsds = __check_xvalues(ppsds)
+    orig_args = locals().copy() #Get the initial arguments
+    if verbose:
+        print('Calculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key=='params':
+                pass
+            else:
+                print('\t\t{}={}'.format(key, value))
+    #First, divide up for batch or not
+    if params['batch']:
+        #If running batch, we'll loop through each site
+        for site_name in params.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = params[site_name] #Get what would normally be the "params" variable for each site
+            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
+            args['params']['batch'] = False #Set to false, since only running this time
+            params[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+            params[site_name]['batch'] = True #Reset batch to true
+    else:
+        ppsds = params['ppsds'].copy()#[k]['psd_values']
+        ppsds = __check_xvalues(ppsds)
 
-    methodList = ['<placeholder_0>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
-    x_freqs = {}
-    x_periods = {}
+        methodList = ['<placeholder_0>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+        x_freqs = {}
+        x_periods = {}
 
-    psdValsTAvg = {}
-    stDev = {}
-    stDevValsP = {}
-    stDevValsM = {}
-    psdRaw={}
-    currTimesUsed={}
-    
-    for k in ppsds:
-        #if reasmpling has been selected
-        if resample is True or type(resample) is int:
-            if resample is True:
-                resample = 1000 #Default smooth value
+        psdValsTAvg = {}
+        stDev = {}
+        stDevValsP = {}
+        stDevValsM = {}
+        psdRaw={}
+        currTimesUsed={}
+        
+        for k in ppsds:
+            #if reasmpling has been selected
+            if resample is True or type(resample) is int:
+                if resample is True:
+                    resample = 1000 #Default smooth value
 
-            xValMin = min(ppsds[k]['period_bin_centers'])
-            xValMax = max(ppsds[k]['period_bin_centers'])
+                xValMin = min(ppsds[k]['period_bin_centers'])
+                xValMax = max(ppsds[k]['period_bin_centers'])
 
-            #Resample period bin values
-            x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
+                #Resample period bin values
+                x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
 
-            if smooth or type(smooth) is int:
-                if smooth:
-                    smooth = 51 #Default smoothing window
-                elif smooth%2==0:
-                    smooth = smooth+1
+                if smooth or type(smooth) is int:
+                    if smooth:
+                        smooth = 51 #Default smoothing window
+                    elif smooth%2==0:
+                        smooth = smooth+1
 
-            #Resample raw ppsd values
-            for i, t in enumerate(ppsds[k]['psd_values']):
-                if i==0:
-                    psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
-                    if smooth is not False:
-                        psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
+                #Resample raw ppsd values
+                for i, t in enumerate(ppsds[k]['psd_values']):
+                    if i==0:
+                        psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
+                        if smooth is not False:
+                            psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
 
-                else:
-                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)))
-                    if smooth is not False:
-                        psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
+                    else:
+                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)))
+                        if smooth is not False:
+                            psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
+            else:
+                #If no resampling desired
+                x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
+                psdRaw[k] = np.array(ppsds[k]['psd_values'])
+
+            #Get average psd value across time for each channel (used to calc main H/V curve)
+            psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
+            x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+
+            stDev[k] = np.std(psdRaw[k], axis=0)
+            stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
+            stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
+
+            currTimesUsed[k] = ppsds[k]['current_times_used']
+
+        #Get string of method type
+        if type(method) is int:
+            methodInt = method
+            method = methodList[method]
+        params['method'] = method
+
+        #This gets the main hvsr curve averaged from all time steps
+        anyK = list(x_freqs.keys())[0]
+        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
+        origPPSD = params['ppsds_obspy'].copy()
+
+        #Add some other variables to our output dictionary
+        hvsr_out = {'input_params':params.copy(),
+                    'x_freqs':x_freqs,
+                    'hvsr_curve':hvsr_curve,
+                    'x_period':x_periods,
+                    'psd_raw':psdRaw,
+                    'current_times_used': currTimesUsed,
+                    'psd_values_tavg':psdValsTAvg,
+                    'ppsd_std':stDev,
+                    'ppsd_std_vals_m':stDevValsM,
+                    'ppsd_std_vals_p':stDevValsP,
+                    'method':method,
+                    'ppsds':ppsds,
+                    'ppsds_obspy':origPPSD,
+                    'tsteps_used': params['tsteps_used'].copy()
+                    }
+
+        #This is if manual editing was used (should probably be updated at some point to just use masks)
+        if 'xwindows_out' in params.keys():
+            hvsr_out['xwindows_out'] = params['xwindows_out']
         else:
-            #If no resampling desired
-            x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
-            psdRaw[k] = np.array(ppsds[k]['psd_values'])
+            hvsr_out['xwindows_out'] = []
 
-        #Get average psd value across time for each channel (used to calc main H/V curve)
-        psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
-        x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+        #These are in other places in the hvsr_out dict, so are redudant
+        del hvsr_out['input_params']['ppsds_obspy']
+        del hvsr_out['input_params']['ppsds']
+        del hvsr_out['input_params']['tsteps_used']
 
-        stDev[k] = np.std(psdRaw[k], axis=0)
-        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
-        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
+        freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
+        freq_smooth_constant = ['constant', 'const', 'c']
+        freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
 
-        currTimesUsed[k] = ppsds[k]['current_times_used']
-
-    #Get string of method type
-    if type(method) is int:
-        methodInt = method
-        method = methodList[method]
-    params['method'] = method
-
-    #This gets the main hvsr curve averaged from all time steps
-    anyK = list(x_freqs.keys())[0]
-    hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
-    origPPSD = params['ppsds_obspy'].copy()
-
-    #Add some other variables to our output dictionary
-    hvsr_out = {'input_params':params.copy(),
-                'x_freqs':x_freqs,
-                'hvsr_curve':hvsr_curve,
-                'x_period':x_periods,
-                'psd_raw':psdRaw,
-                'current_times_used': currTimesUsed,
-                'psd_values_tavg':psdValsTAvg,
-                'ppsd_std':stDev,
-                'ppsd_std_vals_m':stDevValsM,
-                'ppsd_std_vals_p':stDevValsP,
-                'method':method,
-                'ppsds':ppsds,
-                'ppsds_obspy':origPPSD,
-                'tsteps_used': params['tsteps_used'].copy()
-                }
-
-    #This is if manual editing was used (should probably be updated at some point to just use masks)
-    if 'xwindows_out' in params.keys():
-        hvsr_out['xwindows_out'] = params['xwindows_out']
-    else:
-        hvsr_out['xwindows_out'] = []
-
-    #These are in other places in the hvsr_out dict, so are redudant
-    del hvsr_out['input_params']['ppsds_obspy']
-    del hvsr_out['input_params']['ppsds']
-    del hvsr_out['input_params']['tsteps_used']
-
-    freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
-    freq_smooth_constant = ['constant', 'const', 'c']
-    freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
-
-    #Frequency Smoothing
-    if freq_smooth is False:
-        print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
-    elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
-        from obspy.signal import konnoohmachismoothing
-        for k in hvsr_out['psd_raw']:
-            ppsd_data = hvsr_out['psd_raw'][k]
-            freqs = hvsr_out['x_freqs'][k]
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
-                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
-            hvsr_out['psd_raw'][k] = smoothed_ppsd_data
-    elif freq_smooth.lower() in freq_smooth_constant:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
-    elif freq_smooth.lower() in freq_smooth_proport:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
-    else:
-        print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
-
-    #Get hvsr curve from three components at each time step
-    anyK = list(hvsr_out['psd_raw'].keys())[0]
-    if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
-        pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-    else:
-        hvsr_tSteps = []
-        for tStep in range(len(hvsr_out['psd_raw'][anyK])):
-            tStepDict = {}
+        #Frequency Smoothing
+        if freq_smooth is False:
+            print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+        elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
+            from obspy.signal import konnoohmachismoothing
             for k in hvsr_out['psd_raw']:
-                tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-            hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+                ppsd_data = hvsr_out['psd_raw'][k]
+                freqs = hvsr_out['x_freqs'][k]
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
+                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+                hvsr_out['psd_raw'][k] = smoothed_ppsd_data
+        elif freq_smooth.lower() in freq_smooth_constant:
+            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
+        elif freq_smooth.lower() in freq_smooth_proport:
+            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
+        else:
+            print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
 
-    hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
-    
-    #use the standard deviation of each individual curve to determine if it overlapped
-    if remove_outlier_curves:
-        stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
-        std_stdT= np.std(stdT)
-        avg_stdT= np.nanmean(stdT)
+        #Get hvsr curve from three components at each time step
+        anyK = list(hvsr_out['psd_raw'].keys())[0]
+        if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
+            pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+        else:
+            hvsr_tSteps = []
+            for tStep in range(len(hvsr_out['psd_raw'][anyK])):
+                tStepDict = {}
+                for k in hvsr_out['psd_raw']:
+                    tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
+                hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+                hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
-        psds_to_rid = []
-        for i,t in enumerate(hvsr_out['ind_hvsr_curves']):
-            if stdT[i] < avg_stdT - std_stdT*outlier_curve_std or stdT[i] > avg_stdT + std_stdT*outlier_curve_std:
-                psds_to_rid.append(i)
+        hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
+        
+        #use the standard deviation of each individual curve to determine if it overlapped
+        if remove_outlier_curves:
+            stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
+            std_stdT= np.std(stdT)
+            avg_stdT= np.nanmean(stdT)
 
-        for i, r in enumerate(psds_to_rid):
-            index = int(r-i)
-            hvsr_out['ind_hvsr_curves'] = np.delete(hvsr_out['ind_hvsr_curves'], index, axis=0)
+            psds_to_rid = []
+            for i,t in enumerate(hvsr_out['ind_hvsr_curves']):
+                if stdT[i] < avg_stdT - std_stdT*outlier_curve_std or stdT[i] > avg_stdT + std_stdT*outlier_curve_std:
+                    psds_to_rid.append(i)
 
-            for k in hvsr_out['ppsds']:
-                hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=0)         
-                hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
-        hvsr_out['tsteps_used'][0] = hvsr_out['ppsds'][k]['current_times_used'].shape[0]
+            for i, r in enumerate(psds_to_rid):
+                index = int(r-i)
+                hvsr_out['ind_hvsr_curves'] = np.delete(hvsr_out['ind_hvsr_curves'], index, axis=0)
 
-    hvsr_out['ind_hvsr_stdDev'] = np.nanstd(hvsr_out['ind_hvsr_curves'], axis=0)
+                for k in hvsr_out['ppsds']:
+                    hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=0)         
+                    hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
+            hvsr_out['tsteps_used'][0] = hvsr_out['ppsds'][k]['current_times_used'].shape[0]
 
-    #Get peaks for each time step
-    tStepPeaks = []
-    for tStepHVSR in hvsr_tSteps:
-        tStepPeaks.append(__find_peaks(tStepHVSR))
-    hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
-    #Get peaks of main HV curve
-    hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
-    
-    #Get frequency values at HV peaks in main curve
-    hvsrPF=[]
-    for p in hvsr_out['hvsr_peak_indices']:
-        hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
-    hvsr_out['hvsr_peak_freqs'] = np.array(hvsrPF)
+        hvsr_out['ind_hvsr_stdDev'] = np.nanstd(hvsr_out['ind_hvsr_curves'], axis=0)
+
+        #Get peaks for each time step
+        tStepPeaks = []
+        for tStepHVSR in hvsr_tSteps:
+            tStepPeaks.append(__find_peaks(tStepHVSR))
+        hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
+        #Get peaks of main HV curve
+        hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+        
+        #Get frequency values at HV peaks in main curve
+        hvsrPF=[]
+        for p in hvsr_out['hvsr_peak_indices']:
+            hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
+        hvsr_out['hvsr_peak_freqs'] = np.array(hvsrPF)
 
 
-    #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
-    hvsr_out = __gethvsrparams(hvsr_out)
+        #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
+        hvsr_out = __gethvsrparams(hvsr_out)
 
-    #Include the original obspy stream in the output
-    hvsr_out['stream'] = params['stream']
+        #Include the original obspy stream in the output
+        hvsr_out['stream'] = params['stream']
 
     return hvsr_out
 
@@ -4091,9 +4117,16 @@ def __on_click(event):
     if event.button is MouseButton.LEFT:            
         clickNo, x0 = __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax)    
 
+#Helper function for batch processing of check_peaks
+def _check_peaks_batch(**check_peaks_kwargs):
+    hvsr_dict = check_peaks(**check_peaks_kwargs)
+    if check_peaks_kwargs['verbose']:
+        print('\t{} completed'.format(hvsr_dict['site']))
+    return hvsr_dict
+
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
+def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -4110,91 +4143,110 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
         hvsr_dict   : dict
             Dictionary containing previous input data, plus information about Peak tests
     """
-
-    if not hvsr_band:
-        hvsr_band = [0.4,40]
-    hvsr_dict['hvsr_band'] = hvsr_band
-
-    anyK = list(hvsr_dict['x_freqs'].keys())[0]
-    x = hvsr_dict['x_freqs'][anyK]
-    y = hvsr_dict['hvsr_curve']
-    index_list = hvsr_dict['hvsr_peak_indices']
-    peak_water_level  = hvsr_dict['peak_water_level']
-    hvsrp = hvsr_dict['hvsrp']
-    peak_water_level_p  = hvsr_dict['peak_water_level_p']
-    hvsrm = hvsr_dict['hvsrm']
-    hvsrPeaks = hvsr_dict['ind_hvsr_peak_indices']
-    hvsr_log_std = hvsr_dict['hvsr_log_std']
-
-    #Do for hvsr
-    peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
-
-    peak = __check_curve_reliability(hvsr_dict, peak)
-    peak = __check_clarity(x, y, peak, do_rank=True)
-
-    #Do for hvsrp
-    # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
-    if not np.isnan(np.sum(hvsrp)):
-        index_p = __find_peaks(hvsrp)
+    orig_args = locals().copy() #Get the initial arguments
+    if verbose:
+        print('Checking peaks and scoring "best" peak (check_peaks)')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key=='params':
+                pass
+            else:
+                print('\t\t{}={}'.format(key, value))
+    #First, divide up for batch or not
+    if hvsr_dict['batch']:
+        #If running batch, we'll loop through each site
+        for site_name in hvsr_dict.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
+            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
+            args['params']['batch'] = False #Set to false, since only running this time
+            hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+            hvsr_dict[site_name]['batch'] = True #Reset batch to true
     else:
-        index_p = list()
+        if not hvsr_band:
+            hvsr_band = [0.4,40]
+        hvsr_dict['hvsr_band'] = hvsr_band
 
-    peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
-    peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
+        anyK = list(hvsr_dict['x_freqs'].keys())[0]
+        x = hvsr_dict['x_freqs'][anyK]
+        y = hvsr_dict['hvsr_curve']
+        index_list = hvsr_dict['hvsr_peak_indices']
+        peak_water_level  = hvsr_dict['peak_water_level']
+        hvsrp = hvsr_dict['hvsrp']
+        peak_water_level_p  = hvsr_dict['peak_water_level_p']
+        hvsrm = hvsr_dict['hvsrm']
+        hvsrPeaks = hvsr_dict['ind_hvsr_peak_indices']
+        hvsr_log_std = hvsr_dict['hvsr_log_std']
 
-    #Do for hvsrm
-    # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
-    if not np.isnan(np.sum(hvsrm)):
-        index_m = __find_peaks(hvsrm)
-    else:
-        index_m = list()
+        #Do for hvsr
+        peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
 
-    peak_water_level_m  = hvsr_dict['peak_water_level_m']
+        peak = __check_curve_reliability(hvsr_dict, peak)
+        peak = __check_clarity(x, y, peak, do_rank=True)
 
-    peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
-    peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
-
-    stdf = __get_stdf(x, index_list, hvsrPeaks)
-
-    peak = __check_freq_stability(peak, peakm, peakp)
-    peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
-
-    hvsr_dict['Peak Report'] = peak
-
-    #Iterate through peaks and 
-    #   Get the best peak based on the peak score
-    #   Calculate whether each peak passes enough tests
-    curveTests = ['Window Length Freq.','Significant Cycles', 'Low Curve StDev. over time']
-    peakTests = ['Peak Freq. Clarity Below', 'Peak Freq. Clarity Above', 'Peak Amp. Clarity', 'Freq. Stability', 'Peak Stability (freq. std)', 'Peak Stability (amp. std)']
-    bestPeakScore = 0
-    for p in hvsr_dict['Peak Report']:
-        #Get best peak
-        if p['Score'] > bestPeakScore:
-            bestPeakScore = p['Score']
-            bestPeak = p
-
-        #Calculate if peak passes criteria
-        cTestsPass = 0
-        pTestsPass = 0
-        for testName in p['Pass List'].keys():
-            if testName in curveTests:
-                if p['Pass List'][testName]:
-                    cTestsPass += 1
-            elif testName in peakTests:
-                if p['Pass List'][testName]:
-                    pTestsPass += 1
-
-        if cTestsPass == 3 and pTestsPass >= 5:
-            p['Peak Passes'] = True
+        #Do for hvsrp
+        # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+        if not np.isnan(np.sum(hvsrp)):
+            index_p = __find_peaks(hvsrp)
         else:
-            p['Peak Passes'] = False
-        
-    #Designate best peak in output dict
-    if len(hvsr_dict['Peak Report']) == 0:
-        bestPeak={}
-        print('No Best Peak identified')
+            index_p = list()
 
-    hvsr_dict['Best Peak'] = bestPeak
+        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+        peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
+
+        #Do for hvsrm
+        # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
+        if not np.isnan(np.sum(hvsrm)):
+            index_m = __find_peaks(hvsrm)
+        else:
+            index_m = list()
+
+        peak_water_level_m  = hvsr_dict['peak_water_level_m']
+
+        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+        peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
+
+        stdf = __get_stdf(x, index_list, hvsrPeaks)
+
+        peak = __check_freq_stability(peak, peakm, peakp)
+        peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
+
+        hvsr_dict['Peak Report'] = peak
+
+        #Iterate through peaks and 
+        #   Get the best peak based on the peak score
+        #   Calculate whether each peak passes enough tests
+        curveTests = ['Window Length Freq.','Significant Cycles', 'Low Curve StDev. over time']
+        peakTests = ['Peak Freq. Clarity Below', 'Peak Freq. Clarity Above', 'Peak Amp. Clarity', 'Freq. Stability', 'Peak Stability (freq. std)', 'Peak Stability (amp. std)']
+        bestPeakScore = 0
+        for p in hvsr_dict['Peak Report']:
+            #Get best peak
+            if p['Score'] > bestPeakScore:
+                bestPeakScore = p['Score']
+                bestPeak = p
+
+            #Calculate if peak passes criteria
+            cTestsPass = 0
+            pTestsPass = 0
+            for testName in p['Pass List'].keys():
+                if testName in curveTests:
+                    if p['Pass List'][testName]:
+                        cTestsPass += 1
+                elif testName in peakTests:
+                    if p['Pass List'][testName]:
+                        pTestsPass += 1
+
+            if cTestsPass == 3 and pTestsPass >= 5:
+                p['Peak Passes'] = True
+            else:
+                p['Peak Passes'] = False
+            
+        #Designate best peak in output dict
+        if len(hvsr_dict['Peak Report']) == 0:
+            bestPeak={}
+            print('No Best Peak identified')
+
+        hvsr_dict['Best Peak'] = bestPeak
     return hvsr_dict
 
 #Initialize peaks

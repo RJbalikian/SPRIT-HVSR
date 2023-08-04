@@ -150,7 +150,6 @@ class App:
         self.menubar.add_cascade(label="SPRIT", menu=self.sprit_menu)
         self.menubar.add_cascade(label="Settings", menu=self.settings_menu)
     
-
     def create_tabs(self):
         self.style = ttk.Style(self.master)
 
@@ -177,73 +176,88 @@ class App:
                 self.tab_control.select(self.preview_data_tab)
             
             self.starttime, self.endtime = get_times()
-            
-            if isinstance(self.fpath, str):
-                pass
-            elif len(self.fpath) > 1:
-                self.fpath = list(self.fpath)
+
+
+            if self.file_source.get() == 'batch':
+                if isinstance(self.fpath, str):
+                    pass
+                elif len(self.fpath) > 1:
+                    self.fpath = list(self.fpath)
+                    batchType = 'filelist'
+                else:
+                    self.fpath = self.fpath[0]
+                    batchType = 'table'
+
+                sprit.batch_data_read(input_data=self.fpath, batch_type=batchType)
             else:
-                self.fpath = self.fpath[0]
+                if isinstance(self.fpath, str):
+                    pass
+                elif len(self.fpath) > 1:
+                    self.fpath = list(self.fpath)
+                else:
+                    self.fpath = self.fpath[0]
 
-            self.params = sprit.input_params( datapath=self.fpath,
-                                metapath = self.meta_path.get(),
-                                site=self.site_name.get(),
-                                network=self.network.get(), 
-                                station=self.station.get(), 
-                                loc=self.location.get(), 
-                                channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
-                                acq_date = self.starttime.date(),
-                                starttime = self.starttime,
-                                endtime = self.endtime,
-                                tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
-                                xcoord = self.x.get(),
-                                ycoord =  self.y.get(),
-                                elevation = self.z.get(),
-                                depth = self.depth.get(),
-                                instrument = self.instrumentSel.get(),
-                                hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
-            
-            self.params = sprit.get_metadata(self.params)
-            
-            if self.trim_dir.get()=='':
-                trimDir=None
-            else:
-                trimDir=self.trim_dir.get()
+                self.params = sprit.input_params( datapath=self.fpath,
+                                    metapath = self.meta_path.get(),
+                                    site=self.site_name.get(),
+                                    network=self.network.get(), 
+                                    station=self.station.get(), 
+                                    loc=self.location.get(), 
+                                    channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
+                                    acq_date = self.starttime.date(),
+                                    starttime = self.starttime,
+                                    endtime = self.endtime,
+                                    tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
+                                    xcoord = self.x.get(),
+                                    ycoord =  self.y.get(),
+                                    elevation = self.z.get(),
+                                    input_crs= self.input_crs.get(),
+                                    output_crs= self.output_crs.get(),
+                                    elev_unit= self.elev_unit.get(),
+                                    instrument = self.instrumentSel.get(),
+                                    hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+                
+                self.params = sprit.get_metadata(self.params)
+                
+                if self.trim_dir.get()=='':
+                    trimDir=None
+                else:
+                    trimDir=self.trim_dir.get()
 
-            self.hvsr_data = sprit.fetch_data(params=self.params,
-                                           source=self.file_source.get(), 
-                                           trim_dir=trimDir, 
-                                           export_format=self.export_format.get(), 
-                                           detrend=self.detrend.get(), 
-                                           detrend_order=self.detrend_order.get())
+                self.hvsr_data = sprit.fetch_data(params=self.params,
+                                            source=self.file_source.get(), 
+                                            trim_dir=trimDir, 
+                                            export_format=self.export_format.get(), 
+                                            detrend=self.detrend.get(), 
+                                            detrend_order=self.detrend_order.get())
 
-            #Update labels for data preview tab
-            self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.hvsr_data['stream']))
-            
-            self.obspySreamLabel_settings.configure(text=str(self.hvsr_data['stream']))
+                #Update labels for data preview tab
+                self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.hvsr_data['stream']))
+                
+                self.obspySreamLabel_settings.configure(text=str(self.hvsr_data['stream']))
 
-            self.sensitivityLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['sensitivity'])
-            self.gainLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['gain'])
-            self.polesLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['poles'])
-            self.zerosLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['zeros'])
-            
-            self.sensitivityLabelN_settings.configure(text=self.hvsr_data['paz']['N']['sensitivity'])
-            self.gainLabelN_settings.configure(text=self.hvsr_data['paz']['N']['gain'])
-            self.polesLabelN_settings.configure(text=self.hvsr_data['paz']['N']['poles'])
-            self.zerosLabelN_settings.configure(text=self.hvsr_data['paz']['N']['zeros'])
+                self.sensitivityLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['sensitivity'])
+                self.gainLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['gain'])
+                self.polesLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['poles'])
+                self.zerosLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['zeros'])
+                
+                self.sensitivityLabelN_settings.configure(text=self.hvsr_data['paz']['N']['sensitivity'])
+                self.gainLabelN_settings.configure(text=self.hvsr_data['paz']['N']['gain'])
+                self.polesLabelN_settings.configure(text=self.hvsr_data['paz']['N']['poles'])
+                self.zerosLabelN_settings.configure(text=self.hvsr_data['paz']['N']['zeros'])
 
-            self.sensitivityLabelE_settings.configure(text=self.hvsr_data['paz']['E']['sensitivity'])
-            self.gainLabelE_settings.configure(text=self.hvsr_data['paz']['E']['gain'])
-            self.polesLabelE_settings.configure(text=self.hvsr_data['paz']['E']['poles'])
-            self.zerosLabelE_settings.configure(text=self.hvsr_data['paz']['E']['zeros'])
-            
-            #Plot data in data preview tab
-            self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                self.sensitivityLabelE_settings.configure(text=self.hvsr_data['paz']['E']['sensitivity'])
+                self.gainLabelE_settings.configure(text=self.hvsr_data['paz']['E']['gain'])
+                self.polesLabelE_settings.configure(text=self.hvsr_data['paz']['E']['poles'])
+                self.zerosLabelE_settings.configure(text=self.hvsr_data['paz']['E']['zeros'])
+                
+                #Plot data in data preview tab
+                self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
-            #Plot data in noise preview tab
-            self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
-            select_windows(event=None, initialize=True)
-            plot_noise_windows()
+                #Plot data in noise preview tab
+                self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                select_windows(event=None, initialize=True)
+                plot_noise_windows()
 
             self.data_read = True
 
@@ -345,12 +359,13 @@ class App:
 
 
         def update_input_params_call():
-            self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
-                                            '.../'+pathlib.Path(self.data_path.get()).name, '.../'+pathlib.Path(self.meta_path.get()).name, self.site_name.get(), self.instrumentSel.get(),
+            self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  hvsr_band=[{}, {}])".format(
+                                            self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
-                                            self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
+                                            self.x.get(), self.y.get(), self.z.get(), 
+                                            self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text="Site Name")
@@ -369,10 +384,12 @@ class App:
 
                 if self.file_source.get() == 'raw' or self.file_source.get() == 'dir':
                     self.browse_data_filepath_button.configure(text='Browse Folder')
+                    self.batch_options_frame.grid_forget()
                 elif self.file_source.get() == 'batch':
-                    self.tab_control.select(self.batch_tab)
+                    self.batch_options_frame.grid(row=11, column=0, columnspan=7, sticky='ew')
                 else:
                     self.browse_data_filepath_button.configure(text='Browse File(s)')
+                    self.batch_options_frame.grid_forget()
                 return True
             except ValueError:
                 return False
@@ -385,9 +402,9 @@ class App:
         self.file_source = tk.StringVar()
         self.file_source.set('file')
         ttk.Radiobutton(master=sourcFrame, text='File', variable=self.file_source, value='file', command=on_source_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
-        ttk.Radiobutton(master=sourcFrame, text='Batch', variable=self.file_source, value='batch', command=on_source_select).grid(row=0, column=3, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Raw', variable=self.file_source, value='raw', command=on_source_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Batch', variable=self.file_source, value='batch', command=on_source_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=sourcFrame, text='Directory', variable=self.file_source, value='dir', command=on_source_select).grid(row=0, column=3, sticky='w', padx=(5, 10))
 
         #Instrument select
         ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
@@ -676,23 +693,25 @@ class App:
         self.z_entry = ttk.Entry(hvsrFrame, textvariable=self.z, validate='focusout', validatecommand=update_input_params_call)
         self.z_entry.grid(row=5,column=6, sticky='w', padx=0)
 
-        ttk.Label(hvsrFrame,text="CRS").grid(row=6,column=1, sticky='e', padx=5, pady=10)
-        self.crs = tk.StringVar()
-        self.crs.set('(not yet supported)')
-        self.crs_entry = ttk.Entry(hvsrFrame, textvariable=self.crs, validate='focusout', validatecommand=update_input_params_call)
-        self.crs_entry.grid(row=6,column=2, sticky='w', padx=0)
+        ttk.Label(hvsrFrame,text="Input CRS").grid(row=6,column=1, sticky='e', padx=5, pady=10)
+        self.input_crs = tk.StringVar()
+        self.input_crs.set('EPSG:4236')
+        self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate='focusout', validatecommand=update_input_params_call)
+        self.input_crs_entry.grid(row=6,column=2, sticky='w', padx=0)
 
-        #ttk.Label(hvsrFrame,text="Elevation").grid(row=6,column=3, sticky='e', padx=5, pady=10)
-        #self.elevation = tk.DoubleVar()
-        #self.elevation.set(0)
-        #self.elevation_entry = ttk.Entry(hvsrFrame, textvariable=self.elevation, validate='focusout', validatecommand=update_input_params_call)
-        #self.elevation_entry.grid(row=6, column=4, sticky='w', padx=0)
+        ttk.Label(hvsrFrame,text="Output CRS").grid(row=6,column=3, sticky='e', padx=5, pady=10)
+        self.output_crs = tk.StringVar()
+        self.output_crs.set('EPSG:4236')
+        self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate='focusout', validatecommand=update_input_params_call)
+        self.output_crs_entry.grid(row=6, column=4, sticky='w', padx=0)
 
-        ttk.Label(hvsrFrame,text="Depth").grid(row=6,column=5, sticky='e', padx=5, pady=10)
-        self.depth = tk.DoubleVar()
-        self.depth.set(0)
-        self.depth_entry = ttk.Entry(hvsrFrame,textvariable=self.depth, validate='focusout', validatecommand=update_input_params_call)
-        self.depth_entry.grid(row=6,column=6, sticky='w', padx=0)
+        ttk.Label(master=hvsrFrame, text='Elevation Unit').grid(row=6, column=5, sticky='e', padx=5, pady=10)
+        elevUnitFrame= ttk.Frame(hvsrFrame)
+        elevUnitFrame.grid(row=6, column=6, sticky='w', columnspan=3)
+        self.elev_unit = tk.StringVar()
+        self.elev_unit.set('meters')
+        ttk.Radiobutton(master=elevUnitFrame, text='Meters', variable=self.elev_unit, value='meters', command=update_input_params_call).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=elevUnitFrame, text='Feet', variable=self.elev_unit, value='feet', command=update_input_params_call).grid(row=0, column=1, sticky='w', padx=(5, 10))
 
         # Network Station Location
         ttk.Label(hvsrFrame,text="Network").grid(row=7,column=1, sticky='e', padx=5, pady=10)
@@ -758,8 +777,47 @@ class App:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate='focusout', validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky='ew', padx=(2,0))
 
+        def update_batch_data_read_call():
+            self.batch_read_data_call.configure(text="batch_data_read(input_data, batch_type='{}', param_col={}, batch_params={})".format(
+                                                                                        self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
+            return
+
+        def on_batch_type_select():
+            update_batch_data_read_call()
+            return
+
+        self.batch_options_frame = ttk.LabelFrame(hvsrFrame, text='Batch Options')
+        ttk.Label(self.batch_options_frame, text="Batch Type").grid(row=0,column=0, sticky='e', padx=10, pady=10)
+        batchTypeFrame= ttk.Frame(self.batch_options_frame)
+        batchTypeFrame.grid(row=0, column=1, sticky='w', columnspan=3)
+        self.batch_type = tk.StringVar()
+        self.batch_type.set('table')
+        ttk.Radiobutton(master=batchTypeFrame, text='Table', variable=self.batch_type, value='table', command=on_batch_type_select).grid(row=0, column=0, sticky='w', padx=(5, 10))
+        ttk.Radiobutton(master=batchTypeFrame, text='File list', variable=self.batch_type, value='filelist', command=on_batch_type_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
+
+        ttk.Label(self.batch_options_frame,text="Parameter column name").grid(row=0,column=4, sticky='e', padx=5)
+        self.param_col = tk.StringVar()
+        self.param_col.set(None)
+        self.param_col_entry = ttk.Entry(self.batch_options_frame, textvariable=self.param_col, validate='focusout', validatecommand=update_batch_data_read_call)
+        self.param_col_entry.grid(row=0, column=5, sticky='w', padx=0)
+        ttk.Label(self.batch_options_frame,text="For batch_type='table' with single parameter column only").grid(row=1,column=4, columnspan=2, sticky='w', padx=5)
+
+        ttk.Label(self.batch_options_frame,text="Batch parameters").grid(row=0,column=6, sticky='e', padx=5)
+        self.batch_params = tk.StringVar()
+        self.batch_params.set(None)
+        self.batch_params_entry = ttk.Entry(self.batch_options_frame, textvariable=self.batch_params, validate='focusout', validatecommand=update_batch_data_read_call, width=75)
+        self.batch_params_entry.grid(row=0, column=7, columnspan=3, sticky='ew', padx=0)
+        ttk.Label(self.batch_options_frame,text="To specify parameters used for reading in data").grid(row=1,column=6, columnspan=2, sticky='w', padx=5)
+
+        self.batch_read_data_call = ttk.Label(self.batch_options_frame, text="batch_data_read(input_data, batch_type={}, param_col={}, batch_params={})".format(
+                                                                                        self.batch_type.get(), self.param_col.get(), self.batch_params.get() ))
+        self.batch_read_data_call.grid(row=2,column=0, columnspan=10, sticky='w', padx=10, pady=10)
+
+        self.batch_options_frame.grid(row=11, column=0, columnspan=7, sticky='ew')
+        self.batch_options_frame.grid_forget()
+        
         separator = ttk.Separator(hvsrFrame, orient='horizontal')
-        separator.grid(row=11, column=0, columnspan=7, sticky='ew', padx=10)
+        separator.grid(row=12, column=0, columnspan=7, sticky='ew', padx=10)
 
         def update_fetch_call():
             if self.trim_dir.get()=='':
@@ -839,14 +897,14 @@ class App:
         self.trim_dir_filepath_button.grid(row=15, column=6, sticky='ew', padx=0, pady=(2.5,5))
 
         #self.starttime, self.endtime = get_times()
-
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
-        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\tlon={}, ycoord={}, elevation={}, depth={},  hvsr_band=[{}, {}])".format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  hvsr_band=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
-                                            self.x.get(), self.y.get(), self.z.get(), self.depth.get(), 
+                                            self.x.get(), self.y.get(), self.z.get(), 
+                                            self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get()))
         self.input_params_call.pack(anchor='w', expand=True, padx=20)
 
