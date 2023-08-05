@@ -138,7 +138,7 @@ def info(info_message):
     return
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath):
+def checkifpath(filepath, verbose=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -158,9 +158,11 @@ def checkifpath(filepath):
     else:
         try:
             filepath = pathlib.Path(filepath)
-            #print('Converted string to pathlib path') #Assume a string was input rather than pathlib object
         except:
-            error('Input cannot be converted to pathlib path', 0)
+            if verbose:
+                warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
+        if not filepath.exists():
+            raise RuntimeError('File does not exist: {}'.format(filepath))
     return filepath
 
 #Formats time into desired output
@@ -369,7 +371,8 @@ def input_params(datapath,
                 depth = 0,
                 instrument = 'Raspberry Shake',
                 metapath = '',
-                hvsr_band = [0.4, 40] 
+                hvsr_band = [0.4, 40],
+                verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
     
@@ -424,6 +427,8 @@ def input_params(datapath,
     #Declare obspy here instead of at top of file for (for example) colab, where obspy first needs to be installed on environment
     global obspy
     import obspy
+    if verbose:
+        print('Gathering input parameters (input_params())')
 
     #Make Sure metapath is all good
     if not pathlib.Path(metapath).exists() or metapath=='':
@@ -553,7 +558,7 @@ def input_params(datapath,
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
-def update_shake_metadata(filepath, params, write_path=''):
+def _update_shake_metadata(filepath, params, write_path=''):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
         PARAMETERS
@@ -640,8 +645,7 @@ def update_shake_metadata(filepath, params, write_path=''):
         except:
             print('write_path not recognized as filepath, not writing')
             write_path=''
-
-    if write_path=='':
+    else:
         #Create temporary file for reading into obspy
         tpf = tempfile.NamedTemporaryFile(delete=False)
         stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
@@ -681,7 +685,7 @@ def gui():
     gui_root.mainloop() #Run the main loop
     
 #Support function for get_metadata()
-def _read_RS_Metadata(params):
+def _read_RS_Metadata(params, source=None):
     """Function to read the metadata from Raspberry Shake using the StationXML file provided by the company.
     Intended to be used within the get_metadata() function.
 
@@ -695,22 +699,18 @@ def _read_RS_Metadata(params):
     params : dict
         Further modified parameter dictionary
     """
-    inv = params['inv']
-
-    if isinstance(inv, pathlib.PurePath) or type(inv) is str:
-        inv = checkifpath(inv)
-        tree = ET.parse(inv)
-        root = tree.getroot()
+    if 'inv' in params.keys():
+        inv = params['inv']
+    else:
+        checkifpath(params['metapath'])
+        inv = obspy.read_inventory(params['metapath'], format='STATIONXML', level='response')
+        params['inv'] = inv
 
     station = params['sta']
     network = params['net']
     channels = params['cha']
 
-    if isinstance(inv, pathlib.PurePath):
-        inv = checkifpath(inv)
-        tree = ET.parse(inv)
-        root = tree.getroot()
-    else:
+    if isinstance(inv, obspy.core.inventory.inventory.Inventory):
         #Create temporary file from inventory object
         tpf = tempfile.NamedTemporaryFile(delete=False)
         inv.write(tpf.name, format='STATIONXML')
@@ -722,6 +722,12 @@ def _read_RS_Metadata(params):
         #Close and remove temporary file
         tpf.close()
         os.remove(tpf.name)
+    else:
+        inv = checkifpath(inv)
+        inv = obspy.read_inventory(params['metapath'], format='STATIONXML', level='response')
+        params['inv'] = inv
+        tree = ET.parse(inv)
+        root = tree.getroot()
 
     #if write_path != '':
     #    inv.write(write_path, format='STATIONXML')
@@ -777,10 +783,11 @@ def _read_RS_Metadata(params):
             c = str(c)[-1].upper()
         paz[str(c)] = channelPaz
     params['paz'] = paz
+
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path=''):
+def get_metadata(params, write_path='', update_metadata=False, source=None):
     """Get metadata and calculate or get paz parameter needed for PPSD
 
     Parameters
@@ -800,10 +807,11 @@ def get_metadata(params, write_path=''):
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if params['instrument'].lower() in  raspShakeInstNameList:
-        params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
-        params = _read_RS_Metadata(params)
+        if update_metadata:
+            params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
+        params = _read_RS_Metadata(params, source=source)
     else:
-        print('{} not currently supported\n Returning input params dictionary.'.format(params['instrument']))
+        warnings.warn('{} not currently supported\n Returning input params dictionary.'.format(params['instrument']))
         return params
     
     return params
@@ -819,8 +827,96 @@ def has_required_channels(stream):
     # Check if Z, E, and N channels are present
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
+#Helper function to sort channels
+def _sort_channels(input, source, verbose):
+    if source!='batch':
+        input = {'SITENAME': {'stream':input}} #Make same structure as batch
+
+    for site in input.keys():
+        rawDataIN = input[site]['stream']
+
+        if rawDataIN is None:
+            if verbose:
+                raise RuntimeError("No data was read using specified parameters {}".format(input[site]))
+            else:
+                raise RuntimeError("No data was read using specified parameters")
+
+        elif isinstance(rawDataIN, obspy.core.stream.Stream):
+            #Make sure z component is first
+            if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
+                dataIN = rawDataIN
+            else:
+                dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
+        else:
+            dataIN = []
+            for i, st in enumerate(rawDataIN):
+                if 'Z' in st[0].stats['channel']:#).split('.')[3]:#[12:15]:
+                    dataIN.append(rawDataIN[i])
+                else:
+                    dataIN.append(rawDataIN[i].sort(['channel'], reverse=True)) #z, n, e order            
+
+        input[site]['stream'] = dataIN
+            
+    if source=='batch':
+        #Return a dict
+        output = input
+    else:
+        #Return a stream otherwise
+        output = input[site]['stream']
+    return output
+
+    
+
+#Helper function to detrend data
+def __detrend_data(input, detrend, detrend_order, verbose, source):
+    if source!='batch':
+        input = {'SITENAME': {'stream':input}} #Make same structure as batch
+
+
+    for key in input.keys():
+        dataIN = input[key]['stream']
+        if detrend==False:
+            pass
+        elif detrend==True:
+            #By default, do a spline removal
+            for tr in dataIN:
+                tr.detrend(type='spline', order=detrend_order, dspline=1000)        
+        else:
+            data_undetrended = dataIN.copy()
+            try:
+                if detrend=='simple':
+                    for tr in dataIN:
+                        tr.detrend(type=detrend)
+                if detrend=='linear':
+                    for tr in dataIN:
+                        tr.detrend(type=detrend)
+                if detrend=='constant' or detrend=='demean':
+                    for tr in dataIN:
+                        tr.detrend(type=detrend)                
+                if detrend=='polynomial':
+                    for tr in dataIN:
+                        tr.detrend(type=detrend, order=detrend_order)   
+                if detrend=='spline':
+                    for tr in dataIN:
+                        tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+            except:
+                dataIN = data_undetrended
+                if verbose:
+                    print("Detrend error, data not detrended")
+        
+        input[key]['stream'] = dataIN
+
+    if source=='batch':
+        #Return a dict
+        output = input
+    else:
+        #Return a stream otherwise
+        output = input[key]['stream']
+    return output
+
+
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False, **kwargs):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=False, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -852,10 +948,14 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             Same dict as params parameter, but with an additional "strea" key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         """
-    if inv is None:
-        inv = params['inv'], 
+    if source != 'batch' and verbose:
+        print('\nFetching data (fetch_data())')
+    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    inv = params['inv']
+
     date=params['acq_date']
 
+    #Cleanup for gui input
     if '}' in str(params['datapath']):
         params['datapath'] = params['datapath'].as_posix().replace('{','')
         params['datapath'] = params['datapath'].split('}')
@@ -914,6 +1014,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+
+    #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -940,8 +1042,12 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             warnings.simplefilter('ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source=='batch':
+        if verbose:
+            print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
-        params = batch_data_read(input_data=params['datapath'], **batch_data_read_kwargs)
+        params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
+
+        return params
     else:
         try:
             rawDataIN = obspy.read(dPath)
@@ -949,65 +1055,29 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         except:
             print('Read or source error')
 
-    if rawDataIN is None:
-        return
-    elif isinstance(rawDataIN, obspy.core.stream.Stream):
-        #Make sure z component is first
-        if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
-            dataIN = rawDataIN
-        else:
-            dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
-    else:
-        dataIN = []
-        for i, st in enumerate(rawDataIN):
-            if 'Z' in st[0].stats['channel']:#).split('.')[3]:#[12:15]:
-                dataIN.append(rawDataIN[i])
-            else:
-                dataIN.append(rawDataIN[i].sort(['channel'], reverse=True)) #z, n, e order            
-        
+    #Sort channels (make sure Z is first, makes things easier later)
+    dataIN = _sort_channels(input=rawDataIN, source=source, verbose=verbose)    
+      
+    #Trim and save data as specified
     if not trim_dir:
         pass
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
-    
-    if isinstance(dataIN[0].data, np.ma.masked_array):
-        dataIN = dataIN.split()
-        #Need to test to see if this works ok with lots of little windows
+    #Split data if masked array (if there are gaps)...detrending cannot be done without
+    for tr in dataIN:
+        if isinstance(tr.data, np.ma.masked_array):
+            dataIN = dataIN.split()
+            #Splits entire stream if any trace is masked_array
+            break
 
-    if detrend==False:
-        pass
-    elif detrend==True:
-        #By default, do a spline removal
-        for tr in dataIN:
-            tr.detrend(type='spline', order=detrend_order, dspline=1000)        
-    else:
-        data_undetrended = dataIN.copy()
-        try:
-            if detrend=='simple':
-                for tr in dataIN:
-                    tr.detrend(type=detrend)
-            if detrend=='linear':
-                for tr in dataIN:
-                    tr.detrend(type=detrend)
-            if detrend=='constant' or detrend=='demean':
-                for tr in dataIN:
-                    tr.detrend(type=detrend)                
-            if detrend=='polynomial':
-                for tr in dataIN:
-                    tr.detrend(type=detrend, order=detrend_order)   
-            if detrend=='spline':
-                for tr in dataIN:
-                    tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
-        except:
-            dataIN = data_undetrended
-            if verbose:
-                print("Detrend error, data not detrended")
+    #Detrend data
+    dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
 
+    #Remerge data
     dataIN = dataIN.merge(method=1)
     params['batch'] = False
     params['stream'] = dataIN
-
     return params
 
 def __read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
@@ -1206,7 +1276,6 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
     IndexError
         _description_
     """
-
     #First figure out columns
     input_params_params = input_params.__code__.co_varnames
     get_metadata_params = get_metadata.__code__.co_varnames
@@ -1218,6 +1287,9 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
     if batch_type == 'table':
         if isinstance(input_data, pd.DataFrame):
             dataReadInfoDF = input_data
+        elif isinstance(input_data, dict):
+            #For params input
+            pass
         else:#Read csv
             read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
             dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
@@ -1265,7 +1337,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                             if col in default_dict.keys():
                                 param_dict[col] = default_dict[col] #Get default value
                                 if verbose:
-                                    print('Replacing blank value for {} from file with default value {}'.format(col, default_dict[col]))
+                                    print('Input File Row {}: Replacing blank value for {} from file with default value {}'.format(row_ind, col, default_dict[col]))
                             else:
                                 param_dict[col] = None
                         else:
@@ -1303,12 +1375,10 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 pass 
             else:
                 param_dict_list[i]['datapath'] = file
-
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0
     for param_dict in param_dict_list:
-        
         # Read the data file into a Stream object
         input_params_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in input_params.__code__.co_varnames}
         input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}
@@ -1330,7 +1400,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
             params['site'] = "{}_{}".format(params['site'], str(i).zfill(zfillDigs))
             i+=1
         hvsr_metaDict[params['site']] = params
-    
+    hvsr_metaDict['batch'] = True
     return hvsr_metaDict
 
 #Trim data 
@@ -2284,7 +2354,7 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
 
 #Support function for running batch
 def _generate_ppsds_batch(**generate_ppsds_kwargs):
-    params = process_hvsr(**generate_ppsds_kwargs)
+    params = generate_ppsds(**generate_ppsds_kwargs)
     if generate_ppsds_kwargs['verbose']:
         print('\t{} completed'.format(params['site']))
     return params
