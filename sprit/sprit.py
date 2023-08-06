@@ -15,6 +15,7 @@ from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+from obspy.signal import PPSD
 import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
@@ -787,7 +788,7 @@ def _read_RS_Metadata(params, source=None):
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path='', update_metadata=False, source=None):
+def get_metadata(params, write_path='', update_metadata=True, source=None):
     """Get metadata and calculate or get paz parameter needed for PPSD
 
     Parameters
@@ -865,8 +866,6 @@ def _sort_channels(input, source, verbose):
         output = input[site]['stream']
     return output
 
-    
-
 #Helper function to detrend data
 def __detrend_data(input, detrend, detrend_order, verbose, source):
     if source!='batch':
@@ -914,9 +913,8 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         output = input[key]['stream']
     return output
 
-
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=False, verbose=False, **kwargs):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -950,6 +948,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         """
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
+
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
 
@@ -1337,7 +1336,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                             if col in default_dict.keys():
                                 param_dict[col] = default_dict[col] #Get default value
                                 if verbose:
-                                    print('Input File Row {}: Replacing blank value for {} from file with default value {}'.format(row_ind, col, default_dict[col]))
+                                    print('Input File Row {}: {} not specified in batch file. Using {}={}'.format(row_ind, col, col, default_dict[col]))
                             else:
                                 param_dict[col] = None
                         else:
@@ -1385,10 +1384,10 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         input_params_kwargs.update(input_params_kwargs2)
         params = input_params(**input_params_kwargs)
 
-        get_metadata_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in get_metadata.__code__.co_varnames}
-        get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
-        get_metadata_kwargs.update(get_metadata_kwargs2)
-        params = get_metadata(params=params, **get_metadata_kwargs)
+        #get_metadata_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in get_metadata.__code__.co_varnames}
+        #get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
+        #get_metadata_kwargs.update(get_metadata_kwargs2)
+        #params = get_metadata(params=params, **get_metadata_kwargs)
 
         fetch_data_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in fetch_data.__code__.co_varnames}
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
@@ -1400,7 +1399,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
             params['site'] = "{}_{}".format(params['site'], str(i).zfill(zfillDigs))
             i+=1
         hvsr_metaDict[params['site']] = params
-    hvsr_metaDict['batch'] = True
+    #hvsr_metaDict['batch'] = True
     return hvsr_metaDict
 
 #Trim data 
@@ -2390,22 +2389,27 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
     """
     #First, divide up for batch or not
     orig_args = locals().copy() #Get the initial arguments
-    if params['batch']:
+
+    if (verbose and 'site' not in params.keys()) or (verbose and not params['batch']):
+        print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
+
+    #Site is in the keys anytime it's not batch
+    if 'site' not in params.keys():
         #If running batch, we'll loop through each one
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = params[site_name] #Get what would normally be the "params" variable for each site
             args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
-            args['params']['batch'] = False #Set to false, since only running this time
+            #args['params']['batch'] = False #Set to false, since only running this time
             params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
-            params[site_name]['batch'] = True #Reset batch to true
+            #params[site_name]['batch'] = True #Reset batch to true
     else:
         paz=params['paz']
         stream = params['stream']
 
         #Set defaults here that are different than obspy defaults
         if 'ppsd_length' not in ppsd_kwargs:
-            ppsd_kwargs['ppsd_length'] = 60
+            ppsd_kwargs['ppsd_length'] = 30
         if 'skip_on_gaps' not in ppsd_kwargs:
             ppsd_kwargs['skip_on_gaps'] = True
         if 'period_step_octaves' not in ppsd_kwargs:
@@ -2417,17 +2421,17 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         estats = eStream.traces[0].stats
         ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
         #ppsdE = PPSD(stream.select(component='E').traces[0].stats, paz['E'], ppsd_length=ppsd_length, kwargs=kwargs)
-        ppsdE.add(stream, verbose=verbose)
+        ppsdE.add(stream)
 
         nStream = stream.select(component='N')
         nstats = nStream.traces[0].stats
         ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-        ppsdN.add(stream, verbose=verbose)
+        ppsdN.add(stream)
 
         zStream = stream.select(component='Z')
         zstats = zStream.traces[0].stats
         ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-        ppsdZ.add(stream, verbose=verbose)
+        ppsdZ.add(stream)
 
         ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
 
@@ -2658,7 +2662,7 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
 def _process_hvsr_batch(**process_hvsr_kwargs):
     params = process_hvsr(**process_hvsr_kwargs)
     if process_hvsr_kwargs['verbose']:
-        print('\t{} completed'.format(params['site']))
+        print('\t{} completed'.format(params['input_params']['site']))
     return params
 
 #Main function for processing HVSR Curve
@@ -2709,24 +2713,30 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     """
     orig_args = locals().copy() #Get the initial arguments
-    if verbose:
-        print('Calculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr')
-        print('\tUsing the following parameters:')
+    if (verbose and 'site' not in params.keys()) or (verbose and not params['batch']):
+        if 'batch' in params.keys():
+            pass
+        else:
+            print('Calculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
+            print('\tUsing the following parameters:')
         for key, value in orig_args.items():
             if key=='params':
                 pass
             else:
-                print('\t\t{}={}'.format(key, value))
+                print('\t  {}={}'.format(key, value))
+    
     #First, divide up for batch or not
-    if params['batch']:
+    #Site is in the keys anytime it's not batch
+    if 'site' not in params.keys():
         #If running batch, we'll loop through each site
+        hvsr_out = {}
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = params[site_name] #Get what would normally be the "params" variable for each site
             args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
-            args['params']['batch'] = False #Set to false, since only running this time
-            params[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
-            params[site_name]['batch'] = True #Reset batch to true
+            #args['params']['batch'] = False #Set to false, since only running this time
+            hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+            #params[site_name]['batch'] = True #Reset batch to true
     else:
         ppsds = params['ppsds'].copy()#[k]['psd_values']
         ppsds = __check_xvalues(ppsds)
@@ -3681,8 +3691,6 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
         if ')' in i:
             i = i[:-1]
         axisbox.append(float(i))
-    #print(axisbox)
-    #print(ax.get_position())
 
     ax.legend(loc=legendLoc)
 
@@ -4214,24 +4222,50 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
             Dictionary containing previous input data, plus information about Peak tests
     """
     orig_args = locals().copy() #Get the initial arguments
-    if verbose:
-        print('Checking peaks and scoring "best" peak (check_peaks)')
-        print('\tUsing the following parameters:')
+
+    if (verbose and 'site' not in hvsr_dict.keys()) or (verbose and not hvsr_dict['batch']):
+        if 'batch' in hvsr_dict.keys():
+            pass
+        else:
+            print('Checking peaks in the H/V Curve (check_peaks())')
+            print('\tUsing the following parameters:')
         for key, value in orig_args.items():
-            if key=='params':
+            if key=='hvsr_dict':
                 pass
             else:
-                print('\t\t{}={}'.format(key, value))
+                print('\t  {}={}'.format(key, value))
+    
     #First, divide up for batch or not
-    if hvsr_dict['batch']:
+    #Site is in the keys anytime it's not batch
+    if 'site' not in hvsr_dict.keys():
         #If running batch, we'll loop through each site
         for site_name in hvsr_dict.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
-            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
-            args['params']['batch'] = False #Set to false, since only running this time
+            args['hvsr_dict'] = individual_params #reset the params parameter we originally read in to an individual site params
+            #args['params']['batch'] = False #Set to false, since only running this time
             hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
-            hvsr_dict[site_name]['batch'] = True #Reset batch to true
+            #params[site_name]['batch'] = True #Reset batch to true
+            return hvsr_dict
+
+    #if verbose:
+    #    print('Checking peaks and scoring "best" peak (check_peaks)')
+    #    print('\tUsing the following parameters:')
+    #    for key, value in orig_args.items():
+    #        if key=='params':
+    #            pass
+    #        else:
+    #            print('\t\t{}={}'.format(key, value))
+    #First, divide up for batch or not
+    #if hvsr_dict['batch']:
+    #    #If running batch, we'll loop through each site
+    #    for site_name in hvsr_dict.keys():
+    #        args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+    #        individual_params = hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
+    #        args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
+    #        args['params']['batch'] = False #Set to false, since only running this time
+    #        hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+    #        hvsr_dict[site_name]['batch'] = True #Reset batch to true
     else:
         if not hvsr_band:
             hvsr_band = [0.4,40]
