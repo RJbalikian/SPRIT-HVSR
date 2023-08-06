@@ -1291,7 +1291,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
             pass
         else:#Read csv
             read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
-            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
+            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs)
             if 'datapath' in dataReadInfoDF.columns:
                 filelist = list(dataReadInfoDF['datapath'])
             #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
@@ -1323,7 +1323,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                     'verbose':False}
 
         if verbose:
-            print(dataReadInfoDF)
+            print('\t',dataReadInfoDF)
 
         param_dict_list = []
         if param_col is None: #Not a single parameter column, each col=parameter
@@ -1336,7 +1336,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                             if col in default_dict.keys():
                                 param_dict[col] = default_dict[col] #Get default value
                                 if verbose:
-                                    print('Input File Row {}: {} not specified in batch file. Using {}={}'.format(row_ind, col, col, default_dict[col]))
+                                    print('\tInput File Row {}: {} not specified in batch file. Using {}={}'.format(row_ind, col, col, default_dict[col]))
                             else:
                                 param_dict[col] = None
                         else:
@@ -2666,10 +2666,10 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
 
 #Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
-    params = process_hvsr(**process_hvsr_kwargs)
+    hvsr_dict = process_hvsr(**process_hvsr_kwargs)
     if process_hvsr_kwargs['verbose']:
-        print('\t{} completed'.format(params['input_params']['site']))
-    return params
+        print('\t{} completed'.format(hvsr_dict['input_params']['site']))
+    return hvsr_dict
 
 #Main function for processing HVSR Curve
 def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
@@ -2738,11 +2738,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         hvsr_out = {}
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            individual_params = params[site_name] #Get what would normally be the "params" variable for each site
-            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
-            #args['params']['batch'] = False #Set to false, since only running this time
+            args['params'] = params[site_name] #Get what would normally be the "params" variable for each site
             hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
-            #params[site_name]['batch'] = True #Reset batch to true
     else:
         ppsds = params['ppsds'].copy()#[k]['psd_values']
         ppsds = __check_xvalues(ppsds)
@@ -2922,7 +2919,6 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         #Include the original obspy stream in the output
         hvsr_out['stream'] = params['stream']
-
     return hvsr_out
 
 #Helper function for smoothing across frequencies
@@ -4206,6 +4202,7 @@ def _check_peaks_batch(**check_peaks_kwargs):
     hvsr_dict = check_peaks(**check_peaks_kwargs)
     if check_peaks_kwargs['verbose']:
         print('\t{} completed'.format(hvsr_dict['input_params']['site']))
+    print('inside batch fun', hvsr_dict['Best Peak'])
     return hvsr_dict
 
 #Quality checks, stability tests, clarity tests
@@ -4229,7 +4226,7 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
     """
     orig_args = locals().copy() #Get the initial arguments
 
-    if (verbose and 'site' not in hvsr_dict.keys()) or (verbose and not hvsr_dict['batch']):
+    if (verbose and 'input_params' not in hvsr_dict.keys()) or (verbose and not hvsr_dict['input_params']['batch']):
         if 'batch' in hvsr_dict.keys():
             pass
         else:
@@ -4249,12 +4246,8 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         #If running batch, we'll loop through each site
         for site_name in hvsr_dict.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            individual_params = hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
-            args['hvsr_dict'] = individual_params #reset the params parameter we originally read in to an individual site params
-            #args['params']['batch'] = False #Set to false, since only running this time
+            args['hvsr_dict'] =  hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
             hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
-            #params[site_name]['batch'] = True #Reset batch to true
-            return hvsr_dict
     else:
         if not hvsr_band:
             hvsr_band = [0.4,40]
@@ -4847,9 +4840,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_results[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            #args['params']['batch'] = False #Set to false, since only running this time
-            hvsr_results[site_name] = _get_report_batch(**args) #Call another function, that lets us run this function again
-            #params[site_name]['batch'] = True #Reset batch to true
+            _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
         if 'Best Peak' in hvsr_results.keys():
             curvTestsPassed = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
