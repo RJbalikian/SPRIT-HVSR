@@ -10,7 +10,7 @@ version="0.1.4"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
-dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyqt5"]
+dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyqt5", "pyproj"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Science/Research",

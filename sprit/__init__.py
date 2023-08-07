@@ -32,7 +32,8 @@ from sprit.sprit import(
     remove_noise,
     plot_noise_windows,
     check_peaks,
-    get_report
+    get_report,
+    HVSRData,
 )
 
 __all__ =('sprit',
@@ -64,7 +65,8 @@ __all__ =('sprit',
     'remove_noise',
     'plot_noise_windows',
     'check_peaks',
-    'get_report'
+    'get_report',
+    HVSRData
 )
 
 __author__ = 'Riley Balikian'

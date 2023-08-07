@@ -29,6 +29,24 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
+def test_function():
+    print('is this importing?')
+
+class HVSRData:
+    def __init__(self, params):
+        self.params = params
+    
+    @property
+    def params(self):
+        return self._params
+
+    @params.setter
+    def params(self, value):
+        if not isinstance(value, dict):
+            raise ValueError("params must be a dict class")
+        self._params = value
+
+
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
 
     #Get the input parameters

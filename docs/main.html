@@ -43,7 +43,6 @@ from sprit.sprit import(
     info,
     checkifpath,
     input_params,
-    update_shake_metadata,
     gui,
     get_metadata,
     has_required_channels,
@@ -76,7 +75,6 @@ __all__ =(&#39;sprit&#39;,
     &#39;info&#39;,
     &#39;checkifpath&#39;,
     &#39;input_params&#39;,
-    &#39;update_shake_metadata&#39;,
     &#39;gui&#39;,
     &#39;get_metadata&#39;,
     &#39;has_required_channels&#39;,
@@ -181,7 +179,6 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
     IndexError
         _description_
     &#34;&#34;&#34;
-
     #First figure out columns
     input_params_params = input_params.__code__.co_varnames
     get_metadata_params = get_metadata.__code__.co_varnames
@@ -193,9 +190,12 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
     if batch_type == &#39;table&#39;:
         if isinstance(input_data, pd.DataFrame):
             dataReadInfoDF = input_data
+        elif isinstance(input_data, dict):
+            #For params input
+            pass
         else:#Read csv
             read_csv_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in pd.read_csv.__code__.co_varnames}
-            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs, verbose=verbose)
+            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs)
             if &#39;datapath&#39; in dataReadInfoDF.columns:
                 filelist = list(dataReadInfoDF[&#39;datapath&#39;])
             #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
@@ -227,7 +227,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
                     &#39;verbose&#39;:False}
 
         if verbose:
-            print(dataReadInfoDF)
+            print(&#39;\t&#39;,dataReadInfoDF)
 
         param_dict_list = []
         if param_col is None: #Not a single parameter column, each col=parameter
@@ -240,7 +240,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
                             if col in default_dict.keys():
                                 param_dict[col] = default_dict[col] #Get default value
                                 if verbose:
-                                    print(&#39;Replacing blank value for {} from file with default value {}&#39;.format(col, default_dict[col]))
+                                    print(&#39;\tInput File Row {}: {} not specified in batch file. Using {}={}&#39;.format(row_ind, col, col, default_dict[col]))
                             else:
                                 param_dict[col] = None
                         else:
@@ -278,33 +278,32 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
                 pass 
             else:
                 param_dict_list[i][&#39;datapath&#39;] = file
-
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0
     for param_dict in param_dict_list:
-        
         # Read the data file into a Stream object
         input_params_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in input_params.__code__.co_varnames}
         input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}
         input_params_kwargs.update(input_params_kwargs2)
         params = input_params(**input_params_kwargs)
 
-        get_metadata_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in get_metadata.__code__.co_varnames}
-        get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
-        get_metadata_kwargs.update(get_metadata_kwargs2)
-        params = get_metadata(params=params, **get_metadata_kwargs)
+        #get_metadata_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in get_metadata.__code__.co_varnames}
+        #get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
+        #get_metadata_kwargs.update(get_metadata_kwargs2)
+        #params = get_metadata(params=params, **get_metadata_kwargs)
 
         fetch_data_kwargs = {k: v for k, v in locals()[&#39;readcsv_getMeta_fetch_kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
+        params[&#39;batch&#39;] = True
 
         if params[&#39;site&#39;] == default_dict[&#39;site&#39;]: #If site was not designated
             params[&#39;site&#39;] = &#34;{}_{}&#34;.format(params[&#39;site&#39;], str(i).zfill(zfillDigs))
             i+=1
         hvsr_metaDict[params[&#39;site&#39;]] = params
-    
+    #hvsr_metaDict[&#39;batch&#39;] = True
     return hvsr_metaDict</code></pre>
 </details>
 </dd>
@@ -329,7 +328,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.check_peaks"><code class="name flex">
-<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)</span>
+<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
@@ -353,7 +352,7 @@ This function returns another displayable character if platform is Windows</p></
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8):
+<pre><code class="python">def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
     &#34;&#34;&#34;Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -370,96 +369,120 @@ This function returns another displayable character if platform is Windows</p></
         hvsr_dict   : dict
             Dictionary containing previous input data, plus information about Peak tests
     &#34;&#34;&#34;
+    orig_args = locals().copy() #Get the initial arguments
 
-    if not hvsr_band:
-        hvsr_band = [0.4,40]
-    hvsr_dict[&#39;hvsr_band&#39;] = hvsr_band
-
-    anyK = list(hvsr_dict[&#39;x_freqs&#39;].keys())[0]
-    x = hvsr_dict[&#39;x_freqs&#39;][anyK]
-    y = hvsr_dict[&#39;hvsr_curve&#39;]
-    index_list = hvsr_dict[&#39;hvsr_peak_indices&#39;]
-    peak_water_level  = hvsr_dict[&#39;peak_water_level&#39;]
-    hvsrp = hvsr_dict[&#39;hvsrp&#39;]
-    peak_water_level_p  = hvsr_dict[&#39;peak_water_level_p&#39;]
-    hvsrm = hvsr_dict[&#39;hvsrm&#39;]
-    hvsrPeaks = hvsr_dict[&#39;ind_hvsr_peak_indices&#39;]
-    hvsr_log_std = hvsr_dict[&#39;hvsr_log_std&#39;]
-
-    #Do for hvsr
-    peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
-
-    peak = __check_curve_reliability(hvsr_dict, peak)
-    peak = __check_clarity(x, y, peak, do_rank=True)
-
-    #Do for hvsrp
-    # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
-    if not np.isnan(np.sum(hvsrp)):
-        index_p = __find_peaks(hvsrp)
-    else:
-        index_p = list()
-
-    peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
-    peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
-
-    #Do for hvsrm
-    # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
-    if not np.isnan(np.sum(hvsrm)):
-        index_m = __find_peaks(hvsrm)
-    else:
-        index_m = list()
-
-    peak_water_level_m  = hvsr_dict[&#39;peak_water_level_m&#39;]
-
-    peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
-    peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
-
-    stdf = __get_stdf(x, index_list, hvsrPeaks)
-
-    peak = __check_freq_stability(peak, peakm, peakp)
-    peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
-
-    hvsr_dict[&#39;Peak Report&#39;] = peak
-
-    #Iterate through peaks and 
-    #   Get the best peak based on the peak score
-    #   Calculate whether each peak passes enough tests
-    curveTests = [&#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;, &#39;Low Curve StDev. over time&#39;]
-    peakTests = [&#39;Peak Freq. Clarity Below&#39;, &#39;Peak Freq. Clarity Above&#39;, &#39;Peak Amp. Clarity&#39;, &#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;, &#39;Peak Stability (amp. std)&#39;]
-    bestPeakScore = 0
-    for p in hvsr_dict[&#39;Peak Report&#39;]:
-        #Get best peak
-        if p[&#39;Score&#39;] &gt; bestPeakScore:
-            bestPeakScore = p[&#39;Score&#39;]
-            bestPeak = p
-
-        #Calculate if peak passes criteria
-        cTestsPass = 0
-        pTestsPass = 0
-        for testName in p[&#39;Pass List&#39;].keys():
-            if testName in curveTests:
-                if p[&#39;Pass List&#39;][testName]:
-                    cTestsPass += 1
-            elif testName in peakTests:
-                if p[&#39;Pass List&#39;][testName]:
-                    pTestsPass += 1
-
-        if cTestsPass == 3 and pTestsPass &gt;= 5:
-            p[&#39;Peak Passes&#39;] = True
+    if (verbose and &#39;input_params&#39; not in hvsr_dict.keys()) or (verbose and not hvsr_dict[&#39;input_params&#39;][&#39;batch&#39;]):
+        if &#39;batch&#39; in hvsr_dict.keys():
+            pass
         else:
-            p[&#39;Peak Passes&#39;] = False
-        
-    #Designate best peak in output dict
-    if len(hvsr_dict[&#39;Peak Report&#39;]) == 0:
-        bestPeak={}
-        print(&#39;No Best Peak identified&#39;)
+            print(&#39;\nChecking peaks in the H/V Curve (check_peaks())&#39;)
+            print(&#39;\tUsing the following parameters:&#39;)
+        for key, value in orig_args.items():
+            if key==&#39;hvsr_dict&#39;:
+                pass
+            else:
+                print(&#39;\t  {}={}&#39;.format(key, value))
+    
+    #First, divide up for batch or not
+    #Site is in the keys anytime it&#39;s not batch
+    if &#39;input_params&#39; not in hvsr_dict.keys():
+        if verbose:
+            print(&#39;\t  Running in batch mode&#39;)
+        #If running batch, we&#39;ll loop through each site
+        for site_name in hvsr_dict.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            args[&#39;hvsr_dict&#39;] =  hvsr_dict[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+    else:
+        if not hvsr_band:
+            hvsr_band = [0.4,40]
+        hvsr_dict[&#39;hvsr_band&#39;] = hvsr_band
 
-    hvsr_dict[&#39;Best Peak&#39;] = bestPeak
+        anyK = list(hvsr_dict[&#39;x_freqs&#39;].keys())[0]
+        x = hvsr_dict[&#39;x_freqs&#39;][anyK]
+        y = hvsr_dict[&#39;hvsr_curve&#39;]
+        index_list = hvsr_dict[&#39;hvsr_peak_indices&#39;]
+        peak_water_level  = hvsr_dict[&#39;peak_water_level&#39;]
+        hvsrp = hvsr_dict[&#39;hvsrp&#39;]
+        peak_water_level_p  = hvsr_dict[&#39;peak_water_level_p&#39;]
+        hvsrm = hvsr_dict[&#39;hvsrm&#39;]
+        hvsrPeaks = hvsr_dict[&#39;ind_hvsr_peak_indices&#39;]
+        hvsr_log_std = hvsr_dict[&#39;hvsr_log_std&#39;]
+
+        #Do for hvsr
+        peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
+
+        peak = __check_curve_reliability(hvsr_dict, peak)
+        peak = __check_clarity(x, y, peak, do_rank=True)
+
+        #Do for hvsrp
+        # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+        if not np.isnan(np.sum(hvsrp)):
+            index_p = __find_peaks(hvsrp)
+        else:
+            index_p = list()
+
+        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+        peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
+
+        #Do for hvsrm
+        # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
+        if not np.isnan(np.sum(hvsrm)):
+            index_m = __find_peaks(hvsrm)
+        else:
+            index_m = list()
+
+        peak_water_level_m  = hvsr_dict[&#39;peak_water_level_m&#39;]
+
+        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+        peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
+
+        stdf = __get_stdf(x, index_list, hvsrPeaks)
+
+        peak = __check_freq_stability(peak, peakm, peakp)
+        peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
+
+        hvsr_dict[&#39;Peak Report&#39;] = peak
+
+        #Iterate through peaks and 
+        #   Get the best peak based on the peak score
+        #   Calculate whether each peak passes enough tests
+        curveTests = [&#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;, &#39;Low Curve StDev. over time&#39;]
+        peakTests = [&#39;Peak Freq. Clarity Below&#39;, &#39;Peak Freq. Clarity Above&#39;, &#39;Peak Amp. Clarity&#39;, &#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;, &#39;Peak Stability (amp. std)&#39;]
+        bestPeakScore = 0
+        for p in hvsr_dict[&#39;Peak Report&#39;]:
+            #Get best peak
+            if p[&#39;Score&#39;] &gt; bestPeakScore:
+                bestPeakScore = p[&#39;Score&#39;]
+                bestPeak = p
+
+            #Calculate if peak passes criteria
+            cTestsPass = 0
+            pTestsPass = 0
+            for testName in p[&#39;Pass List&#39;].keys():
+                if testName in curveTests:
+                    if p[&#39;Pass List&#39;][testName]:
+                        cTestsPass += 1
+                elif testName in peakTests:
+                    if p[&#39;Pass List&#39;][testName]:
+                        pTestsPass += 1
+
+            if cTestsPass == 3 and pTestsPass &gt;= 5:
+                p[&#39;Peak Passes&#39;] = True
+            else:
+                p[&#39;Peak Passes&#39;] = False
+            
+        #Designate best peak in output dict
+        if len(hvsr_dict[&#39;Peak Report&#39;]) == 0:
+            bestPeak={}
+            print(&#39;No Best Peak identified&#39;)
+
+        hvsr_dict[&#39;Best Peak&#39;] = bestPeak
     return hvsr_dict</code></pre>
 </details>
 </dd>
 <dt id="sprit.checkifpath"><code class="name flex">
-<span>def <span class="ident">checkifpath</span></span>(<span>filepath)</span>
+<span>def <span class="ident">checkifpath</span></span>(<span>filepath, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Support function to check if a filepath is a pathlib.Path object and tries to convert if not</p>
@@ -477,7 +500,7 @@ This function returns another displayable character if platform is Windows</p></
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def checkifpath(filepath):
+<pre><code class="python">def checkifpath(filepath, verbose=False):
     &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -497,9 +520,11 @@ This function returns another displayable character if platform is Windows</p></
     else:
         try:
             filepath = pathlib.Path(filepath)
-            #print(&#39;Converted string to pathlib path&#39;) #Assume a string was input rather than pathlib object
         except:
-            error(&#39;Input cannot be converted to pathlib path&#39;, 0)
+            if verbose:
+                warnings.warn(&#39;Filepath cannot be converted to pathlib path: {}&#39;.format(filepath))
+        if not filepath.exists():
+            raise RuntimeError(&#39;File does not exist: {}&#39;.format(filepath))
     return filepath</code></pre>
 </details>
 </dd>
@@ -519,7 +544,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.fetch_data"><code class="name flex">
-<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, verbose=False)</span>
+<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Fetch ambient seismic data from a source to read into obspy stream</p>
@@ -558,7 +583,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, verbose=False):
+<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, update_metadata=True, verbose=False, **kwargs):
     &#34;&#34;&#34;Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -590,10 +615,15 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             Same dict as params parameter, but with an additional &#34;strea&#34; key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         
         &#34;&#34;&#34;
-    if inv is None:
-        inv = params[&#39;inv&#39;], 
+    if source != &#39;batch&#39; and verbose:
+        print(&#39;\nFetching data (fetch_data())&#39;)
+
+    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    inv = params[&#39;inv&#39;]
+
     date=params[&#39;acq_date&#39;]
 
+    #Cleanup for gui input
     if &#39;}&#39; in str(params[&#39;datapath&#39;]):
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].as_posix().replace(&#39;{&#39;,&#39;&#39;)
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].split(&#39;}&#39;)
@@ -652,6 +682,8 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
+
+    #Select how reading will be done
     if source==&#39;raw&#39;:
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -678,12 +710,12 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source==&#39;batch&#39;:
-        print(&#34;Batch read not yet supported&#34;)
-        if isinstance(dPath, list) or isinstance(dPath, tuple):
-            for d in dPath:
-                pass
-        else:
-            print(&#39;dPath parameter should be list or tuple if batch mode is selected, not {}.&#39;.format(type(dPath)))
+        if verbose:
+            print(&#39;\nFetching data (fetch_data())&#39;)
+        batch_data_read_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in batch_data_read.__code__.co_varnames}
+        params = batch_data_read(input_data=params[&#39;datapath&#39;], verbose=verbose, **batch_data_read_kwargs)
+
+        return params
     else:
         try:
             rawDataIN = obspy.read(dPath)
@@ -691,64 +723,29 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         except:
             print(&#39;Read or source error&#39;)
 
-    if rawDataIN is None:
-        return
-    elif isinstance(rawDataIN, obspy.core.stream.Stream):
-        #Make sure z component is first
-        if &#39;Z&#39; in rawDataIN[0].stats[&#39;channel&#39;]:#).split(&#39;.&#39;)[3]:#[12:15]:
-            dataIN = rawDataIN
-        else:
-            dataIN = rawDataIN.sort([&#39;channel&#39;], reverse=True) #z, n, e order
-    else:
-        dataIN = []
-        for i, st in enumerate(rawDataIN):
-            if &#39;Z&#39; in st[0].stats[&#39;channel&#39;]:#).split(&#39;.&#39;)[3]:#[12:15]:
-                dataIN.append(rawDataIN[i])
-            else:
-                dataIN.append(rawDataIN[i].sort([&#39;channel&#39;], reverse=True)) #z, n, e order            
-        
+    #Sort channels (make sure Z is first, makes things easier later)
+    dataIN = _sort_channels(input=rawDataIN, source=source, verbose=verbose)    
+      
+    #Trim and save data as specified
     if not trim_dir:
         pass
     else:
         dataIN = trim_data(stream=dataIN, params=params, export_dir=trim_dir, export_format=export_format)
 
-    
-    if isinstance(dataIN[0].data, np.ma.masked_array):
-        dataIN = dataIN.split()
-        #Need to test to see if this works ok with lots of little windows
+    #Split data if masked array (if there are gaps)...detrending cannot be done without
+    for tr in dataIN:
+        if isinstance(tr.data, np.ma.masked_array):
+            dataIN = dataIN.split()
+            #Splits entire stream if any trace is masked_array
+            break
 
-    if detrend==False:
-        pass
-    elif detrend==True:
-        #By default, do a spline removal
-        for tr in dataIN:
-            tr.detrend(type=&#39;spline&#39;, order=detrend_order, dspline=1000)        
-    else:
-        data_undetrended = dataIN.copy()
-        try:
-            if detrend==&#39;simple&#39;:
-                for tr in dataIN:
-                    tr.detrend(type=detrend)
-            if detrend==&#39;linear&#39;:
-                for tr in dataIN:
-                    tr.detrend(type=detrend)
-            if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
-                for tr in dataIN:
-                    tr.detrend(type=detrend)                
-            if detrend==&#39;polynomial&#39;:
-                for tr in dataIN:
-                    tr.detrend(type=detrend, order=detrend_order)   
-            if detrend==&#39;spline&#39;:
-                for tr in dataIN:
-                    tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
-        except:
-            dataIN = data_undetrended
-            if verbose:
-                print(&#34;Detrend error, data not detrended&#34;)
+    #Detrend data
+    dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
 
+    #Remerge data
     dataIN = dataIN.merge(method=1)
+    params[&#39;batch&#39;] = False
     params[&#39;stream&#39;] = dataIN
-
     return params</code></pre>
 </details>
 </dd>
@@ -810,67 +807,90 @@ If the following keywords are not specified, their defaults are amended in this 
             ppsds   :   dict
                 Dictionary containing entries with ppsds for each channel
     &#34;&#34;&#34;
-    paz=params[&#39;paz&#39;]
-    stream = params[&#39;stream&#39;]
+    #First, divide up for batch or not
+    orig_args = locals().copy() #Get the initial arguments
 
-    #Set defaults here that are different than obspy defaults
-    if &#39;ppsd_length&#39; not in ppsd_kwargs:
-        ppsd_kwargs[&#39;ppsd_length&#39;] = 60
-    if &#39;skip_on_gaps&#39; not in ppsd_kwargs:
-        ppsd_kwargs[&#39;skip_on_gaps&#39;] = True
-    if &#39;period_step_octaves&#39; not in ppsd_kwargs:
-        ppsd_kwargs[&#39;period_step_octaves&#39;] = 0.03125
-
-    from obspy.signal import PPSD
-
-    eStream = stream.select(component=&#39;E&#39;)
-    estats = eStream.traces[0].stats
-    ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
-    #ppsdE = PPSD(stream.select(component=&#39;E&#39;).traces[0].stats, paz[&#39;E&#39;], ppsd_length=ppsd_length, kwargs=kwargs)
-    ppsdE.add(stream, verbose=verbose)
-
-    nStream = stream.select(component=&#39;N&#39;)
-    nstats = nStream.traces[0].stats
-    ppsdN = PPSD(nstats, paz[&#39;N&#39;], **ppsd_kwargs)
-    ppsdN.add(stream, verbose=verbose)
-
-    zStream = stream.select(component=&#39;Z&#39;)
-    zstats = zStream.traces[0].stats
-    ppsdZ = PPSD(zstats, paz[&#39;Z&#39;], **ppsd_kwargs)
-    ppsdZ.add(stream, verbose=verbose)
-
-    ppsds = {&#39;Z&#39;:ppsdZ, &#39;N&#39;:ppsdN, &#39;E&#39;:ppsdE}
-
-    #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-    params[&#39;ppsds_obspy&#39;] = ppsds
-    params[&#39;ppsds&#39;] = {}
-    anyKey = list(params[&#39;ppsds_obspy&#39;].keys())[0]
+    if (verbose and &#39;site&#39; not in params.keys()) or (verbose and not params[&#39;batch&#39;]):
+        print(&#39;\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())&#39;)
+        print(&#39;\tUsing the following parameters:&#39;)
+        for key, value in orig_args.items():
+            if key==&#39;params&#39;:
+                pass
+            else:
+                print(&#39;\t  {}={}&#39;.format(key, value))
     
-    #Get ppsd class members
-    members = [mems for mems in dir(params[&#39;ppsds_obspy&#39;][anyKey]) if not callable(mems) and not mems.startswith(&#34;_&#34;)]
-    params[&#39;ppsds&#39;][&#39;Z&#39;] = {}
-    params[&#39;ppsds&#39;][&#39;E&#39;] = {}
-    params[&#39;ppsds&#39;][&#39;N&#39;] = {}
-    
-    #Get lists that we may need to manipulate later and copy everything over to main &#39;ppsds&#39; subdictionary (convert lists to np.arrays for consistency)
-    listList = [&#39;times_data&#39;, &#39;times_gaps&#39;, &#39;times_processed&#39;,&#39;current_times_used&#39;, &#39;psd_values&#39;]
-    for m in members:
-        params[&#39;ppsds&#39;][&#39;Z&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;Z&#39;], m)
-        params[&#39;ppsds&#39;][&#39;E&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;E&#39;], m)
-        params[&#39;ppsds&#39;][&#39;N&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;N&#39;], m)
-        if m in listList:
-            params[&#39;ppsds&#39;][&#39;Z&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;Z&#39;][m])
-            params[&#39;ppsds&#39;][&#39;E&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;E&#39;][m])
-            params[&#39;ppsds&#39;][&#39;N&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;N&#39;][m])
+    #Site is in the keys anytime it&#39;s not batch
+    if &#39;site&#39; not in params.keys():
+        #If running batch, we&#39;ll loop through each one
+        for site_name in params.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            individual_params = params[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            args[&#39;params&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
+            #args[&#39;params&#39;][&#39;batch&#39;] = False #Set to false, since only running this time
+            params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
+            #params[site_name][&#39;batch&#39;] = True #Reset batch to true
+    else:
+        paz=params[&#39;paz&#39;]
+        stream = params[&#39;stream&#39;]
 
-    #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-    params[&#39;tsteps_used&#39;] = [params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
-    
-    #Remove outlier ppsds (those derived from data within the windows to be removed)
-    if remove_outliers and &#39;xwindows_out&#39; in params.keys():
-        params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs[&#39;ppsd_length&#39;])
-    params[&#39;tsteps_used&#39;][0] = params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
-    
+        #Set defaults here that are different than obspy defaults
+        if &#39;ppsd_length&#39; not in ppsd_kwargs:
+            ppsd_kwargs[&#39;ppsd_length&#39;] = 30
+        if &#39;skip_on_gaps&#39; not in ppsd_kwargs:
+            ppsd_kwargs[&#39;skip_on_gaps&#39;] = True
+        if &#39;period_step_octaves&#39; not in ppsd_kwargs:
+            ppsd_kwargs[&#39;period_step_octaves&#39;] = 0.03125
+
+        from obspy.signal import PPSD
+
+        eStream = stream.select(component=&#39;E&#39;)
+        estats = eStream.traces[0].stats
+        ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
+        #ppsdE = PPSD(stream.select(component=&#39;E&#39;).traces[0].stats, paz[&#39;E&#39;], ppsd_length=ppsd_length, kwargs=kwargs)
+        ppsdE.add(stream)
+
+        nStream = stream.select(component=&#39;N&#39;)
+        nstats = nStream.traces[0].stats
+        ppsdN = PPSD(nstats, paz[&#39;N&#39;], **ppsd_kwargs)
+        ppsdN.add(stream)
+
+        zStream = stream.select(component=&#39;Z&#39;)
+        zstats = zStream.traces[0].stats
+        ppsdZ = PPSD(zstats, paz[&#39;Z&#39;], **ppsd_kwargs)
+        ppsdZ.add(stream)
+
+        ppsds = {&#39;Z&#39;:ppsdZ, &#39;N&#39;:ppsdN, &#39;E&#39;:ppsdE}
+
+        #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+        params[&#39;ppsds_obspy&#39;] = ppsds
+        params[&#39;ppsds&#39;] = {}
+        anyKey = list(params[&#39;ppsds_obspy&#39;].keys())[0]
+        
+        #Get ppsd class members
+        members = [mems for mems in dir(params[&#39;ppsds_obspy&#39;][anyKey]) if not callable(mems) and not mems.startswith(&#34;_&#34;)]
+        params[&#39;ppsds&#39;][&#39;Z&#39;] = {}
+        params[&#39;ppsds&#39;][&#39;E&#39;] = {}
+        params[&#39;ppsds&#39;][&#39;N&#39;] = {}
+        
+        #Get lists that we may need to manipulate later and copy everything over to main &#39;ppsds&#39; subdictionary (convert lists to np.arrays for consistency)
+        listList = [&#39;times_data&#39;, &#39;times_gaps&#39;, &#39;times_processed&#39;,&#39;current_times_used&#39;, &#39;psd_values&#39;]
+        for m in members:
+            params[&#39;ppsds&#39;][&#39;Z&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;Z&#39;], m)
+            params[&#39;ppsds&#39;][&#39;E&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;E&#39;], m)
+            params[&#39;ppsds&#39;][&#39;N&#39;][m] = getattr(params[&#39;ppsds_obspy&#39;][&#39;N&#39;], m)
+            if m in listList:
+                params[&#39;ppsds&#39;][&#39;Z&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;Z&#39;][m])
+                params[&#39;ppsds&#39;][&#39;E&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;E&#39;][m])
+                params[&#39;ppsds&#39;][&#39;N&#39;][m] = np.array(params[&#39;ppsds&#39;][&#39;N&#39;][m])
+
+        #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+        params[&#39;tsteps_used&#39;] = [params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
+        
+        #Remove outlier ppsds (those derived from data within the windows to be removed)
+        if remove_outliers and &#39;xwindows_out&#39; in params.keys():
+            params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs[&#39;ppsd_length&#39;])
+        params[&#39;tsteps_used&#39;][0] = params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
+        
     return params</code></pre>
 </details>
 </dd>
@@ -893,7 +913,7 @@ If the following keywords are not specified, their defaults are amended in this 
 </details>
 </dd>
 <dt id="sprit.get_metadata"><code class="name flex">
-<span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='')</span>
+<span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='', update_metadata=True, source=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get metadata and calculate or get paz parameter needed for PPSD</p>
@@ -915,7 +935,7 @@ If not specified, does not write file</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_metadata(params, write_path=&#39;&#39;):
+<pre><code class="python">def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=None):
     &#34;&#34;&#34;Get metadata and calculate or get paz parameter needed for PPSD
 
     Parameters
@@ -935,10 +955,11 @@ If not specified, does not write file</dd>
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     if params[&#39;instrument&#39;].lower() in  raspShakeInstNameList:
-        params = update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
-        params = _read_RS_Metadata(params)
+        if update_metadata:
+            params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
+        params = _read_RS_Metadata(params, source=source)
     else:
-        print(&#39;{} not currently supported\n Returning input params dictionary.&#39;.format(params[&#39;instrument&#39;]))
+        warnings.warn(&#39;{} not currently supported\n Returning input params dictionary.&#39;.format(params[&#39;instrument&#39;]))
         return params
     
     return params</code></pre>
@@ -1125,7 +1146,7 @@ If not specified, does not write file</dd>
 </details>
 </dd>
 <dt id="sprit.get_report"><code class="name flex">
-<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export=None, format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, save_figs=None)</span>
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export=None, format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, save_figs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
@@ -1155,7 +1176,7 @@ For docx (not yet implemented), the following are also included:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, save_figs=None):
+<pre><code class="python">def get_report(hvsr_results, export=None, format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, return_results=False, verbose=False, save_figs=None):    
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -1183,99 +1204,113 @@ For docx (not yet implemented), the following are also included:
     #print statement
     #Check if results are good
     #Curve pass?
-    curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
-                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
-                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
-    curvePass = curvTestsPassed &gt; 2
-    
-    #Peak Pass?
-    peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
-                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
-    peakPass = peakTestsPassed &gt;= 5
-        
-    
-    if format==&#39;print&#39;:
-        #Print results
-        print(&#39;Site:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
-        print(&#39;Acquisition Date:&#39;, hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])
-        print(&#39;Site Location:&#39;, hvsr_results[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_results[&#39;input_params&#39;][&#39;latitude&#39;])
-        print(&#39;Elevation:&#39;,hvsr_results[&#39;input_params&#39;][&#39;elevation&#39;])
-        print()
-        print(&#39;{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
-        if curvePass and peakPass:
-            print(&#39;✔ Curve at {0:.3f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
+    orig_args = locals().copy() #Get the initial arguments
+
+    if &#39;input_params&#39; not in hvsr_results.keys():
+        if verbose:
+            print(&#39;\t  Running in batch mode&#39;)
+        #If running batch, we&#39;ll loop through each site
+        for site_name in hvsr_results.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            individual_params = hvsr_results[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            args[&#39;hvsr_results&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
+            _get_report_batch(**args) #Call another function, that lets us run this function again
+    else:
+        if &#39;Best Peak&#39; in hvsr_results.keys():
+            curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
+                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
+                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
+            curvePass = curvTestsPassed &gt; 2
+            
+            #Peak Pass?
+            peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
+                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
+                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
+                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
+                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
+                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
+            peakPass = peakTestsPassed &gt;= 5
         else:
-            print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
-
-        #Print individual results
-        print(&#39;\tCurve Tests: {}/3 passed&#39;.format(curvTestsPassed))
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
-
-
-        print(&#39;\tPeak Tests: {}/6 passed&#39;.format(peakTestsPassed))
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
-        if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
-            res = &#39;✔&#39;
-        else:
-            res = &#39;✘&#39;
-        print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
-        print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
-
-    elif format==&#39;csv&#39;:
-        import pandas as pd
-        pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
-                  &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
-                  &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
-        d = hvsr_results
-        criteriaList = []
-        for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-            criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-        criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
-        dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
-        dfList[0].extend(criteriaList)
-        outDF = pd.DataFrame(dfList, columns=pdCols)
-        if export is None:
             pass
-        elif export==&#39;&#39;:
-            inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
-            if inFile.is_dir():
-                inFile = inFile.as_posix()
-                if inFile[-1]==&#39;/&#39;:
-                    pass
+        
+        if format==&#39;print&#39;:
+            #Print results
+            print(&#39;\nSite:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
+            print(&#39;Acquisition Date:&#39;, hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])
+            print(&#39;Site Location:&#39;, hvsr_results[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_results[&#39;input_params&#39;][&#39;latitude&#39;])
+            print(&#39;Elevation:&#39;,hvsr_results[&#39;input_params&#39;][&#39;elevation&#39;])
+            if &#39;Best Peak&#39; not in hvsr_results.keys():
+                print(&#39;No identifiable best peak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
+            else:
+                print()
+                print(&#39;{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
+                if curvePass and peakPass:
+                    print(&#39;✔ Curve at {0:.3f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
                 else:
-                    inFile = inFile + &#39;/&#39;
-                fname = hvsr_results[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
-                inFile = inFile + fname +&#39;.csv&#39;
-            elif inFile.is_file():
-                export = inFile.with_suffix(&#39;.csv&#39;)
-            try:
-                outDF.to_csv(export, index_label=&#39;ID&#39;)
-            except:
-                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
-        else:
-            try:
-                outDF.to_csv(export, index_label=&#39;ID&#39;)
-            except:
-                warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
-        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
-        return outDF
-    elif format==&#39;plot&#39;:
-        hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
-        if return_results:
-            return hvsr_results
+                    print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
 
-    if export:
-        pass
-        #code to write to output file
+                #Print individual results
+                print(&#39;\tCurve Tests: {}/3 passed&#39;.format(curvTestsPassed))
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+
+
+                print(&#39;\tPeak Tests: {}/6 passed&#39;.format(peakTestsPassed))
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+                if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+                    res = &#39;✔&#39;
+                else:
+                    res = &#39;✘&#39;
+                print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+                print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+
+        elif format==&#39;csv&#39;:
+            import pandas as pd
+            pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
+                    &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
+                    &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
+            d = hvsr_results
+            criteriaList = []
+            for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
+                criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
+            criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
+            dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
+            dfList[0].extend(criteriaList)
+            outDF = pd.DataFrame(dfList, columns=pdCols)
+            if export is None:
+                pass
+            elif export==&#39;&#39;:
+                inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
+                if inFile.is_dir():
+                    inFile = inFile.as_posix()
+                    if inFile[-1]==&#39;/&#39;:
+                        pass
+                    else:
+                        inFile = inFile + &#39;/&#39;
+                    fname = hvsr_results[&#39;input_params&#39;][&#39;site&#39;]+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])+&#39;_&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;starttime&#39;].time)[:5]+&#39;-&#39;+str(hvsr_results[&#39;input_params&#39;][&#39;endtime&#39;].time)[:5]
+                    inFile = inFile + fname +&#39;.csv&#39;
+                elif inFile.is_file():
+                    export = inFile.with_suffix(&#39;.csv&#39;)
+                try:
+                    outDF.to_csv(export, index_label=&#39;ID&#39;)
+                except:
+                    warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+            else:
+                try:
+                    outDF.to_csv(export, index_label=&#39;ID&#39;)
+                except:
+                    warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export), category=RuntimeWarning)
+            hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
+            return outDF
+        elif format==&#39;plot&#39;:
+            hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+            if return_results:
+                return hvsr_results
+
     return</code></pre>
 </details>
 </dd>
@@ -1541,7 +1576,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-04', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40])</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-06', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1614,7 +1649,8 @@ This is necessary for Raspberry Shake data.</dd>
                 depth = 0,
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = &#39;&#39;,
-                hvsr_band = [0.4, 40] 
+                hvsr_band = [0.4, 40],
+                verbose=False
                 ):
     &#34;&#34;&#34;Function for designating input parameters for reading in and processing data
     
@@ -1669,6 +1705,8 @@ This is necessary for Raspberry Shake data.</dd>
     #Declare obspy here instead of at top of file for (for example) colab, where obspy first needs to be installed on environment
     global obspy
     import obspy
+    if verbose:
+        print(&#39;Gathering input parameters (input_params())&#39;)
 
     #Make Sure metapath is all good
     if not pathlib.Path(metapath).exists() or metapath==&#39;&#39;:
@@ -2004,8 +2042,6 @@ This is necessary for Raspberry Shake data.</dd>
         if &#39;)&#39; in i:
             i = i[:-1]
         axisbox.append(float(i))
-    #print(axisbox)
-    #print(ax.get_position())
 
     ax.legend(loc=legendLoc)
 
@@ -2718,185 +2754,207 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
             Dictionary containing all the information about the data, including input parameters
 
     &#34;&#34;&#34;
-    ppsds = params[&#39;ppsds&#39;].copy()#[k][&#39;psd_values&#39;]
-    ppsds = __check_xvalues(ppsds)
-
-    methodList = [&#39;&lt;placeholder_0&gt;&#39;, &#39;Diffuse Field Assumption&#39;, &#39;Arithmetic Mean&#39;, &#39;Geometric Mean&#39;, &#39;Vector Summation&#39;, &#39;Quadratic Mean&#39;, &#39;Maximum Horizontal Value&#39;]
-    x_freqs = {}
-    x_periods = {}
-
-    psdValsTAvg = {}
-    stDev = {}
-    stDevValsP = {}
-    stDevValsM = {}
-    psdRaw={}
-    currTimesUsed={}
-    
-    for k in ppsds:
-        #if reasmpling has been selected
-        if resample is True or type(resample) is int:
-            if resample is True:
-                resample = 1000 #Default smooth value
-
-            xValMin = min(ppsds[k][&#39;period_bin_centers&#39;])
-            xValMax = max(ppsds[k][&#39;period_bin_centers&#39;])
-
-            #Resample period bin values
-            x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
-
-            if smooth or type(smooth) is int:
-                if smooth:
-                    smooth = 51 #Default smoothing window
-                elif smooth%2==0:
-                    smooth = smooth+1
-
-            #Resample raw ppsd values
-            for i, t in enumerate(ppsds[k][&#39;psd_values&#39;]):
-                if i==0:
-                    psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)
-                    if smooth is not False:
-                        psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
-
-                else:
-                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)))
-                    if smooth is not False:
-                        psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
-
+    orig_args = locals().copy() #Get the initial arguments
+    if (verbose and &#39;site&#39; not in params.keys()) or (verbose and not params[&#39;batch&#39;]):
+        if &#39;batch&#39; in params.keys():
+            pass
         else:
-            #If no resampling desired
-            x_periods[k] = np.array(ppsds[k][&#39;period_bin_centers&#39;])
-            psdRaw[k] = np.array(ppsds[k][&#39;psd_values&#39;])
-
-        #Get average psd value across time for each channel (used to calc main H/V curve)
-        psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
-        x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
-
-        stDev[k] = np.std(psdRaw[k], axis=0)
-        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
-        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
-
-        currTimesUsed[k] = ppsds[k][&#39;current_times_used&#39;]
-
-    #Get string of method type
-    if type(method) is int:
-        methodInt = method
-        method = methodList[method]
-    params[&#39;method&#39;] = method
-
-    #This gets the main hvsr curve averaged from all time steps
-    anyK = list(x_freqs.keys())[0]
-    hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
-    origPPSD = params[&#39;ppsds_obspy&#39;].copy()
-
-    #Add some other variables to our output dictionary
-    hvsr_out = {&#39;input_params&#39;:params.copy(),
-                &#39;x_freqs&#39;:x_freqs,
-                &#39;hvsr_curve&#39;:hvsr_curve,
-                &#39;x_period&#39;:x_periods,
-                &#39;psd_raw&#39;:psdRaw,
-                &#39;current_times_used&#39;: currTimesUsed,
-                &#39;psd_values_tavg&#39;:psdValsTAvg,
-                &#39;ppsd_std&#39;:stDev,
-                &#39;ppsd_std_vals_m&#39;:stDevValsM,
-                &#39;ppsd_std_vals_p&#39;:stDevValsP,
-                &#39;method&#39;:method,
-                &#39;ppsds&#39;:ppsds,
-                &#39;ppsds_obspy&#39;:origPPSD,
-                &#39;tsteps_used&#39;: params[&#39;tsteps_used&#39;].copy()
-                }
-
-    #This is if manual editing was used (should probably be updated at some point to just use masks)
-    if &#39;xwindows_out&#39; in params.keys():
-        hvsr_out[&#39;xwindows_out&#39;] = params[&#39;xwindows_out&#39;]
+            print(&#39;\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())&#39;)
+            print(&#39;\tUsing the following parameters:&#39;)
+        for key, value in orig_args.items():
+            if key==&#39;params&#39;:
+                pass
+            else:
+                print(&#39;\t  {}={}&#39;.format(key, value))
+    
+    #First, divide up for batch or not
+    #Site is in the keys anytime it&#39;s not batch
+    if &#39;site&#39; not in params.keys():
+        #If running batch, we&#39;ll loop through each site
+        hvsr_out = {}
+        for site_name in params.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            args[&#39;params&#39;] = params[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
     else:
-        hvsr_out[&#39;xwindows_out&#39;] = []
+        ppsds = params[&#39;ppsds&#39;].copy()#[k][&#39;psd_values&#39;]
+        ppsds = __check_xvalues(ppsds)
 
-    #These are in other places in the hvsr_out dict, so are redudant
-    del hvsr_out[&#39;input_params&#39;][&#39;ppsds_obspy&#39;]
-    del hvsr_out[&#39;input_params&#39;][&#39;ppsds&#39;]
-    del hvsr_out[&#39;input_params&#39;][&#39;tsteps_used&#39;]
+        methodList = [&#39;&lt;placeholder_0&gt;&#39;, &#39;Diffuse Field Assumption&#39;, &#39;Arithmetic Mean&#39;, &#39;Geometric Mean&#39;, &#39;Vector Summation&#39;, &#39;Quadratic Mean&#39;, &#39;Maximum Horizontal Value&#39;]
+        x_freqs = {}
+        x_periods = {}
 
-    freq_smooth_ko = [&#39;konno ohmachi&#39;, &#39;konno-ohmachi&#39;, &#39;konnoohmachi&#39;, &#39;konnohmachi&#39;, &#39;ko&#39;, &#39;k&#39;]
-    freq_smooth_constant = [&#39;constant&#39;, &#39;const&#39;, &#39;c&#39;]
-    freq_smooth_proport = [&#39;proportional&#39;, &#39;proportion&#39;, &#39;prop&#39;, &#39;p&#39;]
+        psdValsTAvg = {}
+        stDev = {}
+        stDevValsP = {}
+        stDevValsM = {}
+        psdRaw={}
+        currTimesUsed={}
+        
+        for k in ppsds:
+            #if reasmpling has been selected
+            if resample is True or type(resample) is int:
+                if resample is True:
+                    resample = 1000 #Default smooth value
 
-    #Frequency Smoothing
-    if freq_smooth is False:
-        print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
-    elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
-        from obspy.signal import konnoohmachismoothing
-        for k in hvsr_out[&#39;psd_raw&#39;]:
-            ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
-            freqs = hvsr_out[&#39;x_freqs&#39;][k]
-            with warnings.catch_warnings():
-                warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
-                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
-            hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
-    elif freq_smooth.lower() in freq_smooth_constant:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
-    elif freq_smooth.lower() in freq_smooth_proport:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;proportional&#39;)
-    else:
-        print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
+                xValMin = min(ppsds[k][&#39;period_bin_centers&#39;])
+                xValMax = max(ppsds[k][&#39;period_bin_centers&#39;])
 
-    #Get hvsr curve from three components at each time step
-    anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
-    if method==1 or method ==&#39;dfa&#39; or method ==&#39;Diffuse Field Assumption&#39;:
-        pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-    else:
-        hvsr_tSteps = []
-        for tStep in range(len(hvsr_out[&#39;psd_raw&#39;][anyK])):
-            tStepDict = {}
+                #Resample period bin values
+                x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
+
+                if smooth or type(smooth) is int:
+                    if smooth:
+                        smooth = 51 #Default smoothing window
+                    elif smooth%2==0:
+                        smooth = smooth+1
+
+                #Resample raw ppsd values
+                for i, t in enumerate(ppsds[k][&#39;psd_values&#39;]):
+                    if i==0:
+                        psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)
+                        if smooth is not False:
+                            psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
+
+                    else:
+                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)))
+                        if smooth is not False:
+                            psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
+
+            else:
+                #If no resampling desired
+                x_periods[k] = np.array(ppsds[k][&#39;period_bin_centers&#39;])
+                psdRaw[k] = np.array(ppsds[k][&#39;psd_values&#39;])
+
+            #Get average psd value across time for each channel (used to calc main H/V curve)
+            psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
+            x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+
+            stDev[k] = np.std(psdRaw[k], axis=0)
+            stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
+            stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
+
+            currTimesUsed[k] = ppsds[k][&#39;current_times_used&#39;]
+
+        #Get string of method type
+        if type(method) is int:
+            methodInt = method
+            method = methodList[method]
+        params[&#39;method&#39;] = method
+
+        #This gets the main hvsr curve averaged from all time steps
+        anyK = list(x_freqs.keys())[0]
+        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
+        origPPSD = params[&#39;ppsds_obspy&#39;].copy()
+
+        #Add some other variables to our output dictionary
+        hvsr_out = {&#39;input_params&#39;:params.copy(),
+                    &#39;x_freqs&#39;:x_freqs,
+                    &#39;hvsr_curve&#39;:hvsr_curve,
+                    &#39;x_period&#39;:x_periods,
+                    &#39;psd_raw&#39;:psdRaw,
+                    &#39;current_times_used&#39;: currTimesUsed,
+                    &#39;psd_values_tavg&#39;:psdValsTAvg,
+                    &#39;ppsd_std&#39;:stDev,
+                    &#39;ppsd_std_vals_m&#39;:stDevValsM,
+                    &#39;ppsd_std_vals_p&#39;:stDevValsP,
+                    &#39;method&#39;:method,
+                    &#39;ppsds&#39;:ppsds,
+                    &#39;ppsds_obspy&#39;:origPPSD,
+                    &#39;tsteps_used&#39;: params[&#39;tsteps_used&#39;].copy()
+                    }
+
+        #This is if manual editing was used (should probably be updated at some point to just use masks)
+        if &#39;xwindows_out&#39; in params.keys():
+            hvsr_out[&#39;xwindows_out&#39;] = params[&#39;xwindows_out&#39;]
+        else:
+            hvsr_out[&#39;xwindows_out&#39;] = []
+
+        #These are in other places in the hvsr_out dict, so are redudant
+        del hvsr_out[&#39;input_params&#39;][&#39;ppsds_obspy&#39;]
+        del hvsr_out[&#39;input_params&#39;][&#39;ppsds&#39;]
+        del hvsr_out[&#39;input_params&#39;][&#39;tsteps_used&#39;]
+
+        freq_smooth_ko = [&#39;konno ohmachi&#39;, &#39;konno-ohmachi&#39;, &#39;konnoohmachi&#39;, &#39;konnohmachi&#39;, &#39;ko&#39;, &#39;k&#39;]
+        freq_smooth_constant = [&#39;constant&#39;, &#39;const&#39;, &#39;c&#39;]
+        freq_smooth_proport = [&#39;proportional&#39;, &#39;proportion&#39;, &#39;prop&#39;, &#39;p&#39;]
+
+        #Frequency Smoothing
+        if freq_smooth is False:
+            print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
+        elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
+            from obspy.signal import konnoohmachismoothing
             for k in hvsr_out[&#39;psd_raw&#39;]:
-                tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
-            hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
-            hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+                ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
+                freqs = hvsr_out[&#39;x_freqs&#39;][k]
+                with warnings.catch_warnings():
+                    warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
+                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+                hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
+        elif freq_smooth.lower() in freq_smooth_constant:
+            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
+        elif freq_smooth.lower() in freq_smooth_proport:
+            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;proportional&#39;)
+        else:
+            print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
 
-    hvsr_out[&#39;ind_hvsr_curves&#39;] = np.array(hvsr_tSteps)
-    
-    #use the standard deviation of each individual curve to determine if it overlapped
-    if remove_outlier_curves:
-        stdT = np.std(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=1)
-        std_stdT= np.std(stdT)
-        avg_stdT= np.nanmean(stdT)
+        #Get hvsr curve from three components at each time step
+        anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
+        if method==1 or method ==&#39;dfa&#39; or method ==&#39;Diffuse Field Assumption&#39;:
+            pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+        else:
+            hvsr_tSteps = []
+            for tStep in range(len(hvsr_out[&#39;psd_raw&#39;][anyK])):
+                tStepDict = {}
+                for k in hvsr_out[&#39;psd_raw&#39;]:
+                    tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
+                hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+                hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
-        psds_to_rid = []
-        for i,t in enumerate(hvsr_out[&#39;ind_hvsr_curves&#39;]):
-            if stdT[i] &lt; avg_stdT - std_stdT*outlier_curve_std or stdT[i] &gt; avg_stdT + std_stdT*outlier_curve_std:
-                psds_to_rid.append(i)
+        hvsr_out[&#39;ind_hvsr_curves&#39;] = np.array(hvsr_tSteps)
+        
+        #use the standard deviation of each individual curve to determine if it overlapped
+        if remove_outlier_curves:
+            stdT = np.std(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=1)
+            std_stdT= np.std(stdT)
+            avg_stdT= np.nanmean(stdT)
 
-        for i, r in enumerate(psds_to_rid):
-            index = int(r-i)
-            hvsr_out[&#39;ind_hvsr_curves&#39;] = np.delete(hvsr_out[&#39;ind_hvsr_curves&#39;], index, axis=0)
+            psds_to_rid = []
+            for i,t in enumerate(hvsr_out[&#39;ind_hvsr_curves&#39;]):
+                if stdT[i] &lt; avg_stdT - std_stdT*outlier_curve_std or stdT[i] &gt; avg_stdT + std_stdT*outlier_curve_std:
+                    psds_to_rid.append(i)
 
-            for k in hvsr_out[&#39;ppsds&#39;]:
-                hvsr_out[&#39;psd_raw&#39;][k] = np.delete(hvsr_out[&#39;psd_raw&#39;][k], index, axis=0)         
-                hvsr_out[&#39;current_times_used&#39;][k] = np.delete(hvsr_out[&#39;current_times_used&#39;][k], index)
-        hvsr_out[&#39;tsteps_used&#39;][0] = hvsr_out[&#39;ppsds&#39;][k][&#39;current_times_used&#39;].shape[0]
+            for i, r in enumerate(psds_to_rid):
+                index = int(r-i)
+                hvsr_out[&#39;ind_hvsr_curves&#39;] = np.delete(hvsr_out[&#39;ind_hvsr_curves&#39;], index, axis=0)
 
-    hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.nanstd(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=0)
+                for k in hvsr_out[&#39;ppsds&#39;]:
+                    hvsr_out[&#39;psd_raw&#39;][k] = np.delete(hvsr_out[&#39;psd_raw&#39;][k], index, axis=0)         
+                    hvsr_out[&#39;current_times_used&#39;][k] = np.delete(hvsr_out[&#39;current_times_used&#39;][k], index)
+            hvsr_out[&#39;tsteps_used&#39;][0] = hvsr_out[&#39;ppsds&#39;][k][&#39;current_times_used&#39;].shape[0]
 
-    #Get peaks for each time step
-    tStepPeaks = []
-    for tStepHVSR in hvsr_tSteps:
-        tStepPeaks.append(__find_peaks(tStepHVSR))
-    hvsr_out[&#39;ind_hvsr_peak_indices&#39;] = tStepPeaks
-    #Get peaks of main HV curve
-    hvsr_out[&#39;hvsr_peak_indices&#39;] = __find_peaks(hvsr_out[&#39;hvsr_curve&#39;])
-    
-    #Get frequency values at HV peaks in main curve
-    hvsrPF=[]
-    for p in hvsr_out[&#39;hvsr_peak_indices&#39;]:
-        hvsrPF.append(hvsr_out[&#39;x_freqs&#39;][anyK][p])
-    hvsr_out[&#39;hvsr_peak_freqs&#39;] = np.array(hvsrPF)
+        hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.nanstd(hvsr_out[&#39;ind_hvsr_curves&#39;], axis=0)
+
+        #Get peaks for each time step
+        tStepPeaks = []
+        for tStepHVSR in hvsr_tSteps:
+            tStepPeaks.append(__find_peaks(tStepHVSR))
+        hvsr_out[&#39;ind_hvsr_peak_indices&#39;] = tStepPeaks
+        #Get peaks of main HV curve
+        hvsr_out[&#39;hvsr_peak_indices&#39;] = __find_peaks(hvsr_out[&#39;hvsr_curve&#39;])
+        
+        #Get frequency values at HV peaks in main curve
+        hvsrPF=[]
+        for p in hvsr_out[&#39;hvsr_peak_indices&#39;]:
+            hvsrPF.append(hvsr_out[&#39;x_freqs&#39;][anyK][p])
+        hvsr_out[&#39;hvsr_peak_freqs&#39;] = np.array(hvsrPF)
 
 
-    #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
-    hvsr_out = __gethvsrparams(hvsr_out)
+        #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
+        hvsr_out = __gethvsrparams(hvsr_out)
 
-    #Include the original obspy stream in the output
-    hvsr_out[&#39;stream&#39;] = params[&#39;stream&#39;]
-
+        #Include the original obspy stream in the output
+        hvsr_out[&#39;stream&#39;] = params[&#39;stream&#39;]
     return hvsr_out</code></pre>
 </details>
 </dd>
@@ -3345,135 +3403,6 @@ export_format  : str or None, default=None
     return st_trimmed</code></pre>
 </details>
 </dd>
-<dt id="sprit.update_shake_metadata"><code class="name flex">
-<span>def <span class="ident">update_shake_metadata</span></span>(<span>filepath, params, write_path='')</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>filepath</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path object</code></dt>
-<dd>Filepath to metadata file. Should be a file format supported by obspy.read_inventory().</dd>
-<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Dictionary containing necessary keys/values for updating, currently only supported for STATIONXML with Raspberry Shakes.
-Necessary keys: 'net', 'sta',
-Optional keys: 'longitude', 'latitude', 'elevation', 'depth'</dd>
-</dl>
-<p>write_path
-: str, default=''
-If specified, filepath to write to updated inventory file to.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Updated params dict with new key:value pair with updated updated obspy.inventory object (key="inv")</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_shake_metadata(filepath, params, write_path=&#39;&#39;):
-    &#34;&#34;&#34;Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
-
-        PARAMETERS
-        ----------
-        filepath : str or pathlib.Path object
-            Filepath to metadata file. Should be a file format supported by obspy.read_inventory().
-        params : dict
-            Dictionary containing necessary keys/values for updating, currently only supported for STATIONXML with Raspberry Shakes.
-                Necessary keys: &#39;net&#39;, &#39;sta&#39;, 
-                Optional keys: &#39;longitude&#39;, &#39;latitude&#39;, &#39;elevation&#39;, &#39;depth&#39;
-        write_path   : str, default=&#39;&#39;
-            If specified, filepath to write to updated inventory file to.
-
-        Returns
-        -------
-        params : dict
-            Updated params dict with new key:value pair with updated updated obspy.inventory object (key=&#34;inv&#34;)
-    &#34;&#34;&#34;
-
-    network = params[&#39;net&#39;]
-    station = params[&#39;sta&#39;]
-    optKeys = [&#39;longitude&#39;, &#39;latitude&#39;, &#39;elevation&#39;, &#39;depth&#39;]
-    for k in optKeys:
-        if k not in params.keys():
-            params[k] = &#39;0&#39;
-    xcoord = str(params[&#39;longitude&#39;])
-    ycoord = str(params[&#39;latitude&#39;])
-    elevation = str(params[&#39;elevation&#39;])
-    depth = str(params[&#39;depth&#39;])
-    
-    startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day sprit code worked :)
-    enddate=str(datetime.datetime.today())
-
-    filepath = checkifpath(filepath)
-
-    tree = ET.parse(str(filepath))
-    root = tree.getroot()
-
-    prefix= &#34;{http://www.fdsn.org/xml/station/1}&#34;
-
-    for item in root.iter(prefix+&#39;Channel&#39;):
-        item.attrib[&#39;startDate&#39;] = startdate
-        item.attrib[&#39;endDate&#39;] = enddate
-
-    for item in root.iter(prefix+&#39;Station&#39;):
-        item.attrib[&#39;code&#39;] = station
-        item.attrib[&#39;startDate&#39;] = startdate
-        item.attrib[&#39;endDate&#39;] = enddate
-
-    for item in root.iter(prefix+&#39;Network&#39;):
-        item.attrib[&#39;code&#39;] = network
-        
-    for item in root.iter(prefix+&#39;Latitude&#39;):
-        item.text = ycoord
-
-    for item in root.iter(prefix+&#39;Longitude&#39;):
-        item.text = xcoord
-
-    for item in root.iter(prefix+&#39;Created&#39;):
-        nowTime = str(datetime.datetime.now())
-        item.text = nowTime
-
-    for item in root.iter(prefix+&#39;Elevation&#39;):
-        item.text= elevation
-
-    for item in root.iter(prefix+&#39;Depth&#39;):
-        item.text=depth
-
-    #Set up (and) export
-    #filetag = &#39;_&#39;+str(datetime.datetime.today().date())
-    #outfile = str(parentPath)+&#39;\\&#39;+filename+filetag+&#39;.inv&#39;
-
-    if write_path != &#39;&#39;:
-        try:
-            write_path = pathlib.Path(write_path)
-            if write_path.isdir():
-                fname = params[&#39;network&#39;]+&#39;_&#39;+params[&#39;station&#39;]+&#39;_&#39;+params[&#39;site&#39;]
-                fname = fname + &#39;_response.xml&#39;
-                write_file = write_path.joinpath(fname)
-            else:
-                write_file=write_path
-            tree.write(write_file, xml_declaration=True, method=&#39;xml&#39;,encoding=&#39;UTF-8&#39;)
-            inv = obspy.read_inventory(write_file, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
-        except:
-            print(&#39;write_path not recognized as filepath, not writing&#39;)
-            write_path=&#39;&#39;
-
-    if write_path==&#39;&#39;:
-        #Create temporary file for reading into obspy
-        tpf = tempfile.NamedTemporaryFile(delete=False)
-        stringRoot = ET.tostring(root, encoding=&#39;UTF-8&#39;, method=&#39;xml&#39;)
-        tpf.write(stringRoot)
-
-        inv = obspy.read_inventory(tpf.name, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
-        tpf.close()
-
-        os.remove(tpf.name)
-    
-    params[&#39;inv&#39;] = inv
-    return params</code></pre>
-</details>
-</dd>
 <dt id="sprit.warning"><code class="name flex">
 <span>def <span class="ident">warning</span></span>(<span>sender, warn_message)</span>
 </code></dt>
@@ -3535,7 +3464,6 @@ If specified, filepath to write to updated inventory file to.</p>
 <li><code><a title="sprit.select_windows" href="#sprit.select_windows">select_windows</a></code></li>
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
 <li><code><a title="sprit.trim_data" href="#sprit.trim_data">trim_data</a></code></li>
-<li><code><a title="sprit.update_shake_metadata" href="#sprit.update_shake_metadata">update_shake_metadata</a></code></li>
 <li><code><a title="sprit.warning" href="#sprit.warning">warning</a></code></li>
 </ul>
 </li>
