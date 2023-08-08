@@ -61,7 +61,8 @@ from sprit.sprit import(
     remove_noise,
     plot_noise_windows,
     check_peaks,
-    get_report
+    get_report,
+    HVSRData,
 )
 
 __all__ =(&#39;sprit&#39;,
@@ -93,7 +94,8 @@ __all__ =(&#39;sprit&#39;,
     &#39;remove_noise&#39;,
     &#39;plot_noise_windows&#39;,
     &#39;check_peaks&#39;,
-    &#39;get_report&#39;
+    &#39;get_report&#39;,
+    &#39;HVSRData&#39;
 )
 
 __author__ = &#39;Riley Balikian&#39;</code></pre>
@@ -1576,7 +1578,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-06', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-07', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -3420,6 +3422,49 @@ export_format  : str or None, default=None
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="sprit.HVSRData"><code class="flex name class">
+<span>class <span class="ident">HVSRData</span></span>
+<span>(</span><span>params)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class HVSRData:
+    def __init__(self, params):
+        self.params = params
+    
+    @property
+    def params(self):
+        return self._params
+
+    @params.setter
+    def params(self, value):
+        if not isinstance(value, dict):
+            raise ValueError(&#34;params must be a dict class&#34;)
+        self._params = value</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="sprit.HVSRData.params"><code class="name">var <span class="ident">params</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def params(self):
+    return self._params</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -3465,6 +3510,16 @@ export_format  : str or None, default=None
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
 <li><code><a title="sprit.trim_data" href="#sprit.trim_data">trim_data</a></code></li>
 <li><code><a title="sprit.warning" href="#sprit.warning">warning</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a></code></h4>
+<ul class="">
+<li><code><a title="sprit.HVSRData.params" href="#sprit.HVSRData.params">params</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

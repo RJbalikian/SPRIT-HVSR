@@ -66,7 +66,7 @@ __all__ =('sprit',
     'plot_noise_windows',
     'check_peaks',
     'get_report',
-    HVSRData
+    'HVSRData'
 )
 
 __author__ = 'Riley Balikian'
