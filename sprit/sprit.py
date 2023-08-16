@@ -32,9 +32,23 @@ plotRows = 4
 def test_function():
     print('is this working?')
 
-class HVSRData():
+class HVSRBatch:
+    def __init__(self, batch_dict):
+        self._batch_dict = batch_dict
+        self.batch = True
+        for sitename, hvsrdata in batch_dict.items():
+            setattr(self, sitename, hvsrdata)
+        self.sites = list(self._batch_dict.keys())
+
+    def __iter__(self):
+        return iter(self._batch_dict.keys())
+
+    def __getitem__(self, key):
+            return self._batch_dict[key]
+
+class HVSRData:
     def __init__(self, params):
-        self.params = {}
+        self.params = params
         self.datastream = None
         self.batch = False
 
@@ -84,9 +98,15 @@ class HVSRData():
 def test_class(**input_dict):
     hvsr_params = input_params(**input_dict)
     hvsrClass = HVSRData(params=hvsr_params)
+    hvsrdata = fetch_data(hvsr_params, source='batch')
 
-    #hvsr_dict = fetch_data(hvsrClass.params, source='batch')
+    batchData = HVSRBatch(batch_dict=hvsrdata)
 
+    for site in batchData:
+        print(site)
+    #hvsrClass.datastream = hvsrdata['stream']
+    #hvsrClass.batch = hvsrdata['batch']
+    #hvsrClass
     return hvsrClass
 
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):

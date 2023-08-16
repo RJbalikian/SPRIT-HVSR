@@ -34,6 +34,7 @@ from sprit.sprit import(
     check_peaks,
     get_report,
     HVSRData,
+    HVSRBatch,
     test_class
 )
 
@@ -68,6 +69,7 @@ __all__ =('sprit',
     'check_peaks',
     'get_report',
     'HVSRData',
+    'HVSRBatch',
     'test_class'
 )
 
