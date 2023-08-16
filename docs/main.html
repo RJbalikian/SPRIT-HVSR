@@ -63,6 +63,7 @@ from sprit.sprit import(
     check_peaks,
     get_report,
     HVSRData,
+    test_class
 )
 
 __all__ =(&#39;sprit&#39;,
@@ -95,7 +96,8 @@ __all__ =(&#39;sprit&#39;,
     &#39;plot_noise_windows&#39;,
     &#39;check_peaks&#39;,
     &#39;get_report&#39;,
-    &#39;HVSRData&#39;
+    &#39;HVSRData&#39;,
+    &#39;test_class&#39;
 )
 
 __author__ = &#39;Riley Balikian&#39;</code></pre>
@@ -230,7 +232,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
 
         if verbose:
             print(&#39;\t&#39;,dataReadInfoDF)
-
+            print(&#39;\tFetching file following files:&#39;)
         param_dict_list = []
         if param_col is None: #Not a single parameter column, each col=parameter
             for row_ind in range(dataReadInfoDF.shape[0]):
@@ -299,6 +301,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
+        print(&#34;\t  {}&#34;.format(params[&#39;site&#39;]))
         params[&#39;batch&#39;] = True
 
         if params[&#39;site&#39;] == default_dict[&#39;site&#39;]: #If site was not designated
@@ -709,7 +712,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
             rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
-            warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)
+            warnings.simplefilter(action=&#39;ignore&#39;, category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source==&#39;batch&#39;:
         if verbose:
@@ -727,7 +730,6 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
 
     #Sort channels (make sure Z is first, makes things easier later)
     dataIN = _sort_channels(input=rawDataIN, source=source, verbose=verbose)    
-      
     #Trim and save data as specified
     if not trim_dir:
         pass
@@ -1237,28 +1239,30 @@ For docx (not yet implemented), the following are also included:
         
         if format==&#39;print&#39;:
             #Print results
-            print(&#39;\nSite:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
+            print(&#34;\n===================================================================================================&#34;)
+            print(&#39;Site:&#39;,hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
             print(&#39;Acquisition Date:&#39;, hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;])
             print(&#39;Site Location:&#39;, hvsr_results[&#39;input_params&#39;][&#39;longitude&#39;], hvsr_results[&#39;input_params&#39;][&#39;latitude&#39;])
             print(&#39;Elevation:&#39;,hvsr_results[&#39;input_params&#39;][&#39;elevation&#39;])
             if &#39;Best Peak&#39; not in hvsr_results.keys():
                 print(&#39;No identifiable best peak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
             else:
-                print()
+                print(&#39;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -&#39;)
                 print(&#39;{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
                 if curvePass and peakPass:
                     print(&#39;✔ Curve at {0:.3f} Hz passed quality checks! :D&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))
                 else:
                     print(&#39;✘ Peak at {0:.3f} Hz did NOT pass quality checks :(&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))            
+                print(&#39;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -&#39;)
 
                 #Print individual results
-                print(&#39;\tCurve Tests: {}/3 passed&#39;.format(curvTestsPassed))
+                print(&#39;\tCurve Tests: {}/3 passed (3/3 needed)&#39;.format(curvTestsPassed))
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
 
 
-                print(&#39;\tPeak Tests: {}/6 passed&#39;.format(peakTestsPassed))
+                print(&#39;\tPeak Tests: {}/6 passed (5/6 needed)&#39;.format(peakTestsPassed))
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
@@ -1269,6 +1273,7 @@ For docx (not yet implemented), the following are also included:
                 print(&#39;\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
                 print(&#39;\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+            print(&#34;===================================================================================================\n&#34;)
 
         elif format==&#39;csv&#39;:
             import pandas as pd
@@ -1578,7 +1583,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-07', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-15', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1718,7 +1723,7 @@ This is necessary for Raspberry Shake data.</dd>
         else:
             print(&#39;Specified metadata file cannot be read!&#39;)
         repoDir = pathlib.Path(os.path.dirname(__file__))
-        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
+        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv5plus_metadata.inv&#39;))
         #print(&#39;Using default metadata file for Raspberry Shake v.7 distributed with package&#39;)
     else:
         if isinstance(metapath, pathlib.PurePath):
@@ -3242,6 +3247,24 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     return params</code></pre>
 </details>
 </dd>
+<dt id="sprit.test_class"><code class="name flex">
+<span>def <span class="ident">test_class</span></span>(<span>**input_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_class(**input_dict):
+    hvsr_params = input_params(**input_dict)
+    hvsrClass = HVSRData(params=hvsr_params)
+
+    #hvsr_dict = fetch_data(hvsrClass.params, source=&#39;batch&#39;)
+
+    return hvsrClass</code></pre>
+</details>
+</dd>
 <dt id="sprit.time_it"><code class="name flex">
 <span>def <span class="ident">time_it</span></span>(<span>_t)</span>
 </code></dt>
@@ -3434,10 +3457,16 @@ export_format  : str or None, default=None
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class HVSRData:
+<pre><code class="python">class HVSRData():
     def __init__(self, params):
-        self.params = params
-    
+        self.params = {}
+        self.datastream = None
+        self.batch = False
+
+        for key, value in params.items():
+            setattr(self, key, value)
+
+    #params
     @property
     def params(self):
         return self._params
@@ -3445,11 +3474,64 @@ export_format  : str or None, default=None
     @params.setter
     def params(self, value):
         if not isinstance(value, dict):
-            raise ValueError(&#34;params must be a dict class&#34;)
-        self._params = value</code></pre>
+            raise ValueError(&#34;params must be a dict type.&#34;)
+        self._params = value
+
+    #datastream
+    @property
+    def datastream(self):
+        return self._datastream
+
+    @datastream.setter
+    def datastream(self, value):
+        if value is not None and (not isinstance(value, obspy.core.stream.Stream)):
+            raise ValueError(&#34;datastream must be an obspy Stream.&#34;)
+        self._datastream = value
+
+    #batch
+    @property
+    def batch(self):
+        return self._batch
+
+    @batch.setter
+    def batch(self, value):
+        if value == 0:
+            value = False
+        elif value == 1:
+            value = True
+        else:
+            value = None
+
+        if not isinstance(value, bool):
+            raise ValueError(&#34;batch must be boolean type&#34;)
+        self._batch = value</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
+<dt id="sprit.HVSRData.batch"><code class="name">var <span class="ident">batch</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def batch(self):
+    return self._batch</code></pre>
+</details>
+</dd>
+<dt id="sprit.HVSRData.datastream"><code class="name">var <span class="ident">datastream</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def datastream(self):
+    return self._datastream</code></pre>
+</details>
+</dd>
 <dt id="sprit.HVSRData.params"><code class="name">var <span class="ident">params</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -3507,6 +3589,7 @@ def params(self):
 <li><code><a title="sprit.remove_noise" href="#sprit.remove_noise">remove_noise</a></code></li>
 <li><code><a title="sprit.run" href="#sprit.run">run</a></code></li>
 <li><code><a title="sprit.select_windows" href="#sprit.select_windows">select_windows</a></code></li>
+<li><code><a title="sprit.test_class" href="#sprit.test_class">test_class</a></code></li>
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
 <li><code><a title="sprit.trim_data" href="#sprit.trim_data">trim_data</a></code></li>
 <li><code><a title="sprit.warning" href="#sprit.warning">warning</a></code></li>
@@ -3517,6 +3600,8 @@ def params(self):
 <li>
 <h4><code><a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a></code></h4>
 <ul class="">
+<li><code><a title="sprit.HVSRData.batch" href="#sprit.HVSRData.batch">batch</a></code></li>
+<li><code><a title="sprit.HVSRData.datastream" href="#sprit.HVSRData.datastream">datastream</a></code></li>
 <li><code><a title="sprit.HVSRData.params" href="#sprit.HVSRData.params">params</a></code></li>
 </ul>
 </li>
