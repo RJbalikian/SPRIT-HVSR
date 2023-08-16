@@ -154,8 +154,8 @@ for cFile in confFilePaths:
         cFileText = f.read()
 
     #Update which file is being analyzed for creating exe
-    verText = r'version=".*?",'
-    newVerText = r'version="'+release_version+'",'
+    verText = r'version=".*?"'
+    newVerText = r'version="'+release_version+'"'
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
     print(cFileText)
