@@ -32,10 +32,16 @@ plotRows = 4
 def test_function():
     print('is this working?')
 
-class HVSRData:
+class HVSRData():
     def __init__(self, params):
-        self.params = params
-    
+        self.params = {}
+        self.datastream = None
+        self.batch = False
+
+        for key, value in params.items():
+            setattr(self, key, value)
+
+    #params
     @property
     def params(self):
         return self._params
@@ -43,9 +49,45 @@ class HVSRData:
     @params.setter
     def params(self, value):
         if not isinstance(value, dict):
-            raise ValueError("params must be a dict class")
+            raise ValueError("params must be a dict type.")
         self._params = value
 
+    #datastream
+    @property
+    def datastream(self):
+        return self._datastream
+
+    @datastream.setter
+    def datastream(self, value):
+        if value is not None and (not isinstance(value, obspy.core.stream.Stream)):
+            raise ValueError("datastream must be an obspy Stream.")
+        self._datastream = value
+
+    #batch
+    @property
+    def batch(self):
+        return self._batch
+
+    @batch.setter
+    def batch(self, value):
+        if value == 0:
+            value = False
+        elif value == 1:
+            value = True
+        else:
+            value = None
+
+        if not isinstance(value, bool):
+            raise ValueError("batch must be boolean type")
+        self._batch = value
+
+def test_class(**input_dict):
+    hvsr_params = input_params(**input_dict)
+    hvsrClass = HVSRData(params=hvsr_params)
+
+    #hvsr_dict = fetch_data(hvsrClass.params, source='batch')
+
+    return hvsrClass
 
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
 
