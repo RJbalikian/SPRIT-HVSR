@@ -1457,7 +1457,8 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
-        print("\t  {}".format(params['site']))
+        if verbose:
+            print("\t  {}".format(params['site']))
         params['batch'] = True
 
         if params['site'] == default_dict['site']: #If site was not designated
