@@ -17,7 +17,7 @@ pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.6'
+release_version= '0.1.5'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
