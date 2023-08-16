@@ -1,13 +1,23 @@
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
 
+currentDir = pathlib.Path((__file__)).parent
+docsDir = currentDir
+repoDir = docsDir.parent
+spritDir = repoDir.joinpath('sprit')
+spritGUIPath = spritDir.joinpath('sprit_gui.py')
+spritPath = spritDir.joinpath('sprit.py')
+resourcesDir = spritDir.joinpath('resources')
+pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
+
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.0.20'
+release_version= '0.1.7'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
@@ -23,7 +33,8 @@ if rtd_theme:
     subprocess.run(['pdoc', '--html', '-o', output_dir, '--force', '--template-dir', themePath, subdir])
 else:
     subprocess.run(['pdoc', '--html', '-o', output_dir, '--force', subdir ])
-
+    
+#Set up a working directory for the files generated from pdoc
 workDir = pathlib.Path(os.getcwd())
 if workDir.stem == 'docs':
     pass
@@ -39,6 +50,7 @@ else:
 src_path = pathlib.Path(subdir)
 trg_path = src_path.parent # this ends up being current folder, usually
 
+#Move items back into the main docs folder
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
 for t in trg_path.iterdir():
     #print('main folder', t)
@@ -81,9 +93,8 @@ for t in trg_path.iterdir():
     else:
         if t.name not in keepList:
             os.remove(t)
-#os.rmdir(subdir)
 
-#Update 
+#Update html files
 repo_path = pathlib.Path('..')
 for each_file in repo_path.iterdir():
     if each_file.name == 'README.md':
@@ -133,3 +144,20 @@ for each_file in repo_path.iterdir():
             shutil.copy(src=str(each_file), dst='.')
             break
 
+#Update setup file(s) with release version number
+setupFPath = repoDir.joinpath('setup.py')
+pyprojectFPath = repoDir.joinpath('pyproject.toml')
+
+confFilePaths = [setupFPath, pyprojectFPath]
+for cFile in confFilePaths:
+    with open(cFile.as_posix(), 'r') as f:
+        cFileText = f.read()
+
+    #Update which file is being analyzed for creating exe
+    verText = r'version=".*?"'
+    newVerText = r'version="'+release_version+'"'
+    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+
+    print(cFileText)
+    with open(cFile.as_posix(), 'w') as f:
+        f.write(cFileText)

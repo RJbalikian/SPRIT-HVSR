@@ -29,6 +29,66 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
+def test_function():
+    print('is this working?')
+
+class HVSRData():
+    def __init__(self, params):
+        self.params = {}
+        self.datastream = None
+        self.batch = False
+
+        for key, value in params.items():
+            setattr(self, key, value)
+
+    #params
+    @property
+    def params(self):
+        return self._params
+
+    @params.setter
+    def params(self, value):
+        if not isinstance(value, dict):
+            raise ValueError("params must be a dict type.")
+        self._params = value
+
+    #datastream
+    @property
+    def datastream(self):
+        return self._datastream
+
+    @datastream.setter
+    def datastream(self, value):
+        if value is not None and (not isinstance(value, obspy.core.stream.Stream)):
+            raise ValueError("datastream must be an obspy Stream.")
+        self._datastream = value
+
+    #batch
+    @property
+    def batch(self):
+        return self._batch
+
+    @batch.setter
+    def batch(self, value):
+        if value == 0:
+            value = False
+        elif value == 1:
+            value = True
+        else:
+            value = None
+
+        if not isinstance(value, bool):
+            raise ValueError("batch must be boolean type")
+        self._batch = value
+
+def test_class(**input_dict):
+    hvsr_params = input_params(**input_dict)
+    hvsrClass = HVSRData(params=hvsr_params)
+
+    #hvsr_dict = fetch_data(hvsrClass.params, source='batch')
+
+    return hvsrClass
+
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
 
     #Get the input parameters
@@ -439,7 +499,7 @@ def input_params(datapath,
         else:
             print('Specified metadata file cannot be read!')
         repoDir = pathlib.Path(os.path.dirname(__file__))
-        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
+        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv'))
         #print('Using default metadata file for Raspberry Shake v.7 distributed with package')
     else:
         if isinstance(metapath, pathlib.PurePath):
@@ -1038,7 +1098,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=UserWarning)
+            warnings.simplefilter(action='ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
     elif source=='batch':
         if verbose:
@@ -1056,7 +1116,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     #Sort channels (make sure Z is first, makes things easier later)
     dataIN = _sort_channels(input=rawDataIN, source=source, verbose=verbose)    
-      
     #Trim and save data as specified
     if not trim_dir:
         pass
@@ -1203,7 +1262,11 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                     #tr= obspy.Trace(tr.data,header=meta)
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
-            rawDataIN.attach_response(inv)
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action='ignore', message='Found more than one matching response.*')
+                rawDataIN.attach_response(inv)
+
         else:
             rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
             rawDataIN.attach_response(inv)
@@ -1244,6 +1307,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
     elif type(source) is list or type(datapath) is list:
         pass #Eventually do something
         rawDataIN.attach_response(inv)
+
     return rawDataIN
 
 #Read data as batch
@@ -1324,7 +1388,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
 
         if verbose:
             print('\t',dataReadInfoDF)
-
+            print('\tFetching file following files:')
         param_dict_list = []
         if param_col is None: #Not a single parameter column, each col=parameter
             for row_ind in range(dataReadInfoDF.shape[0]):
@@ -1393,6 +1457,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
+        print("\t  {}".format(params['site']))
         params['batch'] = True
 
         if params['site'] == default_dict['site']: #If site was not designated
@@ -3719,7 +3784,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
         fig.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
     if show:
         fig.canvas.draw()#.show()
-        fig.tight_layout()
+        #fig.tight_layout()
         #plt.ion()
     return
 
@@ -4202,7 +4267,6 @@ def _check_peaks_batch(**check_peaks_kwargs):
     hvsr_dict = check_peaks(**check_peaks_kwargs)
     if check_peaks_kwargs['verbose']:
         print('\t{} completed'.format(hvsr_dict['input_params']['site']))
-    print('inside batch fun', hvsr_dict['Best Peak'])
     return hvsr_dict
 
 #Quality checks, stability tests, clarity tests
@@ -4861,28 +4925,30 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
         
         if format=='print':
             #Print results
-            print('\nSite:',hvsr_results['input_params']['site'])
+            print("\n===================================================================================================")
+            print('Site:',hvsr_results['input_params']['site'])
             print('Acquisition Date:', hvsr_results['input_params']['acq_date'])
             print('Site Location:', hvsr_results['input_params']['longitude'], hvsr_results['input_params']['latitude'])
             print('Elevation:',hvsr_results['input_params']['elevation'])
             if 'Best Peak' not in hvsr_results.keys():
                 print('No identifiable best peak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
             else:
-                print()
+                print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
                 print('{0:.3f} Hz Peak Frequency'.format(hvsr_results['Best Peak']['f0']))        
                 if curvePass and peakPass:
                     print('✔ Curve at {0:.3f} Hz passed quality checks! :D'.format(hvsr_results['Best Peak']['f0']))
                 else:
                     print('✘ Peak at {0:.3f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
+                print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
 
                 #Print individual results
-                print('\tCurve Tests: {}/3 passed'.format(curvTestsPassed))
+                print('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
                 print('\t\t', hvsr_results['Best Peak']['Report']['Lw'][-1], 'Length of processing windows:', hvsr_results['Best Peak']['Report']['Lw'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['Nc'][-1], 'Number of significant cycles:', hvsr_results['Best Peak']['Report']['Nc'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['σ_A(f)'][-1], 'Low StDev. of H/V Curve over time:', hvsr_results['Best Peak']['Report']['σ_A(f)'])
 
 
-                print('\tPeak Tests: {}/6 passed'.format(peakTestsPassed))
+                print('\tPeak Tests: {}/6 passed (5/6 needed)'.format(peakTestsPassed))
                 print('\t\t', hvsr_results['Best Peak']['Report']['A(f-)'][-1], 'Clarity Below Peak Frequency:', hvsr_results['Best Peak']['Report']['A(f-)'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['A(f+)'][-1], 'Clarity Above Peak Frequency:',hvsr_results['Best Peak']['Report']['A(f+)'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['A0'][-1], 'Clarity of Peak Amplitude:',hvsr_results['Best Peak']['Report']['A0'])
@@ -4893,6 +4959,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
                 print('\t\t', res, 'Stability of Peak Freq. Over time:', hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' + hvsr_results['Best Peak']['Report']['P+'][:-1], res)
                 print('\t\t', hvsr_results['Best Peak']['Report']['Sf'][-1], 'Stability of Peak (Freq. StDev):', hvsr_results['Best Peak']['Report']['Sf'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['Sa'][-1], 'Stability of Peak (Amp. StDev):', hvsr_results['Best Peak']['Report']['Sa'])
+            print("===================================================================================================\n")
 
         elif format=='csv':
             import pandas as pd
