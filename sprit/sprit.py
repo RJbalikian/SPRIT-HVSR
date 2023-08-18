@@ -1,6 +1,7 @@
 """
 This module contains all the functions needed to run the HVSR analysis
 """
+import copy
 import datetime
 import math
 import os
@@ -81,12 +82,17 @@ class HVSRData:
     def __getitem__(self, key):
         return getattr(self, key)
 
+    #METHODS (mostly reflect dictionary methods)
     def keys(self):
         return self.params.keys()
 
     def items(self):
         return self.params.items()
 
+    def copy(self):
+        return HVSRData(copy.copy(self.params))
+
+    #ATTRIBUTES
     #params
     @property
     def params(self):
@@ -154,7 +160,7 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
-def __keep_it_classy(input_data):
+def __make_it_classy(input_data):
     print('keeping it classy')
     print(type(input_data))
     if isinstance(input_data, (HVSRData, HVSRBatch)):
@@ -168,9 +174,9 @@ def test_class(**input_dict):
     hvsrdata = fetch_data(hvsr_params, source='batch', use_class=True)
    
     hvsrPPSDS = generate_ppsds(hvsrdata, use_class=True)
-    return hvsrPPSDS
         
     hvsrProcessed = process_hvsr(hvsrPPSDS)
+    return hvsrProcessed
     batchData = HVSRBatch(batch_dict=hvsrProcessed)
 
     #hvsr_dict = sprit.check_peaks(hvsr_dict=hvsr_dict)
@@ -709,7 +715,7 @@ def input_params(datapath,
                     }
 
     if use_class:
-        inputParamDict = __keep_it_classy(inputParamDict)
+        inputParamDict = __make_it_classy(inputParamDict)
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
@@ -2642,7 +2648,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, use_class=False,
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
         
         if use_class:
-            params = __keep_it_classy(params)
+            params = __make_it_classy(params)
     return params
 
 #Remove outlier ppsds
@@ -2844,7 +2850,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
     return hvsr_dict
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, use_class=False, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -3091,6 +3097,10 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         #Include the original obspy stream in the output
         hvsr_out['stream'] = params['stream']
+
+        if use_class:
+            hvsr_out = __make_it_classy(hvsr_out)
+
     return hvsr_out
 
 #Helper function for smoothing across frequencies
@@ -3139,7 +3149,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out['psd_raw'][k] = newTPSD
-    
+
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
