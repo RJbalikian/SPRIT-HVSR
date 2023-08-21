@@ -34,22 +34,22 @@ def test_function():
     print('is this working?')
 
 class HVSRBatch:
-    def __init__(self, batch_dict):
-        if isinstance(batch_dict, HVSRBatch):
-            return
-        
-        self._batch_dict = batch_dict
+    def __init__(self, sites_dict):
+      
+        self._batch_dict = sites_dict
+        self.batch_dict = self._batch_dict
         self.batch = True
-        for sitename, hvsrdata in batch_dict.items():
-            setattr(self, sitename, HVSRData(hvsrdata))
+
+        for sitename, hvsrdata in sites_dict.items():
+            setattr(self, sitename, hvsrdata)
             
         self.sites = list(self._batch_dict.keys())
 
     def keys(self):
-        return self._batch_dict.keys()
+        return self.batch_dict.keys()
 
     def items(self):
-        return self._batch_dict.items()
+        return self.batch_dict.items()
 
     def __iter__(self):
         return iter(self._batch_dict.keys())
@@ -73,8 +73,7 @@ class HVSRData:
         self.tsteps_used = []
 
         for key, value in params.items():
-            setattr(self, key, value)
-            
+            setattr(self, key, value)      
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
@@ -161,23 +160,21 @@ class HVSRData:
         self._ppsds=value
 
 def __make_it_classy(input_data):
-    print('keeping it classy')
-    print(type(input_data))
     if isinstance(input_data, (HVSRData, HVSRBatch)):
         output_class = input_data
     else:
         output_class = HVSRData(input_data)
+    print('Made it classy | {} --> {}'.format( type(input_data), type(output_class)))
     return output_class
 
 def test_class(**input_dict):
-    hvsr_params = input_params(**input_dict)
-    hvsrdata = fetch_data(hvsr_params, source='batch', use_class=True)
-   
-    hvsrPPSDS = generate_ppsds(hvsrdata, use_class=True)
+    hvsrdata = input_params(**input_dict)
+    hvsrdata = fetch_data(hvsrdata, source='batch', use_class=True)
+    hvsrdata = generate_ppsds(hvsrdata)
         
-    hvsrProcessed = process_hvsr(hvsrPPSDS)
-    return hvsrProcessed
-    batchData = HVSRBatch(batch_dict=hvsrProcessed)
+    #hvsrProcessed = process_hvsr(hvsrPPSDS)
+    return hvsrdata
+    #batchData = HVSRBatch(batch_dict=hvsrProcessed)
 
     #hvsr_dict = sprit.check_peaks(hvsr_dict=hvsr_dict)
     #sprit.get_report(hvsr_results=hvsr_dict)
@@ -185,6 +182,10 @@ def test_class(**input_dict):
     #hvsrClass.batch = hvsrdata['batch']
     #hvsrClass
     return batchData
+
+def _set_attribute(input, attribute_name, attribute_value):
+
+    return
 
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
 
@@ -486,29 +487,6 @@ def __formatTime(inputDT, tzone='UTC'):
 
     return outputTimeObj
 
-#Sort Channels later
-def __sortchannels(channels=['Z', 'N', 'E']):
-    """"Private function to sort channels. Not currently used
-    
-    Sort channels. Z/vertical should be first, horizontal order doesn't matter, but N 2nd and E 3rd is default
-    
-    Parameters
-    ----------
-        channels    : list, default = ['Z', 'N', 'E']
-    
-    Returns
-    -------
-        sorted_channel_list : list
-            Input list, sorted according to: Z, N, E
-
-    """
-    channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-
-    sorted_channel_list = channels.copy()
-    for channel in channels:
-        sorted_channel_list[channel_order[channel[2]]] = channel
-    return sorted_channel_list
-
 #Define input parameters
 def input_params(datapath,
                 site='HVSR Site',
@@ -530,7 +508,6 @@ def input_params(datapath,
                 instrument = 'Raspberry Shake',
                 metapath = '',
                 hvsr_band = [0.4, 40],
-                use_class=False, 
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
@@ -714,8 +691,7 @@ def input_params(datapath,
                     'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band
                     }
 
-    if use_class:
-        inputParamDict = __make_it_classy(inputParamDict)
+    inputParamDict = __make_it_classy(inputParamDict)
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
@@ -1071,7 +1047,7 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
     return output
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, use_class=False, verbose=False, **kwargs):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -1202,8 +1178,9 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
-        if use_class and not isinstance(params, HVSRBatch):
-            params = HVSRBatch(params)
+        print(params.keys())
+        params = HVSRBatch(params)
+        print(params.sites)
         return params
     else:
         try:
@@ -1235,11 +1212,10 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     #Sort channels (make sure Z is first, makes things easier later)
     dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
-        
+    
     params['batch'] = False
     params['stream'] = dataIN
-    if use_class and not isinstance(params, HVSRData):
-        params = HVSRData(params)
+
     return params
 
 def __read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
@@ -1551,6 +1527,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         input_params_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in input_params.__code__.co_varnames}
         input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in input_params.__code__.co_varnames}
         input_params_kwargs.update(input_params_kwargs2)
+
         params = input_params(**input_params_kwargs)
 
         #get_metadata_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in get_metadata.__code__.co_varnames}
@@ -1561,6 +1538,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in fetch_data.__code__.co_varnames}
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
+        
         params = fetch_data(params=params, **fetch_data_kwargs)
         if verbose:
             print("\t  {}".format(params['site']))
@@ -1570,7 +1548,9 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
             params['site'] = "{}_{}".format(params['site'], str(i).zfill(zfillDigs))
             i+=1
         hvsr_metaDict[params['site']] = params
-    #hvsr_metaDict['batch'] = True
+
+    hvsr_metaDict = HVSRBatch(hvsr_metaDict)
+
     return hvsr_metaDict
 
 #Trim data 
@@ -2531,7 +2511,7 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
 
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
-def generate_ppsds(params, remove_outliers=True, outlier_std=3, use_class=False, verbose=False, **ppsd_kwargs):
+def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -2572,9 +2552,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, use_class=False,
     
     #Site is in the keys anytime it's not batch
     if isinstance(params, HVSRBatch):
-        pass
-    
-    if 'site' not in params.keys():
         #If running batch, we'll loop through each one
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
@@ -2647,8 +2624,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, use_class=False,
             params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
         
-        if use_class:
-            params = __make_it_classy(params)
+        params = __make_it_classy(params)
     return params
 
 #Remove outlier ppsds
