@@ -1,6 +1,7 @@
 """
 This module contains all the functions needed to run the HVSR analysis
 """
+import copy
 import datetime
 import math
 import os
@@ -32,15 +33,66 @@ plotRows = 4
 def test_function():
     print('is this working?')
 
-class HVSRData():
+class HVSRBatch:
+    def __init__(self, batch_dict):
+        if isinstance(batch_dict, HVSRBatch):
+            return
+        
+        self._batch_dict = batch_dict
+        self.batch = True
+        for sitename, hvsrdata in batch_dict.items():
+            setattr(self, sitename, HVSRData(hvsrdata))
+            
+        self.sites = list(self._batch_dict.keys())
+
+    def keys(self):
+        return self._batch_dict.keys()
+
+    def items(self):
+        return self._batch_dict.items()
+
+    def __iter__(self):
+        return iter(self._batch_dict.keys())
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+class HVSRData:
+    def __new__(cls, params):
+        if isinstance(params, (cls, HVSRBatch)):
+            return params
+        return super().__new__(cls)
+        
     def __init__(self, params):
-        self.params = {}
+        self.params = params
         self.datastream = None
         self.batch = False
+        self.tsteps_used = []
 
         for key, value in params.items():
             setattr(self, key, value)
+            
 
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    #METHODS (mostly reflect dictionary methods)
+    def keys(self):
+        return self.params.keys()
+
+    def items(self):
+        return self.params.items()
+
+    def copy(self):
+        return HVSRData(copy.copy(self.params))
+
+    #ATTRIBUTES
     #params
     @property
     def params(self):
@@ -48,8 +100,8 @@ class HVSRData():
 
     @params.setter
     def params(self, value):
-        if not isinstance(value, dict):
-            raise ValueError("params must be a dict type.")
+        if not (isinstance(value, dict)):
+            raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
         self._params = value
 
     #datastream
@@ -81,13 +133,58 @@ class HVSRData():
             raise ValueError("batch must be boolean type")
         self._batch = value
 
+    #PPSD object from obspy (static)
+    @property
+    def ppsds_obspy(self):
+        return self._ppsds_obspy
+
+    @ppsds_obspy.setter
+    def ppsds_obspy(self, value):
+        if not isinstance(value, obspy.signal.spectral_estimation.PPSD):
+            if not isinstance(value, dict):
+                raise ValueError("ppsds_obspy must be obspy.PPSD or dict with osbpy.PPSDs")
+            else:
+                for key in value.keys():
+                    if not isinstance(value[key], obspy.signal.spectral_estimation.PPSD):
+                        raise ValueError("ppsds_obspy must be obspy.PPSD or dict with osbpy.PPSDs")
+        self._ppsds_obspy=value
+                        
+    #PPSD dict, copied from obspy ppsds (dynamic)
+    @property
+    def ppsds(self):
+        return self._ppsds
+
+    @ppsds.setter
+    def ppsds(self, value):
+        if not isinstance(value, dict):
+            raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
+        self._ppsds=value
+
+def __make_it_classy(input_data):
+    print('keeping it classy')
+    print(type(input_data))
+    if isinstance(input_data, (HVSRData, HVSRBatch)):
+        output_class = input_data
+    else:
+        output_class = HVSRData(input_data)
+    return output_class
+
 def test_class(**input_dict):
     hvsr_params = input_params(**input_dict)
-    hvsrClass = HVSRData(params=hvsr_params)
+    hvsrdata = fetch_data(hvsr_params, source='batch', use_class=True)
+   
+    hvsrPPSDS = generate_ppsds(hvsrdata, use_class=True)
+        
+    hvsrProcessed = process_hvsr(hvsrPPSDS)
+    return hvsrProcessed
+    batchData = HVSRBatch(batch_dict=hvsrProcessed)
 
-    #hvsr_dict = fetch_data(hvsrClass.params, source='batch')
-
-    return hvsrClass
+    #hvsr_dict = sprit.check_peaks(hvsr_dict=hvsr_dict)
+    #sprit.get_report(hvsr_results=hvsr_dict)
+    #hvsrClass.datastream = hvsrdata['stream']
+    #hvsrClass.batch = hvsrdata['batch']
+    #hvsrClass
+    return batchData
 
 def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs):
 
@@ -433,6 +530,7 @@ def input_params(datapath,
                 instrument = 'Raspberry Shake',
                 metapath = '',
                 hvsr_band = [0.4, 40],
+                use_class=False, 
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
@@ -616,6 +714,8 @@ def input_params(datapath,
                     'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band
                     }
 
+    if use_class:
+        inputParamDict = __make_it_classy(inputParamDict)
     return inputParamDict
 
 #Read in metadata .inv file, specifically for RaspShake
@@ -904,10 +1004,7 @@ def _sort_channels(input, source, verbose):
 
         elif isinstance(rawDataIN, obspy.core.stream.Stream):
             #Make sure z component is first
-            if 'Z' in rawDataIN[0].stats['channel']:#).split('.')[3]:#[12:15]:
-                dataIN = rawDataIN
-            else:
-                dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
+            dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
         else:
             dataIN = []
             for i, st in enumerate(rawDataIN):
@@ -974,7 +1071,7 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
     return output
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, use_class=False, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -1105,7 +1202,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
-
+        if use_class and not isinstance(params, HVSRBatch):
+            params = HVSRBatch(params)
         return params
     else:
         try:
@@ -1114,8 +1212,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         except:
             print('Read or source error')
 
-    #Sort channels (make sure Z is first, makes things easier later)
-    dataIN = _sort_channels(input=rawDataIN, source=source, verbose=verbose)    
+    dataIN = rawDataIN.copy()
+    
     #Trim and save data as specified
     if not trim_dir:
         pass
@@ -1134,8 +1232,14 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     #Remerge data
     dataIN = dataIN.merge(method=1)
+
+    #Sort channels (make sure Z is first, makes things easier later)
+    dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
+        
     params['batch'] = False
     params['stream'] = dataIN
+    if use_class and not isinstance(params, HVSRData):
+        params = HVSRData(params)
     return params
 
 def __read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
@@ -1438,6 +1542,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 pass 
             else:
                 param_dict_list[i]['datapath'] = file
+                
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0
@@ -1457,7 +1562,8 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         params = fetch_data(params=params, **fetch_data_kwargs)
-        print("\t  {}".format(params['site']))
+        if verbose:
+            print("\t  {}".format(params['site']))
         params['batch'] = True
 
         if params['site'] == default_dict['site']: #If site was not designated
@@ -2425,7 +2531,7 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
 
 #Generate PPSDs for each channel
 #def generate_ppsds(params, stream, ppsd_length=60, **kwargs):
-def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
+def generate_ppsds(params, remove_outliers=True, outlier_std=3, use_class=False, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -2465,6 +2571,9 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                 print('\t  {}={}'.format(key, value))
     
     #Site is in the keys anytime it's not batch
+    if isinstance(params, HVSRBatch):
+        pass
+    
     if 'site' not in params.keys():
         #If running batch, we'll loop through each one
         for site_name in params.keys():
@@ -2486,19 +2595,22 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         if 'period_step_octaves' not in ppsd_kwargs:
             ppsd_kwargs['period_step_octaves'] = 0.03125
 
+        #Get Probablistic power spectral densities (PPSDs)
         from obspy.signal import PPSD
 
+        #Get ppsds of e component
         eStream = stream.select(component='E')
         estats = eStream.traces[0].stats
         ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-        #ppsdE = PPSD(stream.select(component='E').traces[0].stats, paz['E'], ppsd_length=ppsd_length, kwargs=kwargs)
         ppsdE.add(stream)
 
+        #Get ppsds of n component
         nStream = stream.select(component='N')
         nstats = nStream.traces[0].stats
         ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
         ppsdN.add(stream)
 
+        #Get ppsds of z component
         zStream = stream.select(component='Z')
         zstats = zStream.traces[0].stats
         ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
@@ -2527,7 +2639,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                 params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
                 params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
                 params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
-
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
         
@@ -2536,6 +2647,8 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             params = remove_outlier_ppsds(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
         
+        if use_class:
+            params = __make_it_classy(params)
     return params
 
 #Remove outlier ppsds
@@ -2737,7 +2850,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
     return hvsr_dict
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, use_class=False, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2790,11 +2903,11 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         else:
             print('\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
             print('\tUsing the following parameters:')
-        for key, value in orig_args.items():
-            if key=='params':
-                pass
-            else:
-                print('\t  {}={}'.format(key, value))
+            for key, value in orig_args.items():
+                if key=='params':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
     
     #First, divide up for batch or not
     #Site is in the keys anytime it's not batch
@@ -2984,6 +3097,10 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         #Include the original obspy stream in the output
         hvsr_out['stream'] = params['stream']
+
+        if use_class:
+            hvsr_out = __make_it_classy(hvsr_out)
+
     return hvsr_out
 
 #Helper function for smoothing across frequencies
@@ -3032,7 +3149,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out['psd_raw'][k] = newTPSD
-    
+
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
@@ -4926,20 +5043,26 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
         if format=='print':
             #Print results
             print("\n===================================================================================================")
-            print('Site:',hvsr_results['input_params']['site'])
-            print('Acquisition Date:', hvsr_results['input_params']['acq_date'])
-            print('Site Location:', hvsr_results['input_params']['longitude'], hvsr_results['input_params']['latitude'])
+            print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
+            print()
+            print('Site Name:',hvsr_results['input_params']['site'])
+            print('Acq. Date:', hvsr_results['input_params']['acq_date'])
+            print('Location : '+ str(hvsr_results['input_params']['longitude'])+',', hvsr_results['input_params']['latitude'])
             print('Elevation:',hvsr_results['input_params']['elevation'])
+            print()
+            print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
+            print()
             if 'Best Peak' not in hvsr_results.keys():
                 print('No identifiable best peak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
             else:
-                print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
                 print('{0:.3f} Hz Peak Frequency'.format(hvsr_results['Best Peak']['f0']))        
                 if curvePass and peakPass:
-                    print('✔ Curve at {0:.3f} Hz passed quality checks! :D'.format(hvsr_results['Best Peak']['f0']))
+                    print('\t✔ Curve at {0:.3f} Hz passed quality checks! :D'.format(hvsr_results['Best Peak']['f0']))
                 else:
-                    print('✘ Peak at {0:.3f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
+                    print('\t✘ Peak at {0:.3f} Hz did NOT pass quality checks :('.format(hvsr_results['Best Peak']['f0']))            
+                print()
                 print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
+                print()
 
                 #Print individual results
                 print('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
@@ -4959,6 +5082,8 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
                 print('\t\t', res, 'Stability of Peak Freq. Over time:', hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' + hvsr_results['Best Peak']['Report']['P+'][:-1], res)
                 print('\t\t', hvsr_results['Best Peak']['Report']['Sf'][-1], 'Stability of Peak (Freq. StDev):', hvsr_results['Best Peak']['Report']['Sf'])
                 print('\t\t', hvsr_results['Best Peak']['Report']['Sa'][-1], 'Stability of Peak (Amp. StDev):', hvsr_results['Best Peak']['Report']['Sa'])
+            print()
+            print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
             print("===================================================================================================\n")
 
         elif format=='csv':

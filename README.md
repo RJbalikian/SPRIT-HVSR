@@ -26,7 +26,7 @@ Aside from the modules in the python standard library, the following package dep
 - [Scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
 - [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)
 - [pyqt5](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
-- [tkcalendar](https://pypi.org/project/tkcalendar/): Module for tkinter calendar widget (used for date selection in the GUI)
+- [pyproj](https://pyproj4.github.io/pyproj/stable/): Module for cartographic projections and coordinate transformations, a python interface to [PROJ](https://proj.org/en/9.2/)
 
 # References
 - <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>

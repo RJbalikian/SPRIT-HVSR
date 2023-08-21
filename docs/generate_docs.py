@@ -17,7 +17,7 @@ pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.8'
+release_version= '0.1.9'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
@@ -158,6 +158,5 @@ for cFile in confFilePaths:
     newVerText = r'version="'+release_version+'"'
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
-    print(cFileText)
     with open(cFile.as_posix(), 'w') as f:
         f.write(cFileText)
