@@ -295,7 +295,7 @@ class App:
                                                    remove_outlier_curves=self.outlierRembool.get(), 
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
-            self.hvsr_results = sprit.check_peaks(hvsr_dict=self.hvsr_results, 
+            self.hvsr_results = sprit.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_water_level=self.peak_water_level)
 
