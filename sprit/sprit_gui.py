@@ -23,6 +23,7 @@ from matplotlib.backend_bases import MouseButton, MouseEvent
 
 matplotlib.use('TkAgg')
 import numpy as np
+import sprit_utils
 import sprit
 
 class App:
@@ -255,7 +256,7 @@ class App:
                 self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 #Plot data in noise preview tab
-                self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows()
 
@@ -1150,19 +1151,19 @@ class App:
             import matplotlib
             import time
             
-            #self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
             
             #if 'stream' in input.keys():
-            #    self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #    self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #else:
             #    params = input.copy()
             #    input = input['stream']
             
             #if isinstance(input, obspy.core.stream.Stream):
-            #    fig, ax = sprit.plot_specgram_stream(input, component=['Z'])
+            #    fig, ax = sprit._plot_specgram_stream(input, component=['Z'])
             #elif isinstance(input, obspy.core.trace.Trace):
-            #    fig, ax = sprit.plot_specgram_stream(input)
+            #    fig, ax = sprit._plot_specgram_stream(input)
             if initialize:
                 self.lineArtist = []
                 self.winArtist = []
@@ -1238,7 +1239,7 @@ class App:
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
-                self.fig_noise, self.ax_noise = sprit.plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
             self.noise_canvas.draw()
@@ -1276,7 +1277,7 @@ class App:
                 if self.do_warmup.get():
                     self.params['stream_edited'] = sprit.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
-                self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit.get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
+                self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit._get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
                 self.fig_noise.canvas.draw()
                 return self.params    
             self.fig_noise.canvas.draw()

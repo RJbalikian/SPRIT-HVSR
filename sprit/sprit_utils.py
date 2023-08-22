@@ -4,7 +4,7 @@ import sys
 import warnings
 import zoneinfo
 
-import sprit.sprit
+import sprit
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}

@@ -21,7 +21,7 @@ import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
 
-import sprit.sprit_utils as sprit_utils
+import sprit_utils
 
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
@@ -1629,7 +1629,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         output = HVSRBatch(hvsr_out)
         print(hvsr_out[site_name].keys())
         return output
-    elif isinstance(input, HVSRData) or isinstance(input, dict):
+    elif isinstance(input, (HVSRData, dict)):
         if 'stream_edited' in input.keys():
             inStream = input['stream_edited'].copy()
         else:
@@ -1643,7 +1643,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
-        if isinstance(output, dict):
+        if isinstance(output, (HVSRData, dict)):
             if 'xwindows_out' in output.keys():
                 pass
             else:
@@ -1655,7 +1655,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
                 output['stream_edited'] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
-        elif type(output) is dict:
+        elif isinstance(output, (HVSRData, dict)):
             pass
         else:
             print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
@@ -1678,7 +1678,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         return
 
     #Add output
-    if isinstance(input, HVSRData) or isinstance(input, dict):
+    if isinstance(output, (HVSRData, dict)):
         output['stream_edited'] = outStream
         output['stream'] = input['stream']
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
@@ -3018,7 +3018,7 @@ def _select_windows(input):
     global fig
     global ax
 
-    if type(input) is dict:
+    if isinstance(input, (HVSRData, dict)):
         if 'hvsr_curve' in input.keys():
             fig, ax = hvplot(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
         else:
@@ -3065,11 +3065,11 @@ def _on_fig_close(event):
 
 #Shows windows with None on input plot
 def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib'):
-    """This function is solely for getting Nones from masked arrays and plotting them as windows"""
+    """This function is for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
 
-    if type(input) is dict:
+    if isinstance(input, (dict, HVSRData)):
         if 'stream_edited' in input.keys():
             stream = input['stream_edited'].copy()
         else:
