@@ -178,6 +178,7 @@ def __make_it_classy(input_data, verbose=False):
 def test_class(**input_dict):
     hvsrdata = input_params(**input_dict)
     hvsrdata = fetch_data(hvsrdata, source='batch', verbose=input_dict['verbose'])
+    hvsrdata = remove_noise(hvsrdata)
     hvsrdata = generate_ppsds(hvsrdata, verbose=input_dict['verbose'])
     hvsrdata = process_hvsr(hvsrdata, verbose=input_dict['verbose'])
     hvsrdata = check_peaks(hvsr_data=hvsrdata)
@@ -1715,6 +1716,12 @@ def _on_fig_close(event):
     fig_closed = True
     return
 
+def __remove_noise_batch(**remove_noise_kwargs):
+    hvsr_data = remove_noise(**remove_noise_kwargs)
+    if remove_noise_kwargs['verbose']:
+        print('\t{} completed'.format(hvsr_data['input_params']['site']))
+    return hvsr_data
+
 #Function to remove noise windows from data
 def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
     """Function to remove noisy windows from data, using various methods.
@@ -1750,7 +1757,9 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     output : dict
         Dictionary similar to input, but containing modified data with 'noise' removed
     """
+    orig_args = locals().copy() #Get the initial arguments
     
+    #Setup lists
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
@@ -1758,7 +1767,17 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
-    if isinstance(input,dict):
+    #Get Stream from input
+    if isinstance(input, HVSRBatch):
+        #If running batch, we'll loop through each site
+        hvsr_out = {}
+        for site_name in input.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            args['params'] = input[site_name] #Get what would normally be the "params" variable for each site
+            hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
+        output = HVSRBatch(hvsr_out)
+        return output
+    elif isinstance(input, HVSRData) or isinstance(input, dict):
         if 'stream_edited' in input.keys():
             inStream = input['stream_edited'].copy()
         else:
@@ -1770,6 +1789,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     else:
         print("ERROR: input is not expected type")
     
+    #Go through each type of removal and remove
     if kind.lower() in manualList:
         if isinstance(output, dict):
             if 'xwindows_out' in output.keys():
@@ -1802,13 +1822,16 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     elif kind.lower() in warmup_cooldown:
         outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        print("kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
+        print("ERROR: kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
         return
 
-    if isinstance(input, dict):
+    #Add output
+    if isinstance(input, HVSRData) or isinstance(input, dict):
         output['stream_edited'] = outStream
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
+    else:
+        print("ERROR: data type: {}".format(input))
     return output
 
 #Shows windows with None on input plot
