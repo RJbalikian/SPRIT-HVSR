@@ -73,7 +73,10 @@ class HVSRData:
         self.tsteps_used = []
 
         for key, value in params.items():
-            setattr(self, key, value)      
+            setattr(self, key, value)
+            if key=='input_params':
+                for k, v in params[key].items():
+                    setattr(self, k, v)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
@@ -83,7 +86,11 @@ class HVSRData:
 
     #METHODS (mostly reflect dictionary methods)
     def keys(self):
-        return self.params.keys()
+        keyList = []
+        for k in dir(self):
+            if not k.startswith('_'):
+                keyList.append(k)
+        return keyList
 
     def items(self):
         return self.params.items()
@@ -102,7 +109,7 @@ class HVSRData:
         if not (isinstance(value, dict)):
             raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
         self._params = value
-
+    
     #datastream
     @property
     def datastream(self):
@@ -113,7 +120,7 @@ class HVSRData:
         if value is not None and (not isinstance(value, obspy.core.stream.Stream)):
             raise ValueError("datastream must be an obspy Stream.")
         self._datastream = value
-
+        
     #batch
     @property
     def batch(self):
@@ -159,29 +166,23 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
-def __make_it_classy(input_data):
+def __make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (HVSRData, HVSRBatch)):
         output_class = input_data
     else:
         output_class = HVSRData(input_data)
-    print('Made it classy | {} --> {}'.format( type(input_data), type(output_class)))
+    if verbose:
+        print('Made it classy | {} --> {}'.format(type(input_data), type(output_class)))
     return output_class
 
 def test_class(**input_dict):
     hvsrdata = input_params(**input_dict)
-    hvsrdata = fetch_data(hvsrdata, source='batch', use_class=True)
-    hvsrdata = generate_ppsds(hvsrdata)
-        
-    #hvsrProcessed = process_hvsr(hvsrPPSDS)
+    hvsrdata = fetch_data(hvsrdata, source='batch', verbose=input_dict['verbose'])
+    hvsrdata = generate_ppsds(hvsrdata, verbose=input_dict['verbose'])
+    hvsrdata = process_hvsr(hvsrdata, verbose=input_dict['verbose'])
+    hvsrdata = check_peaks(hvsr_data=hvsrdata)
+    get_report(hvsr_results=hvsrdata)
     return hvsrdata
-    #batchData = HVSRBatch(batch_dict=hvsrProcessed)
-
-    #hvsr_dict = sprit.check_peaks(hvsr_dict=hvsr_dict)
-    #sprit.get_report(hvsr_results=hvsr_dict)
-    #hvsrClass.datastream = hvsrdata['stream']
-    #hvsrClass.batch = hvsrdata['batch']
-    #hvsrClass
-    return batchData
 
 def _set_attribute(input, attribute_name, attribute_value):
 
@@ -192,10 +193,6 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     #Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in input_params.__code__.co_varnames}
     params = input_params(datapath=datapath, hvsr_band=hvsr_band, **input_params_kwargs)
-
-    #Get metadata
-    get_metadata_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_metadata.__code__.co_varnames}
-    params = get_metadata(params=params, **get_metadata_kwargs)
 
     #Fetch Data
     fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in fetch_data.__code__.co_varnames}
@@ -218,25 +215,11 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     
     #Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
-    hvsr_results = check_peaks(hvsr_dict=hvsr_results, hvsr_band = hvsr_band, **check_peaks_kwargs)
+    hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, **check_peaks_kwargs)
     
-    #Check if results are good
-    #Curve pass?
-    curvePass = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
-                         hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
-                         hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
-    
-    #Peak Pass?
-    peakPass = ( hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
-                hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
-                hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
-                hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
-                hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
-                hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
-        
     if verbose:
-        get_report(hvsr_results=hvsr_results, format='print')
-        
+        get_report(hvsr_results=hvsr_results, report_format='print')  
+
     if plot_type != False:
         if plot_type == True:
             plot_type = 'HVSR p ann t c+ ann p Spec'
@@ -792,8 +775,8 @@ def _update_shake_metadata(filepath, params, write_path=''):
         tpf.close()
 
         os.remove(tpf.name)
-    
     params['inv'] = inv
+    params['params']['inv'] = inv
     return params
 
 #Launch the gui
@@ -920,6 +903,7 @@ def _read_RS_Metadata(params, source=None):
             c = str(c)[-1].upper()
         paz[str(c)] = channelPaz
     params['paz'] = paz
+    params['params']['paz'] = paz
 
     return params
 
@@ -950,7 +934,6 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     else:
         warnings.warn('{} not currently supported\n Returning input params dictionary.'.format(params['instrument']))
         return params
-    
     return params
 
 #Check that input strema has Z, E, N channels
@@ -1178,9 +1161,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
-        print(params.keys())
         params = HVSRBatch(params)
-        print(params.sites)
         return params
     else:
         try:
@@ -1691,7 +1672,7 @@ def select_windows(input):
 
     if type(input) is dict:
         if 'hvsr_curve' in input.keys():
-            fig, ax = hvplot(hvsr_dict=input, plot_type='spec', returnfig=True, cmap='turbo')
+            fig, ax = hvplot(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
         else:
             params = input.copy()
             input = input['stream']
@@ -2001,7 +1982,7 @@ def get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = []
 
     return fig, ax, lineArtist, winArtist
 
-def plot_noise_windows(hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=None,
+def plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
                          do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
                          do_pctThresh=False, sat_percent=0.8, min_win_size=1, 
                          do_noiseWin=False, noise_percent=0.995, 
@@ -2044,38 +2025,38 @@ def plot_noise_windows(hvsr_dict, fig=None, ax=None, clear_fig=False, fill_gaps=
     #self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
     fig.canvas.draw()
     
-    fig, ax = plot_specgram_stream(stream=hvsr_dict['stream'], params=hvsr_dict, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+    fig, ax = plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
     fig.canvas.draw()
 
     #Reset edited data every time plot_noise_windows is run
-    hvsr_dict['stream_edited'] = hvsr_dict['stream'].copy()
+    hvsr_data['stream_edited'] = hvsr_data['stream'].copy()
 
     #Set initial input
-    input = hvsr_dict['stream']
+    input = hvsr_data['stream']
 
     #print(input[0].stats.starttime)
     if do_stalta:
-        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
-        input = hvsr_dict['stream_edited']
+        hvsr_data['stream_edited'] = remove_noise(input=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_data['stream_edited']
 
     if do_pctThresh:
-        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
-        input = hvsr_dict['stream_edited']
+        hvsr_data['stream_edited'] = remove_noise(input=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_data['stream_edited']
 
     if do_noiseWin:
-        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        input = hvsr_dict['stream_edited']
+        hvsr_data['stream_edited'] = remove_noise(input=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_data['stream_edited']
 
     if do_warmup:
-        hvsr_dict['stream_edited'] = remove_noise(input=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
+        hvsr_data['stream_edited'] = remove_noise(input=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
 
-    fig, ax, noise_windows_line_artists, noise_windows_window_artists = get_removed_windows(input=hvsr_dict, fig=fig, ax=ax, time_type='matplotlib')
+    fig, ax, noise_windows_line_artists, noise_windows_window_artists = get_removed_windows(input=hvsr_data, fig=fig, ax=ax, time_type='matplotlib')
     
     fig.canvas.draw()
     plt.show()
     if return_dict:
-        hvsr_dict['Windows_Plot'] = (fig, ax)
-        return hvsr_dict
+        hvsr_data['Windows_Plot'] = (fig, ax)
+        return hvsr_data
     return 
 
 #Helper function for removing windows from data, leaving gaps
@@ -2707,9 +2688,9 @@ def __check_xvalues(ppsds):
     return ppsds
 
 #Check to make the number of time-steps are the same for each channel
-def __check_tsteps(hvsr_dict):
+def __check_tsteps(hvsr_data):
     """Check time steps of PPSDS to make sure they are all the same length"""
-    ppsds = hvsr_dict['ppsds']
+    ppsds = hvsr_data['ppsds']
     tSteps = []
     for k in ppsds.keys():
         tSteps.append(np.array(ppsds[k]['psd_values']).shape[0])
@@ -2820,13 +2801,13 @@ def dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbo
 
 #Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
-    hvsr_dict = process_hvsr(**process_hvsr_kwargs)
+    hvsr_data = process_hvsr(**process_hvsr_kwargs)
     if process_hvsr_kwargs['verbose']:
-        print('\t{} completed'.format(hvsr_dict['input_params']['site']))
-    return hvsr_dict
+        print('\t{} completed'.format(hvsr_data['input_params']['site']))
+    return hvsr_data
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, use_class=False, verbose=False):
+def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2887,13 +2868,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
     
     #First, divide up for batch or not
     #Site is in the keys anytime it's not batch
-    if 'site' not in params.keys():
+    if isinstance(params, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['params'] = params[site_name] #Get what would normally be the "params" variable for each site
             hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+        hvsr_out = HVSRBatch(hvsr_out)
     else:
         ppsds = params['ppsds'].copy()#[k]['psd_values']
         ppsds = __check_xvalues(ppsds)
@@ -2962,11 +2944,11 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         #This gets the main hvsr curve averaged from all time steps
         anyK = list(x_freqs.keys())[0]
-        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_dict=params, verbose=verbose)
+        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=params, verbose=verbose)
         origPPSD = params['ppsds_obspy'].copy()
 
         #Add some other variables to our output dictionary
-        hvsr_out = {'input_params':params.copy(),
+        hvsr_data = {'input_params':params.copy(),
                     'x_freqs':x_freqs,
                     'hvsr_curve':hvsr_curve,
                     'x_period':x_periods,
@@ -2981,6 +2963,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                     'ppsds_obspy':origPPSD,
                     'tsteps_used': params['tsteps_used'].copy()
                     }
+        
+        hvsr_out = HVSRData(hvsr_data)
 
         #This is if manual editing was used (should probably be updated at some point to just use masks)
         if 'xwindows_out' in params.keys():
@@ -2989,9 +2973,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             hvsr_out['xwindows_out'] = []
 
         #These are in other places in the hvsr_out dict, so are redudant
-        del hvsr_out['input_params']['ppsds_obspy']
-        del hvsr_out['input_params']['ppsds']
-        del hvsr_out['input_params']['tsteps_used']
+        #del dir(hvsr_out['input_params'])['_ppsds_obspy']
+        #del hvsr_out['input_params']['_ppsds']
+        #del hvsr_out['input_params']['tsteps_used']
 
         freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
         freq_smooth_constant = ['constant', 'const', 'c']
@@ -3019,14 +3003,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         #Get hvsr curve from three components at each time step
         anyK = list(hvsr_out['psd_raw'].keys())[0]
         if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
-            pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+            pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
         else:
             hvsr_tSteps = []
             for tStep in range(len(hvsr_out['psd_raw'][anyK])):
                 tStepDict = {}
                 for k in hvsr_out['psd_raw']:
                     tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-                hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_dict=hvsr_out, verbose=verbose)
+                hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
                 hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
         hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
@@ -3074,8 +3058,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         #Include the original obspy stream in the output
         hvsr_out['stream'] = params['stream']
 
-        if use_class:
-            hvsr_out = __make_it_classy(hvsr_out)
+        hvsr_out = __make_it_classy(hvsr_out)
 
     return hvsr_out
 
@@ -3129,7 +3112,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
+def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -3137,7 +3120,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
         x   : list or array_like
             x value (frequency or period)
         psd : dict
-            Dictionary with psd values for three components. Usually read in as part of hvsr_dict from process_hvsr
+            Dictionary with psd values for three components. Usually read in as part of hvsr_data from process_hvsr
         method : int or str
             Integer or string, read in from process_hvsr method parameter
     
@@ -3151,7 +3134,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_dict, verbose=False):
     hvsr_curve = []
     hvsr_tSteps = []
 
-    params = hvsr_dict
+    params = hvsr_data
     if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
         print('WARNING: DFA method is currently experimental and not supported')
         for j in range(len(x)-1):
@@ -3440,12 +3423,12 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
         return fig, axes
     return                 
 
-def hvplot(hvsr_dict, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
+def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
     ----------
-    hvsr_dict : dict                  
+    hvsr_data : dict                  
         Dictionary containing output from process_hvsr function
     plot_type : str='HVSR' or list    
         The plot_type of plot(s) to plot. If list, will plot all plots listed
@@ -3558,12 +3541,12 @@ def hvplot(hvsr_dict, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, x
             fig, axis = plt.subplots()
                 
         if p == 'hvsr':
-            plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+            plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
         elif p=='comp':
             plotComponents[0] = plotComponents[0][:-1]
-            plot_hvsr(hvsr_dict, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+            plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
         elif p=='spec':
-            plot_specgram_hvsr(hvsr_dict, fig=fig, ax=axis, colorbar=False)
+            plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
         else:
             print('Error')    
     
@@ -3573,12 +3556,12 @@ def hvplot(hvsr_dict, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, x
     return
 
 #Plot HVSR data (OLD)
-def __old_hvplot(hvsr_dict, plot_type='HVSR', xtype='freq', return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
+def __old_hvplot(hvsr_data, plot_type='HVSR', xtype='freq', return_fig=False,  save_dir=None, save_suffix='', show=True,**kwargs):
     """Function to plot HVSR data
 
         Parameters
         ----------
-        hvsr_dict : dict                  
+        hvsr_data : dict                  
             Dictionary containing output from process_hvsr function
         plot_type : str='HVSR' or list    
             The plot_type of plot(s) to plot. If list, will plot all plots listed
@@ -3639,16 +3622,16 @@ def __old_hvplot(hvsr_dict, plot_type='HVSR', xtype='freq', return_fig=False,  s
             chartType = k        
         if '+' in k or (k in hvsrList and i > 0) or (k in specgramList and i > 0):
             if chartType in specgramList:
-                fig, ax = plot_specgram_hvsr(hvsr_dict, savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+                fig, ax = plot_specgram_hvsr(hvsr_data, savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
                 i=0
             else:
-                fig, ax = plot_hvsr(hvsr_dict, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)                
+                fig, ax = plot_hvsr(hvsr_data, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)                
                 i=0
 
             if '+' in k:
                 k = k.replace('+', '')    
                 chartStr = [k]
-                fig, ax = plot_hvsr(hvsr_dict, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+                fig, ax = plot_hvsr(hvsr_data, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
             chartStr = [k]
         else:
             i+=1
@@ -3659,9 +3642,9 @@ def __old_hvplot(hvsr_dict, plot_type='HVSR', xtype='freq', return_fig=False,  s
             chartType = k     
 
         if chartType in specgramList:
-            fig, ax = plot_specgram_hvsr(hvsr_dict,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+            fig, ax = plot_specgram_hvsr(hvsr_data,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
         else:
-            fig, ax = plot_hvsr(hvsr_dict, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
+            fig, ax = plot_hvsr(hvsr_data, plot_type=chartStr, xtype=xtype,  savedir=save_dir, save_suffix=save_suffix, show=show, kwargs=kwargs)
 
     if return_fig:
         return fig, ax
@@ -3669,7 +3652,7 @@ def __old_hvplot(hvsr_dict, plot_type='HVSR', xtype='freq', return_fig=False,  s
     return
     
 #Plot hvsr curve, private supporting function for hvplot
-def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs):
+def plot_hvsr(hvsr_data, plot_type, xtype, fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
     if 'kwargs' in kwargs.keys():
@@ -3679,12 +3662,12 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
         fig, ax = plt.subplots()
 
     if 'xlim' not in kwargs.keys():
-        xlim = hvsr_dict['hvsr_band']
+        xlim = hvsr_data['hvsr_band']
     else:
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_dict['hvsrp2'])]
+        ylim = [0, max(hvsr_data['hvsrp2'])]
     else:
         ylim = kwargs['ylim']
     
@@ -3697,16 +3680,16 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
         xlabel = 'Period [s]'
 
     if save_dir is not None:
-        filename = hvsr_dict['input_params']['site']
+        filename = hvsr_data['input_params']['site']
     else:
         filename = ""
 
     #ax = plt.gca()
     #fig = plt.gcf()
 
-    anyKey = list(hvsr_dict[xtype].keys())[0]
-    x = hvsr_dict[xtype][anyKey][:-1]
-    y = hvsr_dict['hvsr_curve']
+    anyKey = list(hvsr_data[xtype].keys())[0]
+    x = hvsr_data[xtype][anyKey][:-1]
+    y = hvsr_data['hvsr_curve']
     
     plotSuff=''
     legendLoc = 'upper right'
@@ -3718,9 +3701,9 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
             ax.plot(x, y, color='k', label='H/V Ratio', zorder=1000)
             plotSuff='HVSRCurve_'
             if '-s' not in plot_type:
-                ax.fill_between(x, hvsr_dict['hvsrm2'], hvsr_dict['hvsrp2'], color='k', alpha=0.2, label='StDev',zorder=997)
-                ax.plot(x, hvsr_dict['hvsrm2'], color='k', alpha=0.25, linewidth=0.5, zorder=998)
-                ax.plot(x, hvsr_dict['hvsrp2'], color='k', alpha=0.25, linewidth=0.5, zorder=999)
+                ax.fill_between(x, hvsr_data['hvsrm2'], hvsr_data['hvsrp2'], color='k', alpha=0.2, label='StDev',zorder=997)
+                ax.plot(x, hvsr_data['hvsrm2'], color='k', alpha=0.25, linewidth=0.5, zorder=998)
+                ax.plot(x, hvsr_data['hvsrp2'], color='k', alpha=0.25, linewidth=0.5, zorder=999)
             else:
                 plotSuff = plotSuff+'noStdDev_'
             break
@@ -3729,8 +3712,8 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     ax.set_xlabel(xlabel)
-    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_dict['method']+']')
-    ax.set_title(hvsr_dict['input_params']['site'])
+    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']')
+    ax.set_title(hvsr_data['input_params']['site'])
 
 
     for k in plot_type:   
@@ -3738,7 +3721,7 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
             plotSuff=plotSuff+'BestPeak_'
             
             bestPeakScore = 0
-            for i, p in enumerate(hvsr_dict['Peak Report']):
+            for i, p in enumerate(hvsr_data['Peak Report']):
                 if p['Score'] > bestPeakScore:
                     bestPeakScore = p['Score']
                     bestPeak = p
@@ -3753,10 +3736,10 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
         elif k=='p'  and 'all' in plot_type:
             plotSuff = plotSuff+'allPeaks_'
 
-            ax.vlines(hvsr_dict['hvsr_peak_freqs'], ax.get_ylim()[0], ax.get_ylim()[1], colors='k', linestyles='dotted', label='Peak')          
+            ax.vlines(hvsr_data['hvsr_peak_freqs'], ax.get_ylim()[0], ax.get_ylim()[1], colors='k', linestyles='dotted', label='Peak')          
             if 'ann' in plot_type:
-                for i, p in enumerate(hvsr_dict['hvsr_peak_freqs']):
-                    y = hvsr_dict['hvsr_curve'][hvsr_dict['hvsr_peak_indices'][i]]
+                for i, p in enumerate(hvsr_data['hvsr_peak_freqs']):
+                    y = hvsr_data['hvsr_curve'][hvsr_data['hvsr_peak_indices'][i]]
                     ax.annotate('Peak at '+str(round(p,2))+'Hz', (p, 0.1), xycoords='data', 
                                     horizontalalignment='center', verticalalignment='bottom', 
                                     bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
@@ -3766,7 +3749,7 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
             plotSuff = plotSuff+'allTWinCurves_'
 
             if k=='tp':
-                for j, t in enumerate(hvsr_dict['ind_hvsr_peak_indices']):
+                for j, t in enumerate(hvsr_data['ind_hvsr_peak_indices']):
                     for i, v in enumerate(t):
                         v= x[v]
                         if i==0:
@@ -3777,7 +3760,7 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
                             ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05, label='Individual H/V Peaks')
                         else:
                            ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
-            for t in hvsr_dict['ind_hvsr_curves']:
+            for t in hvsr_data['ind_hvsr_curves']:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
         if 'c' in k:
@@ -3794,7 +3777,7 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
                 legendLoc2 = 'upper left'
                 
             else:
-                ax.set_title(hvsr_dict['input_params']['site']+': Individual Components')
+                ax.set_title(hvsr_data['input_params']['site']+': Individual Components')
                 #ax = plt.gca()
                 #fig = plt.gcf()
                 compAxis = ax
@@ -3802,9 +3785,9 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
                 
             minY = []
             maxY = []
-            for key in hvsr_dict['psd_values_tavg']:
-                minY.append(min(hvsr_dict['ppsd_std_vals_m'][key]))
-                maxY.append(max(hvsr_dict['ppsd_std_vals_p'][key]))
+            for key in hvsr_data['psd_values_tavg']:
+                minY.append(min(hvsr_data['ppsd_std_vals_m'][key]))
+                maxY.append(max(hvsr_data['ppsd_std_vals_p'][key]))
             minY = min(minY)
             maxY = max(maxY)
             rng = maxY-minY
@@ -3824,8 +3807,8 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
             
             #Plot individual components
             y={}
-            for key in hvsr_dict['psd_values_tavg']:
-                y[key] = hvsr_dict['psd_values_tavg'][key][:-1]
+            for key in hvsr_data['psd_values_tavg']:
+                y[key] = hvsr_data['psd_values_tavg'][key][:-1]
 
                 if key == 'Z':
                     pltColor = 'k'
@@ -3836,7 +3819,7 @@ def plot_hvsr(hvsr_dict, plot_type, xtype, fig=None, ax=None, save_dir=None, sav
 
                 compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
                 if '-s' not in plot_type:
-                    compAxis.fill_between(x, hvsr_dict['ppsd_std_vals_m'][key][:-1], hvsr_dict['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
+                    compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
                 if plot_type[0] != 'c':
                     compAxis.legend(loc=legendLoc2)
             else:
@@ -3882,7 +3865,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     return
 
 #Plot specgtrogram, private supporting function for hvplot
-def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix='',**kwargs):
+def plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
     if fig is None and ax is None:
@@ -3929,24 +3912,24 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     else:
         kwargs['cmap'] = 'turbo'
 
-    ppsds = hvsr_dict['ppsds']#[k]['current_times_used']
+    ppsds = hvsr_data['ppsds']#[k]['current_times_used']
     import matplotlib.dates as mdates
     anyKey = list(ppsds.keys())[0]
 
     psdHList =[]
     psdZList =[]
-    for k in hvsr_dict['psd_raw']:
+    for k in hvsr_data['psd_raw']:
         if 'z' in k.lower():
-            psdZList.append(hvsr_dict['psd_raw'][k])    
+            psdZList.append(hvsr_data['psd_raw'][k])    
         else:
-            psdHList.append(hvsr_dict['psd_raw'][k])
+            psdHList.append(hvsr_data['psd_raw'][k])
     
     #if detrend:
     #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
-    psdArr = hvsr_dict['ind_hvsr_curves'].T
+    psdArr = hvsr_data['ind_hvsr_curves'].T
 
-    xmin = datetime.datetime.strptime(min(hvsr_dict['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
-    xmax = datetime.datetime.strptime(max(hvsr_dict['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmin = datetime.datetime.strptime(min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
+    xmax = datetime.datetime.strptime(max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), '%Y-%m-%dT%H:%M:%S.%f')
     xmin = mdates.date2num(xmin)
     xmax = mdates.date2num(xmax)
 
@@ -3959,20 +3942,20 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     ax.xaxis.set_major_formatter(tLabels)
     ax.tick_params(axis='x', labelsize=8)
 
-    if hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date != hvsr_dict['ppsds'][anyKey]['current_times_used'][-1].date:
-        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_dict['ppsds'][anyKey]['current_times_used'][1].date)
+    if hvsr_data['ppsds'][anyKey]['current_times_used'][0].date != hvsr_data['ppsds'][anyKey]['current_times_used'][-1].date:
+        day = str(hvsr_data['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_data['ppsds'][anyKey]['current_times_used'][1].date)
     else:
-        day = str(hvsr_dict['ppsds'][anyKey]['current_times_used'][0].date)
+        day = str(hvsr_data['ppsds'][anyKey]['current_times_used'][0].date)
 
-    ymin = hvsr_dict['input_params']['hvsr_band'][0]
-    ymax = hvsr_dict['input_params']['hvsr_band'][1]
+    ymin = hvsr_data['input_params']['hvsr_band'][0]
+    ymax = hvsr_data['input_params']['hvsr_band'][1]
 
     extList = [xmin, xmax, ymin, ymax]
   
     #ax = plt.gca()
     #fig = plt.gcf()
 
-    freqticks = np.flip(hvsr_dict['x_freqs'][anyKey])
+    freqticks = np.flip(hvsr_data['x_freqs'][anyKey])
     yminind = np.argmin(np.abs(ymin-freqticks))
     ymaxind = np.argmin(np.abs(ymax-freqticks))
     freqticks = freqticks[yminind:ymaxind]
@@ -3988,10 +3971,10 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
     if peak_plot:
-        ax.hlines(hvsr_dict['Best Peak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
+        ax.hlines(hvsr_data['Best Peak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
 
-    #FreqTicks =np.arange(1,np.round(max(hvsr_dict['x_freqs'][anyKey]),0), 10)
-    ax.set_title(hvsr_dict['input_params']['site']+': Spectrogram')
+    #FreqTicks =np.arange(1,np.round(max(hvsr_data['x_freqs'][anyKey]),0), 10)
+    ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
     ax.set_xlabel('UTC Time \n'+day)
     
     if colorbar:
@@ -4001,7 +3984,7 @@ def plot_specgram_hvsr(hvsr_dict, fig=None, ax=None, save_dir=None, save_suffix=
     ax.set_ylabel(ylabel)
     ax.set_yticks(freqticks)
     ax.semilogy()
-    ax.set_ylim(hvsr_dict['input_params']['hvsr_band'])
+    ax.set_ylim(hvsr_data['input_params']['hvsr_band'])
 
     #plt.rcParams['figure.dpi'] = 500
     #plt.rcParams['figure.figsize'] = (12,4)
@@ -4357,19 +4340,19 @@ def __on_click(event):
 
 #Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
-    hvsr_dict = check_peaks(**check_peaks_kwargs)
+    hvsr_data = check_peaks(**check_peaks_kwargs)
     if check_peaks_kwargs['verbose']:
-        print('\t{} completed'.format(hvsr_dict['input_params']['site']))
-    return hvsr_dict
+        print('\t{} completed'.format(hvsr_data['input_params']['site']))
+    return hvsr_data
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
         ----------
-        hvsr_dict : dict
+        hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
         hvsr_band  : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
@@ -4378,53 +4361,54 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
 
         Returns
         -------
-        hvsr_dict   : dict
+        hvsr_data   : dict
             Dictionary containing previous input data, plus information about Peak tests
     """
     orig_args = locals().copy() #Get the initial arguments
 
-    if (verbose and 'input_params' not in hvsr_dict.keys()) or (verbose and not hvsr_dict['input_params']['batch']):
-        if 'batch' in hvsr_dict.keys():
+    if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['input_params']['batch']):
+        if 'batch' in hvsr_data.keys():
             pass
         else:
             print('\nChecking peaks in the H/V Curve (check_peaks())')
             print('\tUsing the following parameters:')
         for key, value in orig_args.items():
-            if key=='hvsr_dict':
+            if key=='hvsr_data':
                 pass
             else:
                 print('\t  {}={}'.format(key, value))
     
     #First, divide up for batch or not
     #Site is in the keys anytime it's not batch
-    if 'input_params' not in hvsr_dict.keys():
+    if isinstance(hvsr_data, HVSRBatch):
         if verbose:
             print('\t  Running in batch mode')
         #If running batch, we'll loop through each site
-        for site_name in hvsr_dict.keys():
+        for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['hvsr_dict'] =  hvsr_dict[site_name] #Get what would normally be the "params" variable for each site
-            hvsr_dict[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+            args['hvsr_data'] =  hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+        hvsr_data = HVSRBatch(hvsr_data)
     else:
         if not hvsr_band:
             hvsr_band = [0.4,40]
-        hvsr_dict['hvsr_band'] = hvsr_band
+        hvsr_data['hvsr_band'] = hvsr_band
 
-        anyK = list(hvsr_dict['x_freqs'].keys())[0]
-        x = hvsr_dict['x_freqs'][anyK]
-        y = hvsr_dict['hvsr_curve']
-        index_list = hvsr_dict['hvsr_peak_indices']
-        peak_water_level  = hvsr_dict['peak_water_level']
-        hvsrp = hvsr_dict['hvsrp']
-        peak_water_level_p  = hvsr_dict['peak_water_level_p']
-        hvsrm = hvsr_dict['hvsrm']
-        hvsrPeaks = hvsr_dict['ind_hvsr_peak_indices']
-        hvsr_log_std = hvsr_dict['hvsr_log_std']
+        anyK = list(hvsr_data['x_freqs'].keys())[0]
+        x = hvsr_data['x_freqs'][anyK]
+        y = hvsr_data['hvsr_curve']
+        index_list = hvsr_data['hvsr_peak_indices']
+        peak_water_level  = hvsr_data['peak_water_level']
+        hvsrp = hvsr_data['hvsrp']
+        peak_water_level_p  = hvsr_data['peak_water_level_p']
+        hvsrm = hvsr_data['hvsrm']
+        hvsrPeaks = hvsr_data['ind_hvsr_peak_indices']
+        hvsr_log_std = hvsr_data['hvsr_log_std']
 
         #Do for hvsr
         peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
 
-        peak = __check_curve_reliability(hvsr_dict, peak)
+        peak = __check_curve_reliability(hvsr_data, peak)
         peak = __check_clarity(x, y, peak, do_rank=True)
 
         #Do for hvsrp
@@ -4444,7 +4428,7 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         else:
             index_m = list()
 
-        peak_water_level_m  = hvsr_dict['peak_water_level_m']
+        peak_water_level_m  = hvsr_data['peak_water_level_m']
 
         peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
         peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
@@ -4454,7 +4438,7 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         peak = __check_freq_stability(peak, peakm, peakp)
         peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
-        hvsr_dict['Peak Report'] = peak
+        hvsr_data['Peak Report'] = peak
 
         #Iterate through peaks and 
         #   Get the best peak based on the peak score
@@ -4462,7 +4446,7 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         curveTests = ['Window Length Freq.','Significant Cycles', 'Low Curve StDev. over time']
         peakTests = ['Peak Freq. Clarity Below', 'Peak Freq. Clarity Above', 'Peak Amp. Clarity', 'Freq. Stability', 'Peak Stability (freq. std)', 'Peak Stability (amp. std)']
         bestPeakScore = 0
-        for p in hvsr_dict['Peak Report']:
+        for p in hvsr_data['Peak Report']:
             #Get best peak
             if p['Score'] > bestPeakScore:
                 bestPeakScore = p['Score']
@@ -4485,12 +4469,12 @@ def check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
                 p['Peak Passes'] = False
             
         #Designate best peak in output dict
-        if len(hvsr_dict['Peak Report']) == 0:
+        if len(hvsr_data['Peak Report']) == 0:
             bestPeak={}
             print('No Best Peak identified')
 
-        hvsr_dict['Best Peak'] = bestPeak
-    return hvsr_dict
+        hvsr_data['Best Peak'] = bestPeak
+    return hvsr_data
 
 #Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
@@ -4528,7 +4512,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
     return _peak
 
 #Check reliability of HVSR of curve
-def __check_curve_reliability(hvsr_dict, _peak):
+def __check_curve_reliability(hvsr_data, _peak):
     """Tests to check for reliable H/V curve
 
     Tests include:
@@ -4548,7 +4532,7 @@ def __check_curve_reliability(hvsr_dict, _peak):
 
     Parameters
     ----------
-    hvsr_dict   : dict
+    hvsr_data   : dict
         Dictionary containing all important information generated about HVSR curve
     _peak       : list
         A list of dictionaries, with each dictionary containing information about each peak
@@ -4558,11 +4542,11 @@ def __check_curve_reliability(hvsr_dict, _peak):
     _peak   : list
         List of dictionaries, same as above, except with information about curve reliability tests added
     """
-    anyKey = list(hvsr_dict['ppsds'].keys())[0]#Doesn't matter which channel we use as key
+    anyKey = list(hvsr_data['ppsds'].keys())[0]#Doesn't matter which channel we use as key
 
-    delta = hvsr_dict['ppsds'][anyKey]['delta']
-    window_len = (hvsr_dict['ppsds'][anyKey]['len'] * delta) #Window length in seconds
-    window_num = np.array(hvsr_dict['psd_raw'][anyKey]).shape[0]
+    delta = hvsr_data['ppsds'][anyKey]['delta']
+    window_len = (hvsr_data['ppsds'][anyKey]['len'] * delta) #Window length in seconds
+    window_num = np.array(hvsr_data['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
         peakFreq= _peak[_i]['f0']
@@ -4576,15 +4560,15 @@ def __check_curve_reliability(hvsr_dict, _peak):
         
         test3 = True
         failCount = 0
-        for i, freq in enumerate(hvsr_dict['x_freqs'][anyKey][:-1]):
+        for i, freq in enumerate(hvsr_data['x_freqs'][anyKey][:-1]):
             ###IS THIS RIGHT???
             if freq >= halfF0 and freq <doublef0:
                 if peakFreq >= 0.5:
-                    if hvsr_dict['hvsr_log_std'][i] >= 2:
+                    if hvsr_data['hvsr_log_std'][i] >= 2:
                         test3=False
                         failCount +=1
                 else: #if peak freq is less than 0.5
-                    if hvsr_dict['hvsr_log_std'][i] >= 3:
+                    if hvsr_data['hvsr_log_std'][i] >= 3:
                         test3=False
                         failCount +=1
 
@@ -4953,20 +4937,22 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
 #Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
     hvsr_results = get_report(**get_report_kwargs)
-    if get_report_kwargs['verbose'] and get_report_kwargs['format'] != 'print':
-        get_report_kwargs['format'] = 'print'
+    
+    #Print if verbose, but selected report_format was not print
+    if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
+        get_report_kwargs['report_format'] = 'print'
         get_report(**get_report_kwargs)
     return hvsr_results
 
 #Get or print report
-def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, save_figs=None):    
+def get_report(hvsr_results, export=None, report_format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, save_figs=None):    
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
     ----------
     hvsr_results : dict
         Dictionary containing all the information about the processed hvsr data
-    format : {'csv', 'print', 'docx'}
+    report_format : {'csv', 'print', 'docx'}
         Format in which to print or export the report.
     export : str
         Filepath path for export. If not specified, report name is generated automatically and placed in current directory
@@ -4989,7 +4975,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
     #Curve pass?
     orig_args = locals().copy() #Get the initial arguments
 
-    if 'input_params' not in hvsr_results.keys():
+    if isinstance(hvsr_results, HVSRBatch):
         if verbose:
             print('\t  Running in batch mode')
         #If running batch, we'll loop through each site
@@ -5016,7 +5002,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
         else:
             pass
         
-        if format=='print':
+        if report_format=='print':
             #Print results
             print("\n===================================================================================================")
             print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
@@ -5062,7 +5048,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
             print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
             print("===================================================================================================\n")
 
-        elif format=='csv':
+        elif report_format=='csv':
             import pandas as pd
             pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'Peak Frequency', 
                     'Window Length Freq.','Significant Cycles','Low Curve StDev. over time',
@@ -5100,7 +5086,7 @@ def get_report(hvsr_results, export=None, format='print', plot_type='HVSR p ann 
                     warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['Best Peak']['Report']['CSV_Report]".format(export), category=RuntimeWarning)
             hvsr_results['Best Peak']['Report']['CSV_Report'] = outDF
             return outDF
-        elif format=='plot':
+        elif report_format=='plot':
             hvsr_results['Best Peak']['Report']['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
             if return_results:
                 return hvsr_results
