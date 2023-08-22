@@ -1752,7 +1752,7 @@ def __remove_noise_batch(**remove_noise_kwargs):
     return hvsr_data
 
 #Function to remove noise windows from data
-def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
+def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
     &#34;&#34;&#34;Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1780,6 +1780,8 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
         If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to &#39;manual&#39; method.
     warmup_time : int, default=0
         Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.
+    verbose : bool, default=False
+        Whether to print status of remove_noise
 
     Returns
     -------
@@ -1802,7 +1804,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
         hvsr_out = {}
         for site_name in input.keys():
             args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
-            args[&#39;params&#39;] = input[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            args[&#39;input&#39;] = input[site_name] #Get what would normally be the &#34;input&#34; variable for each site
             hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
         return output
@@ -1857,6 +1859,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
     #Add output
     if isinstance(input, HVSRData) or isinstance(input, dict):
         output[&#39;stream_edited&#39;] = outStream
+        output[&#39;stream&#39;] = input[&#39;stream&#39;]
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
     else:
@@ -2312,7 +2315,10 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     staltaStream = stream.copy()
 
     for tr in staltaStream:
-        characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(&#39;ignore&#39;, category=UserWarning)
+            characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+
     if show_plot:
         obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
     windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
@@ -8135,7 +8141,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 </details>
 </dd>
 <dt id="sprit.sprit.remove_noise"><code class="name flex">
-<span>def <span class="ident">remove_noise</span></span>(<span>input, kind='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], warmup_time=0, cooldown_time=0, min_win_size=1)</span>
+<span>def <span class="ident">remove_noise</span></span>(<span>input, kind='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to remove noisy windows from data, using various methods.</p>
@@ -8163,6 +8169,8 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 <dd>If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to 'manual' method.</dd>
 <dt><strong><code>warmup_time</code></strong> :&ensp;<code>int</code>, default=<code>0</code></dt>
 <dd>Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to print status of remove_noise</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -8173,7 +8181,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
+<pre><code class="python">def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
     &#34;&#34;&#34;Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -8201,6 +8209,8 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to &#39;manual&#39; method.
     warmup_time : int, default=0
         Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.
+    verbose : bool, default=False
+        Whether to print status of remove_noise
 
     Returns
     -------
@@ -8223,7 +8233,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         hvsr_out = {}
         for site_name in input.keys():
             args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
-            args[&#39;params&#39;] = input[site_name] #Get what would normally be the &#34;params&#34; variable for each site
+            args[&#39;input&#39;] = input[site_name] #Get what would normally be the &#34;input&#34; variable for each site
             hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
         return output
@@ -8278,6 +8288,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     #Add output
     if isinstance(input, HVSRData) or isinstance(input, dict):
         output[&#39;stream_edited&#39;] = outStream
+        output[&#39;stream&#39;] = input[&#39;stream&#39;]
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
     else:

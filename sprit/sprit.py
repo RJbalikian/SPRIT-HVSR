@@ -1723,7 +1723,7 @@ def __remove_noise_batch(**remove_noise_kwargs):
     return hvsr_data
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1):
+def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1751,6 +1751,8 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to 'manual' method.
     warmup_time : int, default=0
         Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.
+    verbose : bool, default=False
+        Whether to print status of remove_noise
 
     Returns
     -------
@@ -1773,7 +1775,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         hvsr_out = {}
         for site_name in input.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['params'] = input[site_name] #Get what would normally be the "params" variable for each site
+            args['input'] = input[site_name] #Get what would normally be the "input" variable for each site
             hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
         return output
@@ -1828,6 +1830,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     #Add output
     if isinstance(input, HVSRData) or isinstance(input, dict):
         output['stream_edited'] = outStream
+        output['stream'] = input['stream']
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
     else:
@@ -2283,7 +2286,10 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     staltaStream = stream.copy()
 
     for tr in staltaStream:
-        characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=UserWarning)
+            characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+
     if show_plot:
         obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
     windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
