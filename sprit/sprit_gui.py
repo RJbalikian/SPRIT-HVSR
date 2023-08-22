@@ -777,6 +777,7 @@ class App:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate='focusout', validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky='ew', padx=(2,0))
 
+        #BATCH Section
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text="batch_data_read(input_data, batch_type='{}', param_col={}, batch_params={})".format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
