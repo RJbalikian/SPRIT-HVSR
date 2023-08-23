@@ -10,6 +10,7 @@ docsDir = currentDir
 repoDir = docsDir.parent
 spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
+spritUtilsPath = spritDir.joinpath('sprit_utils.py')
 spritPath = spritDir.joinpath('sprit.py')
 resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
@@ -17,7 +18,7 @@ pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.9'
+release_version= '0.1.10'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'

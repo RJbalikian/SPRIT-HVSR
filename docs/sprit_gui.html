@@ -811,6 +811,7 @@ class App:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
+        #BATCH Section
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
@@ -3426,6 +3427,7 @@ if __name__ == &#34;__main__&#34;:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
+        #BATCH Section
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
@@ -5918,6 +5920,7 @@ if __name__ == &#34;__main__&#34;:
     hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
     hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
+    #BATCH Section
     def update_batch_data_read_call():
         self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                     self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
