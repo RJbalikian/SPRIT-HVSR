@@ -47,11 +47,15 @@ class HVSRBatch:
             
         self.sites = list(self._batch_dict.keys())
 
+    #METHODS
     def keys(self):
         return self.batch_dict.keys()
 
     def items(self):
         return self.batch_dict.items()
+
+    def copy(self):
+        return HVSRBatch(copy.copy(self._batch_dict))
 
     def __iter__(self):
         return iter(self._batch_dict.keys())

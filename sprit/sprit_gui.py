@@ -170,6 +170,29 @@ class App:
         #self.logo_label = ttk.Label(hvsrFrame, image=self.logo)
         #self.logo_label.grid(row=0, column=0)
         self.processingData = False
+
+        def update_input_labels(hvsr_data):
+            #Update labels for data preview tab
+            self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(hvsr_data['stream']))
+            
+            self.obspySreamLabel_settings.configure(text=str(hvsr_data['stream']))
+
+            self.sensitivityLabelZ_settings.configure(text=hvsr_data['paz']['Z']['sensitivity'])
+            self.gainLabelZ_settings.configure(text=hvsr_data['paz']['Z']['gain'])
+            self.polesLabelZ_settings.configure(text=hvsr_data['paz']['Z']['poles'])
+            self.zerosLabelZ_settings.configure(text=hvsr_data['paz']['Z']['zeros'])
+            
+            self.sensitivityLabelN_settings.configure(text=hvsr_data['paz']['N']['sensitivity'])
+            self.gainLabelN_settings.configure(text=hvsr_data['paz']['N']['gain'])
+            self.polesLabelN_settings.configure(text=hvsr_data['paz']['N']['poles'])
+            self.zerosLabelN_settings.configure(text=hvsr_data['paz']['N']['zeros'])
+
+            self.sensitivityLabelE_settings.configure(text=hvsr_data['paz']['E']['sensitivity'])
+            self.gainLabelE_settings.configure(text=hvsr_data['paz']['E']['gain'])
+            self.polesLabelE_settings.configure(text=hvsr_data['paz']['E']['poles'])
+            self.zerosLabelE_settings.configure(text=hvsr_data['paz']['E']['zeros'])
+            return
+        
         #FUNCTION TO READ DATA
         def read_data():
             #print('Reading {}'.format(self.data_path.get()))
@@ -189,7 +212,19 @@ class App:
                     self.fpath = self.fpath[0]
                     batchType = 'table'
 
-                sprit.batch_data_read(input_data=self.fpath, batch_type=batchType)
+                self.params = sprit.batch_data_read(input_data=self.fpath, batch_type=batchType)
+                self.hvsr_data = self.params
+                firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
+                update_input_labels(firstSite)
+
+                #Plot data in data preview tab
+                self.fig_pre, self.ax_pre = sprit.plot_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+
+                #Plot data in noise preview tab
+                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                select_windows(event=None, initialize=True)
+                plot_noise_windows(firstSite)
+
             else:
                 if isinstance(self.fpath, str):
                     pass
@@ -217,9 +252,7 @@ class App:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
-                
-                self.params = sprit.get_metadata(self.params)
-                
+
                 if self.trim_dir.get()=='':
                     trimDir=None
                 else:
@@ -231,34 +264,17 @@ class App:
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-
-                #Update labels for data preview tab
-                self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(self.hvsr_data['stream']))
                 
-                self.obspySreamLabel_settings.configure(text=str(self.hvsr_data['stream']))
+                update_input_labels(self.hvsr_data)
 
-                self.sensitivityLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['sensitivity'])
-                self.gainLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['gain'])
-                self.polesLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['poles'])
-                self.zerosLabelZ_settings.configure(text=self.hvsr_data['paz']['Z']['zeros'])
-                
-                self.sensitivityLabelN_settings.configure(text=self.hvsr_data['paz']['N']['sensitivity'])
-                self.gainLabelN_settings.configure(text=self.hvsr_data['paz']['N']['gain'])
-                self.polesLabelN_settings.configure(text=self.hvsr_data['paz']['N']['poles'])
-                self.zerosLabelN_settings.configure(text=self.hvsr_data['paz']['N']['zeros'])
 
-                self.sensitivityLabelE_settings.configure(text=self.hvsr_data['paz']['E']['sensitivity'])
-                self.gainLabelE_settings.configure(text=self.hvsr_data['paz']['E']['gain'])
-                self.polesLabelE_settings.configure(text=self.hvsr_data['paz']['E']['poles'])
-                self.zerosLabelE_settings.configure(text=self.hvsr_data['paz']['E']['zeros'])
-                
                 #Plot data in data preview tab
                 self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 #Plot data in noise preview tab
                 self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
-                plot_noise_windows()
+                plot_noise_windows(self.hvsr_data)
 
             self.data_read = True
 
@@ -271,7 +287,7 @@ class App:
             
             self.tab_control.select(self.results_tab)
 
-            self.hvsr_data = plot_noise_windows()
+            self.hvsr_data = plot_noise_windows(self.hvsr_data)
    
             self.hvsr_data = sprit.generate_ppsds(params=self.hvsr_data, 
                                                ppsd_length=self.ppsd_length.get(), 
@@ -312,9 +328,9 @@ class App:
                                 self.hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
                                 self.hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
             if curvePass:
-                totalCurveResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
+                totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
-                totalCurveResult.configure(text='✘', font=("TkDefaultFont", 16, "bold"), foreground='red')
+                totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
 
             peakTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
             peakTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][-1])
@@ -354,7 +370,6 @@ class App:
                 totalResult.configure(text='Fail ✘', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
             sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
-            #plot_noise_windows()
 
             self.processingData = False
 
@@ -1206,11 +1221,16 @@ class App:
             if event.button is MouseButton.LEFT:            
                 self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
 
-        def plot_noise_windows(initial_setup=False):
+        def plot_noise_windows(hvsr_data, initial_setup=False):
+            if isinstance(hvsr_data, sprit.HVSRBatch):
+                batch_data = hvsr_data.copy()
+                hvsr_data = hvsr_data[list(hvsr_data.keys())[0]]
+            else:
+                batch_data = None
+
             if initial_setup:
                 self.xWindows=[]
-
-            if not initial_setup:
+            else:
                 #Clear everything
                 for key in self.ax_noise:
                     self.ax_noise[key].clear()
@@ -1239,7 +1259,7 @@ class App:
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
-                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
             self.noise_canvas.draw()
@@ -1255,35 +1275,41 @@ class App:
             self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
 
             if not initial_setup:
-                #Reset edited data every time plot_noise_windows is run
-                self.params['stream_edited'] = self.params['stream'].copy()
+                if batch_data is None:
+                    batch_data = {'SITENAME':hvsr_data}
 
-                #Set initial input
-                input = self.params['stream']
+                for i, (k, hv_data) in enumerate(batch_data.items()):
+                    #Reset edited data every time plot_noise_windows is run
+                    hv_data['stream_edited'] = hv_data['stream'].copy()
+                    
+                    #Set initial input
+                    input = hv_data['stream']
 
-                #print(input[0].stats.starttime)
-                if self.do_stalta.get():
-                    self.params['stream_edited'] = sprit.remove_noise(input=input, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                    input = self.params['stream_edited']
+                    #print(input[0].stats.starttime)
+                    if self.do_stalta.get():
+                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                        input = hv_data['stream_edited']
 
-                if self.do_pctThresh.get():
-                    self.params['stream_edited'] = sprit.remove_noise(input=input, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                    input = self.params['stream_edited']
+                    if self.do_pctThresh.get():
+                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                        input = hv_data['stream_edited']
 
-                if self.do_noiseWin.get():
-                    self.params['stream_edited'] = sprit.remove_noise(input=input, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                    input = self.params['stream_edited']
+                    if self.do_noiseWin.get():
+                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                        input = hv_data['stream_edited']
+                
+                    if self.do_warmup.get():
+                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+
+                    if i==0:
+                        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit._get_removed_windows(input=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
+                        self.fig_noise.canvas.draw()
+                return hvsr_data
             
-                if self.do_warmup.get():
-                    self.params['stream_edited'] = sprit.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
-
-                self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit._get_removed_windows(input=self.params, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
-                self.fig_noise.canvas.draw()
-                return self.params    
             self.fig_noise.canvas.draw()
             return
 
-        plot_noise_windows(initial_setup=True)
+        plot_noise_windows(None, initial_setup=True)
         self.canvasFrame_noise.pack(fill='both')#.grid(row=0, column=0, sticky="nsew")
 
         #noise_mosaic = [['spec'],['spec'],['spec'],
