@@ -92,6 +92,10 @@ class HVSRData:
     def copy(self):
         return HVSRData(copy.copy(self.params))
 
+    def plot(self, **kwargs):
+        return hvplot(self, **kwargs)
+        
+
     #ATTRIBUTES
     #params
     @property
