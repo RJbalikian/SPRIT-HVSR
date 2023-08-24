@@ -4,7 +4,7 @@ setup(
     name="sprit",
     author= "Riley Balikian",
     author_email = "balikian@illinois.edu",
-    version="0.1.8",
+    version="0.1.10",
     install_requires=["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyqt5", "pyproj"],
     description="A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data",
     package_data={'sprit': ['resources/*', 'resources/themes/*', 'resources/themes/forest-dark/*', 'resources/themes/forest-light/*']}
