@@ -26,7 +26,7 @@ import numpy as np
 import sprit_utils
 import sprit
 
-class App:
+class SPRIT_App:
     def __init__(self, master):
         self.master = master
         self.master.title("SPRIT")
@@ -61,7 +61,6 @@ class App:
         #    # Add more options here to style other widgets
         #})
         
-
     #Not currently working
     def manual_label_update(self):
         for notebook in self.master.winfo_children():
@@ -2380,17 +2379,16 @@ class App:
         settings_notebook.pack(expand=True, fill='both')
         self.tab_control.add(self.settings_tab, text="Settings")
 
-        # Batch tab
-        self.batch_tab = ttk.Frame(self.tab_control)
-
-        self.tab_control.add(self.batch_tab, text="Batch")
-
-
         # RESULTS TAB
         self.results_tab = ttk.Frame(self.tab_control)
 
+        # Create the Batch Site selection LabelFrame
+        self.results_siteSelectFrame = ttk.LabelFrame(self.results_tab, text="HVSR Results")
+        self.results_siteSelectLabel = ttk.Label(self.results_siteSelectFrame, text='Select Site to display')
+
+
         # Create the hvplot Call LabelFrame
-        self.results_chartFrame = ttk.LabelFrame(self.results_tab, text="HVSR Charts")
+        self.results_chartFrame = ttk.LabelFrame(self.results_tab, text="Data Plots")
 
         #Set up plot     
         #results_mosaic = [['hvsr'],['comp'],['spec']]
@@ -2625,7 +2623,7 @@ if __name__ == "__main__":
     icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
     root.iconbitmap(icon_path)
 
-    app = App(root)
+    app = SPRIT_App(root)
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()

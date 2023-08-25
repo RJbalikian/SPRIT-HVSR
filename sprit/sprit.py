@@ -57,6 +57,13 @@ class HVSRBatch:
     def copy(self):
         return HVSRBatch(copy.copy(self._batch_dict))
 
+    #Method wrapper of sprit.hvplot function
+    def plot(self, **kwargs):
+        returnDict = {}
+        for sitename in self:
+            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+        return returnDict[sitename]
+    
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -861,7 +868,7 @@ def gui():
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath('gui/tkgui.py').as_posix())
-    from sprit.sprit_gui import App
+    from sprit.sprit_gui import SPRIT_App
     import tkinter as tk
 
     def on_gui_closing():
@@ -872,7 +879,7 @@ def gui():
     gui_root = tk.Tk()
     icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sprit_icon_alpha.ico'))
     gui_root.iconbitmap(icon_path)
-    App(master=gui_root) #Open the app with a tk.Tk root
+    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
     gui_root.mainloop() #Run the main loop
