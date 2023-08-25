@@ -81,8 +81,7 @@ def catch_errors(func):
             
             error_category = type(e).__name__.title().replace('error', 'Error')
             error_message = str(e)
-            print(e)
-            print(sys.exc_info()[2])
+            
             #Print the linenumber where error occured to terminal
             #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             #Print the function name where the error occured
@@ -2535,9 +2534,7 @@ class SPRIT_App:
         self.results_siteSelectLabel = ttk.Label(self.results_siteSelectFrame, text='Select Site ')
 
         def on_site_select():
-            print(self.selectedSite.get())
-            print(type(self.selectedSite.get()))
-            report_results(self.hvsr_results['BOP2_1'])
+            report_results(self.hvsr_results[self.selectedSite.get()])
             
         self.site_options = ['']
         self.selectedSite = tk.StringVar(value=self.site_options[0])
