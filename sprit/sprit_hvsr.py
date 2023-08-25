@@ -200,7 +200,7 @@ def gui():
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath('gui/tkgui.py').as_posix())
-    from sprit_gui import SPRIT_App
+    from sprit.sprit_gui import  SPRIT_App
     import tkinter as tk
 
     def on_gui_closing():
@@ -3102,7 +3102,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
     """This function is for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
-
+    print(type(input))
     if isinstance(input, (dict, HVSRData)):
         if 'stream_edited' in input.keys():
             stream = input['stream_edited'].copy()

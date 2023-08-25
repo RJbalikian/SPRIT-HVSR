@@ -57,6 +57,7 @@ def catch_errors(func):
         messageList = []
         hasWarnings = False
         # use a try-except block to catch any exceptions
+        result = func(*args, **kwargs)
         try:
             # use a context manager to catch any warnings
             with warnings.catch_warnings(record=True) as w:
@@ -80,7 +81,8 @@ def catch_errors(func):
             
             error_category = type(e).__name__.title().replace('error', 'Error')
             error_message = str(e)
-
+            print(e)
+            print(sys.exc_info()[2])
             #Print the linenumber where error occured to terminal
             #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             #Print the function name where the error occured
@@ -89,7 +91,7 @@ def catch_errors(func):
             #Get message list, [] if no messages, doesn't run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
             
-            fullErrorMessage = f'PRIMARY ERROR ({error_category}): {error_message}'
+            fullErrorMessage = f'ERROR ({error_category}): {error_message} (line {traceback.extract_tb(sys.exc_info()[2])[-1].lineno})'
             if messageList == []:
                 pass
             else:
@@ -120,7 +122,7 @@ class SPRIT_App:
         self.style = ttk.Style(master)
         self.master.tk.call('source', self.lightthemepath)
         #self.style.theme_use('default')
-        self.style.theme_use('forest-light')
+        #self.style.theme_use('forest-light')
 
         self.create_menubar()
         self.create_tabs()
@@ -280,21 +282,24 @@ class SPRIT_App:
         def read_data():
             self.starttime, self.endtime = get_times()
 
-
             if self.file_source.get() == 'batch':
+                batchType = self.batch_type.get()
                 if isinstance(self.fpath, str):
-                    pass
+                    self.fpath = self.fpath
+                elif isinstance(self.fpath, tuple) and len(self.fpath)==1:
+                    self.fpath = self.fpath[0]
                 elif len(self.fpath) > 1:
                     self.fpath = list(self.fpath)
-                    batchType = 'filelist'
                 else:
                     self.fpath = self.fpath[0]
-                    batchType = 'table'
 
                 self.params = sprit_hvsr.batch_data_read(input_data=self.fpath, batch_type=batchType)
                 self.hvsr_data = self.params
+                self.site_options = self.hvsr_data.sites
+
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
+                update_site_dropdown()
 
                 #Plot data in data preview tab
                 self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
@@ -302,7 +307,7 @@ class SPRIT_App:
                 #Plot data in noise preview tab
                 self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
-                plot_noise_windows(firstSite)
+                plot_noise_windows(self.hvsr_data)
 
             else:
                 if isinstance(self.fpath, str):
@@ -346,7 +351,6 @@ class SPRIT_App:
                 
                 update_input_labels(self.hvsr_data)
 
-
                 #Plot data in data preview tab
                 self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
@@ -359,6 +363,64 @@ class SPRIT_App:
             if not self.processingData:
                 self.tab_control.select(self.preview_data_tab)
 
+        def report_results(hvsr_results):
+            
+            self.curveTest1ResultText.configure(text=hvsr_results['Best Peak']['Report']['Lw'][:-1])
+            self.curveTest1Result.configure(text=hvsr_results['Best Peak']['Report']['Lw'][-1])
+
+            self.curveTest2ResultText.configure(text=hvsr_results['Best Peak']['Report']['Nc'][:-1])
+            self.curveTest2Result.configure(text=hvsr_results['Best Peak']['Report']['Nc'][-1])
+
+            self.curveTest3ResultText.configure(text=hvsr_results['Best Peak']['Report']['σ_A(f)'][:-1])
+            self.curveTest3Result.configure(text=hvsr_results['Best Peak']['Report']['σ_A(f)'][-1])
+
+            curvePass = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
+                                hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
+                                hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
+            if curvePass:
+                self.totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
+            else:
+                self.totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
+
+            self.peakTest1ResultText.configure(text=hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
+            self.peakTest1Result.configure(text=hvsr_results['Best Peak']['Report']['A(f-)'][-1])
+            
+            self.peakTest2ResultText.configure(text=hvsr_results['Best Peak']['Report']['A(f+)'][:-1])
+            self.peakTest2Result.configure(text=hvsr_results['Best Peak']['Report']['A(f+)'][-1])
+            
+            self.peakTest3ResultText.configure(text=hvsr_results['Best Peak']['Report']['A0'][:-1])
+            self.peakTest3Result.configure(text=hvsr_results['Best Peak']['Report']['A0'][-1])
+
+            self.peakTest4ResultText.configure(text=hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' +hvsr_results['Best Peak']['Report']['P+'][:-1])
+            if hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
+                self.peakTest4Result.configure(text=sprit_utils.check_mark())
+            else:
+                self.peakTest4Result.configure(text=sprit_utils.x_mark())
+
+            self.peakTest5ResultText.configure(text=hvsr_results['Best Peak']['Report']['Sf'][:-1])
+            self.peakTest5Result.configure(text=hvsr_results['Best Peak']['Report']['Sf'][-1])
+            
+            self.peakTest6ResultText.configure(text=hvsr_results['Best Peak']['Report']['Sa'][:-1])
+            self.peakTest6Result.configure(text=hvsr_results['Best Peak']['Report']['Sa'][-1])
+
+            peakPass = (hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
+                    hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
+                    hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
+                    hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
+                    hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
+                    hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
+            if peakPass:
+                self.totalPeakResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
+            else:
+                self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
+
+            if curvePass and peakPass:
+                self.totalResult.configure(text=f'Pass {sprit_utils.check_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='green')
+            else:
+                self.totalResult.configure(text=f'Fail {sprit_utils.x_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='red')
+
+            sprit_hvsr.hvplot(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+
         #FUNCTION TO PROCESS DATA
         @catch_errors
         def process_data():
@@ -366,7 +428,7 @@ class SPRIT_App:
             
             if self.data_read == False:
                 read_data()
-            
+
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
    
             self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
@@ -395,61 +457,14 @@ class SPRIT_App:
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_water_level=self.peak_water_level)
 
-            curveTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Lw'][:-1])
-            curveTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['Lw'][-1])
-
-            curveTest2ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Nc'][:-1])
-            curveTest2Result.configure(text=self.hvsr_results['Best Peak']['Report']['Nc'][-1])
-
-            curveTest3ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['σ_A(f)'][:-1])
-            curveTest3Result.configure(text=self.hvsr_results['Best Peak']['Report']['σ_A(f)'][-1])
-
-            curvePass = (self.hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
-                                self.hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
-                                self.hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
-            if curvePass:
-                totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
+            if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
+                report_results(self.hvsr_results)
+                #self.results_siteSelectFrame.grid_forget()
+            elif isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
+                self.results_siteSelectFrame.grid(row=0, column=0, columnspan=10, sticky='ew')
+                report_results(self.hvsr_results[self.hvsr_results.sites[0]])
             else:
-                totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
-
-            peakTest1ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
-            peakTest1Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f-)'][-1])
-            
-            peakTest2ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A(f+)'][:-1])
-            peakTest2Result.configure(text=self.hvsr_results['Best Peak']['Report']['A(f+)'][-1])
-            
-            peakTest3ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][:-1])
-            peakTest3Result.configure(text=self.hvsr_results['Best Peak']['Report']['A0'][-1])
-
-            peakTest4ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' +self.hvsr_results['Best Peak']['Report']['P+'][:-1])
-            if self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
-                peakTest4Result.configure(text='✔')
-            else:
-                peakTest4Result.configure(text='✘')
-
-            peakTest5ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][:-1])
-            peakTest5Result.configure(text=self.hvsr_results['Best Peak']['Report']['Sf'][-1])
-            
-            peakTest6ResultText.configure(text=self.hvsr_results['Best Peak']['Report']['Sa'][:-1])
-            peakTest6Result.configure(text=self.hvsr_results['Best Peak']['Report']['Sa'][-1])
-
-            peakPass = (self.hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
-                    self.hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
-                    self.hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
-                    self.hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
-                    self.hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
-                    self.hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
-            if peakPass:
-                totalPeakResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
-            else:
-                totalPeakResult.configure(text='✘', font=("TkDefaultFont", 16, "bold"), foreground='red')
-
-            if curvePass and peakPass:
-                totalResult.configure(text='Pass ✔', font=("TkDefaultFont", 22, "bold"), foreground='green')
-            else:
-                totalResult.configure(text='Fail ✘', font=("TkDefaultFont", 22, "bold"), foreground='red')
-
-            sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+                warnings.warn(f'Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.')
 
             self.processingData = False
             self.tab_control.select(self.results_tab)
@@ -1066,12 +1081,6 @@ class SPRIT_App:
         ttk.Label(master=self.inputInfoFrame, text=self.data_filepath_entry.get()).pack()#.grid(row=0, column=0)
 
         #Set up plot
-        #self.fig_pre, self.ax_pre = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
-        #self.canvas_pre = FigureCanvasTkAgg(self.fig_pre, master=self.inputDataViewFrame)
-        #self.canvas_pre.draw()
-        #self.canvasPreWidget = self.canvas_pre.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        #self.canvasPreWidget.pack(expand=True, fill='both')#.grid(row=1)
-
         #Reset axes, figure, and canvas widget
         self.fig_pre = plt.figure()
 
@@ -1085,7 +1094,6 @@ class SPRIT_App:
         self.preview_toolbar.update()
     
         #self.canvas_pre.mpl_connect("button_release_event", select_windows)
-
 
         #Save preview figure
         savePrevFigFrame = ttk.Frame(master=self.inputDataViewFrame)
@@ -1382,9 +1390,11 @@ class SPRIT_App:
 
             if not initial_setup:
                 if batch_data is None:
-                    batch_data = {'SITENAME':hvsr_data}
+                    hvsr_data = {'SITENAME':hvsr_data}
+                else:
+                    hvsr_data = batch_data
 
-                for i, (k, hv_data) in enumerate(batch_data.items()):
+                for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
                     hv_data['stream_edited'] = hv_data['stream'].copy()
                     
@@ -1408,8 +1418,9 @@ class SPRIT_App:
                         hv_data['stream_edited'] = sprit_hvsr.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
-                        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
+                        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
                         self.fig_noise.canvas.draw()
+            
                 return hvsr_data
             
             self.fig_noise.canvas.draw()
@@ -2521,180 +2532,191 @@ class SPRIT_App:
 
         # Create the Batch Site selection LabelFrame
         self.results_siteSelectFrame = ttk.LabelFrame(self.results_tab, text="HVSR Results")
-        self.results_siteSelectLabel = ttk.Label(self.results_siteSelectFrame, text='Select Site to display')
+        self.results_siteSelectLabel = ttk.Label(self.results_siteSelectFrame, text='Select Site ')
 
+        def on_site_select():
+            print(self.selectedSite.get())
+            print(type(self.selectedSite.get()))
+            report_results(self.hvsr_results['BOP2_1'])
+            
+        self.site_options = ['']
+        self.selectedSite = tk.StringVar(value=self.site_options[0])
+        self.site_dropdown = ttk.Combobox(self.results_siteSelectFrame, textvariable=self.selectedSite, values=self.site_options, validate='focusout', validatecommand=on_site_select)
+        self.site_dropdown.config(width=30)
+        self.results_siteSelectLabel.grid(row=0, column=0, columnspan=1, sticky='ew')
+        self.site_dropdown.grid(row=0, column=1, columnspan=4, sticky='ew')
 
+        self.browse_results_fig = ttk.Button(self.results_siteSelectFrame, text="Update site",command=on_site_select)
+        self.browse_results_fig.grid(row=0, column=8, sticky='ew', padx=5)
+
+        def update_site_dropdown():
+            self.site_dropdown['values'] = self.site_options
+
+        
+        #lambda value=string: self.om_variable.set(value)
         # Create the hvplot Call LabelFrame
         self.results_chartFrame = ttk.LabelFrame(self.results_tab, text="Data Plots")
 
         #Set up plot     
-        #results_mosaic = [['hvsr'],['comp'],['spec']]
-        #self.fig_results, self.ax_results = plt.subplot_mosaic(results_mosaic)  
-        #self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)
-        #self.results_canvas.draw()
-        #self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
         self.fig_results = plt.figure()
         results_mosaic = [['hvsr'],['comp'],['spec']]
         self.ax_results = self.fig_results.subplot_mosaic(results_mosaic)
 
         self.results_canvas = FigureCanvasTkAgg(self.fig_results, master=self.results_chartFrame)  # A tk.DrawingArea.
         self.results_canvas.draw()
-        self.results_canvasWidget = self.results_canvas.get_tk_widget()#.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.results_canvasWidget = self.results_canvas.get_tk_widget()
         self.results_toolbar = NavigationToolbar2Tk(self.results_canvas, self.results_chartFrame, pack_toolbar=False)
         self.results_toolbar.update()
         self.results_toolbar.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
-        self.results_canvasWidget.pack(fill='both', expand=True)#.grid(row=0, column=0, sticky='nsew')
+        self.results_canvasWidget.pack(fill='both', expand=True)
 
         #Peak report
-        results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text="Peak Report")
-        curveTitleLabel = ttk.Label(results_peakInfoFrame, text='Criteria for Reliable H/V Curve (all 3 must pass)')
-        curveTest1Label = ttk.Label(results_peakInfoFrame, text='Window Length for Frequency')
-        curveTest1ResultFrame = ttk.Frame(results_peakInfoFrame)
-        curveTest1ResultText = ttk.Label(curveTest1ResultFrame, text='')
-        curveTest1Result = ttk.Label(curveTest1ResultFrame, text='')
+        self.results_peakInfoFrame = ttk.LabelFrame(self.results_tab, text="Peak Report")
+        self.curveTitleLabel = ttk.Label(self.results_peakInfoFrame, text='Criteria for Reliable H/V Curve (all 3 must pass)')
+        self.curveTest1Label = ttk.Label(self.results_peakInfoFrame, text='Window Length for Frequency')
+        self.curveTest1ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.curveTest1ResultText = ttk.Label(self.curveTest1ResultFrame, text='')
+        self.curveTest1Result = ttk.Label(self.curveTest1ResultFrame, text='')
 
-        curveTest2Label = ttk.Label(results_peakInfoFrame, text='Number of Significant Cycles')
-        curveTest2ResultFrame = ttk.Frame(results_peakInfoFrame)
-        curveTest2ResultText = ttk.Label(curveTest2ResultFrame, text='')
-        curveTest2Result = ttk.Label(curveTest2ResultFrame, text='')
+        self.curveTest2Label = ttk.Label(self.results_peakInfoFrame, text='Number of Significant Cycles')
+        self.curveTest2ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.curveTest2ResultText = ttk.Label(self.curveTest2ResultFrame, text='')
+        self.curveTest2Result = ttk.Label(self.curveTest2ResultFrame, text='')
 
-        curveTest3Label = ttk.Label(results_peakInfoFrame, text='Low Curve Standard Deviation for Frequencies Near Peak Over Time')
-        curveTest3ResultFrame = ttk.Frame(results_peakInfoFrame)
-        curveTest3ResultText = ttk.Label(curveTest3ResultFrame, text='')
-        curveTest3Result = ttk.Label(curveTest3ResultFrame, text='')
+        self.curveTest3Label = ttk.Label(self.results_peakInfoFrame, text='Low Curve Standard Deviation for Frequencies Near Peak Over Time')
+        self.curveTest3ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.curveTest3ResultText = ttk.Label(self.curveTest3ResultFrame, text='')
+        self.curveTest3Result = ttk.Label(self.curveTest3ResultFrame, text='')
 
-        totalCurveResult = ttk.Label(results_peakInfoFrame, text='')
+        self.totalCurveResult = ttk.Label(self.results_peakInfoFrame, text='')
 
-        peakTitleLabel = ttk.Label(results_peakInfoFrame, text='Criteria for a Clear H/V Peak (5/6 must pass)')
-        peakTest1Label = ttk.Label(results_peakInfoFrame, text='H/V Amplitude is low Below Peak Frequency')
-        peakTest1ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest1ResultText = ttk.Label(peakTest1ResultFrame, text='')
-        peakTest1Result = ttk.Label(peakTest1ResultFrame, text='')
+        self.peakTitleLabel = ttk.Label(self.results_peakInfoFrame, text='Criteria for a Clear H/V Peak (5/6 must pass)')
+        self.peakTest1Label = ttk.Label(self.results_peakInfoFrame, text='H/V Amplitude is low Below Peak Frequency')
+        self.peakTest1ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest1ResultText = ttk.Label(self.peakTest1ResultFrame, text='')
+        self.peakTest1Result = ttk.Label(self.peakTest1ResultFrame, text='')
         
-        peakTest2Label = ttk.Label(results_peakInfoFrame, text='H/V Amplitude is low Above Peak Frequency')
-        peakTest2ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest2ResultText = ttk.Label(peakTest2ResultFrame, text='')
-        peakTest2Result = ttk.Label(peakTest2ResultFrame, text='')
+        self.peakTest2Label = ttk.Label(self.results_peakInfoFrame, text='H/V Amplitude is low Above Peak Frequency')
+        self.peakTest2ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest2ResultText = ttk.Label(self.peakTest2ResultFrame, text='')
+        self.peakTest2Result = ttk.Label(self.peakTest2ResultFrame, text='')
         
-        peakTest3Label = ttk.Label(results_peakInfoFrame, text='Peak is Prominent')
-        peakTest3ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest3ResultText = ttk.Label(peakTest3ResultFrame, text='')
-        peakTest3Result = ttk.Label(peakTest3ResultFrame, text='')
+        self.peakTest3Label = ttk.Label(self.results_peakInfoFrame, text='Peak is Prominent')
+        self.peakTest3ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest3ResultText = ttk.Label(self.peakTest3ResultFrame, text='')
+        self.peakTest3Result = ttk.Label(self.peakTest3ResultFrame, text='')
         
-        peakTest4Label = ttk.Label(results_peakInfoFrame, text='Frequency of Peak is Stationary Over Time')
-        peakTest4ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest4ResultText = ttk.Label(peakTest4ResultFrame, text='')
-        peakTest4Result = ttk.Label(peakTest4ResultFrame, text='')
+        self.peakTest4Label = ttk.Label(self.results_peakInfoFrame, text='Frequency of Peak is Stationary Over Time')
+        self.peakTest4ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest4ResultText = ttk.Label(self.peakTest4ResultFrame, text='')
+        self.peakTest4Result = ttk.Label(self.peakTest4ResultFrame, text='')
         
-        peakTest5Label = ttk.Label(results_peakInfoFrame, text='Standard Deviation of Peak Frequency is low ')
-        peakTest5ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest5ResultText = ttk.Label(peakTest5ResultFrame, text='')
-        peakTest5Result = ttk.Label(peakTest5ResultFrame, text='')
+        self.peakTest5Label = ttk.Label(self.results_peakInfoFrame, text='Standard Deviation of Peak Frequency is low ')
+        self.peakTest5ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest5ResultText = ttk.Label(self.peakTest5ResultFrame, text='')
+        self.peakTest5Result = ttk.Label(self.peakTest5ResultFrame, text='')
         
-        peakTest6Label = ttk.Label(results_peakInfoFrame, text='Standard Deviation of Peak Amplitude is low')
-        peakTest6ResultFrame = ttk.Frame(results_peakInfoFrame)
-        peakTest6ResultText = ttk.Label(peakTest6ResultFrame, text='')
-        peakTest6Result = ttk.Label(peakTest6ResultFrame, text='')
+        self.peakTest6Label = ttk.Label(self.results_peakInfoFrame, text='Standard Deviation of Peak Amplitude is low')
+        self.peakTest6ResultFrame = ttk.Frame(self.results_peakInfoFrame)
+        self.peakTest6ResultText = ttk.Label(self.peakTest6ResultFrame, text='')
+        self.peakTest6Result = ttk.Label(self.peakTest6ResultFrame, text='')
 
-        totalPeakResult = ttk.Label(results_peakInfoFrame, text='')
+        self.totalPeakResult = ttk.Label(self.results_peakInfoFrame, text='')
 
-        totalResult = ttk.Label(results_peakInfoFrame, text='')
+        self.totalResult = ttk.Label(self.results_peakInfoFrame, text='')
 
-        curveTitleLabel.grid(row=0, sticky='w', padx=5, pady=2.5)
-        curveTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
-        curveTest1Label.grid(row=1, sticky='w', padx=5, pady=2.5)
-        curveTest1ResultFrame.grid(row=2, sticky='ew', padx=5, pady=2.5)
-        curveTest1ResultFrame.columnconfigure(0, weight=1)
-        curveTest1ResultFrame.columnconfigure(1, weight=6)
-        curveTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        curveTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.curveTitleLabel.grid(row=0, sticky='w', padx=5, pady=2.5)
+        self.curveTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
+        self.curveTest1Label.grid(row=1, sticky='w', padx=5, pady=2.5)
+        self.curveTest1ResultFrame.grid(row=2, sticky='ew', padx=5, pady=2.5)
+        self.curveTest1ResultFrame.columnconfigure(0, weight=1)
+        self.curveTest1ResultFrame.columnconfigure(1, weight=6)
+        self.curveTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.curveTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        curveTest2Label.grid(row=3, sticky='w', padx=5, pady=2.5)
-        curveTest2ResultFrame.grid(row=4, sticky='ew', padx=5, pady=2.5)
-        curveTest2ResultFrame.columnconfigure(0, weight=1)
-        curveTest2ResultFrame.columnconfigure(1, weight=6)
-        curveTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        curveTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.curveTest2Label.grid(row=3, sticky='w', padx=5, pady=2.5)
+        self.curveTest2ResultFrame.grid(row=4, sticky='ew', padx=5, pady=2.5)
+        self.curveTest2ResultFrame.columnconfigure(0, weight=1)
+        self.curveTest2ResultFrame.columnconfigure(1, weight=6)
+        self.curveTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.curveTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        curveTest3Label.grid(row=5, sticky='w', padx=5, pady=2.5)
-        curveTest3ResultFrame.grid(row=6, sticky='ew', padx=5, pady=2.5)
-        curveTest3ResultFrame.columnconfigure(0, weight=1)
-        curveTest3ResultFrame.columnconfigure(1, weight=6)
-        curveTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        curveTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.curveTest3Label.grid(row=5, sticky='w', padx=5, pady=2.5)
+        self.curveTest3ResultFrame.grid(row=6, sticky='ew', padx=5, pady=2.5)
+        self.curveTest3ResultFrame.columnconfigure(0, weight=1)
+        self.curveTest3ResultFrame.columnconfigure(1, weight=6)
+        self.curveTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.curveTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        totalCurveResult.grid(row=7, sticky='e', padx=5, pady=10 )
+        self.totalCurveResult.grid(row=7, sticky='e', padx=5, pady=10 )
 
-        ttk.Separator(results_peakInfoFrame).grid(row=8, sticky='ew', pady=5)
+        ttk.Separator(self.results_peakInfoFrame).grid(row=8, sticky='ew', pady=5)
         
-        peakTitleLabel.grid(row=9, sticky='w', padx=5, pady=2.5)
-        peakTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
+        self.peakTitleLabel.grid(row=9, sticky='w', padx=5, pady=2.5)
+        self.peakTitleLabel.configure(font=("TkDefaultFont", 12, 'underline', 'bold'))
         
-        peakTest1Label.grid(row=11, sticky='w', padx=5, pady=2.5)
-        peakTest1ResultFrame.grid(row=12, sticky='ew', padx=5, pady=2.5)
-        peakTest1ResultFrame.columnconfigure(0, weight=1)
-        peakTest1ResultFrame.columnconfigure(1, weight=6)
-        peakTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest1Label.grid(row=11, sticky='w', padx=5, pady=2.5)
+        self.peakTest1ResultFrame.grid(row=12, sticky='ew', padx=5, pady=2.5)
+        self.peakTest1ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest1ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest1ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest1Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        peakTest2Label.grid(row=13, sticky='w', padx=5, pady=2.5)
-        peakTest2ResultFrame.grid(row=14, sticky='ew', padx=5, pady=2.5)
-        peakTest2ResultFrame.columnconfigure(0, weight=1)
-        peakTest2ResultFrame.columnconfigure(1, weight=6)
-        peakTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest2Label.grid(row=13, sticky='w', padx=5, pady=2.5)
+        self.peakTest2ResultFrame.grid(row=14, sticky='ew', padx=5, pady=2.5)
+        self.peakTest2ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest2ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest2ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest2Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        peakTest3Label.grid(row=15, sticky='w', padx=5, pady=2.5)
-        peakTest3ResultFrame.grid(row=16, sticky='ew', padx=5, pady=2.5)
-        peakTest3ResultFrame.columnconfigure(0, weight=1)
-        peakTest3ResultFrame.columnconfigure(1, weight=6)
-        peakTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest3Label.grid(row=15, sticky='w', padx=5, pady=2.5)
+        self.peakTest3ResultFrame.grid(row=16, sticky='ew', padx=5, pady=2.5)
+        self.peakTest3ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest3ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest3ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest3Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        peakTest4Label.grid(row=17, sticky='w', padx=5, pady=2.5)
-        peakTest4ResultFrame.grid(row=18, sticky='ew', padx=5, pady=2.5)
-        peakTest4ResultFrame.columnconfigure(0, weight=1)
-        peakTest4ResultFrame.columnconfigure(1, weight=6)
-        peakTest4ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest4Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest4Label.grid(row=17, sticky='w', padx=5, pady=2.5)
+        self.peakTest4ResultFrame.grid(row=18, sticky='ew', padx=5, pady=2.5)
+        self.peakTest4ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest4ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest4ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest4Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        peakTest5Label.grid(row=19, sticky='w', padx=5, pady=2.5)
-        peakTest5ResultFrame.grid(row=20, sticky='ew', padx=5, pady=2.5)
-        peakTest5ResultFrame.columnconfigure(0, weight=1)
-        peakTest5ResultFrame.columnconfigure(1, weight=6)
-        peakTest5ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest5Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest5Label.grid(row=19, sticky='w', padx=5, pady=2.5)
+        self.peakTest5ResultFrame.grid(row=20, sticky='ew', padx=5, pady=2.5)
+        self.peakTest5ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest5ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest5ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest5Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        peakTest6Label.grid(row=21, sticky='w', padx=5, pady=2.5)
-        peakTest6ResultFrame.grid(row=22, sticky='ew', padx=5, pady=2.5)
-        peakTest6ResultFrame.columnconfigure(0, weight=1)
-        peakTest6ResultFrame.columnconfigure(1, weight=6)
-        peakTest6ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
-        peakTest6Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
+        self.peakTest6Label.grid(row=21, sticky='w', padx=5, pady=2.5)
+        self.peakTest6ResultFrame.grid(row=22, sticky='ew', padx=5, pady=2.5)
+        self.peakTest6ResultFrame.columnconfigure(0, weight=1)
+        self.peakTest6ResultFrame.columnconfigure(1, weight=6)
+        self.peakTest6ResultText.grid(row=0, column=0, sticky='e', padx=5, pady=2.5)
+        self.peakTest6Result.grid(row=0, column=1, sticky='e', padx=5, pady=2.5)
 
-        totalPeakResult.grid(row=23, sticky='e', padx=5, pady=10 )
+        self.totalPeakResult.grid(row=23, sticky='e', padx=5, pady=10 )
 
-        ttk.Separator(results_peakInfoFrame).grid(row=24, sticky='ew', pady=5)
+        ttk.Separator(self.results_peakInfoFrame).grid(row=24, sticky='ew', pady=5)
 
-        totalResult.grid(row=25, sticky='e', padx=5, pady=10 )
+        self.totalResult.grid(row=25, sticky='e', padx=5, pady=10 )
 
         #Export results
-        results_export_Frame = ttk.LabelFrame(self.results_tab, text="Export Results")
+        self.results_export_Frame = ttk.LabelFrame(self.results_tab, text="Export Results")
         
-        ttk.Label(results_export_Frame, text="Export Figure").grid(row=0, column=0, sticky='ew', padx=5)
+        ttk.Label(self.results_export_Frame, text="Export Figure").grid(row=0, column=0, sticky='ew', padx=5)
         self.results_fig_dir = tk.StringVar()
-        self.results_fig_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_fig_dir)
+        self.results_fig_dir_entry = ttk.Entry(self.results_export_Frame, textvariable=self.results_fig_dir)
         self.results_fig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
-        
         
         def filepath_results_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='png', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_results.png')
             if filepath:
                 self.results_fig_dir_entry.delete(0, 'end')
                 self.results_fig_dir_entry.insert(0, filepath)
-        
-        
+           
         def save_results_fig():
             if not self.save_ind_subplots.get():
                 self.fig_results.savefig(self.results_fig_dir.get())
@@ -2705,30 +2727,22 @@ class SPRIT_App:
                     self.fig_results.savefig(pathlib.Path(self.results_fig_dir.get()).parent.as_posix()+'/Subplot'+key+'.png',  bbox_inches=extent)
         
 
-        self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_results_fig)
+        self.browse_results_fig = ttk.Button(self.results_export_Frame, text="Browse",command=filepath_results_fig)
         self.browse_results_fig.grid(row=0, column=7, sticky='ew', padx=2.5)
         
-        self.save_results_fig = ttk.Button(results_export_Frame, text="Save",command=save_results_fig)
+        self.save_results_fig = ttk.Button(self.results_export_Frame, text="Save",command=save_results_fig)
         self.save_results_fig.grid(row=0, column=8, columnspan=2, sticky='ew', padx=2.5)
 
         #Save subplots individually
         self.save_ind_subplots = tk.BooleanVar()
         self.save_ind_subplots.set(False)
-        ttk.Checkbutton(results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=0, column=10, sticky="ew", padx=5)
-
-        self.browse_results_fig = ttk.Button(results_export_Frame, text="Update Plot",command=update_results_plot)
-        self.browse_results_fig.grid(row=1, column=10, sticky='ew', padx=(7.5, 2.5))
-
-
-        results_export_Frame.columnconfigure(1, weight=1)
-        results_export_Frame.pack(side='bottom', fill='both')
+        ttk.Checkbutton(self.results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=0, column=10, sticky="ew", padx=5)
 
         #Export Peak Report        
-        ttk.Label(results_export_Frame, text="Export Peak Report").grid(row=1, column=0, sticky='ew', padx=5)
+        ttk.Label(self.results_export_Frame, text="Export Peak Report").grid(row=1, column=0, sticky='ew', padx=5)
         self.results_report_dir = tk.StringVar()
-        self.results_report_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_report_dir)
+        self.results_report_dir_entry = ttk.Entry(self.results_export_Frame, textvariable=self.results_report_dir)
         self.results_report_dir_entry.grid(row=1, column=1, columnspan=5, sticky='ew')
-        
         
         def filepath_report_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='csv', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_peakReport.csv')
@@ -2736,20 +2750,23 @@ class SPRIT_App:
                 self.results_report_dir_entry.delete(0, 'end')
                 self.results_report_dir_entry.insert(0, filepath)
         
-        
         def save_report_fig():
             sprit_hvsr.get_report(self.hvsr_results, format='plot',  export=self.results_report_dir.get())
 
-        self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_report_fig)
+        self.browse_results_fig = ttk.Button(self.results_export_Frame, text="Browse",command=filepath_report_fig)
         self.browse_results_fig.grid(row=1, column=7, sticky='ew', padx=2.5)
         
-        self.save_results_fig = ttk.Button(results_export_Frame, text="Save",command=save_report_fig)
+        self.save_results_fig = ttk.Button(self.results_export_Frame, text="Save",command=save_report_fig)
         self.save_results_fig.grid(row=1, column=8, columnspan=2, sticky='ew', padx=2.5)
-
-        results_peakInfoFrame.pack(side='right', fill='both')
-        self.results_chartFrame.pack(side='top', expand=True, fill='both')
-        results_export_Frame.pack(side='bottom', fill='x')
+        self.results_export_Frame.columnconfigure(1, weight=1)
         
+        self.results_siteSelectFrame.grid(row=0,column=0, columnspan=8, rowspan=2, sticky='ew')
+        self.results_peakInfoFrame.grid(row=0,  column=9, columnspan=2, rowspan=8, sticky='nsew')#.pack(side='right', fill='both')
+        self.results_chartFrame.grid(row=2,     column=0, columnspan=8, rowspan=6, sticky='nsew')#.pack(side='top', expand=True, fill='both')
+        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,stick='nsew')#.pack(side='bottom', fill='x')
+        self.results_tab.columnconfigure(0, weight=1)
+        self.results_tab.rowconfigure(2, weight=1)
+
         # Add tabs to tab control
         self.tab_control.add(self.results_tab, text="Results")
 
