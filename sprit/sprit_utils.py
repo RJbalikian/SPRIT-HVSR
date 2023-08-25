@@ -8,49 +8,10 @@ import zoneinfo
 
 import numpy as np
 
-import sprit
+from sprit import sprit_hvsr
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-
-#Decorator that catches errors and warnings (to be modified later for gui)
-def catch_errors(func):
-    # use functools.wraps to preserve the original function's metadata
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # use the global keyword to access the error_message and error_category variables
-        global error_message
-        global error_category
-        # use a try-except block to catch any exceptions
-        try:
-            # call the original function with the given arguments
-            result = func(*args, **kwargs)
-        except Exception as e:
-            # assign the exception message to the error_message variable
-            error_message = str(e)
-            # assign the exception class name to the error_category variable
-            error_category = type(e).__name__
-            # return the error message and category as the result
-            result = f'[ERROR]\n{error_category}: {error_message}'
-
-        # use a context manager to catch any warnings
-        with warnings.catch_warnings(record=True) as w:
-            # filter all warnings
-            warnings.simplefilter('always')
-            # check if any warnings were recorded
-            if w:
-                # loop through the warnings
-                for warning in w:
-                    # assign the warning message to the error_message variable
-                    error_message = str(warning.message)
-                    # assign the warning class name to the error_category variable
-                    error_category = type(warning.message).__name__
-                    # append the warning message and category to the result
-                    result += f'[WARNING]\n{error_category}: {error_message}'
-        # return the result of the function or the error/warning messages and categories
-        return result
-    # return the wrapper function
-    return wrapper
 
 #Get check mark
 def check_mark(incolor=False, interminal=False):
@@ -307,12 +268,12 @@ def has_required_channels(stream):
     # Check if Z, E, and N channels are present
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
-#Make input data (dict) into sprit class
+#Make input data (dict) into sprit_hvsr class
 def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit.HVSRData, sprit.HVSRBatch)):
+    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         output_class = input_data
     else:
-        output_class = sprit.HVSRData(input_data)
+        output_class = sprit_hvsr.HVSRData(input_data)
     if verbose:
         print('Made it classy | {} --> {}'.format(type(input_data), type(output_class)))
     return output_class

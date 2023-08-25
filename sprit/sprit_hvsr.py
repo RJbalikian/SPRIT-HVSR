@@ -21,7 +21,8 @@ import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
 
-import sprit_utils
+from sprit import sprit_utils
+
 
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
@@ -62,7 +63,7 @@ class HVSRBatch:
         returnDict = {}
         for sitename in self:
             returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
-        return returnDict[sitename]
+        return returnDict
     
     def __iter__(self):
         return iter(self._batch_dict.keys())
@@ -98,7 +99,7 @@ class HVSRData:
     def __getitem__(self, key):
         return getattr(self, key)
 
-    #METHODS (mostly reflect dictionary methods)
+    #METHODS (many reflect dictionary methods)
     def keys(self):
         keyList = []
         for k in dir(self):
@@ -113,6 +114,12 @@ class HVSRData:
         return HVSRData(copy.copy(self.params))
 
     def plot(self, **kwargs):
+        """Function to plot data, wrapper of sprit.hvplot()
+
+        Returns
+        -------
+        matplotlib.Figure (if return_fig=True)
+        """
         return hvplot(self, **kwargs)
         
 
@@ -182,6 +189,33 @@ class HVSRData:
         if not isinstance(value, dict):
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
+
+
+#Launch the tkinter gui
+def gui():
+    """Function to open a window with a graphical user interface (gui)
+    
+    No parameters, no returns; just opens the gui window.
+    """
+    import pkg_resources
+    #guiPath = pathlib.Path(os.path.realpath(__file__))
+    #print(guiPath.joinpath('gui/tkgui.py').as_posix())
+    from sprit_gui import SPRIT_App
+    import tkinter as tk
+
+    def on_gui_closing():
+        plt.close('all')
+        gui_root.quit()
+        gui_root.destroy()
+
+    gui_root = tk.Tk()
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
+    gui_root.iconbitmap(icon_path)
+    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+
+    gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
+    gui_root.mainloop() #Run the main loop
+
 
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
@@ -498,7 +532,10 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         except:
             print('Read or source error')
 
-    dataIN = rawDataIN.copy()
+    try:
+        dataIN = rawDataIN.copy()
+    except:
+        raise RuntimeError('Data not fetched. Check input parameters.')
     
     #Trim and save data as specified
     if not trim_dir:
@@ -858,31 +895,6 @@ def get_report(hvsr_results, export=None, report_format='print', plot_type='HVSR
                 return hvsr_results
 
     return
-
-#Launch the tkinter gui
-def gui():
-    """Function to open a window with a graphical user interface (gui)
-    
-    No parameters, no returns; just opens the gui window.
-    """
-    import pkg_resources
-    #guiPath = pathlib.Path(os.path.realpath(__file__))
-    #print(guiPath.joinpath('gui/tkgui.py').as_posix())
-    from sprit.sprit_gui import SPRIT_App
-    import tkinter as tk
-
-    def on_gui_closing():
-        plt.close('all')
-        gui_root.quit()
-        gui_root.destroy()
-
-    gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sprit_icon_alpha.ico'))
-    gui_root.iconbitmap(icon_path)
-    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
-
-    gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
-    gui_root.mainloop() #Run the main loop
 
 #Main function for plotting results
 def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
@@ -2425,7 +2437,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                             fileList.append(c)
 
             if len(fileList) !=3:
-                warnings.warn('3 channels needed! {} found.'.format(len(folderPathList)), 1)
+                warnings.warn('3 channels needed! {} found.'.format(len(folderPathList)), UserWarning)
             else:
                 fileList.sort(reverse=True) # Puts z channel first
                 folderPathList.sort(reverse=True)
@@ -2433,13 +2445,20 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                     print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
 
             if len(fileList) == 0:
-                warnings.warn('No file found for specified parameters. The following days/files exist for specified year in this directory')
+
                 doyList = []
+                printList= []
                 for j, folder in enumerate(folderPathList):
                     for i, file in enumerate(folder.iterdir()):
                         if j ==0:
                             doyList.append(str(year) + ' ' + str(file.name[-3:]))
-                            print(datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d'), '| Day of year:' ,file.name[-3:])
+                            printList.append(f"{datetime.datetime.strptime(doyList[i], '%Y %j').strftime('%b %d')} | Day of year: {file.name[-3:]}")
+                if len(printList) == 0:
+                    warnings.warn('No files found matching Raspberry Shake data structure or files in specified directory.')
+                else:
+                    warnings.warn('No file found for specified date. The following days/files exist for specified year in this directory')
+                    for p in printList:
+                        print('\t',p)
                 return None
             
             traceList = []

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>sprit.sprit API documentation</title>
+<title>sprit.sprit_hvsr API documentation</title>
 <meta name="description" content="This module contains all the functions needed to run the HVSR analysis" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>sprit.sprit</code></h1>
+<h1 class="title">Module <code>sprit.sprit_hvsr</code></h1>
 </header>
 <section id="section-intro">
 <p>This module contains all the functions needed to run the HVSR analysis</p>
@@ -50,7 +50,8 @@ import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
 
-import sprit.sprit_utils as sprit_utils
+from sprit import sprit_utils
+
 
 #Main variables
 greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
@@ -76,12 +77,23 @@ class HVSRBatch:
             
         self.sites = list(self._batch_dict.keys())
 
+    #METHODS
     def keys(self):
         return self.batch_dict.keys()
 
     def items(self):
         return self.batch_dict.items()
 
+    def copy(self):
+        return HVSRBatch(copy.copy(self._batch_dict))
+
+    #Method wrapper of sprit.hvplot function
+    def plot(self, **kwargs):
+        returnDict = {}
+        for sitename in self:
+            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+        return returnDict
+    
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -116,7 +128,7 @@ class HVSRData:
     def __getitem__(self, key):
         return getattr(self, key)
 
-    #METHODS (mostly reflect dictionary methods)
+    #METHODS (many reflect dictionary methods)
     def keys(self):
         keyList = []
         for k in dir(self):
@@ -129,6 +141,16 @@ class HVSRData:
 
     def copy(self):
         return HVSRData(copy.copy(self.params))
+
+    def plot(self, **kwargs):
+        &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+
+        Returns
+        -------
+        matplotlib.Figure (if return_fig=True)
+        &#34;&#34;&#34;
+        return hvplot(self, **kwargs)
+        
 
     #ATTRIBUTES
     #params
@@ -196,6 +218,33 @@ class HVSRData:
         if not isinstance(value, dict):
             raise ValueError(&#34;ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())&#34;)                  
         self._ppsds=value
+
+
+#Launch the tkinter gui
+def gui():
+    &#34;&#34;&#34;Function to open a window with a graphical user interface (gui)
+    
+    No parameters, no returns; just opens the gui window.
+    &#34;&#34;&#34;
+    import pkg_resources
+    #guiPath = pathlib.Path(os.path.realpath(__file__))
+    #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
+    from sprit_gui import SPRIT_App
+    import tkinter as tk
+
+    def on_gui_closing():
+        plt.close(&#39;all&#39;)
+        gui_root.quit()
+        gui_root.destroy()
+
+    gui_root = tk.Tk()
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
+    gui_root.iconbitmap(icon_path)
+    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+
+    gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
+    gui_root.mainloop() #Run the main loop
+
 
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
@@ -512,7 +561,10 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
         except:
             print(&#39;Read or source error&#39;)
 
-    dataIN = rawDataIN.copy()
+    try:
+        dataIN = rawDataIN.copy()
+    except:
+        raise RuntimeError(&#39;Data not fetched. Check input parameters.&#39;)
     
     #Trim and save data as specified
     if not trim_dir:
@@ -872,31 +924,6 @@ def get_report(hvsr_results, export=None, report_format=&#39;print&#39;, plot_ty
                 return hvsr_results
 
     return
-
-#Launch the tkinter gui
-def gui():
-    &#34;&#34;&#34;Function to open a window with a graphical user interface (gui)
-    
-    No parameters, no returns; just opens the gui window.
-    &#34;&#34;&#34;
-    import pkg_resources
-    #guiPath = pathlib.Path(os.path.realpath(__file__))
-    #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
-    from sprit.sprit_gui import App
-    import tkinter as tk
-
-    def on_gui_closing():
-        plt.close(&#39;all&#39;)
-        gui_root.quit()
-        gui_root.destroy()
-
-    gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sprit_icon_alpha.ico&#39;))
-    gui_root.iconbitmap(icon_path)
-    App(master=gui_root) #Open the app with a tk.Tk root
-
-    gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
-    gui_root.mainloop() #Run the main loop
 
 #Main function for plotting results
 def hvplot(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True, clear_fig=True,**kwargs):
@@ -1658,7 +1685,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
         output = HVSRBatch(hvsr_out)
         print(hvsr_out[site_name].keys())
         return output
-    elif isinstance(input, HVSRData) or isinstance(input, dict):
+    elif isinstance(input, (HVSRData, dict)):
         if &#39;stream_edited&#39; in input.keys():
             inStream = input[&#39;stream_edited&#39;].copy()
         else:
@@ -1672,7 +1699,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
-        if isinstance(output, dict):
+        if isinstance(output, (HVSRData, dict)):
             if &#39;xwindows_out&#39; in output.keys():
                 pass
             else:
@@ -1684,7 +1711,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
                 output[&#39;stream_edited&#39;] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
-        elif type(output) is dict:
+        elif isinstance(output, (HVSRData, dict)):
             pass
         else:
             print(&#39;ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.&#39;)
@@ -1707,7 +1734,7 @@ def remove_noise(input, kind=&#39;auto&#39;, sat_percent=0.995, noise_percent=0.
         return
 
     #Add output
-    if isinstance(input, HVSRData) or isinstance(input, dict):
+    if isinstance(output, (HVSRData, dict)):
         output[&#39;stream_edited&#39;] = outStream
         output[&#39;stream&#39;] = input[&#39;stream&#39;]
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
@@ -2439,7 +2466,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                             fileList.append(c)
 
             if len(fileList) !=3:
-                warnings.warn(&#39;3 channels needed! {} found.&#39;.format(len(folderPathList)), 1)
+                warnings.warn(&#39;3 channels needed! {} found.&#39;.format(len(folderPathList)), UserWarning)
             else:
                 fileList.sort(reverse=True) # Puts z channel first
                 folderPathList.sort(reverse=True)
@@ -2447,13 +2474,20 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                     print(&#39;Reading files: \n\t{}\n\t{}\n\t{}&#39;.format(fileList[0].name, fileList[1].name, fileList[2].name))
 
             if len(fileList) == 0:
-                warnings.warn(&#39;No file found for specified parameters. The following days/files exist for specified year in this directory&#39;)
+
                 doyList = []
+                printList= []
                 for j, folder in enumerate(folderPathList):
                     for i, file in enumerate(folder.iterdir()):
                         if j ==0:
                             doyList.append(str(year) + &#39; &#39; + str(file.name[-3:]))
-                            print(datetime.datetime.strptime(doyList[i], &#39;%Y %j&#39;).strftime(&#39;%b %d&#39;), &#39;| Day of year:&#39; ,file.name[-3:])
+                            printList.append(f&#34;{datetime.datetime.strptime(doyList[i], &#39;%Y %j&#39;).strftime(&#39;%b %d&#39;)} | Day of year: {file.name[-3:]}&#34;)
+                if len(printList) == 0:
+                    warnings.warn(&#39;No files found matching Raspberry Shake data structure or files in specified directory.&#39;)
+                else:
+                    warnings.warn(&#39;No file found for specified date. The following days/files exist for specified year in this directory&#39;)
+                    for p in printList:
+                        print(&#39;\t&#39;,p)
                 return None
             
             traceList = []
@@ -3047,7 +3081,7 @@ def _select_windows(input):
     global fig
     global ax
 
-    if type(input) is dict:
+    if isinstance(input, (HVSRData, dict)):
         if &#39;hvsr_curve&#39; in input.keys():
             fig, ax = hvplot(hvsr_data=input, plot_type=&#39;spec&#39;, returnfig=True, cmap=&#39;turbo&#39;)
         else:
@@ -3094,11 +3128,11 @@ def _on_fig_close(event):
 
 #Shows windows with None on input plot
 def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format=&#39;matplotlib&#39;, keep_line_artists=True, time_type=&#39;matplotlib&#39;):
-    &#34;&#34;&#34;This function is solely for getting Nones from masked arrays and plotting them as windows&#34;&#34;&#34;
+    &#34;&#34;&#34;This function is for getting Nones from masked arrays and plotting them as windows&#34;&#34;&#34;
     if fig is None and ax is None:
         fig, ax = plt.subplots()
 
-    if type(input) is dict:
+    if isinstance(input, (dict, HVSRData)):
         if &#39;stream_edited&#39; in input.keys():
             stream = input[&#39;stream_edited&#39;].copy()
         else:
@@ -4767,7 +4801,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="sprit.sprit.batch_data_read"><code class="name flex">
+<dt id="sprit.sprit_hvsr.batch_data_read"><code class="name flex">
 <span>def <span class="ident">batch_data_read</span></span>(<span>input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs)</span>
 </code></dt>
 <dd>
@@ -4970,7 +5004,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return hvsr_metaDict</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.check_peaks"><code class="name flex">
+<dt id="sprit.sprit_hvsr.check_peaks"><code class="name flex">
 <span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False)</span>
 </code></dt>
 <dd>
@@ -5125,7 +5159,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return hvsr_data</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.fetch_data"><code class="name flex">
+<dt id="sprit.sprit_hvsr.fetch_data"><code class="name flex">
 <span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
@@ -5306,7 +5340,10 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         except:
             print(&#39;Read or source error&#39;)
 
-    dataIN = rawDataIN.copy()
+    try:
+        dataIN = rawDataIN.copy()
+    except:
+        raise RuntimeError(&#39;Data not fetched. Check input parameters.&#39;)
     
     #Trim and save data as specified
     if not trim_dir:
@@ -5336,7 +5373,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
     return params</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.generate_ppsds"><code class="name flex">
+<dt id="sprit.sprit_hvsr.generate_ppsds"><code class="name flex">
 <span>def <span class="ident">generate_ppsds</span></span>(<span>params, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs)</span>
 </code></dt>
 <dd>
@@ -5484,7 +5521,7 @@ If the following keywords are not specified, their defaults are amended in this 
     return params</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.get_metadata"><code class="name flex">
+<dt id="sprit.sprit_hvsr.get_metadata"><code class="name flex">
 <span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='', update_metadata=True, source=None)</span>
 </code></dt>
 <dd>
@@ -5536,7 +5573,7 @@ If not specified, does not write file</dd>
     return params</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.get_report"><code class="name flex">
+<dt id="sprit.sprit_hvsr.get_report"><code class="name flex">
 <span>def <span class="ident">get_report</span></span>(<span>hvsr_results, export=None, report_format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, save_figs=None)</span>
 </code></dt>
 <dd>
@@ -5753,7 +5790,7 @@ For docx (not yet implemented), the following are also included:
     return</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.gui"><code class="name flex">
+<dt id="sprit.sprit_hvsr.gui"><code class="name flex">
 <span>def <span class="ident">gui</span></span>(<span>)</span>
 </code></dt>
 <dd>
@@ -5771,7 +5808,7 @@ For docx (not yet implemented), the following are also included:
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
-    from sprit.sprit_gui import App
+    from sprit_gui import SPRIT_App
     import tkinter as tk
 
     def on_gui_closing():
@@ -5780,15 +5817,15 @@ For docx (not yet implemented), the following are also included:
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sprit_icon_alpha.ico&#39;))
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
     gui_root.iconbitmap(icon_path)
-    App(master=gui_root) #Open the app with a tk.Tk root
+    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
     gui_root.mainloop() #Run the main loop</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.hvplot"><code class="name flex">
+<dt id="sprit.sprit_hvsr.hvplot"><code class="name flex">
 <span>def <span class="ident">hvplot</span></span>(<span>hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, clear_fig=True, **kwargs)</span>
 </code></dt>
 <dd>
@@ -5979,8 +6016,8 @@ Keyword arguments for matplotlib.pyplot</p>
     return</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-22', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
+<dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-25', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -6241,7 +6278,7 @@ This is necessary for Raspberry Shake data.</dd>
     return inputParamDict</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.plot_stream"><code class="name flex">
+<dt id="sprit.sprit_hvsr.plot_stream"><code class="name flex">
 <span>def <span class="ident">plot_stream</span></span>(<span>stream, params, fig=None, axes=None, return_fig=True)</span>
 </code></dt>
 <dd>
@@ -6356,7 +6393,7 @@ This is necessary for Raspberry Shake data.</dd>
     return                 </code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.process_hvsr"><code class="name flex">
+<dt id="sprit.sprit_hvsr.process_hvsr"><code class="name flex">
 <span>def <span class="ident">process_hvsr</span></span>(<span>params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False)</span>
 </code></dt>
 <dd>
@@ -6669,7 +6706,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     return hvsr_out</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.remove_noise"><code class="name flex">
+<dt id="sprit.sprit_hvsr.remove_noise"><code class="name flex">
 <span>def <span class="ident">remove_noise</span></span>(<span>input, kind='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False)</span>
 </code></dt>
 <dd>
@@ -6767,7 +6804,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         output = HVSRBatch(hvsr_out)
         print(hvsr_out[site_name].keys())
         return output
-    elif isinstance(input, HVSRData) or isinstance(input, dict):
+    elif isinstance(input, (HVSRData, dict)):
         if &#39;stream_edited&#39; in input.keys():
             inStream = input[&#39;stream_edited&#39;].copy()
         else:
@@ -6781,7 +6818,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
-        if isinstance(output, dict):
+        if isinstance(output, (HVSRData, dict)):
             if &#39;xwindows_out&#39; in output.keys():
                 pass
             else:
@@ -6793,7 +6830,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
                 output[&#39;stream_edited&#39;] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
-        elif type(output) is dict:
+        elif isinstance(output, (HVSRData, dict)):
             pass
         else:
             print(&#39;ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.&#39;)
@@ -6816,7 +6853,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         return
 
     #Add output
-    if isinstance(input, HVSRData) or isinstance(input, dict):
+    if isinstance(output, (HVSRData, dict)):
         output[&#39;stream_edited&#39;] = outStream
         output[&#39;stream&#39;] = input[&#39;stream&#39;]
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
@@ -6826,7 +6863,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     return output</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.remove_outlier_curves"><code class="name flex">
+<dt id="sprit.sprit_hvsr.remove_outlier_curves"><code class="name flex">
 <span>def <span class="ident">remove_outlier_curves</span></span>(<span>params, outlier_std=3, ppsd_length=60)</span>
 </code></dt>
 <dd>
@@ -6918,7 +6955,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
     return params</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.run"><code class="name flex">
+<dt id="sprit.sprit_hvsr.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plot_type=False, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
@@ -6968,7 +7005,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
     return hvsr_results</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.test_class"><code class="name flex">
+<dt id="sprit.sprit_hvsr.test_class"><code class="name flex">
 <span>def <span class="ident">test_class</span></span>(<span>**input_dict)</span>
 </code></dt>
 <dd>
@@ -6987,7 +7024,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
     return hvsrdata</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.test_function"><code class="name flex">
+<dt id="sprit.sprit_hvsr.test_function"><code class="name flex">
 <span>def <span class="ident">test_function</span></span>(<span>)</span>
 </code></dt>
 <dd>
@@ -7005,7 +7042,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="sprit.sprit.HVSRBatch"><code class="flex name class">
+<dt id="sprit.sprit_hvsr.HVSRBatch"><code class="flex name class">
 <span>class <span class="ident">HVSRBatch</span></span>
 <span>(</span><span>sites_dict)</span>
 </code></dt>
@@ -7028,12 +7065,23 @@ This averages over the entire curve so that curves with very abberant data (ofte
             
         self.sites = list(self._batch_dict.keys())
 
+    #METHODS
     def keys(self):
         return self.batch_dict.keys()
 
     def items(self):
         return self.batch_dict.items()
 
+    def copy(self):
+        return HVSRBatch(copy.copy(self._batch_dict))
+
+    #Method wrapper of sprit.hvplot function
+    def plot(self, **kwargs):
+        returnDict = {}
+        for sitename in self:
+            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+        return returnDict
+    
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -7045,7 +7093,20 @@ This averages over the entire curve so that curves with very abberant data (ofte
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="sprit.sprit.HVSRBatch.items"><code class="name flex">
+<dt id="sprit.sprit_hvsr.HVSRBatch.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy(self):
+    return HVSRBatch(copy.copy(self._batch_dict))</code></pre>
+</details>
+</dd>
+<dt id="sprit.sprit_hvsr.HVSRBatch.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -7058,7 +7119,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
     return self.batch_dict.items()</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRBatch.keys"><code class="name flex">
+<dt id="sprit.sprit_hvsr.HVSRBatch.keys"><code class="name flex">
 <span>def <span class="ident">keys</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -7071,9 +7132,25 @@ This averages over the entire curve so that curves with very abberant data (ofte
     return self.batch_dict.keys()</code></pre>
 </details>
 </dd>
+<dt id="sprit.sprit_hvsr.HVSRBatch.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, **kwargs):
+    returnDict = {}
+    for sitename in self:
+        returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+    return returnDict</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
-<dt id="sprit.sprit.HVSRData"><code class="flex name class">
+<dt id="sprit.sprit_hvsr.HVSRData"><code class="flex name class">
 <span>class <span class="ident">HVSRData</span></span>
 <span>(</span><span>params)</span>
 </code></dt>
@@ -7107,7 +7184,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
     def __getitem__(self, key):
         return getattr(self, key)
 
-    #METHODS (mostly reflect dictionary methods)
+    #METHODS (many reflect dictionary methods)
     def keys(self):
         keyList = []
         for k in dir(self):
@@ -7120,6 +7197,16 @@ This averages over the entire curve so that curves with very abberant data (ofte
 
     def copy(self):
         return HVSRData(copy.copy(self.params))
+
+    def plot(self, **kwargs):
+        &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+
+        Returns
+        -------
+        matplotlib.Figure (if return_fig=True)
+        &#34;&#34;&#34;
+        return hvplot(self, **kwargs)
+        
 
     #ATTRIBUTES
     #params
@@ -7190,7 +7277,7 @@ This averages over the entire curve so that curves with very abberant data (ofte
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="sprit.sprit.HVSRData.batch"><code class="name">var <span class="ident">batch</span></code></dt>
+<dt id="sprit.sprit_hvsr.HVSRData.batch"><code class="name">var <span class="ident">batch</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -7202,7 +7289,7 @@ def batch(self):
     return self._batch</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.datastream"><code class="name">var <span class="ident">datastream</span></code></dt>
+<dt id="sprit.sprit_hvsr.HVSRData.datastream"><code class="name">var <span class="ident">datastream</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -7214,7 +7301,7 @@ def datastream(self):
     return self._datastream</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.params"><code class="name">var <span class="ident">params</span></code></dt>
+<dt id="sprit.sprit_hvsr.HVSRData.params"><code class="name">var <span class="ident">params</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -7226,7 +7313,7 @@ def params(self):
     return self._params</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.ppsds"><code class="name">var <span class="ident">ppsds</span></code></dt>
+<dt id="sprit.sprit_hvsr.HVSRData.ppsds"><code class="name">var <span class="ident">ppsds</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -7238,7 +7325,7 @@ def ppsds(self):
     return self._ppsds</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.ppsds_obspy"><code class="name">var <span class="ident">ppsds_obspy</span></code></dt>
+<dt id="sprit.sprit_hvsr.HVSRData.ppsds_obspy"><code class="name">var <span class="ident">ppsds_obspy</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -7253,7 +7340,7 @@ def ppsds_obspy(self):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="sprit.sprit.HVSRData.copy"><code class="name flex">
+<dt id="sprit.sprit_hvsr.HVSRData.copy"><code class="name flex">
 <span>def <span class="ident">copy</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -7266,7 +7353,7 @@ def ppsds_obspy(self):
     return HVSRData(copy.copy(self.params))</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.items"><code class="name flex">
+<dt id="sprit.sprit_hvsr.HVSRData.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -7279,7 +7366,7 @@ def ppsds_obspy(self):
     return self.params.items()</code></pre>
 </details>
 </dd>
-<dt id="sprit.sprit.HVSRData.keys"><code class="name flex">
+<dt id="sprit.sprit_hvsr.HVSRData.keys"><code class="name flex">
 <span>def <span class="ident">keys</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -7294,6 +7381,30 @@ def ppsds_obspy(self):
         if not k.startswith(&#39;_&#39;):
             keyList.append(k)
     return keyList</code></pre>
+</details>
+</dd>
+<dt id="sprit.sprit_hvsr.HVSRData.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Function to plot data, wrapper of sprit.hvplot()</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>matplotlib.Figure (if return_fig=True)</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, **kwargs):
+    &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+
+    Returns
+    -------
+    matplotlib.Figure (if return_fig=True)
+    &#34;&#34;&#34;
+    return hvplot(self, **kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -7314,44 +7425,47 @@ def ppsds_obspy(self):
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="sprit.sprit.batch_data_read" href="#sprit.sprit.batch_data_read">batch_data_read</a></code></li>
-<li><code><a title="sprit.sprit.check_peaks" href="#sprit.sprit.check_peaks">check_peaks</a></code></li>
-<li><code><a title="sprit.sprit.fetch_data" href="#sprit.sprit.fetch_data">fetch_data</a></code></li>
-<li><code><a title="sprit.sprit.generate_ppsds" href="#sprit.sprit.generate_ppsds">generate_ppsds</a></code></li>
-<li><code><a title="sprit.sprit.get_metadata" href="#sprit.sprit.get_metadata">get_metadata</a></code></li>
-<li><code><a title="sprit.sprit.get_report" href="#sprit.sprit.get_report">get_report</a></code></li>
-<li><code><a title="sprit.sprit.gui" href="#sprit.sprit.gui">gui</a></code></li>
-<li><code><a title="sprit.sprit.hvplot" href="#sprit.sprit.hvplot">hvplot</a></code></li>
-<li><code><a title="sprit.sprit.input_params" href="#sprit.sprit.input_params">input_params</a></code></li>
-<li><code><a title="sprit.sprit.plot_stream" href="#sprit.sprit.plot_stream">plot_stream</a></code></li>
-<li><code><a title="sprit.sprit.process_hvsr" href="#sprit.sprit.process_hvsr">process_hvsr</a></code></li>
-<li><code><a title="sprit.sprit.remove_noise" href="#sprit.sprit.remove_noise">remove_noise</a></code></li>
-<li><code><a title="sprit.sprit.remove_outlier_curves" href="#sprit.sprit.remove_outlier_curves">remove_outlier_curves</a></code></li>
-<li><code><a title="sprit.sprit.run" href="#sprit.sprit.run">run</a></code></li>
-<li><code><a title="sprit.sprit.test_class" href="#sprit.sprit.test_class">test_class</a></code></li>
-<li><code><a title="sprit.sprit.test_function" href="#sprit.sprit.test_function">test_function</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.batch_data_read" href="#sprit.sprit_hvsr.batch_data_read">batch_data_read</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.check_peaks" href="#sprit.sprit_hvsr.check_peaks">check_peaks</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.fetch_data" href="#sprit.sprit_hvsr.fetch_data">fetch_data</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.generate_ppsds" href="#sprit.sprit_hvsr.generate_ppsds">generate_ppsds</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.get_metadata" href="#sprit.sprit_hvsr.get_metadata">get_metadata</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.gui" href="#sprit.sprit_hvsr.gui">gui</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.hvplot" href="#sprit.sprit_hvsr.hvplot">hvplot</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.input_params" href="#sprit.sprit_hvsr.input_params">input_params</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.plot_stream" href="#sprit.sprit_hvsr.plot_stream">plot_stream</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.process_hvsr" href="#sprit.sprit_hvsr.process_hvsr">process_hvsr</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.remove_noise" href="#sprit.sprit_hvsr.remove_noise">remove_noise</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.run" href="#sprit.sprit_hvsr.run">run</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.test_class" href="#sprit.sprit_hvsr.test_class">test_class</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.test_function" href="#sprit.sprit_hvsr.test_function">test_function</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="sprit.sprit.HVSRBatch" href="#sprit.sprit.HVSRBatch">HVSRBatch</a></code></h4>
+<h4><code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a></code></h4>
 <ul class="">
-<li><code><a title="sprit.sprit.HVSRBatch.items" href="#sprit.sprit.HVSRBatch.items">items</a></code></li>
-<li><code><a title="sprit.sprit.HVSRBatch.keys" href="#sprit.sprit.HVSRBatch.keys">keys</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.copy" href="#sprit.sprit_hvsr.HVSRBatch.copy">copy</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.items" href="#sprit.sprit_hvsr.HVSRBatch.items">items</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.keys" href="#sprit.sprit_hvsr.HVSRBatch.keys">keys</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.plot" href="#sprit.sprit_hvsr.HVSRBatch.plot">plot</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="sprit.sprit.HVSRData" href="#sprit.sprit.HVSRData">HVSRData</a></code></h4>
+<h4><code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code></h4>
 <ul class="two-column">
-<li><code><a title="sprit.sprit.HVSRData.batch" href="#sprit.sprit.HVSRData.batch">batch</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.copy" href="#sprit.sprit.HVSRData.copy">copy</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.datastream" href="#sprit.sprit.HVSRData.datastream">datastream</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.items" href="#sprit.sprit.HVSRData.items">items</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.keys" href="#sprit.sprit.HVSRData.keys">keys</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.params" href="#sprit.sprit.HVSRData.params">params</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.ppsds" href="#sprit.sprit.HVSRData.ppsds">ppsds</a></code></li>
-<li><code><a title="sprit.sprit.HVSRData.ppsds_obspy" href="#sprit.sprit.HVSRData.ppsds_obspy">ppsds_obspy</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.batch" href="#sprit.sprit_hvsr.HVSRData.batch">batch</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.copy" href="#sprit.sprit_hvsr.HVSRData.copy">copy</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.datastream" href="#sprit.sprit_hvsr.HVSRData.datastream">datastream</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.items" href="#sprit.sprit_hvsr.HVSRData.items">items</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.keys" href="#sprit.sprit_hvsr.HVSRData.keys">keys</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.params" href="#sprit.sprit_hvsr.HVSRData.params">params</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.plot" href="#sprit.sprit_hvsr.HVSRData.plot">plot</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.ppsds" href="#sprit.sprit_hvsr.HVSRData.ppsds">ppsds</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.ppsds_obspy" href="#sprit.sprit_hvsr.HVSRData.ppsds_obspy">ppsds_obspy</a></code></li>
 </ul>
 </li>
 </ul>

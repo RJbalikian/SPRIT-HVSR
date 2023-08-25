@@ -27,12 +27,16 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import datetime
+import functools
+import os
 import pathlib
 import sys
 import warnings
 import zoneinfo
 
-import sprit.sprit
+import numpy as np
+
+from sprit import sprit_hvsr
 
 greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
 channel_order = {&#39;Z&#39;: 0, &#39;1&#39;: 1, &#39;N&#39;: 1, &#39;2&#39;: 2, &#39;E&#39;: 2}
@@ -292,12 +296,12 @@ def has_required_channels(stream):
     # Check if Z, E, and N channels are present
     return {&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;}.issubset(channel_set)
 
-#Make input data (dict) into sprit class
+#Make input data (dict) into sprit_hvsr class
 def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit.HVSRData, sprit.HVSRBatch)):
+    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         output_class = input_data
     else:
-        output_class = sprit.HVSRData(input_data)
+        output_class = sprit_hvsr.HVSRData(input_data)
     if verbose:
         print(&#39;Made it classy | {} --&gt; {}&#39;.format(type(input_data), type(output_class)))
     return output_class
@@ -765,10 +769,10 @@ If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit.HVSRData, sprit.HVSRBatch)):
+    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         output_class = input_data
     else:
-        output_class = sprit.HVSRData(input_data)
+        output_class = sprit_hvsr.HVSRData(input_data)
     if verbose:
         print(&#39;Made it classy | {} --&gt; {}&#39;.format(type(input_data), type(output_class)))
     return output_class</code></pre>

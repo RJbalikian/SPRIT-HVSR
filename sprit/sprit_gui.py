@@ -7,29 +7,110 @@ Na
 """
 
 import datetime
+import functools
 import os
 import pathlib
 import pkg_resources
+import sys
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter.simpledialog import askinteger
+from tkinter import messagebox
+import traceback
+import warnings
 import zoneinfo
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import MouseButton, MouseEvent
-
-matplotlib.use('TkAgg')
 import numpy as np
-import sprit_utils
-import sprit
+matplotlib.use('TkAgg')
+
+from sprit import sprit_utils
+from sprit import sprit_hvsr
+
+#Decorator that catches errors and warnings (to be modified later for gui)
+def catch_errors(func):
+    #Define a local function to get a list of warnings that we'll use in the output
+    def get_warning_msg_list(w):
+        messageList = []
+        #Collect warnings that happened before we got to the error
+        if w:
+            hasWarnings = True
+            for warning in w:
+                warning_category = type(warning.message).__name__.title().replace('warning','Warning')
+                warning_message = str(warning.message)
+                # append the warning category and message to messageList so we get all warnings
+                messageList.append(f'{warning_category}: {warning_message}')
+        return messageList
+    
+    # use functools.wraps to preserve the original function's metadata
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = None
+        # use the global keyword to access the error_message and error_category variables
+        global error_message
+        global error_category
+
+        messageList = []
+        hasWarnings = False
+        # use a try-except block to catch any exceptions
+        try:
+            # use a context manager to catch any warnings
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                # call the original function with the given arguments
+                result = func(*args, **kwargs)
+                
+                #Get message list, [] if no messages, doesn't run at all if Error/exception in func
+                messageList = get_warning_msg_list(w)
+                if messageList == []:
+                    return result
+                else:
+                    warningMessage = "WARNING:"
+                    for msg in messageList:
+                        warningMessage = "\n {}".format(msg)
+
+                    messagebox.showwarning(title='WARNINGS', message=warningMessage)
+                    
+        except Exception as e:
+            messageList = get_warning_msg_list(w)
+            
+            error_category = type(e).__name__.title().replace('error', 'Error')
+            error_message = str(e)
+
+            #Print the linenumber where error occured to terminal
+            #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            #Print the function name where the error occured
+            #print(func.__name__)
+
+            #Get message list, [] if no messages, doesn't run at all if Error/exception in func
+            warningMessageList = get_warning_msg_list(w)
+            
+            fullErrorMessage = f'PRIMARY ERROR ({error_category}): {error_message}'
+            if messageList == []:
+                pass
+            else:
+                
+                fullErrorMessage = fullErrorMessage+"\n\n  Additional Warnings along the way:"
+                for addMsg in warningMessageList:
+                    fullErrorMessage = "\n{}\n   {}".format(fullErrorMessage, addMsg)
+
+            messagebox.showerror(title=f'ERROR ({error_category})',
+                                    message=fullErrorMessage)
+                
+        # return the result of the function or the error/warning messages and categories
+        return result
+    # return the wrapper function
+    return wrapper
 
 class SPRIT_App:
     def __init__(self, master):
         self.master = master
         self.master.title("SPRIT")
+        self.params = sprit_hvsr.HVSRData({'site':''})
 
         # Set the theme
         self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-dark.tcl"))
@@ -79,59 +160,60 @@ class SPRIT_App:
                                     self.style.map('CustTLabel', {'priority':[('CustTLabel',1)]})
                                     widget.configure(style='CustTLabel')
 
-    def on_theme_select(self):
-        # Set the theme based on the selected value
-        self.style = ttk.Style()
-        
-        """An attempt to get the backgrounds right
-        def apply_to_all_children(widget, func):
-            Recursively apply a function to all child widgets of a given widget
-            children = widget.winfo_children()
-            for child in children:
-                func(child)
-                apply_to_all_children(child, func)
-            return
-
-        def change_background_color(widget):
-            if isinstance(widget, tk.Label):
-                widget.option_clear()
-                widget.configure(background=None, foreground=None)
-            return
-        
-        apply_to_all_children(self.master, change_background_color)
-        """
-        if 'forest' in self.theme_var.get():
-            if self.theme_var.get()=='forest-dark' and 'forest-dark' not in self.style.theme_names():
-                self.master.tk.call('source', self.darkthemepath)
-            elif self.theme_var.get()=='forest-light' and 'forest-light' not in self.style.theme_names():
-                self.master.tk.call('source', self.lightthemepath)            
-        self.master.tk.call("ttk::style", "theme", "use", self.theme_var.get())
-        #self.master.tk.call("ttk::setTheme", self.theme_var.get())
-
-        #self.style.theme_use(self.theme_var.get())
-        #self.master.tk.call('source', self.lightthemepath)
-        #self.style.theme_use(self.theme_var.get())
-        #self.style.configure("TLabel", background=self.style.lookup('TLabel', 'background'), foreground=self.style.lookup('TLabel', 'background'))
-
     def create_menubar(self):
         self.menubar = tk.Menu(self.master)
         self.master.config(menu=self.menubar)
         
         self.sprit_menu = tk.Menu(self.menubar, tearoff=0)
 
+        def on_theme_select():
+            # Set the theme based on the selected value
+            self.style = ttk.Style()
+            
+            """An attempt to get the backgrounds right
+            def apply_to_all_children(widget, func):
+                Recursively apply a function to all child widgets of a given widget
+                children = widget.winfo_children()
+                for child in children:
+                    func(child)
+                    apply_to_all_children(child, func)
+                return
+
+            def change_background_color(widget):
+                if isinstance(widget, tk.Label):
+                    widget.option_clear()
+                    widget.configure(background=None, foreground=None)
+                return
+            
+            apply_to_all_children(self.master, change_background_color)
+            """
+            if 'forest' in self.theme_var.get():
+                if self.theme_var.get()=='forest-dark' and 'forest-dark' not in self.style.theme_names():
+                    self.master.tk.call('source', self.darkthemepath)
+                elif self.theme_var.get()=='forest-light' and 'forest-light' not in self.style.theme_names():
+                    self.master.tk.call('source', self.lightthemepath)            
+            self.master.tk.call("ttk::style", "theme", "use", self.theme_var.get())
+            #self.master.tk.call("ttk::setTheme", self.theme_var.get())
+
+            #self.style.theme_use(self.theme_var.get())
+            #self.master.tk.call('source', self.lightthemepath)
+            #self.style.theme_use(self.theme_var.get())
+            #self.style.configure("TLabel", background=self.style.lookup('TLabel', 'background'), foreground=self.style.lookup('TLabel', 'background'))
+
         def import_parameters(self):
             filepath = filedialog.askopenfilename()
+        
         
         def export_parameters(self):
             filepath = filedialog.asksaveasfilename()
 
         self.theme_menu = tk.Menu(self.menubar, tearoff=0)
         self.theme_var = tk.StringVar(value="Default")
-        self.theme_menu.add_radiobutton(label="Default", variable=self.theme_var, value="default", command=self.on_theme_select)
-        self.theme_menu.add_radiobutton(label="Clam", variable=self.theme_var, value="clam", command=self.on_theme_select)
-        self.theme_menu.add_radiobutton(label="Alt", variable=self.theme_var, value="alt", command=self.on_theme_select)
-        self.theme_menu.add_radiobutton(label="Forest Light (buggy)", variable=self.theme_var, value="forest-light", command=self.on_theme_select)
-        self.theme_menu.add_radiobutton(label="Forest Dark (buggy)", variable=self.theme_var, value="forest-dark", command=self.on_theme_select)
+        self.theme_menu.add_radiobutton(label="Default", variable=self.theme_var, value="default", command=on_theme_select)
+        self.theme_menu.add_radiobutton(label="Clam", variable=self.theme_var, value="clam", command=on_theme_select)
+        self.theme_menu.add_radiobutton(label="Alt", variable=self.theme_var, value="alt", command=on_theme_select)
+        self.theme_menu.add_radiobutton(label="Forest Light (buggy)", variable=self.theme_var, value="forest-light", command=on_theme_select)
+        self.theme_menu.add_radiobutton(label="Forest Dark (buggy)", variable=self.theme_var, value="forest-dark", command=on_theme_select)
 
         self.sprit_menu.add_cascade(label="Theme", menu=self.theme_menu)
         self.sprit_menu.add_command(label="Import Parameters", command=import_parameters)
@@ -170,6 +252,7 @@ class SPRIT_App:
         #self.logo_label.grid(row=0, column=0)
         self.processingData = False
 
+        
         def update_input_labels(hvsr_data):
             #Update labels for data preview tab
             self.input_data_label.configure(text=self.data_filepath_entry.get() + '\n' + str(hvsr_data['stream']))
@@ -193,11 +276,8 @@ class SPRIT_App:
             return
         
         #FUNCTION TO READ DATA
+        @catch_errors
         def read_data():
-            #print('Reading {}'.format(self.data_path.get()))
-            if not self.processingData:
-                self.tab_control.select(self.preview_data_tab)
-            
             self.starttime, self.endtime = get_times()
 
 
@@ -211,16 +291,16 @@ class SPRIT_App:
                     self.fpath = self.fpath[0]
                     batchType = 'table'
 
-                self.params = sprit.batch_data_read(input_data=self.fpath, batch_type=batchType)
+                self.params = sprit_hvsr.batch_data_read(input_data=self.fpath, batch_type=batchType)
                 self.hvsr_data = self.params
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
 
                 #Plot data in data preview tab
-                self.fig_pre, self.ax_pre = sprit.plot_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 #Plot data in noise preview tab
-                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows(firstSite)
 
@@ -232,7 +312,7 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
-                self.params = sprit.input_params( datapath=self.fpath,
+                self.params = sprit_hvsr.input_params( datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
                                     network=self.network.get(), 
@@ -257,7 +337,7 @@ class SPRIT_App:
                 else:
                     trimDir=self.trim_dir.get()
 
-                self.hvsr_data = sprit.fetch_data(params=self.params,
+                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(), 
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
@@ -268,27 +348,28 @@ class SPRIT_App:
 
 
                 #Plot data in data preview tab
-                self.fig_pre, self.ax_pre = sprit.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 #Plot data in noise preview tab
-                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows(self.hvsr_data)
 
             self.data_read = True
+            if not self.processingData:
+                self.tab_control.select(self.preview_data_tab)
 
         #FUNCTION TO PROCESS DATA
+        @catch_errors
         def process_data():
             self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
             
-            self.tab_control.select(self.results_tab)
-
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
    
-            self.hvsr_data = sprit.generate_ppsds(params=self.hvsr_data, 
+            self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
                                                ppsd_length=self.ppsd_length.get(), 
                                                overlap=self.overlap.get(), 
                                                period_step_octaves=self.perStepOct.get(), 
@@ -301,7 +382,7 @@ class SPRIT_App:
                                                special_handling=special_handling
                                                )
             
-            self.hvsr_results = sprit.process_hvsr(params=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
@@ -310,7 +391,7 @@ class SPRIT_App:
                                                    remove_outlier_curves=self.outlierRembool.get(), 
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
-            self.hvsr_results = sprit.check_peaks(hvsr_data=self.hvsr_results, 
+            self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_water_level=self.peak_water_level)
 
@@ -368,11 +449,12 @@ class SPRIT_App:
             else:
                 totalResult.configure(text='Fail ✘', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
-            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
             self.processingData = False
+            self.tab_control.select(self.results_tab)
 
-
+        
         def update_input_params_call():
             self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  hvsr_band=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
@@ -390,7 +472,8 @@ class SPRIT_App:
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate='focusout', validatecommand=update_input_params_call)
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky='ew', padx=5)
 
-        # source=file 
+        # source=file
+        
         def on_source_select():
             try:
                 str(self.file_source.get())
@@ -425,6 +508,7 @@ class SPRIT_App:
         ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
         inst_options = ["Raspberry Shake", "Nodes", "Other"]
 
+        
         def on_option_select(self, inst):
             update_input_params_call()
             if inst == "Raspberry Shake":
@@ -463,10 +547,12 @@ class SPRIT_App:
         dataLabel.grid(row=1, column=0, sticky='e', padx=5, pady=(5,2.55))
     
         #Function to set self.data_read False whenever the data_path is updated
+        
         def on_data_path_change(data_path, index, trace_mode):
             #If our data path changes, data is registered as not having been read
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
+        
         
         def filepath_update():
             self.fpath = self.data_path.get()
@@ -478,6 +564,7 @@ class SPRIT_App:
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
 
+        
         def browse_data_filepath():
             if self.file_source.get() == 'raw' or self.file_source.get() == 'dir':
                 self.fpath = filedialog.askdirectory()
@@ -512,6 +599,7 @@ class SPRIT_App:
         self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate='focusout', validatecommand=update_input_params_call)
         self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky='ew', padx=5, pady=(2.5,5))
         
+        
         def browse_metadata_filepath():
             filepath = filedialog.askopenfilename()
             if filepath:
@@ -522,6 +610,7 @@ class SPRIT_App:
         self.browse_metadata_filepath_button = ttk.Button(hvsrFrame, text="Browse", command=browse_metadata_filepath)
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
 
+        
         def update_acq_date(event):
             aMonth = self.acq_month.get()
             if str(aMonth)[0]=='0':
@@ -599,6 +688,8 @@ class SPRIT_App:
             return self.starttime, self.endtime
 
         self.tz = datetime.timezone.utc
+
+        
         def any_time_change():
             self.acq_date = self.date_entry.get_date()
             self.starttime, self.endtime = get_times()
@@ -641,6 +732,7 @@ class SPRIT_App:
         self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
         self.starttime, self.endtime = get_times()
 
+        
         def onTimezoneSelect(event):
             #Listbox "loses" selection and triggers an event sometimes, so need to check if that is just what happened
             if self.timezone_listbox.curselection():
@@ -793,11 +885,13 @@ class SPRIT_App:
         hvsr_band_max_entry.grid(row=0,column=1, sticky='ew', padx=(2,0))
 
         #BATCH Section
+        
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text="batch_data_read(input_data, batch_type='{}', param_col={}, batch_params={})".format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
             return
 
+        
         def on_batch_type_select():
             update_batch_data_read_call()
             return
@@ -835,6 +929,7 @@ class SPRIT_App:
         separator = ttk.Separator(hvsrFrame, orient='horizontal')
         separator.grid(row=12, column=0, columnspan=7, sticky='ew', padx=10)
 
+        
         def update_fetch_call():
             if self.trim_dir.get()=='':
                 trim_dir = None
@@ -845,6 +940,7 @@ class SPRIT_App:
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
 
         #export_format='.mseed'
+        
         def on_obspyFormatSelect(self):
             update_fetch_call()
         ttk.Label(hvsrFrame, text="Data Format").grid(row=13, column=1, sticky='e', padx=5)
@@ -855,6 +951,7 @@ class SPRIT_App:
         self.data_format_dropdown.grid(row=13, column=2, columnspan=3, sticky='ew')
 
         #detrend='spline'
+        
         def on_detrend_select():
             try:
                 str(self.detrend.get())
@@ -875,6 +972,7 @@ class SPRIT_App:
         ttk.Radiobutton(master=detrendFrame, text='None', variable=self.detrend, value='none', command=on_detrend_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
 
         #detrend_order=2
+        
         def on_detrend_order():
             try:
                 int(self.detrend_order.get())
@@ -902,6 +1000,7 @@ class SPRIT_App:
         self.trim_dir = tk.StringVar()
         self.trim_dir_entry = ttk.Entry(hvsrFrame, textvariable=self.trim_dir, validate='focusout', validatecommand=on_trim_dir)
         self.trim_dir_entry.grid(row=15, column=1, columnspan=5, sticky='ew', padx=5, pady=(2.5,5))
+        
         
         def browse_trim_dir_filepath():
             filepath = filedialog.askdirectory()
@@ -996,11 +1095,13 @@ class SPRIT_App:
         self.previewFig_dir_entry = ttk.Entry(savePrevFigFrame, textvariable=self.previewFig_dir)
         self.previewFig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
         
+        
         def filepath_preview_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='.png', initialdir=pathlib.Path(self.data_path.get()).parent)
             if filepath:
                 self.previewFig_dir_entry.delete(0, 'end')
                 self.previewFig_dir_entry.insert(0, filepath)
+        
         
         def save_preview_fig():
             self.fig_pre.savefig(self.previewFig_dir.get())
@@ -1032,6 +1133,7 @@ class SPRIT_App:
         self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
 
         #Helper function for updating the canvas and drawing/deleted the boxes
+        
         def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
             """Helper function for updating the canvas and drawing/deleted the boxes"""
             for i, pa in enumerate(pathlist):
@@ -1048,6 +1150,7 @@ class SPRIT_App:
                 fig.canvas.draw()
 
         #Helper function for manual window selection 
+        
         def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
             """Helper function for manual window selection to draw boxes to show where windows have been selected for removal"""
             #Create an axis dictionary if it does not already exist so all functions are the same
@@ -1128,6 +1231,7 @@ class SPRIT_App:
             return self.clickNo, self.x0
 
         #Helper function for manual window selection to draw boxes to deslect windows for removal
+        
         def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
             """Helper function for manual window selection to draw boxes to deslect windows for removal"""
 
@@ -1146,6 +1250,7 @@ class SPRIT_App:
                         self.xWindows.pop(i)
             fig.canvas.draw() 
                
+        
         def select_windows(event, input=None, initialize=False):
             import obspy
             """Function to manually select windows for exclusion from data.
@@ -1165,19 +1270,19 @@ class SPRIT_App:
             import matplotlib
             import time
             
-            #self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
             
             #if 'stream' in input.keys():
-            #    self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #    self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #else:
             #    params = input.copy()
             #    input = input['stream']
             
             #if isinstance(input, obspy.core.stream.Stream):
-            #    fig, ax = sprit._plot_specgram_stream(input, component=['Z'])
+            #    fig, ax = sprit_hvsr._plot_specgram_stream(input, component=['Z'])
             #elif isinstance(input, obspy.core.trace.Trace):
-            #    fig, ax = sprit._plot_specgram_stream(input)
+            #    fig, ax = sprit_hvsr._plot_specgram_stream(input)
             if initialize:
                 self.lineArtist = []
                 self.winArtist = []
@@ -1206,12 +1311,13 @@ class SPRIT_App:
             return self.hvsr_data
 
         #Support function to help select_windows run properly
+        
         def _on_fig_close(event):
             self.fig_closed
             fig_closed = True
             return
 
-
+        
         def __on_click(event):
 
             if event.button is MouseButton.RIGHT:
@@ -1220,8 +1326,9 @@ class SPRIT_App:
             if event.button is MouseButton.LEFT:            
                 self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
 
+        
         def plot_noise_windows(hvsr_data, initial_setup=False):
-            if isinstance(hvsr_data, sprit.HVSRBatch):
+            if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
                 batch_data = hvsr_data.copy()
                 hvsr_data = hvsr_data[list(hvsr_data.keys())[0]]
             else:
@@ -1258,7 +1365,7 @@ class SPRIT_App:
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
-                self.fig_noise, self.ax_noise = sprit._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
             self.noise_canvas.draw()
@@ -1286,22 +1393,22 @@ class SPRIT_App:
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
-                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                        hv_data['stream_edited'] = sprit_hvsr.remove_noise(input=input, kind='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
                         input = hv_data['stream_edited']
 
                     if self.do_pctThresh.get():
-                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                        hv_data['stream_edited'] = sprit_hvsr.remove_noise(input=input, kind='saturation',  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
                         input = hv_data['stream_edited']
 
                     if self.do_noiseWin.get():
-                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                        hv_data['stream_edited'] = sprit_hvsr.remove_noise(input=input, kind='noise', noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                         input = hv_data['stream_edited']
                 
                     if self.do_warmup.get():
-                        hv_data['stream_edited'] = sprit.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                        hv_data['stream_edited'] = sprit_hvsr.remove_noise(input=input, kind='warmup', warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
-                        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit._get_removed_windows(input=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
+                        self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
                         self.fig_noise.canvas.draw()
                 return hvsr_data
             
@@ -1356,6 +1463,8 @@ class SPRIT_App:
         self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
         manualBool = ttk.Checkbutton(master=windowremoveFrame, text="", variable=self.do_window) # create the Checkbutton widget
         manualBool.grid(row=0, column=0, sticky='ew')
+        
+        
         def remove_windows_manually():
             #Placeholderfunction
             print('Ok, this button may not need to do anything')
@@ -1491,6 +1600,7 @@ class SPRIT_App:
         autoFrame = ttk.LabelFrame(noiseFrame, text='Auto Run')
         autoFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
 
+        
         def set_auto():
             if self.do_auto.get():
                 self.do_stalta.set(True)
@@ -1511,11 +1621,13 @@ class SPRIT_App:
         self.results_noise_dir_entry = ttk.Entry(noiseFrame, textvariable=self.results_noise_dir)
         self.results_noise_dir_entry.grid(row=4, column=0, columnspan=5, sticky='ew', padx=(100,5))
         
+        
         def filepath_noise_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='png', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_noisewindows.png')
             if filepath:
                 self.results_noise_dir_entry.delete(4, 'end')
                 self.results_noise_dir_entry.insert(4, filepath)
+        
         
         def save_noise_fig():
             self.fig_noise.savefig(self.results_noise_dir.get())
@@ -1544,6 +1656,7 @@ class SPRIT_App:
         ppsdParamsFrame = ttk.LabelFrame(ppsd_settings_tab, text='PPSD Parameters')#.pack(fill='both')
 
         # ppsd_length=30.0
+        
         def on_ppsd_length():
             try:
                 float(self.ppsd_length.get())
@@ -1562,6 +1675,7 @@ class SPRIT_App:
         ppsdLenEntry.grid(row=0, column=1, sticky='w', padx=(5, 10))
 
         # overlap=0.5, 
+        
         def on_overlap():
             try:
                 overlap = float(self.overlap.get())
@@ -1582,6 +1696,7 @@ class SPRIT_App:
         overlapEntry.grid(row=1, column=1, sticky='w', padx=(5, 10))
 
         # period_step_octaves=0.0625, 
+        
         def on_per_step_oct():
             try:
                 float(self.perStepOct.get())
@@ -1601,6 +1716,7 @@ class SPRIT_App:
         pStepOctEntry.grid(row=2, column=1, sticky='w', padx=(5, 10))
 
         #skip_on_gaps
+        
         def show_sog():
             if self.skip_on_gaps.get():
                 sogLabel.configure(text ='skip_on_gaps=True')
@@ -1616,6 +1732,7 @@ class SPRIT_App:
         sogLabel.grid(row=3, column=0, sticky='ew', pady=(6,6), padx=5)
 
         # db_bins=(-200, -50, 1.0), 
+        
         def show_dbbins():
             try:
                 float(minDB.get())
@@ -1657,6 +1774,7 @@ class SPRIT_App:
         self.db_bins = (minDB.get(), maxDB.get(), dB_step.get())
 
         # period_limits=None,
+        
         def show_per_lims():
             try:
                 if minPerLim.get() == 'None':
@@ -1704,6 +1822,7 @@ class SPRIT_App:
             self.period_limits = [float(minPerLim.get()), float(maxPerLim.get())]
 
         # period_smoothing_width_octaves=1.0,
+        
         def on_per_smoothwidth_oct():
             try:
                 float(self.perSmoothWidthOct.get())
@@ -1723,6 +1842,7 @@ class SPRIT_App:
         pSmoothWidthEntry.grid(row=6, column=1, sticky='w', padx=(5, 10))
         
         # special_handling=None, 
+        
         def on_special_handling():
             try:
                 str(self.special_handling.get())
@@ -1760,6 +1880,7 @@ class SPRIT_App:
         separator.grid(row=8, sticky='ew', pady=10, padx=5)
 
         #remove_outliers
+        
         def show_rem_outliers():
             if self.remove_outliers.get():
                 rem_outliers_Label.configure(text ='remove_outliers=True')
@@ -1776,6 +1897,7 @@ class SPRIT_App:
         rem_outliers_Label.grid(row=9, column=0, sticky='ew', pady=(6,6), padx=5)
 
         # outlier_std=1.5, 
+        
         def on_outlier_std():
             try:
                 float(self.outlier_std.get())
@@ -1795,7 +1917,7 @@ class SPRIT_App:
 
 
         #PPSD Function Call
-        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit.generate_ppsds() and obspy PPSD() call')#.pack(fill='both') 
+        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit_hvsr.generate_ppsds() and obspy PPSD() call')#.pack(fill='both') 
        
         self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
                   .format('stats', 'metadata', ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
@@ -1807,6 +1929,7 @@ class SPRIT_App:
                           ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
         self.generate_ppsd_call.pack(side='bottom', anchor='w', padx=(25,0), pady=(10,10))
+        
         
         def update_ppsd_call(ppsd_call):
             ppsd_call.configure(text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'.format('stats', 'metadata', ppsdLenLabel.cget('text'), 
@@ -1903,7 +2026,7 @@ class SPRIT_App:
         
         #Method selection, method=4
         ttk.Label(hvsrSettingsFrame, text="Horizontal Combine Method [int]").grid(row=0, column=0, padx=(5,0), sticky='w')
-        method_options = ['', #Empty to make intuitive and match sprit.py
+        method_options = ['', #Empty to make intuitive and match sprit_hvsr.py
                           "1.Diffuse Field Assumption (not currently implemented)", 
                           "2. Arithmetic Mean H ≡ (N + E)/2",
                           "3. Geometric Mean: H ≡ √(N · E) (recommended by SESEAME Project (2004))",
@@ -1912,6 +2035,7 @@ class SPRIT_App:
                           "6. Maximum Horizontal Value: H ≡ max(N, E)"
                           ]
 
+        
         def on_method_select(meth, meth_opts=method_options):
             self.method_ind = meth_opts.index(meth)
 
@@ -1934,6 +2058,7 @@ class SPRIT_App:
         self.method_dropdown.grid(row=0, column=1, columnspan=8, sticky='ew')
         
         #smooth=True, 
+        
         def curve_smooth():
             try:
                 int(self.hvsmooth.get())
@@ -1970,6 +2095,7 @@ class SPRIT_App:
         freqSmoothLabel = ttk.Label(master=hvsrParamsFrame, text="freq_smooth='konno ohmachi'", width=30)
         freqSmoothLabel.grid(row=2, column=0, sticky='w', pady=(16,16), padx=5)
 
+        
         def on_freq_smooth():
             try:
                 str(self.freq_smooth.get())
@@ -1993,6 +2119,7 @@ class SPRIT_App:
         fSmoothWidthlabel = ttk.Label(master=hvsrParamsFrame, text="f_smooth_width=40", width=30)
         fSmoothWidthlabel.grid(row=3, column=0, sticky='ew', pady=(6,6), padx=5)
 
+        
         def on_smooth_width():
             try:
                 int(self.fSmoothWidth.get())
@@ -2011,6 +2138,7 @@ class SPRIT_App:
         #resample=True, 
         resampleLabel = ttk.Label(master=hvsrParamsFrame, text="resample=True", width=30)
         resampleLabel.grid(row=4, column=0, sticky='ew', pady=(6,6), padx=5)
+        
         def on_curve_resample():
             try:
                 if not self.resamplebool.get():
@@ -2041,6 +2169,7 @@ class SPRIT_App:
         outlierRemLabel = ttk.Label(master=hvsrParamsFrame, text="remove_outlier_curves=True", width=30)
         outlierRemLabel.grid(row=5, column=0, sticky='ew', pady=(6,6), padx=5)
 
+        
         def on_remove_outlier_curves():
             try:
                 bool(self.outlierRembool.get())
@@ -2065,6 +2194,7 @@ class SPRIT_App:
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text="outlier_curve_std=1.75", width=30)
         outlierValLabel.grid(row=6, column=0, sticky='ew', pady=(6,6), padx=5)        
 
+        
         def on_outlier_std():
             try:
                 float(self.outlierRemStDev.get())
@@ -2099,6 +2229,7 @@ class SPRIT_App:
         pwaterLevLabel = ttk.Label(master=hvsrParamsFrame, text="peak_water_level=1.8", width=30)
         pwaterLevLabel.grid(row=8, column=0, sticky='w', pady=(6,6), padx=5)        
 
+        
         def on_pwaterlevel_update():
             try:
                 float(self.peak_water_level.get())
@@ -2117,26 +2248,28 @@ class SPRIT_App:
         pWaterLevelEntry.grid(row=9, column=1, sticky='w')
 
         #Process HVSR Function Call
-        hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit.process_hvsr() Call')#.pack(fill='both')
+        hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit_hvsr.process_hvsr() Call')#.pack(fill='both')
         
         self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})'
                   .format('params', hCombMethodLabel.cget('text'), hvSmoothLabel.cget('text'), freqSmoothLabel.cget('text'), fSmoothWidthlabel.cget('text'), resampleLabel.cget('text'), 
                           outlierRemLabel.cget('text'), outlierValLabel.cget('text'), hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
         self.procHVSR_call.pack(anchor='w', padx=(25,0), pady=(10,10))
 
+        
         def update_procHVSR_call(procHVSR_call):
             procHVSR_call.configure(text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})'
                   .format('params', hCombMethodLabel.cget('text'), hvSmoothLabel.cget('text'), freqSmoothLabel.cget('text'), fSmoothWidthlabel.cget('text'), resampleLabel.cget('text'), 
                           outlierRemLabel.cget('text'), outlierValLabel.cget('text'), hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
         
         #Check Peaks Function Call
-        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit.check_peaks() Call')#.pack(fill='both')
+        checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text='sprit_hvsr.check_peaks() Call')#.pack(fill='both')
 
         self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text='check_peaks({}, {}, {})'
                   .format('hvsr_data', hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
         self.checkPeaks_Call.pack(anchor='w', padx=(25,0), pady=(10,10))
 
         #check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)
+        
         def update_check_peaks_call(checkPeaks_Call):
             checkPeaks_Call.configure(text='check_peaks({}, {}, {})'
                   .format('hvsr_data', hvsrBandLabel.cget('text'), pwaterLevLabel.cget('text')))
@@ -2163,6 +2296,7 @@ class SPRIT_App:
         # Create the Plot Options LabelFrame
         plot_options_frame = ttk.LabelFrame(plot_settings_tab, text="Plot Options")
 
+        
         def update_hvplot_call():
             kindstr = get_kindstr()
             hvplot_label.configure(text="hvplot({}, kind={}, xtype='{}', {}, {})".format('hvsr_data', kindstr, self.x_type.get(), '[...]', 'kwargs'))
@@ -2186,6 +2320,7 @@ class SPRIT_App:
         
         #Separate component chart: c+
         ttk.Label(plot_options_frame, text='Show Components on same chart as H/V Curve:').grid(row=3, column=0, sticky='w', padx=5)
+        
         
         def disable_comp_buttons():
             if self.show_comp_with_hv.get():
@@ -2303,6 +2438,7 @@ class SPRIT_App:
         hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text="hvplot() Call")
 
         #HVSR
+        
         def get_kindstr():
             if self.hvsr_chart_bool.get():
                 kindstr_hv = 'HVSR'
@@ -2359,9 +2495,10 @@ class SPRIT_App:
 
         self.run_button = ttk.Button(runFrame_set_plot, text="Run", style='Run.TButton', command=process_data)
 
+        
         def update_results_plot():
             self.tab_control.select(self.results_tab)
-            sprit.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text="Update Plot", style='Noise.TButton', command=update_results_plot, width=30)
         
@@ -2550,11 +2687,13 @@ class SPRIT_App:
         self.results_fig_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_fig_dir)
         self.results_fig_dir_entry.grid(row=0, column=1, columnspan=5, sticky='ew')
         
+        
         def filepath_results_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='png', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_results.png')
             if filepath:
                 self.results_fig_dir_entry.delete(0, 'end')
                 self.results_fig_dir_entry.insert(0, filepath)
+        
         
         def save_results_fig():
             if not self.save_ind_subplots.get():
@@ -2565,6 +2704,7 @@ class SPRIT_App:
                     extent = self.ax_results[key].get_tightbbox(self.fig_results.canvas.renderer).transformed(self.fig_results.dpi_scale_trans.inverted())
                     self.fig_results.savefig(pathlib.Path(self.results_fig_dir.get()).parent.as_posix()+'/Subplot'+key+'.png',  bbox_inches=extent)
         
+
         self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_results_fig)
         self.browse_results_fig.grid(row=0, column=7, sticky='ew', padx=2.5)
         
@@ -2576,6 +2716,10 @@ class SPRIT_App:
         self.save_ind_subplots.set(False)
         ttk.Checkbutton(results_export_Frame, text="Save ind. subplots", variable=self.save_ind_subplots).grid(row=0, column=10, sticky="ew", padx=5)
 
+        self.browse_results_fig = ttk.Button(results_export_Frame, text="Update Plot",command=update_results_plot)
+        self.browse_results_fig.grid(row=1, column=10, sticky='ew', padx=(7.5, 2.5))
+
+
         results_export_Frame.columnconfigure(1, weight=1)
         results_export_Frame.pack(side='bottom', fill='both')
 
@@ -2585,14 +2729,16 @@ class SPRIT_App:
         self.results_report_dir_entry = ttk.Entry(results_export_Frame, textvariable=self.results_report_dir)
         self.results_report_dir_entry.grid(row=1, column=1, columnspan=5, sticky='ew')
         
+        
         def filepath_report_fig():
             filepath = filedialog.asksaveasfilename(defaultextension='csv', initialdir=pathlib.Path(self.data_path.get()).parent, initialfile=self.params['site']+'_peakReport.csv')
             if filepath:
                 self.results_report_dir_entry.delete(0, 'end')
                 self.results_report_dir_entry.insert(0, filepath)
         
+        
         def save_report_fig():
-            sprit.get_report(self.hvsr_results, format='csv', export=self.results_report_dir.get())
+            sprit_hvsr.get_report(self.hvsr_results, format='plot',  export=self.results_report_dir.get())
 
         self.browse_results_fig = ttk.Button(results_export_Frame, text="Browse",command=filepath_report_fig)
         self.browse_results_fig.grid(row=1, column=7, sticky='ew', padx=2.5)
@@ -2610,13 +2756,10 @@ class SPRIT_App:
         # Pack tab control
         self.tab_control.pack(expand=True, fill="both")
 
-
 def on_closing():
     plt.close('all')
     root.destroy()
     exit()
-
-
 
 if __name__ == "__main__":
     root = tk.Tk()

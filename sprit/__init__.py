@@ -3,7 +3,11 @@
 This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
 
-from sprit.sprit import(
+import sprit.sprit_utils as sprit_utils
+import sprit.sprit_gui as sprit_gui
+import sprit.sprit_hvsr as sprit_hvsr
+
+from sprit.sprit_hvsr import(
     run,
     input_params,
     gui,
@@ -18,7 +22,6 @@ from sprit.sprit import(
     get_report,
     HVSRData,
     HVSRBatch,
-    test_class
 )
 
 from sprit.sprit_utils import(
@@ -34,7 +37,12 @@ from sprit.sprit_utils import(
     time_it
 )
 
-__all__ =('sprit',
+from sprit.sprit_gui import(
+    catch_errors
+)
+
+
+__all__ =('sprit_hvsr',
             'run',
             'check_mark',
             'get_char',
@@ -54,7 +62,6 @@ __all__ =('sprit',
             'get_report',
             'HVSRData',
             'HVSRBatch',
-            'test_class',
         'sprit_utils',
             'checkifpath',
             'check_mark',
@@ -65,8 +72,9 @@ __all__ =('sprit',
             'has_required_channels',
             'make_it_classy',
             'read_from_RS',
-            'time_it'        
-
-)
+            'time_it',
+        'sprit_gui',
+            'catch_errors'
+            )
 
 __author__ = 'Riley Balikian'

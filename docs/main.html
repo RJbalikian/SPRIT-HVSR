@@ -32,7 +32,11 @@
 This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 &#34;&#34;&#34;
 
-from sprit.sprit import(
+import sprit.sprit_utils as sprit_utils
+import sprit.sprit_gui as sprit_gui
+import sprit.sprit_hvsr as sprit_hvsr
+
+from sprit.sprit_hvsr import(
     run,
     input_params,
     gui,
@@ -47,7 +51,6 @@ from sprit.sprit import(
     get_report,
     HVSRData,
     HVSRBatch,
-    test_class
 )
 
 from sprit.sprit_utils import(
@@ -63,7 +66,12 @@ from sprit.sprit_utils import(
     time_it
 )
 
-__all__ =(&#39;sprit&#39;,
+from sprit.sprit_gui import(
+    catch_errors
+)
+
+
+__all__ =(&#39;sprit_hvsr&#39;,
             &#39;run&#39;,
             &#39;check_mark&#39;,
             &#39;get_char&#39;,
@@ -83,7 +91,6 @@ __all__ =(&#39;sprit&#39;,
             &#39;get_report&#39;,
             &#39;HVSRData&#39;,
             &#39;HVSRBatch&#39;,
-            &#39;test_class&#39;,
         &#39;sprit_utils&#39;,
             &#39;checkifpath&#39;,
             &#39;check_mark&#39;,
@@ -94,9 +101,10 @@ __all__ =(&#39;sprit&#39;,
             &#39;has_required_channels&#39;,
             &#39;make_it_classy&#39;,
             &#39;read_from_RS&#39;,
-            &#39;time_it&#39;        
-
-)
+            &#39;time_it&#39;,
+        &#39;sprit_gui&#39;,
+            &#39;catch_errors&#39;
+            )
 
 __author__ = &#39;Riley Balikian&#39;</code></pre>
 </details>
@@ -104,13 +112,13 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="sprit.sprit" href="sprit.html">sprit.sprit</a></code></dt>
-<dd>
-<div class="desc"><p>This module contains all the functions needed to run the HVSR analysis</p></div>
-</dd>
 <dt><code class="name"><a title="sprit.sprit_gui" href="sprit_gui.html">sprit.sprit_gui</a></code></dt>
 <dd>
 <div class="desc"><p>This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface …</p></div>
+</dd>
+<dt><code class="name"><a title="sprit.sprit_hvsr" href="sprit_hvsr.html">sprit.sprit_hvsr</a></code></dt>
+<dd>
+<div class="desc"><p>This module contains all the functions needed to run the HVSR analysis</p></div>
 </dd>
 <dt><code class="name"><a title="sprit.sprit_utils" href="sprit_utils.html">sprit.sprit_utils</a></code></dt>
 <dd>
@@ -324,6 +332,90 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
     hvsr_metaDict = HVSRBatch(hvsr_metaDict)
 
     return hvsr_metaDict</code></pre>
+</details>
+</dd>
+<dt id="sprit.catch_errors"><code class="name flex">
+<span>def <span class="ident">catch_errors</span></span>(<span>func)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def catch_errors(func):
+    #Define a local function to get a list of warnings that we&#39;ll use in the output
+    def get_warning_msg_list(w):
+        messageList = []
+        #Collect warnings that happened before we got to the error
+        if w:
+            hasWarnings = True
+            for warning in w:
+                warning_category = type(warning.message).__name__.title().replace(&#39;warning&#39;,&#39;Warning&#39;)
+                warning_message = str(warning.message)
+                # append the warning category and message to messageList so we get all warnings
+                messageList.append(f&#39;{warning_category}: {warning_message}&#39;)
+        return messageList
+    
+    # use functools.wraps to preserve the original function&#39;s metadata
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = None
+        # use the global keyword to access the error_message and error_category variables
+        global error_message
+        global error_category
+
+        messageList = []
+        hasWarnings = False
+        # use a try-except block to catch any exceptions
+        try:
+            # use a context manager to catch any warnings
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter(&#39;always&#39;)
+                # call the original function with the given arguments
+                result = func(*args, **kwargs)
+                
+                #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
+                messageList = get_warning_msg_list(w)
+                if messageList == []:
+                    return result
+                else:
+                    warningMessage = &#34;WARNING:&#34;
+                    for msg in messageList:
+                        warningMessage = &#34;\n {}&#34;.format(msg)
+
+                    messagebox.showwarning(title=&#39;WARNINGS&#39;, message=warningMessage)
+                    
+        except Exception as e:
+            messageList = get_warning_msg_list(w)
+            
+            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+            error_message = str(e)
+
+            #Print the linenumber where error occured to terminal
+            #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            #Print the function name where the error occured
+            #print(func.__name__)
+
+            #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
+            warningMessageList = get_warning_msg_list(w)
+            
+            fullErrorMessage = f&#39;PRIMARY ERROR ({error_category}): {error_message}&#39;
+            if messageList == []:
+                pass
+            else:
+                
+                fullErrorMessage = fullErrorMessage+&#34;\n\n  Additional Warnings along the way:&#34;
+                for addMsg in warningMessageList:
+                    fullErrorMessage = &#34;\n{}\n   {}&#34;.format(fullErrorMessage, addMsg)
+
+            messagebox.showerror(title=f&#39;ERROR ({error_category})&#39;,
+                                    message=fullErrorMessage)
+                
+        # return the result of the function or the error/warning messages and categories
+        return result
+    # return the wrapper function
+    return wrapper</code></pre>
 </details>
 </dd>
 <dt id="sprit.check_mark"><code class="name flex">
@@ -781,7 +873,10 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         except:
             print(&#39;Read or source error&#39;)
 
-    dataIN = rawDataIN.copy()
+    try:
+        dataIN = rawDataIN.copy()
+    except:
+        raise RuntimeError(&#39;Data not fetched. Check input parameters.&#39;)
     
     #Trim and save data as specified
     if not trim_dir:
@@ -1452,7 +1547,7 @@ For docx (not yet implemented), the following are also included:
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
-    from sprit.sprit_gui import App
+    from sprit_gui import SPRIT_App
     import tkinter as tk
 
     def on_gui_closing():
@@ -1461,9 +1556,9 @@ For docx (not yet implemented), the following are also included:
         gui_root.destroy()
 
     gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sprit_icon_alpha.ico&#39;))
+    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
     gui_root.iconbitmap(icon_path)
-    App(master=gui_root) #Open the app with a tk.Tk root
+    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
     gui_root.mainloop() #Run the main loop</code></pre>
@@ -1681,7 +1776,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-22', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-08-25', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -1952,10 +2047,10 @@ This is necessary for Raspberry Shake data.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit.HVSRData, sprit.HVSRBatch)):
+    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         output_class = input_data
     else:
-        output_class = sprit.HVSRData(input_data)
+        output_class = sprit_hvsr.HVSRData(input_data)
     if verbose:
         print(&#39;Made it classy | {} --&gt; {}&#39;.format(type(input_data), type(output_class)))
     return output_class</code></pre>
@@ -2455,7 +2550,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         output = HVSRBatch(hvsr_out)
         print(hvsr_out[site_name].keys())
         return output
-    elif isinstance(input, HVSRData) or isinstance(input, dict):
+    elif isinstance(input, (HVSRData, dict)):
         if &#39;stream_edited&#39; in input.keys():
             inStream = input[&#39;stream_edited&#39;].copy()
         else:
@@ -2469,7 +2564,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
-        if isinstance(output, dict):
+        if isinstance(output, (HVSRData, dict)):
             if &#39;xwindows_out&#39; in output.keys():
                 pass
             else:
@@ -2481,7 +2576,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
                 output[&#39;stream_edited&#39;] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
-        elif type(output) is dict:
+        elif isinstance(output, (HVSRData, dict)):
             pass
         else:
             print(&#39;ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.&#39;)
@@ -2504,7 +2599,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         return
 
     #Add output
-    if isinstance(input, HVSRData) or isinstance(input, dict):
+    if isinstance(output, (HVSRData, dict)):
         output[&#39;stream_edited&#39;] = outStream
         output[&#39;stream&#39;] = input[&#39;stream&#39;]
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
@@ -2564,25 +2659,6 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     return hvsr_results</code></pre>
 </details>
 </dd>
-<dt id="sprit.test_class"><code class="name flex">
-<span>def <span class="ident">test_class</span></span>(<span>**input_dict)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def test_class(**input_dict):
-    hvsrdata = input_params(**input_dict)
-    hvsrdata = fetch_data(hvsrdata, source=&#39;batch&#39;, verbose=input_dict[&#39;verbose&#39;])
-    hvsrdata = remove_noise(hvsrdata)
-    hvsrdata = generate_ppsds(hvsrdata, verbose=input_dict[&#39;verbose&#39;])
-    hvsrdata = process_hvsr(hvsrdata, verbose=input_dict[&#39;verbose&#39;])
-    hvsrdata = check_peaks(hvsr_data=hvsrdata)
-    return hvsrdata</code></pre>
-</details>
-</dd>
 <dt id="sprit.time_it"><code class="name flex">
 <span>def <span class="ident">time_it</span></span>(<span>_t, proc_name='', verbose=True)</span>
 </code></dt>
@@ -2632,12 +2708,23 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
             
         self.sites = list(self._batch_dict.keys())
 
+    #METHODS
     def keys(self):
         return self.batch_dict.keys()
 
     def items(self):
         return self.batch_dict.items()
 
+    def copy(self):
+        return HVSRBatch(copy.copy(self._batch_dict))
+
+    #Method wrapper of sprit.hvplot function
+    def plot(self, **kwargs):
+        returnDict = {}
+        for sitename in self:
+            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+        return returnDict
+    
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -2649,6 +2736,19 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="sprit.HVSRBatch.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy(self):
+    return HVSRBatch(copy.copy(self._batch_dict))</code></pre>
+</details>
+</dd>
 <dt id="sprit.HVSRBatch.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
@@ -2673,6 +2773,22 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 </summary>
 <pre><code class="python">def keys(self):
     return self.batch_dict.keys()</code></pre>
+</details>
+</dd>
+<dt id="sprit.HVSRBatch.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, **kwargs):
+    returnDict = {}
+    for sitename in self:
+        returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+    return returnDict</code></pre>
 </details>
 </dd>
 </dl>
@@ -2711,7 +2827,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     def __getitem__(self, key):
         return getattr(self, key)
 
-    #METHODS (mostly reflect dictionary methods)
+    #METHODS (many reflect dictionary methods)
     def keys(self):
         keyList = []
         for k in dir(self):
@@ -2724,6 +2840,16 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 
     def copy(self):
         return HVSRData(copy.copy(self.params))
+
+    def plot(self, **kwargs):
+        &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+
+        Returns
+        -------
+        matplotlib.Figure (if return_fig=True)
+        &#34;&#34;&#34;
+        return hvplot(self, **kwargs)
+        
 
     #ATTRIBUTES
     #params
@@ -2900,6 +3026,30 @@ def ppsds_obspy(self):
     return keyList</code></pre>
 </details>
 </dd>
+<dt id="sprit.HVSRData.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Function to plot data, wrapper of sprit.hvplot()</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>matplotlib.Figure (if return_fig=True)</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, **kwargs):
+    &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+
+    Returns
+    -------
+    matplotlib.Figure (if return_fig=True)
+    &#34;&#34;&#34;
+    return hvplot(self, **kwargs)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -2913,14 +3063,15 @@ def ppsds_obspy(self):
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="sprit.sprit" href="sprit.html">sprit.sprit</a></code></li>
 <li><code><a title="sprit.sprit_gui" href="sprit_gui.html">sprit.sprit_gui</a></code></li>
+<li><code><a title="sprit.sprit_hvsr" href="sprit_hvsr.html">sprit.sprit_hvsr</a></code></li>
 <li><code><a title="sprit.sprit_utils" href="sprit_utils.html">sprit.sprit_utils</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="sprit.batch_data_read" href="#sprit.batch_data_read">batch_data_read</a></code></li>
+<li><code><a title="sprit.catch_errors" href="#sprit.catch_errors">catch_errors</a></code></li>
 <li><code><a title="sprit.check_mark" href="#sprit.check_mark">check_mark</a></code></li>
 <li><code><a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks</a></code></li>
 <li><code><a title="sprit.check_tsteps" href="#sprit.check_tsteps">check_tsteps</a></code></li>
@@ -2941,7 +3092,6 @@ def ppsds_obspy(self):
 <li><code><a title="sprit.read_from_RS" href="#sprit.read_from_RS">read_from_RS</a></code></li>
 <li><code><a title="sprit.remove_noise" href="#sprit.remove_noise">remove_noise</a></code></li>
 <li><code><a title="sprit.run" href="#sprit.run">run</a></code></li>
-<li><code><a title="sprit.test_class" href="#sprit.test_class">test_class</a></code></li>
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
 </ul>
 </li>
@@ -2950,8 +3100,10 @@ def ppsds_obspy(self):
 <li>
 <h4><code><a title="sprit.HVSRBatch" href="#sprit.HVSRBatch">HVSRBatch</a></code></h4>
 <ul class="">
+<li><code><a title="sprit.HVSRBatch.copy" href="#sprit.HVSRBatch.copy">copy</a></code></li>
 <li><code><a title="sprit.HVSRBatch.items" href="#sprit.HVSRBatch.items">items</a></code></li>
 <li><code><a title="sprit.HVSRBatch.keys" href="#sprit.HVSRBatch.keys">keys</a></code></li>
+<li><code><a title="sprit.HVSRBatch.plot" href="#sprit.HVSRBatch.plot">plot</a></code></li>
 </ul>
 </li>
 <li>
@@ -2963,6 +3115,7 @@ def ppsds_obspy(self):
 <li><code><a title="sprit.HVSRData.items" href="#sprit.HVSRData.items">items</a></code></li>
 <li><code><a title="sprit.HVSRData.keys" href="#sprit.HVSRData.keys">keys</a></code></li>
 <li><code><a title="sprit.HVSRData.params" href="#sprit.HVSRData.params">params</a></code></li>
+<li><code><a title="sprit.HVSRData.plot" href="#sprit.HVSRData.plot">plot</a></code></li>
 <li><code><a title="sprit.HVSRData.ppsds" href="#sprit.HVSRData.ppsds">ppsds</a></code></li>
 <li><code><a title="sprit.HVSRData.ppsds_obspy" href="#sprit.HVSRData.ppsds_obspy">ppsds_obspy</a></code></li>
 </ul>
