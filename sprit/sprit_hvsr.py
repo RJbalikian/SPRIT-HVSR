@@ -62,9 +62,41 @@ class HVSRBatch:
     def plot(self, **kwargs):
         returnDict = {}
         for sitename in self:
-            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+            returnDict[sitename] = hvplot(self[sitename], **kwargs)
         return returnDict
     
+    def get_report(self, **kwargs):
+        """Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+        """
+        if 'report_format' in kwargs.keys():
+            if 'csv' == kwargs['report_format']:
+                for sitename in self:
+                    rowList = []
+                    rowList.append(get_report(self[sitename], **kwargs))
+                return pd.concat(rowList, ignore_index=True)
+            elif 'plot' == kwargs['report_format']:
+                plotDict = {}
+                for sitename in self:
+                    if 'return_fig' in kwargs.keys() and kwargs['return_fig']:
+                        plotDict[sitename] = get_report(self[sitename], **kwargs)
+                    else:
+                        get_report(self[sitename], **kwargs)
+                return plotDict
+            
+        #Only report_format left is print, doesn't return anything, so doesn't matter if defalut or not
+        for sitename in self:
+            get_report(self[sitename], **kwargs)
+        return
+
+    def report(self, **kwargs):
+        """Wrapper of get_report()"""
+        return self.get_report(**kwargs)
+
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -114,7 +146,7 @@ class HVSRData:
         return HVSRData(copy.copy(self.params))
 
     def plot(self, **kwargs):
-        """Function to plot data, wrapper of sprit.hvplot()
+        """Method to plot data, wrapper of sprit.hvplot()
 
         Returns
         -------
@@ -122,6 +154,19 @@ class HVSRData:
         """
         return hvplot(self, **kwargs)
         
+    def get_report(self, **kwargs):
+        """Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+        """
+        return get_report(self, **kwargs)
+
+    def report(self, **kwargs):
+        """Wrapper of get_report()"""
+        return get_report(self, **kwargs)
 
     #ATTRIBUTES
     #params
@@ -889,6 +934,7 @@ def get_report(hvsr_results, export=None, report_format='print', plot_type='HVSR
             return outDF
         elif report_format=='plot':
             hvsr_results['Best Peak']['Report']['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
+            plt.show()
             if return_results:
                 return hvsr_results
 

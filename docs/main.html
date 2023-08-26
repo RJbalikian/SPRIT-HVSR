@@ -1522,6 +1522,7 @@ For docx (not yet implemented), the following are also included:
             return outDF
         elif report_format==&#39;plot&#39;:
             hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+            plt.show()
             if return_results:
                 return hvsr_results
 
@@ -2726,9 +2727,41 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     def plot(self, **kwargs):
         returnDict = {}
         for sitename in self:
-            returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+            returnDict[sitename] = hvplot(self[sitename], **kwargs)
         return returnDict
     
+    def get_report(self, **kwargs):
+        &#34;&#34;&#34;Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+        &#34;&#34;&#34;
+        if &#39;report_format&#39; in kwargs.keys():
+            if &#39;csv&#39; == kwargs[&#39;report_format&#39;]:
+                for sitename in self:
+                    rowList = []
+                    rowList.append(get_report(self[sitename], **kwargs))
+                return pd.concat(rowList, ignore_index=True)
+            elif &#39;plot&#39; == kwargs[&#39;report_format&#39;]:
+                plotDict = {}
+                for sitename in self:
+                    if &#39;return_fig&#39; in kwargs.keys() and kwargs[&#39;return_fig&#39;]:
+                        plotDict[sitename] = get_report(self[sitename], **kwargs)
+                    else:
+                        get_report(self[sitename], **kwargs)
+                return plotDict
+            
+        #Only report_format left is print, doesn&#39;t return anything, so doesn&#39;t matter if defalut or not
+        for sitename in self:
+            get_report(self[sitename], **kwargs)
+        return
+
+    def report(self, **kwargs):
+        &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
+        return self.get_report(**kwargs)
+
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -2751,6 +2784,49 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 </summary>
 <pre><code class="python">def copy(self):
     return HVSRBatch(copy.copy(self._batch_dict))</code></pre>
+</details>
+</dd>
+<dt id="sprit.HVSRBatch.get_report"><code class="name flex">
+<span>def <span class="ident">get_report</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get report from processed data, in print, graphical, or tabular format.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Variable</code></dt>
+<dd>May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_report(self, **kwargs):
+    &#34;&#34;&#34;Method to get report from processed data, in print, graphical, or tabular format.
+
+    Returns
+    -------
+    Variable
+        May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+    &#34;&#34;&#34;
+    if &#39;report_format&#39; in kwargs.keys():
+        if &#39;csv&#39; == kwargs[&#39;report_format&#39;]:
+            for sitename in self:
+                rowList = []
+                rowList.append(get_report(self[sitename], **kwargs))
+            return pd.concat(rowList, ignore_index=True)
+        elif &#39;plot&#39; == kwargs[&#39;report_format&#39;]:
+            plotDict = {}
+            for sitename in self:
+                if &#39;return_fig&#39; in kwargs.keys() and kwargs[&#39;return_fig&#39;]:
+                    plotDict[sitename] = get_report(self[sitename], **kwargs)
+                else:
+                    get_report(self[sitename], **kwargs)
+            return plotDict
+        
+    #Only report_format left is print, doesn&#39;t return anything, so doesn&#39;t matter if defalut or not
+    for sitename in self:
+        get_report(self[sitename], **kwargs)
+    return</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRBatch.items"><code class="name flex">
@@ -2791,8 +2867,22 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 <pre><code class="python">def plot(self, **kwargs):
     returnDict = {}
     for sitename in self:
-        returnDict[sitename] = self[sitename].plot(self[sitename], **kwargs)
+        returnDict[sitename] = hvplot(self[sitename], **kwargs)
     return returnDict</code></pre>
+</details>
+</dd>
+<dt id="sprit.HVSRBatch.report"><code class="name flex">
+<span>def <span class="ident">report</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Wrapper of get_report()</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def report(self, **kwargs):
+    &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
+    return self.get_report(**kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -2846,7 +2936,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         return HVSRData(copy.copy(self.params))
 
     def plot(self, **kwargs):
-        &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+        &#34;&#34;&#34;Method to plot data, wrapper of sprit.hvplot()
 
         Returns
         -------
@@ -2854,6 +2944,19 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         &#34;&#34;&#34;
         return hvplot(self, **kwargs)
         
+    def get_report(self, **kwargs):
+        &#34;&#34;&#34;Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+        &#34;&#34;&#34;
+        return get_report(self, **kwargs)
+
+    def report(self, **kwargs):
+        &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
+        return get_report(self, **kwargs)
 
     #ATTRIBUTES
     #params
@@ -3000,6 +3103,31 @@ def ppsds_obspy(self):
     return HVSRData(copy.copy(self.params))</code></pre>
 </details>
 </dd>
+<dt id="sprit.HVSRData.get_report"><code class="name flex">
+<span>def <span class="ident">get_report</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get report from processed data, in print, graphical, or tabular format.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Variable</code></dt>
+<dd>May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_report(self, **kwargs):
+    &#34;&#34;&#34;Method to get report from processed data, in print, graphical, or tabular format.
+
+    Returns
+    -------
+    Variable
+        May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+    &#34;&#34;&#34;
+    return get_report(self, **kwargs)</code></pre>
+</details>
+</dd>
 <dt id="sprit.HVSRData.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
@@ -3034,7 +3162,7 @@ def ppsds_obspy(self):
 <span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to plot data, wrapper of sprit.hvplot()</p>
+<div class="desc"><p>Method to plot data, wrapper of sprit.hvplot()</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>matplotlib.Figure (if return_fig=True)</code></dt>
@@ -3045,13 +3173,27 @@ def ppsds_obspy(self):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot(self, **kwargs):
-    &#34;&#34;&#34;Function to plot data, wrapper of sprit.hvplot()
+    &#34;&#34;&#34;Method to plot data, wrapper of sprit.hvplot()
 
     Returns
     -------
     matplotlib.Figure (if return_fig=True)
     &#34;&#34;&#34;
     return hvplot(self, **kwargs)</code></pre>
+</details>
+</dd>
+<dt id="sprit.HVSRData.report"><code class="name flex">
+<span>def <span class="ident">report</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Wrapper of get_report()</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def report(self, **kwargs):
+    &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
+    return get_report(self, **kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3103,11 +3245,13 @@ def ppsds_obspy(self):
 <ul>
 <li>
 <h4><code><a title="sprit.HVSRBatch" href="#sprit.HVSRBatch">HVSRBatch</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="sprit.HVSRBatch.copy" href="#sprit.HVSRBatch.copy">copy</a></code></li>
+<li><code><a title="sprit.HVSRBatch.get_report" href="#sprit.HVSRBatch.get_report">get_report</a></code></li>
 <li><code><a title="sprit.HVSRBatch.items" href="#sprit.HVSRBatch.items">items</a></code></li>
 <li><code><a title="sprit.HVSRBatch.keys" href="#sprit.HVSRBatch.keys">keys</a></code></li>
 <li><code><a title="sprit.HVSRBatch.plot" href="#sprit.HVSRBatch.plot">plot</a></code></li>
+<li><code><a title="sprit.HVSRBatch.report" href="#sprit.HVSRBatch.report">report</a></code></li>
 </ul>
 </li>
 <li>
@@ -3116,12 +3260,14 @@ def ppsds_obspy(self):
 <li><code><a title="sprit.HVSRData.batch" href="#sprit.HVSRData.batch">batch</a></code></li>
 <li><code><a title="sprit.HVSRData.copy" href="#sprit.HVSRData.copy">copy</a></code></li>
 <li><code><a title="sprit.HVSRData.datastream" href="#sprit.HVSRData.datastream">datastream</a></code></li>
+<li><code><a title="sprit.HVSRData.get_report" href="#sprit.HVSRData.get_report">get_report</a></code></li>
 <li><code><a title="sprit.HVSRData.items" href="#sprit.HVSRData.items">items</a></code></li>
 <li><code><a title="sprit.HVSRData.keys" href="#sprit.HVSRData.keys">keys</a></code></li>
 <li><code><a title="sprit.HVSRData.params" href="#sprit.HVSRData.params">params</a></code></li>
 <li><code><a title="sprit.HVSRData.plot" href="#sprit.HVSRData.plot">plot</a></code></li>
 <li><code><a title="sprit.HVSRData.ppsds" href="#sprit.HVSRData.ppsds">ppsds</a></code></li>
 <li><code><a title="sprit.HVSRData.ppsds_obspy" href="#sprit.HVSRData.ppsds_obspy">ppsds_obspy</a></code></li>
+<li><code><a title="sprit.HVSRData.report" href="#sprit.HVSRData.report">report</a></code></li>
 </ul>
 </li>
 </ul>
