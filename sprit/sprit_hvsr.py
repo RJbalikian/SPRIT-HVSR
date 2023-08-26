@@ -199,7 +199,6 @@ def gui():
     """
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    #print(guiPath.joinpath('gui/tkgui.py').as_posix())
     from sprit.sprit_gui import  SPRIT_App
     import tkinter as tk
 
@@ -523,19 +522,18 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
         params = HVSRBatch(params)
-        print(params[list(params.keys())[0]].keys())
         return params
     else:
         try:
             rawDataIN = obspy.read(dPath)
             rawDataIN.attach_response(inv)
         except:
-            print('Read or source error')
+            RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
 
     try:
         dataIN = rawDataIN.copy()
     except:
-        raise RuntimeError('Data not fetched. Check input parameters.')
+        raise RuntimeError('Data not fetched. Check your input parameters.')
     
     #Trim and save data as specified
     if not trim_dir:
@@ -1022,7 +1020,7 @@ def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, x
         elif p=='spec':
             _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
         else:
-            print('Error')    
+            warnings.warn('Plot type {p} not recognized', UserWarning)   
     
     fig.canvas.draw()
     if return_fig:
@@ -1112,7 +1110,6 @@ def input_params(datapath,
     if not pathlib.Path(metapath).exists() or metapath=='':
         if metapath == '':
             pass
-            #print('No metadata file specified!')
         else:
             print('Specified metadata file cannot be read!')
         repoDir = pathlib.Path(os.path.dirname(__file__))
@@ -1382,6 +1379,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         Whether to remove outlier h/v curves. Recommend to be repeated even after using in generate_ppsds() if remove_noise() is used.
     outlier_curve_std : float, default = 1.75
         Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an 'outlier'
+    verbose : bool, defualt=False
+        Whether to print output to terminal
 
     Returns
     -------
@@ -1519,7 +1518,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         #Frequency Smoothing
         if freq_smooth is False:
-            print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+            if verbose:
+                warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out['psd_raw']:
@@ -1534,7 +1534,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         elif freq_smooth.lower() in freq_smooth_proport:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
         else:
-            print('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+            if verbose:
+                warnings.warn(f'You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.')
 
         #Get hvsr curve from three components at each time step
         anyK = list(hvsr_out['psd_raw'].keys())[0]
@@ -1654,8 +1655,8 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
             args['input'] = input[site_name] #Get what would normally be the "input" variable for each site
             hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
-        print(hvsr_out[site_name].keys())
         return output
+
     elif isinstance(input, (HVSRData, dict)):
         if 'stream_edited' in input.keys():
             inStream = input['stream_edited'].copy()
@@ -1666,7 +1667,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         inStream = input.copy()
         output = inStream.copy()
     else:
-        print("ERROR: input is not expected type")
+        RuntimeError(f"Input of type type(input)={type(input)} cannot be used.")
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
@@ -1685,7 +1686,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         elif isinstance(output, (HVSRData, dict)):
             pass
         else:
-            print('ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.')
+            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")
             
     elif kind.lower() in autoList:
         outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
@@ -1701,8 +1702,8 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     elif kind.lower() in warmup_cooldown:
         outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        print("ERROR: kind parameter is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
-        return
+        warnings.warn(f"Input value kind={kind} is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
+        return output
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
@@ -1711,7 +1712,8 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
     else:
-        print("ERROR: data type: {}".format(input))
+        warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning input data.")
+        return input
     return output
 
 #Remove outlier ppsds
@@ -1906,7 +1908,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
             if isinstance(file, obspy.core.stream.Stream):
-                print('Reading in a list of Obspy streams is not currently supported')
+                warnings.warn('Reading in a list of Obspy streams is not currently supported, but may be implemented in the future', FutureWarning)
                 pass 
             else:
                 param_dict_list[i]['datapath'] = file
@@ -2093,7 +2095,7 @@ def _update_shake_metadata(filepath, params, write_path=''):
             tree.write(write_file, xml_declaration=True, method='xml',encoding='UTF-8')
             inv = obspy.read_inventory(write_file, format='STATIONXML', level='response')
         except:
-            print('write_path not recognized as filepath, not writing')
+            warnings.warn(f'write_path={write_path} is not recognized as a filepath, updated metadata file will not be written')
             write_path=''
     else:
         #Create temporary file for reading into obspy
@@ -2401,7 +2403,7 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
             except:
                 dataIN = data_undetrended
                 if verbose:
-                    print("Detrend error, data not detrended")
+                    warnings.warn("Detrend error, data not detrended", UserWarning)
         
         input[key]['stream'] = dataIN
 
@@ -2880,7 +2882,6 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
     #Set initial input
     input = hvsr_data['stream']
 
-    #print(input[0].stats.starttime)
     if do_stalta:
         hvsr_data['stream_edited'] = remove_noise(input=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
         input = hvsr_data['stream_edited']
@@ -3102,7 +3103,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
     """This function is for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
-    print(type(input))
+
     if isinstance(input, (dict, HVSRData)):
         if 'stream_edited' in input.keys():
             stream = input['stream_edited'].copy()
@@ -3159,7 +3160,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                 removed=False
                 if w[0] in startList and w[1] in endList:
                     existing_xWindows.remove(w)
-                    print('match')
+
                     removed=True                    
                 if exist_win_format.lower() in matplotlibList and not removed:
                     sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
@@ -3210,7 +3211,12 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                         x0 = x0.matplotlib_date
                         x1 = x1.matplotlib_date
                 else:
-                    print('time_type error')
+                    warnings.warn(f'time_type={time_type} not recognized. Defaulting to matplotlib time formatting')
+                    x0 = trace.stats.starttime + (win[0] * sample_rate)
+                    x1 = trace.stats.starttime + (win[1] * sample_rate)
+                    
+                    x0 = x0.matplotlib_date
+                    x1 = x1.matplotlib_date
                 
                 y0, y1 = ax.get_ylim()
 
@@ -3316,8 +3322,7 @@ s
     for i, w in enumerate(sorted_window_list):
         if i < len(sorted_window_list) - 1:
             if w[1] > sorted_window_list[i+1][0]:
-                print("ERROR: Overlapping windows. Please reselect windows to be removed or use a different noise removal method.")
-                print(w[1], '>', sorted_window_list[i+1][0])
+                warnings.warn(f"Warning: Overlapping windows. Please start over and reselect windows to be removed or use a different noise removal method: {w[1]} '>' {sorted_window_list[i+1][0]}")
                 return
                 
     window_gaps_obspy = []
@@ -3409,7 +3414,7 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
 
     if method.lower() in dfaList:
         if verbose:
-            print('[INFO] Diffuse Field Assumption', flush=True)
+            print('[Using Diffuuse Field Assumption (DFA)', flush=True)
         params['dfa'] = {}
         params['dfa']['sum_ns_power'] = list()
         params['dfa']['sum_ew_power'] = list()
@@ -3500,7 +3505,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
         else:
             fwidthHalf = int(f_smooth_width * freqLength)
     else:
-        print('Oops, typo somewhere')
+        warnings.warn('Oops, typo somewhere')
 
     for k in hvsr_out['psd_raw']:
         newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
@@ -3561,7 +3566,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
 
     params = hvsr_data
     if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
-        print('WARNING: DFA method is currently experimental and not supported')
+        warnings.warn('WARNING: DFA method is currently experimental and not supported')
         for j in range(len(x)-1):
             for time_interval in params['ppsds']['Z']['current_times_used']:
                 hvsr_curve_tinterval = []

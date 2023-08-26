@@ -290,7 +290,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
         # Read and process each MiniSEED file
         for i, file in enumerate(input_data):
             if isinstance(file, obspy.core.stream.Stream):
-                print(&#39;Reading in a list of Obspy streams is not currently supported&#39;)
+                warnings.warn(&#39;Reading in a list of Obspy streams is not currently supported, but may be implemented in the future&#39;, FutureWarning)
                 pass 
             else:
                 param_dict_list[i][&#39;datapath&#39;] = file
@@ -368,6 +368,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
         messageList = []
         hasWarnings = False
         # use a try-except block to catch any exceptions
+        #result = func(*args, **kwargs)
         try:
             # use a context manager to catch any warnings
             with warnings.catch_warnings(record=True) as w:
@@ -389,18 +390,17 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
         except Exception as e:
             messageList = get_warning_msg_list(w)
             
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
-            error_message = str(e)
-
-            #Print the linenumber where error occured to terminal
-            #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_message = f&#34;{e} ({errLineNo})&#34;
+            
             #Print the function name where the error occured
-            #print(func.__name__)
-
+            #print(func.__name__) 
+            
             #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
             
-            fullErrorMessage = f&#39;PRIMARY ERROR ({error_category}): {error_message}&#39;
+            fullErrorMessage = f&#39;ERROR ({error_category}): {error_message} (line {traceback.extract_tb(sys.exc_info()[2])[-1].lineno})&#39;
             if messageList == []:
                 pass
             else:
@@ -864,19 +864,18 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         batch_data_read_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params[&#39;datapath&#39;], verbose=verbose, **batch_data_read_kwargs)
         params = HVSRBatch(params)
-        print(params[list(params.keys())[0]].keys())
         return params
     else:
         try:
             rawDataIN = obspy.read(dPath)
             rawDataIN.attach_response(inv)
         except:
-            print(&#39;Read or source error&#39;)
+            RuntimeError(f&#39;source={source} not recognized, and datapath cannot be read using obspy.read()&#39;)
 
     try:
         dataIN = rawDataIN.copy()
     except:
-        raise RuntimeError(&#39;Data not fetched. Check input parameters.&#39;)
+        raise RuntimeError(&#39;Data not fetched. Check your input parameters.&#39;)
     
     #Trim and save data as specified
     if not trim_dir:
@@ -1546,8 +1545,7 @@ For docx (not yet implemented), the following are also included:
     &#34;&#34;&#34;
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    #print(guiPath.joinpath(&#39;gui/tkgui.py&#39;).as_posix())
-    from sprit_gui import SPRIT_App
+    from sprit.sprit_gui import  SPRIT_App
     import tkinter as tk
 
     def on_gui_closing():
@@ -1767,7 +1765,7 @@ Keyword arguments for matplotlib.pyplot</p>
         elif p==&#39;spec&#39;:
             _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
         else:
-            print(&#39;Error&#39;)    
+            warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
     
     fig.canvas.draw()
     if return_fig:
@@ -1912,7 +1910,6 @@ This is necessary for Raspberry Shake data.</dd>
     if not pathlib.Path(metapath).exists() or metapath==&#39;&#39;:
         if metapath == &#39;&#39;:
             pass
-            #print(&#39;No metadata file specified!&#39;)
         else:
             print(&#39;Specified metadata file cannot be read!&#39;)
         repoDir = pathlib.Path(os.path.dirname(__file__))
@@ -2104,6 +2101,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <dd>Whether to remove outlier h/v curves. Recommend to be repeated even after using in generate_ppsds() if remove_noise() is used.</dd>
 <dt><strong><code>outlier_curve_std</code></strong> :&ensp;<code>float</code>, default <code>= 1.75</code></dt>
 <dd>Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an 'outlier'</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool, defualt=False</code></dt>
+<dd>Whether to print output to terminal</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <pre><code>hvsr_out    : dict
@@ -2152,6 +2151,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         Whether to remove outlier h/v curves. Recommend to be repeated even after using in generate_ppsds() if remove_noise() is used.
     outlier_curve_std : float, default = 1.75
         Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an &#39;outlier&#39;
+    verbose : bool, defualt=False
+        Whether to print output to terminal
 
     Returns
     -------
@@ -2289,7 +2290,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 
         #Frequency Smoothing
         if freq_smooth is False:
-            print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
+            if verbose:
+                warnings.warn(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out[&#39;psd_raw&#39;]:
@@ -2304,7 +2306,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         elif freq_smooth.lower() in freq_smooth_proport:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;proportional&#39;)
         else:
-            print(&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;)
+            if verbose:
+                warnings.warn(f&#39;You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.&#39;)
 
         #Get hvsr curve from three components at each time step
         anyK = list(hvsr_out[&#39;psd_raw&#39;].keys())[0]
@@ -2548,8 +2551,8 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
             args[&#39;input&#39;] = input[site_name] #Get what would normally be the &#34;input&#34; variable for each site
             hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
-        print(hvsr_out[site_name].keys())
         return output
+
     elif isinstance(input, (HVSRData, dict)):
         if &#39;stream_edited&#39; in input.keys():
             inStream = input[&#39;stream_edited&#39;].copy()
@@ -2560,7 +2563,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         inStream = input.copy()
         output = inStream.copy()
     else:
-        print(&#34;ERROR: input is not expected type&#34;)
+        RuntimeError(f&#34;Input of type type(input)={type(input)} cannot be used.&#34;)
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
@@ -2579,7 +2582,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
         elif isinstance(output, (HVSRData, dict)):
             pass
         else:
-            print(&#39;ERROR: Using anything other than an obspy stream is not currently supported for this noise removal method.&#39;)
+            RuntimeError(&#34;Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.&#34;)
             
     elif kind.lower() in autoList:
         outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
@@ -2595,8 +2598,8 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     elif kind.lower() in warmup_cooldown:
         outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        print(&#34;ERROR: kind parameter is not recognized. Please choose one of the following: &#39;manual&#39;, &#39;auto&#39;, &#39;antitrigger&#39;, &#39;noise threshold&#39;, &#39;warmup_cooldown&#34;)
-        return
+        warnings.warn(f&#34;Input value kind={kind} is not recognized. Please choose one of the following: &#39;manual&#39;, &#39;auto&#39;, &#39;antitrigger&#39;, &#39;noise threshold&#39;, &#39;warmup_cooldown&#34;)
+        return output
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
@@ -2605,7 +2608,8 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
         output = outStream
     else:
-        print(&#34;ERROR: data type: {}&#34;.format(input))
+        warnings.warn(f&#34;Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning input data.&#34;)
+        return input
     return output</code></pre>
 </details>
 </dd>

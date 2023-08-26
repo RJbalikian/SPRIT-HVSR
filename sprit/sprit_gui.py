@@ -57,7 +57,7 @@ def catch_errors(func):
         messageList = []
         hasWarnings = False
         # use a try-except block to catch any exceptions
-        result = func(*args, **kwargs)
+        #result = func(*args, **kwargs)
         try:
             # use a context manager to catch any warnings
             with warnings.catch_warnings(record=True) as w:
@@ -79,14 +79,13 @@ def catch_errors(func):
         except Exception as e:
             messageList = get_warning_msg_list(w)
             
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = str(e)
+            error_message = f"{e} ({errLineNo})"
             
-            #Print the linenumber where error occured to terminal
-            #print(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             #Print the function name where the error occured
-            #print(func.__name__)
-
+            #print(func.__name__) 
+            
             #Get message list, [] if no messages, doesn't run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
             
@@ -2534,7 +2533,11 @@ class SPRIT_App:
         self.results_siteSelectLabel = ttk.Label(self.results_siteSelectFrame, text='Select Site ')
 
         def on_site_select():
-            report_results(self.hvsr_results[self.selectedSite.get()])
+            sitename =self.selectedSite.get()
+            try: 
+                report_results(self.hvsr_results[sitename])
+            except:
+                warnings.warn(f"Site {sitename} does not exist", UserWarning)
             
         self.site_options = ['']
         self.selectedSite = tk.StringVar(value=self.site_options[0])
