@@ -4,14 +4,31 @@ The arguments here should correspond to any of the keyword arguments that can be
 """
 
 import argparse
+import inspect
 import sprit  # Assuming you have a module named 'sprit'
 
 def main():
     parser = argparse.ArgumentParser(description='CLI for SPRIT HVSR package (specifically the sprit.run() function)')
     
-    # Add arguments and options here
-    parser.add_argument('--arg1', help='Description of argument 1')
-    parser.add_argument('--arg2', help='Description of argument 2')
+    hvsrFunctions = [sprit.input_params,
+                     sprit.fetch_data,
+                     sprit.remove_noise,
+                     sprit.generate_ppsds,
+                     sprit.process_hvsr,
+                     sprit.check_peaks,
+                     sprit.get_report,
+                     sprit.hvplot]
+
+    parameters = []
+
+    for f in hvsrFunctions:
+        parameters.append(inspect.signature(f).parameters)
+
+    for i, param in enumerate(parameters.items()):
+        for name, parameter in param.items():
+            # Add arguments and options here
+            parser.add_argument(F'--{name}', help=f'Keyword argument {hvsrFunctions[i].__str__} in function')
+    
     # Add more arguments/options as needed
     
     args = parser.parse_args()
