@@ -5,6 +5,11 @@ import shutil
 import subprocess
 import sys
 
+#Whether to convert_md using markdown library (True), or let github do it (False)
+convert_md=True
+rtd_theme=False #Not currently working
+release_version= '0.1.12'
+
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
 repoDir = docsDir.parent
@@ -15,10 +20,6 @@ spritPath = spritDir.joinpath('sprit.py')
 resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 
-#Whether to convert_md using markdown library (True), or let github do it (False)
-convert_md=True
-rtd_theme=False #Not currently working
-release_version= '0.1.11'
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
