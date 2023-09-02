@@ -24,11 +24,14 @@ def main():
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    for i, param in enumerate(parameters.items()):
+    paramNamesList = []
+    for i, param in enumerate(parameters):
         for name, parameter in param.items():
+            print(name, ',Default=', parameter.default)
             # Add arguments and options here
-            parser.add_argument(F'--{name}', help=f'Keyword argument {hvsrFunctions[i].__str__} in function')
-    
+            if name not in paramNamesList:
+                paramNamesList.append(name)
+                parser.add_argument(F'--{name}', help=f'Keyword argument {hvsrFunctions[i].__str__} in function')
     # Add more arguments/options as needed
     
     args = parser.parse_args()
@@ -37,11 +40,13 @@ def main():
     
     #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
-    if args.arg1:
-        kwargs['arg1'] = args.arg1
-    if args.arg2:
-        kwargs['arg2'] = args.arg2
-    # Map more arguments/options as needed
+    for arg_name, arg_value in vars(args).items():
+        if arg_value is None:
+            pass
+            print(f"{arg_name}={arg_value}")
+        else:
+            print(f"!!!{arg_name}={arg_value}")
+
     
     # Call the sprit.run function with the generated kwargs
     sprit.run(**kwargs)
