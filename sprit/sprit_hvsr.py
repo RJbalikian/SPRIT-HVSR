@@ -312,9 +312,9 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         ----------
         hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        hvsr_band  : tuple or list, default=[0.4, 40]
+        hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
-        peak_water_level: float, default=1.8
+        peak_water_level : float, default=1.8
             Value of peak water level
 
         Returns
