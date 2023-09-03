@@ -52,9 +52,9 @@ def main():
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == 'datapath':
-                    parser.add_argument('-V', F'--{name}',  required=True, help=f'{curr_doc_str}', default=parameter.default)
+                    parser.add_argument(F'--{name}',  required=True, help=f'{curr_doc_str}', default=parameter.default)
                 elif name == 'verbose':
-                    parser.add_argument('-V', F'--verbose',  action='store_true', help=f'Print status and results of code to terminal.', default=parameter.default)
+                    parser.add_argument('-V', F'--verbose',  action='store_true', help=f'Print status and results to terminal.', default=parameter.default)
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
                     print(helpStr)
