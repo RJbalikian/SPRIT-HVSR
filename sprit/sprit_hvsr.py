@@ -789,7 +789,8 @@ def get_report(hvsr_results, export=None, report_format='print', plot_type='HVSR
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
             _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
-        if 'Best Peak' in hvsr_results.keys():
+        #if 'Best Peak' in hvsr_results.keys() and 'Pass List' in hvsr_results['Best Peak'].keys():
+        try:
             curvTestsPassed = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
                                 hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
                                 hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time'])
@@ -803,8 +804,8 @@ def get_report(hvsr_results, export=None, report_format='print', plot_type='HVSR
                         hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
                         hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)'])
             peakPass = peakTestsPassed >= 5
-        else:
-            pass
+        except:
+            raise RuntimeError('No Best Peak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
         
         if report_format=='print':
             #Print results
