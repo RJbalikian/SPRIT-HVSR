@@ -68,12 +68,8 @@ def main():
     #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
-        if arg_value is None:
-            pass
-            print(f"{arg_name}={arg_value}")
-        else:
-            print(f"{arg_name}={arg_value}")
-
+        kwargs[arg_name] = arg_value
+        
     # Call the sprit.run function with the generated kwargs
     sprit.run(**kwargs)
 
