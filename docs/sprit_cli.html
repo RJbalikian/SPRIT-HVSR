@@ -72,7 +72,7 @@ def main():
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -84,10 +84,9 @@ def main():
                 if name == &#39;datapath&#39;:
                     parser.add_argument(F&#39;--{name}&#39;,  required=True, help=f&#39;{curr_doc_str}&#39;, default=parameter.default)
                 elif name == &#39;verbose&#39;:
-                    parser.add_argument(&#39;-V&#39;, F&#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
+                    parser.add_argument(&#39;-v&#39;, F&#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
-                    print(helpStr)
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
     # Add more arguments/options as needed
     
@@ -99,9 +98,13 @@ def main():
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
         kwargs[arg_name] = arg_value
-        
+
     # Call the sprit.run function with the generated kwargs
-    sprit.run(**kwargs)
+    try:
+        sprit.run(**kwargs)
+    except:
+        print(&#39;error&#39;)
+        print(helpStr)
 
 if __name__ == &#39;__main__&#39;:
     main()</code></pre>
@@ -168,7 +171,7 @@ if __name__ == &#39;__main__&#39;:
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -180,10 +183,9 @@ if __name__ == &#39;__main__&#39;:
                 if name == &#39;datapath&#39;:
                     parser.add_argument(F&#39;--{name}&#39;,  required=True, help=f&#39;{curr_doc_str}&#39;, default=parameter.default)
                 elif name == &#39;verbose&#39;:
-                    parser.add_argument(&#39;-V&#39;, F&#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
+                    parser.add_argument(&#39;-v&#39;, F&#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
-                    print(helpStr)
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
     # Add more arguments/options as needed
     
@@ -195,9 +197,13 @@ if __name__ == &#39;__main__&#39;:
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
         kwargs[arg_name] = arg_value
-        
+
     # Call the sprit.run function with the generated kwargs
-    sprit.run(**kwargs)</code></pre>
+    try:
+        sprit.run(**kwargs)
+    except:
+        print(&#39;error&#39;)
+        print(helpStr)</code></pre>
 </details>
 </dd>
 </dl>
