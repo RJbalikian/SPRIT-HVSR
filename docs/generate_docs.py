@@ -8,7 +8,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.20'
+release_version= '0.1.22'
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
