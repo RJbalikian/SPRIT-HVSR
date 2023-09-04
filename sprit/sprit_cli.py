@@ -70,12 +70,8 @@ def main():
         kwargs[arg_name] = arg_value
 
     # Call the sprit.run function with the generated kwargs
-    try:
-        sprit.run(**kwargs)
-    except:
-        print('error')
-        print(helpStr)
-
+    sprit.run(**kwargs)
+    
 if __name__ == '__main__':
     main()
 
