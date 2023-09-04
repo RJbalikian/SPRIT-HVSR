@@ -291,9 +291,18 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     #Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
-    
+
+    get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report_kwargs.__code__.co_varnames}
+    hvsr_results.get_report(**get_report_kwargs)
+
     if verbose:
-        get_report(hvsr_results=hvsr_results, report_format='print')  
+        if 'report_format' in get_report_kwargs.keys():
+            if get_report_kwargs['report_format']=='print':
+                pass
+            else:
+                get_report(hvsr_results=hvsr_results, **get_report_kwargs)  
+        else:
+            get_report(hvsr_results=hvsr_results, report_format='print')  
 
     if plot_type != False:
         if plot_type == True:
