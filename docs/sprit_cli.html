@@ -72,7 +72,7 @@ def main():
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -167,7 +167,7 @@ if __name__ == &#39;__main__&#39;:
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):

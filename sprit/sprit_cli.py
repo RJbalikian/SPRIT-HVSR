@@ -42,7 +42,7 @@ def main():
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = ['params', 'input']
+    intermediate_params_list = ['params', 'input', 'hvsr_data']
 
     paramNamesList = []
     for i, param in enumerate(parameters):
