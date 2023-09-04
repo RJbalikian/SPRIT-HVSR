@@ -951,7 +951,7 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
                     except:
                         warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['Best Peak']['Report']['CSV_Report]".format(export_table), category=RuntimeWarning)
                 hvsr_results['Best Peak']['Report']['CSV_Report'] = outDF
-                return outDF
+                return hvsr_results
             elif _report_format=='plot':
                 hvsr_results['Best Peak']['Report']['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
                 plt.show()
