@@ -333,8 +333,8 @@ def run(datapath, source=&#39;file&#39;, kind=&#39;auto&#39;, method=4, hvsr_ban
     return hvsr_results
 
 #Quality checks, stability tests, clarity tests
-#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], peak_water_level=1.8, do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
+#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False):
     &#34;&#34;&#34;Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -343,8 +343,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
         hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
-        peak_water_level : float, default=1.8
-            Value of peak water level
 
         Returns
         -------
@@ -385,15 +383,14 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         x = hvsr_data[&#39;x_freqs&#39;][anyK]
         y = hvsr_data[&#39;hvsr_curve&#39;]
         index_list = hvsr_data[&#39;hvsr_peak_indices&#39;]
-        peak_water_level  = hvsr_data[&#39;peak_water_level&#39;]
         hvsrp = hvsr_data[&#39;hvsrp&#39;]
-        peak_water_level_p  = hvsr_data[&#39;peak_water_level_p&#39;]
         hvsrm = hvsr_data[&#39;hvsrm&#39;]
         hvsrPeaks = hvsr_data[&#39;ind_hvsr_peak_indices&#39;]
         hvsr_log_std = hvsr_data[&#39;hvsr_log_std&#39;]
+        peak_freq_range = hvsr_data[&#39;peak_freq_range&#39;]
 
         #Do for hvsr
-        peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
+        peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
 
         peak = __check_curve_reliability(hvsr_data, peak)
         peak = __check_clarity(x, y, peak, do_rank=True)
@@ -405,7 +402,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         else:
             index_p = list()
 
-        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
         peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
 
         #Do for hvsrm
@@ -415,9 +412,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=Fa
         else:
             index_m = list()
 
-        peak_water_level_m  = hvsr_data[&#39;peak_water_level_m&#39;]
-
-        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
         peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
         stdf = __get_stdf(x, index_list, hvsrPeaks)
@@ -823,7 +818,8 @@ def get_report(hvsr_results, export=None, report_format=&#39;print&#39;, plot_ty
             args[&#39;hvsr_results&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
             _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
-        if &#39;Best Peak&#39; in hvsr_results.keys():
+        #if &#39;Best Peak&#39; in hvsr_results.keys() and &#39;Pass List&#39; in hvsr_results[&#39;Best Peak&#39;].keys():
+        try:
             curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
                                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
                                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
@@ -837,8 +833,8 @@ def get_report(hvsr_results, export=None, report_format=&#39;print&#39;, plot_ty
                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
             peakPass = peakTestsPassed &gt;= 5
-        else:
-            pass
+        except:
+            raise RuntimeError(&#39;No Best Peak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
         
         if report_format==&#39;print&#39;:
             #Print results
@@ -1123,6 +1119,7 @@ def input_params(datapath,
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = &#39;&#39;,
                 hvsr_band = [0.4, 40],
+                peak_freq_range=[0.4, 40],
                 verbose=False
                 ):
     &#34;&#34;&#34;Function for designating input parameters for reading in and processing data
@@ -1302,7 +1299,7 @@ def input_params(datapath,
     inputParamDict = {&#39;site&#39;:site, &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
                     &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;, #Will be in UTC by this point
                     &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;input_crs&#39;:input_crs, &#39;output_crs&#39;:output_crs,
-                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
+                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band, &#39;peak_freq_range&#39;:peak_freq_range
                     }
 
     inputParamDict = sprit_utils.make_it_classy(inputParamDict)
@@ -1664,7 +1661,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
         hvsr_out[&#39;hvsr_peak_freqs&#39;] = np.array(hvsrPF)
 
 
-        #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
+        #Get other HVSR parameters (i.e., standard deviations, etc.)
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
@@ -3792,16 +3789,13 @@ def __gethvsrparams(hvsr_out):
     hvsrp2 = {}
     hvsrm2 = {}
     
-    peak_water_level = []
     peak_water_level_p=[]
     hvsrp2=[]
     hvsrm=[]
     peak_water_level_m=[]
-    water_level=1.8 #Make this an input parameter eventually!!!****
     
     hvsr_log_std = {}
 
-    peak_water_level.append(water_level)
 
     hvsr=hvsr_out[&#39;hvsr_curve&#39;]
     if hvsr_out[&#39;ind_hvsr_curves&#39;].shape[0] &gt; 0:
@@ -3812,11 +3806,9 @@ def __gethvsrparams(hvsr_out):
         hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
         hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
 
-        peak_water_level_p = water_level + hvsr_out[&#39;ind_hvsr_stdDev&#39;]
-        peak_water_level_m = water_level - hvsr_out[&#39;ind_hvsr_stdDev&#39;]
 
-    newKeys = [&#39;hvsr_log_std&#39;, &#39;peak_water_level&#39;, &#39;peak_water_level_p&#39;, &#39;peak_water_level_m&#39;,&#39;hvsrp&#39;,&#39;hvsrm&#39;, &#39;hvsrp2&#39;,&#39;hvsrm2&#39;]
-    newVals = [hvsr_log_std,    peak_water_level,   peak_water_level_p,   peak_water_level_m,  hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
+    newKeys = [&#39;hvsr_log_std&#39;, &#39;hvsrp&#39;,&#39;hvsrm&#39;, &#39;hvsrp2&#39;,&#39;hvsrm2&#39;]
+    newVals = [hvsr_log_std,    hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
     for i, nk in enumerate(newKeys):
         hvsr_out[nk] = np.array(newVals[i])
 
@@ -4387,7 +4379,7 @@ def _plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type
 
 ##Helper functions for checking peaks
 #Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
     &#34;&#34;&#34; Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
@@ -4401,18 +4393,21 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, _peak_water_level):
         index_list : list or array_like 
             List with indices of peaks
         _hvsr_band : list
-            Two-item list with low and high frequency to limit assessment extent
-        _peak_water_level : float
-            Peak water level value
-        
+            Two-item list with low and high frequency to limit frequency range of data analysis extent
+        peak_freq_range : list
+            Two-item list with low and high frequency to limit frequency range for checking for peaks
+        _min_peak_amp : float
+            Minimum amplitude to be used for peak selection (to limit number of meaningless peaks found)
+
         Returns
         -------
         _peak               : list 
             List of dictionaries, one for each input peak
     &#34;&#34;&#34;
+
     _peak = list()
     for _i in _index_list:
-        if _y[_i] &gt; _peak_water_level[0] and (_hvsr_band[0] &lt;= _x[_i] &lt;= _hvsr_band[1]):
+        if (_hvsr_band[0] &lt;= _x[_i] &lt;= _hvsr_band[1]) and (peak_freq_range[0] &lt;= _x[_i] &lt;= peak_freq_range[1]) and (_y[_i]&gt;_min_peak_amp):
             _peak.append({&#39;f0&#39;: float(_x[_i]), &#39;A0&#39;: float(_y[_i]), 
                           &#39;f-&#39;: None, &#39;f+&#39;: None, &#39;Sf&#39;: None, &#39;Sa&#39;: None,
                           &#39;Score&#39;: 0, 
@@ -5056,7 +5051,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.check_peaks"><code class="name flex">
-<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False)</span>
+<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
@@ -5066,8 +5061,6 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
 <dd>Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</dd>
 <dt><strong><code>hvsr_band</code></strong> :&ensp;<code>tuple</code> or <code>list</code>, default=<code>[0.4, 40]</code></dt>
 <dd>2-item tuple or list with lower and upper limit of frequencies to analyze</dd>
-<dt><strong><code>peak_water_level</code></strong> :&ensp;<code>float</code>, default=<code>1.8</code></dt>
-<dd>Value of peak water level</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -5079,7 +5072,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_water_level=1.8, verbose=False):
+<pre><code class="python">def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False):
     &#34;&#34;&#34;Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -5088,8 +5081,6 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
         hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
-        peak_water_level : float, default=1.8
-            Value of peak water level
 
         Returns
         -------
@@ -5130,15 +5121,14 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         x = hvsr_data[&#39;x_freqs&#39;][anyK]
         y = hvsr_data[&#39;hvsr_curve&#39;]
         index_list = hvsr_data[&#39;hvsr_peak_indices&#39;]
-        peak_water_level  = hvsr_data[&#39;peak_water_level&#39;]
         hvsrp = hvsr_data[&#39;hvsrp&#39;]
-        peak_water_level_p  = hvsr_data[&#39;peak_water_level_p&#39;]
         hvsrm = hvsr_data[&#39;hvsrm&#39;]
         hvsrPeaks = hvsr_data[&#39;ind_hvsr_peak_indices&#39;]
         hvsr_log_std = hvsr_data[&#39;hvsr_log_std&#39;]
+        peak_freq_range = hvsr_data[&#39;peak_freq_range&#39;]
 
         #Do for hvsr
-        peak = __init_peaks(x, y, index_list, hvsr_band, peak_water_level)
+        peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
 
         peak = __check_curve_reliability(hvsr_data, peak)
         peak = __check_clarity(x, y, peak, do_rank=True)
@@ -5150,7 +5140,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         else:
             index_p = list()
 
-        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_water_level_p)
+        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
         peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
 
         #Do for hvsrm
@@ -5160,9 +5150,7 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         else:
             index_m = list()
 
-        peak_water_level_m  = hvsr_data[&#39;peak_water_level_m&#39;]
-
-        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_water_level_m)
+        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
         peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
         stdf = __get_stdf(x, index_list, hvsrPeaks)
@@ -5693,7 +5681,8 @@ For docx (not yet implemented), the following are also included:
             args[&#39;hvsr_results&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
             _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
-        if &#39;Best Peak&#39; in hvsr_results.keys():
+        #if &#39;Best Peak&#39; in hvsr_results.keys() and &#39;Pass List&#39; in hvsr_results[&#39;Best Peak&#39;].keys():
+        try:
             curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
                                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
                                 hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
@@ -5707,8 +5696,8 @@ For docx (not yet implemented), the following are also included:
                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
                         hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
             peakPass = peakTestsPassed &gt;= 5
-        else:
-            pass
+        except:
+            raise RuntimeError(&#39;No Best Peak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
         
         if report_format==&#39;print&#39;:
             #Print results
@@ -6066,7 +6055,7 @@ Keyword arguments for matplotlib.pyplot</p>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-09-02', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-09-03', starttime='00:00:00.00', endtime='23:59:59.999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -6140,6 +6129,7 @@ This is necessary for Raspberry Shake data.</dd>
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = &#39;&#39;,
                 hvsr_band = [0.4, 40],
+                peak_freq_range=[0.4, 40],
                 verbose=False
                 ):
     &#34;&#34;&#34;Function for designating input parameters for reading in and processing data
@@ -6319,7 +6309,7 @@ This is necessary for Raspberry Shake data.</dd>
     inputParamDict = {&#39;site&#39;:site, &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:loc, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
                     &#39;acq_date&#39;:acq_date,&#39;starttime&#39;:starttime,&#39;endtime&#39;:endtime, &#39;timezone&#39;:&#39;UTC&#39;, #Will be in UTC by this point
                     &#39;longitude&#39;:xcoord,&#39;latitude&#39;:ycoord,&#39;elevation&#39;:elevation,&#39;input_crs&#39;:input_crs, &#39;output_crs&#39;:output_crs,
-                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band
+                    &#39;depth&#39;:depth, &#39;datapath&#39;: datapath, &#39;metapath&#39;:metapath, &#39;hvsr_band&#39;:hvsr_band, &#39;peak_freq_range&#39;:peak_freq_range
                     }
 
     inputParamDict = sprit_utils.make_it_classy(inputParamDict)
@@ -6749,7 +6739,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         hvsr_out[&#39;hvsr_peak_freqs&#39;] = np.array(hvsrPF)
 
 
-        #Get other HVSR parameters (i.e., standard deviations, water levels, etc.)
+        #Get other HVSR parameters (i.e., standard deviations, etc.)
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
