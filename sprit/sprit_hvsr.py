@@ -3,9 +3,11 @@ This module contains all the functions needed to run the HVSR analysis
 """
 import copy
 import datetime
+import json
 import math
 import os
 import pathlib
+import pickle
 import pkg_resources
 import tempfile
 import warnings
@@ -34,8 +36,23 @@ max_rank = 0
 plotRows = 4
 
 #CLASSES
+
+#CHeck if the data is already the right class
+# Define a decorator that wraps the __init__ method
+def check_instance(init):
+    def wrapper(self, *args, **kwargs):
+        # Check if the first argument is an instance of self.__class__
+        if args and isinstance(args[0], self.__class__):
+            # Copy its attributes to self
+            self.__dict__.update(args[0].__dict__)
+        else:
+            # Call the original __init__ method
+            init(self, *args, **kwargs)
+    return wrapper
+
 #Class for batch data
 class HVSRBatch:
+    @check_instance
     def __init__(self, sites_dict):
       
         self._batch_dict = sites_dict
@@ -47,6 +64,15 @@ class HVSRBatch:
             self[sitename]['batch']=True
             
         self.sites = list(self._batch_dict.keys())
+
+    def to_json(self, filepath):
+        # open the file with the given filepath
+        with open(filepath, 'w') as f:
+            # dump the JSON string to the file
+            json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    def export(self, export_path=None, ext='hvsr'):
+        export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
     #METHODS
     def keys(self):
@@ -108,11 +134,12 @@ class HVSRBatch:
 
 #Class for each HVSR site
 class HVSRData:
-    def __new__(cls, params):
-        if isinstance(params, (cls, HVSRBatch)):
-            return params
-        return super().__new__(cls)
-        
+    #def __new__(cls, params):
+    #    if isinstance(params, (cls, HVSRBatch)):
+    #        return params
+    #    return super().__new__(cls)
+
+    @check_instance    
     def __init__(self, params):
         self.params = params
         #self.datastream = None
@@ -130,6 +157,24 @@ class HVSRData:
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+    def to_json(self, filepath):
+        # open the file with the given filepath
+        def unseriable_fun(o):
+            if isinstance(o, np.ndarray):
+                output = o.tolist()
+            try:
+                output = o.__dict__
+            except:
+                output = dir(o)
+            return output
+
+        with open(filepath, 'w') as f:
+            # dump the JSON string to the file
+            json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)
+
+    def export(self, export_path=None, ext='hvsr'):
+        export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
     #METHODS (many reflect dictionary methods)
     def keys(self):
@@ -235,6 +280,24 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
+#Importing HVSR data
+def import_data(input_file, filetype='pickle'):
+    if filetype=='json':
+        if "sites" in input_file and "batch" in input_file and "batch_dict" in input_file:
+            # obj is a HVSRBatch
+            return HVSRBatch(input_file["batch_dict"])
+        elif "params" in input_file and "batch" in input_file and "datastream" in input_file:
+            # obj is a HVSRData
+            return HVSRData(input_file["params"])
+        else:
+            # obj is neither
+            return input_file
+    else:
+        import pickle
+        with open(input_file, 'rb') as f:
+            datafile = pickle.load(f)
+
+        return datafile
 
 #Launch the tkinter gui
 def gui():
@@ -259,7 +322,6 @@ def gui():
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
     gui_root.mainloop() #Run the main loop
-
 
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
@@ -442,6 +504,28 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
 
         hvsr_data['Best Peak'] = bestPeak
     return hvsr_data
+
+#Function to export data to file
+def export_data(hvsr_data, export_path=None, ext='hvsr'):
+    """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time.
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData or HVSRBatch
+        Data to be exported
+    export_path : str or filepath object, default = None
+        String or filepath object to be read by pathlib.Path() and/or a with open(export_path, 'wb') statement. If None, defaults to input datapath directory, by default None
+    ext : str, default = 'hvsr'
+        Filepath extension to use for data file, by default 'hvsr'
+    """
+    if export_path is None:
+        export_path = hvsr_data.params['datapath']
+        fname = f"{hvsr_data.params['site']}_{hvsr_data.params['acq_date']}_pickle.{ext}"
+        export_path = pathlib.Path(export_path).with_name(fname)
+        export_path = str(export_path.as_posix())
+    with open(export_path, 'wb') as f:
+        pickle.dump(hvsr_data, f)    
+    return
 
 #Reads in traces to obspy stream
 def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
@@ -1095,6 +1179,15 @@ def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, x
     if return_fig:
         return fig, ax
     return
+
+#Import data
+def import_data(import_filepath, data_format='pickle'):
+    if data_format=='pickle':
+        with open(import_filepath, 'rb') as f:
+            dataIN = pickle.load(f)
+    else:
+        dataIN = import_filepath
+    return dataIN
 
 #Define input parameters
 def input_params(datapath,

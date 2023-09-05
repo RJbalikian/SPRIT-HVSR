@@ -9,6 +9,8 @@ import sprit.sprit_hvsr as sprit_hvsr
 
 from sprit.sprit_hvsr import(
     run,
+    export_data,
+    import_data,
     input_params,
     gui,
     get_metadata,
@@ -48,6 +50,8 @@ __all__ =('sprit_hvsr',
             'get_char',
             'time_it',
             'checkifpath',
+            'export_data', 
+            'import_data',
             'input_params',
             'gui',
             'get_metadata',
