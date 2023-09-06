@@ -499,13 +499,13 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
         hvsr_data[&#39;Peak Report&#39;] = peak
 
         #Iterate through peaks and 
-        #   Get the best peak based on the peak score
+        #   Get the BestPeak based on the peak score
         #   Calculate whether each peak passes enough tests
-        curveTests = [&#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;, &#39;Low Curve StDev. over time&#39;]
-        peakTests = [&#39;Peak Freq. Clarity Below&#39;, &#39;Peak Freq. Clarity Above&#39;, &#39;Peak Amp. Clarity&#39;, &#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;, &#39;Peak Stability (amp. std)&#39;]
+        curveTests = [&#39;WindowLengthFreq.&#39;,&#39;SignificantCycles&#39;, &#39;LowCurveStDevOverTime&#39;]
+        peakTests = [&#39;PeakFreqClarityBelow&#39;, &#39;PeakFreqClarityAbove&#39;, &#39;PeakAmpClarity&#39;, &#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;, &#39;PeakStability_AmpStD&#39;]
         bestPeakScore = 0
         for p in hvsr_data[&#39;Peak Report&#39;]:
-            #Get best peak
+            #Get BestPeak
             if p[&#39;Score&#39;] &gt; bestPeakScore:
                 bestPeakScore = p[&#39;Score&#39;]
                 bestPeak = p
@@ -513,25 +513,25 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
             #Calculate if peak passes criteria
             cTestsPass = 0
             pTestsPass = 0
-            for testName in p[&#39;Pass List&#39;].keys():
+            for testName in p[&#39;PassList&#39;].keys():
                 if testName in curveTests:
-                    if p[&#39;Pass List&#39;][testName]:
+                    if p[&#39;PassList&#39;][testName]:
                         cTestsPass += 1
                 elif testName in peakTests:
-                    if p[&#39;Pass List&#39;][testName]:
+                    if p[&#39;PassList&#39;][testName]:
                         pTestsPass += 1
 
             if cTestsPass == 3 and pTestsPass &gt;= 5:
-                p[&#39;Peak Passes&#39;] = True
+                p[&#39;PeakPasses&#39;] = True
             else:
-                p[&#39;Peak Passes&#39;] = False
+                p[&#39;PeakPasses&#39;] = False
             
-        #Designate best peak in output dict
+        #Designate BestPeak in output dict
         if len(hvsr_data[&#39;Peak Report&#39;]) == 0:
             bestPeak={}
-            print(&#39;No Best Peak identified&#39;)
+            print(&#39;No BestPeak identified&#39;)
 
-        hvsr_data[&#39;Best Peak&#39;] = bestPeak
+        hvsr_data[&#39;BestPeak&#39;] = bestPeak
     return hvsr_data
 
 #Function to export data to file
@@ -916,23 +916,23 @@ def get_report(hvsr_results, export_table=None, report_format=&#39;print&#39;, p
             args[&#39;hvsr_results&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
             _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
-        #if &#39;Best Peak&#39; in hvsr_results.keys() and &#39;Pass List&#39; in hvsr_results[&#39;Best Peak&#39;].keys():
+        #if &#39;BestPeak&#39; in hvsr_results.keys() and &#39;PassList&#39; in hvsr_results[&#39;BestPeak&#39;].keys():
         try:
-            curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
-                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
-                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
+            curvTestsPassed = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;WindowLengthFreq.&#39;] +
+                                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;SignificantCycles&#39;]+
+                                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;LowCurveStDevOverTime&#39;])
             curvePass = curvTestsPassed &gt; 2
             
             #Peak Pass?
-            peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
+            peakTestsPassed = ( hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] +
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;])
             peakPass = peakTestsPassed &gt;= 5
         except:
-            raise RuntimeError(&#39;No Best Peak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
+            raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
     
         if isinstance(report_format, (list, tuple)):
             pass
@@ -994,50 +994,50 @@ def get_report(hvsr_results, export_table=None, report_format=&#39;print&#39;, p
                 print()
                 print(internalSeparator)
                 print()
-                if &#39;Best Peak&#39; not in hvsr_results.keys():
-                    print(&#39;\tNo identifiable best peak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
+                if &#39;BestPeak&#39; not in hvsr_results.keys():
+                    print(&#39;\tNo identifiable BestPeak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
                 else:
-                    print(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
+                    print(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;]))        
                     if curvePass and peakPass:
-                        print(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;],3)))
+                        print(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
                     else:
-                        print(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;],3)))            
+                        print(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
                     print()
                     print(internalSeparator)
                     print()
 
                     #Print individual results
                     print(&#39;\tCurve Tests: {}/3 passed (3/3 needed)&#39;.format(curvTestsPassed))
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
 
 
                     print(&#39;\t\tPeak Tests: {}/6 passed (5/6 needed)&#39;.format(peakTestsPassed))
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
-                    if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+                    if hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]:
                         res = sprit_utils.check_mark()
                     else:
                         res = sprit_utils.x_mark()
-                    print(&#39;\t\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+                    print(&#39;\t\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
                 print()
                 print(internalSeparator)
                 print(endSiteSeparator)
             elif _report_format==&#39;csv&#39;:
                 import pandas as pd
-                pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
-                        &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
-                        &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
+                pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
+                        &#39;WindowLengthFreq.&#39;,&#39;SignificantCycles&#39;,&#39;LowCurveStDevOverTime&#39;,
+                        &#39;PeakFreqClarityBelow&#39;,&#39;PeakFreqClarityAbove&#39;,&#39;PeakAmpClarity&#39;,&#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;,&#39;PeakStability_AmpStD&#39;, &#39;PeakPasses&#39;]
                 d = hvsr_results
                 criteriaList = []
-                for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-                    criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-                criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
-                dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
+                for p in hvsr_results[&#39;BestPeak&#39;][&#34;PassList&#34;]:
+                    criteriaList.append(hvsr_results[&#39;BestPeak&#39;][&#34;PassList&#34;][p])
+                criteriaList.append(hvsr_results[&#39;BestPeak&#39;][&#34;PeakPasses&#34;])
+                dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;BestPeak&#39;][&#39;f0&#39;], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
                 if export_table is None:
@@ -1057,22 +1057,25 @@ def get_report(hvsr_results, export_table=None, report_format=&#39;print&#39;, p
                     try:
                         outDF.to_csv(export_table, index_label=&#39;ID&#39;)
                     except:
-                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
+                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
                 else:
                     try:
                         outDF.to_csv(export_table, index_label=&#39;ID&#39;)
                     except:
-                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
-                hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
+                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
+                hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
+                hvsr_results[&#39;CSV_Report&#39;] = outDF
+                if verbose:
+                    print(outDF)
                 return hvsr_results
             elif _report_format==&#39;plot&#39;:
-                hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+                hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
                 plt.show()
                 if return_results:
                     return hvsr_results
 
         for rep_form in report_format:
-            report_output(rep_form)      
+            report_output(rep_form, export_table=export_table, plot_type=plot_type, return_results=return_results, verbose=verbose, save_figs=save_figs)      
 
     return
 
@@ -1087,7 +1090,7 @@ def hvplot(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots
     plot_type : str=&#39;HVSR&#39; or list    
         The plot_type of plot(s) to plot. If list, will plot all plots listed
         &#39;HVSR&#39; : Standard HVSR plot, including standard deviation
-        - &#39;[HVSR] p&#39; : HVSR plot with best peaks shown
+        - &#39;[HVSR] p&#39; : HVSR plot with BestPeaks shown
         - &#39;[HVSR] p&#39; : HVSR plot with best picked peak shown                
         - &#39;[HVSR] p* all&#39; : HVSR plot with all picked peaks shown                
         - &#39;[HVSR] p* t&#39; : HVSR plot with peaks from all time steps in background                
@@ -4256,7 +4259,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
     if peak_plot:
-        ax.hlines(hvsr_data[&#39;Best Peak&#39;][&#39;f0&#39;], xmin, xmax, colors=&#39;k&#39;, linestyles=&#39;dashed&#39;, alpha=0.5)
+        ax.hlines(hvsr_data[&#39;BestPeak&#39;][&#39;f0&#39;], xmin, xmax, colors=&#39;k&#39;, linestyles=&#39;dashed&#39;, alpha=0.5)
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_data[&#39;x_freqs&#39;][anyKey]),0), 10)
     ax.set_title(hvsr_data[&#39;input_params&#39;][&#39;site&#39;]+&#39;: Spectrogram&#39;)
@@ -4532,8 +4535,8 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _mi
                           &#39;f-&#39;: None, &#39;f+&#39;: None, &#39;Sf&#39;: None, &#39;Sa&#39;: None,
                           &#39;Score&#39;: 0, 
                           &#39;Report&#39;: {&#39;Lw&#39;:&#39;&#39;, &#39;Nc&#39;:&#39;&#39;, &#39;σ_A(f)&#39;:&#39;&#39;, &#39;A(f-)&#39;:&#39;&#39;, &#39;A(f+)&#39;:&#39;&#39;, &#39;A0&#39;: &#39;&#39;, &#39;P+&#39;: &#39;&#39;, &#39;P-&#39;: &#39;&#39;, &#39;Sf&#39;: &#39;&#39;, &#39;Sa&#39;: &#39;&#39;},
-                          &#39;Pass List&#39;:{},
-                          &#39;Peak Passes&#39;:False})
+                          &#39;PassList&#39;:{},
+                          &#39;PeakPasses&#39;:False})
     return _peak
 
 #Check reliability of HVSR of curve
@@ -4616,9 +4619,9 @@ def __check_curve_reliability(hvsr_data, _peak):
         else:
             _peak[_i][&#39;Report&#39;][&#39;σ_A(f)&#39;] = &#39;σ_A for all freqs {}-{} &lt; {}  {}&#39;.format(round(peakFreq*0.5, 3), round(peakFreq*2, 3), compVal, &#39;✘&#39;)
 
-        _peak[_i][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] = test1
-        _peak[_i][&#39;Pass List&#39;][&#39;Significant Cycles&#39;] = test2
-        _peak[_i][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;] = test3
+        _peak[_i][&#39;PassList&#39;][&#39;WindowLengthFreq.&#39;] = test1
+        _peak[_i][&#39;PassList&#39;][&#39;SignificantCycles&#39;] = test2
+        _peak[_i][&#39;PassList&#39;][&#39;LowCurveStDevOverTime&#39;] = test3
     return _peak
 
 #Check clarity of peaks
@@ -4662,14 +4665,14 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i][&#39;f-&#39;] = &#39;✘&#39;
         _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = &#39;No A_h/v in freqs {}-{} &lt; {}  {}&#39;.format(round(_peak[_i][&#39;A0&#39;]/4, 3), round(_peak[_i][&#39;A0&#39;], 3), round(_peak[_i][&#39;A0&#39;]/2, 3), &#39;✘&#39;)
-        _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] = False #Start with assumption that it is False until we find an instance where it is True
+        _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) &gt; 2.
             if (float(_peak[_i][&#39;f0&#39;]) / 4.0 &lt;= _x[_j] &lt; float(_peak[_i][&#39;f0&#39;])) and float(_peak[_i][&#39;A0&#39;]) / _y[_j] &gt; 2.0:
                 _peak[_i][&#39;Score&#39;] += 1
                 _peak[_i][&#39;f-&#39;] = &#39;%10.3f %1s&#39; % (_x[_j], sprit_utils.check_mark())
                 _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = &#39;A({}): {} &lt; {}  {}&#39;.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i][&#39;A0&#39;]/2,3), sprit_utils.check_mark())
-                _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] = True
+                _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] = True
                 break
             else:
                 pass
@@ -4680,7 +4683,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i][&#39;f+&#39;] = &#39;✘&#39;
         _peak[_i][&#39;Report&#39;][&#39;A(f+)&#39;] = &#39;No A_h/v in freqs {}-{} &lt; {}  {}&#39;.format(round(_peak[_i][&#39;A0&#39;], 3), round(_peak[_i][&#39;A0&#39;]*4, 3), round(_peak[_i][&#39;A0&#39;]/2, 3), &#39;✘&#39;)
-        _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;] = False
+        _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;] = False
         for _j in range(len(_x) - 1):
 
             # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) &gt; 2.
@@ -4689,14 +4692,14 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
                 _peak[_i][&#39;Score&#39;] += 1
                 _peak[_i][&#39;f+&#39;] = &#39;%10.3f %1s&#39; % (_x[_j], sprit_utils.check_mark())
                 _peak[_i][&#39;Report&#39;][&#39;A(f+)&#39;] = &#39;A({}): {} &lt; {}  {}&#39;.format(round(_x[_j], 3), round(_y[_j], 3), round(_peak[_i][&#39;A0&#39;]/2,3), sprit_utils.check_mark())
-                _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;] = True
+                _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;] = True
                 break
             else:
                 pass
 #        if False in clarityPass:
-#            _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] = False
+#            _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] = False
 #        else:
-#            _peak[_i][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;] = True
+#            _peak[_i][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;] = True
 
     #Amplitude Clarity test
     # Only peaks with A0 &gt; 2 pass
@@ -4708,10 +4711,10 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         if float(_peak[_i][&#39;A0&#39;]) &gt; _a0:
             _peak[_i][&#39;Report&#39;][&#39;A0&#39;] = &#39;%10.2f &gt; %0.1f %1s&#39; % (_peak[_i][&#39;A0&#39;], _a0, sprit_utils.check_mark())
             _peak[_i][&#39;Score&#39;] += 1
-            _peak[_i][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;] = True
+            _peak[_i][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;] = True
         else:
             _peak[_i][&#39;Report&#39;][&#39;A0&#39;] = &#39;%10.2f &gt; %0.1f %1s&#39; % (_peak[_i][&#39;A0&#39;], _a0, &#39;✘&#39;)
-            _peak[_i][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;] = False
+            _peak[_i][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;] = False
 
     return _peak
 
@@ -4778,15 +4781,15 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                     _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (
                         _peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], sprit_utils.check_mark())
                     _peak[_i][&#39;Score&#39;] += 1
-                    _peak[_i][&#39;Pass List&#39;][&#39;Freq. Stability&#39;] = True
+                    _peak[_i][&#39;PassList&#39;][&#39;FreqStability&#39;] = True
                 else:
                     _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (
                         _peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)
-                    _peak[_i][&#39;Pass List&#39;][&#39;Freq. Stability&#39;] = False
+                    _peak[_i][&#39;PassList&#39;][&#39;FreqStability&#39;] = False
                 break
             else:
                 _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (_peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)
-                _peak[_i][&#39;Pass List&#39;][&#39;Freq. Stability&#39;] = False                
+                _peak[_i][&#39;PassList&#39;][&#39;FreqStability&#39;] = False                
         if _peak[_i][&#39;Report&#39;][&#39;P+&#39;] == &#39;✘&#39; and len(_peakp) &gt; 0:
             _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = &#39;%0.3f within ±5%s of %0.3f %1s&#39; % (
                 _peakp[_j][&#39;f0&#39;], &#39;%&#39;, _peak[_i][&#39;f0&#39;], &#39;✘&#39;)###changed i to j
@@ -4836,21 +4839,21 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;],
                                                                             sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = True
 
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f  %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;], &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
             _t = 0.48
             if _hvsr_log_std[_i] &lt; _t:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f %1s&#39; % (_hvsr_log_std[_i], _t,
                                                                     sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f  %1s&#39; % (_hvsr_log_std[_i], _t, &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = False
 
         elif 0.2 &lt;= _this_peak[&#39;f0&#39;] &lt; 0.5:
             _e = 0.2
@@ -4858,20 +4861,20 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;],
                                                                             sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f  %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;], &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
             _t = 0.40
             if _hvsr_log_std[_i] &lt; _t:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f %1s&#39; % (_hvsr_log_std[_i], _t,
                                                                     sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f  %1s&#39; % (_hvsr_log_std[_i], _t, &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = False
 
         elif 0.5 &lt;= _this_peak[&#39;f0&#39;] &lt; 1.0:
             _e = 0.15
@@ -4879,19 +4882,19 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;],
                                                                             sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f  %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;], &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
             _t = 0.3
             if _hvsr_log_std[_i] &lt; _t:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f %1s&#39; % (_hvsr_log_std[_i], _t, sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f  %1s&#39; % (_hvsr_log_std[_i], _t, &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = False
 
         elif 1.0 &lt;= _this_peak[&#39;f0&#39;] &lt;= 2.0:
             _e = 0.1
@@ -4899,19 +4902,19 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;],
                                                                             sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s &#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;], &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
             _t = 0.25
             if _hvsr_log_std[_i] &lt; _t:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f %1s&#39; % (_hvsr_log_std[_i], _t, sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f  %1s&#39; % (_hvsr_log_std[_i], _t, &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = False
 
         elif _this_peak[&#39;f0&#39;] &gt; 0.2:
             _e = 0.05
@@ -4919,19 +4922,19 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;],
                                                                             sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sf&#39;] = &#39;%10.4f &lt; %0.2f * %0.3f  %1s&#39; % (_stdf[_i], _e, _this_peak[&#39;f0&#39;], &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
             _t = 0.2
             if _hvsr_log_std[_i] &lt; _t:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f %1s&#39; % (_hvsr_log_std[_i], _t, sprit_utils.check_mark())
                 _this_peak[&#39;Score&#39;] += 1
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;] = True
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;] = True
             else:
                 _peak[_i][&#39;Report&#39;][&#39;Sa&#39;] = &#39;%10.4f &lt; %0.2f  %1s&#39; % (_hvsr_log_std[_i], _t, &#39;✘&#39;)
-                _this_peak[&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;] = False
+                _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
     return _peak
 
@@ -5302,13 +5305,13 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         hvsr_data[&#39;Peak Report&#39;] = peak
 
         #Iterate through peaks and 
-        #   Get the best peak based on the peak score
+        #   Get the BestPeak based on the peak score
         #   Calculate whether each peak passes enough tests
-        curveTests = [&#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;, &#39;Low Curve StDev. over time&#39;]
-        peakTests = [&#39;Peak Freq. Clarity Below&#39;, &#39;Peak Freq. Clarity Above&#39;, &#39;Peak Amp. Clarity&#39;, &#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;, &#39;Peak Stability (amp. std)&#39;]
+        curveTests = [&#39;WindowLengthFreq.&#39;,&#39;SignificantCycles&#39;, &#39;LowCurveStDevOverTime&#39;]
+        peakTests = [&#39;PeakFreqClarityBelow&#39;, &#39;PeakFreqClarityAbove&#39;, &#39;PeakAmpClarity&#39;, &#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;, &#39;PeakStability_AmpStD&#39;]
         bestPeakScore = 0
         for p in hvsr_data[&#39;Peak Report&#39;]:
-            #Get best peak
+            #Get BestPeak
             if p[&#39;Score&#39;] &gt; bestPeakScore:
                 bestPeakScore = p[&#39;Score&#39;]
                 bestPeak = p
@@ -5316,25 +5319,25 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
             #Calculate if peak passes criteria
             cTestsPass = 0
             pTestsPass = 0
-            for testName in p[&#39;Pass List&#39;].keys():
+            for testName in p[&#39;PassList&#39;].keys():
                 if testName in curveTests:
-                    if p[&#39;Pass List&#39;][testName]:
+                    if p[&#39;PassList&#39;][testName]:
                         cTestsPass += 1
                 elif testName in peakTests:
-                    if p[&#39;Pass List&#39;][testName]:
+                    if p[&#39;PassList&#39;][testName]:
                         pTestsPass += 1
 
             if cTestsPass == 3 and pTestsPass &gt;= 5:
-                p[&#39;Peak Passes&#39;] = True
+                p[&#39;PeakPasses&#39;] = True
             else:
-                p[&#39;Peak Passes&#39;] = False
+                p[&#39;PeakPasses&#39;] = False
             
-        #Designate best peak in output dict
+        #Designate BestPeak in output dict
         if len(hvsr_data[&#39;Peak Report&#39;]) == 0:
             bestPeak={}
-            print(&#39;No Best Peak identified&#39;)
+            print(&#39;No BestPeak identified&#39;)
 
-        hvsr_data[&#39;Best Peak&#39;] = bestPeak
+        hvsr_data[&#39;BestPeak&#39;] = bestPeak
     return hvsr_data</code></pre>
 </details>
 </dd>
@@ -5862,23 +5865,23 @@ For docx (not yet implemented), the following are also included:
             args[&#39;hvsr_results&#39;] = individual_params #reset the params parameter we originally read in to an individual site params
             _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
-        #if &#39;Best Peak&#39; in hvsr_results.keys() and &#39;Pass List&#39; in hvsr_results[&#39;Best Peak&#39;].keys():
+        #if &#39;BestPeak&#39; in hvsr_results.keys() and &#39;PassList&#39; in hvsr_results[&#39;BestPeak&#39;].keys():
         try:
-            curvTestsPassed = (hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Window Length Freq.&#39;] +
-                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Significant Cycles&#39;]+
-                                hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Low Curve StDev. over time&#39;])
+            curvTestsPassed = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;WindowLengthFreq.&#39;] +
+                                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;SignificantCycles&#39;]+
+                                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;LowCurveStDevOverTime&#39;])
             curvePass = curvTestsPassed &gt; 2
             
             #Peak Pass?
-            peakTestsPassed = ( hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Below&#39;] +
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Freq. Clarity Above&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Amp. Clarity&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (freq. std)&#39;]+
-                        hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Peak Stability (amp. std)&#39;])
+            peakTestsPassed = ( hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] +
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
+                        hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;])
             peakPass = peakTestsPassed &gt;= 5
         except:
-            raise RuntimeError(&#39;No Best Peak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
+            raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
     
         if isinstance(report_format, (list, tuple)):
             pass
@@ -5940,50 +5943,50 @@ For docx (not yet implemented), the following are also included:
                 print()
                 print(internalSeparator)
                 print()
-                if &#39;Best Peak&#39; not in hvsr_results.keys():
-                    print(&#39;\tNo identifiable best peak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
+                if &#39;BestPeak&#39; not in hvsr_results.keys():
+                    print(&#39;\tNo identifiable BestPeak was present between {} for {}&#39;.format(hvsr_results[&#39;input_params&#39;][&#39;hvsr_band&#39;], hvsr_results[&#39;input_params&#39;][&#39;site&#39;]))
                 else:
-                    print(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;]))        
+                    print(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;]))        
                     if curvePass and peakPass:
-                        print(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;],3)))
+                        print(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
                     else:
-                        print(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;Best Peak&#39;][&#39;f0&#39;],3)))            
+                        print(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
                     print()
                     print(internalSeparator)
                     print()
 
                     #Print individual results
                     print(&#39;\tCurve Tests: {}/3 passed (3/3 needed)&#39;.format(curvTestsPassed))
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1], &#39;Length of processing windows:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Nc&#39;][-1], &#39;Number of significant cycles:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Nc&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;][-1], &#39;Low StDev. of H/V Curve over time:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;σ_A(f)&#39;])
 
 
                     print(&#39;\t\tPeak Tests: {}/6 passed (5/6 needed)&#39;.format(peakTestsPassed))
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;A0&#39;])
-                    if hvsr_results[&#39;Best Peak&#39;][&#39;Pass List&#39;][&#39;Freq. Stability&#39;]:
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;][-1], &#39;Clarity Below Peak Frequency:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f-)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;][-1], &#39;Clarity Above Peak Frequency:&#39;,hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A(f+)&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A0&#39;][-1], &#39;Clarity of Peak Amplitude:&#39;,hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;A0&#39;])
+                    if hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]:
                         res = sprit_utils.check_mark()
                     else:
                         res = sprit_utils.x_mark()
-                    print(&#39;\t\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
-                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
+                    print(&#39;\t\t\t&#39;, res, &#39;Stability of Peak Freq. Over time:&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; + hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;P+&#39;][:-1], res)
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sf&#39;][-1], &#39;Stability of Peak (Freq. StDev):&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sf&#39;])
+                    print(&#39;\t\t\t&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1], &#39;Stability of Peak (Amp. StDev):&#39;, hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;])
                 print()
                 print(internalSeparator)
                 print(endSiteSeparator)
             elif _report_format==&#39;csv&#39;:
                 import pandas as pd
-                pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;Peak Frequency&#39;, 
-                        &#39;Window Length Freq.&#39;,&#39;Significant Cycles&#39;,&#39;Low Curve StDev. over time&#39;,
-                        &#39;Peak Freq. Clarity Below&#39;,&#39;Peak Freq. Clarity Above&#39;,&#39;Peak Amp. Clarity&#39;,&#39;Freq. Stability&#39;, &#39;Peak Stability (freq. std)&#39;,&#39;Peak Stability (amp. std)&#39;, &#39;Peak Passes&#39;]
+                pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
+                        &#39;WindowLengthFreq.&#39;,&#39;SignificantCycles&#39;,&#39;LowCurveStDevOverTime&#39;,
+                        &#39;PeakFreqClarityBelow&#39;,&#39;PeakFreqClarityAbove&#39;,&#39;PeakAmpClarity&#39;,&#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;,&#39;PeakStability_AmpStD&#39;, &#39;PeakPasses&#39;]
                 d = hvsr_results
                 criteriaList = []
-                for p in hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;]:
-                    criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Pass List&#34;][p])
-                criteriaList.append(hvsr_results[&#39;Best Peak&#39;][&#34;Peak Passes&#34;])
-                dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;Best Peak&#39;][&#39;f0&#39;], 3)]]
+                for p in hvsr_results[&#39;BestPeak&#39;][&#34;PassList&#34;]:
+                    criteriaList.append(hvsr_results[&#39;BestPeak&#39;][&#34;PassList&#34;][p])
+                criteriaList.append(hvsr_results[&#39;BestPeak&#39;][&#34;PeakPasses&#34;])
+                dfList = [[d[&#39;input_params&#39;][&#39;site&#39;], d[&#39;input_params&#39;][&#39;acq_date&#39;], d[&#39;input_params&#39;][&#39;longitude&#39;], d[&#39;input_params&#39;][&#39;latitude&#39;], d[&#39;input_params&#39;][&#39;elevation&#39;], round(d[&#39;BestPeak&#39;][&#39;f0&#39;], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
                 if export_table is None:
@@ -6003,22 +6006,25 @@ For docx (not yet implemented), the following are also included:
                     try:
                         outDF.to_csv(export_table, index_label=&#39;ID&#39;)
                     except:
-                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
+                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
                 else:
                     try:
                         outDF.to_csv(export_table, index_label=&#39;ID&#39;)
                     except:
-                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
-                hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
+                        warnings.warn(&#34;{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report]&#34;.format(export_table), category=RuntimeWarning)
+                hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;CSV_Report&#39;] = outDF
+                hvsr_results[&#39;CSV_Report&#39;] = outDF
+                if verbose:
+                    print(outDF)
                 return hvsr_results
             elif _report_format==&#39;plot&#39;:
-                hvsr_results[&#39;Best Peak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
+                hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;HV_Plot&#39;]=hvplot(hvsr_results, plot_type=plot_type)
                 plt.show()
                 if return_results:
                     return hvsr_results
 
         for rep_form in report_format:
-            report_output(rep_form)      
+            report_output(rep_form, export_table=export_table, plot_type=plot_type, return_results=return_results, verbose=verbose, save_figs=save_figs)      
 
     return</code></pre>
 </details>
@@ -6071,7 +6077,7 @@ For docx (not yet implemented), the following are also included:
 </code></dt>
 <dd>The plot_type of plot(s) to plot. If list, will plot all plots listed
 'HVSR' : Standard HVSR plot, including standard deviation
-- '[HVSR] p' : HVSR plot with best peaks shown
+- '[HVSR] p' : HVSR plot with BestPeaks shown
 - '[HVSR] p' : HVSR plot with best picked peak shown
 <br>
 - '[HVSR] p<em> all' : HVSR plot with all picked peaks shown
@@ -6125,7 +6131,7 @@ Keyword arguments for matplotlib.pyplot</p>
     plot_type : str=&#39;HVSR&#39; or list    
         The plot_type of plot(s) to plot. If list, will plot all plots listed
         &#39;HVSR&#39; : Standard HVSR plot, including standard deviation
-        - &#39;[HVSR] p&#39; : HVSR plot with best peaks shown
+        - &#39;[HVSR] p&#39; : HVSR plot with BestPeaks shown
         - &#39;[HVSR] p&#39; : HVSR plot with best picked peak shown                
         - &#39;[HVSR] p* all&#39; : HVSR plot with all picked peaks shown                
         - &#39;[HVSR] p* t&#39; : HVSR plot with peaks from all time steps in background                
