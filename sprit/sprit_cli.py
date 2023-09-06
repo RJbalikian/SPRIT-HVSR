@@ -52,7 +52,7 @@ def main():
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == 'datapath':
-                    parser.add_argument(name, required=True, help=f'{curr_doc_str}', default=parameter.default)
+                    parser.add_argument(name, help=f'{curr_doc_str}')
                 elif name == 'verbose':
                     parser.add_argument('-v', '--verbose',  action='store_true', help=f'Print status and results to terminal.', default=parameter.default)
                 else:
