@@ -355,7 +355,8 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report.__code__.co_varnames}
-    print(get_report_kwargs)
+    if 'hvsr_results' not in get_report_kwargs.keys():
+        get_report_kwargs['hvsr_results'] = hvsr_results
     get_report(**get_report_kwargs)
 
     if verbose:
