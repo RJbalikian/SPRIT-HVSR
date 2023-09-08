@@ -82,7 +82,7 @@ def main():
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == &#39;datapath&#39;:
-                    parser.add_argument(name, required=True, help=f&#39;{curr_doc_str}&#39;, default=parameter.default)
+                    parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
                 elif name == &#39;verbose&#39;:
                     parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
@@ -177,7 +177,7 @@ if __name__ == &#39;__main__&#39;:
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == &#39;datapath&#39;:
-                    parser.add_argument(name, required=True, help=f&#39;{curr_doc_str}&#39;, default=parameter.default)
+                    parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
                 elif name == &#39;verbose&#39;:
                     parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
