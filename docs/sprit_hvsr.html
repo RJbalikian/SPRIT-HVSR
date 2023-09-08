@@ -384,7 +384,8 @@ def run(datapath, source=&#39;file&#39;, kind=&#39;auto&#39;, method=4, hvsr_ban
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in get_report.__code__.co_varnames}
-    hvsr_results.get_report(**get_report_kwargs)
+    print(get_report_kwargs)
+    get_report(**get_report_kwargs)
 
     if verbose:
         if &#39;report_format&#39; in get_report_kwargs.keys():
@@ -7257,7 +7258,8 @@ This averages over the entire curve so that curves with very abberant data (ofte
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in get_report.__code__.co_varnames}
-    hvsr_results.get_report(**get_report_kwargs)
+    print(get_report_kwargs)
+    get_report(**get_report_kwargs)
 
     if verbose:
         if &#39;report_format&#39; in get_report_kwargs.keys():
