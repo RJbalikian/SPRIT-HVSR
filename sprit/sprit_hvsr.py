@@ -337,14 +337,14 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
 
     #Remove Noise
     remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
-    dataIN = remove_noise(input=dataIN, kind=kind, verbose=verbose,**remove_noise_kwargs)   
+    data_noiseRemoved = remove_noise(input=dataIN, kind=kind, verbose=verbose,**remove_noise_kwargs)   
 
     #Generate PPSDs
     generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
     from obspy.signal.spectral_estimation import PPSD
     PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
     generate_ppsds_kwargs.update(PPSDkwargs)
-    ppsd_data = generate_ppsds(params=dataIN, verbose=verbose,**generate_ppsds_kwargs)
+    ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
     
     #Process HVSR Curves
     process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
@@ -421,7 +421,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] =  hvsr_data[site_name] #Get what would normally be the "params" variable for each site
-            hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+            if hvsr_data[site_name]['ReadStatus']:
+                hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
         hvsr_data = HVSRBatch(hvsr_data)
     else:
         if not hvsr_band:
@@ -531,6 +532,8 @@ def export_data(hvsr_data, export_path=None, ext='hvsr'):
 
 #Reads in traces to obspy stream
 def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
+    import warnings
+
     """Fetch ambient seismic data from a source to read into obspy stream
         
         Parameters
@@ -633,7 +636,13 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+            try:
+                rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+                params['ReadStatus'] = True
+            except:
+                warnings.warn(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
+                params['ReadStatus'] = False
+                return params
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -673,13 +682,16 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     try:
         dataIN = rawDataIN.copy()
     except:
-        raise RuntimeError('Data not fetched. Check your input parameters.')
+        raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
     
     #Trim and save data as specified
     if not trim_dir:
         pass
     else:
-        dataIN = _trim_data(stream=dataIN, params=params, export_dir=trim_dir, source=source, export_format=export_format)
+        if isinstance(params, HVSRBatch):
+            pass
+        else:
+            dataIN = _trim_data(input=params, stream=dataIN, export_dir=trim_dir, source=source, export_format=export_format)
 
     #Split data if masked array (if there are gaps)...detrending cannot be done without
     for tr in dataIN:
@@ -689,13 +701,19 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             break
 
     #Detrend data
-    dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
+    if isinstance(params, HVSRBatch):
+        pass
+    else:
+        dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
 
     #Remerge data
     dataIN = dataIN.merge(method=1)
 
     #Sort channels (make sure Z is first, makes things easier later)
-    dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
+    if isinstance(params, HVSRBatch):
+        pass
+    else:
+        dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
     
     params['batch'] = False
     params['stream'] = dataIN
@@ -750,7 +768,8 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             individual_params = params[site_name] #Get what would normally be the "params" variable for each site
             args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
             #args['params']['batch'] = False #Set to false, since only running this time
-            params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
+            if params[site_name]['ReadStatus']:
+                params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
             #params[site_name]['batch'] = True #Reset batch to true
     else:
         paz=params['paz']
@@ -887,7 +906,8 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_results[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            _get_report_batch(**args) #Call another function, that lets us run this function again
+            if hvsr_results[site_name]['ReadStatus']:
+                _get_report_batch(**args) #Call another function, that lets us run this function again
     else:
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
@@ -1577,7 +1597,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['params'] = params[site_name] #Get what would normally be the "params" variable for each site
-            hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+            if params[site_name]['ReadStatus']:
+                hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
         hvsr_out = HVSRBatch(hvsr_out)
     else:
         ppsds = params['ppsds'].copy()#[k]['psd_values']
@@ -1821,7 +1842,8 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
         for site_name in input.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['input'] = input[site_name] #Get what would normally be the "input" variable for each site
-            hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
+            if input[site_name]['ReadStatus']:
+                hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
         output = HVSRBatch(hvsr_out)
         return output
 
@@ -2027,7 +2049,8 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                     'verbose':False}
 
         if verbose:
-            print('\t',dataReadInfoDF)
+            print(f'\t Showing information for first {10} files.')
+            print('\t',dataReadInfoDF.head(10))
             print('\tFetching the following files:')
         param_dict_list = []
         verboseStatement = []
@@ -2092,11 +2115,6 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
 
         params = input_params(**input_params_kwargs)
 
-        #get_metadata_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in get_metadata.__code__.co_varnames}
-        #get_metadata_kwargs2 = {k: v for k, v in param_dict.items() if k in get_metadata.__code__.co_varnames}
-        #get_metadata_kwargs.update(get_metadata_kwargs2)
-        #params = get_metadata(params=params, **get_metadata_kwargs)
-
         fetch_data_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in fetch_data.__code__.co_varnames}
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
@@ -2136,21 +2154,30 @@ def test_class(**input_dict):
 #BATCH FUNCTIONS
 #Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
-    hvsr_data = check_peaks(**check_peaks_kwargs)
+    try:
+        hvsr_data = check_peaks(**check_peaks_kwargs)
+    except:
+        warnings.warn(f"Error in check_peaks({check_peaks_kwargs['hvsr_data']['input_params']['site']}, **check_peaks_kwargs)", RuntimeWarning)
     if check_peaks_kwargs['verbose']:
         print('\t{} completed'.format(hvsr_data['input_params']['site']))
     return hvsr_data
 
 #Support function for running batch
 def _generate_ppsds_batch(**generate_ppsds_kwargs):
-    params = generate_ppsds(**generate_ppsds_kwargs)
+    try:
+        params = generate_ppsds(**generate_ppsds_kwargs)
+    except:
+        warnings.warn(f"Error in generate_ppsds({generate_ppsds_kwargs['params']['site']}, **generate_ppsds_kwargs)", RuntimeWarning)
     if generate_ppsds_kwargs['verbose']:
         print('\t{} completed'.format(params['site']))
     return params
 
 #Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
-    hvsr_results = get_report(**get_report_kwargs)
+    try:
+        hvsr_results = get_report(**get_report_kwargs)
+    except:
+        warnings.warn(f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)", RuntimeWarning)
     
     #Print if verbose, but selected report_format was not print
     if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
@@ -2160,7 +2187,11 @@ def _get_report_batch(**get_report_kwargs):
 
 #Helper function for batch procesing of remove_noise
 def __remove_noise_batch(**remove_noise_kwargs):
-    hvsr_data = remove_noise(**remove_noise_kwargs)
+    try:
+        hvsr_data = remove_noise(**remove_noise_kwargs)
+    except:
+        warnings.warn(f"Error in remove_noise({remove_noise_kwargs['input']['site']}, **remove_noise_kwargs)", RuntimeWarning)
+
     if remove_noise_kwargs['verbose']:
         if 'input_params' in hvsr_data.keys():
             print('\t{} completed'.format(hvsr_data['input_params']['site']))
@@ -2171,7 +2202,11 @@ def __remove_noise_batch(**remove_noise_kwargs):
 
 #Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
-    hvsr_data = process_hvsr(**process_hvsr_kwargs)
+    try:
+        hvsr_data = process_hvsr(**process_hvsr_kwargs)
+    except:
+        warnings.warn(f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)", RuntimeWarning)
+
     if process_hvsr_kwargs['verbose']:
         print('\t{} completed'.format(hvsr_data['input_params']['site']))
     return hvsr_data
@@ -2443,13 +2478,13 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
             st_trimmed  : obspy.stream object 
                 Obpsy Stream trimmed to start and end times
     """
-    if source!='batch':
-        input = {'SITENAME': {'stream':input}} #Make same structure as batch
-
+    #if source!='batch':
+    #    #input = {'SITENAME': {'stream':input}} #Make same structure as batch
+    #    pass
 
     if 'starttime' in kwargs.keys():
         start = kwargs['starttime']
-    else:
+    elif isinstance(input, (HVSRData, dict)):
         start = input['starttime']
     
     if 'endtime' in kwargs.keys():
@@ -2591,7 +2626,6 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
     folderPathList = []
     filesinfolder = False
     datapath = sprit_utils.checkifpath(datapath)
-
     #Read RS files
     if source=='raw': #raw data with individual files per trace
         if datapath.is_dir():
@@ -2606,16 +2640,8 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                         if c.is_file() and c.name.startswith('AM') and c.name.endswith(str(doy).zfill(3)) and str(year) in c.name:
                             fileList.append(c)
 
-            if len(fileList) !=3:
-                warnings.warn('3 channels needed! {} found.'.format(len(folderPathList)), UserWarning)
-            else:
-                fileList.sort(reverse=True) # Puts z channel first
-                folderPathList.sort(reverse=True)
-                if verbose:
-                    print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
 
             if len(fileList) == 0:
-
                 doyList = []
                 printList= []
                 for j, folder in enumerate(folderPathList):
@@ -2626,11 +2652,18 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                 if len(printList) == 0:
                     warnings.warn('No files found matching Raspberry Shake data structure or files in specified directory.')
                 else:
-                    warnings.warn('No file found for specified date. The following days/files exist for specified year in this directory')
+                    warnings.warn(f'No file found for specified date: {params["acq_date"]}. The following days/files exist for specified year in this directory')
                     for p in printList:
                         print('\t',p)
                 return None
-            
+            elif len(fileList) !=3:
+                warnings.warn('3 channels needed! {} found.'.format(len(folderPathList)), UserWarning)
+            else:
+                fileList.sort(reverse=True) # Puts z channel first
+                folderPathList.sort(reverse=True)
+                if verbose:
+                    print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
+
             traceList = []
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
@@ -2641,11 +2674,9 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                     #tr= obspy.Trace(tr.data,header=meta)
                     traceList.append(tr)
             rawDataIN = obspy.Stream(traceList)
-
             with warnings.catch_warnings():
                 warnings.filterwarnings(action='ignore', message='Found more than one matching response.*')
                 rawDataIN.attach_response(inv)
-
         else:
             rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
             rawDataIN.attach_response(inv)
