@@ -35,7 +35,7 @@ def main():
                      sprit.process_hvsr,
                      sprit.check_peaks,
                      sprit.get_report,
-                     sprit.hvplot]
+                     sprit.plot_hvsr]
 
     parameters = []
 

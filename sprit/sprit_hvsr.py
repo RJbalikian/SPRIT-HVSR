@@ -84,11 +84,11 @@ class HVSRBatch:
     def copy(self):
         return HVSRBatch(copy.copy(self._batch_dict))
 
-    #Method wrapper of sprit.hvplot function
+    #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
         returnDict = {}
         for sitename in self:
-            returnDict[sitename] = hvplot(self[sitename], **kwargs)
+            returnDict[sitename] = plot_hvsr(self[sitename], **kwargs)
         return returnDict
     
     def get_report(self, **kwargs):
@@ -191,13 +191,13 @@ class HVSRData:
         return HVSRData(copy.copy(self.params))
 
     def plot(self, **kwargs):
-        """Method to plot data, wrapper of sprit.hvplot()
+        """Method to plot data, wrapper of sprit.plot_hvsr()
 
         Returns
         -------
         matplotlib.Figure (if return_fig=True)
         """
-        return hvplot(self, **kwargs)
+        return plot_hvsr(self, **kwargs)
         
     def get_report(self, **kwargs):
         """Method to get report from processed data, in print, graphical, or tabular format.
@@ -329,27 +329,60 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
 
     #Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in input_params.__code__.co_varnames}
-    params = input_params(datapath=datapath, hvsr_band=hvsr_band, verbose=verbose, **input_params_kwargs)
-
+    try:
+        params = input_params(datapath=datapath, hvsr_band=hvsr_band, verbose=verbose, **input_params_kwargs)
+    except:
+        #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+        raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
+        #If input_params fails, initialize params as an HVSRDATA
+        params = {'ProcessingStatus':{'InputStatus':False, 'OverallStatus':False}}
+        params.update(input_params_kwargs)
+        params = sprit_utils.make_it_classy(params)
     #Fetch Data
-    fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in fetch_data.__code__.co_varnames}
-    dataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
-
+    try:
+        fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in fetch_data.__code__.co_varnames}
+        dataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
+    except:
+        #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+        raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
+        
     #Remove Noise
-    remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
-    data_noiseRemoved = remove_noise(input=dataIN, kind=kind, verbose=verbose,**remove_noise_kwargs)   
-
+    try:
+        remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
+        data_noiseRemoved = remove_noise(hvsr_data=dataIN, kind=kind, verbose=verbose,**remove_noise_kwargs)   
+    except:
+        data_noiseRemoved = dataIN
+        data_noiseRemoved['ProcessingStatus']['RemoveNoiseStatus']=False
+        #Since noise removal is not required for data processing, check others first
+        if dataIN['ProcessingStatus']['OverallStatus']:
+            data_noiseRemoved['ProcessingStatus']['OverallStatus'] = True        
+        else:
+            data_noiseRemoved['ProcessingStatus']['OverallStatus'] = False
+        
     #Generate PPSDs
-    generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
-    from obspy.signal.spectral_estimation import PPSD
-    PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
-    generate_ppsds_kwargs.update(PPSDkwargs)
-    ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
+    try:
+        generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
+        from obspy.signal.spectral_estimation import PPSD
+        PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
+        generate_ppsds_kwargs.update(PPSDkwargs)
+        ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
+    except:
+        ppsd_data = data_noiseRemoved
+        ppsd_data['ProcessingStatus']['PPSDStatus']=False
+        ppsd_data['ProcessingStatus']['OverallStatus'] = False
+    
     
     #Process HVSR Curves
-    process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
-    hvsr_results = process_hvsr(params=ppsd_data, method=method, verbose=verbose,**process_hvsr_kwargs)
-    
+    try:
+        process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
+        hvsr_results = process_hvsr(params=ppsd_data, method=method, verbose=verbose,**process_hvsr_kwargs)
+    except:
+        hvsr_results = ppsd_data
+        hvsr_results['ProcessingStatus']['HVStatus']=False
+        hvsr_results['ProcessingStatus']['OverallStatus'] = False
+
+    #Final post-processing/reporting
+
     #Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
@@ -376,8 +409,21 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     if plot_type != False:
         if plot_type == True:
             plot_type = 'HVSR p ann t c+ ann p Spec'
-        hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in hvplot.__code__.co_varnames}
-        hvsr_results['HV_Plot'] = hvplot(hvsr_results, plot_type=plot_type, **hvplot_kwargs)
+        hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
+        hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, plot_type=plot_type, **hvplot_kwargs)
+    
+    #Export processed data if export_path(as pickle currently, default .hvsr extension)
+    if 'export_path' in kwargs.keys():
+            if 'ext' in kwargs.keys():
+                ext = kwargs['ext']
+            else:
+                ext = 'hvsr'
+            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext)
+            
+    else:
+        print(type(hvsr_results))
+
+        warnings.warn(f"Processing of {hvsr_results['site']} not completed.")
 
     return hvsr_results
 
@@ -421,91 +467,100 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] =  hvsr_data[site_name] #Get what would normally be the "params" variable for each site
-            if hvsr_data[site_name]['ReadStatus']:
-                hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    print(f"Peaks for {site_name} unable to be checked.")
+                
         hvsr_data = HVSRBatch(hvsr_data)
     else:
-        if not hvsr_band:
-            hvsr_band = [0.4,40]
-        hvsr_data['hvsr_band'] = hvsr_band
+        if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if not hvsr_band:
+                hvsr_band = [0.4,40]
+            hvsr_data['hvsr_band'] = hvsr_band
 
-        anyK = list(hvsr_data['x_freqs'].keys())[0]
-        x = hvsr_data['x_freqs'][anyK]
-        y = hvsr_data['hvsr_curve']
-        index_list = hvsr_data['hvsr_peak_indices']
-        hvsrp = hvsr_data['hvsrp']
-        hvsrm = hvsr_data['hvsrm']
-        hvsrPeaks = hvsr_data['ind_hvsr_peak_indices']
-        hvsr_log_std = hvsr_data['hvsr_log_std']
-        peak_freq_range = hvsr_data['peak_freq_range']
+            anyK = list(hvsr_data['x_freqs'].keys())[0]
+            x = hvsr_data['x_freqs'][anyK]
+            y = hvsr_data['hvsr_curve']
+            index_list = hvsr_data['hvsr_peak_indices']
+            hvsrp = hvsr_data['hvsrp']
+            hvsrm = hvsr_data['hvsrm']
+            hvsrPeaks = hvsr_data['ind_hvsr_peak_indices']
+            hvsr_log_std = hvsr_data['hvsr_log_std']
+            peak_freq_range = hvsr_data['peak_freq_range']
 
-        #Do for hvsr
-        peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
+            #Do for hvsr
+            peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
 
-        peak = __check_curve_reliability(hvsr_data, peak)
-        peak = __check_clarity(x, y, peak, do_rank=True)
+            peak = __check_curve_reliability(hvsr_data, peak)
+            peak = __check_clarity(x, y, peak, do_rank=True)
 
-        #Do for hvsrp
-        # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
-        if not np.isnan(np.sum(hvsrp)):
-            index_p = __find_peaks(hvsrp)
-        else:
-            index_p = list()
-
-        peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
-        peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
-
-        #Do for hvsrm
-        # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
-        if not np.isnan(np.sum(hvsrm)):
-            index_m = __find_peaks(hvsrm)
-        else:
-            index_m = list()
-
-        peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
-        peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
-
-        stdf = __get_stdf(x, index_list, hvsrPeaks)
-
-        peak = __check_freq_stability(peak, peakm, peakp)
-        peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
-
-        hvsr_data['Peak Report'] = peak
-
-        #Iterate through peaks and 
-        #   Get the BestPeak based on the peak score
-        #   Calculate whether each peak passes enough tests
-        curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
-        peakTests = ['PeakFreqClarityBelow', 'PeakFreqClarityAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
-        bestPeakScore = 0
-        for p in hvsr_data['Peak Report']:
-            #Get BestPeak
-            if p['Score'] > bestPeakScore:
-                bestPeakScore = p['Score']
-                bestPeak = p
-
-            #Calculate if peak passes criteria
-            cTestsPass = 0
-            pTestsPass = 0
-            for testName in p['PassList'].keys():
-                if testName in curveTests:
-                    if p['PassList'][testName]:
-                        cTestsPass += 1
-                elif testName in peakTests:
-                    if p['PassList'][testName]:
-                        pTestsPass += 1
-
-            if cTestsPass == 3 and pTestsPass >= 5:
-                p['PeakPasses'] = True
+            #Do for hvsrp
+            # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+            if not np.isnan(np.sum(hvsrp)):
+                index_p = __find_peaks(hvsrp)
             else:
-                p['PeakPasses'] = False
-            
-        #Designate BestPeak in output dict
-        if len(hvsr_data['Peak Report']) == 0:
-            bestPeak={}
-            print('No BestPeak identified')
+                index_p = list()
 
-        hvsr_data['BestPeak'] = bestPeak
+            peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
+            peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
+
+            #Do for hvsrm
+            # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
+            if not np.isnan(np.sum(hvsrm)):
+                index_m = __find_peaks(hvsrm)
+            else:
+                index_m = list()
+
+            peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
+            peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
+
+            stdf = __get_stdf(x, index_list, hvsrPeaks)
+
+            peak = __check_freq_stability(peak, peakm, peakp)
+            peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
+
+            hvsr_data['Peak Report'] = peak
+
+            #Iterate through peaks and 
+            #   Get the BestPeak based on the peak score
+            #   Calculate whether each peak passes enough tests
+            curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
+            peakTests = ['PeakFreqClarityBelow', 'PeakFreqClarityAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
+            bestPeakScore = 0
+            for p in hvsr_data['Peak Report']:
+                #Get BestPeak
+                if p['Score'] > bestPeakScore:
+                    bestPeakScore = p['Score']
+                    bestPeak = p
+
+                #Calculate if peak passes criteria
+                cTestsPass = 0
+                pTestsPass = 0
+                for testName in p['PassList'].keys():
+                    if testName in curveTests:
+                        if p['PassList'][testName]:
+                            cTestsPass += 1
+                    elif testName in peakTests:
+                        if p['PassList'][testName]:
+                            pTestsPass += 1
+
+                if cTestsPass == 3 and pTestsPass >= 5:
+                    p['PeakPasses'] = True
+                else:
+                    p['PeakPasses'] = False
+                
+            #Designate BestPeak in output dict
+            if len(hvsr_data['Peak Report']) == 0:
+                bestPeak={}
+                print(f"No Best Peak identified for {hvsr_data['site']}")
+
+            hvsr_data['BestPeak'] = bestPeak
+        else:
+            hvsr_data['BestPeak'] = {}
+            print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']}")
+            
     return hvsr_data
 
 #Function to export data to file
@@ -521,13 +576,28 @@ def export_data(hvsr_data, export_path=None, ext='hvsr'):
     ext : str, default = 'hvsr'
         Filepath extension to use for data file, by default 'hvsr'
     """
-    if export_path is None:
-        export_path = hvsr_data.params['datapath']
-        fname = f"{hvsr_data.params['site']}_{hvsr_data.params['acq_date']}_pickle.{ext}"
-        export_path = pathlib.Path(export_path).with_name(fname)
-        export_path = str(export_path.as_posix())
-    with open(export_path, 'wb') as f:
-        pickle.dump(hvsr_data, f)    
+    def _do_export(_hvsr_data=hvsr_data, _export_path=export_path, _ext=ext):
+            
+        fname = f"{_hvsr_data.params['site']}_{_hvsr_data.params['acq_date']}_pickledData.{ext}"
+        if _export_path is None:
+            _export_path = _hvsr_data.params['datapath']
+            _export_path = pathlib.Path(_export_path).with_name(fname)
+        else:
+            _export_path = pathlib.Path(_export_path)
+            if _export_path.is_dir():
+                _export_path = _export_path.joinpath(fname)    
+        
+        _export_path = str(_export_path.as_posix())
+        with open(export_path, 'wb') as f:
+            pickle.dump(hvsr_data, f) 
+    
+    if isinstance(hvsr_data, HVSRBatch):
+        for sitename in hvsr_data.keys():
+            _do_export(hvsr_data[sitename], export_path, ext)
+    elif isinstance(hvsr_data, HVSRData):
+        _do_export(hvsr_data, export_path, ext)
+    else:
+        print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     return
 
 #Reads in traces to obspy stream
@@ -638,10 +708,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         if inst.lower() in raspShakeInstNameList:
             try:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-                params['ReadStatus'] = True
             except:
-                warnings.warn(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
-                params['ReadStatus'] = False
+                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
                 return params
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
@@ -683,6 +751,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         dataIN = rawDataIN.copy()
     except:
         raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
+        
     
     #Trim and save data as specified
     if not trim_dir:
@@ -714,9 +783,11 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         pass
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
-    
-    params['batch'] = False
+
+    params['batch'] = False #Set False by default, will get corrected later in batch mode        
     params['stream'] = dataIN
+    params['ProcessingStatus']['FetchDataStatus'] = True
+    params = _check_processing_status(params)
 
     return params
 
@@ -752,13 +823,17 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
     orig_args = locals().copy() #Get the initial arguments
 
     if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
-        print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
-        print('\tUsing the following parameters:')
-        for key, value in orig_args.items():
-            if key=='params':
-                pass
-            else:
-                print('\t  {}={}'.format(key, value))
+        if 'batch' in params.keys():
+            pass
+        else:
+            print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
+            print('\tUsing the following parameters:')
+            for key, value in orig_args.items():
+                if key=='params':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
+    
     
     #Site is in the keys anytime it's not batch
     if isinstance(params, HVSRBatch):
@@ -768,9 +843,16 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             individual_params = params[site_name] #Get what would normally be the "params" variable for each site
             args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
             #args['params']['batch'] = False #Set to false, since only running this time
-            if params[site_name]['ReadStatus']:
-                params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
-            #params[site_name]['batch'] = True #Reset batch to true
+            if params[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    params[site_name]['ProcessingStatus']['PPSDStatus']=False
+                    params[site_name]['ProcessingStatus']['OverallStatus'] = False                     
+            else:
+                params[site_name]['ProcessingStatus']['PPSDStatus']=False
+                params[site_name]['ProcessingStatus']['OverallStatus'] = False                
+        return params
     else:
         paz=params['paz']
         stream = params['stream']
@@ -836,6 +918,9 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
         
         params = sprit_utils.make_it_classy(params)
+    
+    params['ProcessingStatus']['PPSDStatus'] = True
+    params = _check_processing_status(params)
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
@@ -906,8 +991,15 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_results[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            if hvsr_results[site_name]['ReadStatus']:
-                _get_report_batch(**args) #Call another function, that lets us run this function again
+            if hvsr_results[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    hvsr_results[site_name] = _get_report_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    hvsr_results[site_name] = hvsr_results[site_name]
+            else:
+                hvsr_results[site_name] = hvsr_results[site_name]
+        if return_results:
+            return hvsr_results
     else:
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
@@ -931,7 +1023,11 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
             pass
         else:
             #We will use a loop later even if it's just one report type, so reformat to prepare for for loop
-            report_format = [report_format]   
+            allList = [':', 'all']
+            if report_format.lower() in allList:
+                report_format = ['print', 'csv', 'plot']
+            else:
+                report_format = [report_format]   
 
         def report_output(_report_format, export_table=None, plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, save_figs=None):
             if _report_format=='print':
@@ -975,51 +1071,58 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
                         siteSeparator = siteSeparator + siteSepSymbol
                     endSiteSeparator = endSiteSeparator + siteSepSymbol
 
-                #Start printing
-                print()
-                print(siteSeparator)
-                print(internalSeparator)
-                print()
-                print('\tSite Name:',hvsr_results['input_params']['site'])
-                print('\tAcq. Date:', hvsr_results['input_params']['acq_date'])
-                print('\tLocation : '+ str(hvsr_results['input_params']['longitude'])+',', hvsr_results['input_params']['latitude'])
-                print('\tElevation:',hvsr_results['input_params']['elevation'])
-                print()
-                print(internalSeparator)
-                print()
+                #Start building list to print
+                report_string_list = []
+                report_string_list.append("") #Blank line to start
+                report_string_list.append(siteSeparator)
+                report_string_list.append(internalSeparator)
+                report_string_list.append('')
+                report_string_list.append('\tSite Name:',hvsr_results['input_params']['site'])
+                report_string_list.append('\tAcq. Date:', hvsr_results['input_params']['acq_date'])
+                report_string_list.append('\tLocation : '+ str(hvsr_results['input_params']['longitude'])+',', hvsr_results['input_params']['latitude'])
+                report_string_list.append('\tElevation:',hvsr_results['input_params']['elevation'])
+                report_string_list.append('')
+                report_string_list.append(internalSeparator)
+                report_string_list('')
                 if 'BestPeak' not in hvsr_results.keys():
-                    print('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
+                    report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
                 else:
-                    print('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak']['f0']))        
+                    report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak']['f0']))        
                     if curvePass and peakPass:
-                        print('\t  {} Curve at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak']['f0'],3)))
+                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak']['f0'],3)))
                     else:
-                        print('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak']['f0'],3)))            
-                    print()
-                    print(internalSeparator)
-                    print()
+                        report_string_list('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak']['f0'],3)))            
+                    report_string_list.append('')
+                    report_string_list.append(internalSeparator)
+                    report_string_list.append('')
 
                     #Print individual results
-                    print('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['Lw'][-1], 'Length of processing windows:', hvsr_results['BestPeak']['Report']['Lw'])
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['Nc'][-1], 'Number of significant cycles:', hvsr_results['BestPeak']['Report']['Nc'])
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['σ_A(f)'][-1], 'Low StDev. of H/V Curve over time:', hvsr_results['BestPeak']['Report']['σ_A(f)'])
+                    report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Lw'][-1]} Length of processing windows: {hvsr_results['BestPeak']['Report']['Lw']}")
+                    report_string_list.append(f"'\t\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]} Low StDev. of H/V Curve over time: {hvsr_results['BestPeak']['Report']['σ_A(f)']}")
 
-
-                    print('\t\tPeak Tests: {}/6 passed (5/6 needed)'.format(peakTestsPassed))
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['A(f-)'][-1], 'Clarity Below Peak Frequency:', hvsr_results['BestPeak']['Report']['A(f-)'])
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['A(f+)'][-1], 'Clarity Above Peak Frequency:',hvsr_results['BestPeak']['Report']['A(f+)'])
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['A0'][-1], 'Clarity of Peak Amplitude:',hvsr_results['BestPeak']['Report']['A0'])
+                    report_string_list.append("\t\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A(f-)'][-1]} Clarity Below Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f-)']}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A(f+)'][-1]} Clarity Above Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f+)']}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A0'][-1]} Clarity of Peak Amplitude: {hvsr_results['BestPeak']['Report']['A0']}")
                     if hvsr_results['BestPeak']['PassList']['FreqStability']:
                         res = sprit_utils.check_mark()
                     else:
                         res = sprit_utils.x_mark()
-                    print('\t\t\t', res, 'Stability of Peak Freq. Over time:', hvsr_results['BestPeak']['Report']['P-'][:5] + ' and ' + hvsr_results['BestPeak']['Report']['P+'][:-1], res)
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['Sf'][-1], 'Stability of Peak (Freq. StDev):', hvsr_results['BestPeak']['Report']['Sf'])
-                    print('\t\t\t', hvsr_results['BestPeak']['Report']['Sa'][-1], 'Stability of Peak (Amp. StDev):', hvsr_results['BestPeak']['Report']['Sa'])
-                print()
-                print(internalSeparator)
-                print(endSiteSeparator)
+                    report_string_list.append(f"\t\t\t {res} Stability of Peak Freq. Over time: {hvsr_results['BestPeak']['Report']['P-'][:5]} and {hvsr_results['BestPeak']['Report']['P+'][:-1]} {res}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]} Stability of Peak (Freq. StDev): {hvsr_results['BestPeak']['Report']['Sf']}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]} Stability of Peak (Amp. StDev): {hvsr_results['BestPeak']['Report']['Sa']}")
+                report_string_list.append('')
+                report_string_list.append(internalSeparator)
+                report_string_list.append(endSiteSeparator)
+                
+                #Now print it
+                for line in report_string_list:
+                    print(line)
+                if return_results:
+                    hvsr_results['BestPeak']['Report']['Print_Report'] = outDF
+                    hvsr_results['Print_Report'] = outDF             
             elif _report_format=='csv':
                 import pandas as pd
                 pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
@@ -1062,18 +1165,17 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
                     print(outDF)
                 return hvsr_results
             elif _report_format=='plot':
-                hvsr_results['BestPeak']['Report']['HV_Plot']=hvplot(hvsr_results, plot_type=plot_type)
+                hvsr_results['BestPeak']['Report']['HV_Plot']=plot_hvsr(hvsr_results, plot_type=plot_type)
                 plt.show()
                 if return_results:
                     return hvsr_results
-
+                
         for rep_form in report_format:
             report_output(rep_form, export_table=export_table, plot_type=plot_type, return_results=return_results, verbose=verbose, save_figs=save_figs)      
-
     return
 
 #Main function for plotting results
-def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -1116,93 +1218,106 @@ def hvplot(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, x
         Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
     """
 
-    if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
-        #Clear everything
-        for key in ax:
-            ax[key].clear()
-        fig.clear()
+    orig_args = locals().copy() #Get the initial arguments
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we'll loop through each site
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    _hvsr_plot_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    print(f"{site_name} not able to be plotted.")
+    else:
+        if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+            #Clear everything
+            for key in ax:
+                ax[key].clear()
+            fig.clear()
 
 
-    compList = ['c', 'comp', 'component', 'components']
-    specgramList = ['spec', 'specgram', 'spectrogram']
-    hvsrList = ['hvsr', 'hv', 'h']
+        compList = ['c', 'comp', 'component', 'components']
+        specgramList = ['spec', 'specgram', 'spectrogram']
+        hvsrList = ['hvsr', 'hv', 'h']
 
-    hvsrInd = np.nan
-    compInd = np.nan
-    specInd = np.nan
+        hvsrInd = np.nan
+        compInd = np.nan
+        specInd = np.nan
 
-    kList = plot_type.split(' ')
-    for i, k in enumerate(kList):
-        kList[i] = k.lower()
+        kList = plot_type.split(' ')
+        for i, k in enumerate(kList):
+            kList[i] = k.lower()
 
-    #HVSR index
-    if len(set(hvsrList).intersection(kList)):
-        for i, hv in enumerate(hvsrList):
-            if hv in kList:
-                hvsrInd = kList.index(hv)
+        #HVSR index
+        if len(set(hvsrList).intersection(kList)):
+            for i, hv in enumerate(hvsrList):
+                if hv in kList:
+                    hvsrInd = kList.index(hv)
+                    break
+        #Component index
+        #if len(set(compList).intersection(kList)):
+        for i, c in enumerate(kList):
+            if '+' in c and c[:-1] in compList:
+                compInd = kList.index(c)
                 break
-    #Component index
-    #if len(set(compList).intersection(kList)):
-    for i, c in enumerate(kList):
-        if '+' in c and c[:-1] in compList:
-            compInd = kList.index(c)
-            break
+            
+        #Specgram index
+        if len(set(specgramList).intersection(kList)):
+            for i, sp in enumerate(specgramList):
+                if sp in kList:
+                    specInd = kList.index(sp)
+                    break        
+
+        indList = [hvsrInd, compInd, specInd]
+        indListCopy = indList.copy()
+        plotTypeList = ['hvsr', 'comp', 'spec']
+
+        plotTypeOrder = []
+        plotIndOrder = []
+
+        lastVal = 0
+        while lastVal != 99:
+            firstInd = np.nanargmin(indListCopy)
+            plotTypeOrder.append(plotTypeList[firstInd])
+            plotIndOrder.append(indList[firstInd])
+            lastVal = indListCopy[firstInd]
+            indListCopy[firstInd] = 99 #high number
+
+        plotTypeOrder.pop()
+        plotIndOrder[-1]=len(kList)
+
+        for i, p in enumerate(plotTypeOrder):
+            pStartInd = plotIndOrder[i]
+            pEndInd = plotIndOrder[i+1]
+            plotComponents = kList[pStartInd:pEndInd]
+
+            if use_subplots and i==0 and fig is None and ax is None:
+                mosaicPlots = []
+                for pto in plotTypeOrder:
+                    mosaicPlots.append([pto])
+                fig, ax = plt.subplot_mosaic(mosaicPlots)
+                axis = ax[p]
+            elif use_subplots:
+                ax[p].clear()
+                axis = ax[p]
+            else:
+                fig, axis = plt.subplots()
+                    
+            if p == 'hvsr':
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+            elif p=='comp':
+                plotComponents[0] = plotComponents[0][:-1]
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+            elif p=='spec':
+                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
+            else:
+                warnings.warn('Plot type {p} not recognized', UserWarning)   
         
-    #Specgram index
-    if len(set(specgramList).intersection(kList)):
-        for i, sp in enumerate(specgramList):
-            if sp in kList:
-                specInd = kList.index(sp)
-                break        
-
-    indList = [hvsrInd, compInd, specInd]
-    indListCopy = indList.copy()
-    plotTypeList = ['hvsr', 'comp', 'spec']
-
-    plotTypeOrder = []
-    plotIndOrder = []
-
-    lastVal = 0
-    while lastVal != 99:
-        firstInd = np.nanargmin(indListCopy)
-        plotTypeOrder.append(plotTypeList[firstInd])
-        plotIndOrder.append(indList[firstInd])
-        lastVal = indListCopy[firstInd]
-        indListCopy[firstInd] = 99 #high number
-
-    plotTypeOrder.pop()
-    plotIndOrder[-1]=len(kList)
-
-    for i, p in enumerate(plotTypeOrder):
-        pStartInd = plotIndOrder[i]
-        pEndInd = plotIndOrder[i+1]
-        plotComponents = kList[pStartInd:pEndInd]
-
-        if use_subplots and i==0 and fig is None and ax is None:
-            mosaicPlots = []
-            for pto in plotTypeOrder:
-                mosaicPlots.append([pto])
-            fig, ax = plt.subplot_mosaic(mosaicPlots)
-            axis = ax[p]
-        elif use_subplots:
-            ax[p].clear()
-            axis = ax[p]
-        else:
-            fig, axis = plt.subplots()
-                
-        if p == 'hvsr':
-            _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
-        elif p=='comp':
-            plotComponents[0] = plotComponents[0][:-1]
-            _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
-        elif p=='spec':
-            _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
-        else:
-            warnings.warn('Plot type {p} not recognized', UserWarning)   
-    
-    fig.canvas.draw()
-    if return_fig:
-        return fig, ax
+        fig.canvas.draw()
+        if return_fig:
+            return fig, ax
     return
 
 #Import data
@@ -1283,8 +1398,8 @@ def input_params(datapath,
     
     Returns
     -------
-    inputParamDict : dict
-        Dictionary containing input parameters, including data file path and metadata path. This will be used as an input to other functions.
+    params : sprit.HVSRData
+        sprit.HVSRData class containing input parameters, including data file path and metadata path. This will be used as an input to other functions. If batch processing, params will be converted to batch type in fetch_data() step.
 
     """
 
@@ -1410,16 +1525,17 @@ def input_params(datapath,
         coord_transformer = Transformer.from_crs(input_crs, output_crs, always_xy=True)
         xcoord, ycoord = coord_transformer.transform(xcoord, ycoord)
 
-
     #Add key/values to input parameter dictionary
     inputParamDict = {'site':site, 'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'input_crs':input_crs, 'output_crs':output_crs,
-                    'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range
+                    'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
+                    'ProcessingStatus':{'InputStatus':True, 'OverallStatus':True}
                     }
-
-    inputParamDict = sprit_utils.make_it_classy(inputParamDict)
-    return inputParamDict
+    
+    params = sprit_utils.make_it_classy(inputParamDict)
+    params = _check_processing_status(params)
+    return params
 
 #Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
@@ -1577,7 +1693,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     """
     orig_args = locals().copy() #Get the initial arguments
-    if (verbose and 'site' not in params.keys()) or (verbose and not params['batch']):
+    if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
         if 'batch' in params.keys():
             pass
         else:
@@ -1597,8 +1713,17 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         for site_name in params.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['params'] = params[site_name] #Get what would normally be the "params" variable for each site
-            if params[site_name]['ReadStatus']:
-                hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+            if params[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    hvsr_out = params
+                    hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
+                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False                    
+            else:
+                hvsr_out = params
+                hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
+                hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
         hvsr_out = HVSRBatch(hvsr_out)
     else:
         ppsds = params['ppsds'].copy()#[k]['psd_values']
@@ -1786,10 +1911,13 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
 
+        hvsr_out['ProcessingStatus']['HVStatus'] = True
+    hvsr_out = _check_processing_status(hvsr_out)
+
     return hvsr_out
 
 #Function to remove noise windows from data
-def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
+def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -1800,7 +1928,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
 
     Parameters
     ----------
-    input : dict, obspy.Stream, or obspy.Trace
+    hvsr_data : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
     kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
@@ -1823,7 +1951,7 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     Returns
     -------
     output : dict
-        Dictionary similar to input, but containing modified data with 'noise' removed
+        Dictionary similar to hvsr_data, but containing modified data with 'noise' removed
     """
     orig_args = locals().copy() #Get the initial arguments
     
@@ -1835,29 +1963,38 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
-    #Get Stream from input
-    if isinstance(input, HVSRBatch):
+    #Get Stream from hvsr_data
+    if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
-        for site_name in input.keys():
+        for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['input'] = input[site_name] #Get what would normally be the "input" variable for each site
-            if input[site_name]['ReadStatus']:
-                hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
+            args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                   hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    hvsr_out[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
+                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus']=False
+            else:
+                hvsr_data[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
+                hvsr_data[site_name]['ProcessingStatus']['OverallStatus']=False
+                hvsr_out = hvsr_data
+                
         output = HVSRBatch(hvsr_out)
         return output
 
-    elif isinstance(input, (HVSRData, dict)):
-        if 'stream_edited' in input.keys():
-            inStream = input['stream_edited'].copy()
+    elif isinstance(hvsr_data, (HVSRData, dict)):
+        if 'stream_edited' in hvsr_data.keys():
+            inStream = hvsr_data['stream_edited'].copy()
         else:
-            inStream = input['stream'].copy()
-        output = input.copy()
-    elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
-        inStream = input.copy()
+            inStream = hvsr_data['stream'].copy()
+        output = hvsr_data.copy()
+    elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
+        inStream = hvsr_data.copy()
         output = inStream.copy()
     else:
-        RuntimeError(f"Input of type type(input)={type(input)} cannot be used.")
+        RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     
     #Go through each type of removal and remove
     if kind.lower() in manualList:
@@ -1898,12 +2035,15 @@ def remove_noise(input, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=
     #Add output
     if isinstance(output, (HVSRData, dict)):
         output['stream_edited'] = outStream
-        output['stream'] = input['stream']
-    elif isinstance(input, obspy.core.stream.Stream) or isinstance(input, obspy.core.trace.Trace):
+        output['stream'] = hvsr_data['stream']
+    elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         output = outStream
     else:
-        warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning input data.")
-        return input
+        warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
+        return hvsr_data
+    
+    output['ProcessingStatus']['RemoveNoiseStatus'] = True
+    output = _check_processing_status(output)
     return output
 
 #Remove outlier ppsds
@@ -2119,12 +2259,19 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in fetch_data.__code__.co_varnames[0:7]}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         
-        params = fetch_data(params=params, **fetch_data_kwargs)
-        if verbose:
+        try:
+            params = fetch_data(params=params, **fetch_data_kwargs)
+        except:
+            params['ProcessingStatus']['FetchDataStatus']=False
+            params['ProcessingStatus']['OverallStatus'] = False            
+        
+        if verbose and params['ProcessingStatus']['FetchDataStatus']:
             print("\t  {}".format(params['site']))
             if verboseStatement !=[]:
                 for item in verboseStatement[i]:
                     print(item)
+        elif verbose and not params['ProcessingStatus']['FetchDataStatus']:
+            print("\t  {} not read correctly. Processing will not be carried out.".format(params['site']))
                 
         params['batch'] = True
 
@@ -2156,63 +2303,114 @@ def test_class(**input_dict):
 def _check_peaks_batch(**check_peaks_kwargs):
     try:
         hvsr_data = check_peaks(**check_peaks_kwargs)
+        if check_peaks_kwargs['verbose']:
+            print('\t{} succesfully completed check_peaks()'.format(hvsr_data['input_params']['site']))    
     except:
         warnings.warn(f"Error in check_peaks({check_peaks_kwargs['hvsr_data']['input_params']['site']}, **check_peaks_kwargs)", RuntimeWarning)
-    if check_peaks_kwargs['verbose']:
-        print('\t{} completed'.format(hvsr_data['input_params']['site']))
+        hvsr_data = check_peaks_kwargs['hvsr_data']
+        
     return hvsr_data
 
 #Support function for running batch
 def _generate_ppsds_batch(**generate_ppsds_kwargs):
     try:
         params = generate_ppsds(**generate_ppsds_kwargs)
+        if generate_ppsds_kwargs['verbose']:
+            print('\t{} successfully completed generate_ppsds()'.format(params['site']))
     except:
         warnings.warn(f"Error in generate_ppsds({generate_ppsds_kwargs['params']['site']}, **generate_ppsds_kwargs)", RuntimeWarning)
-    if generate_ppsds_kwargs['verbose']:
-        print('\t{} completed'.format(params['site']))
+        params = generate_ppsds_kwargs['params']
+        
     return params
 
 #Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
     try:
         hvsr_results = get_report(**get_report_kwargs)
+        #Print if verbose, but selected report_format was not print
+        if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
+            get_report_kwargs['report_format'] = 'print'
+            get_report(**get_report_kwargs)
     except:
         warnings.warn(f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)", RuntimeWarning)
-    
-    #Print if verbose, but selected report_format was not print
-    if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
-        get_report_kwargs['report_format'] = 'print'
-        get_report(**get_report_kwargs)
+        hvsr_results = get_report_kwargs['hvsr_results']
+        
     return hvsr_results
 
 #Helper function for batch procesing of remove_noise
 def __remove_noise_batch(**remove_noise_kwargs):
     try:
         hvsr_data = remove_noise(**remove_noise_kwargs)
+
+        if remove_noise_kwargs['verbose']:
+            if 'input_params' in hvsr_data.keys():
+                print('\t{} successfully completed remove_noise()'.format(hvsr_data['input_params']['site']))
+            elif 'site' in hvsr_data.keys():
+                print('\t{} successfully completed remove_noise()'.format(hvsr_data['site']))
     except:
         warnings.warn(f"Error in remove_noise({remove_noise_kwargs['input']['site']}, **remove_noise_kwargs)", RuntimeWarning)
 
-    if remove_noise_kwargs['verbose']:
-        if 'input_params' in hvsr_data.keys():
-            print('\t{} completed'.format(hvsr_data['input_params']['site']))
-        elif 'site' in hvsr_data.keys():
-            print('\t{} completed'.format(hvsr_data['site']))
+    return hvsr_data
 
+#Batch function for plot_hvsr()
+def _hvsr_plot_batch(**hvsr_plot_kwargs):
+    try:
+        hvsr_data = plot_hvsr(**hvsr_plot_kwargs)
+    except:
+        warnings.warn(f"Error in plotting ({hvsr_plot_kwargs['hvsr_data']['input_params']['site']}, **hvsr_plot_kwargs)", RuntimeWarning)
+        hvsr_data = hvsr_plot_kwargs['hvsr_data']
+        
     return hvsr_data
 
 #Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
     try:
         hvsr_data = process_hvsr(**process_hvsr_kwargs)
+        if process_hvsr_kwargs['verbose']:
+            print('\t{} successfuly completed process_hvsr()'.format(hvsr_data['input_params']['site']))
     except:
         warnings.warn(f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)", RuntimeWarning)
-
-    if process_hvsr_kwargs['verbose']:
-        print('\t{} completed'.format(hvsr_data['input_params']['site']))
+        hvsr_data = process_hvsr_kwargs['params']
+        
     return hvsr_data
 
 ##HELPER functions for fetch_data() and get_metadata()
 #Read in metadata .inv file, specifically for RaspShake
+def _check_processing_status(hvsr_data):
+    """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
+
+    Parameters
+    ----------
+    hvsr_data : sprit.HVSRData
+        _description_
+
+    Returns
+    -------
+    sprit.HVSRData
+        _description_
+    """
+    
+    if isinstance(hvsr_data, HVSRData):
+        siteName = hvsr_data['site']
+        hvsr_interim = {siteName: hvsr_data}
+    else:
+        hvsr_interim = hvsr_data
+        
+    for sitename in hvsr_interim.keys():
+        statusOK = True
+        for status_type, status_value in hvsr_interim[sitename]['ProcessingStatus'].items():
+            if not status_value and status_type != 'RemoveNoiseStatus':
+                statusOK = False
+                
+        if statusOK:
+                hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = True
+        else:
+                hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = False
+
+    if isinstance(hvsr_data, HVSRData):
+        hvsr_data = hvsr_interim[siteName]
+    return hvsr_data    
+
 def _update_shake_metadata(filepath, params, write_path=''):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
@@ -3082,19 +3280,19 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
     input = hvsr_data['stream']
 
     if do_stalta:
-        hvsr_data['stream_edited'] = remove_noise(input=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
         input = hvsr_data['stream_edited']
 
     if do_pctThresh:
-        hvsr_data['stream_edited'] = remove_noise(input=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
+        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
         input = hvsr_data['stream_edited']
 
     if do_noiseWin:
-        hvsr_data['stream_edited'] = remove_noise(input=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
         input = hvsr_data['stream_edited']
 
     if do_warmup:
-        hvsr_data['stream_edited'] = remove_noise(input=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
+        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
 
     fig, ax, noise_windows_line_artists, noise_windows_window_artists = _get_removed_windows(input=hvsr_data, fig=fig, ax=ax, time_type='matplotlib')
     
@@ -3254,7 +3452,7 @@ def _select_windows(input):
 
     if isinstance(input, (HVSRData, dict)):
         if 'hvsr_curve' in input.keys():
-            fig, ax = hvplot(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
+            fig, ax = plot_hvsr(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
         else:
             params = input.copy()
             input = input['stream']
@@ -3942,7 +4140,7 @@ def __gethvsrparams(hvsr_out):
     return hvsr_out
 
 ##Helper Functions for plotting
-#Plot hvsr curve, private supporting function for hvplot
+#Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
@@ -4140,7 +4338,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
 
 #Private function to help for when to show and format and save plots
 def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show):
-    """Private function to support hvplot, for plotting and showing plots"""
+    """Private function to support plot_hvsr, for plotting and showing plots"""
     #plt.gca()
     #plt.gcf()
     #fig.tight_layout() #May need to uncomment this
@@ -4156,7 +4354,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
         #plt.ion()
     return
 
-#Plot specgtrogram, private supporting function for hvplot
+#Plot specgtrogram, private supporting function for plot_hvsr
 def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
