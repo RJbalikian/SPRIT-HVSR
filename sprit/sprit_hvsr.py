@@ -418,12 +418,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
                 ext = kwargs['ext']
             else:
                 ext = 'hvsr'
-            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext)
-            
-    else:
-        print(type(hvsr_results))
-
-        warnings.warn(f"Processing of {hvsr_results['site']} not completed.")
+            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext)        
 
     return hvsr_results
 
@@ -452,14 +447,13 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
         else:
             print('\nChecking peaks in the H/V Curve (check_peaks())')
             print('\tUsing the following parameters:')
-        for key, value in orig_args.items():
-            if key=='hvsr_data':
-                pass
-            else:
-                print('\t  {}={}'.format(key, value))
-    
+            for key, value in orig_args.items():
+                if key=='hvsr_data':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
+        
     #First, divide up for batch or not
-    #Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
         if verbose:
             print('\t  Running in batch mode')
@@ -471,7 +465,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
                 try:
                     hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
                 except:
-                    print(f"Peaks for {site_name} unable to be checked.")
+                    if verbose:
+                        print(f"\tPeaks for {site_name} unable to be checked.")
                 
         hvsr_data = HVSRBatch(hvsr_data)
     else:
@@ -1954,7 +1949,20 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
         Dictionary similar to hvsr_data, but containing modified data with 'noise' removed
     """
     orig_args = locals().copy() #Get the initial arguments
-    
+
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+        if 'batch' in hvsr_data.keys():
+            pass
+        else:
+            print('\nRemoving noisy data windows (remove_noise())')
+            print('\tUsing the following parameters:')
+            for key, value in orig_args.items():
+                if key=='hvsr_data':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
+
+
     #Setup lists
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
@@ -2302,7 +2310,9 @@ def test_class(**input_dict):
 #Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
     try:
+        print('before check peaks')
         hvsr_data = check_peaks(**check_peaks_kwargs)
+        print('after check peaks')
         if check_peaks_kwargs['verbose']:
             print('\t{} succesfully completed check_peaks()'.format(hvsr_data['input_params']['site']))    
     except:
