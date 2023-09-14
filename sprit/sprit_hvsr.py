@@ -728,13 +728,39 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
-    elif source=='batch':
+    elif source=='batch' and params['datapath'] != 'sample':
         if verbose:
             print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
         params = HVSRBatch(params)
         return params
+    elif 'sample' in params['datapath']:
+        sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+        if source=='batch':
+            print('TODO: Code for running sample batch')
+            #params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
+        elif source=='dir':
+            print("TODO: Code for getting files from directory")
+        elif source=='file':
+            if '1' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+            elif '2' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED')
+            elif '3' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED')
+            elif '4' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED')
+            elif '5' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED')
+            elif '6' in params['datapath'] and source=='file':
+                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')
+
+            rawDataIN = obspy.read(params['datapath'])#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter(action='ignore', category=UserWarning)
+                rawDataIN.attach_response(inv)
     else:
         try:
             rawDataIN = obspy.read(dPath)
