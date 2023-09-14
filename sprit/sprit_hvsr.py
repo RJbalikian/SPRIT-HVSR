@@ -743,7 +743,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
         if source=='batch':
             print('TODO: Code for running sample batch')
-            #params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
+            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
         elif source=='dir':
             print("TODO: Code for getting files from directory")
         elif source=='file':
@@ -2296,9 +2296,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         #input_params(datapath,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
         #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
         #get_metadata(params, write_path)
-
     elif batch_type == 'filelist':
-
         if isinstance(batch_params, list):
             if len(batch_params) != len(input_data):
                 raise RuntimeError('If batch_params is list, it must be the same length as input_data. len(batch_params)={} != len(input_data)={}'.format(len(batch_params), len(input_data)))
@@ -2316,7 +2314,103 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 pass 
             else:
                 param_dict_list[i]['datapath'] = file
-                
+    elif batch_type =='sample':
+        dataReadInfoDF = pd.read_csv(input_data)
+        if 'datapath' in dataReadInfoDF.columns:
+            filelist = list(dataReadInfoDF['datapath'])
+        #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
+
+        default_dict = {'site':'HVSR Site',
+                    'network':'AM', 
+                    'station':'RAC84', 
+                    'loc':'00', 
+                    'channels':['EHZ', 'EHN', 'EHE'],
+                    'acq_date':str(datetime.datetime.now().date()),
+                    'starttime' : '00:00:00.00',
+                    'endtime' : '23:59:59.999',
+                    'tzone' : 'UTC',
+                    'xcoord' : -88.2290526,
+                    'ycoord' :  40.1012122,
+                    'elevation' : 755,
+                    'input_crs':'EPSG:4326',#4269 is NAD83, defautling to WGS
+                    'output_crs':'EPSG:4326',
+                    'elev_unit' : 'feet',
+                    'depth' : 0,
+                    'instrument' : 'Raspberry Shake',
+                    'metapath' : '',
+                    'hvsr_band' : [0.4, 40],
+                    'write_path':'',
+                    'source':'file', 
+                    'export_format':'mseed', 
+                    'detrend':'spline', 
+                    'detrend_order':2, 
+                    'verbose':False}
+
+        print(f"\t{dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
+        if verbose:
+            maxLength = 25
+            maxColWidth = 12
+            if dataReadInfoDF.shape[0] > maxLength:
+                print(f'\t Showing information for first {maxLength} files only:')
+            print()
+            #Print nicely formated df
+            #Print column names
+            print('\t', end='')
+            for col in dataReadInfoDF.columns:
+                print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
+            print('\n\t', end='')
+
+            #Print separator
+            tableLen = (maxColWidth+2)*len(dataReadInfoDF.columns)
+            for r in range(tableLen):
+                print('-', end='')
+            print()
+
+            #Print columns/rows
+            for index, row in dataReadInfoDF.iterrows():
+                print('\t', end='')
+                for col in row:
+                    if len(str(col)) > maxColWidth:
+                        print((str(col)[:maxColWidth-3]+'...').ljust(maxColWidth), end='  ')
+                    else:
+                        print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
+                print()
+            if dataReadInfoDF.shape[0] > maxLength:
+                endline = f'\t...{dataReadInfoDF.shape[0]-maxLength} more rows in file.\n'
+            else:
+                endline = '\n'
+            print(endline)
+
+            print('\tFetching the following files:')
+        param_dict_list = []
+        verboseStatement = []
+        if param_col is None: #Not a single parameter column, each col=parameter
+            for row_ind in range(dataReadInfoDF.shape[0]):
+                param_dict = {}
+                verboseStatement.append([])
+                for col in dataReadInfoDF.columns:
+                    if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
+                        currParam = dataReadInfoDF.loc[row_ind, col]
+                        if pd.isna(currParam) or currParam == 'nan':
+                            if col in default_dict.keys():
+                                param_dict[col] = default_dict[col] #Get default value
+                                if verbose:
+                                    verboseStatement[row_ind].append("\t\t'{}' not specified in batch file. Using '{}'={}".format(col, col, default_dict[col]))
+                            else:
+                                param_dict[col] = None
+                        else:
+                            param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                param_dict['datapath'] = pathlib.Path(pkg_resources.resource_filename(__name__, f"resources/sample_data/{param_dict['datapath']}")).as_posix()
+                param_dict_list.append(param_dict)
+        else:
+            if param_col not in dataReadInfoDF.columns:
+                raise IndexError('{} is not a column in {} (columns are: {})'.format(param_col, input_data, dataReadInfoDF.columns))
+            for row in dataReadInfoDF[param_col]:
+                param_dict = {}
+                splitRow = str(row).split(',')
+                for item in splitRow:
+                    param_dict[item.split('=')[0]] = item.split('=')[1]
+                param_dict_list.append(param_dict)        
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0
