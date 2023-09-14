@@ -10,6 +10,7 @@ import pathlib
 import pickle
 import pkg_resources
 import tempfile
+import textwrap
 import warnings
 import xml.etree.ElementTree as ET
 
@@ -388,9 +389,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], plo
     hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report.__code__.co_varnames}
-    if 'hvsr_results' not in get_report_kwargs.keys():
-        get_report_kwargs['hvsr_results'] = hvsr_results
-    get_report(**get_report_kwargs)
+    get_report(hvsr_results=hvsr_results, plot_type=plot_type, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if 'report_format' in get_report_kwargs.keys():
@@ -466,15 +465,18 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
                     hvsr_data[site_name] = _check_peaks_batch(**args) #Call another function, that lets us run this function again
                 except:
                     if verbose:
-                        print(f"\tPeaks for {site_name} unable to be checked.")
+                        print(f"\t{site_name}: check_peaks() unsuccessful. Peaks not checked.")
+                    else:
+                        warnings.warn(f"\t{site_name}: check_peaks() unsuccessful. Peaks not checked.", RuntimeWarning)
                 
         hvsr_data = HVSRBatch(hvsr_data)
     else:
-        if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+        if hvsr_data['ProcessingStatus']['OverallStatus']:
             if not hvsr_band:
                 hvsr_band = [0.4,40]
             hvsr_data['hvsr_band'] = hvsr_band
 
+            print(hvsr_data.keys())
             anyK = list(hvsr_data['x_freqs'].keys())[0]
             x = hvsr_data['x_freqs'][anyK]
             y = hvsr_data['hvsr_curve']
@@ -485,6 +487,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
             hvsr_log_std = hvsr_data['hvsr_log_std']
             peak_freq_range = hvsr_data['peak_freq_range']
 
+            print('starting to get peaks')
             #Do for hvsr
             peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
 
@@ -524,6 +527,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
             curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
             peakTests = ['PeakFreqClarityBelow', 'PeakFreqClarityAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
             bestPeakScore = 0
+
             for p in hvsr_data['Peak Report']:
                 #Get BestPeak
                 if p['Score'] > bestPeakScore:
@@ -1024,6 +1028,7 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
     else:
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
+            print('trying')
             curvTestsPassed = (hvsr_results['BestPeak']['PassList']['WindowLengthFreq.'] +
                                 hvsr_results['BestPeak']['PassList']['SignificantCycles']+
                                 hvsr_results['BestPeak']['PassList']['LowCurveStDevOverTime'])
@@ -1038,6 +1043,7 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
                         hvsr_results['BestPeak']['PassList']['PeakStability_AmpStD'])
             peakPass = peakTestsPassed >= 5
         except:
+            print('well, that didnt work')
             raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
     
         if isinstance(report_format, (list, tuple)):
@@ -1192,7 +1198,8 @@ def get_report(hvsr_results, export_table=None, report_format='print', plot_type
                     return hvsr_results
                 
         for rep_form in report_format:
-            report_output(rep_form, export_table=export_table, plot_type=plot_type, return_results=return_results, verbose=verbose, save_figs=save_figs)      
+            print(rep_form)
+            report_output(hvsr_results=hvsr_results, report_format=rep_form, export_table=export_table, plot_type=plot_type, return_results=return_results, verbose=verbose, save_figs=save_figs)
     return
 
 #Main function for plotting results
@@ -2222,9 +2229,41 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                     'detrend_order':2, 
                     'verbose':False}
 
+        print(f"\t{dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
         if verbose:
-            print(f'\t Showing information for first {10} files.')
-            print('\t',dataReadInfoDF.head(10))
+            maxLength = 25
+            maxColWidth = 12
+            if dataReadInfoDF.shape[0] > maxLength:
+                print(f'\t Showing information for first {maxLength} files only:')
+            print()
+            #Print nicely formated df
+            #Print column names
+            print('\t', end='')
+            for col in dataReadInfoDF.columns:
+                print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
+            print('\n\t', end='')
+
+            #Print separator
+            tableLen = (maxColWidth+2)*len(dataReadInfoDF.columns)
+            for r in range(tableLen):
+                print('-', end='')
+            print()
+
+            #Print columns/rows
+            for index, row in dataReadInfoDF.iterrows():
+                print('\t', end='')
+                for col in row:
+                    if len(str(col)) > maxColWidth:
+                        print((str(col)[:maxColWidth-3]+'...').ljust(maxColWidth), end='  ')
+                    else:
+                        print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
+                print()
+            if dataReadInfoDF.shape[0] > maxLength:
+                endline = f'\t...{dataReadInfoDF.shape[0]-maxLength} more rows in file.\n'
+            else:
+                endline = '\n'
+            print(endline)
+
             print('\tFetching the following files:')
         param_dict_list = []
         verboseStatement = []
@@ -2336,9 +2375,7 @@ def test_class(**input_dict):
 #Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
     try:
-        print('before check peaks')
         hvsr_data = check_peaks(**check_peaks_kwargs)
-        print('after check peaks')
         if check_peaks_kwargs['verbose']:
             print('\t{} succesfully completed check_peaks()'.format(hvsr_data['input_params']['site']))    
     except:
@@ -2361,14 +2398,21 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
 
 #Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
+    print(get_report_kwargs)
     try:
+        print('before report')
         hvsr_results = get_report(**get_report_kwargs)
+        print('after report')
         #Print if verbose, but selected report_format was not print
         if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
             get_report_kwargs['report_format'] = 'print'
             get_report(**get_report_kwargs)
     except:
-        warnings.warn(f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)", RuntimeWarning)
+        warnMsg = f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)"
+        if get_report_kwargs['verbose']:
+            print('\t'+warnMsg)
+        else:
+            warnings.warn(warnMsg, RuntimeWarning)
         hvsr_results = get_report_kwargs['hvsr_results']
         
     return hvsr_results
@@ -2405,7 +2449,11 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
         if process_hvsr_kwargs['verbose']:
             print('\t{} successfuly completed process_hvsr()'.format(hvsr_data['input_params']['site']))
     except:
-        warnings.warn(f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)", RuntimeWarning)
+        errMsg=f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)"
+        if process_hvsr_kwargs['verbose']:
+            print('\t'+errMsg)
+        else:
+            warnings.warn(errMsg, RuntimeWarning)
         hvsr_data = process_hvsr_kwargs['params']
         
     return hvsr_data
