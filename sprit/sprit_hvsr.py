@@ -586,7 +586,7 @@ def export_data(hvsr_data, export_path=None, ext='hvsr'):
     """
     def _do_export(_hvsr_data=hvsr_data, _export_path=export_path, _ext=ext):
             
-        fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickledData.{ext}"
+        fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickled.{ext}"
         if _export_path is None:
             _export_path = _hvsr_data.params['datapath']
             _export_path = pathlib.Path(_export_path).with_name(fname)
@@ -594,9 +594,9 @@ def export_data(hvsr_data, export_path=None, ext='hvsr'):
             _export_path = pathlib.Path(_export_path)
             if _export_path.is_dir():
                 _export_path = _export_path.joinpath(fname)    
-        
-        #_export_path = str(_export_path.as_posix())
-        with open(export_path, 'wb') as f:
+        print(_export_path)
+        _export_path = str(_export_path)
+        with open(_export_path, 'wb') as f:
             pickle.dump(_hvsr_data, f) 
     
     if isinstance(hvsr_data, HVSRBatch):
@@ -1118,30 +1118,42 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             else:
                 report_format = [report_format]   
 
-        def get_export_filename(_export_path, _rep_form):
+        def export_report(export_obj, _export_path, _rep_form):
             if _export_path is None:
-                pass
-            elif _export_path==True:
+                return
+            else:
                 if _rep_form == 'csv':
                     ext = '.csv'
                 elif _rep_form =='plot':
                     ext='.png'
                 else:
-                    return
+                    ext=''
+                    
+                sitename=hvsr_results['input_params']['site']#.replace('.', '-')
+                fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+                fname = fname.replace(':', '')
 
-            inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-            if inFile.is_dir():
-                fname = hvsr_results['input_params']['site']+'_'+str(hvsr_results['input_params']['acq_date'])+'_'+str(hvsr_results['input_params']['starttime'].time)[:5]+'-'+str(hvsr_results['input_params']['endtime'].time)[:5]
-  
-                inFile = inFile.joinpath(fname) + ext
-
-            elif inFile.is_file():
-                    _export_path = inFile.with_suffix('.csv')
-
-            try:
-                outDF.to_csv(_export_path, index_label='ID')
-            except:
-                warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]".format(_export_path), category=RuntimeWarning)
+                if _export_path==True:
+                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                    if inFile.is_dir():
+                        outFile = inFile.joinpath(fname)
+                    else:
+                        outFile = inFile.with_name(fname)
+                else:
+                    if pathlib.Path(_export_path).is_dir():
+                        outFile = pathlib.Path(_export_path).joinpath(fname)
+                    else:
+                        outFile=_export_path
+            print(outFile)
+            if _rep_form == 'csv':
+                try:
+                    export_obj.to_csv(outFile, index_label='ID')
+                except:
+                    warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+            elif _rep_form =='plot':
+                plt.scf = export_obj
+                plt.savefig(outFile)
+            return 
 
         def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _return_results=False, _export_path=None, verbose=False):
             if _report_format=='print':
@@ -1213,7 +1225,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     #Print individual results
                     report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
                     report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Lw'][-1]} Length of processing windows: {hvsr_results['BestPeak']['Report']['Lw']}")
-                    report_string_list.append(f"'\t\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
+                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
                     report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]} Low StDev. of H/V Curve over time: {hvsr_results['BestPeak']['Report']['σ_A(f)']}")
 
                     report_string_list.append("\t\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
@@ -1231,12 +1243,15 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 report_string_list.append(internalSeparator)
                 report_string_list.append(endSiteSeparator)
                 
+                reportStr=''
                 #Now print it
                 for line in report_string_list:
                     print(line)
-                if _return_results:
-                    hvsr_results['BestPeak']['Report']['Print_Report'] = outDF
-                    hvsr_results['Print_Report'] = outDF             
+                    reportStr = reportStr+'\n'+line
+
+                export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
+                hvsr_results['BestPeak']['Report']['Print_Report'] = reportStr
+                hvsr_results['Print_Report'] = reportStr   
             elif _report_format=='csv':
                 import pandas as pd
                 pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
@@ -1250,40 +1265,19 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak']['f0'], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
-                if _export_path is None:
-                    pass
-                elif _export_path==True:
-                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-                    if inFile.is_dir():
-                        inFile = inFile.as_posix()
-                        if inFile[-1]=='/':
-                            pass
-                        else:
-                            inFile = inFile + '/'
-                        fname = hvsr_results['input_params']['site']+'_'+str(hvsr_results['input_params']['acq_date'])+'_'+str(hvsr_results['input_params']['starttime'].time)[:5]+'-'+str(hvsr_results['input_params']['endtime'].time)[:5]
-                        inFile = inFile + fname +'.csv'
-                    elif inFile.is_file():
-                        _export_path = inFile.with_suffix('.csv')
-                    try:
-                        outDF.to_csv(_export_path, index_label='ID')
-                    except:
-                        warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]".format(_export_path), category=RuntimeWarning)
-                else:
-                    try:
-                        outDF.to_csv(_export_path, index_label='ID')
-                    except:
-                        warnings.warn("{} does not exist, report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]".format(_export_path), category=RuntimeWarning)
+                export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results['BestPeak']['Report']['CSV_Report'] = outDF
                 hvsr_results['CSV_Report'] = outDF
                 if verbose:
                     print(outDF)
-                return hvsr_results
             elif _report_format=='plot':
-                hvsr_results['BestPeak']['Report']['HV_Plot']=plot_hvsr(hvsr_results, plot_type=_plot_type)
-                plt.show()
-                if _return_results:
-                    return hvsr_results
+                fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, show=False, return_fig=True)
 
+                export_report(export_obj=fig_ax[0], _export_path=_export_path, _rep_form=_report_format)
+                hvsr_results['BestPeak']['Report']['HV_Plot']=hvsr_results['HV_Plot']=fig_ax
+                plt.show()
+                
+            return hvsr_results
 
         for i, rep_form in enumerate(report_format):
             if isinstance(export_path, (list, tuple)):
@@ -1295,8 +1289,8 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, verbose=verbose)
-    return
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, verbose=verbose)
+    return hvsr_results
 
 #Main function for plotting results
 def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, close_figs=False, clear_fig=True,**kwargs):
@@ -1438,8 +1432,10 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
-        
-        fig.canvas.draw()
+
+        if show:
+            fig.canvas.draw()
+            
         if return_fig:
             return fig, ax
     return
