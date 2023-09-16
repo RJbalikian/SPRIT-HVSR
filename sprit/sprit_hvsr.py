@@ -1041,7 +1041,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, verbose=False, export_path=None):    
+def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, csv_overwrite_opt='append', verbose=False, export_path=None):    
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -1060,6 +1060,8 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             'print' - matplotlib.Figure object
             'csv' - pandas.DataFrame object
             list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
+    csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
+        How to handle csv report outputs if the designated output file already exists. By default, appends the new information to the end of the existing file.
     export_path : None, bool, or filepath, default = None
         If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
@@ -1143,9 +1145,17 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     if pathlib.Path(_export_path).is_dir():
                         outFile = pathlib.Path(_export_path).joinpath(fname)
                     else:
-                        outFile=_export_path
-            print(outFile)
+                        outFile=pathlib.Path(_export_path)
+
             if _rep_form == 'csv':
+                if outFile.exists():
+                    existFile = pd.read_csv(outFile)
+                    if csv_overwrite_opt.lower() == 'append':
+                        export_obj = existFile.append(export_obj, ignore_index=True)
+                    elif csv_overwrite_opt.lower() == 'overwrite':
+                        pass
+                    elif csv_overwrite_opt.lower() in ['keep', 'rename']:
+
                 try:
                     export_obj.to_csv(outFile, index_label='ID')
                 except:
