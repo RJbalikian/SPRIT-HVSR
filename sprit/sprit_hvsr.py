@@ -1155,7 +1155,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     elif csv_overwrite_opt.lower() == 'overwrite':
                         pass
                     elif csv_overwrite_opt.lower() in ['keep', 'rename']:
-
+                        outFile = outFile.with_stem(outFile.stem+'_1')
                 try:
                     export_obj.to_csv(outFile, index_label='ID')
                 except:
