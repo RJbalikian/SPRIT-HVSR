@@ -32,6 +32,7 @@ from sprit import sprit_utils
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 separator_character = '='
+obspyFormats =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 t0 = datetime.datetime.now().time()
 max_rank = 0
@@ -353,7 +354,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
-        
+    
     #Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
@@ -366,7 +367,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
             data_noiseRemoved['ProcessingStatus']['OverallStatus'] = True        
         else:
             data_noiseRemoved['ProcessingStatus']['OverallStatus'] = False
-        
+    
     #Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
@@ -385,7 +386,6 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
         ppsd_data['ProcessingStatus']['PPSDStatus']=False
         ppsd_data['ProcessingStatus']['OverallStatus'] = False
     
-    
     #Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
@@ -394,7 +394,6 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
         hvsr_results = ppsd_data
         hvsr_results['ProcessingStatus']['HVStatus']=False
         hvsr_results['ProcessingStatus']['OverallStatus'] = False
-
     #Final post-processing/reporting
 
     #Check peaks
@@ -712,6 +711,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
 
+    sampleList = ['1', '2', '3', '4', '5', '6', 'batch']
     #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
@@ -723,7 +723,20 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-    elif source=='file':
+        else:
+            obspyFiles = {}
+            for obForm in obspyFormats:
+                temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
+                for f in temp_file_glob:
+                    currParams = params
+                    currParams['datapath'] = f
+                    curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
+                                trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs), 
+                    obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
+            
+            return HVSRBatch(obspyFiles)
+
+    elif source=='file' and str(params['datapath']).lower() not in sampleList:
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawTraces = []
             for datafile in dPath:
@@ -736,6 +749,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                     rawDataIN = trace
                 else:
                     rawDataIN = rawDataIN + trace
+        elif dPath[:6].lower()=='sample':
+            pass
         else:
             rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         import warnings
@@ -749,27 +764,27 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
         params = HVSRBatch(params)
         return params
-    elif 'sample' in params['datapath']:
+    elif params['datapath'].lower() in sampleList:
         sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
         if source=='batch':
-            print('TODO: Code for running sample batch')
-            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+            params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+            params = batch_data_read(input_data=params['datapath'], verbose=verbose)
         elif source=='dir':
             print("TODO: Code for getting files from directory")
         elif source=='file':
-            if '1' in params['datapath'] and source=='file':
+            if   str(params['datapath']) == '1' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
-            elif '2' in params['datapath'] and source=='file':
+            elif str(params['datapath']) == '2' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED')
-            elif '3' in params['datapath'] and source=='file':
+            elif str(params['datapath']) == '3' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED')
-            elif '4' in params['datapath'] and source=='file':
+            elif str(params['datapath']) == '4' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED')
-            elif '5' in params['datapath'] and source=='file':
+            elif str(params['datapath']) == '5' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED')
-            elif '6' in params['datapath'] and source=='file':
+            elif str(params['datapath']) == '6' and source=='file':
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')
-
+            dPath = params['datapath']
             rawDataIN = obspy.read(params['datapath'])#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
             import warnings
             with warnings.catch_warnings():
@@ -784,9 +799,88 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
 
     try:
         dataIN = rawDataIN.copy()
-        if source=='file':
+        if source!='raw':
+            #Use metadata from file for;
+            # site
+            if params['site'] == "HVSR Site":
+                params['site'] = dPath.stem
+                params['params']['site'] = dPath.stem
+            
+            # network
+            if str(params['net']) == 'AM':
+                params['net'] = rawDataIN[0].stats.network
+                params['params']['net'] = rawDataIN[0].stats.network
+
+            # station
+            if str(params['sta']) == 'RAC84':
+                params['sta'] = rawDataIN[0].stats.station
+                params['params']['sta'] = rawDataIN[0].stats.station
+
+            # loc
+            if str(params['loc']) == '00':
+                params['loc'] = rawDataIN[0].stats.location
+                params['params']['loc'] = rawDataIN[0].stats.location
+            
+            # channels
+            channelList = []
+            if str(params['cha']) == ['EHZ', 'EHN', 'EHE']:
+                for tr in rawDataIN:
+                    if tr.stats.channel not in channelList:
+                        channelList.append(tr.stats.channel)
+                        channelList.sort(reverse=True) #Just so z is first, just in case
+                params['cha'] = channelList
+                params['params']['cha'] = channelList
+           
+            # Acquisition date
             if str(params['acq_date']) == str(datetime.datetime.now().date()):
                 params['acq_date'] = rawDataIN[0].stats.starttime.date
+
+            # starttime
+            today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
+                                                                 day = datetime.date.today().day,
+                                                                hour=0, minute=0, second=0, microsecond=0))
+            maxStarttime = datetime.time(hour=0, minute=0, second=0, microsecond=0)
+            if str(params['starttime']) == str(today_Starttime):
+                for tr in rawDataIN.merge():
+                    currTime = datetime.time(hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
+                                       second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond)
+                    if currTime > maxStarttime:
+                        maxStarttime = currTime
+
+                newStarttime = obspy.UTCDateTime(datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month,
+                                                                 day = params['acq_date'].day,
+                                                                hour=maxStarttime.hour, minute=maxStarttime.minute, 
+                                                                second=maxStarttime.second, microsecond=maxStarttime.microsecond))
+                params['starttime'] = newStarttime
+                params['params']['starttime'] = newStarttime
+
+            # endttime
+            today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
+                                                                 day = datetime.date.today().day,
+                                                                hour=23, minute=59, second=59, microsecond=999999))
+            minEndtime = datetime.time(hour=23, minute=59, second=59, microsecond=999999)
+            if str(params['endtime']) == str(today_Endtime):
+                for tr in rawDataIN.merge():
+                    currTime = datetime.time(hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
+                                       second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond)
+                    if currTime < minEndtime:
+                        minEndtime = currTime
+                newEndtime = obspy.UTCDateTime(datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month,
+                                                                 day = params['acq_date'].day,
+                                                                hour=minEndtime.hour, minute=minEndtime.minute, 
+                                                                second=minEndtime.second, microsecond=minEndtime.microsecond))
+                params['endtime'] = newEndtime
+                params['params']['endtime'] = newEndtime
+
+
+            #print(rawDataIN)
+            #print(params['starttime'])
+            #print(params['endtime'])
+            rawDataIN = rawDataIN.split()
+            rawDataIN = rawDataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
+            rawDataIN.merge()
+            #print(rawDataIN)
+
     except:
         raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
         
@@ -1151,7 +1245,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 if outFile.exists():
                     existFile = pd.read_csv(outFile)
                     if csv_overwrite_opt.lower() == 'append':
-                        export_obj = existFile.append(export_obj, ignore_index=True)
+                        export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
                     elif csv_overwrite_opt.lower() == 'overwrite':
                         pass
                     else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
@@ -1240,24 +1334,25 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
 
                     #Print individual results
                     report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Lw'][-1]} Length of processing windows: {hvsr_results['BestPeak']['Report']['Lw']}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]} Low StDev. of H/V Curve over time: {hvsr_results['BestPeak']['Report']['σ_A(f)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Lw'][-1]} Length of processing windows: {hvsr_results['BestPeak']['Report']['Lw']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]} Low StDev. of H/V Curve over time: {hvsr_results['BestPeak']['Report']['σ_A(f)']}")
 
-                    report_string_list.append("\t\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A(f-)'][-1]} Clarity Below Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f-)']}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A(f+)'][-1]} Clarity Above Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f+)']}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['A0'][-1]} Clarity of Peak Amplitude: {hvsr_results['BestPeak']['Report']['A0']}")
+                    report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f-)'][-1]} Clarity Below Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f-)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f+)'][-1]} Clarity Above Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f+)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A0'][-1]} Clarity of Peak Amplitude: {hvsr_results['BestPeak']['Report']['A0']}")
                     if hvsr_results['BestPeak']['PassList']['FreqStability']:
                         res = sprit_utils.check_mark()
                     else:
                         res = sprit_utils.x_mark()
-                    report_string_list.append(f"\t\t\t {res} Stability of Peak Freq. Over time: {hvsr_results['BestPeak']['Report']['P-'][:5]} and {hvsr_results['BestPeak']['Report']['P+'][:-1]} {res}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]} Stability of Peak (Freq. StDev): {hvsr_results['BestPeak']['Report']['Sf']}")
-                    report_string_list.append(f"\t\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]} Stability of Peak (Amp. StDev): {hvsr_results['BestPeak']['Report']['Sa']}")
+                    report_string_list.append(f"\t\t {res} Stability of Peak Freq. Over time: {hvsr_results['BestPeak']['Report']['P-'][:5]} and {hvsr_results['BestPeak']['Report']['P+'][:-1]} {res}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]} Stability of Peak (Freq. StDev): {hvsr_results['BestPeak']['Report']['Sf']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]} Stability of Peak (Amp. StDev): {hvsr_results['BestPeak']['Report']['Sa']}")
                 report_string_list.append('')
                 report_string_list.append(internalSeparator)
                 report_string_list.append(endSiteSeparator)
+                report_string_list.append('')
                 
                 reportStr=''
                 #Now print it
@@ -1474,7 +1569,7 @@ def input_params(datapath,
                 channels=['EHZ', 'EHN', 'EHE'],
                 acq_date=str(datetime.datetime.now().date()),
                 starttime = '00:00:00.00',
-                endtime = '23:59:59.999',
+                endtime = '23:59:59.999999',
                 tzone = 'UTC',
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
@@ -1938,7 +2033,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         origPPSD = params['ppsds_obspy'].copy()
 
         #Add some other variables to our output dictionary
-        hvsr_data = {'input_params':params.copy(),
+        hvsr_data = {'input_params':params,
                     'x_freqs':x_freqs,
                     'hvsr_curve':hvsr_curve,
                     'x_period':x_periods,
@@ -2108,7 +2203,6 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
                 else:
                     print('\t  {}={}'.format(key, value))
 
-
     #Setup lists
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
@@ -2143,7 +2237,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
             inStream = hvsr_data['stream_edited'].copy()
         else:
             inStream = hvsr_data['stream'].copy()
-        output = hvsr_data.copy()
+        output = hvsr_data#.copy()
     elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         inStream = hvsr_data.copy()
         output = inStream.copy()
@@ -2195,7 +2289,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
     else:
         warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
         return hvsr_data
-    
+
     output['ProcessingStatus']['RemoveNoiseStatus'] = True
     output = _check_processing_status(output)
     return output
@@ -2427,103 +2521,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 pass 
             else:
                 param_dict_list[i]['datapath'] = file
-    elif batch_type =='sample':
-        dataReadInfoDF = pd.read_csv(input_data)
-        if 'datapath' in dataReadInfoDF.columns:
-            filelist = list(dataReadInfoDF['datapath'])
-        #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
 
-        default_dict = {'site':'HVSR Site',
-                    'network':'AM', 
-                    'station':'RAC84', 
-                    'loc':'00', 
-                    'channels':['EHZ', 'EHN', 'EHE'],
-                    'acq_date':str(datetime.datetime.now().date()),
-                    'starttime' : '00:00:00.00',
-                    'endtime' : '23:59:59.999',
-                    'tzone' : 'UTC',
-                    'xcoord' : -88.2290526,
-                    'ycoord' :  40.1012122,
-                    'elevation' : 755,
-                    'input_crs':'EPSG:4326',#4269 is NAD83, defautling to WGS
-                    'output_crs':'EPSG:4326',
-                    'elev_unit' : 'feet',
-                    'depth' : 0,
-                    'instrument' : 'Raspberry Shake',
-                    'metapath' : '',
-                    'hvsr_band' : [0.4, 40],
-                    'write_path':'',
-                    'source':'file', 
-                    'export_format':'mseed', 
-                    'detrend':'spline', 
-                    'detrend_order':2, 
-                    'verbose':False}
-
-        print(f"\t{dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
-        if verbose:
-            maxLength = 25
-            maxColWidth = 12
-            if dataReadInfoDF.shape[0] > maxLength:
-                print(f'\t Showing information for first {maxLength} files only:')
-            print()
-            #Print nicely formated df
-            #Print column names
-            print('\t', end='')
-            for col in dataReadInfoDF.columns:
-                print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
-            print('\n\t', end='')
-
-            #Print separator
-            tableLen = (maxColWidth+2)*len(dataReadInfoDF.columns)
-            for r in range(tableLen):
-                print('-', end='')
-            print()
-
-            #Print columns/rows
-            for index, row in dataReadInfoDF.iterrows():
-                print('\t', end='')
-                for col in row:
-                    if len(str(col)) > maxColWidth:
-                        print((str(col)[:maxColWidth-3]+'...').ljust(maxColWidth), end='  ')
-                    else:
-                        print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
-                print()
-            if dataReadInfoDF.shape[0] > maxLength:
-                endline = f'\t...{dataReadInfoDF.shape[0]-maxLength} more rows in file.\n'
-            else:
-                endline = '\n'
-            print(endline)
-
-            print('\tFetching the following files:')
-        param_dict_list = []
-        verboseStatement = []
-        if param_col is None: #Not a single parameter column, each col=parameter
-            for row_ind in range(dataReadInfoDF.shape[0]):
-                param_dict = {}
-                verboseStatement.append([])
-                for col in dataReadInfoDF.columns:
-                    if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
-                        currParam = dataReadInfoDF.loc[row_ind, col]
-                        if pd.isna(currParam) or currParam == 'nan':
-                            if col in default_dict.keys():
-                                param_dict[col] = default_dict[col] #Get default value
-                                if verbose:
-                                    verboseStatement[row_ind].append("\t\t'{}' not specified in batch file. Using '{}'={}".format(col, col, default_dict[col]))
-                            else:
-                                param_dict[col] = None
-                        else:
-                            param_dict[col] = dataReadInfoDF.loc[row_ind, col]
-                param_dict['datapath'] = pathlib.Path(pkg_resources.resource_filename(__name__, f"resources/sample_data/{param_dict['datapath']}")).as_posix()
-                param_dict_list.append(param_dict)
-        else:
-            if param_col not in dataReadInfoDF.columns:
-                raise IndexError('{} is not a column in {} (columns are: {})'.format(param_col, input_data, dataReadInfoDF.columns))
-            for row in dataReadInfoDF[param_col]:
-                param_dict = {}
-                splitRow = str(row).split(',')
-                for item in splitRow:
-                    param_dict[item.split('=')[0]] = item.split('=')[1]
-                param_dict_list.append(param_dict)        
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
     i=0

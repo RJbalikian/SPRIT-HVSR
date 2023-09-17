@@ -43,9 +43,11 @@ def checkifpath(filepath, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     """
-
+    sampleList = ['1', '2', '3', '4', '5', '6', 'batch']
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
+        pass
+    elif filepath in sampleList:
         pass
     else:
         try:
