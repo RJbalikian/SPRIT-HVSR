@@ -1,5 +1,5 @@
 """
-This module contains all the functions needed to run the HVSR analysis
+This module contains all the functions needed to run the HVSR analysis. The functions defined here are read both by the SpRIT graphical user interface and by the command-line interface to 
 """
 import copy
 import datetime
@@ -14,6 +14,7 @@ import tempfile
 import textwrap
 import warnings
 import xml.etree.ElementTree as ET
+import sys
 
 import matplotlib
 from matplotlib.backend_bases import MouseButton
@@ -328,6 +329,8 @@ def gui():
         gui_root.quit()
         gui_root.destroy()
 
+    if sys.platform == 'linux':
+        warnings.Warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use apt-get install python-tk or apt-get install python3-tk to install tkinter.')
     gui_root = tk.Tk()
     icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
     gui_root.iconbitmap(icon_path)
