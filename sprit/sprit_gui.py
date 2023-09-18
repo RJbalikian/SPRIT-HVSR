@@ -1,9 +1,4 @@
-"""This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface
-
-Returns
--------
-Na
-    No returns
+"""This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.
 """
 
 import datetime

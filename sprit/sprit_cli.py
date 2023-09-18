@@ -1,6 +1,10 @@
 """This module/script is used to run sprit from the command line. 
 
-The arguments here should correspond to any of the keyword arguments that can be used with sprit.run()
+The arguments here should correspond to any of the keyword arguments that can be used with sprit.run() (or sprit_hvsr.run()). See the run() function's documentation for more information, or the individual functions that are run within it.
+
+For list inputs, you should pass the argument multiple times(e.g., --report_format "csv" --report_format "print" --report_format "plot"). (In the case of --report_format, you can also just use "all" to get csv, print, and plot report types)
+
+The datapath parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.
 """
 
 import argparse

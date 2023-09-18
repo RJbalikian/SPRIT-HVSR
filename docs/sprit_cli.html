@@ -23,14 +23,20 @@
 </header>
 <section id="section-intro">
 <p>This module/script is used to run sprit from the command line. </p>
-<p>The arguments here should correspond to any of the keyword arguments that can be used with sprit.run()</p>
+<p>The arguments here should correspond to any of the keyword arguments that can be used with sprit.run() (or sprit_hvsr.run()). See the run() function's documentation for more information, or the individual functions that are run within it.</p>
+<p>For list inputs, you should pass the argument multiple times(e.g., &ndash;report_format "csv" &ndash;report_format "print" &ndash;report_format "plot"). (In the case of &ndash;report_format, you can also just use "all" to get csv, print, and plot report types)</p>
+<p>The datapath parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;This module/script is used to run sprit from the command line. 
 
-The arguments here should correspond to any of the keyword arguments that can be used with sprit.run()
+The arguments here should correspond to any of the keyword arguments that can be used with sprit.run() (or sprit_hvsr.run()). See the run() function&#39;s documentation for more information, or the individual functions that are run within it.
+
+For list inputs, you should pass the argument multiple times(e.g., --report_format &#34;csv&#34; --report_format &#34;print&#34; --report_format &#34;plot&#34;). (In the case of --report_format, you can also just use &#34;all&#34; to get csv, print, and plot report types)
+
+The datapath parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.
 &#34;&#34;&#34;
 
 import argparse

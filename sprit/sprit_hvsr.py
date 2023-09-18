@@ -1,5 +1,9 @@
 """
-This module contains all the functions needed to run the HVSR analysis. The functions defined here are read both by the SpRIT graphical user interface and by the command-line interface to 
+This module is the main SpRIT module that contains all the functions needed to run HVSR analysis.
+
+The functions defined here are read both by the SpRIT graphical user interface and by the command-line interface to run HVSR analysis on input data.
+
+See documentation for individual functions for more information.
 """
 import copy
 import datetime
@@ -330,7 +334,7 @@ def gui():
         gui_root.destroy()
 
     if sys.platform == 'linux':
-        warnings.Warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use apt-get install python-tk or apt-get install python3-tk to install tkinter.')
+        warnings.Warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
     gui_root = tk.Tk()
     icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
     gui_root.iconbitmap(icon_path)
@@ -341,12 +345,53 @@ def gui():
 
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
-def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], verbose=False, **kwargs):
+def run(datapath, source='file', verbose=False, **kwargs):
+    """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
+    
+    The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
+    
+        The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
+        - input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
+        - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
+        - remove_noise(): by default, the kind of noise removal is kind='auto'. See the remove_noise() documentation for more information. If kind is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
+        - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+        - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
+        - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
+        - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+        - export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
 
+    Parameters
+    ----------
+    datapath : str or filepath object that can be read by obspy
+        Filepath to data to be processed. This may be a file or directory, depending on what kind of data is being processed (this can be specified with the source parameter). 
+        For sample data, The following can be specified as the datapath parameter:
+            - Any integer 1-6 (inclusive), or the string (e.g., datapath="1" or datapath=1 will work)
+            - The word "sample" before any integer (e.g., datapath="sample1")
+            - The word "sample" will default to "sample1" if source='file'. 
+            - If source='batch', datapath should be datapath='sample' or datapath='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
+    source : str, optional
+        _description_, by default 'file'
+    verbose : bool, optional
+        _description_, by default False
+
+    Returns
+    -------
+    hvsr_results : sprit.HVSRData or sprit.HVSRBatch object
+        If a single file/data point is being processed, a HVSRData object will be returned. Otherwise, it will be a HVSRBatch object. See their documention for more information.
+
+    Raises
+    ------
+    RuntimeError
+        If the input parameter may not be read correctly. This is raised if the input_params() function fails. This raises an error since no other data processing or reading steps will be able to carried out correctly.
+    RuntimeError
+        If the data is not read/fetched correctly using fetch_data(), an error will be raised. This is raised if the fetch_data() function fails. This raises an error since no other data processing steps will be able to carried out correctly.
+    RuntimeError
+        If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
+    """
     #Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in input_params.__code__.co_varnames}
     try:
-        params = input_params(datapath=datapath, hvsr_band=hvsr_band, verbose=verbose, **input_params_kwargs)
+        params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
@@ -354,6 +399,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
         params = {'ProcessingStatus':{'InputStatus':False, 'OverallStatus':False}}
         params.update(input_params_kwargs)
         params = sprit_utils.make_it_classy(params)
+    
     #Fetch Data
     try:
         fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in fetch_data.__code__.co_varnames}
@@ -365,7 +411,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
     #Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
-        data_noiseRemoved = remove_noise(hvsr_data=dataIN, kind=kind, verbose=verbose,**remove_noise_kwargs)   
+        data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
     except:
         data_noiseRemoved = dataIN
         data_noiseRemoved['ProcessingStatus']['RemoveNoiseStatus']=False
@@ -396,7 +442,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
     #Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
-        hvsr_results = process_hvsr(params=ppsd_data, method=method, verbose=verbose,**process_hvsr_kwargs)
+        hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except:
         hvsr_results = ppsd_data
         hvsr_results['ProcessingStatus']['HVStatus']=False
@@ -405,7 +451,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
 
     #Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
-    hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band=hvsr_band, verbose=verbose, **check_peaks_kwargs)
+    hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report.__code__.co_varnames}
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
@@ -728,7 +774,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
 
-    sampleList = ['1', '2', '3', '4', '5', '6', 'batch']
+    sampleList = ['1', '2', '3', '4', '5', '6', 'batch', 'sample', 'sample_batch']
     #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
@@ -752,20 +798,19 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
             
             return HVSRBatch(obspyFiles)
-
     elif source=='file' and str(params['datapath']).lower() not in sampleList:
         if isinstance(dPath, list) or isinstance(dPath, tuple):
-            rawTraces = []
+            rawStreams = []
             for datafile in dPath:
-                rawTrace = obspy.read(datafile)
-                rawTrace = rawTrace
-                rawTraces.append(rawTrace)
+                rawStream = obspy.read(datafile)
+                rawStreams.append(rawStream) #These are actually streams, not traces
             
-            for i, trace in enumerate(rawTraces):
+            for i, stream in enumerate(rawStreams):
                 if i == 0:
-                    rawDataIN = trace
+                    rawDataIN = obspy.Stream(stream) #Just in case
                 else:
-                    rawDataIN = rawDataIN + trace
+                    rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
+            
         elif str(dPath)[:6].lower()=='sample':
             pass
         else:
@@ -774,35 +819,44 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
-    elif source=='batch' and params['datapath'] != 'sample':
+    elif source=='batch' and str(params['datapath']).lower() not in sampleList:
         if verbose:
             print('\nFetching data (fetch_data())')
         batch_data_read_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in batch_data_read.__code__.co_varnames}
         params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
         params = HVSRBatch(params)
         return params
-    elif params['datapath'].lower() in sampleList:
+    elif str(params['datapath']).lower() in sampleList or f"sample{params['datapath'].lower()}" in sampleList:
         sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
         if source=='batch':
             params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
-            params = batch_data_read(input_data=params['datapath'], verbose=verbose)
+            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+            params = HVSRBatch(params)
+            return params
+
         elif source=='dir':
-            print("TODO: Code for getting files from directory")
+            params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+            params = HVSRBatch(params)
+            return params
+
         elif source=='file':
-            if   str(params['datapath']) == '1' and source=='file':
+            params['datapath'] = str(params['datapath']).lower()
+            
+            sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                                '2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                                '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                                '4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                                '5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                                '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')}
+            
+            if params['datapath'] in sampleFileKeyMap.keys():
+                params['datapath'] = sampleFileKeyMap[params['datapath']]
+            else:
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
-            elif str(params['datapath']) == '2' and source=='file':
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED')
-            elif str(params['datapath']) == '3' and source=='file':
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED')
-            elif str(params['datapath']) == '4' and source=='file':
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED')
-            elif str(params['datapath']) == '5' and source=='file':
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED')
-            elif str(params['datapath']) == '6' and source=='file':
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')
+
             dPath = params['datapath']
-            rawDataIN = obspy.read(params['datapath'])#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
             import warnings
             with warnings.catch_warnings():
                 warnings.simplefilter(action='ignore', category=UserWarning)
@@ -2442,6 +2496,11 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
     get_metadata_params = get_metadata.__code__.co_varnames
     fetch_data_params = fetch_data.__code__.co_varnames
 
+    if batch_type=='sample':
+        sample_data=True
+        batch_type='table'
+    else:
+        sample_data = False
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
@@ -2457,6 +2516,12 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
             if 'datapath' in dataReadInfoDF.columns:
                 filelist = list(dataReadInfoDF['datapath'])
             #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
+
+        #If this is sample data, we need to create absolute paths to the filepaths
+        if sample_data:
+            sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+            for index, row in dataReadInfoDF.iterrows():
+                dataReadInfoDF.loc[index, 'datapath'] = sample_data_dir.joinpath(row.loc['datapath'])
 
         default_dict = {'site':'HVSR Site',
                     'network':'AM', 
@@ -2653,9 +2718,7 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
 def _get_report_batch(**get_report_kwargs):
     print(get_report_kwargs)
     try:
-        print('before report')
         hvsr_results = get_report(**get_report_kwargs)
-        print('after report')
         #Print if verbose, but selected report_format was not print
         if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
             get_report_kwargs['report_format'] = 'print'
@@ -2700,7 +2763,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
     try:
         hvsr_data = process_hvsr(**process_hvsr_kwargs)
         if process_hvsr_kwargs['verbose']:
-            print('\t{} successfuly completed process_hvsr()'.format(hvsr_data['input_params']['site']))
+            print('\t{} successfully completed process_hvsr()'.format(hvsr_data['input_params']['site']))
     except:
         errMsg=f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)"
         if process_hvsr_kwargs['verbose']:
