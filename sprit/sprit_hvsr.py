@@ -671,7 +671,7 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     return
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, verbose=False, **kwargs):
+def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     import warnings
 
     """Fetch ambient seismic data from a source to read into obspy stream
@@ -951,11 +951,9 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             rawDataIN = rawDataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             rawDataIN.merge()
             #print(rawDataIN)
-
     except:
         raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
         
-    
     #Trim and save data as specified
     if not trim_dir:
         pass
@@ -981,7 +979,12 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     #Remerge data
     dataIN = dataIN.merge(method=1)
 
-    #Sort channels (make sure Z is first, makes things easier later)
+    if plot_input_stream:
+        #dataIN.plot(method='full', linewidth=0.25)
+        params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+        _get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+
+        #Sort channels (make sure Z is first, makes things easier later)
     if isinstance(params, HVSRBatch):
         pass
     else:
@@ -1259,6 +1262,26 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     hvsr_results[site_name] = hvsr_results[site_name]
             else:
                 hvsr_results[site_name] = hvsr_results[site_name]
+        
+        combined_csvReport = pd.DataFrame()
+        for site_name in hvsr_results.keys():
+            if 'CSV_Report' in hvsr_results[site_name]:
+                combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['CSV_Report']], ignore_index=True, join='inner')
+        
+        if export_path is not None:
+            if pathlib.Path(export_path).is_dir():
+                csvExportPath = export_path
+            elif pathlib.Path(export_path).is_file():
+                csvExportPath = export_path.parent
+            else:
+                csvExportPath = pathlib.Path(hvsr_results[site_name].datapath)
+                if csvExportPath.is_dir():
+                    pass
+                else:
+                    csvExportPath = csvExportPath.parent
+                
+        combined_csvReport.to_csv(csvExportPath, index=False)
+        
         if return_results:
             return hvsr_results
     else:
@@ -1880,7 +1903,7 @@ def input_params(datapath,
     return params
 
 #Plot Obspy Trace in axis using matplotlib
-def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
+def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True):
     if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
 
@@ -1967,7 +1990,7 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
         stD = np.abs(np.nanstd(np.ma.getdata(stream.select(component=comp)[0].data)))
         dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
-        axes[comp].set_ylim([dmed-0.75*stD, dmed+0.75*stD])
+        axes[comp].set_ylim([dmed-ylim_std*stD, dmed+ylim_std*stD])
         axes[comp].set_xlim([xmin, xmax])
 
     fig.suptitle(params['site'])
@@ -1980,6 +2003,9 @@ def plot_stream(stream, params, fig=None, axes=None, return_fig=True):
     
     #fig.tight_layout()
     fig.canvas.draw()
+
+    if show_plot:
+        plt.show()
 
     if return_fig:
         return fig, axes
@@ -3909,7 +3935,7 @@ def _on_fig_close(event):
     return
 
 #Shows windows with None on input plot
-def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib'):
+def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib',show_plot=False):
     """This function is for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
         fig, ax = plt.subplots()
@@ -4081,7 +4107,9 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         ax = origAxes
 
         fig.canvas.draw()
-
+    
+    if show_plot:
+        plt.show()
     return fig, ax, lineArtist, winArtist
 
 #Helper function for removing windows from data, leaving gaps
@@ -4902,7 +4930,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     return fig, ax
 
 #Plot spectrogram from stream
-def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, return_fig=True, fig=None, ax=None, cmap_per=[0.1,0.9], **kwargs):
+def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
 
     For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html 
@@ -5022,8 +5050,9 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     array_displayed = spec[minfreqInd:maxfreqInd,:]
     #freqs_displayed = freqs[minfreqInd:maxfreqInd]
     #im.set_data(array_displayed)
-    vmin = np.percentile(array_displayed, cmap_per[0]*100)
-    vmax = np.percentile(array_displayed, cmap_per[1]*100)
+    vmin = np.nanpercentile(array_displayed, cmap_per[0]*100)
+    vmax = np.nanpercentile(array_displayed, cmap_per[1]*100)
+  
     
     decimation_factor = 10
 
@@ -5094,7 +5123,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         stD = np.abs(np.nanstd(np.ma.getdata(og_stream.select(component=comp)[0].data)))
         dmed = np.nanmedian(np.ma.getdata(og_stream.select(component=comp)[0].data))
         key = 'signal'+comp.lower()
-        ax[key].set_ylim([dmed-5*stD, dmed+5*stD])
+        ax[key].set_ylim([dmed-ylimstd*stD, dmed+ylimstd*stD])
     
     if params is None:
         fig.suptitle('HVSR Site: Spectrogram and Data')
@@ -5115,6 +5144,9 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     #fig.tight_layout()
     fig.canvas.draw()
+    
+    if show_plot:
+        plt.show()
     
     if return_fig:
         return fig, ax
