@@ -402,7 +402,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
 
     #Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
-    hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band = hvsr_band, verbose=verbose, **check_peaks_kwargs)
+    hvsr_results = check_peaks(hvsr_data=hvsr_results, hvsr_band=hvsr_band, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report.__code__.co_varnames}
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
@@ -417,12 +417,16 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
                 #We will just change the report_format kwarg to print, since we already got the originally intended report format above, 
                 #   now need to print for verbose output
                 get_report_kwargs['report_format']='print'
-                get_report(hvsr_results=hvsr_results, **get_report_kwargs)  
+                get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                
+            if get_report_kwargs['report_format']=='plot' or 'plot' in get_report_kwargs['report_format']:
+                #We do not need to plot another report if already plotted
+                pass
+            else:
+                hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
+                hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, **hvplot_kwargs)
         else:
             pass
-
-        hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
-        hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, **hvplot_kwargs)
     
     #Export processed data if export_path(as pickle currently, default .hvsr extension)
     if 'export_path' in kwargs.keys():
@@ -439,7 +443,7 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -600,12 +604,14 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
             _export_path = pathlib.Path(_export_path)
             if _export_path.is_dir():
                 _export_path = _export_path.joinpath(fname)    
-        if verbose:
-            print(f"Processed data being exported as pickled data to: {_export_path}")
+
         _export_path = str(_export_path)
         with open(_export_path, 'wb') as f:
             pickle.dump(_hvsr_data, f) 
-    
+            
+        if verbose:
+            print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
+            
     if isinstance(hvsr_data, HVSRBatch):
         for sitename in hvsr_data.keys():
             _do_export(hvsr_data[sitename], export_path, ext)
@@ -1265,10 +1271,13 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                             if not outFile.exists():
                                 fileNameExists = False
                 try:
+                    print(f'\nSaving csv data to: {outFile}')
                     export_obj.to_csv(outFile, index_label='ID')
                 except:
                     warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
             elif _rep_form =='plot':
+                if verbose:
+                    print(f'\nSaving plot to: {outFile}')
                 plt.scf = export_obj
                 plt.savefig(outFile)
             return 
@@ -1384,16 +1393,44 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak']['f0'], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
-                export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
+
+                if verbose:
+                    print('\nCSV Report:')
+                    maxColWidth = 13
+                    for col in outDF.columns:
+                        if len(str(col)) > maxColWidth:
+                            colStr = str(col)[:maxColWidth-3]+'...'
+                        else:
+                            colStr = str(col)
+                        print(colStr.ljust(maxColWidth), end='  ')
+                    print()
+                    for c in range(len(outDF.columns) * (maxColWidth+2)):
+                        print('-', end='')
+                    print()
+                    
+                    for row in outDF.iterrows():
+                        for col in row[1]:
+                            if len(str(col)) > maxColWidth:
+                                colStr = str(col)[:maxColWidth-3]+'...'
+                            else:
+                                colStr = str(col)
+                            print(colStr.ljust(maxColWidth), end='  ')
+                        print()
+
+                try:
+                    export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
+                except:
+                    print("Error in exporting csv report. CSV not exported")
                 hvsr_results['BestPeak']['Report']['CSV_Report'] = outDF
                 hvsr_results['CSV_Report'] = outDF
-                if verbose:
-                    print(outDF)
+                        
             elif _report_format=='plot':
                 fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, show=False, return_fig=True)
 
                 export_report(export_obj=fig_ax[0], _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results['BestPeak']['Report']['HV_Plot']=hvsr_results['HV_Plot']=fig_ax
+
+                print('\nPlot of data report:')
                 plt.show()
                 
             return hvsr_results
@@ -1589,7 +1626,7 @@ def input_params(datapath,
                 instrument = 'Raspberry Shake',
                 metapath = '',
                 hvsr_band = [0.4, 40],
-                peak_freq_range=[0.4, 40],
+                peak_freq_range=[1, 20],
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data

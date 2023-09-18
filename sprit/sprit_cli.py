@@ -78,6 +78,9 @@ def main():
                 arg_value = True
             if arg_value=='False':
                 arg_value = False
+            if "[" in arg_value:
+                arg_value = arg_value.replace('[', '').replace(']','')
+                arg_value = arg_value.split(',')
         kwargs[arg_name] = arg_value
 
     for key, value in kwargs.items():
