@@ -459,7 +459,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
     if verbose:
         if 'report_format' in get_report_kwargs.keys():
             #if report_format is 'print', we would have already printed it in previous step
-            if get_report_kwargs['report_format']=='print' or 'print' in get_report_kwargs['report_format']:
+            if get_report_kwargs['report_format']=='print' or 'print' in get_report_kwargs['report_format'] or isinstance(hvsr_results, HVSRBatch):
                 #We do not need to print another report if already printed to terminal
                 pass
             else:
@@ -510,7 +510,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
     orig_args = locals().copy() #Get the initial arguments
 
     if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
-        if hvsr_data['batch']:
+        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
         else:
             print('\nChecking peaks in the H/V Curve (check_peaks())')
@@ -1057,7 +1057,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
     orig_args['ppsd_kwargs'] = [ppsd_kwargs]
 
     if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
-        if params['batch']:
+        if isinstance(params, HVSRData) and params['batch']:
             pass
         else:
             print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
@@ -1241,7 +1241,12 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
 
     if isinstance(hvsr_results, HVSRBatch):
         if verbose:
-            print('\t  Running in batch mode')
+            print('\nGetting Reports: Running in batch mode')
+
+            print('\tUsing parameters:')
+            for key, value in orig_args.items():
+                print(f'\t  {key}={value}')    
+            print()
         #If running batch, we'll loop through each site
         for site_name in hvsr_results.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
@@ -2031,7 +2036,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
     """
     orig_args = locals().copy() #Get the initial arguments
     if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
-        if params['batch']:
+        if isinstance(params, HVSRData) and params['batch']:
             pass
         else:
             print('\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
@@ -2294,7 +2299,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
     orig_args = locals().copy() #Get the initial arguments
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
-        if hvsr_data['batch']:
+        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
         else:
             print('\nRemoving noisy data windows (remove_noise())')
@@ -2584,7 +2589,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 endline = '\n'
             print(endline)
 
-            print('\tFetching the following files:')
+            print('Fetching the following files:')
         param_dict_list = []
         verboseStatement = []
         if param_col is None: #Not a single parameter column, each col=parameter
@@ -2598,7 +2603,10 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                             if col in default_dict.keys():
                                 param_dict[col] = default_dict[col] #Get default value
                                 if verbose:
-                                    verboseStatement[row_ind].append("\t\t'{}' not specified in batch file. Using '{}'={}".format(col, col, default_dict[col]))
+                                    if type(default_dict[col]) is str:
+                                        verboseStatement[row_ind].append("\t\t'{}' parameter not specified in batch file. Using {}='{}'".format(col, col, default_dict[col]))
+                                    else:
+                                        verboseStatement[row_ind].append("\t\t'{}' parameter not specified in batch file. Using {}={}".format(col, col, default_dict[col]))
                             else:
                                 param_dict[col] = None
                         else:
@@ -2716,13 +2724,18 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
 
 #Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
-    print(get_report_kwargs)
+
     try:
         hvsr_results = get_report(**get_report_kwargs)
         #Print if verbose, but selected report_format was not print
-        if get_report_kwargs['verbose'] and get_report_kwargs['report_format'] != 'print':
-            get_report_kwargs['report_format'] = 'print'
-            get_report(**get_report_kwargs)
+        print('\n\n\n') #add some 'whitespace'
+        if get_report_kwargs['verbose']:
+            if 'print' in get_report_kwargs['report_format']:
+                pass
+            else:
+                get_report_kwargs['report_format'] = 'print'
+                get_report(**get_report_kwargs)
+        
     except:
         warnMsg = f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)"
         if get_report_kwargs['verbose']:
