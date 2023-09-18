@@ -8,7 +8,11 @@ import zoneinfo
 
 import numpy as np
 
-from sprit import sprit_hvsr
+try: # For distribution
+    from sprit import sprit_hvsr
+except: #For testing
+    #import sprit_hvsr
+    pass
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -43,9 +47,11 @@ def checkifpath(filepath, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     """
-
+    sampleList = ['1', '2', '3', '4', '5', '6', 'batch', 'sample', 'sample_batch']
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
+        pass
+    elif str(filepath) in sampleList:
         pass
     else:
         try:

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>sprit.sprit_gui API documentation</title>
-<meta name="description" content="This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface …" />
+<meta name="description" content="This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,22 +22,12 @@
 <h1 class="title">Module <code>sprit.sprit_gui</code></h1>
 </header>
 <section id="section-intro">
-<p>This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>Na</code></dt>
-<dd>No returns</dd>
-</dl>
+<p>This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface
-
-Returns
--------
-Na
-    No returns
+<pre><code class="python">&#34;&#34;&#34;This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.
 &#34;&#34;&#34;
 
 import datetime
@@ -62,8 +52,13 @@ from matplotlib.backend_bases import MouseButton, MouseEvent
 import numpy as np
 matplotlib.use(&#39;TkAgg&#39;)
 
-from sprit import sprit_utils
-from sprit import sprit_hvsr
+try: #For distribution
+    from sprit import sprit_utils
+    from sprit import sprit_hvsr
+except: #For local testing
+    #import sprit_hvsr 
+    #import sprit_utils
+    pass
 
 #Decorator that catches errors and warnings (to be modified later for gui)
 def catch_errors(func):
@@ -451,7 +446,7 @@ class SPRIT_App:
             else:
                 self.totalResult.configure(text=f&#39;Fail {sprit_utils.x_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-            sprit_hvsr.hvplot(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
         #FUNCTION TO PROCESS DATA
         @catch_errors
@@ -2342,7 +2337,7 @@ class SPRIT_App:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;hvplot({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -2477,8 +2472,8 @@ class SPRIT_App:
 
         plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
-        # Create the hvplot Call LabelFrame
-        hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;hvplot() Call&#34;)
+        # Create the plot_hvsr Call LabelFrame
+        hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;plot_hvsr() Call&#34;)
 
         #HVSR
         
@@ -2530,8 +2525,8 @@ class SPRIT_App:
             return kindstr
         
 
-        # Add a Label widget to the hvplot Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;hvplot({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        # Add a Label widget to the plot_hvsr Call Label section
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -2541,7 +2536,7 @@ class SPRIT_App:
         
         def update_results_plot():
             self.tab_control.select(self.results_tab)
-            sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
@@ -2588,7 +2583,7 @@ class SPRIT_App:
 
         
         #lambda value=string: self.om_variable.set(value)
-        # Create the hvplot Call LabelFrame
+        # Create the plot_hvsr Call LabelFrame
         self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;Data Plots&#34;)
 
         #Set up plot     
@@ -3255,7 +3250,7 @@ if __name__ == &#34;__main__&#34;:
             else:
                 self.totalResult.configure(text=f&#39;Fail {sprit_utils.x_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-            sprit_hvsr.hvplot(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
         #FUNCTION TO PROCESS DATA
         @catch_errors
@@ -5146,7 +5141,7 @@ if __name__ == &#34;__main__&#34;:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;hvplot({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -5281,8 +5276,8 @@ if __name__ == &#34;__main__&#34;:
 
         plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
-        # Create the hvplot Call LabelFrame
-        hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;hvplot() Call&#34;)
+        # Create the plot_hvsr Call LabelFrame
+        hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;plot_hvsr() Call&#34;)
 
         #HVSR
         
@@ -5334,8 +5329,8 @@ if __name__ == &#34;__main__&#34;:
             return kindstr
         
 
-        # Add a Label widget to the hvplot Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;hvplot({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        # Add a Label widget to the plot_hvsr Call Label section
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -5345,7 +5340,7 @@ if __name__ == &#34;__main__&#34;:
         
         def update_results_plot():
             self.tab_control.select(self.results_tab)
-            sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
@@ -5392,7 +5387,7 @@ if __name__ == &#34;__main__&#34;:
 
         
         #lambda value=string: self.om_variable.set(value)
-        # Create the hvplot Call LabelFrame
+        # Create the plot_hvsr Call LabelFrame
         self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;Data Plots&#34;)
 
         #Set up plot     
@@ -5889,7 +5884,7 @@ if __name__ == &#34;__main__&#34;:
         else:
             self.totalResult.configure(text=f&#39;Fail {sprit_utils.x_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
-        sprit_hvsr.hvplot(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+        sprit_hvsr.plot_hvsr(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
     #FUNCTION TO PROCESS DATA
     @catch_errors
@@ -7780,7 +7775,7 @@ if __name__ == &#34;__main__&#34;:
     
     def update_hvplot_call():
         kindstr = get_kindstr()
-        hvplot_label.configure(text=&#34;hvplot({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     # Create the Checkbuttons for the plot options
     ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -7915,8 +7910,8 @@ if __name__ == &#34;__main__&#34;:
 
     plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
-    # Create the hvplot Call LabelFrame
-    hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;hvplot() Call&#34;)
+    # Create the plot_hvsr Call LabelFrame
+    hvplot_call_frame = ttk.LabelFrame(plot_settings_tab, text=&#34;plot_hvsr() Call&#34;)
 
     #HVSR
     
@@ -7968,8 +7963,8 @@ if __name__ == &#34;__main__&#34;:
         return kindstr
     
 
-    # Add a Label widget to the hvplot Call Label section
-    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;hvplot({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+    # Add a Label widget to the plot_hvsr Call Label section
+    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     #Run button frame
     runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -7979,7 +7974,7 @@ if __name__ == &#34;__main__&#34;:
     
     def update_results_plot():
         self.tab_control.select(self.results_tab)
-        sprit_hvsr.hvplot(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+        sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
     self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
     
@@ -8026,7 +8021,7 @@ if __name__ == &#34;__main__&#34;:
 
     
     #lambda value=string: self.om_variable.set(value)
-    # Create the hvplot Call LabelFrame
+    # Create the plot_hvsr Call LabelFrame
     self.results_chartFrame = ttk.LabelFrame(self.results_tab, text=&#34;Data Plots&#34;)
 
     #Set up plot     
@@ -8281,9 +8276,7 @@ if __name__ == &#34;__main__&#34;:
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul>
-<li><a href="#returns">Returns</a></li>
-</ul>
+<ul></ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
