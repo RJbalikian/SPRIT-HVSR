@@ -108,6 +108,9 @@ def main():
                 arg_value = True
             if arg_value==&#39;False&#39;:
                 arg_value = False
+            if &#34;[&#34; in arg_value:
+                arg_value = arg_value.replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;,&#39;&#39;)
+                arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
 
     for key, value in kwargs.items():
@@ -214,6 +217,9 @@ if __name__ == &#39;__main__&#39;:
                 arg_value = True
             if arg_value==&#39;False&#39;:
                 arg_value = False
+            if &#34;[&#34; in arg_value:
+                arg_value = arg_value.replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;,&#39;&#39;)
+                arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
 
     for key, value in kwargs.items():
