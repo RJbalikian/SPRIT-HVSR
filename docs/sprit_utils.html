@@ -36,7 +36,11 @@ import zoneinfo
 
 import numpy as np
 
-from sprit import sprit_hvsr
+try: # For distribution
+    from sprit import sprit_hvsr
+except: #For testing
+    #import sprit_hvsr
+    pass
 
 greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
 channel_order = {&#39;Z&#39;: 0, &#39;1&#39;: 1, &#39;N&#39;: 1, &#39;2&#39;: 2, &#39;E&#39;: 2}
@@ -71,9 +75,11 @@ def checkifpath(filepath, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
-
+    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;]
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
+        pass
+    elif filepath in sampleList:
         pass
     else:
         try:
@@ -518,9 +524,11 @@ This function returns another displayable character if platform is Windows</p></
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
-
+    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;]
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
+        pass
+    elif filepath in sampleList:
         pass
     else:
         try:

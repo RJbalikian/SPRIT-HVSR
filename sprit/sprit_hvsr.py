@@ -25,7 +25,11 @@ import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
 
-from sprit import sprit_utils
+try: #For distribution
+    from sprit import sprit_utils
+except: #For testing
+    #import sprit_utils
+    pass
 
 
 #Main variables
@@ -422,11 +426,14 @@ def run(datapath, source='file', kind='auto', method=4, hvsr_band=[0.4, 40], ver
     
     #Export processed data if export_path(as pickle currently, default .hvsr extension)
     if 'export_path' in kwargs.keys():
+        if kwargs['export_path'] is None:
+            pass
+        else:
             if 'ext' in kwargs.keys():
                 ext = kwargs['ext']
             else:
                 ext = 'hvsr'
-            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext)        
+            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext, verbose=verbose)        
 
     return hvsr_results
 
@@ -571,7 +578,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbo
     return hvsr_data
 
 #Function to export data to file
-def export_data(hvsr_data, export_path=None, ext='hvsr'):
+def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time.
 
     Parameters
@@ -584,16 +591,17 @@ def export_data(hvsr_data, export_path=None, ext='hvsr'):
         Filepath extension to use for data file, by default 'hvsr'
     """
     def _do_export(_hvsr_data=hvsr_data, _export_path=export_path, _ext=ext):
-            
+        
         fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickled.{ext}"
-        if _export_path is None:
-            _export_path = _hvsr_data.params['datapath']
+        if _export_path is None or _export_path is True:
+            _export_path = _hvsr_data['datapath']
             _export_path = pathlib.Path(_export_path).with_name(fname)
         else:
             _export_path = pathlib.Path(_export_path)
             if _export_path.is_dir():
                 _export_path = _export_path.joinpath(fname)    
-        print(_export_path)
+        if verbose:
+            print(f"Processed data being exported as pickled data to: {_export_path}")
         _export_path = str(_export_path)
         with open(_export_path, 'wb') as f:
             pickle.dump(_hvsr_data, f) 
@@ -749,7 +757,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                     rawDataIN = trace
                 else:
                     rawDataIN = rawDataIN + trace
-        elif dPath[:6].lower()=='sample':
+        elif str(dPath)[:6].lower()=='sample':
             pass
         else:
             rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
@@ -2277,7 +2285,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
     elif kind.lower() in warmup_cooldown:
         outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        warnings.warn(f"Input value kind={kind} is not recognized. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown")
+        warnings.warn(f"Input value kind={kind} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
         return output
 
     #Add output

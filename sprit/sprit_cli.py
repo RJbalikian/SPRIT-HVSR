@@ -5,7 +5,11 @@ The arguments here should correspond to any of the keyword arguments that can be
 
 import argparse
 import inspect
-import sprit  # Assuming you have a module named 'sprit'
+try:
+    import sprit  # When distributed
+except:
+    #import sprit_hvsr as sprit #When testing
+    pass
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -42,7 +46,7 @@ def main():
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = ['params', 'input', 'hvsr_data']
+    intermediate_params_list = ['params', 'input', 'hvsr_data', 'hvsr_results']
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -58,8 +62,8 @@ def main():
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
                     parser.add_argument(F'--{name}', help=helpStr, default=parameter.default)
-    # Add more arguments/options as needed
     
+    # Add more arguments/options as needed
     args = parser.parse_args()
 
     kwargs = {}
@@ -67,8 +71,19 @@ def main():
     #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
+        if isinstance(arg_value, str):
+            if "=" in arg_value:
+                arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
+            if arg_value=='True':
+                arg_value = True
+            if arg_value=='False':
+                arg_value = False
         kwargs[arg_name] = arg_value
 
+    for key, value in kwargs.items():
+        print(key, value)
+
+    #print(kwargs['kwargs'])
     # Call the sprit.run function with the generated kwargs
     sprit.run(**kwargs)
     

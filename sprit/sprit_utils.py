@@ -8,7 +8,11 @@ import zoneinfo
 
 import numpy as np
 
-from sprit import sprit_hvsr
+try: # For distribution
+    from sprit import sprit_hvsr
+except: #For testing
+    #import sprit_hvsr
+    pass
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}

@@ -28,8 +28,13 @@ from matplotlib.backend_bases import MouseButton, MouseEvent
 import numpy as np
 matplotlib.use('TkAgg')
 
-from sprit import sprit_utils
-from sprit import sprit_hvsr
+try: #For distribution
+    from sprit import sprit_utils
+    from sprit import sprit_hvsr
+except: #For local testing
+    #import sprit_hvsr 
+    #import sprit_utils
+    pass
 
 #Decorator that catches errors and warnings (to be modified later for gui)
 def catch_errors(func):

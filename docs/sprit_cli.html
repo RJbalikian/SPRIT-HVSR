@@ -35,7 +35,11 @@ The arguments here should correspond to any of the keyword arguments that can be
 
 import argparse
 import inspect
-import sprit  # Assuming you have a module named &#39;sprit&#39;
+try:
+    import sprit  # When distributed
+except:
+    #import sprit_hvsr as sprit #When testing
+    pass
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -65,14 +69,14 @@ def main():
                      sprit.process_hvsr,
                      sprit.check_peaks,
                      sprit.get_report,
-                     sprit.hvplot]
+                     sprit.plot_hvsr]
 
     parameters = []
 
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -88,8 +92,8 @@ def main():
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
-    # Add more arguments/options as needed
     
+    # Add more arguments/options as needed
     args = parser.parse_args()
 
     kwargs = {}
@@ -97,8 +101,19 @@ def main():
     #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
+        if isinstance(arg_value, str):
+            if &#34;=&#34; in arg_value:
+                arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
+            if arg_value==&#39;True&#39;:
+                arg_value = True
+            if arg_value==&#39;False&#39;:
+                arg_value = False
         kwargs[arg_name] = arg_value
 
+    for key, value in kwargs.items():
+        print(key, value)
+
+    #print(kwargs[&#39;kwargs&#39;])
     # Call the sprit.run function with the generated kwargs
     sprit.run(**kwargs)
     
@@ -160,14 +175,14 @@ if __name__ == &#39;__main__&#39;:
                      sprit.process_hvsr,
                      sprit.check_peaks,
                      sprit.get_report,
-                     sprit.hvplot]
+                     sprit.plot_hvsr]
 
     parameters = []
 
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
-    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;]
+    intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
 
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -183,8 +198,8 @@ if __name__ == &#39;__main__&#39;:
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
-    # Add more arguments/options as needed
     
+    # Add more arguments/options as needed
     args = parser.parse_args()
 
     kwargs = {}
@@ -192,8 +207,19 @@ if __name__ == &#39;__main__&#39;:
     #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
     for arg_name, arg_value in vars(args).items():
+        if isinstance(arg_value, str):
+            if &#34;=&#34; in arg_value:
+                arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
+            if arg_value==&#39;True&#39;:
+                arg_value = True
+            if arg_value==&#39;False&#39;:
+                arg_value = False
         kwargs[arg_name] = arg_value
 
+    for key, value in kwargs.items():
+        print(key, value)
+
+    #print(kwargs[&#39;kwargs&#39;])
     # Call the sprit.run function with the generated kwargs
     sprit.run(**kwargs)</code></pre>
 </details>

@@ -8,7 +8,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.29'
+release_version= '0.1.30'
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
@@ -16,10 +16,10 @@ repoDir = docsDir.parent
 spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
 spritUtilsPath = spritDir.joinpath('sprit_utils.py')
-spritPath = spritDir.joinpath('sprit.py')
+spritCLIPath = spritDir.joinpath('sprit_cli.py')
+spritPath = spritDir.joinpath('sprit_hvsr.py')
 resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
-
 
 # Set the package name, subdirectory, and output directory
 subdir = '.\sprit'
@@ -29,6 +29,7 @@ venvPath = pathlib.Path(sys.executable).parent.parent
 
 os.environ['PYTHONPATH'] = '..' + os.pathsep + os.environ.get('PYTHONPATH', '')
 
+print(output_dir)
 # Run the pdoc command
 if rtd_theme:
     themePath = venvPath.as_posix()+'/lib/site-packages/sphinx_rtd_theme/'
@@ -38,6 +39,7 @@ else:
     
 #Set up a working directory for the files generated from pdoc
 workDir = pathlib.Path(os.getcwd())
+
 if workDir.stem == 'docs':
     pass
 elif 'docs' in str(workDir):
@@ -50,7 +52,7 @@ else:
             break
 
 src_path = pathlib.Path(subdir)
-trg_path = src_path.parent # this ends up being current folder, usually
+trg_path = src_path.parent # this ends up being main repo folder, usually
 
 #Move items back into the main docs folder
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
