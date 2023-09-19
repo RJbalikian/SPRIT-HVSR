@@ -879,23 +879,23 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             
             # network
             if str(params['net']) == 'AM':
-                params['net'] = rawDataIN[0].stats.network
-                params['params']['net'] = rawDataIN[0].stats.network
+                params['net'] = dataIN[0].stats.network
+                params['params']['net'] = dataIN[0].stats.network
 
             # station
             if str(params['sta']) == 'RAC84':
-                params['sta'] = rawDataIN[0].stats.station
-                params['params']['sta'] = rawDataIN[0].stats.station
+                params['sta'] = dataIN[0].stats.station
+                params['params']['sta'] = dataIN[0].stats.station
 
             # loc
             if str(params['loc']) == '00':
-                params['loc'] = rawDataIN[0].stats.location
-                params['params']['loc'] = rawDataIN[0].stats.location
+                params['loc'] = dataIN[0].stats.location
+                params['params']['loc'] = dataIN[0].stats.location
             
             # channels
             channelList = []
             if str(params['cha']) == ['EHZ', 'EHN', 'EHE']:
-                for tr in rawDataIN:
+                for tr in dataIN:
                     if tr.stats.channel not in channelList:
                         channelList.append(tr.stats.channel)
                         channelList.sort(reverse=True) #Just so z is first, just in case
@@ -904,7 +904,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
            
             # Acquisition date
             if str(params['acq_date']) == str(datetime.datetime.now().date()):
-                params['acq_date'] = rawDataIN[0].stats.starttime.date
+                params['acq_date'] = dataIN[0].stats.starttime.date
 
             # starttime
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
@@ -912,7 +912,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.time(hour=0, minute=0, second=0, microsecond=0)
             if str(params['starttime']) == str(today_Starttime):
-                for tr in rawDataIN.merge():
+                for tr in dataIN.merge():
                     currTime = datetime.time(hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
                                        second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond)
                     if currTime > maxStarttime:
@@ -931,7 +931,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                                                                 hour=23, minute=59, second=59, microsecond=999999))
             minEndtime = datetime.time(hour=23, minute=59, second=59, microsecond=999999)
             if str(params['endtime']) == str(today_Endtime):
-                for tr in rawDataIN.merge():
+                for tr in dataIN.merge():
                     currTime = datetime.time(hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
                                        second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond)
                     if currTime < minEndtime:
@@ -944,13 +944,13 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                 params['params']['endtime'] = newEndtime
 
 
-            #print(rawDataIN)
+            #print(dataIN)
             #print(params['starttime'])
             #print(params['endtime'])
-            rawDataIN = rawDataIN.split()
-            rawDataIN = rawDataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
-            rawDataIN.merge()
-            #print(rawDataIN)
+            dataIN = dataIN.split()
+            dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
+            dataIN.merge()
+            #print(dataIN)
     except:
         raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
         
@@ -1099,19 +1099,19 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         eStream = stream.select(component='E')
         estats = eStream.traces[0].stats
         ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-        ppsdE.add(stream)
+        ppsdE.add(eStream)
 
         #Get ppsds of n component
         nStream = stream.select(component='N')
         nstats = nStream.traces[0].stats
         ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-        ppsdN.add(stream)
+        ppsdN.add(nStream)
 
         #Get ppsds of z component
         zStream = stream.select(component='Z')
         zstats = zStream.traces[0].stats
         ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-        ppsdZ.add(stream)
+        ppsdZ.add(zStream)
 
         ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
 
@@ -1160,7 +1160,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                     
                     
                     if maxPctDiff > 0.05 and timeDiffWarn:
-                        raise warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
+                        warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
                     elif verbose  and timeDiffWarn:
                         print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
                     timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
@@ -1300,8 +1300,12 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                         hvsr_results['BestPeak']['PassList']['PeakStability_FreqStD']+
                         hvsr_results['BestPeak']['PassList']['PeakStability_AmpStD'])
             peakPass = peakTestsPassed >= 5
-        except:
-            raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
+        except Exception as e:
+            errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
+            print(errMsg)
+            print(e)
+            return hvsr_results
+            #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
     
         if isinstance(report_format, (list, tuple)):
             pass
@@ -1534,7 +1538,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     return hvsr_results
 
 #Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -1609,6 +1613,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
         for i, k in enumerate(kList):
             kList[i] = k.lower()
 
+        #Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
         #HVSR index
         if len(set(hvsrList).intersection(kList)):
             for i, hv in enumerate(hvsrList):
@@ -1642,7 +1647,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
             plotTypeOrder.append(plotTypeList[firstInd])
             plotIndOrder.append(indList[firstInd])
             lastVal = indListCopy[firstInd]
-            indListCopy[firstInd] = 99 #high number
+            indListCopy[firstInd] = 99 #just a high number
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
@@ -1656,7 +1661,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 mosaicPlots = []
                 for pto in plotTypeOrder:
                     mosaicPlots.append([pto])
-                fig, ax = plt.subplot_mosaic(mosaicPlots)
+                fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={'hspace':0.3})
                 axis = ax[p]
             elif use_subplots:
                 ax[p].clear()
@@ -1665,10 +1670,10 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 fig, axis = plt.subplots()
                     
             if p == 'hvsr':
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax)
             elif p=='comp':
                 plotComponents[0] = plotComponents[0][:-1]
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs')
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax)
             elif p=='spec':
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
             else:
@@ -4649,7 +4654,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']')
     ax.set_title(hvsr_data['input_params']['site'])
 
-
+    
+    #print("label='comp'" in str(ax.__dict__['_axes']))
     for k in plot_type:   
         if k=='p' and 'all' not in plot_type:
             plotSuff=plotSuff+'BestPeak_'
@@ -4697,10 +4703,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             for t in hvsr_data['ind_hvsr_curves']:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
-        if 'c' in k:
+        if 'c' in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
-            if plot_type[0] != 'c':
+            if 'c' not in plot_type[0]:#This is part of the hvsr axis
                 fig.tight_layout()
                 axis2 = ax.twinx()
                 compAxis = axis2
@@ -4711,9 +4717,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                 legendLoc2 = 'upper left'
                 
             else:
-                ax.set_title(hvsr_data['input_params']['site']+': Individual Components')
-                #ax = plt.gca()
-                #fig = plt.gcf()
+                ax.set_title('') #Remove title
+                ax.sharex(kwargs['axes']['hvsr'])
                 compAxis = ax
                 legendLoc2 = 'upper right'
                 
@@ -4730,7 +4735,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             pad = rng * 0.05
             ylim = [minY-pad, maxY+pad]
         
-            compAxis.set_ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+            compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
 
             #Modify based on whether there are multiple charts
@@ -4771,7 +4776,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             i = i[:-1]
         axisbox.append(float(i))
 
-    ax.legend(loc=legendLoc)
+    if kwargs['show_legend']:
+        ax.legend(loc=legendLoc)
 
     __plot_current_fig(save_dir=save_dir, 
                         filename=filename, 
@@ -4910,7 +4916,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
         ax.hlines(hvsr_data['BestPeak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_data['x_freqs'][anyKey]),0), 10)
-    ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
+    specTitle = ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
+    bgClr = (fig.get_facecolor()[0], fig.get_facecolor()[1], fig.get_facecolor()[2], 0.1)
+    specTitle.set_color(bgClr)
     ax.set_xlabel('UTC Time \n'+day)
     
     if colorbar:
@@ -4922,6 +4930,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.semilogy()
     ax.set_ylim(hvsr_data['input_params']['hvsr_band'])
 
+    #fig.tight_layout()
     #plt.rcParams['figure.dpi'] = 500
     #plt.rcParams['figure.figsize'] = (12,4)
     fig.canvas.draw()
@@ -4999,13 +5008,23 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     if len(stream)>1:
         stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
+    newFig= False
     if fig is None and ax is None:
         #Organize the chart layout
-        mosaic = [['spec'],['spec'],['spec'],
-                ['spec'],['spec'],['spec'],
-                ['signalz'],['signalz'], ['signaln'], ['signale']]
-        fig, ax = plt.subplot_mosaic(mosaic, sharex=True)  
-        #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)  
+        mosaic = [['spec'],
+                  ['spec'],
+                  ['spec'],
+                  ['spec'],
+                  ['spec'],
+                  ['spec'],
+                  ['signalz'],
+                  ['signalz'], 
+                  ['signaln'], 
+                  ['signale']]
+        fig, ax = plt.subplot_mosaic(mosaic, sharex=True, gridspec_kw={'hspace':0.3})
+        #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+        newFig = True
+
     
     data = stream[0].data
     if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
@@ -5134,22 +5153,28 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
             sitename = params['input_params']['site']
         else:
             sitename = params['site']
-        fig.suptitle('{}: Spectrogram and Data'.format(sitename))
+        fig.suptitle('{}\nSpectrogram and Data'.format(sitename))
     
     day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
     ax['signale'].set_xlabel('UTC Time \n'+day)
 
-    #plt.rcParams['figure.dpi'] = 100
-    #plt.rcParams['figure.figsize'] = (5,4)
-    
-    #fig.tight_layout()
+    if newFig:
+        ogFigsize = matplotlib.rcParams['figure.figsize']
+        fig = plt.gcf()
+        matplotlib.rcParams['figure.figsize'] = (40, 4)
+        #plt.rcParams['figure.dpi'] = 100
+        #plt.rcParams['figure.figsize'] = (5,4)
+        #fig.tight_layout()
+        plt.rcParams['figure.figsize'] = ogFigsize
+        
     fig.canvas.draw()
-    
+
     if show_plot:
         plt.show()
     
     if return_fig:
         return fig, ax
+    
     return
 
 ##Helper functions for checking peaks
