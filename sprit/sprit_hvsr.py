@@ -719,11 +719,17 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         params['datapath'] = params['datapath'].as_posix().replace('{','')
         params['datapath'] = params['datapath'].split('}')
     
+    sampleListNos = ['1', '2', '3', '4', '5', '6']
+    sampleList = ['1', '2', '3', '4', '5', '6', 'batch', 'sample', 'sample_batch']
+    for s in sampleListNos:
+        sampleList.append(f'sample{s}')
+        sampleList.append(f'sample_{s}')
+
     if isinstance(params['datapath'],list):
         for i, d in enumerate(params['datapath']):
             params['datapath'][i] = sprit_utils.checkifpath(str(d).strip())
     else:
-        dPath = sprit_utils.checkifpath(params['datapath'])
+        dPath = sprit_utils.checkifpath(params['datapath'], sample_list=sampleList)
 
     inst = params['instrument']
 
@@ -774,7 +780,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
 
-    sampleList = ['1', '2', '3', '4', '5', '6', 'batch', 'sample', 'sample_batch']
     #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
@@ -848,10 +853,24 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                                 '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
                                 '4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
                                 '5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                                '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')}
+                                '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                                
+                                'sample1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                                'sample2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                                'sample3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                                'sample4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                                'sample5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                                'sample6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+
+                                'sample_1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                                'sample_2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                                'sample_3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                                'sample_4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                                'sample_5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                                'sample_6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')}
             
-            if params['datapath'] in sampleFileKeyMap.keys():
-                params['datapath'] = sampleFileKeyMap[params['datapath']]
+            if params['datapath'].lower() in sampleFileKeyMap.keys():
+                params['datapath'] = sampleFileKeyMap[params['datapath'].lower()]
             else:
                 params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
 

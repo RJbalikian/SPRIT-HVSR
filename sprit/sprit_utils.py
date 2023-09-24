@@ -34,7 +34,7 @@ def check_mark(incolor=False, interminal=False):
     return check
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, verbose=False):
+def checkifpath(filepath, sample_list='', verbose=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -47,11 +47,10 @@ def checkifpath(filepath, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     """
-    sampleList = ['1', '2', '3', '4', '5', '6', 'batch', 'sample', 'sample_batch']
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
-    elif str(filepath) in sampleList:
+    elif str(filepath) in sample_list:
         pass
     else:
         try:

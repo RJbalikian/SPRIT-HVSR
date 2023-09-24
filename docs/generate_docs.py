@@ -151,8 +151,9 @@ for each_file in repo_path.iterdir():
 #Update setup file(s) with release version number
 setupFPath = repoDir.joinpath('setup.py')
 pyprojectFPath = repoDir.joinpath('pyproject.toml')
+condaFPath = repoDir.joinPath('conda/meta.yaml')
 
-confFilePaths = [setupFPath, pyprojectFPath]
+confFilePaths = [setupFPath, pyprojectFPath, condaFPath]
 for cFile in confFilePaths:
     with open(cFile.as_posix(), 'r') as f:
         cFileText = f.read()
@@ -160,6 +161,10 @@ for cFile in confFilePaths:
     #Update which file is being analyzed for creating exe
     verText = r'version=".*?"'
     newVerText = r'version="'+release_version+'"'
+    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+
+    verTest = r"version: .*?"
+    newVerText = r'version: '+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
     with open(cFile.as_posix(), 'w') as f:

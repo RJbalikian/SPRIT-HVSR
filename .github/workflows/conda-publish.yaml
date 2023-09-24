@@ -1,0 +1,31 @@
+name: Publish to Conda-Forge
+
+on:
+  release:
+    types:
+      - created
+      - edited
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v2
+
+      - name: Install Conda-Forge Client
+        run: conda install -c conda-forge conda-forge-ci-setup -y
+
+      - name: Create Conda environment
+        run: conda env create -f conda/environment.yml
+
+      - name: Activate conda environment
+        run: conda activate sprit-env
+
+      - name: Build and Upload Package
+        env:
+          CONDA_FORGE_TOKEN: ${{ secrets.CONDA_FORGE_TOKEN }}
+        run: conda smithy ci  # Adjust this command to your Conda-Forge workflow
