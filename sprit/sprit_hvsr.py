@@ -4887,6 +4887,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     
     #if detrend:
     #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+    psdArr = hvsr_data['ind_hvsr_curves'].T
 
     xmin = min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
     xmax = max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
