@@ -4887,25 +4887,10 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     
     #if detrend:
     #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
-    psdArr = hvsr_data['ind_hvsr_curves'].T
-    if '.' in str(min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1])):
-        minTformat = '%Y-%m-%dT%H:%M:%S.%f'
-    else:
-        minTformat = '%Y-%m-%dT%H:%M:%S'
-
-    if '.' in str(max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1])):
-        maxTformat = '%Y-%m-%dT%H:%M:%S.%f'
-    else:
-        maxTformat = '%Y-%m-%dT%H:%M:%S'
 
     xmin = min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
     xmax = max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
-
-    #xmin = datetime.datetime.strptime(min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), minTformat)
-    #xmax = datetime.datetime.strptime(max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).isoformat(), maxTformat)
-    #xmin = mdates.date2num(xmin)
-    #xmax = mdates.date2num(xmax)
-    
+  
     tTicks = mdates.MinuteLocator(byminute=range(0,60,5))
     ax.xaxis.set_major_locator(tTicks)
     tTicks_minor = mdates.SecondLocator(bysecond=[0])
