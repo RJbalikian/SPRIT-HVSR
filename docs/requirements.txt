@@ -3,4 +3,5 @@ numpy
 pandas
 obspy
 scipy
-pyqt5
+pyproj
+PyQt5
