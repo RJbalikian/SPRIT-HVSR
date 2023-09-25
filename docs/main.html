@@ -707,7 +707,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.checkifpath"><code class="name flex">
-<span>def <span class="ident">checkifpath</span></span>(<span>filepath, verbose=False)</span>
+<span>def <span class="ident">checkifpath</span></span>(<span>filepath, sample_list='', verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Support function to check if a filepath is a pathlib.Path object and tries to convert if not</p>
@@ -725,7 +725,7 @@ This function returns another displayable character if platform is Windows</p></
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def checkifpath(filepath, verbose=False):
+<pre><code class="python">def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
     &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -738,11 +738,10 @@ This function returns another displayable character if platform is Windows</p></
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
-    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
-    elif str(filepath) in sampleList:
+    elif str(filepath) in sample_list:
         pass
     else:
         try:
@@ -870,11 +869,17 @@ This function returns another displayable character if platform is Windows</p></
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].as_posix().replace(&#39;{&#39;,&#39;&#39;)
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].split(&#39;}&#39;)
     
+    sampleListNos = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;]
+    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
+    for s in sampleListNos:
+        sampleList.append(f&#39;sample{s}&#39;)
+        sampleList.append(f&#39;sample_{s}&#39;)
+
     if isinstance(params[&#39;datapath&#39;],list):
         for i, d in enumerate(params[&#39;datapath&#39;]):
             params[&#39;datapath&#39;][i] = sprit_utils.checkifpath(str(d).strip())
     else:
-        dPath = sprit_utils.checkifpath(params[&#39;datapath&#39;])
+        dPath = sprit_utils.checkifpath(params[&#39;datapath&#39;], sample_list=sampleList)
 
     inst = params[&#39;instrument&#39;]
 
@@ -925,7 +930,6 @@ This function returns another displayable character if platform is Windows</p></
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
 
-    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
     #Select how reading will be done
     if source==&#39;raw&#39;:
         if inst.lower() in raspShakeInstNameList:
@@ -999,10 +1003,24 @@ This function returns another displayable character if platform is Windows</p></
                                 &#39;3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
                                 &#39;4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
                                 &#39;5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
-                                &#39;6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;)}
+                                &#39;6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;),
+                                
+                                &#39;sample1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;),
+                                &#39;sample2&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;),
+                                &#39;sample3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
+                                &#39;sample4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
+                                &#39;sample5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
+                                &#39;sample6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;),
+
+                                &#39;sample_1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;),
+                                &#39;sample_2&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;),
+                                &#39;sample_3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
+                                &#39;sample_4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
+                                &#39;sample_5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
+                                &#39;sample_6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;)}
             
-            if params[&#39;datapath&#39;] in sampleFileKeyMap.keys():
-                params[&#39;datapath&#39;] = sampleFileKeyMap[params[&#39;datapath&#39;]]
+            if params[&#39;datapath&#39;].lower() in sampleFileKeyMap.keys():
+                params[&#39;datapath&#39;] = sampleFileKeyMap[params[&#39;datapath&#39;].lower()]
             else:
                 params[&#39;datapath&#39;] = sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;)
 
@@ -1030,23 +1048,23 @@ This function returns another displayable character if platform is Windows</p></
             
             # network
             if str(params[&#39;net&#39;]) == &#39;AM&#39;:
-                params[&#39;net&#39;] = rawDataIN[0].stats.network
-                params[&#39;params&#39;][&#39;net&#39;] = rawDataIN[0].stats.network
+                params[&#39;net&#39;] = dataIN[0].stats.network
+                params[&#39;params&#39;][&#39;net&#39;] = dataIN[0].stats.network
 
             # station
             if str(params[&#39;sta&#39;]) == &#39;RAC84&#39;:
-                params[&#39;sta&#39;] = rawDataIN[0].stats.station
-                params[&#39;params&#39;][&#39;sta&#39;] = rawDataIN[0].stats.station
+                params[&#39;sta&#39;] = dataIN[0].stats.station
+                params[&#39;params&#39;][&#39;sta&#39;] = dataIN[0].stats.station
 
             # loc
             if str(params[&#39;loc&#39;]) == &#39;00&#39;:
-                params[&#39;loc&#39;] = rawDataIN[0].stats.location
-                params[&#39;params&#39;][&#39;loc&#39;] = rawDataIN[0].stats.location
+                params[&#39;loc&#39;] = dataIN[0].stats.location
+                params[&#39;params&#39;][&#39;loc&#39;] = dataIN[0].stats.location
             
             # channels
             channelList = []
             if str(params[&#39;cha&#39;]) == [&#39;EHZ&#39;, &#39;EHN&#39;, &#39;EHE&#39;]:
-                for tr in rawDataIN:
+                for tr in dataIN:
                     if tr.stats.channel not in channelList:
                         channelList.append(tr.stats.channel)
                         channelList.sort(reverse=True) #Just so z is first, just in case
@@ -1055,7 +1073,7 @@ This function returns another displayable character if platform is Windows</p></
            
             # Acquisition date
             if str(params[&#39;acq_date&#39;]) == str(datetime.datetime.now().date()):
-                params[&#39;acq_date&#39;] = rawDataIN[0].stats.starttime.date
+                params[&#39;acq_date&#39;] = dataIN[0].stats.starttime.date
 
             # starttime
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
@@ -1063,7 +1081,7 @@ This function returns another displayable character if platform is Windows</p></
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.time(hour=0, minute=0, second=0, microsecond=0)
             if str(params[&#39;starttime&#39;]) == str(today_Starttime):
-                for tr in rawDataIN.merge():
+                for tr in dataIN.merge():
                     currTime = datetime.time(hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
                                        second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond)
                     if currTime &gt; maxStarttime:
@@ -1082,7 +1100,7 @@ This function returns another displayable character if platform is Windows</p></
                                                                 hour=23, minute=59, second=59, microsecond=999999))
             minEndtime = datetime.time(hour=23, minute=59, second=59, microsecond=999999)
             if str(params[&#39;endtime&#39;]) == str(today_Endtime):
-                for tr in rawDataIN.merge():
+                for tr in dataIN.merge():
                     currTime = datetime.time(hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
                                        second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond)
                     if currTime &lt; minEndtime:
@@ -1095,13 +1113,13 @@ This function returns another displayable character if platform is Windows</p></
                 params[&#39;params&#39;][&#39;endtime&#39;] = newEndtime
 
 
-            #print(rawDataIN)
+            #print(dataIN)
             #print(params[&#39;starttime&#39;])
             #print(params[&#39;endtime&#39;])
-            rawDataIN = rawDataIN.split()
-            rawDataIN = rawDataIN.trim(starttime=params[&#39;starttime&#39;], endtime=params[&#39;endtime&#39;])
-            rawDataIN.merge()
-            #print(rawDataIN)
+            dataIN = dataIN.split()
+            dataIN = dataIN.trim(starttime=params[&#39;starttime&#39;], endtime=params[&#39;endtime&#39;])
+            dataIN.merge()
+            #print(dataIN)
     except:
         raise RuntimeError(&#39;Data not fetched. Check your input parameters or the data file.&#39;)
         
@@ -1469,19 +1487,19 @@ If the following keywords are not specified, their defaults are amended in this 
         eStream = stream.select(component=&#39;E&#39;)
         estats = eStream.traces[0].stats
         ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
-        ppsdE.add(stream)
+        ppsdE.add(eStream)
 
         #Get ppsds of n component
         nStream = stream.select(component=&#39;N&#39;)
         nstats = nStream.traces[0].stats
         ppsdN = PPSD(nstats, paz[&#39;N&#39;], **ppsd_kwargs)
-        ppsdN.add(stream)
+        ppsdN.add(nStream)
 
         #Get ppsds of z component
         zStream = stream.select(component=&#39;Z&#39;)
         zstats = zStream.traces[0].stats
         ppsdZ = PPSD(zstats, paz[&#39;Z&#39;], **ppsd_kwargs)
-        ppsdZ.add(stream)
+        ppsdZ.add(zStream)
 
         ppsds = {&#39;Z&#39;:ppsdZ, &#39;N&#39;:ppsdN, &#39;E&#39;:ppsdE}
 
@@ -1530,7 +1548,7 @@ If the following keywords are not specified, their defaults are amended in this 
                     
                     
                     if maxPctDiff &gt; 0.05 and timeDiffWarn:
-                        raise warnings.warn(f&#34;\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% &gt; 5%. Last windows will be trimmed.&#34;)
+                        warnings.warn(f&#34;\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% &gt; 5%. Last windows will be trimmed.&#34;)
                     elif verbose  and timeDiffWarn:
                         print(f&#34;\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.&#34;)
                     timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
@@ -1746,8 +1764,12 @@ If a directory is specified, the filename will be
                         hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
                         hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;])
             peakPass = peakTestsPassed &gt;= 5
-        except:
-            raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
+        except Exception as e:
+            errMsg= &#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;
+            print(errMsg)
+            print(e)
+            return hvsr_results
+            #raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.&#39;)
     
         if isinstance(report_format, (list, tuple)):
             pass
@@ -1913,7 +1935,7 @@ If a directory is specified, the filename will be
                 hvsr_results[&#39;Print_Report&#39;] = reportStr   
             elif _report_format==&#39;csv&#39;:
                 import pandas as pd
-                pdCols = [&#39;Site Name&#39;, &#39;Acqusition Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
+                pdCols = [&#39;Site Name&#39;, &#39;Acq_Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
                         &#39;WindowLengthFreq.&#39;,&#39;SignificantCycles&#39;,&#39;LowCurveStDevOverTime&#39;,
                         &#39;PeakFreqClarityBelow&#39;,&#39;PeakFreqClarityAbove&#39;,&#39;PeakAmpClarity&#39;,&#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;,&#39;PeakStability_AmpStD&#39;, &#39;PeakPasses&#39;]
                 d = hvsr_results
@@ -1926,19 +1948,23 @@ If a directory is specified, the filename will be
                 outDF = pd.DataFrame(dfList, columns=pdCols)
 
                 if verbose:
-                    print(&#39;\nCSV Report:&#39;)
+                    print(&#39;\nCSV Report:\n&#39;)
                     maxColWidth = 13
+                    print(&#39;  &#39;, end=&#39;&#39;)
                     for col in outDF.columns:
                         if len(str(col)) &gt; maxColWidth:
                             colStr = str(col)[:maxColWidth-3]+&#39;...&#39;
                         else:
                             colStr = str(col)
                         print(colStr.ljust(maxColWidth), end=&#39;  &#39;)
-                    print()
+                    print() #new line
                     for c in range(len(outDF.columns) * (maxColWidth+2)):
-                        print(&#39;-&#39;, end=&#39;&#39;)
-                    print()
-                    
+                        if c % (maxColWidth+2) == 0:
+                            print(&#39;|&#39;, end=&#39;&#39;)
+                        else:
+                            print(&#39;-&#39;, end=&#39;&#39;)
+                    print(&#39;|&#39;) #new line
+                    print(&#39;  &#39;, end=&#39;&#39;) #Small indent at start                    
                     for row in outDF.iterrows():
                         for col in row[1]:
                             if len(str(col)) &gt; maxColWidth:
@@ -2055,7 +2081,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-09-18', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-09-25', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -2341,7 +2367,7 @@ This is necessary for Raspberry Shake data.</dd>
 </details>
 </dd>
 <dt id="sprit.plot_hvsr"><code class="name flex">
-<span>def <span class="ident">plot_hvsr</span></span>(<span>hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show=True, close_figs=False, clear_fig=True, **kwargs)</span>
+<span>def <span class="ident">plot_hvsr</span></span>(<span>hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False, save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot HVSR data</p>
@@ -2398,7 +2424,7 @@ Keyword arguments for matplotlib.pyplot</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show=True, close_figs=False, clear_fig=True,**kwargs):
+<pre><code class="python">def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subplots=True, xtype=&#39;freq&#39;, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix=&#39;&#39;, show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
     &#34;&#34;&#34;Function to plot HVSR data
 
     Parameters
@@ -2473,6 +2499,7 @@ Keyword arguments for matplotlib.pyplot</p>
         for i, k in enumerate(kList):
             kList[i] = k.lower()
 
+        #Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
         #HVSR index
         if len(set(hvsrList).intersection(kList)):
             for i, hv in enumerate(hvsrList):
@@ -2506,7 +2533,7 @@ Keyword arguments for matplotlib.pyplot</p>
             plotTypeOrder.append(plotTypeList[firstInd])
             plotIndOrder.append(indList[firstInd])
             lastVal = indListCopy[firstInd]
-            indListCopy[firstInd] = 99 #high number
+            indListCopy[firstInd] = 99 #just a high number
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
@@ -2520,7 +2547,7 @@ Keyword arguments for matplotlib.pyplot</p>
                 mosaicPlots = []
                 for pto in plotTypeOrder:
                     mosaicPlots.append([pto])
-                fig, ax = plt.subplot_mosaic(mosaicPlots)
+                fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={&#39;hspace&#39;:0.3})
                 axis = ax[p]
             elif use_subplots:
                 ax[p].clear()
@@ -2529,10 +2556,10 @@ Keyword arguments for matplotlib.pyplot</p>
                 fig, axis = plt.subplots()
                     
             if p == &#39;hvsr&#39;:
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;, show_legend=show_legend, axes=ax)
             elif p==&#39;comp&#39;:
                 plotComponents[0] = plotComponents[0][:-1]
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;)
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;, show_legend=show_legend, axes=ax)
             elif p==&#39;spec&#39;:
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
             else:

@@ -8,11 +8,12 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.31'
+release_version= '0.1.32'
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
 repoDir = docsDir.parent
+print(repoDir)
 spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
 spritUtilsPath = spritDir.joinpath('sprit_utils.py')
@@ -151,21 +152,24 @@ for each_file in repo_path.iterdir():
 #Update setup file(s) with release version number
 setupFPath = repoDir.joinpath('setup.py')
 pyprojectFPath = repoDir.joinpath('pyproject.toml')
-condaFPath = repoDir.joinPath('conda/meta.yaml')
+condaFPath = repoDir.joinpath('conda/meta.yaml')
 
 confFilePaths = [setupFPath, pyprojectFPath, condaFPath]
 for cFile in confFilePaths:
     with open(cFile.as_posix(), 'r') as f:
         cFileText = f.read()
 
+
+
     #Update which file is being analyzed for creating exe
     verText = r'version=".*?"'
     newVerText = r'version="'+release_version+'"'
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
-    verTest = r"version: .*?"
+    verText = r'version:\s+\d+\.\d+\.\d+[^\n]*'
     newVerText = r'version: '+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+
 
     with open(cFile.as_posix(), 'w') as f:
         f.write(cFileText)

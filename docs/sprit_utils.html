@@ -62,7 +62,7 @@ def check_mark(incolor=False, interminal=False):
     return check
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, verbose=False):
+def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
     &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -75,11 +75,10 @@ def checkifpath(filepath, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
-    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
-    elif str(filepath) in sampleList:
+    elif str(filepath) in sample_list:
         pass
     else:
         try:
@@ -493,7 +492,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.sprit_utils.checkifpath"><code class="name flex">
-<span>def <span class="ident">checkifpath</span></span>(<span>filepath, verbose=False)</span>
+<span>def <span class="ident">checkifpath</span></span>(<span>filepath, sample_list='', verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Support function to check if a filepath is a pathlib.Path object and tries to convert if not</p>
@@ -511,7 +510,7 @@ This function returns another displayable character if platform is Windows</p></
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def checkifpath(filepath, verbose=False):
+<pre><code class="python">def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
     &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -524,11 +523,10 @@ This function returns another displayable character if platform is Windows</p></
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
-    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
-    elif str(filepath) in sampleList:
+    elif str(filepath) in sample_list:
         pass
     else:
         try:

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "sprit"
 dynamic = ["readme"]
 license = {file = "LICENSE"}
-version="0.1.31"
+version="0.1.32"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
@@ -18,9 +18,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[tool.setuptools.dynamic]
-readme = {file = ["README.md"]}
+#[tool.setuptools.dynamic]
+#readme = {file = ["README.md"]}
 
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
 "API Documentation" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
+"Tutorials & Wiki" = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
