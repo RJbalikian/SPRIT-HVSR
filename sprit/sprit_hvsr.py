@@ -49,7 +49,7 @@ plotRows = 4
 
 #CLASSES
 
-#CHeck if the data is already the right class
+#Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
 def check_instance(init):
     def wrapper(self, *args, **kwargs):
@@ -1490,7 +1490,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 hvsr_results['Print_Report'] = reportStr   
             elif _report_format=='csv':
                 import pandas as pd
-                pdCols = ['Site Name', 'Acqusition Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
+                pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
                         'WindowLengthFreq.','SignificantCycles','LowCurveStDevOverTime',
                         'PeakFreqClarityBelow','PeakFreqClarityAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
                 d = hvsr_results
@@ -1503,19 +1503,23 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 outDF = pd.DataFrame(dfList, columns=pdCols)
 
                 if verbose:
-                    print('\nCSV Report:')
+                    print('\nCSV Report:\n')
                     maxColWidth = 13
+                    print('  ', end='')
                     for col in outDF.columns:
                         if len(str(col)) > maxColWidth:
                             colStr = str(col)[:maxColWidth-3]+'...'
                         else:
                             colStr = str(col)
                         print(colStr.ljust(maxColWidth), end='  ')
-                    print()
+                    print() #new line
                     for c in range(len(outDF.columns) * (maxColWidth+2)):
-                        print('-', end='')
-                    print()
-                    
+                        if c % (maxColWidth+2) == 0:
+                            print('|', end='')
+                        else:
+                            print('-', end='')
+                    print('|') #new line
+                    print('  ', end='') #Small indent at start                    
                     for row in outDF.iterrows():
                         for col in row[1]:
                             if len(str(col)) > maxColWidth:

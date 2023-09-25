@@ -27,5 +27,5 @@ jobs:
 
       - name: Build and Upload Package
         env:
-          CONDA_FORGE_TOKEN: ${{ secrets.CONDA_FORGE_TOKEN }}
+          CONDA_FORGE_TOKEN: ${{ secrets.CONDA_INITIALIZE }}
         run: conda smithy ci  # Adjust this command to your Conda-Forge workflow
