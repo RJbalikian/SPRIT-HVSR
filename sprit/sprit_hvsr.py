@@ -414,12 +414,23 @@ def run(datapath, source='file', verbose=False, **kwargs):
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
     except:
         data_noiseRemoved = dataIN
-        data_noiseRemoved['ProcessingStatus']['RemoveNoiseStatus']=False
-        #Since noise removal is not required for data processing, check others first
-        if dataIN['ProcessingStatus']['OverallStatus']:
-            data_noiseRemoved['ProcessingStatus']['OverallStatus'] = True        
-        else:
-            data_noiseRemoved['ProcessingStatus']['OverallStatus'] = False
+        
+        #Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(data_noiseRemoved, HVSRData):
+            data_noiseRemoved = {'place_holder_sitename':data_noiseRemoved}
+            dataIN = {'place_holder_sitename':dataIN}
+            
+        for site_name in data_noiseRemoved.keys():
+            data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
+            #Since noise removal is not required for data processing, check others first
+            if dataIN[site_name]['ProcessingStatus']['OverallStatus']:
+                data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
+            else:
+                data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not data_noiseRemoved[site_name]['batch']:
+                data_noiseRemoved = data_noiseRemoved[site_name]
     
     #Generate PPSDs
     try:
@@ -435,9 +446,18 @@ def run(datapath, source='file', verbose=False, **kwargs):
             else:
                 errMsg = e
             raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+                #Reformat data so HVSRData and HVSRBatch data both work here
         ppsd_data = data_noiseRemoved
-        ppsd_data['ProcessingStatus']['PPSDStatus']=False
-        ppsd_data['ProcessingStatus']['OverallStatus'] = False
+        if isinstance(ppsd_data, HVSRData):
+            ppsd_data = {'place_holder_sitename':ppsd_data}
+            
+        for site_name in ppsd_data.keys(): #This should work more or less the same for batch and regular data now
+            ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+            ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+    
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not ppsd_data[site_name]['batch']:
+                ppsd_data = ppsd_data[site_name]
     
     #Process HVSR Curves
     try:
@@ -445,8 +465,18 @@ def run(datapath, source='file', verbose=False, **kwargs):
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except:
         hvsr_results = ppsd_data
-        hvsr_results['ProcessingStatus']['HVStatus']=False
-        hvsr_results['ProcessingStatus']['OverallStatus'] = False
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results = {'place_holder_sitename':hvsr_results}
+            
+        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+        
+            hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
+            hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
+            
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not hvsr_results[site_name]['batch']:
+                hvsr_results = hvsr_results[site_name]            
+            
     #Final post-processing/reporting
 
     #Check peaks
@@ -1284,7 +1314,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         
         combined_csvReport = pd.DataFrame()
         for site_name in hvsr_results.keys():
-            if 'CSV_Report' in hvsr_results[site_name]:
+            if 'CSV_Report' in hvsr_results[site_name].keys():
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['CSV_Report']], ignore_index=True, join='inner')
         
         if export_path is not None:
@@ -1299,7 +1329,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 else:
                     csvExportPath = csvExportPath.parent
                 
-        combined_csvReport.to_csv(csvExportPath, index=False)
+            combined_csvReport.to_csv(csvExportPath, index=False)
         
         if return_results:
             return hvsr_results

@@ -8,12 +8,11 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.34'
+release_version= '0.1.35'
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
 repoDir = docsDir.parent
-print(repoDir)
 spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
 spritUtilsPath = spritDir.joinpath('sprit_utils.py')

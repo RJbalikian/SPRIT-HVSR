@@ -1,6 +1,6 @@
 package:
   name: sprit
-  version: 0.1.34
+  version: 0.1.35
 
 source:
   git_url: https://github.com/RJbalikian/SPRIT-HVSR
@@ -23,7 +23,7 @@ requirements:
     - matplotlib
     - pandas
     - numpy
-    - pyqt5
+    - PyQt5
     - pyproj
 
 about:

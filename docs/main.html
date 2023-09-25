@@ -1729,7 +1729,7 @@ If a directory is specified, the filename will be
         
         combined_csvReport = pd.DataFrame()
         for site_name in hvsr_results.keys():
-            if &#39;CSV_Report&#39; in hvsr_results[site_name]:
+            if &#39;CSV_Report&#39; in hvsr_results[site_name].keys():
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name][&#39;CSV_Report&#39;]], ignore_index=True, join=&#39;inner&#39;)
         
         if export_path is not None:
@@ -1744,7 +1744,7 @@ If a directory is specified, the filename will be
                 else:
                     csvExportPath = csvExportPath.parent
                 
-        combined_csvReport.to_csv(csvExportPath, index=False)
+            combined_csvReport.to_csv(csvExportPath, index=False)
         
         if return_results:
             return hvsr_results
@@ -3289,12 +3289,23 @@ For sample data, The following can be specified as the datapath parameter:
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
     except:
         data_noiseRemoved = dataIN
-        data_noiseRemoved[&#39;ProcessingStatus&#39;][&#39;RemoveNoiseStatus&#39;]=False
-        #Since noise removal is not required for data processing, check others first
-        if dataIN[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;]:
-            data_noiseRemoved[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = True        
-        else:
-            data_noiseRemoved[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+        
+        #Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(data_noiseRemoved, HVSRData):
+            data_noiseRemoved = {&#39;place_holder_sitename&#39;:data_noiseRemoved}
+            dataIN = {&#39;place_holder_sitename&#39;:dataIN}
+            
+        for site_name in data_noiseRemoved.keys():
+            data_noiseRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;RemoveNoiseStatus&#39;]=False
+            #Since noise removal is not required for data processing, check others first
+            if dataIN[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;]:
+                data_noiseRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = True        
+            else:
+                data_noiseRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+
+            #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
+            if not data_noiseRemoved[site_name][&#39;batch&#39;]:
+                data_noiseRemoved = data_noiseRemoved[site_name]
     
     #Generate PPSDs
     try:
@@ -3310,9 +3321,18 @@ For sample data, The following can be specified as the datapath parameter:
             else:
                 errMsg = e
             raise RuntimeError(f&#34;generate_ppsds() error: {errMsg}&#34;)
+                #Reformat data so HVSRData and HVSRBatch data both work here
         ppsd_data = data_noiseRemoved
-        ppsd_data[&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;]=False
-        ppsd_data[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+        if isinstance(ppsd_data, HVSRData):
+            ppsd_data = {&#39;place_holder_sitename&#39;:ppsd_data}
+            
+        for site_name in ppsd_data.keys(): #This should work more or less the same for batch and regular data now
+            ppsd_data[site_name][&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;]=False
+            ppsd_data[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+    
+            #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
+            if not ppsd_data[site_name][&#39;batch&#39;]:
+                ppsd_data = ppsd_data[site_name]
     
     #Process HVSR Curves
     try:
@@ -3320,8 +3340,18 @@ For sample data, The following can be specified as the datapath parameter:
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except:
         hvsr_results = ppsd_data
-        hvsr_results[&#39;ProcessingStatus&#39;][&#39;HVStatus&#39;]=False
-        hvsr_results[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results = {&#39;place_holder_sitename&#39;:hvsr_results}
+            
+        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+        
+            hvsr_results[site_name][&#39;ProcessingStatus&#39;][&#39;HVStatus&#39;]=False
+            hvsr_results[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+            
+            #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
+            if not hvsr_results[site_name][&#39;batch&#39;]:
+                hvsr_results = hvsr_results[site_name]            
+            
     #Final post-processing/reporting
 
     #Check peaks
