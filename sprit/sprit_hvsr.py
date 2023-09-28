@@ -1143,7 +1143,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         paz=params['paz']
         stream = params['stream']
 
-
         #Get ppsds of e component
         eStream = stream.select(component='E')
         estats = eStream.traces[0].stats
@@ -1175,21 +1174,52 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         params['ppsds']['E'] = {}
         params['ppsds']['N'] = {}
         
-        #Get lists so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
         listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
         timeKeys= ['times_processed','current_times_used','psd_values']
         timeDiffWarn = True
+        dfList = []
+        time_data = {}
+        time_dict = {}
         for m in members:
             params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
             params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
             params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
             if m in listList:
+               
                 params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
                 params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
                 params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
             
+            if str(m)=='times_processed':
+                unique_times = np.unique(np.array([params['ppsds']['Z'][m],
+                                          params['ppsds']['E'][m],
+                                          params['ppsds']['N'][m]]))
+                
+                common_times = []
+                for currTime in unique_times:
+                    if currTime in params['ppsds']['Z'][m]:
+                        if currTime in params['ppsds']['E'][m]:
+                            if currTime in params['ppsds']['N'][m]:
+                                common_times.append(currTime)
+
+
+                cTimeIndList = []
+                for cTime in common_times:
+                    ZArr = params['ppsds']['Z'][m]
+                    EArr = params['ppsds']['E'][m]
+                    NArr = params['ppsds']['N'][m]
+                    cTimeIndList.append([int(np.where(ZArr == cTime)[0]),
+                                        int(np.where(EArr == cTime)[0]),
+                                        int(np.where(NArr == cTime)[0])])
+                    
             #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
+                if str(m) != 'times_processed':
+                    time_data[str(m)] = (params['ppsds']['Z'][m], params['ppsds']['E'][m], params['ppsds']['N'][m])
+
+                #print(m, params['ppsds']['Z'][m])
+
                 tSteps_same = params['ppsds']['Z'][m].shape[0] == params['ppsds']['E'][m].shape[0] == params['ppsds']['N'][m].shape[0]
 
                 if not tSteps_same:
@@ -1214,6 +1244,32 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                         print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
                     timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
 
+        for i, currTStep in enumerate(cTimeIndList):
+            colList = []
+            currTStepList = []
+            colList.append('TimesProcessed')
+            currTStepList.append(common_times[i])
+            for tk in time_data.keys():
+                colList.append(str(tk)+'_Z')
+                colList.append(str(tk)+'_E')
+                colList.append(str(tk)+'_N')
+                currTStepList.append(time_data[tk][0][currTStep[0]])#z
+                currTStepList.append(time_data[tk][1][currTStep[1]])#e
+                currTStepList.append(time_data[tk][2][currTStep[2]])#n
+
+            dfList.append(currTStepList)
+            
+        hvsrDF = pd.DataFrame(dfList, columns=colList)
+        hvsrDF['EndTime'] = hvsrDF['TimesProcessed'] + ppsd_kwargs['ppsd_length']
+        hvsrDF['Use'] = True
+        for gap in params['ppsds']['Z']['times_gaps']:
+            print(gap)
+            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['EndTime'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['EndTime'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['EndTime']))
+            
+        hvsrDF.set_index('TimesProcessed', inplace=True)
+        params['HVSR_DF'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
         
