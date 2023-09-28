@@ -1040,7 +1040,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
     params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['stream'] = dataIN
+    params['input_stream'] = dataIN
+    params['stream'] = dataIN.copy()
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
@@ -1260,16 +1261,15 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             dfList.append(currTStepList)
             
         hvsrDF = pd.DataFrame(dfList, columns=colList)
-        hvsrDF['EndTime'] = hvsrDF['TimesProcessed'] + ppsd_kwargs['ppsd_length']
+        hvsrDF['WindowEnd'] = hvsrDF['TimesProcessed'] + ppsd_kwargs['ppsd_length']
         hvsrDF['Use'] = True
         for gap in params['ppsds']['Z']['times_gaps']:
-            print(gap)
-            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['EndTime'])) | \
-                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['EndTime'])) | \
-                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['EndTime']))
+            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['WindowEnd']))
             
         hvsrDF.set_index('TimesProcessed', inplace=True)
-        params['HVSR_DF'] = hvsrDF
+        params['hvsr_df'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
         
@@ -2293,7 +2293,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                     'method':method,
                     'ppsds':ppsds,
                     'ppsds_obspy':origPPSD,
-                    'tsteps_used': params['tsteps_used'].copy()
+                    'tsteps_used': params['tsteps_used'].copy(),
+                    'hvsr_df':params['hvsr_df']
                     }
         
         hvsr_out = HVSRData(hvsr_data)
@@ -2390,7 +2391,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
-        hvsr_out['stream'] = params['stream']
+        hvsr_out['input_stream'] = params['input_stream'] #input_stream
 
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
 
@@ -2400,7 +2401,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
     return hvsr_out
 
 #Function to remove noise windows from data
-def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
+def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -2480,12 +2481,12 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
         return output
 
     elif isinstance(hvsr_data, (HVSRData, dict)):
-        if 'stream_edited' in hvsr_data.keys():
-            inStream = hvsr_data['stream_edited'].copy()
+        if remove_raw_noise:
+            inStream = hvsr_data['input_stream'].copy()
         else:
             inStream = hvsr_data['stream'].copy()
         output = hvsr_data#.copy()
-    elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
+    elif isinstance(hvsr_data, (obspy.core.stream.Stream, obspy.core.trace.Trace)):
         inStream = hvsr_data.copy()
         output = inStream.copy()
     else:
@@ -2502,7 +2503,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
 
         if isinstance(inStream, obspy.core.stream.Stream):
             if window_list is not None:
-                output['stream_edited'] = __remove_windows(inStream, window_list, warmup_time)
+                output['stream'] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
         elif isinstance(output, (HVSRData, dict)):
@@ -2529,8 +2530,8 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
-        output['stream_edited'] = outStream
-        output['stream'] = hvsr_data['stream']
+        output['stream'] = outStream
+        output['input_stream'] = hvsr_data['input_stream']
     elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         output = outStream
     else:
@@ -2539,6 +2540,29 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
 
     output['ProcessingStatus']['RemoveNoiseStatus'] = True
     output = _check_processing_status(output)
+
+    if 'hvsr_df' in output.keys():
+        hvsrDF = output['hvsr_df']
+        output = output.split()
+        for i, trace in enumerate(output):
+            if i ==0:
+                trEndTime = trace.stats.endtime
+                comp_end = trace.stats.component
+                continue
+            trStartTime = trace.stats.starttime
+            comp_start = trace.stats.component
+            
+            if trEndTime < trStartTime and comp_end==comp_start:
+                gap = [trEndTime,trStartTime]
+
+                output['hvsr_df']['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['WindowEnd']))
+            
+            trEndTime = trace.stats.endtime
+        
+        output.merge()
+
     return output
 
 #Remove outlier ppsds
@@ -3759,7 +3783,7 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         pass
     else:
         startT = stream[0].stats.starttime
-        endT = stream[0].stats.endtime
+        endT = stream[-1].stats.endtime
         window_UTC = []
         window_MPL = []
         window_UTC.append([startT, startT])
@@ -3826,26 +3850,23 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
     fig, ax = _plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
     fig.canvas.draw()
 
-    #Reset edited data every time plot_noise_windows is run
-    hvsr_data['stream_edited'] = hvsr_data['stream'].copy()
-
     #Set initial input
     input = hvsr_data['stream']
 
     if do_stalta:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_data['stream']
 
     if do_pctThresh:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_data['stream']
 
     if do_noiseWin:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_data['stream']
 
     if do_warmup:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
 
     fig, ax, noise_windows_line_artists, noise_windows_window_artists = _get_removed_windows(input=hvsr_data, fig=fig, ax=ax, time_type='matplotlib')
     
@@ -4055,13 +4076,11 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig, ax = plt.subplots()
 
     if isinstance(input, (dict, HVSRData)):
-        if 'stream_edited' in input.keys():
-            stream = input['stream_edited'].copy()
-        else:
-            stream = input['stream'].copy()
-    else:
+        stream = input['stream'].copy()
+    elif isinstance(input, (obpsy.core.Trace.trace, obpsy,core.stream.Stream)):
         stream = input.copy()
-
+    else:
+        pass #Warning?
 
     samplesList = ['sample', 'samples', 's']
     utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
