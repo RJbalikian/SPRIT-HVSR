@@ -1248,7 +1248,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         for i, currTStep in enumerate(cTimeIndList):
             colList = []
             currTStepList = []
-            colList.append('TimesProcessed')
+            colList.append('TimesProcessed_Obspy')
             currTStepList.append(common_times[i])
             for tk in time_data.keys():
                 colList.append(str(tk)+'_Z')
@@ -1261,19 +1261,33 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             dfList.append(currTStepList)
             
         hvsrDF = pd.DataFrame(dfList, columns=colList)
-        hvsrDF['WindowEnd'] = hvsrDF['TimesProcessed'] + ppsd_kwargs['ppsd_length']
+        hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
+        
+        #Add other times (for start times)
+        def convert_to_datetime(obspyUTCDateTime):
+            return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+
+        def convert_to_mpl_dates(obspyUTCDateTime):
+            return obspyUTCDateTime.matplotlib_date
+
+        hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
+        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length']) 
+        hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
+        hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
+        
         hvsrDF['Use'] = True
         for gap in params['ppsds']['Z']['times_gaps']:
-            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['WindowEnd'])) | \
-                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['WindowEnd'])) | \
-                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['WindowEnd']))
-            
+            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed_Obspy']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed_Obspy']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['WindowEnd']))
+
         hvsrDF.set_index('TimesProcessed', inplace=True)
         params['hvsr_df'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
         
         #Remove outlier ppsds (those derived from data within the windows to be removed)
+
         if remove_outliers and 'xwindows_out' in params.keys():
             params = remove_outlier_curves(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
@@ -2222,8 +2236,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         stDevValsM = {}
         psdRaw={}
         currTimesUsed={}
-        
+        hvsrDF = params['hvsr_df']
+
+
         for k in ppsds:
+            #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
+            currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
+            input_ppsds = np.stack(currPPSDs)
+
             #if reasmpling has been selected
             if resample is True or type(resample) is int:
                 if resample is True:
@@ -2242,7 +2262,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                         smooth = smooth+1
 
                 #Resample raw ppsd values
-                for i, t in enumerate(ppsds[k]['psd_values']):
+                for i, t in enumerate(input_ppsds):
                     if i==0:
                         psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
                         if smooth is not False:
@@ -2256,7 +2276,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             else:
                 #If no resampling desired
                 x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
-                psdRaw[k] = np.array(ppsds[k]['psd_values'])
+                psdRaw[k] = np.array(input_ppsds)
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
@@ -2266,7 +2286,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
-            currTimesUsed[k] = ppsds[k]['current_times_used']
+            currTimesUsed[k] = np.array(hvsrDF['TimesProcessed_Obspy'][hvsrDF['Use']].values)
+            #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
+            
 
         #Get string of method type
         if type(method) is int:
@@ -2349,7 +2371,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
         hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
-        
+        hvsr_out['hvsr_df']['HV_Curves'] = np.array(hvsr_tSteps).tolist()
+
+        ###CONTINUE HERE
         #use the standard deviation of each individual curve to determine if it overlapped
         if remove_outlier_curves:
             stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
@@ -2493,7 +2517,9 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     
     #Go through each type of removal and remove
-    if kind.lower() in manualList:
+    if not kind:
+        outStream=inStream
+    elif kind.lower() in manualList:
         if isinstance(output, (HVSRData, dict)):
             if 'xwindows_out' in output.keys():
                 pass
@@ -2509,8 +2535,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
         elif isinstance(output, (HVSRData, dict)):
             pass
         else:
-            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")
-            
+            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
     elif kind.lower() in autoList:
         outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
         outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
@@ -2555,9 +2580,9 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
             if trEndTime < trStartTime and comp_end==comp_start:
                 gap = [trEndTime,trStartTime]
 
-                output['hvsr_df']['Use'] = ((gap[0] < hvsrDF['TimesProcessed']) & (gap[1] > hvsrDF['WindowEnd'])) | \
-                                ((gap[0] > hvsrDF['TimesProcessed']) & (gap[0] < hvsrDF['WindowEnd'])) | \
-                                ((gap[1] > hvsrDF['TimesProcessed']) & (gap[1] < hvsrDF['WindowEnd']))
+                output['hvsr_df']['Use'] = ((gap[0] < hvsrDF['TimesProcessed_Obspy']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed_Obspy']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['WindowEnd']))
             
             trEndTime = trace.stats.endtime
         
@@ -2566,7 +2591,7 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
+def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
     """Function used in generate_ppsds() to remove outliers. May also be used independently.
     
     This uses the mean value of the entirety of each ppsd curve. This is not very robust, but it is intended only to remove curves who are well outside of the what would be expected.
@@ -2593,18 +2618,23 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
     stds = {}
     psds_to_rid = []
 
-
     for k in ppsds:
+        #Get the average ppsd curve value
         psdVals = np.array(ppsds[k]['psd_values'])
         meanArr = np.nanmean(psdVals, axis=1)
+        medArr = np.nanmedian(psdVals, axis=1)
+        
         newPPsds[k] = []
         totMean = np.nanmean(meanArr)
+        totMed = np.nanmed(medArr)
+
         stds[k] = np.std(meanArr)
 
         for i, m in enumerate(meanArr):
             if m > totMean + outlier_std*stds[k] or m < totMean - outlier_std*stds[k]:
                 psds_to_rid.append(i)
 
+        params['hvsr_df']
         curr_times_mpl = []
         for i, t in enumerate(ppsds[k]['current_times_used']):
             curr_times_mpl.append(t.matplotlib_date)
@@ -2622,6 +2652,19 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
                 elif nextT > win[0] and nextT < win[1]:
                     psds_to_rid.append(i)
     
+        #Use dataframe
+        hvsrDF = params['hvsr_df']
+        psdVals = hvsrDF['psd_values_'+k]
+        params['hvsr_df'][k+'_CurveMedian'] = psdVals.apply(np.nanmedian)
+        params['hvsr_df'][k+'_CurveMean'] = psdVals.apply(np.nanmean)
+
+        totMean = np.nanmedian(params['hvsr_df'][k+'_CurveMean'])
+        stds[k] = np.nanstd(params['hvsr_df'][k+'_CurveMean'])
+
+        meanArr = params['hvsr_df'][k+'_CurveMean']
+        params['hvsr_df']['Use'] = meanArr < (totMean + outlier_std * stds[k])
+
+
     psds_to_rid = np.unique(psds_to_rid)
 
     for k in params['ppsds']:
