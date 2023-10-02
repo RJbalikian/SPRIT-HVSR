@@ -1430,19 +1430,19 @@ class SPRIT_App:
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
                         input = hv_data[&#39;stream_edited&#39;]
 
                     if self.do_pctThresh.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
                         input = hv_data[&#39;stream_edited&#39;]
 
                     if self.do_noiseWin.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                         input = hv_data[&#39;stream_edited&#39;]
                 
                     if self.do_warmup.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
                         self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -2337,7 +2337,7 @@ class SPRIT_App:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -2526,7 +2526,7 @@ class SPRIT_App:
         
 
         # Add a Label widget to the plot_hvsr Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -4234,19 +4234,19 @@ if __name__ == &#34;__main__&#34;:
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
                         input = hv_data[&#39;stream_edited&#39;]
 
                     if self.do_pctThresh.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
                         input = hv_data[&#39;stream_edited&#39;]
 
                     if self.do_noiseWin.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                         input = hv_data[&#39;stream_edited&#39;]
                 
                     if self.do_warmup.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
                         self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -5141,7 +5141,7 @@ if __name__ == &#34;__main__&#34;:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -5330,7 +5330,7 @@ if __name__ == &#34;__main__&#34;:
         
 
         # Add a Label widget to the plot_hvsr Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -6868,19 +6868,19 @@ if __name__ == &#34;__main__&#34;:
 
                 #print(input[0].stats.starttime)
                 if self.do_stalta.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
+                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
                     input = hv_data[&#39;stream_edited&#39;]
 
                 if self.do_pctThresh.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
+                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
                     input = hv_data[&#39;stream_edited&#39;]
 
                 if self.do_noiseWin.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
+                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                     input = hv_data[&#39;stream_edited&#39;]
             
                 if self.do_warmup.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, kind=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                 if i==0:
                     self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -7775,7 +7775,7 @@ if __name__ == &#34;__main__&#34;:
     
     def update_hvplot_call():
         kindstr = get_kindstr()
-        hvplot_label.configure(text=&#34;plot_hvsr({}, kind={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     # Create the Checkbuttons for the plot options
     ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -7964,7 +7964,7 @@ if __name__ == &#34;__main__&#34;:
     
 
     # Add a Label widget to the plot_hvsr Call Label section
-    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, kind=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     #Run button frame
     runFrame_set_plot = ttk.Frame(plot_settings_tab)
