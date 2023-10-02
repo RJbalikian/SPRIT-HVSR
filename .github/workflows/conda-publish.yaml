@@ -13,6 +13,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Initialize Conda
+        run: conda init bash  #using bash
+
+      - name: Restart Shell
+        run: exec $SHELL
+
       - name: Set up Conda
         uses: conda-incubator/setup-miniconda@v2
 
@@ -28,4 +34,4 @@ jobs:
       - name: Build and Upload Package
         env:
           CONDA_FORGE_TOKEN: ${{ secrets.CONDA_INITIALIZE }}
-        run: conda smithy ci  # Adjust this command to your Conda-Forge workflow
+        run: conda smithy ci  # using smithy
