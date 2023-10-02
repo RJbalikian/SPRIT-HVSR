@@ -11,7 +11,7 @@ import numpy as np
 try: # For distribution
     from sprit import sprit_hvsr
 except: #For testing
-    #import sprit_hvsr
+    import sprit_hvsr
     pass
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}

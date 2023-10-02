@@ -27,8 +27,8 @@ try: #For distribution
     from sprit import sprit_utils
     from sprit import sprit_hvsr
 except: #For local testing
-    #import sprit_hvsr 
-    #import sprit_utils
+    import sprit_hvsr 
+    import sprit_utils
     pass
 
 #Decorator that catches errors and warnings (to be modified later for gui)
@@ -2780,8 +2780,12 @@ def on_closing():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
-    root.iconbitmap(icon_path)
+    try:
+        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))        
+        #icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
+        root.iconphoto(False, tk.PhotoImage(file=icon_path))
+    except Exception as e:
+        print("ICON NOT LOADED",e)
 
     app = SPRIT_App(root)
 
