@@ -353,7 +353,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
         The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
         - input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
         - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
-        - remove_noise(): by default, the kind of noise removal is kind='auto'. See the remove_noise() documentation for more information. If kind is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
+        - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
         - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
         - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
         - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
@@ -373,6 +373,8 @@ def run(datapath, source='file', verbose=False, **kwargs):
         _description_, by default 'file'
     verbose : bool, optional
         _description_, by default False
+    **kwargs
+        Keyword arguments for the functions listed above. The keyword arguments are unique, so they will get parsed out and passed into the appropriate function.
 
     Returns
     -------
@@ -531,11 +533,15 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
         hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
-
+        peak_freq_range : tuple or list, default=[1, 20];
+            The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.
+        verbose : bool, default=False
+            Whether to print results and inputs to terminal.
+        
         Returns
         -------
-        hvsr_data   : dict
-            Dictionary containing previous input data, plus information about Peak tests
+        hvsr_data   : HVSRData or HVSRBatch object
+            Object containing previous input data, plus information about peak tests
     """
     orig_args = locals().copy() #Get the initial arguments
 
@@ -577,12 +583,16 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             hvsr_data['hvsr_band'] = hvsr_band
 
             anyK = list(hvsr_data['x_freqs'].keys())[0]
-            x = hvsr_data['x_freqs'][anyK]
-            y = hvsr_data['hvsr_curve']
-            index_list = hvsr_data['hvsr_peak_indices']
-            hvsrp = hvsr_data['hvsrp']
-            hvsrm = hvsr_data['hvsrm']
-            hvsrPeaks = hvsr_data['ind_hvsr_peak_indices']
+
+            x = hvsr_data['x_freqs'][anyK] #Consistent for all curves
+            y = hvsr_data['hvsr_curve'] #Calculated based on "Use" column
+            index_list = hvsr_data['hvsr_peak_indices'] #Calculated based on hvsr_curve
+            hvsrp = hvsr_data['hvsrp'] #Calculated based on "Use" column
+            hvsrm = hvsr_data['hvsrm'] #Calculated based on "Use" column
+
+            hvsrPeaks = hvsr_data['hvsr_df'][hvsr_data['hvsr_df']['Use']]['CurvesPeakIndices']
+            #hvsrPeaks = hvsr_data['ind_hvsr_peak_indices'] #Original calculation
+
             hvsr_log_std = hvsr_data['hvsr_log_std']
             peak_freq_range = hvsr_data['peak_freq_range']
 
@@ -662,7 +672,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
 
 #Function to export data to file
 def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
-    """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time.
+    """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time. 
+    Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
 
     Parameters
     ----------
@@ -713,11 +724,13 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
                 Parameters defined using input_params() function.
         inv     : obspy inventory object, default=None
             Obspy inventory object containing metadata for instrument that collected data to be fetched. By default, the inventory object is read from params['inv'], but this can be manually specified here too.
-        source  : str, {'raw', 'dir', 'file'}
+        source  : str, {'raw', 'dir', 'file', 'batch'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
                 'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
                 'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+                'batch' is used to read a list or specified set of seismic files. 
+                    Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
         trim_dir : None or str or pathlib obj, default=None
             If None (or False), data is not trimmed in this function.
             Otherwise, this is the directory to save trimmed and exported data.
@@ -728,12 +741,19 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
             Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
         detrend_order : int, default=2
             If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
-        
+        update_metadata : bool, default=True
+            Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
+        plot_input_stream : bool, default=False
+            Whether to plot the raw input stream. This plot includes a spectrogram (Z component) and the raw (with decimation for speed) plots of each component signal.
+        verbose : bool, default=False
+            Whether to print outputs and inputs to the terminal
+        **kwargs
+            Keywords arguments, primarily for 'batch' and 'dir' sources
+            
         Returns
         -------
-        params : dict
-            Same dict as params parameter, but with an additional "strea" key with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
-        
+        params : HVSRData or HVSRBatch object
+            Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         """
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
@@ -1040,7 +1060,8 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
     params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['stream'] = dataIN
+    params['input_stream'] = dataIN
+    params['stream'] = dataIN.copy()
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
@@ -1060,14 +1081,16 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         
         Parameters
         ----------
-        params : dict
+        params : dict, HVSRData object, or HVSRBatch object
             Dictionary containing all the parameters and other data of interest (stream and paz, for example)
         remove_outliers : bool, default=True
             Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.
         outlier_std :  float, default=3
             The standard deviation value to use as a threshold for determining whether a curve is an outlier. 
             This averages over the entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
-        **kwargs : dict
+        verbose : bool, default=True
+            Whether to print inputs and results to terminal
+        **ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
             If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:
                 - ppsd_length defaults to 60 (seconds) here instead of 3600
@@ -1076,7 +1099,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
 
         Returns
         -------
-            ppsds   :   dict
+            ppsds : HVSRData object
                 Dictionary containing entries with ppsds for each channel
     """
     #First, divide up for batch or not
@@ -1143,7 +1166,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         paz=params['paz']
         stream = params['stream']
 
-
         #Get ppsds of e component
         eStream = stream.select(component='E')
         estats = eStream.traces[0].stats
@@ -1175,21 +1197,52 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         params['ppsds']['E'] = {}
         params['ppsds']['N'] = {}
         
-        #Get lists so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
         listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
         timeKeys= ['times_processed','current_times_used','psd_values']
         timeDiffWarn = True
+        dfList = []
+        time_data = {}
+        time_dict = {}
         for m in members:
             params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
             params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
             params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
             if m in listList:
+               
                 params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
                 params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
                 params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
             
+            if str(m)=='times_processed':
+                unique_times = np.unique(np.array([params['ppsds']['Z'][m],
+                                          params['ppsds']['E'][m],
+                                          params['ppsds']['N'][m]]))
+                
+                common_times = []
+                for currTime in unique_times:
+                    if currTime in params['ppsds']['Z'][m]:
+                        if currTime in params['ppsds']['E'][m]:
+                            if currTime in params['ppsds']['N'][m]:
+                                common_times.append(currTime)
+
+
+                cTimeIndList = []
+                for cTime in common_times:
+                    ZArr = params['ppsds']['Z'][m]
+                    EArr = params['ppsds']['E'][m]
+                    NArr = params['ppsds']['N'][m]
+                    cTimeIndList.append([int(np.where(ZArr == cTime)[0]),
+                                        int(np.where(EArr == cTime)[0]),
+                                        int(np.where(NArr == cTime)[0])])
+                    
             #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
+                if str(m) != 'times_processed':
+                    time_data[str(m)] = (params['ppsds']['Z'][m], params['ppsds']['E'][m], params['ppsds']['N'][m])
+
+                #print(m, params['ppsds']['Z'][m])
+
                 tSteps_same = params['ppsds']['Z'][m].shape[0] == params['ppsds']['E'][m].shape[0] == params['ppsds']['N'][m].shape[0]
 
                 if not tSteps_same:
@@ -1214,10 +1267,50 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                         print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
                     timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
 
+        for i, currTStep in enumerate(cTimeIndList):
+            colList = []
+            currTStepList = []
+            colList.append('TimesProcessed_Obspy')
+            currTStepList.append(common_times[i])
+            for tk in time_data.keys():
+                colList.append(str(tk)+'_Z')
+                colList.append(str(tk)+'_E')
+                colList.append(str(tk)+'_N')
+                currTStepList.append(time_data[tk][0][currTStep[0]])#z
+                currTStepList.append(time_data[tk][1][currTStep[1]])#e
+                currTStepList.append(time_data[tk][2][currTStep[2]])#n
+
+            dfList.append(currTStepList)
+            
+        hvsrDF = pd.DataFrame(dfList, columns=colList)
+        hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
+        
+        #Add other times (for start times)
+        def convert_to_datetime(obspyUTCDateTime):
+            return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+
+        def convert_to_mpl_dates(obspyUTCDateTime):
+            return obspyUTCDateTime.matplotlib_date
+
+        hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
+        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length']) 
+        hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
+        hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
+        
+        hvsrDF['Use'] = True
+        for gap in params['ppsds']['Z']['times_gaps']:
+            hvsrDF['Use'] = ((gap[0] < hvsrDF['TimesProcessed_Obspy']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed_Obspy']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['WindowEnd']))
+
+        hvsrDF.set_index('TimesProcessed', inplace=True)
+        params['hvsr_df'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-        params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
+        params['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
+        #params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
         
         #Remove outlier ppsds (those derived from data within the windows to be removed)
+
         if remove_outliers and 'xwindows_out' in params.keys():
             params = remove_outlier_curves(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
         params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
@@ -1258,7 +1351,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', return_results=False, csv_overwrite_opt='append', verbose=False, export_path=None):    
+def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', verbose=False):    
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -1269,8 +1362,10 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         Format in which to print or export the report.
     plot_type : str, default = 'HVSR p ann C+ p ann Spec
         What type of plot to plot, if 'plot' part of report_format input
-    export_path : str
-        Filepath path for export. If not specified, report name is generated automatically and placed in current directory
+    export_path : None, bool, or filepath, default = None
+        If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
+        Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
+        If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". The suffix defaults to png for report_format="plot", csv for 'csv', and does not export if 'print.'
     return_results : bool, default=False
         Whether to return results. The following report_formats return the following items:
             'plot'- str
@@ -1278,13 +1373,18 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             'csv' - pandas.DataFrame object
             list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
-        How to handle csv report outputs if the designated output file already exists. By default, appends the new information to the end of the existing file.
-    export_path : None, bool, or filepath, default = None
-        If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
-        Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
-        If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". The suffix defaults to png for report_format="plot", csv for 'csv', and does not export if 'print.'
+        How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format='print', and will not repeat if that is already selected
+
+    Returns
+    -------
+    If return_results=True, the following report_formats return the following items:
+        'plot'- str
+        'print' - matplotlib.Figure object
+        'csv' - pandas.DataFrame object
+        list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
+
     """
     #print statement
     #Check if results are good
@@ -1493,6 +1593,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]} Number of significant cycles: {hvsr_results['BestPeak']['Report']['Nc']}")
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]} Low StDev. of H/V Curve over time: {hvsr_results['BestPeak']['Report']['σ_A(f)']}")
 
+                    report_string_list.append('')
                     report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f-)'][-1]} Clarity Below Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f-)']}")
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f+)'][-1]} Clarity Above Peak Frequency: {hvsr_results['BestPeak']['Report']['A(f+)']}")
@@ -1505,6 +1606,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]} Stability of Peak (Freq. StDev): {hvsr_results['BestPeak']['Report']['Sf']}")
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]} Stability of Peak (Amp. StDev): {hvsr_results['BestPeak']['Report']['Sa']}")
                 report_string_list.append('')
+                report_string_list.append(f"Calculated using {hvsr_results['hvsr_df']['Use'].sum()}/{hvsr_results['hvsr_df']['Use'].count()} time windows".rjust(sepLen-1))
                 report_string_list.append(internalSeparator)
                 report_string_list.append(endSiteSeparator)
                 report_string_list.append('')
@@ -1617,15 +1719,25 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
         String for what to use, between frequency or period
             For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
             For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
-    return_fig   : bool
+    fig : matplotlib.Figure, default = None
+        If not None, matplotlib figure on which plot is plotted
+    ax : matplotlib.Axis, default = None
+        If not None, matplotlib axis on which plot is plotted
+    return_fig : bool
         Whether to return figure and axis objects
-    save_dir     : str or None
+    save_dir : str or None
         Directory in which to save figures
-    save_suffix  : str
+    save_suffix : str
         Suffix to add to end of figure filename(s), if save_dir is used
-    show    : bool
+    show_legend : bool, default=False
+        Whether to show legend in plot
+    show : bool
         Whether to show plot
-    **kwargs    : keyword arguments
+    close_figs : bool, default=False
+        Whether to close figures before plotting
+    clear_fig : bool, default=True
+        Whether to clear figures before plotting
+    **kwargs : keyword arguments
         Keyword arguments for matplotlib.pyplot
 
     Returns
@@ -1741,6 +1853,19 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
 
 #Import data
 def import_data(import_filepath, data_format='pickle'):
+    """Function to import .hvsr (or other extension) data exported using export_data() function
+
+    Parameters
+    ----------
+    import_filepath : str or path object
+        Filepath of file created using export_data() function. This is usually a pickle file with a .hvsr extension
+    data_format : str, default='pickle'
+        Type of format data is in. Currently, only 'pickle' supported. Eventually, json or other type may be supported, by default 'pickle'.
+
+    Returns
+    -------
+    HVSRData or HVSRBatch object
+    """
     if data_format=='pickle':
         with open(import_filepath, 'rb') as f:
             dataIN = pickle.load(f)
@@ -1769,17 +1894,17 @@ def input_params(datapath,
                 instrument = 'Raspberry Shake',
                 metapath = '',
                 hvsr_band = [0.4, 40],
-                peak_freq_range=[1, 20],
+                peak_freq_range=[0.4, 40],
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
     
     Parameters
     ----------
-     datapath : str or pathlib.Path object
+    datapath : str or pathlib.Path object
         Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
-    site : str
-        Site name as designated by scientist for ease of reference. Used for plotting titles, etc.
+    site : str, default="HVSR Site"
+        Site name as designated by user for ease of reference. Used for plotting titles, filenames, etc.
     network : str, default='AM'
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
     station : str, default='RAC84'
@@ -1793,19 +1918,23 @@ def input_params(datapath,
         If int, this will be interpreted as the time_int of year of current year (e.g., 33 would be Feb 2 of current year)
         If date or datetime object, this will be the date. Make sure to account for time change when converting to UTC (if UTC is the following time_int, use the UTC time_int).
     starttime : str, time object, or datetime object, default='00:00:00.00'
-        Start time of data stream. This is necessary for Raspberry Shake data. Format can be either 'HH:MM:SS.micros' or 'HH:MM' at minimum.
+        Start time of data stream. This is necessary for Raspberry Shake data in 'raw' form, or for trimming data. Format can be either 'HH:MM:SS.micros' or 'HH:MM' at minimum.
     endtime : str, time obejct, or datetime object, default='23:59:99.99'
-        End time of data stream. This is necessary for Raspberry Shake data. Same format as starttime
+        End time of data stream. This is necessary for Raspberry Shake data in 'raw' form, or for trimming data. Same format as starttime.
     tzone : str or int, default = 'UTC'
         Timezone of input data. If string, 'UTC' will use the time as input directly. Any other string value needs to be a TZ identifier in the IANA database, a wikipedia page of these is available here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
-        This is necessary for Raspberry Shake data.
+        This is necessary for Raspberry Shake data in 'raw' format.
     xcoord : float, default=-88.2290526
-        Longitude of data point. Not currently used, but will likely be used in future.
+        Longitude (or easting, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in csv output, but will likely be used in future for mapping/profile purposes.
     ycoord : float, default=40.1012122
-        Latitude of data point. Not currently used, but will likely be used in the future.
+        Latitute (or northing, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in csv output, but will likely be used in future for mapping/profile purposes.
+    input_crs : str or other format read by pyproj, default='EPSG:4326'
+        Coordinate reference system of input data, as used by pyproj.CRS.from_user_input()
+    output_crs : str or other format read by pyproj, default='EPSG:4326'
+        Coordinate reference system to which input data will be transformed, as used by pyproj.CRS.from_user_input()
     elevation : float, default=755
-        Surface elevation of data point. Not currently used, but will likely be used in the future.
+        Surface elevation of data point. Not currently used (except in csv output), but will likely be used in the future.
     depth : float, default=0
         Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str or list {'Raspberry Shake')
@@ -1813,8 +1942,12 @@ def input_params(datapath,
     metapath : str or pathlib.Path object, default=''
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of '', will read from resources folder of repository (only supported for Raspberry Shake).
     hvsr_band : list, default=[0.4, 40]
-        Two-element list containing low and high "corner" frequencies for processing. This can specified again later.
-    
+        Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
+    peak_freq_range : list or tuple, default=[0.4, 40]
+        Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
+    verbose : bool, default=False
+        Whether to print output and results to terminal
+
     Returns
     -------
     params : sprit.HVSRData
@@ -1935,11 +2068,10 @@ def input_params(datapath,
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
+    if output_crs is None:
+        output_crs='EPSG:4326'
+
     if input_crs is None:
-        xcoord = 0
-        ycoord = 0
-        input_crs = 'EPSG:4326'#Default to WGS84
-    elif -180 < xcoord < 180 and -90 < ycoord < 90:
         input_crs = 'EPSG:4326'#Default to WGS84
     else:        
         input_crs = CRS.from_user_input(input_crs)
@@ -1962,6 +2094,31 @@ def input_params(datapath,
 
 #Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True):
+    """Function to plot a stream of data with Z, E, N components using matplotlib. Similar to obspy.Stream.Plot(), but will be formatted differently and eventually more customizable.
+    This is also used in various functions throughout the package.
+
+    Parameters
+    ----------
+    stream : obspy.core.Stream.stream
+        Obpsy stream of data with Z, E, N componenents
+    params : HVSRData or HVSRBatch
+        Data object with parameters relevant for creating plot
+    fig : matplotlib.Figure, default=None
+        Optional: if not None, matplotlib.Figure in which to plot the resulting figure (i.e., can be plotted in existing figure)
+    axes : matplotlib.Axis, default=None
+        Optional: if not None, matplotlib.Axis in which to plot the resulting figure (i.e., can be plotted in existing axis)
+    show_plot : bool, default=False
+        Whether to do matplotlib.pylot.show(), by default False
+    ylim_std : float, default = 0.75
+        Optional: the standard deviation of the data at which to clip the chart, by default 0.75
+    return_fig : bool, default=True
+        Optional: whether to return the figure, by default True
+
+    Returns
+    -------
+    (matplotlib.Figure, matplotlib.Axes)
+        Tuple containing the figure and axes of the resulting plot, only returned if return_fig = True
+    """
     if fig is None and axes is None:
         fig, axes = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
 
@@ -2070,7 +2227,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
     return                 
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, remove_outlier_curves=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2078,24 +2235,26 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     Parameters
     ----------
-    params  : dict
-        Dictionary containing all the parameters input by the user
-    method  : int or str
+    params  : HVSRData or HVSRBatch
+        Data object containing all the parameters input and generated by the user (usually, during sprit.input_params(), sprit.fetch_data(), sprit.generate_ppsds() and/or sprit.remove_noise()).
+    method  : int or str, default=3
         Method to use for combining the horizontal components
+            0) (not used)
             1) Diffuse field assumption, or 'DFA' (not currently implemented)
             2) 'Arithmetic Mean': H ≡ (HN + HE)/2
             3) 'Geometric Mean': H ≡ √HN · HE, recommended by the SESAME project (2004)
             4) 'Vector Summation': H ≡ √H2 N + H2 E
             5) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2
             6) 'Maximum Horizontal Value': H ≡ max {HN, HE}
-    smooth  : bool=True
-        bool or int. 
+    smooth  : bool, default=True
+        bool or int may be used. 
             If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
             If int, the length of the window in the savgoy filter.
     freq_smooth : str {'konno ohmachi', 'constant', 'proportional'}
         Which frequency smoothing method to use. By default, uses the 'konno ohmachi' method.
             - The Konno & Ohmachi method uses the obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing() function: https://docs.obspy.org/packages/autogen/obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing.html
-            - The constant method
+            - The constant method uses a window of constant length f_smooth_width
+            - The proportional method uses a window the percentage length of the frequncy steps/range (f_smooth_width now refers to percentage)
         See here for more information: https://www.geopsy.org/documentation/geopsy/hv-processing.html
     f_smooth_width : int, default = 40
         - For 'konno ohmachi': passed directly to the bandwidth parameter of the konno_ohmachi_smoothing() function, determines the width of the smoothing peak, with lower values resulting in broader peak. Must be > 0.
@@ -2105,8 +2264,6 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
-    remove_outlier_curves : bool, default = True
-        Whether to remove outlier h/v curves. Recommend to be repeated even after using in generate_ppsds() if remove_noise() is used.
     outlier_curve_std : float, default = 1.75
         Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an 'outlier'
     verbose : bool, defualt=False
@@ -2166,8 +2323,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         stDevValsM = {}
         psdRaw={}
         currTimesUsed={}
-        
+        hvsrDF = params['hvsr_df']
+
+
         for k in ppsds:
+            #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
+            currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
+            input_ppsds = np.stack(currPPSDs)
+            
             #if reasmpling has been selected
             if resample is True or type(resample) is int:
                 if resample is True:
@@ -2186,12 +2349,11 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                         smooth = smooth+1
 
                 #Resample raw ppsd values
-                for i, t in enumerate(ppsds[k]['psd_values']):
+                for i, t in enumerate(input_ppsds):
                     if i==0:
                         psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
                         if smooth is not False:
                             psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
-
                     else:
                         psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)))
                         if smooth is not False:
@@ -2200,7 +2362,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             else:
                 #If no resampling desired
                 x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
-                psdRaw[k] = np.array(ppsds[k]['psd_values'])
+                psdRaw[k] = np.array(input_ppsds)
+
+            hvsrDF[f'psd_values_{k}'] = list(psdRaw[k])
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
@@ -2210,8 +2374,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
-            currTimesUsed[k] = ppsds[k]['current_times_used']
-
+            currTimesUsed[k] = np.array(hvsrDF['TimesProcessed_Obspy'][hvsrDF['Use']].values)
+            #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
+            
         #Get string of method type
         if type(method) is int:
             methodInt = method
@@ -2237,7 +2402,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                     'method':method,
                     'ppsds':ppsds,
                     'ppsds_obspy':origPPSD,
-                    'tsteps_used': params['tsteps_used'].copy()
+                    'tsteps_used': params['tsteps_used'].copy(),
+                    'hvsr_df':params['hvsr_df']
                     }
         
         hvsr_out = HVSRData(hvsr_data)
@@ -2264,12 +2430,15 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out['psd_raw']:
+                ppsd_data = np.stack(hvsr_out['hvsr_df'][f'psd_values_{k}'])
                 ppsd_data = hvsr_out['psd_raw'][k]
+
                 freqs = hvsr_out['x_freqs'][k]
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
                     smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
+                hvsr_out['hvsr_df'][f'psd_values_{k}'] = smoothed_ppsd_data
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
         elif freq_smooth.lower() in freq_smooth_proport:
@@ -2289,37 +2458,62 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 for k in hvsr_out['psd_raw']:
                     tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
                 hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
-                hvsr_tSteps.append(hvsr_tstep) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+                hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
 
-        hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
-        
-        #use the standard deviation of each individual curve to determine if it overlapped
-        if remove_outlier_curves:
-            stdT = np.std(hvsr_out['ind_hvsr_curves'], axis=1)
-            std_stdT= np.std(stdT)
+        hvsr_out['hvsr_df']['HV_Curves'] = hvsr_tSteps
+
+        hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
+        #hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
+
+        #Initialize array based only on the curves we are currently using
+        indHVCurvesArr = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
+        #indHVCurvesArr = hvsr_out['ind_hvsr_curves']
+
+        if outlier_curve_std:
+            #use the standard deviation of each individual curve to determine if it overlapped
+            stdT = np.nanstd(indHVCurvesArr, axis=1)
+            std_stdT= np.nanstd(stdT)
             avg_stdT= np.nanmean(stdT)
+            bool_col='Use'
+            eval_col='HV_Curves'
 
+            #First, do pandas version of it
+            hvsr_out['hvsr_df'][bool_col] = ((avg_stdT - (std_stdT * outlier_curve_std)) < (hvsr_out['hvsr_df'][hvsr_out['hvsr_df'][bool_col]][eval_col].apply(np.nanstd))) & \
+                            ((avg_stdT + (std_stdT * outlier_curve_std)) > (hvsr_out['hvsr_df'][hvsr_out['hvsr_df'][bool_col]][eval_col].apply(np.nanstd)))
+
+            #Find psds to get rid of based on standard deviation of each curve (i.e., how curvy is the curve)
             psds_to_rid = []
-            for i,t in enumerate(hvsr_out['ind_hvsr_curves']):
+            for i,t in enumerate(indHVCurvesArr):
                 if stdT[i] < avg_stdT - std_stdT*outlier_curve_std or stdT[i] > avg_stdT + std_stdT*outlier_curve_std:
                     psds_to_rid.append(i)
 
             for i, r in enumerate(psds_to_rid):
                 index = int(r-i)
-                hvsr_out['ind_hvsr_curves'] = np.delete(hvsr_out['ind_hvsr_curves'], index, axis=0)
+                indHVCurvesArr = np.delete(indHVCurvesArr, index, axis=0)
 
                 for k in hvsr_out['ppsds']:
                     hvsr_out['psd_raw'][k] = np.delete(hvsr_out['psd_raw'][k], index, axis=0)         
                     hvsr_out['current_times_used'][k] = np.delete(hvsr_out['current_times_used'][k], index)
             hvsr_out['tsteps_used'][0] = hvsr_out['ppsds'][k]['current_times_used'].shape[0]
 
-        hvsr_out['ind_hvsr_stdDev'] = np.nanstd(hvsr_out['ind_hvsr_curves'], axis=0)
+        hvsr_out['ind_hvsr_stdDev'] = np.nanstd(indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
         tStepPeaks = []
         for tStepHVSR in hvsr_tSteps:
             tStepPeaks.append(__find_peaks(tStepHVSR))
         hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
+        hvsr_out['hvsr_df']['CurvesPeakIndices'] = tStepPeaks
+
+        tStepPFList = []
+        for tPeaks in tStepPeaks:
+            tStepPFs = []
+            for pInd in tPeaks:
+                tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
+            tStepPFList.append(tStepPFs)
+        hvsr_out['hvsr_df']['CurvesPeakFreqs'] = tStepPFList
+
+
         #Get peaks of main HV curve
         hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
         
@@ -2334,7 +2528,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
-        hvsr_out['stream'] = params['stream']
+        hvsr_out['input_stream'] = params['input_stream'] #input_stream
 
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
 
@@ -2344,34 +2538,42 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
     return hvsr_out
 
 #Function to remove noise windows from data
-def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, verbose=False):
+def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
     - Manual window selection (by clicking on a chart with spectrogram and stream data), 
     - Auto window selection, which does the following two in sequence (these can also be done indepently):
         - A sta/lta "antitrigger" method (using stalta values to automatically remove triggered windows where there appears to be too much noise)
-        - A noise threshold method, that cuts off all times where the noise threshold equals more than (by default) 99.5% of the highest amplitude noise sample.
+        - A noise threshold method, that cuts off all times where the noise threshold equals more than (by default) 80% of the highest amplitude noise sample for the length specified by lta (in seconds)
+        - A saturation threshold method, that cuts off all times where the noise threshold equals more than (by default) 99.5% of the highest amplitude noise sample.
 
     Parameters
     ----------
     hvsr_data : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
-    kind : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}
+    remove_method : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}
         The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
-    noise_percent : float, default=0.995
-        Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the noise threshold method. By default 0.995. 
+    sat_percent : float, default=0.995
+        Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the saturation method. By default 0.995. 
+        If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage.
+    noise_percent : float, default = 0.8
+        Percentage (between 0 and 1), to use as the threshold at which to remove data, if it persists for longer than time (in seconds (specified by min_win_size)). This is used in the noise threshold method. By default 0.8. 
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage.
     sta : int, optional
-        Short term average (STA) window (in seconds), by default 2.
+        Short term average (STA) window (in seconds), by default 2. For use with sta/lta antitrigger method.
     lta : int, optional
-        Long term average (STA) window (in seconds), by default 30.
+        Long term average (STA) window (in seconds), by default 30. For use with sta/lta antitrigger method.
     stalta_thresh : list, default=[0.5,5]
         Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
-    show_plot : bool, default=False
-        If True, will plot the trigger and stalta values (if stalta antitrigger method), or the data with the new windows removed (if noise threshold), by default False. Does not apply to 'manual' method.
     warmup_time : int, default=0
-        Time in seconds to allow for warmup of the instrument. This will renove any data before this time, by default 0.
+        Time in seconds to allow for warmup of the instrument (or while operator is still near instrument). This will renove any data before this time, by default 0.
+    cooldown_time : int, default=0
+        Time in seconds to allow for cooldown of the instrument (or for when operator is nearing instrument). This will renove any data before this time, by default 0.
+    min_win_size : float, default=1
+        The minumum size a window must be over specified threshold (in seconds) for it to be removed
+    remove_raw_noise : bool, default=False
+        If remove_raw_noise=True, will perform operation on raw data ('input_stream'), rather than potentially already-modified data ('stream').
     verbose : bool, default=False
         Whether to print status of remove_noise
 
@@ -2424,19 +2626,21 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
         return output
 
     elif isinstance(hvsr_data, (HVSRData, dict)):
-        if 'stream_edited' in hvsr_data.keys():
-            inStream = hvsr_data['stream_edited'].copy()
+        if remove_raw_noise:
+            inStream = hvsr_data['input_stream'].copy()
         else:
             inStream = hvsr_data['stream'].copy()
         output = hvsr_data#.copy()
-    elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
+    elif isinstance(hvsr_data, (obspy.core.stream.Stream, obspy.core.trace.Trace)):
         inStream = hvsr_data.copy()
         output = inStream.copy()
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     
     #Go through each type of removal and remove
-    if kind.lower() in manualList:
+    if not remove_method:
+        outStream=inStream
+    elif remove_method.lower() in manualList:
         if isinstance(output, (HVSRData, dict)):
             if 'xwindows_out' in output.keys():
                 pass
@@ -2446,35 +2650,34 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
 
         if isinstance(inStream, obspy.core.stream.Stream):
             if window_list is not None:
-                output['stream_edited'] = __remove_windows(inStream, window_list, warmup_time)
+                output['stream'] = __remove_windows(inStream, window_list, warmup_time)
             else:
                 output = _select_windows(output)
         elif isinstance(output, (HVSRData, dict)):
             pass
         else:
-            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")
-            
-    elif kind.lower() in autoList:
+            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
+    elif remove_method.lower() in autoList:
         outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
         outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
         outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
         outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
-    elif kind.lower() in antitrigger:
+    elif remove_method.lower() in antitrigger:
         outStream = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
-    elif kind.lower() in saturationThresh:
+    elif remove_method.lower() in saturationThresh:
         outStream = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
-    elif kind.lower() in noiseThresh:
+    elif remove_method.lower() in noiseThresh:
         outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-    elif kind.lower() in warmup_cooldown:
+    elif remove_method.lower() in warmup_cooldown:
         outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
     else:
-        warnings.warn(f"Input value kind={kind} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+        warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
         return output
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
-        output['stream_edited'] = outStream
-        output['stream'] = hvsr_data['stream']
+        output['stream'] = outStream
+        output['input_stream'] = hvsr_data['input_stream']
     elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         output = outStream
     else:
@@ -2483,10 +2686,33 @@ def remove_noise(hvsr_data, kind='auto', sat_percent=0.995, noise_percent=0.80, 
 
     output['ProcessingStatus']['RemoveNoiseStatus'] = True
     output = _check_processing_status(output)
+
+    if 'hvsr_df' in output.keys():
+        hvsrDF = output['hvsr_df']
+        output = output.split()
+        for i, trace in enumerate(output):
+            if i ==0:
+                trEndTime = trace.stats.endtime
+                comp_end = trace.stats.component
+                continue
+            trStartTime = trace.stats.starttime
+            comp_start = trace.stats.component
+            
+            if trEndTime < trStartTime and comp_end==comp_start:
+                gap = [trEndTime,trStartTime]
+
+                output['hvsr_df']['Use'] = ((gap[0] < hvsrDF['TimesProcessed_Obspy']) & (gap[1] > hvsrDF['WindowEnd'])) | \
+                                ((gap[0] > hvsrDF['TimesProcessed_Obspy']) & (gap[0] < hvsrDF['WindowEnd'])) | \
+                                ((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['WindowEnd']))
+            
+            trEndTime = trace.stats.endtime
+        
+        output.merge()
+
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
+def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
     """Function used in generate_ppsds() to remove outliers. May also be used independently.
     
     This uses the mean value of the entirety of each ppsd curve. This is not very robust, but it is intended only to remove curves who are well outside of the what would be expected.
@@ -2498,7 +2724,7 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
         Input dictionary containing all the values and parameters of interest
     outlier_std :  float, default=3
         The standard deviation value to use as a threshold for determining whether a curve is an outlier. 
-        This averages over the entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
+        This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
     ppsd_length : float, optional
         Length of data segments passed to psd in seconds, by default 60.
 
@@ -2513,12 +2739,16 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
     stds = {}
     psds_to_rid = []
 
-
     for k in ppsds:
+        #Get the average ppsd curve value
         psdVals = np.array(ppsds[k]['psd_values'])
         meanArr = np.nanmean(psdVals, axis=1)
+        medArr = np.nanmedian(psdVals, axis=1)
+        
         newPPsds[k] = []
         totMean = np.nanmean(meanArr)
+        totMed = np.nanmed(medArr)
+
         stds[k] = np.std(meanArr)
 
         for i, m in enumerate(meanArr):
@@ -2542,6 +2772,18 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
                 elif nextT > win[0] and nextT < win[1]:
                     psds_to_rid.append(i)
     
+        #Use dataframe
+        hvsrDF = params['hvsr_df']
+        psdVals = hvsrDF['psd_values_'+k]
+        params['hvsr_df'][k+'_CurveMedian'] = psdVals.apply(np.nanmedian)
+        params['hvsr_df'][k+'_CurveMean'] = psdVals.apply(np.nanmean)
+
+        totMean = np.nanmean(params['hvsr_df'][k+'_CurveMean'])
+        stds[k] = np.nanstd(params['hvsr_df'][k+'_CurveMean'])
+
+        meanArr = params['hvsr_df'][k+'_CurveMean']
+        params['hvsr_df']['Use'] = meanArr < (totMean + outlier_std * stds[k])
+
     psds_to_rid = np.unique(psds_to_rid)
 
     for k in params['ppsds']:
@@ -2553,7 +2795,7 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=60):
 
 #Read data as batch
 def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
-    """Function to read data in data as a batch of multiple data files
+    """Function to read data in data as a batch of multiple data files. This is best used through sprit.fetch_data(*args, source='batch', **other_kwargs).
 
     Parameters
     ----------
@@ -2771,17 +3013,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
 def test_function():
     print('is this working?')
 
-#Just for testing classes
-def test_class(**input_dict):
-    hvsrdata = input_params(**input_dict)
-    hvsrdata = fetch_data(hvsrdata, source='batch', verbose=input_dict['verbose'])
-    hvsrdata = remove_noise(hvsrdata)
-    hvsrdata = generate_ppsds(hvsrdata, verbose=input_dict['verbose'])
-    hvsrdata = process_hvsr(hvsrdata, verbose=input_dict['verbose'])
-    hvsrdata = check_peaks(hvsr_data=hvsrdata)
-    return hvsrdata
-
-#BATCH FUNCTIONS
+#BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data
 #Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
     try:
@@ -2871,20 +3103,19 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
         
     return hvsr_data
 
-##HELPER functions for fetch_data() and get_metadata()
-#Read in metadata .inv file, specifically for RaspShake
+#Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
 def _check_processing_status(hvsr_data):
     """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
 
     Parameters
     ----------
     hvsr_data : sprit.HVSRData
-        _description_
+        Data being processed
 
     Returns
     -------
     sprit.HVSRData
-        _description_
+        Data being processed, with updated the 'OverallStatus' key of the attribute ProcessingStatus updated.
     """
     
     if isinstance(hvsr_data, HVSRData):
@@ -2908,6 +3139,8 @@ def _check_processing_status(hvsr_data):
         hvsr_data = hvsr_interim[siteName]
     return hvsr_data    
 
+#HELPER functions for fetch_data() and get_metadata()
+#Read in metadata .inv file, specifically for RaspShake
 def _update_shake_metadata(filepath, params, write_path=''):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
@@ -3130,6 +3363,7 @@ def _sort_channels(input, source, verbose):
             #Make sure z component is first
             dataIN = rawDataIN.sort(['channel'], reverse=True) #z, n, e order
         else:
+            #Not usually used anymore, retained just in case
             dataIN = []
             for i, st in enumerate(rawDataIN):
                 if 'Z' in st[0].stats['channel']:#).split('.')[3]:#[12:15]:
@@ -3268,6 +3502,7 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
 
 #Helper function to detrend data
 def __detrend_data(input, detrend, detrend_order, verbose, source):
+    """Helper function to detrend data, specifically formatted for the HVSRData and HVSRBatch objects"""
     if source!='batch':
         input = {'SITENAME': {'stream':input}} #Make same structure as batch
 
@@ -3420,7 +3655,6 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
     #combine overlapping windows
-    #THIS PART NEEDS WORK!!!!! #!#
     overlapList = []
     for i in range(len(window_gaps_obspy)-2):
         if window_gaps_obspy[i][1] > window_gaps_obspy[i+1][0]:
@@ -3703,7 +3937,7 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         pass
     else:
         startT = stream[0].stats.starttime
-        endT = stream[0].stats.endtime
+        endT = stream[-1].stats.endtime
         window_UTC = []
         window_MPL = []
         window_UTC.append([startT, startT])
@@ -3770,26 +4004,23 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
     fig, ax = _plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
     fig.canvas.draw()
 
-    #Reset edited data every time plot_noise_windows is run
-    hvsr_data['stream_edited'] = hvsr_data['stream'].copy()
-
     #Set initial input
     input = hvsr_data['stream']
 
     if do_stalta:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, remove_method='stalta', sta=sta, lta=lta, stalta_thresh=stalta_thresh)
+        input = hvsr_data['stream']
 
     if do_pctThresh:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, remove_method='saturation',  sat_percent=sat_percent, min_win_size=min_win_size)
+        input = hvsr_data['stream']
 
     if do_noiseWin:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        input = hvsr_data['stream_edited']
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, remove_method='noise', noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        input = hvsr_data['stream']
 
     if do_warmup:
-        hvsr_data['stream_edited'] = remove_noise(hvsr_data=input, kind='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
+        hvsr_data['stream'] = remove_noise(hvsr_data=input, remove_method='warmup', warmup_time=warmup_time, cooldown_time=cooldown_time)
 
     fig, ax, noise_windows_line_artists, noise_windows_window_artists = _get_removed_windows(input=hvsr_data, fig=fig, ax=ax, time_type='matplotlib')
     
@@ -3999,13 +4230,11 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         fig, ax = plt.subplots()
 
     if isinstance(input, (dict, HVSRData)):
-        if 'stream_edited' in input.keys():
-            stream = input['stream_edited'].copy()
-        else:
-            stream = input['stream'].copy()
-    else:
+        stream = input['stream'].copy()
+    elif isinstance(input, (obpsy.core.Trace.trace, obpsy,core.stream.Stream)):
         stream = input.copy()
-
+    else:
+        pass #Warning?
 
     samplesList = ['sample', 'samples', 's']
     utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
@@ -4434,7 +4663,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out['psd_raw'][k] = newTPSD
-
+        hvsr_out['hvsr_df'].loc[f'psd_values_{k}'] = newTPSD
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
@@ -4623,10 +4852,20 @@ def __gethvsrparams(hvsr_out):
 
     hvsr=hvsr_out['hvsr_curve']
     if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
+        #With arrays, original way of doing it
+        hvsr_log_std = np.nanstd(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
+
+        #With dataframe, updated way to use DF for all time-step tasks, still testing
+        stackedData = np.stack(hvsr_out['hvsr_df']['HV_Curves'])
+        logStackedata = np.log10(stackedData).tolist()
+        for i, r in enumerate(logStackedata):
+            logStackedata[i] = np.array(r)
+        hvsr_out['hvsr_df']['HV_Curves_Log10'] = logStackedata
+        hvsr_log_std = np.nanstd(np.stack(hvsr_out['hvsr_df']['HV_Curves_Log10'][hvsr_out['hvsr_df']['Use']]), axis=0)
+
+        #The componenets are already calculated, don't need to recalculate aren't calculated at the time-step level
         hvsrp = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
         hvsrm = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
-
-        hvsr_log_std = np.std(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
         hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
         hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
 
