@@ -334,10 +334,17 @@ def gui():
         gui_root.destroy()
 
     if sys.platform == 'linux':
-        warnings.Warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
+        if not pathlib.Path("/usr/share/doc/python3-tk").exists():
+            warnings.warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
+
     gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico'))
-    gui_root.iconbitmap(icon_path)
+    try:
+        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+        gui_root.iconphoto(False, tk.PhotoImage(file=icon_path))
+        #gui_root.iconbitmap(icon_path)
+    except Exception as e:
+        print(e)
+        print('icon not loaded')
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
