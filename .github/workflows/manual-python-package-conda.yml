@@ -22,10 +22,11 @@ jobs:
 
     - name: Print stuff
       run: |
-        echo ls home
-        echo ls home/runner
-        echo ls home/runner/work
-        echo ls home/runner/work/SPRIT-HVSR
+        ls
+        ls home
+        ls home/runner
+        ls home/runner/work
+        ls home/runner/work/SPRIT-HVSR
         
         
     - name: Install dependencies
