@@ -1,11 +1,10 @@
-name: Manually Publish to Conda-Forge
+name: Publish to Conda-Forge
 
 on:
-  workflow_dispatch
-
-
-
-
+  release:
+    types:
+      - created
+      - edited
 
 jobs:
   publish:
@@ -13,33 +12,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      # Activate the Conda environment
-      #- name: Activate Conda environment
-      #  run: source activate sprit-env
-
+        
       - name: Set up Conda
         uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: anaconda-client-env
-          environment-file: conda/environment.yml
-          auto-activate-base: false
-          
+
+      - name: Create Conda Env. from environment file
+        uses: conda env create --file=conda/environments.yml
+
+      - name: Activate conda environment
+        run: conda activate sprit-env
+
       - name: Install Conda-Forge Client
-        run: conda activate sprit-env && conda install -c conda-forge conda-forge-ci-setup -y
+        run: conda install -c conda-forge conda-forge-ci-setup -y
 
       - name: Build and Upload Package
         env:
           CONDA_FORGE_TOKEN: ${{ secrets.CONDA_INITIALIZE }}
-        run: conda activate sprit-env && conda smithy ci  
-
-
-
-    
-    #- uses: actions/checkout@v2
-    #- name: publish-to-conda
-    #  uses: conda-forge/conda-publish-action@v1.3
-    #  with:
-    #    subdir: 'conda'
-    #    anacondatoken: ${{ secrets.CONDA_INITIALIZE }}
-    #    platforms: 'win osx linux'
+        run: conda smithy ci  # using smithy
