@@ -3,6 +3,7 @@
 
 import datetime
 import functools
+import linecache
 import os
 import pathlib
 import pkg_resources
@@ -39,11 +40,14 @@ def catch_errors(func):
         #Collect warnings that happened before we got to the error
         if w:
             hasWarnings = True
-            for warning in w:
-                warning_category = type(warning.message).__name__.title().replace('warning','Warning')
-                warning_message = str(warning.message)
+            for wi in w:
+                warning_category = type(wi.message).__name__.title().replace('warning','Warning')
+                #if w.line is None:
+                #    w.line = linecache.getline(wi.filename, wi.lineno)
+                warning_lineNo = wi.lineno
+                warning_message = str(wi.message)
                 # append the warning category and message to messageList so we get all warnings
-                messageList.append(f'{warning_category}: {warning_message}')
+                messageList.append(f'{warning_category} ({warning_lineNo}): {warning_message}')
         return messageList
     
     # use functools.wraps to preserve the original function's metadata
@@ -73,7 +77,8 @@ def catch_errors(func):
                     warningMessage = "WARNING:"
                     for msg in messageList:
                         warningMessage = "\n {}".format(msg)
-
+            
+                    print(warningMessage)
                     messagebox.showwarning(title='WARNINGS', message=warningMessage)
                     
         except Exception as e:
@@ -98,9 +103,10 @@ def catch_errors(func):
                 for addMsg in warningMessageList:
                     fullErrorMessage = "\n{}\n   {}".format(fullErrorMessage, addMsg)
 
+            print(fullErrorMessage)        
             messagebox.showerror(title=f'ERROR ({error_category})',
                                     message=fullErrorMessage)
-                
+
         # return the result of the function or the error/warning messages and categories
         return result
     # return the wrapper function
@@ -291,8 +297,38 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
-                self.params = sprit_hvsr.batch_data_read(input_data=self.fpath, batch_type=batchType)
-                self.hvsr_data = self.params
+                self.params = sprit_hvsr.input_params(datapath=self.fpath,
+                                    metapath = self.meta_path.get(),
+                                    site=self.site_name.get(),
+                                    network=self.network.get(), 
+                                    station=self.station.get(), 
+                                    loc=self.location.get(), 
+                                    channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
+                                    acq_date = self.starttime.date(),
+                                    starttime = self.starttime,
+                                    endtime = self.endtime,
+                                    tzone = 'UTC', #Will always be converted to UTC before we get to this point when using gui
+                                    xcoord = self.x.get(),
+                                    ycoord =  self.y.get(),
+                                    elevation = self.z.get(),
+                                    input_crs= self.input_crs.get(),
+                                    output_crs= self.output_crs.get(),
+                                    elev_unit= self.elev_unit.get(),
+                                    instrument = self.instrumentSel.get(),
+                                    hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+
+                if self.trim_dir.get()=='':
+                    trimDir=None
+                else:
+                    trimDir=self.trim_dir.get()
+
+                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
+                                            source=self.file_source.get(), 
+                                            trim_dir=trimDir, 
+                                            export_format=self.export_format.get(), 
+                                            detrend=self.detrend.get(), 
+                                            detrend_order=self.detrend_order.get())
+                    
                 self.site_options = self.hvsr_data.sites
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
@@ -362,51 +398,50 @@ class SPRIT_App:
                 self.tab_control.select(self.preview_data_tab)
 
         def report_results(hvsr_results):
-            
-            self.curveTest1ResultText.configure(text=hvsr_results['Best Peak']['Report']['Lw'][:-1])
-            self.curveTest1Result.configure(text=hvsr_results['Best Peak']['Report']['Lw'][-1])
+            self.curveTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['Lw'][:-1])
+            self.curveTest1Result.configure(text=hvsr_results['BestPeak']['Report']['Lw'][-1])
 
-            self.curveTest2ResultText.configure(text=hvsr_results['Best Peak']['Report']['Nc'][:-1])
-            self.curveTest2Result.configure(text=hvsr_results['Best Peak']['Report']['Nc'][-1])
+            self.curveTest2ResultText.configure(text=hvsr_results['BestPeak']['Report']['Nc'][:-1])
+            self.curveTest2Result.configure(text=hvsr_results['BestPeak']['Report']['Nc'][-1])
 
-            self.curveTest3ResultText.configure(text=hvsr_results['Best Peak']['Report']['σ_A(f)'][:-1])
-            self.curveTest3Result.configure(text=hvsr_results['Best Peak']['Report']['σ_A(f)'][-1])
+            self.curveTest3ResultText.configure(text=hvsr_results['BestPeak']['Report']['σ_A(f)'][:-1])
+            self.curveTest3Result.configure(text=hvsr_results['BestPeak']['Report']['σ_A(f)'][-1])
 
-            curvePass = (hvsr_results['Best Peak']['Pass List']['Window Length Freq.'] +
-                                hvsr_results['Best Peak']['Pass List']['Significant Cycles']+
-                                hvsr_results['Best Peak']['Pass List']['Low Curve StDev. over time']) > 2
+            curvePass = (hvsr_results['BestPeak']['PassList']['WindowLengthFreq.'] +
+                                hvsr_results['BestPeak']['PassList']['SignificantCycles']+
+                                hvsr_results['BestPeak']['PassList']['LowCurveStDevOverTime']) > 2
             if curvePass:
                 self.totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
                 self.totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
 
-            self.peakTest1ResultText.configure(text=hvsr_results['Best Peak']['Report']['A(f-)'][:-1])
-            self.peakTest1Result.configure(text=hvsr_results['Best Peak']['Report']['A(f-)'][-1])
+            self.peakTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['A(f-)'][:-1])
+            self.peakTest1Result.configure(text=hvsr_results['BestPeak']['Report']['A(f-)'][-1])
             
-            self.peakTest2ResultText.configure(text=hvsr_results['Best Peak']['Report']['A(f+)'][:-1])
-            self.peakTest2Result.configure(text=hvsr_results['Best Peak']['Report']['A(f+)'][-1])
+            self.peakTest2ResultText.configure(text=hvsr_results['BestPeak']['Report']['A(f+)'][:-1])
+            self.peakTest2Result.configure(text=hvsr_results['BestPeak']['Report']['A(f+)'][-1])
             
-            self.peakTest3ResultText.configure(text=hvsr_results['Best Peak']['Report']['A0'][:-1])
-            self.peakTest3Result.configure(text=hvsr_results['Best Peak']['Report']['A0'][-1])
+            self.peakTest3ResultText.configure(text=hvsr_results['BestPeak']['Report']['A0'][:-1])
+            self.peakTest3Result.configure(text=hvsr_results['BestPeak']['Report']['A0'][-1])
 
-            self.peakTest4ResultText.configure(text=hvsr_results['Best Peak']['Report']['P-'][:5] + ' and ' +hvsr_results['Best Peak']['Report']['P+'][:-1])
-            if hvsr_results['Best Peak']['Pass List']['Freq. Stability']:
+            self.peakTest4ResultText.configure(text=hvsr_results['BestPeak']['Report']['P-'][:5] + ' and ' +hvsr_results['BestPeak']['Report']['P+'][:-1])
+            if hvsr_results['BestPeak']['PassList']['FreqStability']:
                 self.peakTest4Result.configure(text=sprit_utils.check_mark())
             else:
                 self.peakTest4Result.configure(text=sprit_utils.x_mark())
 
-            self.peakTest5ResultText.configure(text=hvsr_results['Best Peak']['Report']['Sf'][:-1])
-            self.peakTest5Result.configure(text=hvsr_results['Best Peak']['Report']['Sf'][-1])
+            self.peakTest5ResultText.configure(text=hvsr_results['BestPeak']['Report']['Sf'][:-1])
+            self.peakTest5Result.configure(text=hvsr_results['BestPeak']['Report']['Sf'][-1])
             
-            self.peakTest6ResultText.configure(text=hvsr_results['Best Peak']['Report']['Sa'][:-1])
-            self.peakTest6Result.configure(text=hvsr_results['Best Peak']['Report']['Sa'][-1])
+            self.peakTest6ResultText.configure(text=hvsr_results['BestPeak']['Report']['Sa'][:-1])
+            self.peakTest6Result.configure(text=hvsr_results['BestPeak']['Report']['Sa'][-1])
 
-            peakPass = (hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Below'] +
-                    hvsr_results['Best Peak']['Pass List']['Peak Freq. Clarity Above']+
-                    hvsr_results['Best Peak']['Pass List']['Peak Amp. Clarity']+
-                    hvsr_results['Best Peak']['Pass List']['Freq. Stability']+
-                    hvsr_results['Best Peak']['Pass List']['Peak Stability (freq. std)']+
-                    hvsr_results['Best Peak']['Pass List']['Peak Stability (amp. std)']) >= 5
+            peakPass = (hvsr_results['BestPeak']['PassList']['PeakFreqClarityBelow'] +
+                    hvsr_results['BestPeak']['PassList']['PeakFreqClarityAbove']+
+                    hvsr_results['BestPeak']['PassList']['PeakAmpClarity']+
+                    hvsr_results['BestPeak']['PassList']['FreqStability']+
+                    hvsr_results['BestPeak']['PassList']['PeakStability_FreqStD']+
+                    hvsr_results['BestPeak']['PassList']['PeakStability_AmpStD']) >= 5
             if peakPass:
                 self.totalPeakResult.configure(text='✔', font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
@@ -427,34 +462,39 @@ class SPRIT_App:
             if self.data_read == False:
                 read_data()
 
+            #Make this an option
+            #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method='auto')
+
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
-   
+
             self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
-                                               ppsd_length=self.ppsd_length.get(), 
-                                               overlap=self.overlap.get(), 
-                                               period_step_octaves=self.perStepOct.get(), 
-                                               remove_outliers=self.remove_outliers.get(), 
-                                               outlier_std=self.outlier_std.get(),
-                                               skip_on_gaps=self.skip_on_gaps.get(),
-                                               db_bins=self.db_bins,
-                                               period_limits=self.period_limits,
-                                               period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
-                                               special_handling=special_handling
+                                                remove_outliers=self.remove_outliers.get(), 
+                                                outlier_std=self.outlier_std.get(),
+                                                
+                                                ppsd_length=self.ppsd_length.get(), 
+                                                overlap=self.overlap.get(), 
+                                                period_step_octaves=self.perStepOct.get(), 
+                                                skip_on_gaps=self.skip_on_gaps.get(),
+                                                db_bins=self.db_bins,
+                                                period_limits=self.period_limits,
+                                                period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
+                                                special_handling=special_handling, verbose=True
                                                )
             
+
             self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
                                                    f_smooth_width=self.fSmoothWidth.get(), 
-                                                   resample=self.hvresample_int, 
-                                                   remove_outlier_curves=self.outlierRembool.get(), 
+                                                   resample=self.hvresample_int,
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
-                                                  peak_water_level=self.peak_water_level)
+                                                  peak_freq_range=[self.hvsrBand_min.get(), self.hvsrBand_max.get()])
 
+            print(type(self.hvsr_results))
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
                 #self.results_siteSelectFrame.grid_forget()
@@ -1418,7 +1458,10 @@ class SPRIT_App:
                     if i==0:
                         self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type='matplotlib')
                         self.fig_noise.canvas.draw()
-            
+
+                if batch_data is None:
+                    hvsr_data = hvsr_data['SITENAME']
+
                 return hvsr_data
             
             self.fig_noise.canvas.draw()
@@ -2527,6 +2570,7 @@ class SPRIT_App:
 
         # RESULTS TAB
         self.results_tab = ttk.Frame(self.tab_control)
+        self.hvsr_results = {'site':''}#Just initialize for now
 
         # Create the Batch Site selection LabelFrame
         self.results_siteSelectFrame = ttk.LabelFrame(self.results_tab, text="HVSR Results")
@@ -2538,9 +2582,13 @@ class SPRIT_App:
                 report_results(self.hvsr_results[sitename])
             except:
                 warnings.warn(f"Site {sitename} does not exist", UserWarning)
-            
-        self.site_options = ['']
-        self.selectedSite = tk.StringVar(value=self.site_options[0])
+        
+        if isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
+            sites = self.hvsr_results.sites
+        else:
+            sites = [self.hvsr_results['site']]
+        self.site_options = sites
+        self.selectedSite = tk.StringVar(value=sites[0])
         self.site_dropdown = ttk.Combobox(self.results_siteSelectFrame, textvariable=self.selectedSite, values=self.site_options, validate='focusout', validatecommand=on_site_select)
         self.site_dropdown.config(width=30)
         self.results_siteSelectLabel.grid(row=0, column=0, columnspan=1, sticky='ew')

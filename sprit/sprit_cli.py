@@ -12,7 +12,7 @@ import inspect
 try:
     import sprit  # When distributed
 except:
-    #import sprit_hvsr as sprit #When testing
+    import sprit_hvsr as sprit #When testing
     pass
 
 def get_param_docstring(func, param_name):
@@ -87,8 +87,19 @@ def main():
                 arg_value = arg_value.split(',')
         kwargs[arg_name] = arg_value
 
-    for key, value in kwargs.items():
-        print(key, value)
+    if not kwargs['verbose']:
+        print("Running sprit.run() with the following arguments (use --verbose for more information):")
+        print(f"sprit.run(", end='')
+        for key, value in kwargs.items():
+            if 'kwargs' in str(key):
+                pass
+            else:
+                if type(value) is str:
+                    print(f"{key}='{value}'",end=', ')
+                else:
+                    print(f"{key}={value}",end=', ')
+        print('**ppsd_kwargs, **kwargs', end='')
+        print(')')
 
     #print(kwargs['kwargs'])
     # Call the sprit.run function with the generated kwargs
@@ -96,4 +107,3 @@ def main():
     
 if __name__ == '__main__':
     main()
-
