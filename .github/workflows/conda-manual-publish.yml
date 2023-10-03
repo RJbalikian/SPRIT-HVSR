@@ -16,8 +16,8 @@ jobs:
       - name: Create Conda Env. from environment file
         uses: $CONDA/bin/conda env update --file conda/environment.yml --name base
 
-      - name: Activate conda environment
-        run: conda activate sprit-env
+      #- name: Activate conda environment
+      #  run: conda activate sprit-env
 
       - name: Install Conda-Forge Client
         run: conda install -c conda-forge conda-forge-ci-setup -y
