@@ -169,6 +169,10 @@ for cFile in confFilePaths:
     newVerText = r'version: '+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
+    verText = r'git_tag:\s+\d+\.\d+\.\d+[^\n]*'
+    newVerText = r'git_tag: '+release_version
+    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+
 
     with open(cFile.as_posix(), 'w') as f:
         f.write(cFileText)
