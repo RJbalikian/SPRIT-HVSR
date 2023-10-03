@@ -38,10 +38,8 @@ jobs:
         pytest
         
     - name: Create Conda Env. from environment.yml file
-      uses: $CONDA/bin/conda env update --file "environment.yml" --name base
-        with:
-          subDir: 'conda'
-          
+      run: $CONDA/bin/conda env update --file="//home/runner/work/SPRIT-HVSR/conda/environment.yml" --name base
+            
     - name: Install Conda-Forge Client
       run: conda install -c conda-forge conda-forge-ci-setup -y
 
