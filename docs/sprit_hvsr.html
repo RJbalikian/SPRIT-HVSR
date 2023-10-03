@@ -46,7 +46,7 @@ import pathlib
 import pickle
 import pkg_resources
 import tempfile
-import textwrap
+import traceback
 import warnings
 import xml.etree.ElementTree as ET
 import sys
@@ -56,6 +56,7 @@ from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
+import obspy
 from obspy.signal import PPSD
 import pandas as pd
 from pyproj import CRS, Transformer
@@ -365,10 +366,17 @@ def gui():
         gui_root.destroy()
 
     if sys.platform == &#39;linux&#39;:
-        warnings.Warn(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
+        if not pathlib.Path(&#34;/usr/share/doc/python3-tk&#34;).exists():
+            warnings.warn(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
+
     gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
-    gui_root.iconbitmap(icon_path)
+    try:
+        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))
+        gui_root.iconphoto(False, tk.PhotoImage(file=icon_path))
+        #gui_root.iconbitmap(icon_path)
+    except Exception as e:
+        print(e)
+        print(&#39;icon not loaded&#39;)
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -432,7 +440,7 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
         params = {&#39;ProcessingStatus&#39;:{&#39;InputStatus&#39;:False, &#39;OverallStatus&#39;:False}}
         params.update(input_params_kwargs)
         params = sprit_utils.make_it_classy(params)
-    
+
     #Fetch Data
     try:
         fetch_data_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
@@ -496,7 +504,18 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in process_hvsr.__code__.co_varnames}
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
-    except:
+    except Exception as e:
+        if verbose:
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+            error_message = f&#34;{e} ({errLineNo})&#34;
+            print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+            print(lineno, filename, f)
+
         hvsr_results = ppsd_data
         if isinstance(hvsr_results, HVSRData):
             hvsr_results = {&#39;place_holder_sitename&#39;:hvsr_results}
@@ -882,8 +901,8 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
                     curr_data = fetch_data(params, source=&#39;file&#39;, #all the same as input, except just reading the one file using the source=&#39;file&#39;
                                 trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs), 
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath&#39;s stem as the site name
-            
             return HVSRBatch(obspyFiles)
+        
     elif source==&#39;file&#39; and str(params[&#39;datapath&#39;]).lower() not in sampleList:
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawStreams = []
@@ -1090,6 +1109,38 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
+    if &#39;clean_ends&#39; not in kwargs.keys():
+        clean_ends=True 
+    else:
+        clean_ends = kwargs[&#39;clean_ends&#39;]
+
+    if clean_ends:
+        maxStarttime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
+        minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) 
+
+        for tr in dataIN:
+            currStarttime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day, 
+                                         hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
+                                         second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond, tzinfo=datetime.timezone.utc)
+            if currStarttime &gt; maxStarttime:
+                maxStarttime = currStarttime
+
+            currEndtime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day, 
+                                         hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
+                                         second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond, tzinfo=datetime.timezone.utc)
+
+            if currEndtime &lt; minEndtime:
+                minEndtime = currEndtime
+
+
+        maxStarttime = obspy.UTCDateTime(maxStarttime)
+        minEndtime = obspy.UTCDateTime(minEndtime)
+        dataIN = dataIN.split()
+        for tr in dataIN:
+            tr.trim(starttime=maxStarttime, endtime=minEndtime)
+            pass
+        dataIN.merge()
+    
     params[&#39;batch&#39;] = False #Set False by default, will get corrected later in batch mode        
     params[&#39;input_stream&#39;] = dataIN
     params[&#39;stream&#39;] = dataIN.copy()
@@ -1113,7 +1164,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         Parameters
         ----------
         params : dict, HVSRData object, or HVSRBatch object
-            Dictionary containing all the parameters and other data of interest (stream and paz, for example)
+            Data object containing all the parameters and other data of interest (stream and paz, for example)
         remove_outliers : bool, default=True
             Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.
         outlier_std :  float, default=3
@@ -1257,15 +1308,15 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
                             if currTime in params[&#39;ppsds&#39;][&#39;N&#39;][m]:
                                 common_times.append(currTime)
 
-
                 cTimeIndList = []
                 for cTime in common_times:
                     ZArr = params[&#39;ppsds&#39;][&#39;Z&#39;][m]
                     EArr = params[&#39;ppsds&#39;][&#39;E&#39;][m]
                     NArr = params[&#39;ppsds&#39;][&#39;N&#39;][m]
-                    cTimeIndList.append([int(np.where(ZArr == cTime)[0]),
-                                        int(np.where(EArr == cTime)[0]),
-                                        int(np.where(NArr == cTime)[0])])
+
+                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                        int(np.where(EArr == cTime)[0][0]),
+                                        int(np.where(NArr == cTime)[0][0])])
                     
             #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
@@ -1330,9 +1381,9 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         
         hvsrDF[&#39;Use&#39;] = True
         for gap in params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
-            hvsrDF[&#39;Use&#39;] = ((gap[0] &lt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &gt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[0] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[0] &lt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;WindowEnd&#39;]))
+            hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
+                                (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
+                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
 
         hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
         params[&#39;hvsr_df&#39;] = hvsrDF
@@ -2356,12 +2407,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
         currTimesUsed={}
         hvsrDF = params[&#39;hvsr_df&#39;]
 
-
-        for k in ppsds:
+        for k in ppsds.keys():
             #input_ppsds = ppsds[k][&#39;psd_values&#39;] #original, not used anymore
+            input_ppsds = np.stack(hvsrDF[&#39;psd_values_&#39;+k].values)
+
             currPPSDs = hvsrDF[&#39;psd_values_&#39;+k][hvsrDF[&#39;Use&#39;]].values
-            input_ppsds = np.stack(currPPSDs)
+            used_ppsds = np.stack(currPPSDs)
             
+
             #if reasmpling has been selected
             if resample is True or type(resample) is int:
                 if resample is True:
@@ -2507,10 +2560,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
             avg_stdT= np.nanmean(stdT)
             bool_col=&#39;Use&#39;
             eval_col=&#39;HV_Curves&#39;
+    
+            testCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).gt((avg_stdT + (std_stdT * outlier_curve_std)))
+            low_std_val = avg_stdT - (std_stdT * outlier_curve_std)
+            hi_std_val = avg_stdT + (std_stdT * outlier_curve_std)
 
             #First, do pandas version of it
-            hvsr_out[&#39;hvsr_df&#39;][bool_col] = ((avg_stdT - (std_stdT * outlier_curve_std)) &lt; (hvsr_out[&#39;hvsr_df&#39;][hvsr_out[&#39;hvsr_df&#39;][bool_col]][eval_col].apply(np.nanstd))) &amp; \
-                            ((avg_stdT + (std_stdT * outlier_curve_std)) &gt; (hvsr_out[&#39;hvsr_df&#39;][hvsr_out[&#39;hvsr_df&#39;][bool_col]][eval_col].apply(np.nanstd)))
+            updateUseCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).between(low_std_val, hi_std_val, inclusive=&#39;both&#39;)
+            hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], bool_col] = updateUseCol
 
             #Find psds to get rid of based on standard deviation of each curve (i.e., how curvy is the curve)
             psds_to_rid = []
@@ -2543,7 +2600,6 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
                 tStepPFs.append(np.float32(hvsr_out[&#39;x_freqs&#39;][anyK][pInd]))
             tStepPFList.append(tStepPFs)
         hvsr_out[&#39;hvsr_df&#39;][&#39;CurvesPeakFreqs&#39;] = tStepPFList
-
 
         #Get peaks of main HV curve
         hvsr_out[&#39;hvsr_peak_indices&#39;] = __find_peaks(hvsr_out[&#39;hvsr_curve&#39;])
@@ -2731,10 +2787,10 @@ def remove_noise(hvsr_data, remove_method=&#39;auto&#39;, sat_percent=0.995, noi
             
             if trEndTime &lt; trStartTime and comp_end==comp_start:
                 gap = [trEndTime,trStartTime]
-
-                output[&#39;hvsr_df&#39;][&#39;Use&#39;] = ((gap[0] &lt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &gt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[0] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[0] &lt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;WindowEnd&#39;]))
+                hvsrDF= output[&#39;hvsr_df&#39;]
+                output[&#39;hvsr_df&#39;][&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
+                                (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
+                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
             
             trEndTime = trace.stats.endtime
         
@@ -3063,7 +3119,8 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
         params = generate_ppsds(**generate_ppsds_kwargs)
         if generate_ppsds_kwargs[&#39;verbose&#39;]:
             print(&#39;\t{} successfully completed generate_ppsds()&#39;.format(params[&#39;site&#39;]))
-    except:
+    except Exception as e:
+        print(e)
         warnings.warn(f&#34;Error in generate_ppsds({generate_ppsds_kwargs[&#39;params&#39;][&#39;site&#39;]}, **generate_ppsds_kwargs)&#34;, RuntimeWarning)
         params = generate_ppsds_kwargs[&#39;params&#39;]
         
@@ -4016,8 +4073,9 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
 
     if use_tkinter:
         try:
-            ax=self.ax_noise
-            fig=self.fig_noise
+            pass #Don&#39;t think this is being used anymore, defined in sprit_gui separately
+            #ax=ax_noise #self.ax_noise #?
+            #fig=fig_noise
         except:
             pass
 
@@ -4262,7 +4320,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
 
     if isinstance(input, (dict, HVSRData)):
         stream = input[&#39;stream&#39;].copy()
-    elif isinstance(input, (obpsy.core.Trace.trace, obpsy,core.stream.Stream)):
+    elif isinstance(input, (obspy.core.Trace.trace, obspy.core.stream.Stream)):
         stream = input.copy()
     else:
         pass #Warning?
@@ -4882,6 +4940,7 @@ def __gethvsrparams(hvsr_out):
 
 
     hvsr=hvsr_out[&#39;hvsr_curve&#39;]
+    hvsrDF = hvsr_out[&#39;hvsr_df&#39;]
     if hvsr_out[&#39;ind_hvsr_curves&#39;].shape[0] &gt; 0:
         #With arrays, original way of doing it
         hvsr_log_std = np.nanstd(np.log10(hvsr_out[&#39;ind_hvsr_curves&#39;]), axis=0)
@@ -4891,8 +4950,9 @@ def __gethvsrparams(hvsr_out):
         logStackedata = np.log10(stackedData).tolist()
         for i, r in enumerate(logStackedata):
             logStackedata[i] = np.array(r)
+
         hvsr_out[&#39;hvsr_df&#39;][&#39;HV_Curves_Log10&#39;] = logStackedata
-        hvsr_log_std = np.nanstd(np.stack(hvsr_out[&#39;hvsr_df&#39;][&#39;HV_Curves_Log10&#39;][hvsr_out[&#39;hvsr_df&#39;][&#39;Use&#39;]]), axis=0)
+        hvsr_log_std = np.nanstd(np.stack(hvsr_out[&#39;hvsr_df&#39;][&#39;HV_Curves_Log10&#39;][hvsrDF[&#39;Use&#39;]]), axis=0)
 
         #The componenets are already calculated, don&#39;t need to recalculate aren&#39;t calculated at the time-step level
         hvsrp = np.add(hvsr_out[&#39;hvsr_curve&#39;], hvsr_out[&#39;ind_hvsr_stdDev&#39;])
@@ -5944,13 +6004,15 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         point = list()
         for j in range(len(hvsrPeaks)):
             p = None
-            for k in range(len(hvsrPeaks[j])):
+            for k in range(len(hvsrPeaks.iloc[j])):
                 if p is None:
-                    p = hvsrPeaks[j][k]
+                    p = hvsrPeaks.iloc[j][k]
                 else:
                     #Find closest peak in current time to (current) main hvsr peak
-                    if abs(index - hvsrPeaks[j][k]) &lt; abs(index - p):
-                        p = hvsrPeaks[j][k]
+                    if abs(index - hvsrPeaks.iloc[j][k]) &lt; abs(index - p):
+                        p = hvsrPeaks.iloc[j][k]
+                        #p = hvsrPeaks[j][k]
+                        #print(p=p1, p, p1)
             if p is not None:
                 point.append(p)
         point.append(index)
@@ -6620,8 +6682,8 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
                     curr_data = fetch_data(params, source=&#39;file&#39;, #all the same as input, except just reading the one file using the source=&#39;file&#39;
                                 trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs), 
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath&#39;s stem as the site name
-            
             return HVSRBatch(obspyFiles)
+        
     elif source==&#39;file&#39; and str(params[&#39;datapath&#39;]).lower() not in sampleList:
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawStreams = []
@@ -6828,6 +6890,38 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
+    if &#39;clean_ends&#39; not in kwargs.keys():
+        clean_ends=True 
+    else:
+        clean_ends = kwargs[&#39;clean_ends&#39;]
+
+    if clean_ends:
+        maxStarttime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
+        minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) 
+
+        for tr in dataIN:
+            currStarttime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day, 
+                                         hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
+                                         second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond, tzinfo=datetime.timezone.utc)
+            if currStarttime &gt; maxStarttime:
+                maxStarttime = currStarttime
+
+            currEndtime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day, 
+                                         hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
+                                         second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond, tzinfo=datetime.timezone.utc)
+
+            if currEndtime &lt; minEndtime:
+                minEndtime = currEndtime
+
+
+        maxStarttime = obspy.UTCDateTime(maxStarttime)
+        minEndtime = obspy.UTCDateTime(minEndtime)
+        dataIN = dataIN.split()
+        for tr in dataIN:
+            tr.trim(starttime=maxStarttime, endtime=minEndtime)
+            pass
+        dataIN.merge()
+    
     params[&#39;batch&#39;] = False #Set False by default, will get corrected later in batch mode        
     params[&#39;input_stream&#39;] = dataIN
     params[&#39;stream&#39;] = dataIN.copy()
@@ -6852,7 +6946,7 @@ Info on PPSD creation here: <a href="https://docs.obspy.org/packages/autogen/obs
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>params</code></strong> :&ensp;<code>dict, <a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a> object,</code> or <code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a> object</code></dt>
-<dd>Dictionary containing all the parameters and other data of interest (stream and paz, for example)</dd>
+<dd>Data object containing all the parameters and other data of interest (stream and paz, for example)</dd>
 <dt><strong><code>remove_outliers</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.</dd>
 <dt><strong><code>outlier_std</code></strong> :&ensp;<code> float</code>, default=<code>3</code></dt>
@@ -6884,7 +6978,7 @@ If the following keywords are not specified, their defaults are amended in this 
         Parameters
         ----------
         params : dict, HVSRData object, or HVSRBatch object
-            Dictionary containing all the parameters and other data of interest (stream and paz, for example)
+            Data object containing all the parameters and other data of interest (stream and paz, for example)
         remove_outliers : bool, default=True
             Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.
         outlier_std :  float, default=3
@@ -7028,15 +7122,15 @@ If the following keywords are not specified, their defaults are amended in this 
                             if currTime in params[&#39;ppsds&#39;][&#39;N&#39;][m]:
                                 common_times.append(currTime)
 
-
                 cTimeIndList = []
                 for cTime in common_times:
                     ZArr = params[&#39;ppsds&#39;][&#39;Z&#39;][m]
                     EArr = params[&#39;ppsds&#39;][&#39;E&#39;][m]
                     NArr = params[&#39;ppsds&#39;][&#39;N&#39;][m]
-                    cTimeIndList.append([int(np.where(ZArr == cTime)[0]),
-                                        int(np.where(EArr == cTime)[0]),
-                                        int(np.where(NArr == cTime)[0])])
+
+                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                        int(np.where(EArr == cTime)[0][0]),
+                                        int(np.where(NArr == cTime)[0][0])])
                     
             #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
@@ -7101,9 +7195,9 @@ If the following keywords are not specified, their defaults are amended in this 
         
         hvsrDF[&#39;Use&#39;] = True
         for gap in params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
-            hvsrDF[&#39;Use&#39;] = ((gap[0] &lt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &gt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[0] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[0] &lt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;WindowEnd&#39;]))
+            hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
+                                (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
+                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
 
         hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
         params[&#39;hvsr_df&#39;] = hvsrDF
@@ -7585,10 +7679,17 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
         gui_root.destroy()
 
     if sys.platform == &#39;linux&#39;:
-        warnings.Warn(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
+        if not pathlib.Path(&#34;/usr/share/doc/python3-tk&#34;).exists():
+            warnings.warn(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
+
     gui_root = tk.Tk()
-    icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
-    gui_root.iconbitmap(icon_path)
+    try:
+        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))
+        gui_root.iconphoto(False, tk.PhotoImage(file=icon_path))
+        #gui_root.iconbitmap(icon_path)
+    except Exception as e:
+        print(e)
+        print(&#39;icon not loaded&#39;)
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -7639,7 +7740,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-03', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -8463,12 +8564,14 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         currTimesUsed={}
         hvsrDF = params[&#39;hvsr_df&#39;]
 
-
-        for k in ppsds:
+        for k in ppsds.keys():
             #input_ppsds = ppsds[k][&#39;psd_values&#39;] #original, not used anymore
+            input_ppsds = np.stack(hvsrDF[&#39;psd_values_&#39;+k].values)
+
             currPPSDs = hvsrDF[&#39;psd_values_&#39;+k][hvsrDF[&#39;Use&#39;]].values
-            input_ppsds = np.stack(currPPSDs)
+            used_ppsds = np.stack(currPPSDs)
             
+
             #if reasmpling has been selected
             if resample is True or type(resample) is int:
                 if resample is True:
@@ -8614,10 +8717,14 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
             avg_stdT= np.nanmean(stdT)
             bool_col=&#39;Use&#39;
             eval_col=&#39;HV_Curves&#39;
+    
+            testCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).gt((avg_stdT + (std_stdT * outlier_curve_std)))
+            low_std_val = avg_stdT - (std_stdT * outlier_curve_std)
+            hi_std_val = avg_stdT + (std_stdT * outlier_curve_std)
 
             #First, do pandas version of it
-            hvsr_out[&#39;hvsr_df&#39;][bool_col] = ((avg_stdT - (std_stdT * outlier_curve_std)) &lt; (hvsr_out[&#39;hvsr_df&#39;][hvsr_out[&#39;hvsr_df&#39;][bool_col]][eval_col].apply(np.nanstd))) &amp; \
-                            ((avg_stdT + (std_stdT * outlier_curve_std)) &gt; (hvsr_out[&#39;hvsr_df&#39;][hvsr_out[&#39;hvsr_df&#39;][bool_col]][eval_col].apply(np.nanstd)))
+            updateUseCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).between(low_std_val, hi_std_val, inclusive=&#39;both&#39;)
+            hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], bool_col] = updateUseCol
 
             #Find psds to get rid of based on standard deviation of each curve (i.e., how curvy is the curve)
             psds_to_rid = []
@@ -8650,7 +8757,6 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 tStepPFs.append(np.float32(hvsr_out[&#39;x_freqs&#39;][anyK][pInd]))
             tStepPFList.append(tStepPFs)
         hvsr_out[&#39;hvsr_df&#39;][&#39;CurvesPeakFreqs&#39;] = tStepPFList
-
 
         #Get peaks of main HV curve
         hvsr_out[&#39;hvsr_peak_indices&#39;] = __find_peaks(hvsr_out[&#39;hvsr_curve&#39;])
@@ -8887,10 +8993,10 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
             
             if trEndTime &lt; trStartTime and comp_end==comp_start:
                 gap = [trEndTime,trStartTime]
-
-                output[&#39;hvsr_df&#39;][&#39;Use&#39;] = ((gap[0] &lt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &gt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[0] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[0] &lt; hvsrDF[&#39;WindowEnd&#39;])) | \
-                                ((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;WindowEnd&#39;]))
+                hvsrDF= output[&#39;hvsr_df&#39;]
+                output[&#39;hvsr_df&#39;][&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
+                                (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
+                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
             
             trEndTime = trace.stats.endtime
         
@@ -9113,7 +9219,7 @@ For sample data, The following can be specified as the datapath parameter:
         params = {&#39;ProcessingStatus&#39;:{&#39;InputStatus&#39;:False, &#39;OverallStatus&#39;:False}}
         params.update(input_params_kwargs)
         params = sprit_utils.make_it_classy(params)
-    
+
     #Fetch Data
     try:
         fetch_data_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in fetch_data.__code__.co_varnames}
@@ -9177,7 +9283,18 @@ For sample data, The following can be specified as the datapath parameter:
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in process_hvsr.__code__.co_varnames}
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
-    except:
+    except Exception as e:
+        if verbose:
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+            error_message = f&#34;{e} ({errLineNo})&#34;
+            print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+            print(lineno, filename, f)
+
         hvsr_results = ppsd_data
         if isinstance(hvsr_results, HVSRData):
             hvsr_results = {&#39;place_holder_sitename&#39;:hvsr_results}

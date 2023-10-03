@@ -8,7 +8,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.37'
+release_version= '0.1.38'
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
@@ -22,7 +22,7 @@ resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 
 # Set the package name, subdirectory, and output directory
-subdir = '.\sprit'
+subdir = './sprit'
 output_dir = 'docs'
 
 venvPath = pathlib.Path(sys.executable).parent.parent
@@ -52,8 +52,9 @@ else:
             break
 
 src_path = pathlib.Path(subdir)
-trg_path = src_path.parent # this ends up being main repo folder, usually
-
+trg_path = src_path.parent.joinpath(output_dir) # this ends up being main repo folder, usually
+print(src_path.absolute())
+print(trg_path.absolute())
 #Move items back into the main docs folder
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
 for t in trg_path.iterdir():
@@ -88,7 +89,7 @@ for t in trg_path.iterdir():
                 file = file.rename(destFilePath)
                 keepList.append(destFilePath.name)
                 if file.name=='index.html':
-                    mainhtmlFPath = file.parent.parent.joinpath('main.html')
+                    mainhtmlFPath = file.parent.joinpath('main.html')
                     if mainhtmlFPath.is_file():
                         os.remove(mainhtmlFPath)
                     file.rename(mainhtmlFPath)      
@@ -169,7 +170,7 @@ for cFile in confFilePaths:
     newVerText = r'version: '+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
-    verText = r'git_tag:\s+\d+\.\d+\.\d+[^\n]*'
+    verText = r'git_tag:\s+v+\d+\.\d+\.\d+[^\n]*'
     newVerText = r'git_tag: v'+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 

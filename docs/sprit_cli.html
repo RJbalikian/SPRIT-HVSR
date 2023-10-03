@@ -44,7 +44,7 @@ import inspect
 try:
     import sprit  # When distributed
 except:
-    #import sprit_hvsr as sprit #When testing
+    import sprit_hvsr as sprit #When testing
     pass
 
 def get_param_docstring(func, param_name):
@@ -119,8 +119,19 @@ def main():
                 arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
 
-    for key, value in kwargs.items():
-        print(key, value)
+    if not kwargs[&#39;verbose&#39;]:
+        print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
+        print(f&#34;sprit.run(&#34;, end=&#39;&#39;)
+        for key, value in kwargs.items():
+            if &#39;kwargs&#39; in str(key):
+                pass
+            else:
+                if type(value) is str:
+                    print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
+                else:
+                    print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
+        print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
+        print(&#39;)&#39;)
 
     #print(kwargs[&#39;kwargs&#39;])
     # Call the sprit.run function with the generated kwargs
@@ -228,8 +239,19 @@ if __name__ == &#39;__main__&#39;:
                 arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
 
-    for key, value in kwargs.items():
-        print(key, value)
+    if not kwargs[&#39;verbose&#39;]:
+        print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
+        print(f&#34;sprit.run(&#34;, end=&#39;&#39;)
+        for key, value in kwargs.items():
+            if &#39;kwargs&#39; in str(key):
+                pass
+            else:
+                if type(value) is str:
+                    print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
+                else:
+                    print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
+        print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
+        print(&#39;)&#39;)
 
     #print(kwargs[&#39;kwargs&#39;])
     # Call the sprit.run function with the generated kwargs
