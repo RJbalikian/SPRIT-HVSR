@@ -10,11 +10,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         
-      - name: Set up Conda
-        uses: conda-incubator/setup-miniconda@v2
+      #- name: Set up Conda
+      #  uses: conda-incubator/setup-miniconda@v2
 
       - name: Create Conda Env. from environment file
-        uses: conda env create --file=conda/environments.yml
+        uses: $CONDA/bin/conda env update --file conda/environment.yml --name base
 
       - name: Activate conda environment
         run: conda activate sprit-env
