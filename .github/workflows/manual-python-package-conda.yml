@@ -39,8 +39,8 @@ jobs:
         
     - name: Create Conda Env. from environment.yml file
       run: $CONDA/bin/conda env update --file "environment.yml" --name base
-        with: 
-          subdir 'conda'
+        with:
+          subDir: 'conda'
           
     - name: Install Conda-Forge Client
       run: conda install -c conda-forge conda-forge-ci-setup -y
