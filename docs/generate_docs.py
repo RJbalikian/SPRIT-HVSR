@@ -170,7 +170,7 @@ for cFile in confFilePaths:
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
     verText = r'git_tag:\s+\d+\.\d+\.\d+[^\n]*'
-    newVerText = r'git_tag: '+release_version
+    newVerText = r'git_tag: v'+release_version
     cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
 
 
