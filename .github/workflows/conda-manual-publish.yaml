@@ -1,11 +1,8 @@
-name: Publish to Conda-Forge
+name: Manually Publish to Conda-Forge
 
 on:
-  release:
-    types:
-      - created
-      - edited
-
+  workflow_dispatch
+  
 jobs:
   publish:
     runs-on: ubuntu-latest
