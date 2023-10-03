@@ -13,7 +13,7 @@ jobs:
       #- name: Set up Conda
       #  uses: conda-incubator/setup-miniconda@v2
 
-      - name: Create Conda Env. from environment file
+      - name: Create Conda Env. from environment.yml file
         uses: $CONDA/bin/conda env update --file conda/environment.yml --name base
 
       #- name: Activate conda environment
