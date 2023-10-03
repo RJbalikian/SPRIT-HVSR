@@ -1,4 +1,4 @@
-name: Publish to Conda-Forge
+name: Manually Publish to Conda-Forge
 
 on:
   workflow_dispatch:
