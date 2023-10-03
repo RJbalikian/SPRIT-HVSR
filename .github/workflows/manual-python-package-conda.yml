@@ -38,7 +38,7 @@ jobs:
         pytest
         
     - name: Create Conda Env. from environment.yml file
-      run: $CONDA/bin/conda env update --file "environment.yml" --name base
+      uses: $CONDA/bin/conda env update --file "environment.yml" --name base
         with:
           subDir: 'conda'
           
