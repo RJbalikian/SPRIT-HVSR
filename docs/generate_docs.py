@@ -23,19 +23,18 @@ pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 
 # Set the package name, subdirectory, and output directory
 subdir = './sprit'
-output_dir = 'docs'
+output_dir = docsDir
 
 venvPath = pathlib.Path(sys.executable).parent.parent
 
 os.environ['PYTHONPATH'] = '..' + os.pathsep + os.environ.get('PYTHONPATH', '')
 
-print(output_dir)
 # Run the pdoc command
 if rtd_theme:
     themePath = venvPath.as_posix()+'/lib/site-packages/sphinx_rtd_theme/'
-    subprocess.run(['pdoc', '--html', '-o', output_dir, '--force', '--template-dir', themePath, subdir])
+    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', '--template-dir', themePath, str(spritDir)])
 else:
-    subprocess.run(['pdoc', '--html', '-o', output_dir, '--force', subdir ])
+    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', str(spritDir)])
     
 #Set up a working directory for the files generated from pdoc
 workDir = pathlib.Path(os.getcwd())
@@ -52,7 +51,7 @@ else:
             break
 
 src_path = pathlib.Path(subdir)
-trg_path = src_path.parent.joinpath(output_dir) # this ends up being main repo folder, usually
+trg_path = docsDir#src_path.parent.joinpath(output_dir) # this ends up being main repo folder, usually
 print(src_path.absolute())
 print(trg_path.absolute())
 #Move items back into the main docs folder

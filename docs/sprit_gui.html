@@ -310,6 +310,7 @@ class SPRIT_App:
             self.zerosLabelE_settings.configure(text=hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             return
         
+        self.data_read = False #Initialize
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
@@ -472,7 +473,7 @@ class SPRIT_App:
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;]) &gt;= 5
             if peakPass:
-                self.totalPeakResult.configure(text=&#39;✔&#39;, font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
+                self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
             else:
                 self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
 
@@ -507,7 +508,7 @@ class SPRIT_App:
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
                                                 period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
-                                                special_handling=special_handling, verbose=True
+                                                special_handling=special_handling#, verbose=True
                                                )
             
 
@@ -521,12 +522,11 @@ class SPRIT_App:
             
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
-                                                  peak_freq_range=[self.hvsrBand_min.get(), self.hvsrBand_max.get()])
+                                                  peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
 
-            print(type(self.hvsr_results))
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
-                #self.results_siteSelectFrame.grid_forget()
+                self.results_siteSelectFrame.grid_forget()
             elif isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
                 self.results_siteSelectFrame.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
                 report_results(self.hvsr_results[self.hvsr_results.sites[0]])
@@ -538,14 +538,15 @@ class SPRIT_App:
 
         
         def update_input_params_call():
-            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), 
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                            self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -567,6 +568,7 @@ class SPRIT_App:
                     self.batch_options_frame.grid_forget()
                 elif self.file_source.get() == &#39;batch&#39;:
                     self.batch_options_frame.grid(row=11, column=0, columnspan=7, sticky=&#39;ew&#39;)
+                    self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
                 else:
                     self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
                     self.batch_options_frame.grid_forget()
@@ -665,7 +667,6 @@ class SPRIT_App:
                         self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
                 
             update_input_params_call()
-
 
         buttonFrame = ttk.Frame(hvsrFrame)
         buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
@@ -966,13 +967,37 @@ class SPRIT_App:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
-        #BATCH Section
+        # Peak Freq Range Band
+        def on_peakFreqRange_update():
+            try:
+                float(self.peakFreqRange_min.get())
+                float(self.peakFreqRange_max.get())
+
+                peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                update_check_peaks_call(self.checkPeaks_Call)
+                update_input_params_call()
+                return True
+            except ValueError:
+                return False      
         
+        ttk.Label(hvsrFrame,text=&#34;Peak Freq. Range&#34;).grid(row=9,column=3, sticky=&#39;e&#39;, padx=10, pady=10)
+        peakFreqRangeframe= ttk.Frame(hvsrFrame)
+        peakFreqRangeframe.grid(row=9, column=4,sticky=&#39;w&#39;)
+        self.peakFreqRange_min = tk.DoubleVar()
+        self.peakFreqRange_min.set(0.4)
+        peakFreqRange_min_entry = ttk.Entry(peakFreqRangeframe, width=9, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        peakFreqRange_min_entry.grid(row=0, column=0, sticky=&#39;ew&#39;, padx=(0,2))
+
+        self.peakFreqRange_max = tk.DoubleVar()
+        self.peakFreqRange_max.set(40)
+        peakFreqRange_max_entry = ttk.Entry(peakFreqRangeframe, width=9,textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        peakFreqRange_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
+
+        #BATCH Section
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
             return
-
         
         def on_batch_type_select():
             update_batch_data_read_call()
@@ -1095,14 +1120,15 @@ class SPRIT_App:
 
         #self.starttime, self.endtime = get_times()
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), 
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                            self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
         self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
 
         #fetch_data() call
@@ -1400,9 +1426,14 @@ class SPRIT_App:
 
             if event.button is MouseButton.LEFT:            
                 self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
-
         
-        def plot_noise_windows(hvsr_data, initial_setup=False):
+        #if &#39;hvsr_data&#39; not in dir(self):
+        #    self.hvsr_data = {&#39;placeholder&#39;:None}
+            
+        def plot_noise_windows(hvsr_data={&#39;placeholder&#39;:None}, initial_setup=False):
+            if &#39;hvsr_data&#39; in dir(self):
+                hvsr_data = self.hvsr_data
+                
             if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
                 batch_data = hvsr_data.copy()
                 hvsr_data = hvsr_data[list(hvsr_data.keys())[0]]
@@ -1437,6 +1468,7 @@ class SPRIT_App:
                     [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
             self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
 
+
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
@@ -1463,26 +1495,23 @@ class SPRIT_App:
 
                 for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
-                    hv_data[&#39;stream_edited&#39;] = hv_data[&#39;stream&#39;].copy()
+                    hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
                     
                     #Set initial input
-                    input = hv_data[&#39;stream&#39;]
+                    input = hv_data#[&#39;input_stream&#39;]
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
                     if self.do_pctThresh.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get())
 
                     if self.do_noiseWin.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                 
                     if self.do_warmup.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
                         self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -1496,7 +1525,7 @@ class SPRIT_App:
             self.fig_noise.canvas.draw()
             return
 
-        plot_noise_windows(None, initial_setup=True)
+        plot_noise_windows({&#39;placeholder&#39;:None}, initial_setup=True)
         self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
 
         #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
@@ -1518,7 +1547,7 @@ class SPRIT_App:
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
         self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
-
+        
         self.noise_windows_line_artists = []
         self.noise_windows_window_artists = []
 
@@ -1529,11 +1558,12 @@ class SPRIT_App:
 
         runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
 
-        #Plot adjustment Frame
-        pltAdjustFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Adjust Plot&#39;)
-        pltAdjustFrame.pack(fill=&#39;both&#39;, side=&#39;right&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
+        #remove_noise Frame
+        removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-        ttk.Label(master=pltAdjustFrame, text=&#39;Adjustment Parameters (in progress)&#39;).grid(row=0, column=0)
+        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+        self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
+        removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
         noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
@@ -1544,7 +1574,6 @@ class SPRIT_App:
         self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
         manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
         manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-        
         
         def remove_windows_manually():
             #Placeholderfunction
@@ -1600,12 +1629,6 @@ class SPRIT_App:
         pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
-
-        ttk.Label(master=pctThresFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5, sticky=&#39;e&#39;)
-        self.win_size_sat = tk.DoubleVar()
-        self.win_size_sat.set(0)
-        win_size_Entry = ttk.Entry(master=pctThresFrame, textvariable=self.win_size_sat, width=10) # create the Entry widget
-        win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
         #Options for noisy window
         noisyWindowFrame = ttk.LabelFrame(noiseFrame, text=&#39;Noisy Windows&#39;)
@@ -1695,6 +1718,35 @@ class SPRIT_App:
         self.do_auto= tk.BooleanVar()
         autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
         autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+
+
+        def update_remove_noise_call(remove_noise):
+            #Get method
+            remMethDict = {&#39;auto&#39;:False,
+                           &#39;stalta&#39;:False,
+                           &#39;sat_per&#39;:False,
+                           &#39;noise_per&#39;:False,
+                           &#39;warmcool&#39;:False,
+                           }
+            remMethList = []
+            for k, v in remMethDict.items():
+                if v:
+                    if k==&#39;auto&#39;:
+                        remMethList = [&#39;auto&#39;]
+                        break
+                    remMethList.append(k)
+            if len(remMethList)==1:
+                remMethList = remMethList[0]
+            
+            if len(remMethList)==0 or remMethList==&#39;auto&#39;:
+                remMethList = &#39;auto&#39;
+                self.do_auto().set(True)
+                set_auto()
+            
+            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+
+                                                                ))
+ 
 
         #Export noise windows
         ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -2245,35 +2297,10 @@ class SPRIT_App:
         resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
         resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
         ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
-                        
-        #remove_outlier_curves=True, 
-        outlierRemLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;remove_outlier_curves=True&#34;, width=30)
-        outlierRemLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-
-        
-        def on_remove_outlier_curves():
-            try:
-                bool(self.outlierRembool.get())
-                outlierRemLabel.configure(text=&#39;remove_outlier_curves={}&#39;.format(self.outlierRembool.get()))
-                #if self.outlierRembool.get():
-                #    outlierRemStDev.state([&#39;active&#39;])
-                #else:
-                #    outlierRemStDev.state([&#39;disabled&#39;])
-
-                update_procHVSR_call(self.procHVSR_call)
-                return True
-            except ValueError:
-                return False
-            
-        self.outlierRembool = tk.BooleanVar()
-        self.outlierRembool.set(True)
-        ttk.Label(master=hvsrSettingsFrame, text=&#39;Remove Outlier H/V Curves [bool]&#39;).grid(row=5, column=0, padx=(5,0), sticky=&#39;w&#39;)
-        resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.outlierRembool, command=on_remove_outlier_curves) # create the Checkbutton widget
-        resampleCurveBool.grid(row=5, column=1, sticky=&#39;w&#39;)
 
         #outlier_curve_std=1.75
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
-        outlierValLabel.grid(row=6, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
+        outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
         
         def on_outlier_std():
@@ -2306,54 +2333,44 @@ class SPRIT_App:
         hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_settingsEntry.grid(row=8,column=2, sticky=&#39;ew&#39;)
    
-        #peak_water_level=1.8
-        pwaterLevLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_water_level=1.8&#34;, width=30)
-        pwaterLevLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)        
+        #peak_freq_range=[0.4, 40]
+        peakFreqRangeLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_freq_range=[0.4,40]&#34;, width=30)
+        peakFreqRangeLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(20,6), padx=5)
 
-        
-        def on_pwaterlevel_update():
-            try:
-                float(self.peak_water_level.get())
+        ttk.Label(hvsrSettingsFrame,text=&#34;Peak Frequency Range [Hz]&#34;).grid(row=9,column=0, sticky=&#39;w&#39;, padx=(5,0))
 
-                pwaterLevLabel.configure(text=&#39;peak_water_level={}&#39;.format(self.peak_water_level.get()))                
-                update_check_peaks_call(self.checkPeaks_Call)
-                return True
-            except ValueError:
-                return False      
-                
-        ttk.Label(hvsrSettingsFrame,text=&#34;Peak Water Level&#34;).grid(row=9, column=0, sticky=&#39;w&#39;, padx=5)
+        hvsr_band_min_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        hvsr_band_min_settingsEntry.grid(row=9,column=1, sticky=&#39;ew&#39;)
 
-        self.peak_water_level = tk.DoubleVar()
-        self.peak_water_level.set(1.8)
-        pWaterLevelEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peak_water_level, validate=&#39;focusout&#39;, validatecommand=on_pwaterlevel_update)
-        pWaterLevelEntry.grid(row=9, column=1, sticky=&#39;w&#39;)
-
+        hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        hvsr_band_max_settingsEntry.grid(row=9,column=2, sticky=&#39;ew&#39;)
+       
         #Process HVSR Function Call
         hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
         
-        self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+        self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                          outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         
         def update_procHVSR_call(procHVSR_call):
             procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                          outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                          outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
         checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
         self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
-                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
         self.checkPeaks_Call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         #check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)
         
         def update_check_peaks_call(checkPeaks_Call):
             checkPeaks_Call.configure(text=&#39;check_peaks({}, {}, {})&#39;
-                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
 
 
         #Run button frame
@@ -2380,7 +2397,7 @@ class SPRIT_App:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, plot_type={}, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -2498,20 +2515,27 @@ class SPRIT_App:
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=16, columnspan=5, sticky=&#39;ew&#39;)
 
+        ttk.Label(plot_options_frame, text=&#39;Show Legend:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5)
+
+        self.show_legend = tk.BooleanVar()
+        self.show_legend.set(False)
+        ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_legend, command=update_hvplot_call).grid(row=17, column=2, sticky=&#34;ew&#34;, padx=50)
+
+
         #Specify X-Type
-        ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+        ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
         self.x_type = tk.StringVar()
         self.x_type.set(&#39;freq&#39;)
-        ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=17, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
-        ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=17, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+        ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=18, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+        ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=18, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
 
         #kwargs
-        ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+        ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=19, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
         self.plot_kwargs = tk.StringVar()
         self.plot_kwargs.set(&#34;cmap=&#39;turbo&#39;&#34;)
-        ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=18, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
+        ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=19, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
 
         plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
@@ -2569,7 +2593,7 @@ class SPRIT_App:
         
 
         # Add a Label widget to the plot_hvsr Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -2579,7 +2603,7 @@ class SPRIT_App:
         
         def update_results_plot():
             self.tab_control.select(self.results_tab)
-            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, show_legend=self.show_legend.get(), use_subplots=True, clear_fig=False)
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
@@ -2610,8 +2634,11 @@ class SPRIT_App:
             try: 
                 report_results(self.hvsr_results[sitename])
             except:
-                warnings.warn(f&#34;Site {sitename} does not exist&#34;, UserWarning)
-        
+                if sitename==&#39;&#39;:
+                    pass
+                else:
+                    messagebox.showwarning(title=&#39;WARNING&#39;, message=f&#34;Site {sitename} does not exist&#34;)
+                                                   
         if isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
             sites = self.hvsr_results.sites
         else:
@@ -2858,11 +2885,14 @@ def on_closing():
 if __name__ == &#34;__main__&#34;:
     root = tk.Tk()
     try:
-        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))        
-        #icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;))
-        root.iconphoto(False, tk.PhotoImage(file=icon_path))
+        try:
+            icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;)) 
+            root.iconbitmap(icon_path)
+        except:
+            icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))
+            root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
-        print(&#34;ICON NOT LOADED&#34;,e)
+        print(&#34;ICON NOT LOADED, still opening GUI&#34;)
 
     app = SPRIT_App(root)
 
@@ -3165,6 +3195,7 @@ if __name__ == &#34;__main__&#34;:
             self.zerosLabelE_settings.configure(text=hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
             return
         
+        self.data_read = False #Initialize
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
@@ -3327,7 +3358,7 @@ if __name__ == &#34;__main__&#34;:
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;]) &gt;= 5
             if peakPass:
-                self.totalPeakResult.configure(text=&#39;✔&#39;, font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
+                self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
             else:
                 self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
 
@@ -3362,7 +3393,7 @@ if __name__ == &#34;__main__&#34;:
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
                                                 period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
-                                                special_handling=special_handling, verbose=True
+                                                special_handling=special_handling#, verbose=True
                                                )
             
 
@@ -3376,12 +3407,11 @@ if __name__ == &#34;__main__&#34;:
             
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
-                                                  peak_freq_range=[self.hvsrBand_min.get(), self.hvsrBand_max.get()])
+                                                  peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
 
-            print(type(self.hvsr_results))
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
-                #self.results_siteSelectFrame.grid_forget()
+                self.results_siteSelectFrame.grid_forget()
             elif isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
                 self.results_siteSelectFrame.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
                 report_results(self.hvsr_results[self.hvsr_results.sites[0]])
@@ -3393,14 +3423,15 @@ if __name__ == &#34;__main__&#34;:
 
         
         def update_input_params_call():
-            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+            self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), 
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                            self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -3422,6 +3453,7 @@ if __name__ == &#34;__main__&#34;:
                     self.batch_options_frame.grid_forget()
                 elif self.file_source.get() == &#39;batch&#39;:
                     self.batch_options_frame.grid(row=11, column=0, columnspan=7, sticky=&#39;ew&#39;)
+                    self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
                 else:
                     self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
                     self.batch_options_frame.grid_forget()
@@ -3520,7 +3552,6 @@ if __name__ == &#34;__main__&#34;:
                         self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
                 
             update_input_params_call()
-
 
         buttonFrame = ttk.Frame(hvsrFrame)
         buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
@@ -3821,13 +3852,37 @@ if __name__ == &#34;__main__&#34;:
         hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
-        #BATCH Section
+        # Peak Freq Range Band
+        def on_peakFreqRange_update():
+            try:
+                float(self.peakFreqRange_min.get())
+                float(self.peakFreqRange_max.get())
+
+                peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                update_check_peaks_call(self.checkPeaks_Call)
+                update_input_params_call()
+                return True
+            except ValueError:
+                return False      
         
+        ttk.Label(hvsrFrame,text=&#34;Peak Freq. Range&#34;).grid(row=9,column=3, sticky=&#39;e&#39;, padx=10, pady=10)
+        peakFreqRangeframe= ttk.Frame(hvsrFrame)
+        peakFreqRangeframe.grid(row=9, column=4,sticky=&#39;w&#39;)
+        self.peakFreqRange_min = tk.DoubleVar()
+        self.peakFreqRange_min.set(0.4)
+        peakFreqRange_min_entry = ttk.Entry(peakFreqRangeframe, width=9, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        peakFreqRange_min_entry.grid(row=0, column=0, sticky=&#39;ew&#39;, padx=(0,2))
+
+        self.peakFreqRange_max = tk.DoubleVar()
+        self.peakFreqRange_max.set(40)
+        peakFreqRange_max_entry = ttk.Entry(peakFreqRangeframe, width=9,textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        peakFreqRange_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
+
+        #BATCH Section
         def update_batch_data_read_call():
             self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                         self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
             return
-
         
         def on_batch_type_select():
             update_batch_data_read_call()
@@ -3950,14 +4005,15 @@ if __name__ == &#34;__main__&#34;:
 
         #self.starttime, self.endtime = get_times()
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                             self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                             self.x.get(), self.y.get(), self.z.get(), 
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                            self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                            self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                            self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
         self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
 
         #fetch_data() call
@@ -4255,9 +4311,14 @@ if __name__ == &#34;__main__&#34;:
 
             if event.button is MouseButton.LEFT:            
                 self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
-
         
-        def plot_noise_windows(hvsr_data, initial_setup=False):
+        #if &#39;hvsr_data&#39; not in dir(self):
+        #    self.hvsr_data = {&#39;placeholder&#39;:None}
+            
+        def plot_noise_windows(hvsr_data={&#39;placeholder&#39;:None}, initial_setup=False):
+            if &#39;hvsr_data&#39; in dir(self):
+                hvsr_data = self.hvsr_data
+                
             if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
                 batch_data = hvsr_data.copy()
                 hvsr_data = hvsr_data[list(hvsr_data.keys())[0]]
@@ -4292,6 +4353,7 @@ if __name__ == &#34;__main__&#34;:
                     [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
             self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
 
+
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
@@ -4318,26 +4380,23 @@ if __name__ == &#34;__main__&#34;:
 
                 for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
-                    hv_data[&#39;stream_edited&#39;] = hv_data[&#39;stream&#39;].copy()
+                    hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
                     
                     #Set initial input
-                    input = hv_data[&#39;stream&#39;]
+                    input = hv_data#[&#39;input_stream&#39;]
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
                     if self.do_pctThresh.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get())
 
                     if self.do_noiseWin.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                        input = hv_data[&#39;stream_edited&#39;]
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
                 
                     if self.do_warmup.get():
-                        hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                        hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                     if i==0:
                         self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -4351,7 +4410,7 @@ if __name__ == &#34;__main__&#34;:
             self.fig_noise.canvas.draw()
             return
 
-        plot_noise_windows(None, initial_setup=True)
+        plot_noise_windows({&#39;placeholder&#39;:None}, initial_setup=True)
         self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
 
         #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
@@ -4373,7 +4432,7 @@ if __name__ == &#34;__main__&#34;:
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
         self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
-
+        
         self.noise_windows_line_artists = []
         self.noise_windows_window_artists = []
 
@@ -4384,11 +4443,12 @@ if __name__ == &#34;__main__&#34;:
 
         runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
 
-        #Plot adjustment Frame
-        pltAdjustFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Adjust Plot&#39;)
-        pltAdjustFrame.pack(fill=&#39;both&#39;, side=&#39;right&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
+        #remove_noise Frame
+        removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-        ttk.Label(master=pltAdjustFrame, text=&#39;Adjustment Parameters (in progress)&#39;).grid(row=0, column=0)
+        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+        self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
+        removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
         noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
@@ -4399,7 +4459,6 @@ if __name__ == &#34;__main__&#34;:
         self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
         manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
         manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-        
         
         def remove_windows_manually():
             #Placeholderfunction
@@ -4455,12 +4514,6 @@ if __name__ == &#34;__main__&#34;:
         pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
-
-        ttk.Label(master=pctThresFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5, sticky=&#39;e&#39;)
-        self.win_size_sat = tk.DoubleVar()
-        self.win_size_sat.set(0)
-        win_size_Entry = ttk.Entry(master=pctThresFrame, textvariable=self.win_size_sat, width=10) # create the Entry widget
-        win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
         #Options for noisy window
         noisyWindowFrame = ttk.LabelFrame(noiseFrame, text=&#39;Noisy Windows&#39;)
@@ -4550,6 +4603,35 @@ if __name__ == &#34;__main__&#34;:
         self.do_auto= tk.BooleanVar()
         autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
         autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+
+
+        def update_remove_noise_call(remove_noise):
+            #Get method
+            remMethDict = {&#39;auto&#39;:False,
+                           &#39;stalta&#39;:False,
+                           &#39;sat_per&#39;:False,
+                           &#39;noise_per&#39;:False,
+                           &#39;warmcool&#39;:False,
+                           }
+            remMethList = []
+            for k, v in remMethDict.items():
+                if v:
+                    if k==&#39;auto&#39;:
+                        remMethList = [&#39;auto&#39;]
+                        break
+                    remMethList.append(k)
+            if len(remMethList)==1:
+                remMethList = remMethList[0]
+            
+            if len(remMethList)==0 or remMethList==&#39;auto&#39;:
+                remMethList = &#39;auto&#39;
+                self.do_auto().set(True)
+                set_auto()
+            
+            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+
+                                                                ))
+ 
 
         #Export noise windows
         ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -5100,35 +5182,10 @@ if __name__ == &#34;__main__&#34;:
         resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
         resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
         ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
-                        
-        #remove_outlier_curves=True, 
-        outlierRemLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;remove_outlier_curves=True&#34;, width=30)
-        outlierRemLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-
-        
-        def on_remove_outlier_curves():
-            try:
-                bool(self.outlierRembool.get())
-                outlierRemLabel.configure(text=&#39;remove_outlier_curves={}&#39;.format(self.outlierRembool.get()))
-                #if self.outlierRembool.get():
-                #    outlierRemStDev.state([&#39;active&#39;])
-                #else:
-                #    outlierRemStDev.state([&#39;disabled&#39;])
-
-                update_procHVSR_call(self.procHVSR_call)
-                return True
-            except ValueError:
-                return False
-            
-        self.outlierRembool = tk.BooleanVar()
-        self.outlierRembool.set(True)
-        ttk.Label(master=hvsrSettingsFrame, text=&#39;Remove Outlier H/V Curves [bool]&#39;).grid(row=5, column=0, padx=(5,0), sticky=&#39;w&#39;)
-        resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.outlierRembool, command=on_remove_outlier_curves) # create the Checkbutton widget
-        resampleCurveBool.grid(row=5, column=1, sticky=&#39;w&#39;)
 
         #outlier_curve_std=1.75
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
-        outlierValLabel.grid(row=6, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
+        outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
         
         def on_outlier_std():
@@ -5161,54 +5218,44 @@ if __name__ == &#34;__main__&#34;:
         hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
         hvsr_band_max_settingsEntry.grid(row=8,column=2, sticky=&#39;ew&#39;)
    
-        #peak_water_level=1.8
-        pwaterLevLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_water_level=1.8&#34;, width=30)
-        pwaterLevLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)        
+        #peak_freq_range=[0.4, 40]
+        peakFreqRangeLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_freq_range=[0.4,40]&#34;, width=30)
+        peakFreqRangeLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(20,6), padx=5)
 
-        
-        def on_pwaterlevel_update():
-            try:
-                float(self.peak_water_level.get())
+        ttk.Label(hvsrSettingsFrame,text=&#34;Peak Frequency Range [Hz]&#34;).grid(row=9,column=0, sticky=&#39;w&#39;, padx=(5,0))
 
-                pwaterLevLabel.configure(text=&#39;peak_water_level={}&#39;.format(self.peak_water_level.get()))                
-                update_check_peaks_call(self.checkPeaks_Call)
-                return True
-            except ValueError:
-                return False      
-                
-        ttk.Label(hvsrSettingsFrame,text=&#34;Peak Water Level&#34;).grid(row=9, column=0, sticky=&#39;w&#39;, padx=5)
+        hvsr_band_min_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        hvsr_band_min_settingsEntry.grid(row=9,column=1, sticky=&#39;ew&#39;)
 
-        self.peak_water_level = tk.DoubleVar()
-        self.peak_water_level.set(1.8)
-        pWaterLevelEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peak_water_level, validate=&#39;focusout&#39;, validatecommand=on_pwaterlevel_update)
-        pWaterLevelEntry.grid(row=9, column=1, sticky=&#39;w&#39;)
-
+        hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+        hvsr_band_max_settingsEntry.grid(row=9,column=2, sticky=&#39;ew&#39;)
+       
         #Process HVSR Function Call
         hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
         
-        self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+        self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                          outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         
         def update_procHVSR_call(procHVSR_call):
             procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                          outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                          outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
         checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
         self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
-                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
         self.checkPeaks_Call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         #check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)
         
         def update_check_peaks_call(checkPeaks_Call):
             checkPeaks_Call.configure(text=&#39;check_peaks({}, {}, {})&#39;
-                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                  .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
 
 
         #Run button frame
@@ -5235,7 +5282,7 @@ if __name__ == &#34;__main__&#34;:
         
         def update_hvplot_call():
             kindstr = get_kindstr()
-            hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+            hvplot_label.configure(text=&#34;plot_hvsr({}, plot_type={}, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         # Create the Checkbuttons for the plot options
         ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -5353,20 +5400,27 @@ if __name__ == &#34;__main__&#34;:
 
         ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=16, columnspan=5, sticky=&#39;ew&#39;)
 
+        ttk.Label(plot_options_frame, text=&#39;Show Legend:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5)
+
+        self.show_legend = tk.BooleanVar()
+        self.show_legend.set(False)
+        ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_legend, command=update_hvplot_call).grid(row=17, column=2, sticky=&#34;ew&#34;, padx=50)
+
+
         #Specify X-Type
-        ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+        ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
         self.x_type = tk.StringVar()
         self.x_type.set(&#39;freq&#39;)
-        ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=17, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
-        ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=17, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+        ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=18, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+        ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=18, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
 
         #kwargs
-        ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+        ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=19, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
         self.plot_kwargs = tk.StringVar()
         self.plot_kwargs.set(&#34;cmap=&#39;turbo&#39;&#34;)
-        ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=18, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
+        ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=19, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
 
         plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
@@ -5424,7 +5478,7 @@ if __name__ == &#34;__main__&#34;:
         
 
         # Add a Label widget to the plot_hvsr Call Label section
-        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -5434,7 +5488,7 @@ if __name__ == &#34;__main__&#34;:
         
         def update_results_plot():
             self.tab_control.select(self.results_tab)
-            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+            sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, show_legend=self.show_legend.get(), use_subplots=True, clear_fig=False)
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
@@ -5465,8 +5519,11 @@ if __name__ == &#34;__main__&#34;:
             try: 
                 report_results(self.hvsr_results[sitename])
             except:
-                warnings.warn(f&#34;Site {sitename} does not exist&#34;, UserWarning)
-        
+                if sitename==&#39;&#39;:
+                    pass
+                else:
+                    messagebox.showwarning(title=&#39;WARNING&#39;, message=f&#34;Site {sitename} does not exist&#34;)
+                                                   
         if isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
             sites = self.hvsr_results.sites
         else:
@@ -5841,6 +5898,7 @@ if __name__ == &#34;__main__&#34;:
         self.zerosLabelE_settings.configure(text=hvsr_data[&#39;paz&#39;][&#39;E&#39;][&#39;zeros&#39;])
         return
     
+    self.data_read = False #Initialize
     #FUNCTION TO READ DATA
     @catch_errors
     def read_data():
@@ -6003,7 +6061,7 @@ if __name__ == &#34;__main__&#34;:
                 hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
                 hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;]) &gt;= 5
         if peakPass:
-            self.totalPeakResult.configure(text=&#39;✔&#39;, font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
+            self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
         else:
             self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
 
@@ -6038,7 +6096,7 @@ if __name__ == &#34;__main__&#34;:
                                             db_bins=self.db_bins,
                                             period_limits=self.period_limits,
                                             period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
-                                            special_handling=special_handling, verbose=True
+                                            special_handling=special_handling#, verbose=True
                                            )
         
 
@@ -6052,12 +6110,11 @@ if __name__ == &#34;__main__&#34;:
         
         self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                               hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
-                                              peak_freq_range=[self.hvsrBand_min.get(), self.hvsrBand_max.get()])
+                                              peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
 
-        print(type(self.hvsr_results))
         if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
             report_results(self.hvsr_results)
-            #self.results_siteSelectFrame.grid_forget()
+            self.results_siteSelectFrame.grid_forget()
         elif isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
             self.results_siteSelectFrame.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
             report_results(self.hvsr_results[self.hvsr_results.sites[0]])
@@ -6069,14 +6126,15 @@ if __name__ == &#34;__main__&#34;:
 
     
     def update_input_params_call():
-        self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+        self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                         self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                         self.x.get(), self.y.get(), self.z.get(), 
                                         self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                        self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                        self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                        self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
     #Specify site name        
     siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
     siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -6098,6 +6156,7 @@ if __name__ == &#34;__main__&#34;:
                 self.batch_options_frame.grid_forget()
             elif self.file_source.get() == &#39;batch&#39;:
                 self.batch_options_frame.grid(row=11, column=0, columnspan=7, sticky=&#39;ew&#39;)
+                self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
             else:
                 self.browse_data_filepath_button.configure(text=&#39;Browse File(s)&#39;)
                 self.batch_options_frame.grid_forget()
@@ -6196,7 +6255,6 @@ if __name__ == &#34;__main__&#34;:
                     self.data_filepath_entry.insert(&#39;end&#39;, self.fpath)
             
         update_input_params_call()
-
 
     buttonFrame = ttk.Frame(hvsrFrame)
     buttonFrame.grid(row=1, column=7, sticky=&#39;ew&#39;)
@@ -6497,13 +6555,37 @@ if __name__ == &#34;__main__&#34;:
     hvsr_band_max_entry = ttk.Entry(hvsrbandframe, width=9,textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
     hvsr_band_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
 
-    #BATCH Section
+    # Peak Freq Range Band
+    def on_peakFreqRange_update():
+        try:
+            float(self.peakFreqRange_min.get())
+            float(self.peakFreqRange_max.get())
+
+            peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+            update_check_peaks_call(self.checkPeaks_Call)
+            update_input_params_call()
+            return True
+        except ValueError:
+            return False      
     
+    ttk.Label(hvsrFrame,text=&#34;Peak Freq. Range&#34;).grid(row=9,column=3, sticky=&#39;e&#39;, padx=10, pady=10)
+    peakFreqRangeframe= ttk.Frame(hvsrFrame)
+    peakFreqRangeframe.grid(row=9, column=4,sticky=&#39;w&#39;)
+    self.peakFreqRange_min = tk.DoubleVar()
+    self.peakFreqRange_min.set(0.4)
+    peakFreqRange_min_entry = ttk.Entry(peakFreqRangeframe, width=9, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+    peakFreqRange_min_entry.grid(row=0, column=0, sticky=&#39;ew&#39;, padx=(0,2))
+
+    self.peakFreqRange_max = tk.DoubleVar()
+    self.peakFreqRange_max.set(40)
+    peakFreqRange_max_entry = ttk.Entry(peakFreqRangeframe, width=9,textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+    peakFreqRange_max_entry.grid(row=0,column=1, sticky=&#39;ew&#39;, padx=(2,0))
+
+    #BATCH Section
     def update_batch_data_read_call():
         self.batch_read_data_call.configure(text=&#34;batch_data_read(input_data, batch_type=&#39;{}&#39;, param_col={}, batch_params={})&#34;.format(
                                                                                     self.batch_type.get(), self.param_col.get(), self.batch_params.get()))
         return
-
     
     def on_batch_type_select():
         update_batch_data_read_call()
@@ -6626,14 +6708,15 @@ if __name__ == &#34;__main__&#34;:
 
     #self.starttime, self.endtime = get_times()
     input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  hvsr_band=[{}, {}])&#34;.format(
+    self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
                                         self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
                                         self.acq_date, self.starttime.time(), self.endtime.time(), self.tz,
                                         self.x.get(), self.y.get(), self.z.get(), 
                                         self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
-                                        self.hvsrBand_min.get(), self.hvsrBand_max.get()))
+                                        self.hvsrBand_min.get(), self.hvsrBand_max.get(),
+                                        self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
     self.input_params_call.pack(anchor=&#39;w&#39;, expand=True, padx=20)
 
     #fetch_data() call
@@ -6931,9 +7014,14 @@ if __name__ == &#34;__main__&#34;:
 
         if event.button is MouseButton.LEFT:            
             self.clickNo, self.x0 = __draw_boxes(event, self.clickNo, self.xWindows, self.pathList, self.windowDrawn, self.winArtist, self.lineArtist, self.x0, self.fig_noise, self.ax_noise)    
-
     
-    def plot_noise_windows(hvsr_data, initial_setup=False):
+    #if &#39;hvsr_data&#39; not in dir(self):
+    #    self.hvsr_data = {&#39;placeholder&#39;:None}
+        
+    def plot_noise_windows(hvsr_data={&#39;placeholder&#39;:None}, initial_setup=False):
+        if &#39;hvsr_data&#39; in dir(self):
+            hvsr_data = self.hvsr_data
+            
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
             batch_data = hvsr_data.copy()
             hvsr_data = hvsr_data[list(hvsr_data.keys())[0]]
@@ -6968,6 +7056,7 @@ if __name__ == &#34;__main__&#34;:
                 [&#39;signalz&#39;],[&#39;signalz&#39;], [&#39;signaln&#39;], [&#39;signale&#39;]]
         self.ax_noise = self.fig_noise.subplot_mosaic(noise_mosaic, sharex=True)  
 
+
         if not initial_setup:
             self.noise_canvasWidget.destroy()
             self.noise_toolbar.destroy()
@@ -6994,26 +7083,23 @@ if __name__ == &#34;__main__&#34;:
 
             for i, (k, hv_data) in enumerate(hvsr_data.items()):
                 #Reset edited data every time plot_noise_windows is run
-                hv_data[&#39;stream_edited&#39;] = hv_data[&#39;stream&#39;].copy()
+                hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
                 
                 #Set initial input
-                input = hv_data[&#39;stream&#39;]
+                input = hv_data#[&#39;input_stream&#39;]
 
                 #print(input[0].stats.starttime)
                 if self.do_stalta.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
-                    input = hv_data[&#39;stream_edited&#39;]
+                    hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;stalta&#39;, sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
                 if self.do_pctThresh.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get(), min_win_size=self.win_size_sat.get())
-                    input = hv_data[&#39;stream_edited&#39;]
+                    hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;saturation&#39;,  sat_percent=self.pct.get())
 
                 if self.do_noiseWin.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
-                    input = hv_data[&#39;stream_edited&#39;]
+                    hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;noise&#39;, noise_percent=self.noise_amp_pct.get(), lta=self.lta_noise.get(), min_win_size=self.win_size_thresh.get())
             
                 if self.do_warmup.get():
-                    hv_data[&#39;stream_edited&#39;] = sprit_hvsr.remove_noise(input=input, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
+                    hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method=&#39;warmup&#39;, warmup_time=self.warmup_time.get(), cooldown_time=self.cooldown_time.get())
 
                 if i==0:
                     self.fig_noise, self.ax_noise, self.noise_windows_line_artists, self.noise_windows_window_artists = sprit_hvsr._get_removed_windows(input=hv_data, fig=self.fig_noise, ax=self.ax_noise, existing_xWindows=self.xWindows, time_type=&#39;matplotlib&#39;)
@@ -7027,7 +7113,7 @@ if __name__ == &#34;__main__&#34;:
         self.fig_noise.canvas.draw()
         return
 
-    plot_noise_windows(None, initial_setup=True)
+    plot_noise_windows({&#39;placeholder&#39;:None}, initial_setup=True)
     self.canvasFrame_noise.pack(fill=&#39;both&#39;)#.grid(row=0, column=0, sticky=&#34;nsew&#34;)
 
     #noise_mosaic = [[&#39;spec&#39;],[&#39;spec&#39;],[&#39;spec&#39;],
@@ -7049,7 +7135,7 @@ if __name__ == &#34;__main__&#34;:
     #Update Noise Windows button
     self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
     self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
-
+    
     self.noise_windows_line_artists = []
     self.noise_windows_window_artists = []
 
@@ -7060,11 +7146,12 @@ if __name__ == &#34;__main__&#34;:
 
     runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
 
-    #Plot adjustment Frame
-    pltAdjustFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Adjust Plot&#39;)
-    pltAdjustFrame.pack(fill=&#39;both&#39;, side=&#39;right&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
+    #remove_noise Frame
+    removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-    ttk.Label(master=pltAdjustFrame, text=&#39;Adjustment Parameters (in progress)&#39;).grid(row=0, column=0)
+    self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+    self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
+    removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
     noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
     noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
@@ -7075,7 +7162,6 @@ if __name__ == &#34;__main__&#34;:
     self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
     manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
     manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-    
     
     def remove_windows_manually():
         #Placeholderfunction
@@ -7131,12 +7217,6 @@ if __name__ == &#34;__main__&#34;:
     pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
-
-    ttk.Label(master=pctThresFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5, sticky=&#39;e&#39;)
-    self.win_size_sat = tk.DoubleVar()
-    self.win_size_sat.set(0)
-    win_size_Entry = ttk.Entry(master=pctThresFrame, textvariable=self.win_size_sat, width=10) # create the Entry widget
-    win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
     #Options for noisy window
     noisyWindowFrame = ttk.LabelFrame(noiseFrame, text=&#39;Noisy Windows&#39;)
@@ -7226,6 +7306,35 @@ if __name__ == &#34;__main__&#34;:
     self.do_auto= tk.BooleanVar()
     autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
     autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+
+
+    def update_remove_noise_call(remove_noise):
+        #Get method
+        remMethDict = {&#39;auto&#39;:False,
+                       &#39;stalta&#39;:False,
+                       &#39;sat_per&#39;:False,
+                       &#39;noise_per&#39;:False,
+                       &#39;warmcool&#39;:False,
+                       }
+        remMethList = []
+        for k, v in remMethDict.items():
+            if v:
+                if k==&#39;auto&#39;:
+                    remMethList = [&#39;auto&#39;]
+                    break
+                remMethList.append(k)
+        if len(remMethList)==1:
+            remMethList = remMethList[0]
+        
+        if len(remMethList)==0 or remMethList==&#39;auto&#39;:
+            remMethList = &#39;auto&#39;
+            self.do_auto().set(True)
+            set_auto()
+        
+        self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+
+                                                            ))
+
 
     #Export noise windows
     ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -7776,35 +7885,10 @@ if __name__ == &#34;__main__&#34;:
     resampleCurveSamples = ttk.Entry(master=hvsrSettingsFrame, textvariable=self.hvresample, width=10, validate=&#39;focusout&#39;, validatecommand=on_curve_resample)
     resampleCurveSamples.grid(row=4, column=2, sticky=&#39;w&#39;, padx=(5, 10))
     ttk.Label(master=hvsrSettingsFrame, text=&#39;[int] # pts in resampled curve (default=1000)&#39;).grid(row=4, column=3, padx=(0,0), sticky=&#39;w&#39;)
-                    
-    #remove_outlier_curves=True, 
-    outlierRemLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;remove_outlier_curves=True&#34;, width=30)
-    outlierRemLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)
-
-    
-    def on_remove_outlier_curves():
-        try:
-            bool(self.outlierRembool.get())
-            outlierRemLabel.configure(text=&#39;remove_outlier_curves={}&#39;.format(self.outlierRembool.get()))
-            #if self.outlierRembool.get():
-            #    outlierRemStDev.state([&#39;active&#39;])
-            #else:
-            #    outlierRemStDev.state([&#39;disabled&#39;])
-
-            update_procHVSR_call(self.procHVSR_call)
-            return True
-        except ValueError:
-            return False
-        
-    self.outlierRembool = tk.BooleanVar()
-    self.outlierRembool.set(True)
-    ttk.Label(master=hvsrSettingsFrame, text=&#39;Remove Outlier H/V Curves [bool]&#39;).grid(row=5, column=0, padx=(5,0), sticky=&#39;w&#39;)
-    resampleCurveBool = ttk.Checkbutton(master=hvsrSettingsFrame, text=&#34;&#34;, compound=&#39;left&#39;, variable=self.outlierRembool, command=on_remove_outlier_curves) # create the Checkbutton widget
-    resampleCurveBool.grid(row=5, column=1, sticky=&#39;w&#39;)
 
     #outlier_curve_std=1.75
     outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
-    outlierValLabel.grid(row=6, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
+    outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
     
     def on_outlier_std():
@@ -7837,54 +7921,44 @@ if __name__ == &#34;__main__&#34;:
     hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.hvsrBand_max, validate=&#39;focusout&#39;, validatecommand=on_hvsrband_update)
     hvsr_band_max_settingsEntry.grid(row=8,column=2, sticky=&#39;ew&#39;)
 
-    #peak_water_level=1.8
-    pwaterLevLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_water_level=1.8&#34;, width=30)
-    pwaterLevLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(6,6), padx=5)        
+    #peak_freq_range=[0.4, 40]
+    peakFreqRangeLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;peak_freq_range=[0.4,40]&#34;, width=30)
+    peakFreqRangeLabel.grid(row=8, column=0, sticky=&#39;w&#39;, pady=(20,6), padx=5)
 
-    
-    def on_pwaterlevel_update():
-        try:
-            float(self.peak_water_level.get())
+    ttk.Label(hvsrSettingsFrame,text=&#34;Peak Frequency Range [Hz]&#34;).grid(row=9,column=0, sticky=&#39;w&#39;, padx=(5,0))
 
-            pwaterLevLabel.configure(text=&#39;peak_water_level={}&#39;.format(self.peak_water_level.get()))                
-            update_check_peaks_call(self.checkPeaks_Call)
-            return True
-        except ValueError:
-            return False      
-            
-    ttk.Label(hvsrSettingsFrame,text=&#34;Peak Water Level&#34;).grid(row=9, column=0, sticky=&#39;w&#39;, padx=5)
+    hvsr_band_min_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_min, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+    hvsr_band_min_settingsEntry.grid(row=9,column=1, sticky=&#39;ew&#39;)
 
-    self.peak_water_level = tk.DoubleVar()
-    self.peak_water_level.set(1.8)
-    pWaterLevelEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peak_water_level, validate=&#39;focusout&#39;, validatecommand=on_pwaterlevel_update)
-    pWaterLevelEntry.grid(row=9, column=1, sticky=&#39;w&#39;)
-
+    hvsr_band_max_settingsEntry = ttk.Entry(hvsrSettingsFrame, width=10, textvariable=self.peakFreqRange_max, validate=&#39;focusout&#39;, validatecommand=on_peakFreqRange_update)
+    hvsr_band_max_settingsEntry.grid(row=9,column=2, sticky=&#39;ew&#39;)
+   
     #Process HVSR Function Call
     hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
     
-    self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+    self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
               .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                      outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                       outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
     self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
     
     def update_procHVSR_call(procHVSR_call):
         procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
               .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
-                      outlierRemLabel.cget(&#39;text&#39;), outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+                      outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
     
     #Check Peaks Function Call
     checkPeaksCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.check_peaks() Call&#39;)#.pack(fill=&#39;both&#39;)
 
     self.checkPeaks_Call = ttk.Label(master=checkPeaksCallFrame, text=&#39;check_peaks({}, {}, {})&#39;
-              .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+              .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
     self.checkPeaks_Call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
     #check_peaks(hvsr_dict, hvsr_band=[0.4, 40], peak_water_level=1.8)
     
     def update_check_peaks_call(checkPeaks_Call):
         checkPeaks_Call.configure(text=&#39;check_peaks({}, {}, {})&#39;
-              .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), pwaterLevLabel.cget(&#39;text&#39;)))
+              .format(&#39;hvsr_data&#39;, hvsrBandLabel.cget(&#39;text&#39;), peakFreqRangeLabel.cget(&#39;text&#39;)))
 
 
     #Run button frame
@@ -7911,7 +7985,7 @@ if __name__ == &#34;__main__&#34;:
     
     def update_hvplot_call():
         kindstr = get_kindstr()
-        hvplot_label.configure(text=&#34;plot_hvsr({}, remove_method={}, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+        hvplot_label.configure(text=&#34;plot_hvsr({}, plot_type={}, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, kindstr, self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     # Create the Checkbuttons for the plot options
     ttk.Label(plot_options_frame, text=&#39;HVSR Plot&#39;, justify=&#39;center&#39;).grid(row=0, column=1, sticky=&#39;ew&#39;, padx=(5, 5))
@@ -8029,20 +8103,27 @@ if __name__ == &#34;__main__&#34;:
 
     ttk.Separator(plot_options_frame, orient=&#39;horizontal&#39;).grid(row=16, columnspan=5, sticky=&#39;ew&#39;)
 
+    ttk.Label(plot_options_frame, text=&#39;Show Legend:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5)
+
+    self.show_legend = tk.BooleanVar()
+    self.show_legend.set(False)
+    ttk.Checkbutton(plot_options_frame, text=&#34;&#34;, variable=self.show_legend, command=update_hvplot_call).grid(row=17, column=2, sticky=&#34;ew&#34;, padx=50)
+
+
     #Specify X-Type
-    ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=17, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+    ttk.Label(plot_options_frame, text=&#39;X Type:&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
     self.x_type = tk.StringVar()
     self.x_type.set(&#39;freq&#39;)
-    ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=17, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
-    ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=17, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+    ttk.Radiobutton(master=plot_options_frame, text=&#39;Frequency&#39;, variable=self.x_type, value=&#39;freq&#39;, command=update_hvplot_call).grid(row=18, column=1, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
+    ttk.Radiobutton(master=plot_options_frame, text=&#39;Period&#39;, variable=self.x_type, value=&#39;period&#39;, command=update_hvplot_call).grid(row=18, column=2, sticky=&#39;w&#39;, padx=(5, 10), pady=10)
 
     #kwargs
-    ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=18, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
+    ttk.Label(plot_options_frame, text=&#39;Matplotlib Keyword Arguments (not implemented):&#39;).grid(row=19, column=0, sticky=&#39;w&#39;, padx=5, pady=10)
 
     self.plot_kwargs = tk.StringVar()
     self.plot_kwargs.set(&#34;cmap=&#39;turbo&#39;&#34;)
-    ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=18, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
+    ttk.Entry(plot_options_frame, textvariable=self.plot_kwargs).grid(row=19, column=1, columnspan=3, sticky=&#34;ew&#34;, pady=10)
 
     plot_options_frame.pack(fill=&#39;both&#39;, expand=True)#.grid(row=1, column=0, padx=10, pady=10, sticky=&#34;nsew&#34;)
 
@@ -8100,7 +8181,7 @@ if __name__ == &#34;__main__&#34;:
     
 
     # Add a Label widget to the plot_hvsr Call Label section
-    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
+    hvplot_label = ttk.Label(hvplot_call_frame, text=&#34;plot_hvsr({}, remove_method=&#39;{}&#39;, xtype=&#39;{}&#39;, show_legend={}, {}, {})&#34;.format(&#39;hvsr_data&#39;, get_kindstr(), self.x_type.get(), self.show_legend.get(), &#39;[...]&#39;, &#39;kwargs&#39;))
 
     #Run button frame
     runFrame_set_plot = ttk.Frame(plot_settings_tab)
@@ -8110,7 +8191,7 @@ if __name__ == &#34;__main__&#34;:
     
     def update_results_plot():
         self.tab_control.select(self.results_tab)
-        sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
+        sprit_hvsr.plot_hvsr(self.hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, show_legend=self.show_legend.get(), use_subplots=True, clear_fig=False)
 
     self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
     
@@ -8141,8 +8222,11 @@ if __name__ == &#34;__main__&#34;:
         try: 
             report_results(self.hvsr_results[sitename])
         except:
-            warnings.warn(f&#34;Site {sitename} does not exist&#34;, UserWarning)
-    
+            if sitename==&#39;&#39;:
+                pass
+            else:
+                messagebox.showwarning(title=&#39;WARNING&#39;, message=f&#34;Site {sitename} does not exist&#34;)
+                                               
     if isinstance(self.hvsr_results, sprit_hvsr.HVSRBatch):
         sites = self.hvsr_results.sites
     else:
