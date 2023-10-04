@@ -34,7 +34,7 @@ import scipy
 try: #For distribution
     from sprit import sprit_utils
 except: #For testing
-    #import sprit_utils
+    import sprit_utils
     pass
 
 
@@ -340,12 +340,15 @@ def gui():
 
     gui_root = tk.Tk()
     try:
-        icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
-        gui_root.iconphoto(False, tk.PhotoImage(file=icon_path))
-        #gui_root.iconbitmap(icon_path)
+        try:
+            icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+            gui_root.iconbitmap(icon_path)
+        except:
+            icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+            gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
-        print(e)
-        print('icon not loaded')
+        print("ICON NOT LOADED, still opening GUI")
+        
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
@@ -2140,6 +2143,7 @@ def input_params(datapath,
                     }
     
     params = sprit_utils.make_it_classy(inputParamDict)
+    params['ProcessingStatus']['InputParams'] = True
     params = _check_processing_status(params)
     return params
 
@@ -2608,8 +2612,9 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     ----------
     hvsr_data : dict, obspy.Stream, or obspy.Trace
         Dictionary containing all the data and parameters for the HVSR analysis
-    remove_method : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation', 'noise threshold', 'warmup'/'cooldown'/'buffer'}
-        The different methods for removing noise from the dataset. See descriptions above for what how each method works. By default 'auto.'
+    remove_method : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation threshold', 'noise threshold', 'warmup'/'cooldown'/'buffer'/'warm_cool'}
+        The different methods for removing noise from the dataset. A list of strings will also work, in which case, it should be a list of the above strings. See descriptions above for what how each method works. By default 'auto.'
+        If remove_method='auto', this is the equivalent of remove_method=['noise threshold', 'antitrigger', 'saturation threshold', 'warm_cool']
     sat_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the saturation method. By default 0.995. 
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage.
@@ -2693,77 +2698,101 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     
+    outStream = inStream
+    
+    if isinstance(remove_method, str):
+        if ',' in remove_method:
+            remove_method = remove_method.split(',')
+        else:
+            remove_method = [remove_method]
+    elif isinstance(remove_method, (list, tuple)):
+        pass
+    elif not remove_method:
+        remove_method=[None]
+    else:
+        warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+        return output
+        
+    #Reorder list so manual is always first
+    if len(set(remove_method).intersection(manualList)) > 0:
+        manInd = list(set(remove_method).intersection(manualList))[0]
+        remove_method.remove(manInd)
+        remove_method.insert(0, manInd)
+        
     #Go through each type of removal and remove
-    if not remove_method:
-        outStream=inStream
-    elif remove_method.lower() in manualList:
-        if isinstance(output, (HVSRData, dict)):
-            if 'xwindows_out' in output.keys():
+    for rem_kind in remove_method:
+        if not rem_kind:
+            break
+        elif rem_kind.lower() in manualList:
+            if isinstance(output, (HVSRData, dict)):
+                if 'xwindows_out' in output.keys():
+                    pass
+                else:
+                    output = _select_windows(output)
+                window_list = output['xwindows_out']
+            if isinstance(outStream, obspy.core.stream.Stream):
+                if window_list is not None:
+                    output['stream'] = __remove_windows(inStream, window_list, warmup_time)
+                else:
+                    output = _select_windows(output)
+            elif isinstance(output, (HVSRData, dict)):
                 pass
             else:
-                output = _select_windows(output)
-            window_list = output['xwindows_out']
-
-        if isinstance(inStream, obspy.core.stream.Stream):
-            if window_list is not None:
-                output['stream'] = __remove_windows(inStream, window_list, warmup_time)
-            else:
-                output = _select_windows(output)
-        elif isinstance(output, (HVSRData, dict)):
-            pass
+                RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
+        elif rem_kind.lower() in autoList:
+            outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+            outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+            outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+            outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+        elif rem_kind.lower() in antitrigger:
+            outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+        elif rem_kind.lower() in saturationThresh:
+            outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+        elif rem_kind.lower() in noiseThresh:
+            outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+        elif rem_kind.lower() in warmup_cooldown:
+            outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
         else:
-            RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
-    elif remove_method.lower() in autoList:
-        outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
-        outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
-        outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
-    elif remove_method.lower() in antitrigger:
-        outStream = __remove_anti_stalta(inStream, sta=sta, lta=lta, thresh=stalta_thresh)
-    elif remove_method.lower() in saturationThresh:
-        outStream = __remove_noise_saturate(inStream, sat_percent=sat_percent, min_win_size=min_win_size)
-    elif remove_method.lower() in noiseThresh:
-        outStream = __remove_noise_thresh(inStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-    elif remove_method.lower() in warmup_cooldown:
-        outStream = __remove_warmup_cooldown(stream=inStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
-    else:
-        warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
-        return output
+            if len(remove_method)==1:
+                warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+                break
+            warnings.warn(f"Input value remove_method={remove_method} is not recognized. Continuing with other noise removal methods.")
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
         output['stream'] = outStream
         output['input_stream'] = hvsr_data['input_stream']
+        output['ProcessingStatus']['RemoveNoiseStatus'] = True
+        output = _check_processing_status(output)
+
+        if 'hvsr_df' in output.keys():
+            hvsrDF = output['hvsr_df']
+            
+            outStream = output['stream'].split()
+            for i, trace in enumerate(outStream):
+                if i ==0:
+                    trEndTime = trace.stats.endtime
+                    comp_end = trace.stats.component
+                    continue
+                trStartTime = trace.stats.starttime
+                comp_start = trace.stats.component
+                
+                if trEndTime < trStartTime and comp_end==comp_start:
+                    gap = [trEndTime,trStartTime]
+                    output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
+                                    (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+                                    #((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['TimesProcessed_ObspyEnd']))
+                
+                trEndTime = trace.stats.endtime
+            
+            outStream.merge()
+            output['stream'] = outStream        
     elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         output = outStream
     else:
         warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
         return hvsr_data
 
-    output['ProcessingStatus']['RemoveNoiseStatus'] = True
-    output = _check_processing_status(output)
-
-    if 'hvsr_df' in output.keys():
-        hvsrDF = output['hvsr_df']
-        output = output.split()
-        for i, trace in enumerate(output):
-            if i ==0:
-                trEndTime = trace.stats.endtime
-                comp_end = trace.stats.component
-                continue
-            trStartTime = trace.stats.starttime
-            comp_start = trace.stats.component
-            
-            if trEndTime < trStartTime and comp_end==comp_start:
-                gap = [trEndTime,trStartTime]
-                hvsrDF= output['hvsr_df']
-                output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
-                                (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                                #((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['TimesProcessed_ObspyEnd']))
-            
-            trEndTime = trace.stats.endtime
-        
-        output.merge()
 
     return output
 
@@ -2803,7 +2832,7 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
         
         newPPsds[k] = []
         totMean = np.nanmean(meanArr)
-        totMed = np.nanmed(medArr)
+        totMed = np.nanmedian(medArr)
 
         stds[k] = np.std(meanArr)
 
@@ -4293,13 +4322,13 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         stream = input.copy()
     else:
         pass #Warning?
-
+        
     samplesList = ['sample', 'samples', 's']
     utcList = ['utc', 'utcdatetime', 'obspy', 'u', 'o']
     matplotlibList = ['matplotlib', 'mpl', 'm']    
     
     #Get masked indices of trace(s)
-    trace = stream[0]
+    trace = stream.merge()[0]
     sample_rate = trace.stats.delta
     windows = []
     #windows.append([0,np.nan])
@@ -4322,131 +4351,133 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
                 wInd += 1
             lastMaskInd = maskInd
         windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
-        winTypeList = ['gaps'] * len(windows)
+    winTypeList = ['gaps'] * len(windows)
+
 
         #if existing_xWindows != []:
         #    windows = windows + existing_xWindows
         #    existWinTypeList = ['removed'] * len(existing_xWindows)
         #    winTypeList = winTypeList + existWinTypeList
 
-        if len(existing_xWindows) > 0:
-            existWin = []
-            #Check if windows are already being taken care of with the gaps
-            startList = []
-            endList = []
-            for start, end in windows:
-                startList.append((trace.stats.starttime + start*sample_rate).matplotlib_date)
-                endList.append((trace.stats.starttime + end*sample_rate).matplotlib_date)
-            for w in existing_xWindows:
-                removed=False
-                if w[0] in startList and w[1] in endList:
-                    existing_xWindows.remove(w)
+    #Check if the windows are just gaps
+    if len(existing_xWindows) > 0:
+        existWin = []
+        #Check if windows are already being taken care of with the gaps
+        startList = []
+        endList = []
+        for start, end in windows:
+            startList.append((trace.stats.starttime + start*sample_rate).matplotlib_date)
+            endList.append((trace.stats.starttime + end*sample_rate).matplotlib_date)
+        for w in existing_xWindows:
+            removed=False
+            if w[0] in startList and w[1] in endList:
+                existing_xWindows.remove(w)
 
-                    removed=True                    
-                if exist_win_format.lower() in matplotlibList and not removed:
-                    sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
-                    existWin.append(list(np.round((w - sTimeMPL)*3600*24/sample_rate)))
-                                        
-            windows = windows + existWin
-            existWinTypeList = ['removed'] * len(existWin)
-            winTypeList = winTypeList + existWinTypeList
+                removed=True                    
+            if exist_win_format.lower() in matplotlibList and not removed:
+                sTimeMPL = trace.stats.starttime.matplotlib_date #Convert time to samples from starttime
+                existWin.append(list(np.round((w - sTimeMPL)*3600*24/sample_rate)))
+                                    
+        windows = windows + existWin
+        existWinTypeList = ['removed'] * len(existWin)
+        winTypeList = winTypeList + existWinTypeList
 
-        #Reformat ax as needed
-        if isinstance(ax, np.ndarray):
-            origAxes = ax.copy()
-            newAx = {}
-            for i, a in enumerate(ax):
-                newAx[i] = a
-            axes = newAx
-        elif isinstance(ax, dict):
-            origAxes = ax
-            axes = ax
+    #Reformat ax as needed
+    if isinstance(ax, np.ndarray):
+        origAxes = ax.copy()
+        newAx = {}
+        for i, a in enumerate(ax):
+            newAx[i] = a
+        axes = newAx
+    elif isinstance(ax, dict):
+        origAxes = ax
+        axes = ax
+    else:
+        origAxes = ax
+        axes = {'ax':ax}
+
+    for i, a in enumerate(axes.keys()):
+        ax = axes[a]
+        pathList = []
+        
+        windowDrawn = []
+        winArtist = []
+        if existing_lineArtists == []:
+            lineArtist = []
+        elif len(existing_lineArtists)>=1 and keep_line_artists:
+            lineArtist = existing_lineArtists
         else:
-            origAxes = ax
-            axes = {'ax':ax}
+            lineArtist = []
 
-        for i, a in enumerate(axes.keys()):
-            ax = axes[a]
-            pathList = []
-            
-            windowDrawn = []
-            winArtist = []
-            if existing_lineArtists == []:
-                lineArtist = []
-            elif len(existing_lineArtists)>=1 and keep_line_artists:
-                lineArtist = existing_lineArtists
-            else:
-                lineArtist = []
+        for winNums, win in enumerate(windows):
+            if time_type.lower() in samplesList:
+                x0 = win[0]
+                x1 = win[1]
+            elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
+                #sample_rate = trace.stats.delta
 
-            for winNums, win in enumerate(windows):
-                if time_type.lower() in samplesList:
-                    x0 = win[0]
-                    x1 = win[1]
-                elif time_type.lower() in utcList or time_type.lower() in matplotlibList:
-                    #sample_rate = trace.stats.delta
+                x0 = trace.stats.starttime + (win[0] * sample_rate)
+                x1 = trace.stats.starttime + (win[1] * sample_rate)
 
-                    x0 = trace.stats.starttime + (win[0] * sample_rate)
-                    x1 = trace.stats.starttime + (win[1] * sample_rate)
-
-                    if time_type.lower() in matplotlibList:
-                        x0 = x0.matplotlib_date
-                        x1 = x1.matplotlib_date
-                else:
-                    warnings.warn(f'time_type={time_type} not recognized. Defaulting to matplotlib time formatting')
-                    x0 = trace.stats.starttime + (win[0] * sample_rate)
-                    x1 = trace.stats.starttime + (win[1] * sample_rate)
-                    
+                if time_type.lower() in matplotlibList:
                     x0 = x0.matplotlib_date
                     x1 = x1.matplotlib_date
-                
-                y0, y1 = ax.get_ylim()
-
-                path_data = [
-                            (matplotlib.path.Path.MOVETO, (x0, y0)),
-                            (matplotlib.path.Path.LINETO, (x1, y0)),
-                            (matplotlib.path.Path.LINETO, (x1, y1)),
-                            (matplotlib.path.Path.LINETO, (x0, y1)),
-                            (matplotlib.path.Path.LINETO, (x0, y0)),
-                            (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
-                        ]
-                
-                codes, verts = zip(*path_data)
-                path = matplotlib.path.Path(verts, codes)
-
-                #
-                windowDrawn.append(False)
-                winArtist.append(None)
-                lineArtist.append([])
-                
-                if winTypeList[winNums] == 'gaps':
-                    clr = '#b13d41'
-                elif winTypeList[winNums] == 'removed':
-                    clr = 'k'
-                else:
-                    clr = 'yellow'
-
-                linArt0 = ax.axvline(x0, y0, y1, color=clr, linewidth=0.5, zorder=100)
-                linArt1 = plt.axvline(x1, y0, y1, color=clr, linewidth=0.5, zorder=100)
-                lineArtist[winNums].append([linArt0, linArt1])
-                #
-                
-                pathList.append(path)
-
-            for i, pa in enumerate(pathList):
-                if windowDrawn[i]:
-                    pass
-                else:
-                    patch = matplotlib.patches.PathPatch(pa, facecolor=clr, alpha=0.75)                            
-                    winArt = ax.add_patch(patch)
-                    windowDrawn[i] = True
-                    winArtist[i] = winArt
-            
-            #Reformat ax as needed
-            if isinstance(origAxes, np.ndarray):
-                origAxes[i] = ax
-            elif isinstance(origAxes, dict):
-                origAxes[a] = ax
             else:
+                warnings.warn(f'time_type={time_type} not recognized. Defaulting to matplotlib time formatting')
+                x0 = trace.stats.starttime + (win[0] * sample_rate)
+                x1 = trace.stats.starttime + (win[1] * sample_rate)
+                
+                x0 = x0.matplotlib_date
+                x1 = x1.matplotlib_date
+            
+            y0, y1 = ax.get_ylim()
+
+            path_data = [
+                        (matplotlib.path.Path.MOVETO, (x0, y0)),
+                        (matplotlib.path.Path.LINETO, (x1, y0)),
+                        (matplotlib.path.Path.LINETO, (x1, y1)),
+                        (matplotlib.path.Path.LINETO, (x0, y1)),
+                        (matplotlib.path.Path.LINETO, (x0, y0)),
+                        (matplotlib.path.Path.CLOSEPOLY, (x0, y0)),
+                    ]
+            
+            codes, verts = zip(*path_data)
+            path = matplotlib.path.Path(verts, codes)
+
+            #
+            windowDrawn.append(False)
+            winArtist.append(None)
+            lineArtist.append([])
+            
+            if winTypeList[winNums] == 'gaps':
+                clr = '#b13d41'
+            elif winTypeList[winNums] == 'removed':
+                clr = 'k'
+            else:
+                clr = 'yellow'
+
+            linArt0 = ax.axvline(x0, y0, y1, color=clr, linewidth=0.5, zorder=100)
+            linArt1 = plt.axvline(x1, y0, y1, color=clr, linewidth=0.5, zorder=100)
+            lineArtist[winNums].append([linArt0, linArt1])
+            #
+            
+            pathList.append(path)
+
+        for i, pa in enumerate(pathList):
+            if windowDrawn[i]:
+                pass
+            else:
+                patch = matplotlib.patches.PathPatch(pa, facecolor=clr, alpha=0.75)                            
+                winArt = ax.add_patch(patch)
+                windowDrawn[i] = True
+                winArtist[i] = winArt
+        
+        #Reformat ax as needed
+        if isinstance(origAxes, np.ndarray):
+            origAxes[i] = ax
+        elif isinstance(origAxes, dict):
+            origAxes[a] = ax
+        else:
                 origAxes = ax
 
         ax = origAxes
