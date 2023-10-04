@@ -50,10 +50,11 @@ else:
             os.chdir(docsPath)
             break
 
-src_path = pathlib.Path(subdir)
+src_path = spritDir#pathlib.Path(subdir)
 trg_path = docsDir#src_path.parent.joinpath(output_dir) # this ends up being main repo folder, usually
-print(src_path.absolute())
-print(trg_path.absolute())
+
+print('Reading .py files from', src_path.absolute())
+print('Placing html files in', trg_path.absolute())
 #Move items back into the main docs folder
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
 for t in trg_path.iterdir():
