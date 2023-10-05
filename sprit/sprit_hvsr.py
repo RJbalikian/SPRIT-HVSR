@@ -477,16 +477,16 @@ def run(datapath, source='file', verbose=False, **kwargs):
         process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except Exception as e:
-        if verbose:
-            exc_type, exc_obj, tb = sys.exc_info()
-            f = tb.tb_frame
-            lineno = tb.tb_lineno
-            filename = f.f_code.co_filename
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = f"{e} ({errLineNo})"
-            print(f"{error_category} ({errLineNo}): {error_message}")
-            print(lineno, filename, f)
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
 
         hvsr_results = ppsd_data
         if isinstance(hvsr_results, HVSRData):
@@ -1634,9 +1634,9 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 else:
                     report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak']['f0']))        
                     if curvePass and peakPass:
-                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak']['f0'],3)))
+                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak']['f0'],3)))
                     else:
-                        report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak']['f0'],3)))            
+                        report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak']['f0'],3)))            
                     report_string_list.append('')
                     report_string_list.append(internalSeparator)
                     report_string_list.append('')
@@ -2261,6 +2261,8 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
         axes[comp].set_ylim([dmed-ylim_std*stD, dmed+ylim_std*stD])
+        if xmin < 0:
+            xmin=params['hvsr_band'][0]
         axes[comp].set_xlim([xmin, xmax])
 
     fig.suptitle(params['site'])
@@ -2406,13 +2408,13 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                         smooth = smooth+1
 
                 #Resample raw ppsd values
-                for i, t in enumerate(input_ppsds):
+                for i, ppsd_t in enumerate(input_ppsds):
                     if i==0:
-                        psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)
+                        psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
                         if smooth is not False:
                             psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
                     else:
-                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], t)))
+                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)))
                         if smooth is not False:
                             psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
@@ -2421,7 +2423,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
                 psdRaw[k] = np.array(input_ppsds)
 
-            hvsrDF[f'psd_values_{k}'] = list(psdRaw[k])
+            hvsrDF['psd_values_'+k] = list(psdRaw[k])
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
@@ -2487,7 +2489,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out['psd_raw']:
-                ppsd_data = np.stack(hvsr_out['hvsr_df'][f'psd_values_{k}'])
+                colName = f'psd_values_{k}'
+
+                ppsd_data = np.stack(hvsr_out['hvsr_df'][colName])
                 ppsd_data = hvsr_out['psd_raw'][k]
 
                 freqs = hvsr_out['x_freqs'][k]
@@ -2495,7 +2499,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                     warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
                     smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
-                hvsr_out['hvsr_df'][f'psd_values_{k}'] = smoothed_ppsd_data
+                hvsr_out['hvsr_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_df'].index)
+
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
         elif freq_smooth.lower() in freq_smooth_proport:
@@ -4721,8 +4726,13 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
     else:
         warnings.warn('Oops, typo somewhere')
 
+
     for k in hvsr_out['psd_raw']:
-        newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
+        colName = f'psd_values_{k}'
+
+        newTPSD = list(np.stack(hvsr_out['hvsr_df'][colName]))
+        #newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
+
         for t, tPSD in enumerate(hvsr_out['psd_raw'][k]):
             for i, fVal in enumerate(tPSD):
                 if i < fwidthHalf:
@@ -4752,7 +4762,9 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out['psd_raw'][k] = newTPSD
-        hvsr_out['hvsr_df'].loc[f'psd_values_{k}'] = newTPSD
+        hvsr_out['hvsr_df'][colName] = pd.Series(list(newTPSD), index=hvsr_out['hvsr_df'].index)
+
+
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components

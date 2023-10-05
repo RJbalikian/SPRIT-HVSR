@@ -83,27 +83,27 @@ def catch_errors(func):
                     
         except Exception as e:
             messageList = get_warning_msg_list(w)
-            
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            errorObj = sys.exc_info()[2]
+                        
+            errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = f"{e} ({errLineNo})"
+            error_message = f"{e} ({errLineNo1})"
             
             #Print the function name where the error occured
-            #print(func.__name__) 
-            
+            errFunc = func.__name__
+            print(sys.exc_info())
             #Get message list, [] if no messages, doesn't run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
-            
-            fullErrorMessage = f'ERROR ({error_category}): {error_message} (line {traceback.extract_tb(sys.exc_info()[2])[-1].lineno})'
+            errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
+            errLineNo2=errorObj.tb_lineno
+            fullErrorMessage = f'ERROR {errFilename}.{errFunc} ({errLineNo2}): {error_message}.'
             if messageList == []:
                 pass
             else:
-                
                 fullErrorMessage = fullErrorMessage+"\n\n  Additional Warnings along the way:"
                 for addMsg in warningMessageList:
                     fullErrorMessage = "\n{}\n   {}".format(fullErrorMessage, addMsg)
 
-            print(fullErrorMessage)        
             messagebox.showerror(title=f'ERROR ({error_category})',
                                     message=fullErrorMessage)
 
@@ -1466,10 +1466,9 @@ class SPRIT_App:
 
                 for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
-                    hv_data['stream'] = hv_data['input_stream'].copy()
-                    
+                    #v_data['stream'] = hv_data['input_stream'].copy()                    
                     #Set initial input
-                    input = hv_data#['input_stream']
+                    #input = hv_data#['input_stream']
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
@@ -1529,6 +1528,50 @@ class SPRIT_App:
 
         runFrame_noise.pack(fill='both',side='bottom', anchor='e')    
 
+
+        def update_remove_noise_call():
+            if 'prevAutoState' not in dir(self):
+                self.prevAutoState=self.do_auto.get()
+
+            if self.prevAutoState and not self.do_auto.get():
+                self.do_stalta.set(False)
+                self.do_pctThresh.set(False)
+                self.do_noiseWin.set(False)
+                self.do_warmup.set(False)
+            #Get method
+            remMethDict = {'auto':self.do_auto.get(),
+                           'stalta':self.do_stalta.get(),
+                           'sat_per':self.do_pctThresh.get(),
+                           'noise_per':self.do_noiseWin.get(),
+                           'warmcool':self.do_warmup.get(),
+                           }
+
+            remMethList = []
+            for k, v in remMethDict.items():
+                if v:
+                    if k=='auto':
+                        remMethList = ['auto']
+                        break
+                    remMethList.append(k)
+
+            if len(remMethList)==1:
+                remMethList = remMethList[0]
+            
+            if remMethList=='auto':
+                remMethList = 'auto'
+                self.do_auto.set(True)
+                set_auto()
+
+            if len(remMethList)==0:
+                remMethList=None
+
+            self.remove_noise_call.configure(text="remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})".format(
+                                                                remMethList, self.pct.get(), self.noise_amp_pct.get(), self.sta.get(), self.lta.get(), self.stalta_thresh_low.get(), self.stalta_thresh_hi.get(), 
+                                                                self.warmup_time.get(), self.cooldown_time.get(), self.win_size_thresh.get(),self.use_raw_data.get() ))
+
+            self.prevAutoState = self.do_auto.get()
+
+
         #remove_noise Frame
         removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text='remove_noise() call')
 
@@ -1538,51 +1581,36 @@ class SPRIT_App:
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text='Noise Removal')
         noiseFrame.pack(fill='both')#.grid(row=1, columnspan=2, sticky='nsew')
-        
-        #Options for manually removing windows
-        windowremoveFrame = ttk.LabelFrame(noiseFrame, text='Manual Window Removal')
-        windowremoveFrame.grid(row=0, column=1, columnspan=1, sticky='nsew')
-        self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
-        manualBool = ttk.Checkbutton(master=windowremoveFrame, text="", variable=self.do_window) # create the Checkbutton widget
-        manualBool.grid(row=0, column=0, sticky='ew')
-        
-        def remove_windows_manually():
-            #Placeholderfunction
-            print('Ok, this button may not need to do anything')
-            #Plot data in noise preview tab
-
-        self.select_windows = ttk.Button(master=windowremoveFrame, text="Remove Windows", command=remove_windows_manually) # create the Checkbutton widget
-        self.select_windows.grid(row=0, column=1, sticky='e')
 
         #Options for doing stalta antitrigger for noise removal
         stltaremoveFrame = ttk.LabelFrame(noiseFrame, text='STA/LTA Antitrigger')
         stltaremoveFrame.grid(row=0, column=0, columnspan=1, sticky='nsew')
         
         self.do_stalta = tk.BooleanVar()
-        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text="", variable=self.do_stalta) # create the Checkbutton widget
+        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text="", variable=self.do_stalta, command=update_remove_noise_call) # create the Checkbutton widget
         staltaBool.grid(row=0, column=0, sticky='ew')
         
         ttk.Label(master=stltaremoveFrame, text="STA [s]").grid(row=0, column=1)
         self.sta = tk.DoubleVar()
         self.sta.set(5)
-        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
+        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         staEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text="LTA [s]").grid(row=0, column=3)
         self.lta = tk.DoubleVar()
         self.lta.set(30)
-        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
+        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         ltaEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text="STA/LTA Thresholds (Low, High)").grid(row=0, column=5)
         self.stalta_thresh_low = tk.DoubleVar()
         self.stalta_thresh_low.set(0.5)
-        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
+        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         staltaLowEntry.grid(row=0, column=6, sticky='ew', padx=(5,0))
         
         self.stalta_thresh_hi = tk.DoubleVar()
         self.stalta_thresh_hi.set(5)
-        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
+        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         staltaHiEntry.grid(row=0, column=7, sticky='ew')
         
         #Options for Percentage threshold removal
@@ -1590,13 +1618,13 @@ class SPRIT_App:
         pctThresFrame.grid(row=1, column=0, sticky='nsew')
 
         self.do_pctThresh= tk.BooleanVar()
-        pctBool = ttk.Checkbutton(master=pctThresFrame, text="", variable=self.do_pctThresh) # create the Checkbutton widget
+        pctBool = ttk.Checkbutton(master=pctThresFrame, text="", variable=self.do_pctThresh, command=update_remove_noise_call) # create the Checkbutton widget
         pctBool.grid(row=0, column=0, sticky='ew')
  
-        ttk.Label(master=pctThresFrame, text="Max Instantaneous %").grid(row=0, column=1)
+        ttk.Label(master=pctThresFrame, text="Max Saturation %").grid(row=0, column=1)
         self.pct = tk.DoubleVar()
         self.pct.set(0.995)
-        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
+        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         pctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
         ttk.Label(master=pctThresFrame, text="", width=27).grid(row=0, column=3, columnspan=2)
@@ -1606,45 +1634,45 @@ class SPRIT_App:
         noisyWindowFrame.grid(row=2, column=0, sticky='nsew')
 
         self.do_noiseWin = tk.BooleanVar()
-        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin) # create the Checkbutton widget
+        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text="", variable=self.do_noiseWin, command=update_remove_noise_call) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky='ew')
  
         ttk.Label(master=noisyWindowFrame, text="Max Window %").grid(row=0, column=1)
         self.noise_amp_pct = tk.DoubleVar()
         self.noise_amp_pct.set(0.80)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text="Window Length [sec]").grid(row=0, column=3)
         self.lta_noise = tk.DoubleVar()
         self.lta_noise.set(30)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text="Min. Window Size [sec]").grid(row=0, column=5)
         self.win_size_thresh = tk.DoubleVar()
         self.win_size_thresh.set(0)
-        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
+        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         win_size_Entry.grid(row=0, column=6, sticky='e', padx=(5,10))
 
         #Options for warmup
         warmupFrame = ttk.LabelFrame(noiseFrame, text='Warmup & Cooldown Time')
-        warmupFrame.grid(row=3, column=0, sticky='nsew')
+        warmupFrame.grid(row=0, column=1, sticky='nsew')
 
         self.do_warmup= tk.BooleanVar()
-        warmupBool = ttk.Checkbutton(master=warmupFrame, text="", variable=self.do_warmup) # create the Checkbutton widget
+        warmupBool = ttk.Checkbutton(master=warmupFrame, text="", variable=self.do_warmup, command=update_remove_noise_call) # create the Checkbutton widget
         warmupBool.grid(row=0, column=0, sticky='ew')
  
         ttk.Label(master=warmupFrame, text="Warmup time [s]").grid(row=0, column=1)
         self.warmup_time = tk.DoubleVar()
-        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10) # create the Entry widget
+        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         warmupEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
         warmupEntry.delete(0, 'end')
         warmupEntry.insert(0, '0')
  
         ttk.Label(master=warmupFrame, text="Cooldown Time [s]").grid(row=0, column=3)
         self.cooldown_time = tk.DoubleVar()
-        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10) # create the Entry widget
+        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10, validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         cooldownEntry.grid(row=0, column=5, sticky='ew', padx=(5,10))
         cooldownEntry.delete(0, 'end')
         cooldownEntry.insert(0, '0')
@@ -1654,26 +1682,26 @@ class SPRIT_App:
         stdremoveFrame.grid(row=1, column=1, columnspan=1, sticky='nsew')
         
         self.do_stdev = tk.BooleanVar()
-        stdBool = ttk.Checkbutton(master=stdremoveFrame, text="", variable=self.do_stdev, state='disabled') # create the Checkbutton widget
+        stdBool = ttk.Checkbutton(master=stdremoveFrame, text="", variable=self.do_stdev, state='disabled', command=update_remove_noise_call) # create the Checkbutton widget
         stdBool.grid(row=0, column=0, sticky='ew')
         
         ttk.Label(master=stdremoveFrame, text="Std Deviation Ratio (moving stdev/total stdev)").grid(row=0, column=1)
         self.stdRatio = tk.DoubleVar()
-        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state='disabled') # create the Entry widget
+        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state='disabled', validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         stdRatEntry.grid(row=0, column=2, sticky='ew', padx=(5,10))
         stdRatEntry.delete(0, 'end')
         stdRatEntry.insert(0, '1')
         
         ttk.Label(master=stdremoveFrame, text="Window Length [s]").grid(row=0, column=3)
         self.stdWinLen = tk.DoubleVar()
-        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state='disabled') # create the Entry widget
+        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state='disabled',validate='focusout', validatecommand=update_remove_noise_call) # create the Entry widget
         stdWinLenEntry.grid(row=0, column=4, sticky='ew', padx=(5,10))
         stdWinLenEntry.delete(0, 'end')
         stdWinLenEntry.insert(0, '5')
 
         #Quick set the auto 
-        autoFrame = ttk.LabelFrame(noiseFrame, text='Auto Run')
-        autoFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
+        #autoFrame = ttk.LabelFrame(noiseFrame, text='Auto Run')
+        #autoFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
 
         
         def set_auto():
@@ -1684,40 +1712,26 @@ class SPRIT_App:
                 self.do_noiseWin.set(True)
                 self.do_pctThresh.set(True)
             else:
+                self.do_stalta.set(False)
+                self.do_stdev.set(False)
+                self.do_warmup.set(False)
+                self.do_noiseWin.set(False)
+                self.do_pctThresh.set(False)                
                 pass
+            
+
+        #Additional options
+        addOptionsFrame = ttk.LabelFrame(noiseFrame, text='')
+        addOptionsFrame.grid(row=2, column=1, columnspan=1, sticky='nsew')
+
 
         self.do_auto= tk.BooleanVar()
-        autoBool = ttk.Checkbutton(master=autoFrame, text="", variable=self.do_auto, command=set_auto) # create the Checkbutton widget
-        autoBool.grid(row=0, column=0, sticky='ew')   
+        autoBool = ttk.Checkbutton(master=addOptionsFrame, text="Set Auto Run", variable=self.do_auto, command=update_remove_noise_call) # create the Checkbutton widget
+        autoBool.grid(row=0, column=0, sticky='nsew', padx=5)
 
-
-        def update_remove_noise_call(remove_noise):
-            #Get method
-            remMethDict = {'auto':False,
-                           'stalta':False,
-                           'sat_per':False,
-                           'noise_per':False,
-                           'warmcool':False,
-                           }
-            remMethList = []
-            for k, v in remMethDict.items():
-                if v:
-                    if k=='auto':
-                        remMethList = ['auto']
-                        break
-                    remMethList.append(k)
-            if len(remMethList)==1:
-                remMethList = remMethList[0]
-            
-            if len(remMethList)==0 or remMethList=='auto':
-                remMethList = 'auto'
-                self.do_auto().set(True)
-                set_auto()
-            
-            self.remove_noise_call.configure(text="remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})".format(
-
-                                                                ))
- 
+        self.use_raw_data= tk.BooleanVar()
+        rawDataRemoveBool = ttk.Checkbutton(master=addOptionsFrame, text="Remove from raw data", variable=self.use_raw_data, command=update_remove_noise_call) # create the Checkbutton widget
+        rawDataRemoveBool.grid(row=0, column=1, sticky='nsew', padx=5)
 
         #Export noise windows
         ttk.Label(noiseFrame, text="Export Figure").grid(row=4, column=0, sticky='ew', padx=5)
