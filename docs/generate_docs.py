@@ -100,54 +100,50 @@ for t in trg_path.iterdir():
             os.remove(t)
 
 #Update html files
-repo_path = pathlib.Path('..')
-for each_file in repo_path.iterdir():
-    if each_file.name == 'README.md':
-        if convert_md:
-            import markdown
+readmePath = repoDir.joinpath('README.md')
+print("Using Readme for landing page")
+if convert_md:
+    import markdown
 
-            with open(each_file, 'r') as f:
-                markdown_text = f.read()
+    with open(readmePath.as_posix(), 'r') as f:
+        markdown_text = f.read()
 
-            html = markdown.markdown(markdown_text)
+    html = markdown.markdown(markdown_text)
 
-            html = html.replace('| Dependency', '<table>\n\t<tr>\n\t<th>Dependency</th>\n', 1)
-            html = html.replace('| Link', '\t\t<th>Link</th>\n', 1)
-            html = html.replace('| Description', '\t\t<th>Description</th>\n', 1)
-            html = html.replace('|','</tr>', 1)
-            html = html.replace('|------------|----------------------------|-------------------------------------------------------------------------------------------------|','', 1)
+    html = html.replace('| Dependency', '<table>\n\t<tr>\n\t<th>Dependency</th>\n', 1)
+    html = html.replace('| Link', '\t\t<th>Link</th>\n', 1)
+    html = html.replace('| Description', '\t\t<th>Description</th>\n', 1)
+    html = html.replace('|','</tr>', 1)
+    html = html.replace('|------------|----------------------------|-------------------------------------------------------------------------------------------------|','', 1)
 
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 2)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
+    html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
+    html = html.replace('|', '\t</td>\n\t\t<td>', 2)
+    html = html.replace('|', '\t</td>\n\t</tr>', 1)
 
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 2)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
+    html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
+    html = html.replace('|', '\t</td>\n\t\t<td>', 2)
+    html = html.replace('|', '\t</td>\n\t</tr>', 1)
 
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 2)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
+    html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
+    html = html.replace('|', '\t</td>\n\t\t<td>', 2)
+    html = html.replace('|', '\t</td>\n\t</tr>', 1)
 
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 2)
-            html = html.replace('|', '\t</td>\n\t</tr>', 1)
+    html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
+    html = html.replace('|', '\t</td>\n\t\t<td>', 2)
+    html = html.replace('|', '\t</td>\n\t</tr>', 1)
 
-            html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
-            html = html.replace('|', '\t</td>\n\t\t<td>', 2)
-            html = html.replace('|', '\t</td>\n\t</tr>\n</table>', 1)
-            html = html.replace('</table></p>', '</table>', 1)
+    html = html.replace('|', '\t<tr>\n\t\t<td>', 1)
+    html = html.replace('|', '\t</td>\n\t\t<td>', 2)
+    html = html.replace('|', '\t</td>\n\t</tr>\n</table>', 1)
+    html = html.replace('</table></p>', '</table>', 1)
 
-
-            dst = pathlib.Path('index.html')
-            with open(dst, 'w') as f:
-                f.write(html)
-            print('hmtl landing page:', dst)
-            break
-        else:
-            #Copy main readme file into docs so github pages will read it
-            shutil.copy(src=str(each_file), dst='.')
-            break
+    dst = docsDir.joinpath('index.html')
+    with open(dst, 'w') as f:
+        f.write(html)
+    print('hmtl landing page:', dst)
+else:
+    #Copy main readme file into docs so github pages will read it
+    shutil.copy(src=str(readmePath.as_posix()), dst='.')
 
 #Update setup file(s) with release version number
 setupFPath = repoDir.joinpath('setup.py')
