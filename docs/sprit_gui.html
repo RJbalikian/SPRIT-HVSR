@@ -37,6 +37,8 @@ import os
 import pathlib
 import pkg_resources
 import sys
+import threading
+import time
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -112,27 +114,27 @@ def catch_errors(func):
                     
         except Exception as e:
             messageList = get_warning_msg_list(w)
-            
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            errorObj = sys.exc_info()[2]
+                        
+            errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
-            error_message = f&#34;{e} ({errLineNo})&#34;
+            error_message = f&#34;{e} ({errLineNo1})&#34;
             
             #Print the function name where the error occured
-            #print(func.__name__) 
-            
+            errFunc = func.__name__
+            #print(sys.exc_info())
             #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
-            
-            fullErrorMessage = f&#39;ERROR ({error_category}): {error_message} (line {traceback.extract_tb(sys.exc_info()[2])[-1].lineno})&#39;
+            errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
+            errLineNo2=errorObj.tb_lineno
+            fullErrorMessage = f&#39;ERROR {errFilename}.{errFunc} ({errLineNo2}): {error_message}.&#39;
             if messageList == []:
                 pass
             else:
-                
                 fullErrorMessage = fullErrorMessage+&#34;\n\n  Additional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
                     fullErrorMessage = &#34;\n{}\n   {}&#34;.format(fullErrorMessage, addMsg)
 
-            print(fullErrorMessage)        
             messagebox.showerror(title=f&#39;ERROR ({error_category})&#39;,
                                     message=fullErrorMessage)
 
@@ -314,7 +316,14 @@ class SPRIT_App:
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo(title=&#34;Reading Data&#34;, message=&#39;Reading Data...&#39;)
+            self.log_text.insert(&#39;end&#39;, f&#39;\n\nReading data [{datetime.datetime.now()}]\n\n&#39;)
             self.starttime, self.endtime = get_times()
+
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.input_params_call[&#39;text&#39;]}\n\n&#34;)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.fetch_data_call[&#39;text&#39;]}\n\n&#34;)
 
             if self.file_source.get() == &#39;batch&#39;:
                 batchType = self.batch_type.get()
@@ -327,6 +336,8 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
+
+                update_progress_bars(prog_percent=1)            
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -352,14 +363,18 @@ class SPRIT_App:
                 else:
                     trimDir=self.trim_dir.get()
 
+                update_progress_bars(prog_percent=2)            
                 self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(), 
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                    
+                
+                update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
+
+                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -381,6 +396,7 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
+                update_progress_bars(prog_percent=1)
                 self.params = sprit_hvsr.input_params( datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -400,19 +416,26 @@ class SPRIT_App:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+                self.hvsr_data = self.params
 
                 if self.trim_dir.get()==&#39;&#39;:
                     trimDir=None
                 else:
                     trimDir=self.trim_dir.get()
-
-                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
-                                            source=self.file_source.get(), 
+                
+                update_progress_bars(prog_percent=2)
+                try:
+                    self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
+                                            source=self.file_source.get(),
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                
+                except:
+                    #print(dir(sys.exc_info()))
+                    traceback.print_exc()
+
+                update_progress_bars(prog_percent=10)
                 update_input_labels(self.hvsr_data)
 
                 #Plot data in data preview tab
@@ -425,6 +448,7 @@ class SPRIT_App:
 
             self.data_read = True
             if not self.processingData:
+                update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
 
         def report_results(hvsr_results):
@@ -487,16 +511,23 @@ class SPRIT_App:
         #FUNCTION TO PROCESS DATA
         @catch_errors
         def process_data():
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
             self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
+                update_progress_bars(prog_percent=12)
+
+            self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
             #Make this an option
             #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
 
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
-
+            
+            update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
                                                 outlier_std=self.outlier_std.get(),
@@ -510,8 +541,9 @@ class SPRIT_App:
                                                 period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                 special_handling=special_handling#, verbose=True
                                                )
-            
+            update_progress_bars(prog_percent=50)
 
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
             self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
@@ -519,11 +551,17 @@ class SPRIT_App:
                                                    f_smooth_width=self.fSmoothWidth.get(), 
                                                    resample=self.hvresample_int,
                                                    outlier_curve_std=self.outlierRemStDev.get())
-            
+            update_progress_bars(prog_percent=90)
+
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
+            update_progress_bars(prog_percent=95)
 
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
                 self.results_siteSelectFrame.grid_forget()
@@ -533,10 +571,44 @@ class SPRIT_App:
             else:
                 warnings.warn(f&#39;Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.&#39;)
 
+            #Log results
+            self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
+            self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+            
             self.processingData = False
             self.tab_control.select(self.results_tab)
+            update_progress_bars(prog_percent=100)
 
-        
+
+        def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
+            progBarListList = [[self.inputProgBar,(0,0), True], 
+                                [self.prevProgBar,(0,0), True], 
+                                [self.noiseProgBar,(0,0), True], 
+                                [self.settingsProgBar_ppsd, (0, 0), True],
+                                [self.settingsProgBar_hvsr, (0,0), True],
+                                [self.settingsProgBar_plot,(0,0), True], 
+                                [self.logProgBar,(0,11), False], 
+                                [self.resultsProgBar,(0,26), False]]
+            
+            def prog_bar_update(progBarListList, progPercent, processName):
+                for bar in progBarListList:
+                    progBar = bar[0]
+                    barLoc = bar[1]
+
+                    progBar[&#39;value&#39;] = progPercent
+
+                    if progPercent==0:
+                        progBar.master.columnconfigure(0, weight=1)
+                        progBar.grid(row=barLoc[0],column=barLoc[1], sticky=&#39;ew&#39;)
+                    elif progPercent==100:
+                        progBar.grid_forget()
+
+                    progBar.update()
+
+            threading.Thread(target=prog_bar_update(progBarListList=progBarListList, progPercent=prog_percent, processName=process_name)).start()
+            #self.update_idletasks()
+
         def update_input_params_call():
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
@@ -547,6 +619,7 @@ class SPRIT_App:
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
+        
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -554,8 +627,6 @@ class SPRIT_App:
         self.site_name.set(&#39;HVSR Site&#39;)
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
-
-        # source=file
         
         def on_source_select():
             try:
@@ -840,27 +911,21 @@ class SPRIT_App:
         ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
         self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
-        #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
-        #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-        #self.timezone_listbox.grid(row=3,column=7)
-
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
-        
-        ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.doy_label = ttk.Label(hvsrFrame,text=str(self.day_of_year))
+
+        ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4, column=1, sticky=&#39;e&#39;, padx=5, pady=10)
+        self.doy_label = ttk.Label(hvsrFrame, text=str(self.day_of_year))
         self.doy_label.grid(row=4, column=2, sticky=&#39;w&#39;)
 
         # UTC Time Output
         ttk.Label(hvsrFrame,text=&#34;UTC Time:&#34;).grid(row=4, column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
-        self.utc_time_output_label.grid(row=4,column=4)
+        self.utc_time_output_label = ttk.Label(hvsrFrame, text=&#34;&#34;)
+        self.utc_time_output_label.grid(row=4, column=4)
 
-        #Initialize as UTC
+        # Initialize as UTC
         self.tz = datetime.timezone.utc
-        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
-        #input_params() call
+
 
         self.starttime, self.endtime = get_times()
 
@@ -973,7 +1038,7 @@ class SPRIT_App:
                 float(self.peakFreqRange_min.get())
                 float(self.peakFreqRange_max.get())
 
-                peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                peakFreqRangeLabel.configure(text=&#39;peak_freq_range=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
                 update_check_peaks_call(self.checkPeaks_Call)
                 update_input_params_call()
                 return True
@@ -1139,14 +1204,18 @@ class SPRIT_App:
 
         #Set up frame for reading and running
         runFrame_hvsr = ttk.Frame(self.input_tab)
+        runFrame_hvsr.columnconfigure(0, weight=1)
+
+        self.inputProgBar = ttk.Progressbar(runFrame_hvsr, orient=&#39;horizontal&#39;)
+        self.inputProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
 
         self.style.configure(style=&#39;Custom.TButton&#39;, background=&#39;#d49949&#39;)
         self.read_button = ttk.Button(runFrame_hvsr, text=&#34;Read Data&#34;, command=read_data, width=30, style=&#39;Custom.TButton&#39;)
 
         self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
         self.run_button = ttk.Button(runFrame_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.read_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+        self.read_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
 
         hvsrFrame.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;)#.grid(row=0, sticky=&#34;nsew&#34;)
         runFrame_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)
@@ -1223,13 +1292,18 @@ class SPRIT_App:
         
         #preview-Run button
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
+        runFrame_dataPrev.columnconfigure(0, weight=1)
+
+        self.prevProgBar = ttk.Progressbar(runFrame_dataPrev, orient=&#39;horizontal&#39;)
+        self.prevProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
-        runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#grid(row=1, sticky=&#39;e&#39;)
+        self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
+        runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;, fill=&#39;both&#39;)#grid(row=1, sticky=&#39;e&#39;)
 
         self.tab_control.add(self.preview_data_tab, text=&#34;Data Preview&#34;)
 
-        # Noise tab
+        # NOISE TAB
         self.noise_tab = ttk.Frame(self.tab_control)
         self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
@@ -1353,7 +1427,6 @@ class SPRIT_App:
                
         
         def select_windows(event, input=None, initialize=False):
-            import obspy
             &#34;&#34;&#34;Function to manually select windows for exclusion from data.
 
             Parameters
@@ -1368,8 +1441,6 @@ class SPRIT_App:
             &#34;&#34;&#34;
             from matplotlib.backend_bases import MouseButton
             import matplotlib.pyplot as plt
-            import matplotlib
-            import time
             
             #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
@@ -1495,10 +1566,9 @@ class SPRIT_App:
 
                 for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
-                    hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
-                    
+                    #v_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()                    
                     #Set initial input
-                    input = hv_data#[&#39;input_stream&#39;]
+                    #input = hv_data#[&#39;input_stream&#39;]
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
@@ -1542,8 +1612,13 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
-        
+        runFrame_noise.columnconfigure(0, weight=1)
+
         #Run area
+        #Progress Bar
+        self.noiseProgBar = ttk.Progressbar(runFrame_noise, orient=&#39;horizontal&#39;)
+        self.noiseProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
         self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
@@ -1553,65 +1628,94 @@ class SPRIT_App:
 
         self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
         self.run_button = ttk.Button(runFrame_noise, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.noise_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.noise_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
         runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
+
+
+        def update_remove_noise_call():
+            if &#39;prevAutoState&#39; not in dir(self):
+                self.prevAutoState=self.do_auto.get()
+
+            if self.prevAutoState and not self.do_auto.get():
+                self.do_stalta.set(False)
+                self.do_pctThresh.set(False)
+                self.do_noiseWin.set(False)
+                self.do_warmup.set(False)
+            #Get method
+            remMethDict = {&#39;auto&#39;:self.do_auto.get(),
+                           &#39;stalta&#39;:self.do_stalta.get(),
+                           &#39;sat_per&#39;:self.do_pctThresh.get(),
+                           &#39;noise_per&#39;:self.do_noiseWin.get(),
+                           &#39;warmcool&#39;:self.do_warmup.get(),
+                           }
+
+            remMethList = []
+            for k, v in remMethDict.items():
+                if v:
+                    if k==&#39;auto&#39;:
+                        remMethList = [&#39;auto&#39;]
+                        break
+                    remMethList.append(k)
+
+            if len(remMethList)==1:
+                remMethList = remMethList[0]
+            
+            if remMethList==&#39;auto&#39;:
+                remMethList = &#39;auto&#39;
+                self.do_auto.set(True)
+                set_auto()
+
+            if len(remMethList)==0:
+                remMethList=None
+
+            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+                                                                remMethList, self.pct.get(), self.noise_amp_pct.get(), self.sta.get(), self.lta.get(), self.stalta_thresh_low.get(), self.stalta_thresh_hi.get(), 
+                                                                self.warmup_time.get(), self.cooldown_time.get(), self.win_size_thresh.get(),self.use_raw_data.get() ))
+
+            self.prevAutoState = self.do_auto.get()
+
 
         #remove_noise Frame
         removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
         self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
         removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
         noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
-        
-        #Options for manually removing windows
-        windowremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;Manual Window Removal&#39;)
-        windowremoveFrame.grid(row=0, column=1, columnspan=1, sticky=&#39;nsew&#39;)
-        self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
-        manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
-        manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-        
-        def remove_windows_manually():
-            #Placeholderfunction
-            print(&#39;Ok, this button may not need to do anything&#39;)
-            #Plot data in noise preview tab
-
-        self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
-        self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
         #Options for doing stalta antitrigger for noise removal
         stltaremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;STA/LTA Antitrigger&#39;)
         stltaremoveFrame.grid(row=0, column=0, columnspan=1, sticky=&#39;nsew&#39;)
         
         self.do_stalta = tk.BooleanVar()
-        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta) # create the Checkbutton widget
+        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta, command=update_remove_noise_call) # create the Checkbutton widget
         staltaBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         
         ttk.Label(master=stltaremoveFrame, text=&#34;STA [s]&#34;).grid(row=0, column=1)
         self.sta = tk.DoubleVar()
         self.sta.set(5)
-        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
+        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text=&#34;LTA [s]&#34;).grid(row=0, column=3)
         self.lta = tk.DoubleVar()
         self.lta.set(30)
-        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
+        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         ltaEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text=&#34;STA/LTA Thresholds (Low, High)&#34;).grid(row=0, column=5)
         self.stalta_thresh_low = tk.DoubleVar()
         self.stalta_thresh_low.set(0.5)
-        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
+        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staltaLowEntry.grid(row=0, column=6, sticky=&#39;ew&#39;, padx=(5,0))
         
         self.stalta_thresh_hi = tk.DoubleVar()
         self.stalta_thresh_hi.set(5)
-        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
+        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staltaHiEntry.grid(row=0, column=7, sticky=&#39;ew&#39;)
         
         #Options for Percentage threshold removal
@@ -1619,13 +1723,13 @@ class SPRIT_App:
         pctThresFrame.grid(row=1, column=0, sticky=&#39;nsew&#39;)
 
         self.do_pctThresh= tk.BooleanVar()
-        pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh) # create the Checkbutton widget
+        pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh, command=update_remove_noise_call) # create the Checkbutton widget
         pctBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
-        ttk.Label(master=pctThresFrame, text=&#34;Max Instantaneous %&#34;).grid(row=0, column=1)
+        ttk.Label(master=pctThresFrame, text=&#34;Max Saturation %&#34;).grid(row=0, column=1)
         self.pct = tk.DoubleVar()
         self.pct.set(0.995)
-        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
+        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
@@ -1635,45 +1739,45 @@ class SPRIT_App:
         noisyWindowFrame.grid(row=2, column=0, sticky=&#39;nsew&#39;)
 
         self.do_noiseWin = tk.BooleanVar()
-        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin) # create the Checkbutton widget
+        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin, command=update_remove_noise_call) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
         ttk.Label(master=noisyWindowFrame, text=&#34;Max Window %&#34;).grid(row=0, column=1)
         self.noise_amp_pct = tk.DoubleVar()
         self.noise_amp_pct.set(0.80)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text=&#34;Window Length [sec]&#34;).grid(row=0, column=3)
         self.lta_noise = tk.DoubleVar()
         self.lta_noise.set(30)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5)
         self.win_size_thresh = tk.DoubleVar()
         self.win_size_thresh.set(0)
-        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
+        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
         #Options for warmup
         warmupFrame = ttk.LabelFrame(noiseFrame, text=&#39;Warmup &amp; Cooldown Time&#39;)
-        warmupFrame.grid(row=3, column=0, sticky=&#39;nsew&#39;)
+        warmupFrame.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         self.do_warmup= tk.BooleanVar()
-        warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup) # create the Checkbutton widget
+        warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup, command=update_remove_noise_call) # create the Checkbutton widget
         warmupBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
         ttk.Label(master=warmupFrame, text=&#34;Warmup time [s]&#34;).grid(row=0, column=1)
         self.warmup_time = tk.DoubleVar()
-        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10) # create the Entry widget
+        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         warmupEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
         warmupEntry.delete(0, &#39;end&#39;)
         warmupEntry.insert(0, &#39;0&#39;)
  
         ttk.Label(master=warmupFrame, text=&#34;Cooldown Time [s]&#34;).grid(row=0, column=3)
         self.cooldown_time = tk.DoubleVar()
-        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10) # create the Entry widget
+        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         cooldownEntry.grid(row=0, column=5, sticky=&#39;ew&#39;, padx=(5,10))
         cooldownEntry.delete(0, &#39;end&#39;)
         cooldownEntry.insert(0, &#39;0&#39;)
@@ -1683,26 +1787,26 @@ class SPRIT_App:
         stdremoveFrame.grid(row=1, column=1, columnspan=1, sticky=&#39;nsew&#39;)
         
         self.do_stdev = tk.BooleanVar()
-        stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;) # create the Checkbutton widget
+        stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;, command=update_remove_noise_call) # create the Checkbutton widget
         stdBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         
         ttk.Label(master=stdremoveFrame, text=&#34;Std Deviation Ratio (moving stdev/total stdev)&#34;).grid(row=0, column=1)
         self.stdRatio = tk.DoubleVar()
-        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;) # create the Entry widget
+        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         stdRatEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
         stdRatEntry.delete(0, &#39;end&#39;)
         stdRatEntry.insert(0, &#39;1&#39;)
         
         ttk.Label(master=stdremoveFrame, text=&#34;Window Length [s]&#34;).grid(row=0, column=3)
         self.stdWinLen = tk.DoubleVar()
-        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;) # create the Entry widget
+        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;,validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         stdWinLenEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
         stdWinLenEntry.delete(0, &#39;end&#39;)
         stdWinLenEntry.insert(0, &#39;5&#39;)
 
         #Quick set the auto 
-        autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
-        autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+        #autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
+        #autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
 
         
         def set_auto():
@@ -1713,40 +1817,26 @@ class SPRIT_App:
                 self.do_noiseWin.set(True)
                 self.do_pctThresh.set(True)
             else:
+                self.do_stalta.set(False)
+                self.do_stdev.set(False)
+                self.do_warmup.set(False)
+                self.do_noiseWin.set(False)
+                self.do_pctThresh.set(False)                
                 pass
+            
+
+        #Additional options
+        addOptionsFrame = ttk.LabelFrame(noiseFrame, text=&#39;&#39;)
+        addOptionsFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+
 
         self.do_auto= tk.BooleanVar()
-        autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
-        autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+        autoBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Set Auto Run&#34;, variable=self.do_auto, command=update_remove_noise_call) # create the Checkbutton widget
+        autoBool.grid(row=0, column=0, sticky=&#39;nsew&#39;, padx=5)
 
-
-        def update_remove_noise_call(remove_noise):
-            #Get method
-            remMethDict = {&#39;auto&#39;:False,
-                           &#39;stalta&#39;:False,
-                           &#39;sat_per&#39;:False,
-                           &#39;noise_per&#39;:False,
-                           &#39;warmcool&#39;:False,
-                           }
-            remMethList = []
-            for k, v in remMethDict.items():
-                if v:
-                    if k==&#39;auto&#39;:
-                        remMethList = [&#39;auto&#39;]
-                        break
-                    remMethList.append(k)
-            if len(remMethList)==1:
-                remMethList = remMethList[0]
-            
-            if len(remMethList)==0 or remMethList==&#39;auto&#39;:
-                remMethList = &#39;auto&#39;
-                self.do_auto().set(True)
-                set_auto()
-            
-            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
-
-                                                                ))
- 
+        self.use_raw_data= tk.BooleanVar()
+        rawDataRemoveBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Remove from raw data&#34;, variable=self.use_raw_data, command=update_remove_noise_call) # create the Checkbutton widget
+        rawDataRemoveBool.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=5)
 
         #Export noise windows
         ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -2138,8 +2228,12 @@ class SPRIT_App:
         #Run button frame
         runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
         self.run_button = ttk.Button(runFrame_set_ppsd, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
-        
+        self.run_button.grid(row=0, column=11, sticky=&#39;ew&#39;, padx=2.5)
+
+        self.settingsProgBar_ppsd = ttk.Progressbar(runFrame_set_ppsd, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_ppsd.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
+        runFrame_set_ppsd.columnconfigure(0, weight=1)
+
         runFrame_set_ppsd.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)            
         obspyMetadataFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=7, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
         obspyStatsFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=6, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
@@ -2150,7 +2244,7 @@ class SPRIT_App:
         ppsd_settings_tab.pack(fill=&#39;both&#39;, expand=True)
         settings_notebook.add(ppsd_settings_tab, text=&#34;PPSD&#34;)
 
-        #HVSR SETTINGS TAB
+        #HVSR SETTINGS SUBTAB
         hvsr_settings_tab = ttk.Frame(settings_notebook)
         
         hvsrSettingsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;H/V Processing Settings&#39;)#.pack(fill=&#39;both&#39;)
@@ -2355,7 +2449,7 @@ class SPRIT_App:
 
         
         def update_procHVSR_call(procHVSR_call):
-            procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+            procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
@@ -2375,8 +2469,13 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_set_hvsr = ttk.Frame(hvsr_settings_tab)
+        runFrame_set_hvsr.columnconfigure(0, weight=1)
+
+        self.settingsProgBar_hvsr = ttk.Progressbar(runFrame_set_hvsr, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_hvsr.grid(row=0, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         self.run_button = ttk.Button(runFrame_set_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+        self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
 
         #Pack tab
         runFrame_set_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
@@ -2556,7 +2655,9 @@ class SPRIT_App:
                 if self.show_ind_curves.get():
                     kindstr_hv = kindstr_hv + &#39; t&#39;
                 if self.show_ind_peaks.get():
-                    kindstr_hv = kindstr_hv + &#39;p&#39;
+                    kindstr_hv = kindstr_hv.replace(&#39;t&#39;, &#39;tp&#39;)
+                    if &#39;tp&#39; not in kindstr_hv:
+                        kindstr_hv = kindstr_hv+ &#39; tp&#39;
                 if not self.show_stDev_hv.get():
                     kindstr_hv = kindstr_hv + &#39; -s&#39;
             else:
@@ -2597,7 +2698,10 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
+        runFrame_set_plot.columnconfigure(0, weight=1)
 
+        self.settingsProgBar_plot = ttk.Progressbar(runFrame_set_plot, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_plot.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
         self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
 
         
@@ -2607,8 +2711,8 @@ class SPRIT_App:
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.update_results_plot_button.grid(row=0, column=11, padx=2.5)#pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=12, padx=2.5)#(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
         runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
         hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
@@ -2652,6 +2756,9 @@ class SPRIT_App:
 
         self.browse_results_fig = ttk.Button(self.results_siteSelectFrame, text=&#34;Update site&#34;,command=on_site_select)
         self.browse_results_fig.grid(row=0, column=8, sticky=&#39;ew&#39;, padx=5)
+
+        self.results_siteSelectFrame.columnconfigure(9, weight=1)
+
 
         def update_site_dropdown():
             self.site_dropdown[&#39;values&#39;] = self.site_options
@@ -2807,6 +2914,9 @@ class SPRIT_App:
 
         self.totalResult.grid(row=25, sticky=&#39;e&#39;, padx=5, pady=10 )
 
+        self.resultsProgBar = ttk.Progressbar(self.results_peakInfoFrame, orient=&#39;horizontal&#39;)
+        self.resultsProgBar.grid(row=26, column=0, sticky=&#39;ew&#39;)
+
         #Export results
         self.results_export_Frame = ttk.LabelFrame(self.results_tab, text=&#34;Export Results&#34;)
         
@@ -2867,12 +2977,39 @@ class SPRIT_App:
         self.results_siteSelectFrame.grid(row=0,column=0, columnspan=8, rowspan=2, sticky=&#39;ew&#39;)
         self.results_peakInfoFrame.grid(row=0,  column=9, columnspan=2, rowspan=8, sticky=&#39;nsew&#39;)#.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
         self.results_chartFrame.grid(row=2,     column=0, columnspan=8, rowspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
-        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,stick=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
+        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
         self.results_tab.columnconfigure(0, weight=1)
         self.results_tab.rowconfigure(2, weight=1)
+        
 
-        # Add tabs to tab control
-        self.tab_control.add(self.results_tab, text=&#34;Results&#34;)
+        # LOG TAB
+        self.log_tab = ttk.Frame(self.tab_control)
+        
+        from tkinter import scrolledtext
+        self.logFrame = ttk.LabelFrame(self.log_tab, text=&#39;Log&#39;)
+        self.logFrame.columnconfigure(0, weight=1)
+        self.logFrame.rowconfigure(0, weight=1)
+        
+        self.log_text = scrolledtext.ScrolledText(self.logFrame, wrap = tk.WORD)#, width=200, height=50)
+        self.log_text.configure(font=(&#34;Courier&#34;, 11))
+        #text_area.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+        self.log_text.grid(row=0, rowspan=10, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;, expand=True)
+
+        self.logProgBar = ttk.Progressbar(self.logFrame, orient=&#39;horizontal&#39;)
+        self.logProgBar.grid(row=11, column=0, sticky=&#39;nsew&#39;)
+
+        introLogText = &#34;Log of active session:\n&#34;
+        self.log_text.insert(&#39;end&#39;, introLogText)
+        #log_text.configure(bg=&#39;black&#39;, fg=&#39;white&#39;)
+
+
+        self.logFrame.pack(fill=&#39;both&#39;, expand=True)#.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;, anchor=&#39;nw&#39;)
+        self.log_tab.pack(fill=&#39;both&#39;, expand=True, side=&#39;left&#39;, anchor=&#39;nw&#39;)
+        
+        # Add log tab to tab control
+        self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
+        # Add result tab to tab control
+        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill=&#34;both&#34;)
@@ -2894,7 +3031,9 @@ if __name__ == &#34;__main__&#34;:
     except Exception as e:
         print(&#34;ICON NOT LOADED, still opening GUI&#34;)
 
-    app = SPRIT_App(root)
+    root.resizable(True, True)
+    SPRIT_App(root)
+
 
     root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
     root.mainloop()</code></pre>
@@ -2966,27 +3105,27 @@ if __name__ == &#34;__main__&#34;:
                     
         except Exception as e:
             messageList = get_warning_msg_list(w)
-            
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            errorObj = sys.exc_info()[2]
+                        
+            errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
-            error_message = f&#34;{e} ({errLineNo})&#34;
+            error_message = f&#34;{e} ({errLineNo1})&#34;
             
             #Print the function name where the error occured
-            #print(func.__name__) 
-            
+            errFunc = func.__name__
+            #print(sys.exc_info())
             #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
-            
-            fullErrorMessage = f&#39;ERROR ({error_category}): {error_message} (line {traceback.extract_tb(sys.exc_info()[2])[-1].lineno})&#39;
+            errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
+            errLineNo2=errorObj.tb_lineno
+            fullErrorMessage = f&#39;ERROR {errFilename}.{errFunc} ({errLineNo2}): {error_message}.&#39;
             if messageList == []:
                 pass
             else:
-                
                 fullErrorMessage = fullErrorMessage+&#34;\n\n  Additional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
                     fullErrorMessage = &#34;\n{}\n   {}&#34;.format(fullErrorMessage, addMsg)
 
-            print(fullErrorMessage)        
             messagebox.showerror(title=f&#39;ERROR ({error_category})&#39;,
                                     message=fullErrorMessage)
 
@@ -3199,7 +3338,14 @@ if __name__ == &#34;__main__&#34;:
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo(title=&#34;Reading Data&#34;, message=&#39;Reading Data...&#39;)
+            self.log_text.insert(&#39;end&#39;, f&#39;\n\nReading data [{datetime.datetime.now()}]\n\n&#39;)
             self.starttime, self.endtime = get_times()
+
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.input_params_call[&#39;text&#39;]}\n\n&#34;)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.fetch_data_call[&#39;text&#39;]}\n\n&#34;)
 
             if self.file_source.get() == &#39;batch&#39;:
                 batchType = self.batch_type.get()
@@ -3212,6 +3358,8 @@ if __name__ == &#34;__main__&#34;:
                 else:
                     self.fpath = self.fpath[0]
 
+
+                update_progress_bars(prog_percent=1)            
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -3237,14 +3385,18 @@ if __name__ == &#34;__main__&#34;:
                 else:
                     trimDir=self.trim_dir.get()
 
+                update_progress_bars(prog_percent=2)            
                 self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(), 
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                    
+                
+                update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
+
+                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -3266,6 +3418,7 @@ if __name__ == &#34;__main__&#34;:
                 else:
                     self.fpath = self.fpath[0]
 
+                update_progress_bars(prog_percent=1)
                 self.params = sprit_hvsr.input_params( datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -3285,19 +3438,26 @@ if __name__ == &#34;__main__&#34;:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+                self.hvsr_data = self.params
 
                 if self.trim_dir.get()==&#39;&#39;:
                     trimDir=None
                 else:
                     trimDir=self.trim_dir.get()
-
-                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
-                                            source=self.file_source.get(), 
+                
+                update_progress_bars(prog_percent=2)
+                try:
+                    self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
+                                            source=self.file_source.get(),
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                
+                except:
+                    #print(dir(sys.exc_info()))
+                    traceback.print_exc()
+
+                update_progress_bars(prog_percent=10)
                 update_input_labels(self.hvsr_data)
 
                 #Plot data in data preview tab
@@ -3310,6 +3470,7 @@ if __name__ == &#34;__main__&#34;:
 
             self.data_read = True
             if not self.processingData:
+                update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
 
         def report_results(hvsr_results):
@@ -3372,16 +3533,23 @@ if __name__ == &#34;__main__&#34;:
         #FUNCTION TO PROCESS DATA
         @catch_errors
         def process_data():
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
             self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
+                update_progress_bars(prog_percent=12)
+
+            self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
             #Make this an option
             #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
 
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
-
+            
+            update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
                                                 outlier_std=self.outlier_std.get(),
@@ -3395,8 +3563,9 @@ if __name__ == &#34;__main__&#34;:
                                                 period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                 special_handling=special_handling#, verbose=True
                                                )
-            
+            update_progress_bars(prog_percent=50)
 
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
             self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
@@ -3404,11 +3573,17 @@ if __name__ == &#34;__main__&#34;:
                                                    f_smooth_width=self.fSmoothWidth.get(), 
                                                    resample=self.hvresample_int,
                                                    outlier_curve_std=self.outlierRemStDev.get())
-            
+            update_progress_bars(prog_percent=90)
+
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
+            update_progress_bars(prog_percent=95)
 
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
                 self.results_siteSelectFrame.grid_forget()
@@ -3418,10 +3593,44 @@ if __name__ == &#34;__main__&#34;:
             else:
                 warnings.warn(f&#39;Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.&#39;)
 
+            #Log results
+            self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
+            self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+            
             self.processingData = False
             self.tab_control.select(self.results_tab)
+            update_progress_bars(prog_percent=100)
 
-        
+
+        def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
+            progBarListList = [[self.inputProgBar,(0,0), True], 
+                                [self.prevProgBar,(0,0), True], 
+                                [self.noiseProgBar,(0,0), True], 
+                                [self.settingsProgBar_ppsd, (0, 0), True],
+                                [self.settingsProgBar_hvsr, (0,0), True],
+                                [self.settingsProgBar_plot,(0,0), True], 
+                                [self.logProgBar,(0,11), False], 
+                                [self.resultsProgBar,(0,26), False]]
+            
+            def prog_bar_update(progBarListList, progPercent, processName):
+                for bar in progBarListList:
+                    progBar = bar[0]
+                    barLoc = bar[1]
+
+                    progBar[&#39;value&#39;] = progPercent
+
+                    if progPercent==0:
+                        progBar.master.columnconfigure(0, weight=1)
+                        progBar.grid(row=barLoc[0],column=barLoc[1], sticky=&#39;ew&#39;)
+                    elif progPercent==100:
+                        progBar.grid_forget()
+
+                    progBar.update()
+
+            threading.Thread(target=prog_bar_update(progBarListList=progBarListList, progPercent=prog_percent, processName=process_name)).start()
+            #self.update_idletasks()
+
         def update_input_params_call():
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
@@ -3432,6 +3641,7 @@ if __name__ == &#34;__main__&#34;:
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
+        
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -3439,8 +3649,6 @@ if __name__ == &#34;__main__&#34;:
         self.site_name.set(&#39;HVSR Site&#39;)
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
-
-        # source=file
         
         def on_source_select():
             try:
@@ -3725,27 +3933,21 @@ if __name__ == &#34;__main__&#34;:
         ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
         self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
-        #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
-        #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-        #self.timezone_listbox.grid(row=3,column=7)
-
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
-        
-        ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.doy_label = ttk.Label(hvsrFrame,text=str(self.day_of_year))
+
+        ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4, column=1, sticky=&#39;e&#39;, padx=5, pady=10)
+        self.doy_label = ttk.Label(hvsrFrame, text=str(self.day_of_year))
         self.doy_label.grid(row=4, column=2, sticky=&#39;w&#39;)
 
         # UTC Time Output
         ttk.Label(hvsrFrame,text=&#34;UTC Time:&#34;).grid(row=4, column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-        self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
-        self.utc_time_output_label.grid(row=4,column=4)
+        self.utc_time_output_label = ttk.Label(hvsrFrame, text=&#34;&#34;)
+        self.utc_time_output_label.grid(row=4, column=4)
 
-        #Initialize as UTC
+        # Initialize as UTC
         self.tz = datetime.timezone.utc
-        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
-        #input_params() call
+
 
         self.starttime, self.endtime = get_times()
 
@@ -3858,7 +4060,7 @@ if __name__ == &#34;__main__&#34;:
                 float(self.peakFreqRange_min.get())
                 float(self.peakFreqRange_max.get())
 
-                peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                peakFreqRangeLabel.configure(text=&#39;peak_freq_range=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
                 update_check_peaks_call(self.checkPeaks_Call)
                 update_input_params_call()
                 return True
@@ -4024,14 +4226,18 @@ if __name__ == &#34;__main__&#34;:
 
         #Set up frame for reading and running
         runFrame_hvsr = ttk.Frame(self.input_tab)
+        runFrame_hvsr.columnconfigure(0, weight=1)
+
+        self.inputProgBar = ttk.Progressbar(runFrame_hvsr, orient=&#39;horizontal&#39;)
+        self.inputProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
 
         self.style.configure(style=&#39;Custom.TButton&#39;, background=&#39;#d49949&#39;)
         self.read_button = ttk.Button(runFrame_hvsr, text=&#34;Read Data&#34;, command=read_data, width=30, style=&#39;Custom.TButton&#39;)
 
         self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
         self.run_button = ttk.Button(runFrame_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.read_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+        self.read_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
 
         hvsrFrame.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;)#.grid(row=0, sticky=&#34;nsew&#34;)
         runFrame_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)
@@ -4108,13 +4314,18 @@ if __name__ == &#34;__main__&#34;:
         
         #preview-Run button
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
+        runFrame_dataPrev.columnconfigure(0, weight=1)
+
+        self.prevProgBar = ttk.Progressbar(runFrame_dataPrev, orient=&#39;horizontal&#39;)
+        self.prevProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
-        runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#grid(row=1, sticky=&#39;e&#39;)
+        self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
+        runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;, fill=&#39;both&#39;)#grid(row=1, sticky=&#39;e&#39;)
 
         self.tab_control.add(self.preview_data_tab, text=&#34;Data Preview&#34;)
 
-        # Noise tab
+        # NOISE TAB
         self.noise_tab = ttk.Frame(self.tab_control)
         self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
@@ -4238,7 +4449,6 @@ if __name__ == &#34;__main__&#34;:
                
         
         def select_windows(event, input=None, initialize=False):
-            import obspy
             &#34;&#34;&#34;Function to manually select windows for exclusion from data.
 
             Parameters
@@ -4253,8 +4463,6 @@ if __name__ == &#34;__main__&#34;:
             &#34;&#34;&#34;
             from matplotlib.backend_bases import MouseButton
             import matplotlib.pyplot as plt
-            import matplotlib
-            import time
             
             #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
@@ -4380,10 +4588,9 @@ if __name__ == &#34;__main__&#34;:
 
                 for i, (k, hv_data) in enumerate(hvsr_data.items()):
                     #Reset edited data every time plot_noise_windows is run
-                    hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
-                    
+                    #v_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()                    
                     #Set initial input
-                    input = hv_data#[&#39;input_stream&#39;]
+                    #input = hv_data#[&#39;input_stream&#39;]
 
                     #print(input[0].stats.starttime)
                     if self.do_stalta.get():
@@ -4427,8 +4634,13 @@ if __name__ == &#34;__main__&#34;:
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
-        
+        runFrame_noise.columnconfigure(0, weight=1)
+
         #Run area
+        #Progress Bar
+        self.noiseProgBar = ttk.Progressbar(runFrame_noise, orient=&#39;horizontal&#39;)
+        self.noiseProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         #Update Noise Windows button
         self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
         self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
@@ -4438,65 +4650,94 @@ if __name__ == &#34;__main__&#34;:
 
         self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
         self.run_button = ttk.Button(runFrame_noise, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.noise_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.noise_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
         runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
+
+
+        def update_remove_noise_call():
+            if &#39;prevAutoState&#39; not in dir(self):
+                self.prevAutoState=self.do_auto.get()
+
+            if self.prevAutoState and not self.do_auto.get():
+                self.do_stalta.set(False)
+                self.do_pctThresh.set(False)
+                self.do_noiseWin.set(False)
+                self.do_warmup.set(False)
+            #Get method
+            remMethDict = {&#39;auto&#39;:self.do_auto.get(),
+                           &#39;stalta&#39;:self.do_stalta.get(),
+                           &#39;sat_per&#39;:self.do_pctThresh.get(),
+                           &#39;noise_per&#39;:self.do_noiseWin.get(),
+                           &#39;warmcool&#39;:self.do_warmup.get(),
+                           }
+
+            remMethList = []
+            for k, v in remMethDict.items():
+                if v:
+                    if k==&#39;auto&#39;:
+                        remMethList = [&#39;auto&#39;]
+                        break
+                    remMethList.append(k)
+
+            if len(remMethList)==1:
+                remMethList = remMethList[0]
+            
+            if remMethList==&#39;auto&#39;:
+                remMethList = &#39;auto&#39;
+                self.do_auto.set(True)
+                set_auto()
+
+            if len(remMethList)==0:
+                remMethList=None
+
+            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+                                                                remMethList, self.pct.get(), self.noise_amp_pct.get(), self.sta.get(), self.lta.get(), self.stalta_thresh_low.get(), self.stalta_thresh_hi.get(), 
+                                                                self.warmup_time.get(), self.cooldown_time.get(), self.win_size_thresh.get(),self.use_raw_data.get() ))
+
+            self.prevAutoState = self.do_auto.get()
+
 
         #remove_noise Frame
         removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
         self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
         removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
         noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
-        
-        #Options for manually removing windows
-        windowremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;Manual Window Removal&#39;)
-        windowremoveFrame.grid(row=0, column=1, columnspan=1, sticky=&#39;nsew&#39;)
-        self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
-        manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
-        manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-        
-        def remove_windows_manually():
-            #Placeholderfunction
-            print(&#39;Ok, this button may not need to do anything&#39;)
-            #Plot data in noise preview tab
-
-        self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
-        self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
         #Options for doing stalta antitrigger for noise removal
         stltaremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;STA/LTA Antitrigger&#39;)
         stltaremoveFrame.grid(row=0, column=0, columnspan=1, sticky=&#39;nsew&#39;)
         
         self.do_stalta = tk.BooleanVar()
-        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta) # create the Checkbutton widget
+        staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta, command=update_remove_noise_call) # create the Checkbutton widget
         staltaBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         
         ttk.Label(master=stltaremoveFrame, text=&#34;STA [s]&#34;).grid(row=0, column=1)
         self.sta = tk.DoubleVar()
         self.sta.set(5)
-        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
+        staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text=&#34;LTA [s]&#34;).grid(row=0, column=3)
         self.lta = tk.DoubleVar()
         self.lta.set(30)
-        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
+        ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         ltaEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=stltaremoveFrame, text=&#34;STA/LTA Thresholds (Low, High)&#34;).grid(row=0, column=5)
         self.stalta_thresh_low = tk.DoubleVar()
         self.stalta_thresh_low.set(0.5)
-        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
+        staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staltaLowEntry.grid(row=0, column=6, sticky=&#39;ew&#39;, padx=(5,0))
         
         self.stalta_thresh_hi = tk.DoubleVar()
         self.stalta_thresh_hi.set(5)
-        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
+        staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         staltaHiEntry.grid(row=0, column=7, sticky=&#39;ew&#39;)
         
         #Options for Percentage threshold removal
@@ -4504,13 +4745,13 @@ if __name__ == &#34;__main__&#34;:
         pctThresFrame.grid(row=1, column=0, sticky=&#39;nsew&#39;)
 
         self.do_pctThresh= tk.BooleanVar()
-        pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh) # create the Checkbutton widget
+        pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh, command=update_remove_noise_call) # create the Checkbutton widget
         pctBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
-        ttk.Label(master=pctThresFrame, text=&#34;Max Instantaneous %&#34;).grid(row=0, column=1)
+        ttk.Label(master=pctThresFrame, text=&#34;Max Saturation %&#34;).grid(row=0, column=1)
         self.pct = tk.DoubleVar()
         self.pct.set(0.995)
-        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
+        pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
@@ -4520,45 +4761,45 @@ if __name__ == &#34;__main__&#34;:
         noisyWindowFrame.grid(row=2, column=0, sticky=&#39;nsew&#39;)
 
         self.do_noiseWin = tk.BooleanVar()
-        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin) # create the Checkbutton widget
+        winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin, command=update_remove_noise_call) # create the Checkbutton widget
         winNoiseBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
         ttk.Label(master=noisyWindowFrame, text=&#34;Max Window %&#34;).grid(row=0, column=1)
         self.noise_amp_pct = tk.DoubleVar()
         self.noise_amp_pct.set(0.80)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text=&#34;Window Length [sec]&#34;).grid(row=0, column=3)
         self.lta_noise = tk.DoubleVar()
         self.lta_noise.set(30)
-        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
+        winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         winamppctEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
         ttk.Label(master=noisyWindowFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5)
         self.win_size_thresh = tk.DoubleVar()
         self.win_size_thresh.set(0)
-        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
+        win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
         #Options for warmup
         warmupFrame = ttk.LabelFrame(noiseFrame, text=&#39;Warmup &amp; Cooldown Time&#39;)
-        warmupFrame.grid(row=3, column=0, sticky=&#39;nsew&#39;)
+        warmupFrame.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
         self.do_warmup= tk.BooleanVar()
-        warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup) # create the Checkbutton widget
+        warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup, command=update_remove_noise_call) # create the Checkbutton widget
         warmupBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
  
         ttk.Label(master=warmupFrame, text=&#34;Warmup time [s]&#34;).grid(row=0, column=1)
         self.warmup_time = tk.DoubleVar()
-        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10) # create the Entry widget
+        warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         warmupEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
         warmupEntry.delete(0, &#39;end&#39;)
         warmupEntry.insert(0, &#39;0&#39;)
  
         ttk.Label(master=warmupFrame, text=&#34;Cooldown Time [s]&#34;).grid(row=0, column=3)
         self.cooldown_time = tk.DoubleVar()
-        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10) # create the Entry widget
+        cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         cooldownEntry.grid(row=0, column=5, sticky=&#39;ew&#39;, padx=(5,10))
         cooldownEntry.delete(0, &#39;end&#39;)
         cooldownEntry.insert(0, &#39;0&#39;)
@@ -4568,26 +4809,26 @@ if __name__ == &#34;__main__&#34;:
         stdremoveFrame.grid(row=1, column=1, columnspan=1, sticky=&#39;nsew&#39;)
         
         self.do_stdev = tk.BooleanVar()
-        stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;) # create the Checkbutton widget
+        stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;, command=update_remove_noise_call) # create the Checkbutton widget
         stdBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
         
         ttk.Label(master=stdremoveFrame, text=&#34;Std Deviation Ratio (moving stdev/total stdev)&#34;).grid(row=0, column=1)
         self.stdRatio = tk.DoubleVar()
-        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;) # create the Entry widget
+        stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         stdRatEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
         stdRatEntry.delete(0, &#39;end&#39;)
         stdRatEntry.insert(0, &#39;1&#39;)
         
         ttk.Label(master=stdremoveFrame, text=&#34;Window Length [s]&#34;).grid(row=0, column=3)
         self.stdWinLen = tk.DoubleVar()
-        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;) # create the Entry widget
+        stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;,validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
         stdWinLenEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
         stdWinLenEntry.delete(0, &#39;end&#39;)
         stdWinLenEntry.insert(0, &#39;5&#39;)
 
         #Quick set the auto 
-        autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
-        autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+        #autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
+        #autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
 
         
         def set_auto():
@@ -4598,40 +4839,26 @@ if __name__ == &#34;__main__&#34;:
                 self.do_noiseWin.set(True)
                 self.do_pctThresh.set(True)
             else:
+                self.do_stalta.set(False)
+                self.do_stdev.set(False)
+                self.do_warmup.set(False)
+                self.do_noiseWin.set(False)
+                self.do_pctThresh.set(False)                
                 pass
+            
+
+        #Additional options
+        addOptionsFrame = ttk.LabelFrame(noiseFrame, text=&#39;&#39;)
+        addOptionsFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+
 
         self.do_auto= tk.BooleanVar()
-        autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
-        autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+        autoBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Set Auto Run&#34;, variable=self.do_auto, command=update_remove_noise_call) # create the Checkbutton widget
+        autoBool.grid(row=0, column=0, sticky=&#39;nsew&#39;, padx=5)
 
-
-        def update_remove_noise_call(remove_noise):
-            #Get method
-            remMethDict = {&#39;auto&#39;:False,
-                           &#39;stalta&#39;:False,
-                           &#39;sat_per&#39;:False,
-                           &#39;noise_per&#39;:False,
-                           &#39;warmcool&#39;:False,
-                           }
-            remMethList = []
-            for k, v in remMethDict.items():
-                if v:
-                    if k==&#39;auto&#39;:
-                        remMethList = [&#39;auto&#39;]
-                        break
-                    remMethList.append(k)
-            if len(remMethList)==1:
-                remMethList = remMethList[0]
-            
-            if len(remMethList)==0 or remMethList==&#39;auto&#39;:
-                remMethList = &#39;auto&#39;
-                self.do_auto().set(True)
-                set_auto()
-            
-            self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
-
-                                                                ))
- 
+        self.use_raw_data= tk.BooleanVar()
+        rawDataRemoveBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Remove from raw data&#34;, variable=self.use_raw_data, command=update_remove_noise_call) # create the Checkbutton widget
+        rawDataRemoveBool.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=5)
 
         #Export noise windows
         ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -5023,8 +5250,12 @@ if __name__ == &#34;__main__&#34;:
         #Run button frame
         runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
         self.run_button = ttk.Button(runFrame_set_ppsd, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
-        
+        self.run_button.grid(row=0, column=11, sticky=&#39;ew&#39;, padx=2.5)
+
+        self.settingsProgBar_ppsd = ttk.Progressbar(runFrame_set_ppsd, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_ppsd.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
+        runFrame_set_ppsd.columnconfigure(0, weight=1)
+
         runFrame_set_ppsd.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)            
         obspyMetadataFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=7, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
         obspyStatsFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=6, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
@@ -5035,7 +5266,7 @@ if __name__ == &#34;__main__&#34;:
         ppsd_settings_tab.pack(fill=&#39;both&#39;, expand=True)
         settings_notebook.add(ppsd_settings_tab, text=&#34;PPSD&#34;)
 
-        #HVSR SETTINGS TAB
+        #HVSR SETTINGS SUBTAB
         hvsr_settings_tab = ttk.Frame(settings_notebook)
         
         hvsrSettingsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;H/V Processing Settings&#39;)#.pack(fill=&#39;both&#39;)
@@ -5240,7 +5471,7 @@ if __name__ == &#34;__main__&#34;:
 
         
         def update_procHVSR_call(procHVSR_call):
-            procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+            procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
                   .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
@@ -5260,8 +5491,13 @@ if __name__ == &#34;__main__&#34;:
 
         #Run button frame
         runFrame_set_hvsr = ttk.Frame(hvsr_settings_tab)
+        runFrame_set_hvsr.columnconfigure(0, weight=1)
+
+        self.settingsProgBar_hvsr = ttk.Progressbar(runFrame_set_hvsr, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_hvsr.grid(row=0, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
         self.run_button = ttk.Button(runFrame_set_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-        self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+        self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
 
         #Pack tab
         runFrame_set_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
@@ -5441,7 +5677,9 @@ if __name__ == &#34;__main__&#34;:
                 if self.show_ind_curves.get():
                     kindstr_hv = kindstr_hv + &#39; t&#39;
                 if self.show_ind_peaks.get():
-                    kindstr_hv = kindstr_hv + &#39;p&#39;
+                    kindstr_hv = kindstr_hv.replace(&#39;t&#39;, &#39;tp&#39;)
+                    if &#39;tp&#39; not in kindstr_hv:
+                        kindstr_hv = kindstr_hv+ &#39; tp&#39;
                 if not self.show_stDev_hv.get():
                     kindstr_hv = kindstr_hv + &#39; -s&#39;
             else:
@@ -5482,7 +5720,10 @@ if __name__ == &#34;__main__&#34;:
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
+        runFrame_set_plot.columnconfigure(0, weight=1)
 
+        self.settingsProgBar_plot = ttk.Progressbar(runFrame_set_plot, orient=&#39;horizontal&#39;)
+        self.settingsProgBar_plot.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
         self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
 
         
@@ -5492,8 +5733,8 @@ if __name__ == &#34;__main__&#34;:
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
         
-        self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-        self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.update_results_plot_button.grid(row=0, column=11, padx=2.5)#pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+        self.run_button.grid(row=0, column=12, padx=2.5)#(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
         runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
         hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
@@ -5537,6 +5778,9 @@ if __name__ == &#34;__main__&#34;:
 
         self.browse_results_fig = ttk.Button(self.results_siteSelectFrame, text=&#34;Update site&#34;,command=on_site_select)
         self.browse_results_fig.grid(row=0, column=8, sticky=&#39;ew&#39;, padx=5)
+
+        self.results_siteSelectFrame.columnconfigure(9, weight=1)
+
 
         def update_site_dropdown():
             self.site_dropdown[&#39;values&#39;] = self.site_options
@@ -5692,6 +5936,9 @@ if __name__ == &#34;__main__&#34;:
 
         self.totalResult.grid(row=25, sticky=&#39;e&#39;, padx=5, pady=10 )
 
+        self.resultsProgBar = ttk.Progressbar(self.results_peakInfoFrame, orient=&#39;horizontal&#39;)
+        self.resultsProgBar.grid(row=26, column=0, sticky=&#39;ew&#39;)
+
         #Export results
         self.results_export_Frame = ttk.LabelFrame(self.results_tab, text=&#34;Export Results&#34;)
         
@@ -5752,12 +5999,39 @@ if __name__ == &#34;__main__&#34;:
         self.results_siteSelectFrame.grid(row=0,column=0, columnspan=8, rowspan=2, sticky=&#39;ew&#39;)
         self.results_peakInfoFrame.grid(row=0,  column=9, columnspan=2, rowspan=8, sticky=&#39;nsew&#39;)#.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
         self.results_chartFrame.grid(row=2,     column=0, columnspan=8, rowspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
-        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,stick=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
+        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
         self.results_tab.columnconfigure(0, weight=1)
         self.results_tab.rowconfigure(2, weight=1)
+        
 
-        # Add tabs to tab control
-        self.tab_control.add(self.results_tab, text=&#34;Results&#34;)
+        # LOG TAB
+        self.log_tab = ttk.Frame(self.tab_control)
+        
+        from tkinter import scrolledtext
+        self.logFrame = ttk.LabelFrame(self.log_tab, text=&#39;Log&#39;)
+        self.logFrame.columnconfigure(0, weight=1)
+        self.logFrame.rowconfigure(0, weight=1)
+        
+        self.log_text = scrolledtext.ScrolledText(self.logFrame, wrap = tk.WORD)#, width=200, height=50)
+        self.log_text.configure(font=(&#34;Courier&#34;, 11))
+        #text_area.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+        self.log_text.grid(row=0, rowspan=10, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;, expand=True)
+
+        self.logProgBar = ttk.Progressbar(self.logFrame, orient=&#39;horizontal&#39;)
+        self.logProgBar.grid(row=11, column=0, sticky=&#39;nsew&#39;)
+
+        introLogText = &#34;Log of active session:\n&#34;
+        self.log_text.insert(&#39;end&#39;, introLogText)
+        #log_text.configure(bg=&#39;black&#39;, fg=&#39;white&#39;)
+
+
+        self.logFrame.pack(fill=&#39;both&#39;, expand=True)#.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;, anchor=&#39;nw&#39;)
+        self.log_tab.pack(fill=&#39;both&#39;, expand=True, side=&#39;left&#39;, anchor=&#39;nw&#39;)
+        
+        # Add log tab to tab control
+        self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
+        # Add result tab to tab control
+        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill=&#34;both&#34;)</code></pre>
@@ -5902,7 +6176,14 @@ if __name__ == &#34;__main__&#34;:
     #FUNCTION TO READ DATA
     @catch_errors
     def read_data():
+        update_progress_bars(prog_percent=0)
+        #messagebox.showinfo(title=&#34;Reading Data&#34;, message=&#39;Reading Data...&#39;)
+        self.log_text.insert(&#39;end&#39;, f&#39;\n\nReading data [{datetime.datetime.now()}]\n\n&#39;)
         self.starttime, self.endtime = get_times()
+
+
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.input_params_call[&#39;text&#39;]}\n\n&#34;)
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.fetch_data_call[&#39;text&#39;]}\n\n&#34;)
 
         if self.file_source.get() == &#39;batch&#39;:
             batchType = self.batch_type.get()
@@ -5915,6 +6196,8 @@ if __name__ == &#34;__main__&#34;:
             else:
                 self.fpath = self.fpath[0]
 
+
+            update_progress_bars(prog_percent=1)            
             self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                 metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
@@ -5940,14 +6223,18 @@ if __name__ == &#34;__main__&#34;:
             else:
                 trimDir=self.trim_dir.get()
 
+            update_progress_bars(prog_percent=2)            
             self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                         source=self.file_source.get(), 
                                         trim_dir=trimDir, 
                                         export_format=self.export_format.get(), 
                                         detrend=self.detrend.get(), 
                                         detrend_order=self.detrend_order.get())
-                
+            
+            update_progress_bars(prog_percent=10)                                
             self.site_options = self.hvsr_data.sites
+
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
 
             firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
             update_input_labels(firstSite)
@@ -5969,6 +6256,7 @@ if __name__ == &#34;__main__&#34;:
             else:
                 self.fpath = self.fpath[0]
 
+            update_progress_bars(prog_percent=1)
             self.params = sprit_hvsr.input_params( datapath=self.fpath,
                                 metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
@@ -5988,19 +6276,26 @@ if __name__ == &#34;__main__&#34;:
                                 elev_unit= self.elev_unit.get(),
                                 instrument = self.instrumentSel.get(),
                                 hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+            self.hvsr_data = self.params
 
             if self.trim_dir.get()==&#39;&#39;:
                 trimDir=None
             else:
                 trimDir=self.trim_dir.get()
-
-            self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
-                                        source=self.file_source.get(), 
+            
+            update_progress_bars(prog_percent=2)
+            try:
+                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
+                                        source=self.file_source.get(),
                                         trim_dir=trimDir, 
                                         export_format=self.export_format.get(), 
                                         detrend=self.detrend.get(), 
                                         detrend_order=self.detrend_order.get())
-            
+            except:
+                #print(dir(sys.exc_info()))
+                traceback.print_exc()
+
+            update_progress_bars(prog_percent=10)
             update_input_labels(self.hvsr_data)
 
             #Plot data in data preview tab
@@ -6013,6 +6308,7 @@ if __name__ == &#34;__main__&#34;:
 
         self.data_read = True
         if not self.processingData:
+            update_progress_bars(prog_percent=100)
             self.tab_control.select(self.preview_data_tab)
 
     def report_results(hvsr_results):
@@ -6075,16 +6371,23 @@ if __name__ == &#34;__main__&#34;:
     #FUNCTION TO PROCESS DATA
     @catch_errors
     def process_data():
+        update_progress_bars(prog_percent=0)
+        #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
         self.processingData = True #Set to true while data processing algorithm is being run
         
         if self.data_read == False:
             read_data()
+            update_progress_bars(prog_percent=12)
+
+        self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
         #Make this an option
         #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
 
         self.hvsr_data = plot_noise_windows(self.hvsr_data)
-
+        
+        update_progress_bars(prog_percent=15)
         self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
                                             remove_outliers=self.remove_outliers.get(), 
                                             outlier_std=self.outlier_std.get(),
@@ -6098,8 +6401,9 @@ if __name__ == &#34;__main__&#34;:
                                             period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                             special_handling=special_handling#, verbose=True
                                            )
-        
+        update_progress_bars(prog_percent=50)
 
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
         self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                method=self.method_ind,
                                                smooth=self.hvsmooth_param,
@@ -6107,11 +6411,17 @@ if __name__ == &#34;__main__&#34;:
                                                f_smooth_width=self.fSmoothWidth.get(), 
                                                resample=self.hvresample_int,
                                                outlier_curve_std=self.outlierRemStDev.get())
-        
+        update_progress_bars(prog_percent=90)
+
+
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
         self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                               hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                               peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
+        update_progress_bars(prog_percent=95)
 
+
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.checkPeaks_Call[&#39;text&#39;]}\n\n&#34;)
         if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
             report_results(self.hvsr_results)
             self.results_siteSelectFrame.grid_forget()
@@ -6121,10 +6431,44 @@ if __name__ == &#34;__main__&#34;:
         else:
             warnings.warn(f&#39;Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.&#39;)
 
+        #Log results
+        self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
+        self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
+        self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+        
         self.processingData = False
         self.tab_control.select(self.results_tab)
+        update_progress_bars(prog_percent=100)
 
-    
+
+    def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
+        progBarListList = [[self.inputProgBar,(0,0), True], 
+                            [self.prevProgBar,(0,0), True], 
+                            [self.noiseProgBar,(0,0), True], 
+                            [self.settingsProgBar_ppsd, (0, 0), True],
+                            [self.settingsProgBar_hvsr, (0,0), True],
+                            [self.settingsProgBar_plot,(0,0), True], 
+                            [self.logProgBar,(0,11), False], 
+                            [self.resultsProgBar,(0,26), False]]
+        
+        def prog_bar_update(progBarListList, progPercent, processName):
+            for bar in progBarListList:
+                progBar = bar[0]
+                barLoc = bar[1]
+
+                progBar[&#39;value&#39;] = progPercent
+
+                if progPercent==0:
+                    progBar.master.columnconfigure(0, weight=1)
+                    progBar.grid(row=barLoc[0],column=barLoc[1], sticky=&#39;ew&#39;)
+                elif progPercent==100:
+                    progBar.grid_forget()
+
+                progBar.update()
+
+        threading.Thread(target=prog_bar_update(progBarListList=progBarListList, progPercent=prog_percent, processName=process_name)).start()
+        #self.update_idletasks()
+
     def update_input_params_call():
         self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
@@ -6135,6 +6479,7 @@ if __name__ == &#34;__main__&#34;:
                                         self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                         self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                         self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
+    
     #Specify site name        
     siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
     siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -6142,8 +6487,6 @@ if __name__ == &#34;__main__&#34;:
     self.site_name.set(&#39;HVSR Site&#39;)
     self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
     self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
-
-    # source=file
     
     def on_source_select():
         try:
@@ -6428,27 +6771,21 @@ if __name__ == &#34;__main__&#34;:
     ttk.Label(hvsrFrame,text=&#34;Timezone&#34;).grid(row=3,column=7, sticky=&#39;w&#39;, padx=5)
     self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky=&#39;nsew&#39;, padx=5)
 
-    #ttk.Label(hvsrFrame, text=&#34;Timezone&#34;).grid(row=3, column=7)
-    #self.timezone_var = tk.StringVar(value=&#34;UTC&#34;)
-    #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, &#34;UTC&#34;, *pytz.all_timezones)
-    #self.timezone_listbox.grid(row=3,column=7)
-
     # DOY
     self.day_of_year = self.acq_date.timetuple().tm_yday
-    
-    ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
-    self.doy_label = ttk.Label(hvsrFrame,text=str(self.day_of_year))
+
+    ttk.Label(hvsrFrame,text=&#34;Day of Year:&#34;).grid(row=4, column=1, sticky=&#39;e&#39;, padx=5, pady=10)
+    self.doy_label = ttk.Label(hvsrFrame, text=str(self.day_of_year))
     self.doy_label.grid(row=4, column=2, sticky=&#39;w&#39;)
 
     # UTC Time Output
     ttk.Label(hvsrFrame,text=&#34;UTC Time:&#34;).grid(row=4, column=3, sticky=&#39;e&#39;, padx=5, pady=10)
-    self.utc_time_output_label = ttk.Label(hvsrFrame,text=&#34;&#34;)
-    self.utc_time_output_label.grid(row=4,column=4)
+    self.utc_time_output_label = ttk.Label(hvsrFrame, text=&#34;&#34;)
+    self.utc_time_output_label.grid(row=4, column=4)
 
-    #Initialize as UTC
+    # Initialize as UTC
     self.tz = datetime.timezone.utc
-    #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
-    #input_params() call
+
 
     self.starttime, self.endtime = get_times()
 
@@ -6561,7 +6898,7 @@ if __name__ == &#34;__main__&#34;:
             float(self.peakFreqRange_min.get())
             float(self.peakFreqRange_max.get())
 
-            peakFreqRange.configure(text=&#39;hvsr_band=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+            peakFreqRangeLabel.configure(text=&#39;peak_freq_range=[{}, {}]&#39;.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
             update_check_peaks_call(self.checkPeaks_Call)
             update_input_params_call()
             return True
@@ -6727,14 +7064,18 @@ if __name__ == &#34;__main__&#34;:
 
     #Set up frame for reading and running
     runFrame_hvsr = ttk.Frame(self.input_tab)
+    runFrame_hvsr.columnconfigure(0, weight=1)
+
+    self.inputProgBar = ttk.Progressbar(runFrame_hvsr, orient=&#39;horizontal&#39;)
+    self.inputProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
 
     self.style.configure(style=&#39;Custom.TButton&#39;, background=&#39;#d49949&#39;)
     self.read_button = ttk.Button(runFrame_hvsr, text=&#34;Read Data&#34;, command=read_data, width=30, style=&#39;Custom.TButton&#39;)
 
     self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
     self.run_button = ttk.Button(runFrame_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-    self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-    self.read_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+    self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
+    self.read_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
 
     hvsrFrame.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;)#.grid(row=0, sticky=&#34;nsew&#34;)
     runFrame_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)
@@ -6811,13 +7152,18 @@ if __name__ == &#34;__main__&#34;:
     
     #preview-Run button
     runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
+    runFrame_dataPrev.columnconfigure(0, weight=1)
+
+    self.prevProgBar = ttk.Progressbar(runFrame_dataPrev, orient=&#39;horizontal&#39;)
+    self.prevProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
     self.run_button = ttk.Button(runFrame_dataPrev, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-    self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
-    runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#grid(row=1, sticky=&#39;e&#39;)
+    self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)#.grid(row=2, column=9, columnspan=20, sticky=&#39;e&#39;)
+    runFrame_dataPrev.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;, fill=&#39;both&#39;)#grid(row=1, sticky=&#39;e&#39;)
 
     self.tab_control.add(self.preview_data_tab, text=&#34;Data Preview&#34;)
 
-    # Noise tab
+    # NOISE TAB
     self.noise_tab = ttk.Frame(self.tab_control)
     self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Viewer&#39;)
 
@@ -6941,7 +7287,6 @@ if __name__ == &#34;__main__&#34;:
            
     
     def select_windows(event, input=None, initialize=False):
-        import obspy
         &#34;&#34;&#34;Function to manually select windows for exclusion from data.
 
         Parameters
@@ -6956,8 +7301,6 @@ if __name__ == &#34;__main__&#34;:
         &#34;&#34;&#34;
         from matplotlib.backend_bases import MouseButton
         import matplotlib.pyplot as plt
-        import matplotlib
-        import time
         
         #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input[&#39;stream&#39;], params=input, fig=self.fig_noise, ax=self.ax_noise, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
         #self.fig_noise.canvas.draw()
@@ -7083,10 +7426,9 @@ if __name__ == &#34;__main__&#34;:
 
             for i, (k, hv_data) in enumerate(hvsr_data.items()):
                 #Reset edited data every time plot_noise_windows is run
-                hv_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()
-                
+                #v_data[&#39;stream&#39;] = hv_data[&#39;input_stream&#39;].copy()                    
                 #Set initial input
-                input = hv_data#[&#39;input_stream&#39;]
+                #input = hv_data#[&#39;input_stream&#39;]
 
                 #print(input[0].stats.starttime)
                 if self.do_stalta.get():
@@ -7130,8 +7472,13 @@ if __name__ == &#34;__main__&#34;:
 
     #Run button frame
     runFrame_noise = ttk.Frame(self.noise_tab)
-    
+    runFrame_noise.columnconfigure(0, weight=1)
+
     #Run area
+    #Progress Bar
+    self.noiseProgBar = ttk.Progressbar(runFrame_noise, orient=&#39;horizontal&#39;)
+    self.noiseProgBar.grid(row=0, column=0, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
     #Update Noise Windows button
     self.style.configure(style=&#39;Noise.TButton&#39;, background=&#39;#86a5ba&#39;)
     self.noise_button = ttk.Button(runFrame_noise, text=&#34;Update Noise Windows&#34;, command=plot_noise_windows, width=30, style=&#39;Noise.TButton&#39;)
@@ -7141,65 +7488,94 @@ if __name__ == &#34;__main__&#34;:
 
     self.style.configure(&#39;Run.TButton&#39;, background=&#39;#8b9685&#39;, width=10, height=3)
     self.run_button = ttk.Button(runFrame_noise, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)        
-    self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-    self.noise_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+    self.noise_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+    self.run_button.grid(row=0, column=2, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
     runFrame_noise.pack(fill=&#39;both&#39;,side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
+
+
+    def update_remove_noise_call():
+        if &#39;prevAutoState&#39; not in dir(self):
+            self.prevAutoState=self.do_auto.get()
+
+        if self.prevAutoState and not self.do_auto.get():
+            self.do_stalta.set(False)
+            self.do_pctThresh.set(False)
+            self.do_noiseWin.set(False)
+            self.do_warmup.set(False)
+        #Get method
+        remMethDict = {&#39;auto&#39;:self.do_auto.get(),
+                       &#39;stalta&#39;:self.do_stalta.get(),
+                       &#39;sat_per&#39;:self.do_pctThresh.get(),
+                       &#39;noise_per&#39;:self.do_noiseWin.get(),
+                       &#39;warmcool&#39;:self.do_warmup.get(),
+                       }
+
+        remMethList = []
+        for k, v in remMethDict.items():
+            if v:
+                if k==&#39;auto&#39;:
+                    remMethList = [&#39;auto&#39;]
+                    break
+                remMethList.append(k)
+
+        if len(remMethList)==1:
+            remMethList = remMethList[0]
+        
+        if remMethList==&#39;auto&#39;:
+            remMethList = &#39;auto&#39;
+            self.do_auto.set(True)
+            set_auto()
+
+        if len(remMethList)==0:
+            remMethList=None
+
+        self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
+                                                            remMethList, self.pct.get(), self.noise_amp_pct.get(), self.sta.get(), self.lta.get(), self.stalta_thresh_low.get(), self.stalta_thresh_hi.get(), 
+                                                            self.warmup_time.get(), self.cooldown_time.get(), self.win_size_thresh.get(),self.use_raw_data.get() ))
+
+        self.prevAutoState = self.do_auto.get()
+
 
     #remove_noise Frame
     removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;remove_noise() call&#39;)
 
-    self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
+    self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=&#34;remove_noise(hvsr_data, remove_method=&#39;auto&#39;,sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)&#34;)
     self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
     removeNoiseFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;)#.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
     noiseFrame = ttk.LabelFrame(self.noise_tab, text=&#39;Noise Removal&#39;)
     noiseFrame.pack(fill=&#39;both&#39;)#.grid(row=1, columnspan=2, sticky=&#39;nsew&#39;)
-    
-    #Options for manually removing windows
-    windowremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;Manual Window Removal&#39;)
-    windowremoveFrame.grid(row=0, column=1, columnspan=1, sticky=&#39;nsew&#39;)
-    self.do_window = tk.BooleanVar() # create a BooleanVar to store the state of the Checkbutton
-    manualBool = ttk.Checkbutton(master=windowremoveFrame, text=&#34;&#34;, variable=self.do_window) # create the Checkbutton widget
-    manualBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
-    
-    def remove_windows_manually():
-        #Placeholderfunction
-        print(&#39;Ok, this button may not need to do anything&#39;)
-        #Plot data in noise preview tab
-
-    self.select_windows = ttk.Button(master=windowremoveFrame, text=&#34;Remove Windows&#34;, command=remove_windows_manually) # create the Checkbutton widget
-    self.select_windows.grid(row=0, column=1, sticky=&#39;e&#39;)
 
     #Options for doing stalta antitrigger for noise removal
     stltaremoveFrame = ttk.LabelFrame(noiseFrame, text=&#39;STA/LTA Antitrigger&#39;)
     stltaremoveFrame.grid(row=0, column=0, columnspan=1, sticky=&#39;nsew&#39;)
     
     self.do_stalta = tk.BooleanVar()
-    staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta) # create the Checkbutton widget
+    staltaBool = ttk.Checkbutton(master=stltaremoveFrame, text=&#34;&#34;, variable=self.do_stalta, command=update_remove_noise_call) # create the Checkbutton widget
     staltaBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
     
     ttk.Label(master=stltaremoveFrame, text=&#34;STA [s]&#34;).grid(row=0, column=1)
     self.sta = tk.DoubleVar()
     self.sta.set(5)
-    staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5) # create the Entry widget
+    staEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.sta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     staEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=stltaremoveFrame, text=&#34;LTA [s]&#34;).grid(row=0, column=3)
     self.lta = tk.DoubleVar()
     self.lta.set(30)
-    ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5) # create the Entry widget
+    ltaEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.lta, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     ltaEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=stltaremoveFrame, text=&#34;STA/LTA Thresholds (Low, High)&#34;).grid(row=0, column=5)
     self.stalta_thresh_low = tk.DoubleVar()
     self.stalta_thresh_low.set(0.5)
-    staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5) # create the Entry widget
+    staltaLowEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_low, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     staltaLowEntry.grid(row=0, column=6, sticky=&#39;ew&#39;, padx=(5,0))
     
     self.stalta_thresh_hi = tk.DoubleVar()
     self.stalta_thresh_hi.set(5)
-    staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5) # create the Entry widget
+    staltaHiEntry = ttk.Entry(master=stltaremoveFrame, textvariable=self.stalta_thresh_hi, width=5, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     staltaHiEntry.grid(row=0, column=7, sticky=&#39;ew&#39;)
     
     #Options for Percentage threshold removal
@@ -7207,13 +7583,13 @@ if __name__ == &#34;__main__&#34;:
     pctThresFrame.grid(row=1, column=0, sticky=&#39;nsew&#39;)
 
     self.do_pctThresh= tk.BooleanVar()
-    pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh) # create the Checkbutton widget
+    pctBool = ttk.Checkbutton(master=pctThresFrame, text=&#34;&#34;, variable=self.do_pctThresh, command=update_remove_noise_call) # create the Checkbutton widget
     pctBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
 
-    ttk.Label(master=pctThresFrame, text=&#34;Max Instantaneous %&#34;).grid(row=0, column=1)
+    ttk.Label(master=pctThresFrame, text=&#34;Max Saturation %&#34;).grid(row=0, column=1)
     self.pct = tk.DoubleVar()
     self.pct.set(0.995)
-    pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10) # create the Entry widget
+    pctEntry = ttk.Entry(master=pctThresFrame, textvariable=self.pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     pctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=pctThresFrame, text=&#34;&#34;, width=27).grid(row=0, column=3, columnspan=2)
@@ -7223,45 +7599,45 @@ if __name__ == &#34;__main__&#34;:
     noisyWindowFrame.grid(row=2, column=0, sticky=&#39;nsew&#39;)
 
     self.do_noiseWin = tk.BooleanVar()
-    winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin) # create the Checkbutton widget
+    winNoiseBool = ttk.Checkbutton(master=noisyWindowFrame, text=&#34;&#34;, variable=self.do_noiseWin, command=update_remove_noise_call) # create the Checkbutton widget
     winNoiseBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
 
     ttk.Label(master=noisyWindowFrame, text=&#34;Max Window %&#34;).grid(row=0, column=1)
     self.noise_amp_pct = tk.DoubleVar()
     self.noise_amp_pct.set(0.80)
-    winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10) # create the Entry widget
+    winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.noise_amp_pct, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     winamppctEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=noisyWindowFrame, text=&#34;Window Length [sec]&#34;).grid(row=0, column=3)
     self.lta_noise = tk.DoubleVar()
     self.lta_noise.set(30)
-    winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10) # create the Entry widget
+    winamppctEntry = ttk.Entry(master=noisyWindowFrame, textvariable=self.lta_noise, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     winamppctEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
 
     ttk.Label(master=noisyWindowFrame, text=&#34;Min. Window Size [sec]&#34;).grid(row=0, column=5)
     self.win_size_thresh = tk.DoubleVar()
     self.win_size_thresh.set(0)
-    win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10) # create the Entry widget
+    win_size_Entry = ttk.Entry(master=noisyWindowFrame, textvariable=self.win_size_thresh, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     win_size_Entry.grid(row=0, column=6, sticky=&#39;e&#39;, padx=(5,10))
 
     #Options for warmup
     warmupFrame = ttk.LabelFrame(noiseFrame, text=&#39;Warmup &amp; Cooldown Time&#39;)
-    warmupFrame.grid(row=3, column=0, sticky=&#39;nsew&#39;)
+    warmupFrame.grid(row=0, column=1, sticky=&#39;nsew&#39;)
 
     self.do_warmup= tk.BooleanVar()
-    warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup) # create the Checkbutton widget
+    warmupBool = ttk.Checkbutton(master=warmupFrame, text=&#34;&#34;, variable=self.do_warmup, command=update_remove_noise_call) # create the Checkbutton widget
     warmupBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
 
     ttk.Label(master=warmupFrame, text=&#34;Warmup time [s]&#34;).grid(row=0, column=1)
     self.warmup_time = tk.DoubleVar()
-    warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10) # create the Entry widget
+    warmupEntry = ttk.Entry(master=warmupFrame, textvariable=self.warmup_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     warmupEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
     warmupEntry.delete(0, &#39;end&#39;)
     warmupEntry.insert(0, &#39;0&#39;)
 
     ttk.Label(master=warmupFrame, text=&#34;Cooldown Time [s]&#34;).grid(row=0, column=3)
     self.cooldown_time = tk.DoubleVar()
-    cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10) # create the Entry widget
+    cooldownEntry = ttk.Entry(master=warmupFrame, textvariable=self.cooldown_time, width=10, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     cooldownEntry.grid(row=0, column=5, sticky=&#39;ew&#39;, padx=(5,10))
     cooldownEntry.delete(0, &#39;end&#39;)
     cooldownEntry.insert(0, &#39;0&#39;)
@@ -7271,26 +7647,26 @@ if __name__ == &#34;__main__&#34;:
     stdremoveFrame.grid(row=1, column=1, columnspan=1, sticky=&#39;nsew&#39;)
     
     self.do_stdev = tk.BooleanVar()
-    stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;) # create the Checkbutton widget
+    stdBool = ttk.Checkbutton(master=stdremoveFrame, text=&#34;&#34;, variable=self.do_stdev, state=&#39;disabled&#39;, command=update_remove_noise_call) # create the Checkbutton widget
     stdBool.grid(row=0, column=0, sticky=&#39;ew&#39;)
     
     ttk.Label(master=stdremoveFrame, text=&#34;Std Deviation Ratio (moving stdev/total stdev)&#34;).grid(row=0, column=1)
     self.stdRatio = tk.DoubleVar()
-    stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;) # create the Entry widget
+    stdRatEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdRatio, width=5, state=&#39;disabled&#39;, validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     stdRatEntry.grid(row=0, column=2, sticky=&#39;ew&#39;, padx=(5,10))
     stdRatEntry.delete(0, &#39;end&#39;)
     stdRatEntry.insert(0, &#39;1&#39;)
     
     ttk.Label(master=stdremoveFrame, text=&#34;Window Length [s]&#34;).grid(row=0, column=3)
     self.stdWinLen = tk.DoubleVar()
-    stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;) # create the Entry widget
+    stdWinLenEntry = ttk.Entry(master=stdremoveFrame, textvariable=self.stdWinLen, width=5, state=&#39;disabled&#39;,validate=&#39;focusout&#39;, validatecommand=update_remove_noise_call) # create the Entry widget
     stdWinLenEntry.grid(row=0, column=4, sticky=&#39;ew&#39;, padx=(5,10))
     stdWinLenEntry.delete(0, &#39;end&#39;)
     stdWinLenEntry.insert(0, &#39;5&#39;)
 
     #Quick set the auto 
-    autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
-    autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+    #autoFrame = ttk.LabelFrame(noiseFrame, text=&#39;Auto Run&#39;)
+    #autoFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
 
     
     def set_auto():
@@ -7301,40 +7677,26 @@ if __name__ == &#34;__main__&#34;:
             self.do_noiseWin.set(True)
             self.do_pctThresh.set(True)
         else:
+            self.do_stalta.set(False)
+            self.do_stdev.set(False)
+            self.do_warmup.set(False)
+            self.do_noiseWin.set(False)
+            self.do_pctThresh.set(False)                
             pass
+        
+
+    #Additional options
+    addOptionsFrame = ttk.LabelFrame(noiseFrame, text=&#39;&#39;)
+    addOptionsFrame.grid(row=2, column=1, columnspan=1, sticky=&#39;nsew&#39;)
+
 
     self.do_auto= tk.BooleanVar()
-    autoBool = ttk.Checkbutton(master=autoFrame, text=&#34;&#34;, variable=self.do_auto, command=set_auto) # create the Checkbutton widget
-    autoBool.grid(row=0, column=0, sticky=&#39;ew&#39;)   
+    autoBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Set Auto Run&#34;, variable=self.do_auto, command=update_remove_noise_call) # create the Checkbutton widget
+    autoBool.grid(row=0, column=0, sticky=&#39;nsew&#39;, padx=5)
 
-
-    def update_remove_noise_call(remove_noise):
-        #Get method
-        remMethDict = {&#39;auto&#39;:False,
-                       &#39;stalta&#39;:False,
-                       &#39;sat_per&#39;:False,
-                       &#39;noise_per&#39;:False,
-                       &#39;warmcool&#39;:False,
-                       }
-        remMethList = []
-        for k, v in remMethDict.items():
-            if v:
-                if k==&#39;auto&#39;:
-                    remMethList = [&#39;auto&#39;]
-                    break
-                remMethList.append(k)
-        if len(remMethList)==1:
-            remMethList = remMethList[0]
-        
-        if len(remMethList)==0 or remMethList==&#39;auto&#39;:
-            remMethList = &#39;auto&#39;
-            self.do_auto().set(True)
-            set_auto()
-        
-        self.remove_noise_call.configure(text=&#34;remove_noise(hvsr_data, remove_method={}, sat_percent={}, noise_percent={}, sta={}, lta={}, stalta_thresh=[{},{}], warmup_time={}, cooldown_time={}, min_win_size={}, remove_raw_noise={})&#34;.format(
-
-                                                            ))
-
+    self.use_raw_data= tk.BooleanVar()
+    rawDataRemoveBool = ttk.Checkbutton(master=addOptionsFrame, text=&#34;Remove from raw data&#34;, variable=self.use_raw_data, command=update_remove_noise_call) # create the Checkbutton widget
+    rawDataRemoveBool.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=5)
 
     #Export noise windows
     ttk.Label(noiseFrame, text=&#34;Export Figure&#34;).grid(row=4, column=0, sticky=&#39;ew&#39;, padx=5)
@@ -7726,8 +8088,12 @@ if __name__ == &#34;__main__&#34;:
     #Run button frame
     runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
     self.run_button = ttk.Button(runFrame_set_ppsd, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-    self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
-    
+    self.run_button.grid(row=0, column=11, sticky=&#39;ew&#39;, padx=2.5)
+
+    self.settingsProgBar_ppsd = ttk.Progressbar(runFrame_set_ppsd, orient=&#39;horizontal&#39;)
+    self.settingsProgBar_ppsd.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)
+    runFrame_set_ppsd.columnconfigure(0, weight=1)
+
     runFrame_set_ppsd.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)            
     obspyMetadataFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=7, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
     obspyStatsFrame.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;,expand=True)#.grid(row=6, column=0, columnspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;both&#39;, anchor=&#39;n&#39;, expand=True)
@@ -7738,7 +8104,7 @@ if __name__ == &#34;__main__&#34;:
     ppsd_settings_tab.pack(fill=&#39;both&#39;, expand=True)
     settings_notebook.add(ppsd_settings_tab, text=&#34;PPSD&#34;)
 
-    #HVSR SETTINGS TAB
+    #HVSR SETTINGS SUBTAB
     hvsr_settings_tab = ttk.Frame(settings_notebook)
     
     hvsrSettingsFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;H/V Processing Settings&#39;)#.pack(fill=&#39;both&#39;)
@@ -7943,7 +8309,7 @@ if __name__ == &#34;__main__&#34;:
 
     
     def update_procHVSR_call(procHVSR_call):
-        procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})&#39;
+        procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
               .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                       outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
     
@@ -7963,8 +8329,13 @@ if __name__ == &#34;__main__&#34;:
 
     #Run button frame
     runFrame_set_hvsr = ttk.Frame(hvsr_settings_tab)
+    runFrame_set_hvsr.columnconfigure(0, weight=1)
+
+    self.settingsProgBar_hvsr = ttk.Progressbar(runFrame_set_hvsr, orient=&#39;horizontal&#39;)
+    self.settingsProgBar_hvsr.grid(row=0, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
+
     self.run_button = ttk.Button(runFrame_set_hvsr, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
-    self.run_button.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
+    self.run_button.grid(row=0, column=1, sticky=&#39;nsew&#39;, padx=2.5)#.pack(side=&#39;bottom&#39;, anchor=&#39;e&#39;)
 
     #Pack tab
     runFrame_set_hvsr.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)    
@@ -8144,7 +8515,9 @@ if __name__ == &#34;__main__&#34;:
             if self.show_ind_curves.get():
                 kindstr_hv = kindstr_hv + &#39; t&#39;
             if self.show_ind_peaks.get():
-                kindstr_hv = kindstr_hv + &#39;p&#39;
+                kindstr_hv = kindstr_hv.replace(&#39;t&#39;, &#39;tp&#39;)
+                if &#39;tp&#39; not in kindstr_hv:
+                    kindstr_hv = kindstr_hv+ &#39; tp&#39;
             if not self.show_stDev_hv.get():
                 kindstr_hv = kindstr_hv + &#39; -s&#39;
         else:
@@ -8185,7 +8558,10 @@ if __name__ == &#34;__main__&#34;:
 
     #Run button frame
     runFrame_set_plot = ttk.Frame(plot_settings_tab)
+    runFrame_set_plot.columnconfigure(0, weight=1)
 
+    self.settingsProgBar_plot = ttk.Progressbar(runFrame_set_plot, orient=&#39;horizontal&#39;)
+    self.settingsProgBar_plot.grid(row=0, column=0, columnspan=10, sticky=&#39;ew&#39;)#.pack(fill=&#39;both&#39;,expand=True, side=&#39;left&#39;, anchor=&#39;sw&#39;)
     self.run_button = ttk.Button(runFrame_set_plot, text=&#34;Run&#34;, style=&#39;Run.TButton&#39;, command=process_data)
 
     
@@ -8195,8 +8571,8 @@ if __name__ == &#34;__main__&#34;:
 
     self.update_results_plot_button = ttk.Button(runFrame_set_plot, text=&#34;Update Plot&#34;, style=&#39;Noise.TButton&#39;, command=update_results_plot, width=30)
     
-    self.run_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
-    self.update_results_plot_button.pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+    self.update_results_plot_button.grid(row=0, column=11, padx=2.5)#pack(side=&#39;right&#39;, anchor=&#39;se&#39;)
+    self.run_button.grid(row=0, column=12, padx=2.5)#(side=&#39;right&#39;, anchor=&#39;se&#39;, padx=(10,0))
 
     runFrame_set_plot.pack(fill=&#39;both&#39;, side=&#39;bottom&#39;, anchor=&#39;e&#39;)
     hvplot_label.pack(fill=&#39;both&#39;, expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky=&#34;w&#34;)
@@ -8240,6 +8616,9 @@ if __name__ == &#34;__main__&#34;:
 
     self.browse_results_fig = ttk.Button(self.results_siteSelectFrame, text=&#34;Update site&#34;,command=on_site_select)
     self.browse_results_fig.grid(row=0, column=8, sticky=&#39;ew&#39;, padx=5)
+
+    self.results_siteSelectFrame.columnconfigure(9, weight=1)
+
 
     def update_site_dropdown():
         self.site_dropdown[&#39;values&#39;] = self.site_options
@@ -8395,6 +8774,9 @@ if __name__ == &#34;__main__&#34;:
 
     self.totalResult.grid(row=25, sticky=&#39;e&#39;, padx=5, pady=10 )
 
+    self.resultsProgBar = ttk.Progressbar(self.results_peakInfoFrame, orient=&#39;horizontal&#39;)
+    self.resultsProgBar.grid(row=26, column=0, sticky=&#39;ew&#39;)
+
     #Export results
     self.results_export_Frame = ttk.LabelFrame(self.results_tab, text=&#34;Export Results&#34;)
     
@@ -8455,12 +8837,39 @@ if __name__ == &#34;__main__&#34;:
     self.results_siteSelectFrame.grid(row=0,column=0, columnspan=8, rowspan=2, sticky=&#39;ew&#39;)
     self.results_peakInfoFrame.grid(row=0,  column=9, columnspan=2, rowspan=8, sticky=&#39;nsew&#39;)#.pack(side=&#39;right&#39;, fill=&#39;both&#39;)
     self.results_chartFrame.grid(row=2,     column=0, columnspan=8, rowspan=6, sticky=&#39;nsew&#39;)#.pack(side=&#39;top&#39;, expand=True, fill=&#39;both&#39;)
-    self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,stick=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
+    self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,sticky=&#39;nsew&#39;)#.pack(side=&#39;bottom&#39;, fill=&#39;x&#39;)
     self.results_tab.columnconfigure(0, weight=1)
     self.results_tab.rowconfigure(2, weight=1)
+    
 
-    # Add tabs to tab control
-    self.tab_control.add(self.results_tab, text=&#34;Results&#34;)
+    # LOG TAB
+    self.log_tab = ttk.Frame(self.tab_control)
+    
+    from tkinter import scrolledtext
+    self.logFrame = ttk.LabelFrame(self.log_tab, text=&#39;Log&#39;)
+    self.logFrame.columnconfigure(0, weight=1)
+    self.logFrame.rowconfigure(0, weight=1)
+    
+    self.log_text = scrolledtext.ScrolledText(self.logFrame, wrap = tk.WORD)#, width=200, height=50)
+    self.log_text.configure(font=(&#34;Courier&#34;, 11))
+    #text_area.grid(row=0, column=0, sticky=&#39;nsew&#39;)
+    self.log_text.grid(row=0, rowspan=10, column=0, sticky=&#39;nsew&#39;)#.pack(fill=&#39;both&#39;, expand=True)
+
+    self.logProgBar = ttk.Progressbar(self.logFrame, orient=&#39;horizontal&#39;)
+    self.logProgBar.grid(row=11, column=0, sticky=&#39;nsew&#39;)
+
+    introLogText = &#34;Log of active session:\n&#34;
+    self.log_text.insert(&#39;end&#39;, introLogText)
+    #log_text.configure(bg=&#39;black&#39;, fg=&#39;white&#39;)
+
+
+    self.logFrame.pack(fill=&#39;both&#39;, expand=True)#.pack(fill=&#39;both&#39;, expand=True, side=&#39;top&#39;, anchor=&#39;nw&#39;)
+    self.log_tab.pack(fill=&#39;both&#39;, expand=True, side=&#39;left&#39;, anchor=&#39;nw&#39;)
+    
+    # Add log tab to tab control
+    self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
+    # Add result tab to tab control
+    self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
 
     # Pack tab control
     self.tab_control.pack(expand=True, fill=&#34;both&#34;)</code></pre>

@@ -94,7 +94,7 @@ def main():
                 if name == &#39;datapath&#39;:
                     parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
                 elif name == &#39;verbose&#39;:
-                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
+                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
@@ -121,7 +121,7 @@ def main():
 
     if not kwargs[&#39;verbose&#39;]:
         print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
-        print(f&#34;sprit.run(&#34;, end=&#39;&#39;)
+        print(&#34;sprit.run(&#34;, end=&#39;&#39;)
         for key, value in kwargs.items():
             if &#39;kwargs&#39; in str(key):
                 pass
@@ -214,7 +214,7 @@ if __name__ == &#39;__main__&#39;:
                 if name == &#39;datapath&#39;:
                     parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
                 elif name == &#39;verbose&#39;:
-                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=f&#39;Print status and results to terminal.&#39;, default=parameter.default)
+                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=&#39;Print status and results to terminal.&#39;, default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
                     parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
@@ -241,7 +241,7 @@ if __name__ == &#39;__main__&#39;:
 
     if not kwargs[&#39;verbose&#39;]:
         print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
-        print(f&#34;sprit.run(&#34;, end=&#39;&#39;)
+        print(&#34;sprit.run(&#34;, end=&#39;&#39;)
         for key, value in kwargs.items():
             if &#39;kwargs&#39; in str(key):
                 pass

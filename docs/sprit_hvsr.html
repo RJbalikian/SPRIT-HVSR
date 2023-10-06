@@ -330,25 +330,6 @@ class HVSRData:
             raise ValueError(&#34;ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())&#34;)                  
         self._ppsds=value
 
-#Importing HVSR data
-def import_data(input_file, filetype=&#39;pickle&#39;):
-    if filetype==&#39;json&#39;:
-        if &#34;sites&#34; in input_file and &#34;batch&#34; in input_file and &#34;batch_dict&#34; in input_file:
-            # obj is a HVSRBatch
-            return HVSRBatch(input_file[&#34;batch_dict&#34;])
-        elif &#34;params&#34; in input_file and &#34;batch&#34; in input_file and &#34;datastream&#34; in input_file:
-            # obj is a HVSRData
-            return HVSRData(input_file[&#34;params&#34;])
-        else:
-            # obj is neither
-            return input_file
-    else:
-        import pickle
-        with open(input_file, &#39;rb&#39;) as f:
-            datafile = pickle.load(f)
-
-        return datafile
-
 #Launch the tkinter gui
 def gui():
     &#34;&#34;&#34;Function to open a window with a graphical user interface (gui)
@@ -357,8 +338,13 @@ def gui():
     &#34;&#34;&#34;
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    from sprit.sprit_gui import  SPRIT_App
-    import tkinter as tk
+    from sprit.sprit_gui import SPRIT_App
+    
+    try:
+        import tkinter as tk
+    except:
+        if sys.platform == &#39;linux&#39;:
+            raise ImportError(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
 
     def on_gui_closing():
         plt.close(&#39;all&#39;)
@@ -379,7 +365,8 @@ def gui():
             gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
         print(&#34;ICON NOT LOADED, still opening GUI&#34;)
-        
+
+    gui_root.resizable(True, True)
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -479,7 +466,6 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
     #Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in generate_ppsds.__code__.co_varnames}
-        from obspy.signal.spectral_estimation import PPSD
         PPSDkwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in PPSD.__init__.__code__.co_varnames}
         generate_ppsds_kwargs.update(PPSDkwargs)
         ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
@@ -490,7 +476,8 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
             else:
                 errMsg = e
             raise RuntimeError(f&#34;generate_ppsds() error: {errMsg}&#34;)
-                #Reformat data so HVSRData and HVSRBatch data both work here
+
+        #Reformat data so HVSRData and HVSRBatch data both work here
         ppsd_data = data_noiseRemoved
         if isinstance(ppsd_data, HVSRData):
             ppsd_data = {&#39;place_holder_sitename&#39;:ppsd_data}
@@ -508,16 +495,16 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in process_hvsr.__code__.co_varnames}
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except Exception as e:
-        if verbose:
-            exc_type, exc_obj, tb = sys.exc_info()
-            f = tb.tb_frame
-            lineno = tb.tb_lineno
-            filename = f.f_code.co_filename
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
-            error_message = f&#34;{e} ({errLineNo})&#34;
-            print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
-            print(lineno, filename, f)
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+        error_message = f&#34;{e} ({errLineNo})&#34;
+        print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+        print(lineno, filename, f)
 
         hvsr_results = ppsd_data
         if isinstance(hvsr_results, HVSRData):
@@ -814,7 +801,6 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
 
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params[&#39;inv&#39;]
-
     date=params[&#39;acq_date&#39;]
 
     #Cleanup for gui input
@@ -828,6 +814,7 @@ def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_fo
         sampleList.append(f&#39;sample{s}&#39;)
         sampleList.append(f&#39;sample_{s}&#39;)
 
+    #Make sure datapath is pointing to an actual file
     if isinstance(params[&#39;datapath&#39;],list):
         for i, d in enumerate(params[&#39;datapath&#39;]):
             params[&#39;datapath&#39;][i] = sprit_utils.checkifpath(str(d).strip())
@@ -1200,9 +1187,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         ppsd_kwargs_sprit_defaults[&#39;period_step_octaves&#39;] = 0.03125
 
     #Get Probablistic power spectral densities (PPSDs)
-    from obspy.signal import PPSD
-
-    #Get default args for PPSD
+    #Get default args for function
     def get_default_args(func):
         signature = inspect.signature(func)
         return {
@@ -1386,7 +1371,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         for gap in params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
             hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
                                 (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
-                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
 
         hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
         params[&#39;hvsr_df&#39;] = hvsrDF
@@ -1424,9 +1408,10 @@ def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=Non
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = &#34;paz&#34;)
     &#34;&#34;&#34;
+    
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
-    if params[&#39;instrument&#39;].lower() in  raspShakeInstNameList:
+    if params[&#39;instrument&#39;].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
@@ -1436,7 +1421,7 @@ def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=Non
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, export_path=None, return_results=False, csv_overwrite_opt=&#39;append&#39;, verbose=False):    
+def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, export_path=None, return_results=False, csv_overwrite_opt=&#39;append&#39;, no_output=False, verbose=False):    
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -1459,14 +1444,16 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
             list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     csv_overwrite_opts : str, {&#39;append&#39;, &#39;overwrite&#39;, &#39;keep/rename&#39;}
         How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
+    no_output : bool, default=False
+        If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format=&#39;print&#39;, and will not repeat if that is already selected
 
     Returns
     -------
     If return_results=True, the following report_formats return the following items:
-        &#39;plot&#39;- str
-        &#39;print&#39; - matplotlib.Figure object
+        &#39;plot&#39;-  matplotlib.Figure object
+        &#39;print&#39; - str
         &#39;csv&#39; - pandas.DataFrame object
         list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
 
@@ -1605,53 +1592,36 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
                 plt.savefig(outFile)
             return 
 
-        def report_output(_report_format, _plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, _return_results=False, _export_path=None, verbose=False):
+        def report_output(_report_format, _plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, _return_results=False, _export_path=None, _no_output=False, verbose=False):
             if _report_format==&#39;print&#39;:
                 #Print results
 
                 #Make separators for nicely formatted print output
                 sepLen = 99
                 siteSepSymbol = &#39;=&#39;
-                intSepSymbol = &#39;-&#39;
-
+                intSepSymbol = u&#34;\u2013&#34;
+                extSepSymbol = u&#34;\u2014&#34;
+                
                 if sepLen % 2 == 0:
                     remainVal = 1
                 else:
                     remainVal = 0
 
+                siteWhitespace = 2
                 #Format the separator lines internal to each site
-                internalSeparator = &#39;&#39;
-                for s in range(sepLen):
-                    if s % 2 == remainVal and s!=0 and s!=sepLen and s!=sepLen-1:
-                        internalSeparator = internalSeparator + intSepSymbol
-                    else:
-                        internalSeparator = internalSeparator + &#39; &#39;
-                sepMidpoint = sepLen//2
-                sitenameLen = len(hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
-                sitenameLenHalved = sitenameLen//2
-                sitenameStart = sepMidpoint - sitenameLenHalved
-                
-                #Format the site separator lines
-                sn=0
-                siteSeparator=&#39;&#39;
-                endSiteSeparator=&#39;&#39;
-                for i in range(sepLen):
-                    if i &gt;=sitenameStart and i &lt; sitenameStart+sitenameLen:
-                        siteSeparator = siteSeparator + hvsr_results[&#39;input_params&#39;][&#39;site&#39;][sn]
-                        sn+=1
-                    elif i == sitenameStart-1 or i == sitenameStart-2:
-                        siteSeparator = siteSeparator + &#39; &#39;
-                    elif i == sitenameStart+sitenameLen or i ==sitenameStart+ sitenameLen+1:
-                        siteSeparator = siteSeparator + &#39; &#39;
-                    else:
-                        siteSeparator = siteSeparator + siteSepSymbol
-                    endSiteSeparator = endSiteSeparator + siteSepSymbol
+                internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, &#39; &#39;)
+
+                extSiteSeparator = &#34;&#34;.center(sepLen, extSepSymbol)
+                siteSeparator = f&#34;{hvsr_results[&#39;input_params&#39;][&#39;site&#39;]}&#34;.center(sepLen - siteWhitespace, &#39; &#39;).center(sepLen, siteSepSymbol)
+                endSiteSeparator = &#34;&#34;.center(sepLen, siteSepSymbol)
 
                 #Start building list to print
                 report_string_list = []
                 report_string_list.append(&#34;&#34;) #Blank line to start
+                report_string_list.append(extSiteSeparator)
                 report_string_list.append(siteSeparator)
-                report_string_list.append(internalSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(internalSeparator)
                 report_string_list.append(&#39;&#39;)
                 report_string_list.append(f&#34;\tSite Name: {hvsr_results[&#39;input_params&#39;][&#39;site&#39;]}&#34;)
                 report_string_list.append(f&#34;\tAcq. Date: {hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;]}&#34;)
@@ -1665,9 +1635,9 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
                 else:
                     report_string_list.append(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;]))        
                     if curvePass and peakPass:
-                        report_string_list.append(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
+                        report_string_list.append(&#39;\t  {} Curve at {} Hz passed quality checks! ☺ :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
                     else:
-                        report_string_list.append(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
+                        report_string_list.append(&#39;\t  {} Peak at {} Hz did NOT pass quality checks ☹:(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
                     report_string_list.append(&#39;&#39;)
                     report_string_list.append(internalSeparator)
                     report_string_list.append(&#39;&#39;)
@@ -1692,19 +1662,23 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
                     report_string_list.append(f&#34;\t\t {hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1]} Stability of Peak (Amp. StDev): {hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;]}&#34;)
                 report_string_list.append(&#39;&#39;)
                 report_string_list.append(f&#34;Calculated using {hvsr_results[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_results[&#39;hvsr_df&#39;][&#39;Use&#39;].count()} time windows&#34;.rjust(sepLen-1))
-                report_string_list.append(internalSeparator)
-                report_string_list.append(endSiteSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(endSiteSeparator)
+                #report_string_list.append(extSiteSeparator)
                 report_string_list.append(&#39;&#39;)
                 
                 reportStr=&#39;&#39;
                 #Now print it
                 for line in report_string_list:
-                    print(line)
                     reportStr = reportStr+&#39;\n&#39;+line
+
+                if not _no_output:
+                    print(reportStr)
 
                 export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Print_Report&#39;] = reportStr
-                hvsr_results[&#39;Print_Report&#39;] = reportStr   
+                hvsr_results[&#39;Print_Report&#39;] = reportStr
+
             elif _report_format==&#39;csv&#39;:
                 import pandas as pd
                 pdCols = [&#39;Site Name&#39;, &#39;Acq_Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
@@ -1774,7 +1748,7 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, verbose=verbose)
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
     return hvsr_results
 
 #Main function for plotting results
@@ -1914,7 +1888,9 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
                 fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={&#39;hspace&#39;:0.3})
                 axis = ax[p]
             elif use_subplots:
-                ax[p].clear()
+                with warnings.catch_warnings():
+                    warnings.simplefilter(&#34;ignore&#34;) #Often warns about xlim when it is not an issue
+                    ax[p].clear()
                 axis = ax[p]
             else:
                 fig, axis = plt.subplots()
@@ -2148,7 +2124,7 @@ def input_params(datapath,
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
-    if instrument.lower() in  raspShakeInstNameList:
+    if instrument.lower() in raspShakeInstNameList:
         if metapath == r&#39;resources/rs3dv7_metadata.inv&#39;:
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
@@ -2292,6 +2268,8 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
         axes[comp].set_ylim([dmed-ylim_std*stD, dmed+ylim_std*stD])
+        if xmin &lt; 0:
+            xmin=params[&#39;hvsr_band&#39;][0]
         axes[comp].set_xlim([xmin, xmax])
 
     fig.suptitle(params[&#39;site&#39;])
@@ -2433,17 +2411,17 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
                 if smooth or type(smooth) is int:
                     if smooth:
                         smooth = 51 #Default smoothing window
-                    elif smooth%2==0:
+                    elif smooth % 2==0:
                         smooth = smooth+1
 
                 #Resample raw ppsd values
-                for i, t in enumerate(input_ppsds):
+                for i, ppsd_t in enumerate(input_ppsds):
                     if i==0:
-                        psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)
+                        psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], ppsd_t)
                         if smooth is not False:
                             psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
                     else:
-                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)))
+                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], ppsd_t)))
                         if smooth is not False:
                             psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
@@ -2452,7 +2430,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
                 x_periods[k] = np.array(ppsds[k][&#39;period_bin_centers&#39;])
                 psdRaw[k] = np.array(input_ppsds)
 
-            hvsrDF[f&#39;psd_values_{k}&#39;] = list(psdRaw[k])
+            hvsrDF[&#39;psd_values_&#39;+k] = list(psdRaw[k])
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
@@ -2518,7 +2496,9 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out[&#39;psd_raw&#39;]:
-                ppsd_data = np.stack(hvsr_out[&#39;hvsr_df&#39;][f&#39;psd_values_{k}&#39;])
+                colName = f&#39;psd_values_{k}&#39;
+
+                ppsd_data = np.stack(hvsr_out[&#39;hvsr_df&#39;][colName])
                 ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
 
                 freqs = hvsr_out[&#39;x_freqs&#39;][k]
@@ -2526,7 +2506,8 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#
                     warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
                     smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
                 hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
-                hvsr_out[&#39;hvsr_df&#39;][f&#39;psd_values_{k}&#39;] = smoothed_ppsd_data
+                hvsr_out[&#39;hvsr_df&#39;][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out[&#39;hvsr_df&#39;].index)
+
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
         elif freq_smooth.lower() in freq_smooth_proport:
@@ -2812,7 +2793,6 @@ def remove_noise(hvsr_data, remove_method=&#39;auto&#39;, sat_percent=0.995, noi
                     gap = [trEndTime,trStartTime]
                     output[&#39;hvsr_df&#39;][&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
                                     (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
-                                    #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
                 
                 trEndTime = trace.stats.endtime
             
@@ -3248,9 +3228,9 @@ def _check_processing_status(hvsr_data):
                 statusOK = False
                 
         if statusOK:
-                hvsr_interim[sitename][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = True
+            hvsr_interim[sitename][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = True
         else:
-                hvsr_interim[sitename][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+            hvsr_interim[sitename][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
 
     if isinstance(hvsr_data, HVSRData):
         hvsr_data = hvsr_interim[siteName]
@@ -4384,12 +4364,6 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
     winTypeList = [&#39;gaps&#39;] * len(windows)
 
-
-        #if existing_xWindows != []:
-        #    windows = windows + existing_xWindows
-        #    existWinTypeList = [&#39;removed&#39;] * len(existing_xWindows)
-        #    winTypeList = winTypeList + existWinTypeList
-
     #Check if the windows are just gaps
     if len(existing_xWindows) &gt; 0:
         existWin = []
@@ -4509,7 +4483,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         elif isinstance(origAxes, dict):
             origAxes[a] = ax
         else:
-                origAxes = ax
+            origAxes = ax
 
         ax = origAxes
 
@@ -4752,8 +4726,13 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
     else:
         warnings.warn(&#39;Oops, typo somewhere&#39;)
 
+
     for k in hvsr_out[&#39;psd_raw&#39;]:
-        newTPSD = list(np.ones_like(hvsr_out[&#39;psd_raw&#39;][k]))
+        colName = f&#39;psd_values_{k}&#39;
+
+        newTPSD = list(np.stack(hvsr_out[&#39;hvsr_df&#39;][colName]))
+        #newTPSD = list(np.ones_like(hvsr_out[&#39;psd_raw&#39;][k]))
+
         for t, tPSD in enumerate(hvsr_out[&#39;psd_raw&#39;][k]):
             for i, fVal in enumerate(tPSD):
                 if i &lt; fwidthHalf:
@@ -4783,7 +4762,9 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out[&#39;psd_raw&#39;][k] = newTPSD
-        hvsr_out[&#39;hvsr_df&#39;].loc[f&#39;psd_values_{k}&#39;] = newTPSD
+        hvsr_out[&#39;hvsr_df&#39;][colName] = pd.Series(list(newTPSD), index=hvsr_out[&#39;hvsr_df&#39;].index)
+
+
     return hvsr_out
 
 #Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
@@ -6623,7 +6604,6 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params[&#39;inv&#39;]
-
     date=params[&#39;acq_date&#39;]
 
     #Cleanup for gui input
@@ -6637,6 +6617,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
         sampleList.append(f&#39;sample{s}&#39;)
         sampleList.append(f&#39;sample_{s}&#39;)
 
+    #Make sure datapath is pointing to an actual file
     if isinstance(params[&#39;datapath&#39;],list):
         for i, d in enumerate(params[&#39;datapath&#39;]):
             params[&#39;datapath&#39;][i] = sprit_utils.checkifpath(str(d).strip())
@@ -7042,9 +7023,7 @@ If the following keywords are not specified, their defaults are amended in this 
         ppsd_kwargs_sprit_defaults[&#39;period_step_octaves&#39;] = 0.03125
 
     #Get Probablistic power spectral densities (PPSDs)
-    from obspy.signal import PPSD
-
-    #Get default args for PPSD
+    #Get default args for function
     def get_default_args(func):
         signature = inspect.signature(func)
         return {
@@ -7228,7 +7207,6 @@ If the following keywords are not specified, their defaults are amended in this 
         for gap in params[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
             hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
                                 (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
-                                #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
 
         hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
         params[&#39;hvsr_df&#39;] = hvsrDF
@@ -7289,9 +7267,10 @@ If not specified, does not write file</dd>
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = &#34;paz&#34;)
     &#34;&#34;&#34;
+    
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
-    if params[&#39;instrument&#39;].lower() in  raspShakeInstNameList:
+    if params[&#39;instrument&#39;].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
@@ -7302,7 +7281,7 @@ If not specified, does not write file</dd>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.get_report"><code class="name flex">
-<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', verbose=False)</span>
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', no_output=False, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Print a report of the HVSR analysis (not currently implemented)</p>
@@ -7327,14 +7306,17 @@ If a directory is specified, the filename will be
 list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list</dd>
 <dt><strong><code>csv_overwrite_opts</code></strong> :&ensp;<code>str, {'append', 'overwrite', 'keep/rename'}</code></dt>
 <dd>How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.</dd>
+<dt><strong><code>no_output</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to print the results to terminal. This is the same output as report_format='print', and will not repeat if that is already selected</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>If return_results=True, the following report_formats return the following items:</code></dt>
-<dd>'plot'- str
-'print' - matplotlib.Figure object
+<dd>'plot'-
+matplotlib.Figure object
+'print' - str
 'csv' - pandas.DataFrame object
 list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list</dd>
 </dl></div>
@@ -7342,7 +7324,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, export_path=None, return_results=False, csv_overwrite_opt=&#39;append&#39;, verbose=False):    
+<pre><code class="python">def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, export_path=None, return_results=False, csv_overwrite_opt=&#39;append&#39;, no_output=False, verbose=False):    
     &#34;&#34;&#34;Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -7365,14 +7347,16 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
             list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     csv_overwrite_opts : str, {&#39;append&#39;, &#39;overwrite&#39;, &#39;keep/rename&#39;}
         How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
+    no_output : bool, default=False
+        If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format=&#39;print&#39;, and will not repeat if that is already selected
 
     Returns
     -------
     If return_results=True, the following report_formats return the following items:
-        &#39;plot&#39;- str
-        &#39;print&#39; - matplotlib.Figure object
+        &#39;plot&#39;-  matplotlib.Figure object
+        &#39;print&#39; - str
         &#39;csv&#39; - pandas.DataFrame object
         list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
 
@@ -7511,53 +7495,36 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 plt.savefig(outFile)
             return 
 
-        def report_output(_report_format, _plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, _return_results=False, _export_path=None, verbose=False):
+        def report_output(_report_format, _plot_type=&#39;HVSR p ann C+ p ann Spec&#39;, _return_results=False, _export_path=None, _no_output=False, verbose=False):
             if _report_format==&#39;print&#39;:
                 #Print results
 
                 #Make separators for nicely formatted print output
                 sepLen = 99
                 siteSepSymbol = &#39;=&#39;
-                intSepSymbol = &#39;-&#39;
-
+                intSepSymbol = u&#34;\u2013&#34;
+                extSepSymbol = u&#34;\u2014&#34;
+                
                 if sepLen % 2 == 0:
                     remainVal = 1
                 else:
                     remainVal = 0
 
+                siteWhitespace = 2
                 #Format the separator lines internal to each site
-                internalSeparator = &#39;&#39;
-                for s in range(sepLen):
-                    if s % 2 == remainVal and s!=0 and s!=sepLen and s!=sepLen-1:
-                        internalSeparator = internalSeparator + intSepSymbol
-                    else:
-                        internalSeparator = internalSeparator + &#39; &#39;
-                sepMidpoint = sepLen//2
-                sitenameLen = len(hvsr_results[&#39;input_params&#39;][&#39;site&#39;])
-                sitenameLenHalved = sitenameLen//2
-                sitenameStart = sepMidpoint - sitenameLenHalved
-                
-                #Format the site separator lines
-                sn=0
-                siteSeparator=&#39;&#39;
-                endSiteSeparator=&#39;&#39;
-                for i in range(sepLen):
-                    if i &gt;=sitenameStart and i &lt; sitenameStart+sitenameLen:
-                        siteSeparator = siteSeparator + hvsr_results[&#39;input_params&#39;][&#39;site&#39;][sn]
-                        sn+=1
-                    elif i == sitenameStart-1 or i == sitenameStart-2:
-                        siteSeparator = siteSeparator + &#39; &#39;
-                    elif i == sitenameStart+sitenameLen or i ==sitenameStart+ sitenameLen+1:
-                        siteSeparator = siteSeparator + &#39; &#39;
-                    else:
-                        siteSeparator = siteSeparator + siteSepSymbol
-                    endSiteSeparator = endSiteSeparator + siteSepSymbol
+                internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, &#39; &#39;)
+
+                extSiteSeparator = &#34;&#34;.center(sepLen, extSepSymbol)
+                siteSeparator = f&#34;{hvsr_results[&#39;input_params&#39;][&#39;site&#39;]}&#34;.center(sepLen - siteWhitespace, &#39; &#39;).center(sepLen, siteSepSymbol)
+                endSiteSeparator = &#34;&#34;.center(sepLen, siteSepSymbol)
 
                 #Start building list to print
                 report_string_list = []
                 report_string_list.append(&#34;&#34;) #Blank line to start
+                report_string_list.append(extSiteSeparator)
                 report_string_list.append(siteSeparator)
-                report_string_list.append(internalSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(internalSeparator)
                 report_string_list.append(&#39;&#39;)
                 report_string_list.append(f&#34;\tSite Name: {hvsr_results[&#39;input_params&#39;][&#39;site&#39;]}&#34;)
                 report_string_list.append(f&#34;\tAcq. Date: {hvsr_results[&#39;input_params&#39;][&#39;acq_date&#39;]}&#34;)
@@ -7571,9 +7538,9 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 else:
                     report_string_list.append(&#39;\t{0:.3f} Hz Peak Frequency&#39;.format(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;]))        
                     if curvePass and peakPass:
-                        report_string_list.append(&#39;\t  {} Curve at {} Hz passed quality checks! :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
+                        report_string_list.append(&#39;\t  {} Curve at {} Hz passed quality checks! ☺ :D&#39;.format(sprit_utils.check_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))
                     else:
-                        report_string_list.append(&#39;\t  {} Peak at {} Hz did NOT pass quality checks :(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
+                        report_string_list.append(&#39;\t  {} Peak at {} Hz did NOT pass quality checks ☹:(&#39;.format(sprit_utils.x_mark(), round(hvsr_results[&#39;BestPeak&#39;][&#39;f0&#39;],3)))            
                     report_string_list.append(&#39;&#39;)
                     report_string_list.append(internalSeparator)
                     report_string_list.append(&#39;&#39;)
@@ -7598,19 +7565,23 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                     report_string_list.append(f&#34;\t\t {hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1]} Stability of Peak (Amp. StDev): {hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;]}&#34;)
                 report_string_list.append(&#39;&#39;)
                 report_string_list.append(f&#34;Calculated using {hvsr_results[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_results[&#39;hvsr_df&#39;][&#39;Use&#39;].count()} time windows&#34;.rjust(sepLen-1))
-                report_string_list.append(internalSeparator)
-                report_string_list.append(endSiteSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(endSiteSeparator)
+                #report_string_list.append(extSiteSeparator)
                 report_string_list.append(&#39;&#39;)
                 
                 reportStr=&#39;&#39;
                 #Now print it
                 for line in report_string_list:
-                    print(line)
                     reportStr = reportStr+&#39;\n&#39;+line
+
+                if not _no_output:
+                    print(reportStr)
 
                 export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Print_Report&#39;] = reportStr
-                hvsr_results[&#39;Print_Report&#39;] = reportStr   
+                hvsr_results[&#39;Print_Report&#39;] = reportStr
+
             elif _report_format==&#39;csv&#39;:
                 import pandas as pd
                 pdCols = [&#39;Site Name&#39;, &#39;Acq_Date&#39;, &#39;Longitude&#39;, &#39;Latitide&#39;, &#39;Elevation&#39;, &#39;PeakFrequency&#39;, 
@@ -7680,7 +7651,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, verbose=verbose)
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
     return hvsr_results</code></pre>
 </details>
 </dd>
@@ -7701,8 +7672,13 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
     &#34;&#34;&#34;
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    from sprit.sprit_gui import  SPRIT_App
-    import tkinter as tk
+    from sprit.sprit_gui import SPRIT_App
+    
+    try:
+        import tkinter as tk
+    except:
+        if sys.platform == &#39;linux&#39;:
+            raise ImportError(&#39;The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use &#34;apt-get install python-tk&#34; or &#34;apt-get install python3-tk&#34; to install tkinter. You may need to use the sudo command at the start of those commands.&#39;)
 
     def on_gui_closing():
         plt.close(&#39;all&#39;)
@@ -7723,7 +7699,8 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
             gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
         print(&#34;ICON NOT LOADED, still opening GUI&#34;)
-        
+
+    gui_root.resizable(True, True)
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
@@ -7774,7 +7751,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-04', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-06', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -8025,7 +8002,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
-    if instrument.lower() in  raspShakeInstNameList:
+    if instrument.lower() in raspShakeInstNameList:
         if metapath == r&#39;resources/rs3dv7_metadata.inv&#39;:
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv7_metadata.inv&#39;))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
@@ -8255,7 +8232,9 @@ For period, the following are accepted (case does not matter): 'p', 'T', 's', 's
                 fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={&#39;hspace&#39;:0.3})
                 axis = ax[p]
             elif use_subplots:
-                ax[p].clear()
+                with warnings.catch_warnings():
+                    warnings.simplefilter(&#34;ignore&#34;) #Often warns about xlim when it is not an issue
+                    ax[p].clear()
                 axis = ax[p]
             else:
                 fig, axis = plt.subplots()
@@ -8421,6 +8400,8 @@ Tuple containing the figure and axes of the resulting plot, only returned if ret
         dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
 
         axes[comp].set_ylim([dmed-ylim_std*stD, dmed+ylim_std*stD])
+        if xmin &lt; 0:
+            xmin=params[&#39;hvsr_band&#39;][0]
         axes[comp].set_xlim([xmin, xmax])
 
     fig.suptitle(params[&#39;site&#39;])
@@ -8621,17 +8602,17 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 if smooth or type(smooth) is int:
                     if smooth:
                         smooth = 51 #Default smoothing window
-                    elif smooth%2==0:
+                    elif smooth % 2==0:
                         smooth = smooth+1
 
                 #Resample raw ppsd values
-                for i, t in enumerate(input_ppsds):
+                for i, ppsd_t in enumerate(input_ppsds):
                     if i==0:
-                        psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)
+                        psdRaw[k] = np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], ppsd_t)
                         if smooth is not False:
                             psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
                     else:
-                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], t)))
+                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k][&#39;period_bin_centers&#39;], ppsd_t)))
                         if smooth is not False:
                             psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
 
@@ -8640,7 +8621,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 x_periods[k] = np.array(ppsds[k][&#39;period_bin_centers&#39;])
                 psdRaw[k] = np.array(input_ppsds)
 
-            hvsrDF[f&#39;psd_values_{k}&#39;] = list(psdRaw[k])
+            hvsrDF[&#39;psd_values_&#39;+k] = list(psdRaw[k])
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
@@ -8706,7 +8687,9 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out[&#39;psd_raw&#39;]:
-                ppsd_data = np.stack(hvsr_out[&#39;hvsr_df&#39;][f&#39;psd_values_{k}&#39;])
+                colName = f&#39;psd_values_{k}&#39;
+
+                ppsd_data = np.stack(hvsr_out[&#39;hvsr_df&#39;][colName])
                 ppsd_data = hvsr_out[&#39;psd_raw&#39;][k]
 
                 freqs = hvsr_out[&#39;x_freqs&#39;][k]
@@ -8714,7 +8697,8 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                     warnings.simplefilter(&#39;ignore&#39;, category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often
                     smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
                 hvsr_out[&#39;psd_raw&#39;][k] = smoothed_ppsd_data
-                hvsr_out[&#39;hvsr_df&#39;][f&#39;psd_values_{k}&#39;] = smoothed_ppsd_data
+                hvsr_out[&#39;hvsr_df&#39;][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out[&#39;hvsr_df&#39;].index)
+
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth=&#39;constant&#39;)
         elif freq_smooth.lower() in freq_smooth_proport:
@@ -9050,7 +9034,6 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
                     gap = [trEndTime,trStartTime]
                     output[&#39;hvsr_df&#39;][&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_Obspy&#39;].gt(gap[1]) )| \
                                     (hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[0]) &amp; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1]))# | \
-                                    #((gap[1] &gt; hvsrDF[&#39;TimesProcessed_Obspy&#39;]) &amp; (gap[1] &lt; hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;]))
                 
                 trEndTime = trace.stats.endtime
             
@@ -9316,7 +9299,6 @@ For sample data, The following can be specified as the datapath parameter:
     #Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in generate_ppsds.__code__.co_varnames}
-        from obspy.signal.spectral_estimation import PPSD
         PPSDkwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in PPSD.__init__.__code__.co_varnames}
         generate_ppsds_kwargs.update(PPSDkwargs)
         ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
@@ -9327,7 +9309,8 @@ For sample data, The following can be specified as the datapath parameter:
             else:
                 errMsg = e
             raise RuntimeError(f&#34;generate_ppsds() error: {errMsg}&#34;)
-                #Reformat data so HVSRData and HVSRBatch data both work here
+
+        #Reformat data so HVSRData and HVSRBatch data both work here
         ppsd_data = data_noiseRemoved
         if isinstance(ppsd_data, HVSRData):
             ppsd_data = {&#39;place_holder_sitename&#39;:ppsd_data}
@@ -9345,16 +9328,16 @@ For sample data, The following can be specified as the datapath parameter:
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in process_hvsr.__code__.co_varnames}
         hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except Exception as e:
-        if verbose:
-            exc_type, exc_obj, tb = sys.exc_info()
-            f = tb.tb_frame
-            lineno = tb.tb_lineno
-            filename = f.f_code.co_filename
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
-            error_message = f&#34;{e} ({errLineNo})&#34;
-            print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
-            print(lineno, filename, f)
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+        error_message = f&#34;{e} ({errLineNo})&#34;
+        print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+        print(lineno, filename, f)
 
         hvsr_results = ppsd_data
         if isinstance(hvsr_results, HVSRData):

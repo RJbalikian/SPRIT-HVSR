@@ -75,6 +75,12 @@ def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
+    if sample_list==&#39;&#39;:
+        sample_list = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;sample&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
+        for s in range(1, 7):
+            sample_list.append(f&#34;sample{s}&#34;)
+            sample_list.append(f&#34;sample_{s}&#34;)
+
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
@@ -523,6 +529,12 @@ This function returns another displayable character if platform is Windows</p></
     filepath : pathlib.Path
         pathlib.Path of filepath
     &#34;&#34;&#34;
+    if sample_list==&#39;&#39;:
+        sample_list = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;sample&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
+        for s in range(1, 7):
+            sample_list.append(f&#34;sample{s}&#34;)
+            sample_list.append(f&#34;sample_{s}&#34;)
+
     # checks if the variable is any instance of pathlib
     if isinstance(filepath, pathlib.PurePath):
         pass
