@@ -777,13 +777,13 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         params : HVSRData or HVSRBatch object
             Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         """
+
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         print()
 
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
-
     date=params['acq_date']
 
     #Cleanup for gui input
@@ -797,6 +797,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         sampleList.append(f'sample{s}')
         sampleList.append(f'sample_{s}')
 
+    #Make sure datapath is pointing to an actual file
     if isinstance(params['datapath'],list):
         for i, d in enumerate(params['datapath']):
             params['datapath'][i] = sprit_utils.checkifpath(str(d).strip())
@@ -1393,6 +1394,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
+    
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     if params['instrument'].lower() in  raspShakeInstNameList:
@@ -1405,7 +1407,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', verbose=False):    
+def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', no_output=False, verbose=False):    
     """Print a report of the HVSR analysis (not currently implemented)
         
     Parameters
@@ -1428,14 +1430,16 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
         How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
+    no_output : bool, default=False
+        If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format='print', and will not repeat if that is already selected
 
     Returns
     -------
     If return_results=True, the following report_formats return the following items:
-        'plot'- str
-        'print' - matplotlib.Figure object
+        'plot'-  matplotlib.Figure object
+        'print' - str
         'csv' - pandas.DataFrame object
         list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
 
@@ -1574,7 +1578,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 plt.savefig(outFile)
             return 
 
-        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _return_results=False, _export_path=None, verbose=False):
+        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _return_results=False, _export_path=None, _no_output=False, verbose=False):
             if _report_format=='print':
                 #Print results
 
@@ -1667,13 +1671,15 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 
                 reportStr=''
                 #Now print it
-                for line in report_string_list:
-                    print(line)
-                    reportStr = reportStr+'\n'+line
+                if not _no_output:
+                    for line in report_string_list:
+                        print(line)
+                        reportStr = reportStr+'\n'+line
 
                 export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results['BestPeak']['Report']['Print_Report'] = reportStr
-                hvsr_results['Print_Report'] = reportStr   
+                hvsr_results['Print_Report'] = reportStr
+
             elif _report_format=='csv':
                 import pandas as pd
                 pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
@@ -1743,7 +1749,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, verbose=verbose)
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
     return hvsr_results
 
 #Main function for plotting results

@@ -91,7 +91,7 @@ def catch_errors(func):
             
             #Print the function name where the error occured
             errFunc = func.__name__
-            print(sys.exc_info())
+            #print(sys.exc_info())
             #Get message list, [] if no messages, doesn't run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
             errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
@@ -285,8 +285,13 @@ class SPRIT_App:
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
-            print(self.fpath)
+            self.log_text.insert('end', f'Reading data [{datetime.datetime.now()}]\n')
             self.starttime, self.endtime = get_times()
+
+
+            self.log_text.insert('end', self.input_params_call['text'])
+            self.log_text.insert('end', '\n\n')
+            self.log_text.insert('end', self.fetch_data_call['text'])
 
             if self.file_source.get() == 'batch':
                 batchType = self.batch_type.get()
@@ -299,6 +304,8 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
+
+                
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -332,6 +339,8 @@ class SPRIT_App:
                                             detrend_order=self.detrend_order.get())
                     
                 self.site_options = self.hvsr_data.sites
+
+                self.log_text.insert('end', self.site_options.get())
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -379,7 +388,7 @@ class SPRIT_App:
                     trimDir=self.trim_dir.get()
 
                 self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
-                                            source=self.file_source.get(), 
+                                            source=self.file_source.get(),
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
@@ -464,6 +473,10 @@ class SPRIT_App:
             if self.data_read == False:
                 read_data()
 
+            self.log_text.insert('end', f"Processing Data [{datetime.datetime.now()}]")
+            self.log_text.insert('end', '\n')
+            self.log_text.insert('end', self.generate_ppsd_call['text'])
+
             #Make this an option
             #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method='auto')
 
@@ -483,7 +496,7 @@ class SPRIT_App:
                                                 special_handling=special_handling#, verbose=True
                                                )
             
-
+            self.log_text.insert('end', self.procHVSR_call['text'])
             self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
@@ -492,10 +505,12 @@ class SPRIT_App:
                                                    resample=self.hvresample_int,
                                                    outlier_curve_std=self.outlierRemStDev.get())
             
+            self.log_text.insert('end', self.checkPeaks_Call['text'])
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
 
+            self.log_text.insert('end', self.checkPeaks_Call['text'])
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
                 self.results_siteSelectFrame.grid_forget()
@@ -504,7 +519,9 @@ class SPRIT_App:
                 report_results(self.hvsr_results[self.hvsr_results.sites[0]])
             else:
                 warnings.warn(f'Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.')
-
+            self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format='print', no_output=True)
+            self.log_text.insert('end', self.hvsr_results['Print_Report'])
+            
             self.processingData = False
             self.tab_control.select(self.results_tab)
 
@@ -2857,31 +2874,32 @@ class SPRIT_App:
         self.results_tab.columnconfigure(0, weight=1)
         self.results_tab.rowconfigure(2, weight=1)
         
-        # Add result tab to tab control
-        self.tab_control.add(self.results_tab, text="Results")
-        
+
         # LOG TAB
         self.log_tab = ttk.Frame(self.tab_control)
         from tkinter import scrolledtext
         logFrame = ttk.LabelFrame(self.log_tab, text='Log')
         logFrame.columnconfigure(0, weight=1)
         #logFrame.grid(row=0, column=0, sticky='nsew')
-        logFrame.pack(fill=tk.BOTH, expand=True)
+        logFrame.pack(fill='both', expand=True)
         
-        log_text = scrolledtext.ScrolledText(logFrame, wrap = tk.WORD)
-        log_text.columnconfigure(0, weight=1)
+        self.log_text = scrolledtext.ScrolledText(logFrame, wrap = tk.WORD, width=200, height=50)
+        self.log_text.columnconfigure(0, weight=1)
         #text_area.grid(row=0, column=0, sticky='nsew')
-        log_text.pack(fill=tk.BOTH, expand=True)
+        self.log_text.pack(fill='both', expand=True)
 
-        testLogText = "Log of active session:\n"
-        log_text.insert('end', testLogText)
+        introLogText = "Log of active session:\n"
+        self.log_text.insert('end', introLogText)
         #log_text.configure(bg='black', fg='white')
+        
+        # Pack tab control
+        self.tab_control.pack(expand=True, fill="both")
 
         # Add log tab to tab control
         self.tab_control.add(self.log_tab, text="Log", sticky='e')
+        # Add result tab to tab control
+        self.tab_control.add(self.results_tab, text="Results")
 
-        # Pack tab control
-        self.tab_control.pack(expand=True, fill="both")
 
 def on_closing():
     plt.close('all')
