@@ -285,6 +285,7 @@ class SPRIT_App:
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
+            print(self.fpath)
             self.starttime, self.endtime = get_times()
 
             if self.file_source.get() == 'batch':
@@ -2852,12 +2853,32 @@ class SPRIT_App:
         self.results_siteSelectFrame.grid(row=0,column=0, columnspan=8, rowspan=2, sticky='ew')
         self.results_peakInfoFrame.grid(row=0,  column=9, columnspan=2, rowspan=8, sticky='nsew')#.pack(side='right', fill='both')
         self.results_chartFrame.grid(row=2,     column=0, columnspan=8, rowspan=6, sticky='nsew')#.pack(side='top', expand=True, fill='both')
-        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,stick='nsew')#.pack(side='bottom', fill='x')
+        self.results_export_Frame.grid(row=9,   column=0, columnspan=11,rowspan=2,sticky='nsew')#.pack(side='bottom', fill='x')
         self.results_tab.columnconfigure(0, weight=1)
         self.results_tab.rowconfigure(2, weight=1)
-
-        # Add tabs to tab control
+        
+        # Add result tab to tab control
         self.tab_control.add(self.results_tab, text="Results")
+        
+        # LOG TAB
+        self.log_tab = ttk.Frame(self.tab_control)
+        from tkinter import scrolledtext
+        logFrame = ttk.LabelFrame(self.log_tab, text='Log')
+        logFrame.columnconfigure(0, weight=1)
+        #logFrame.grid(row=0, column=0, sticky='nsew')
+        logFrame.pack(fill=tk.BOTH, expand=True)
+        
+        log_text = scrolledtext.ScrolledText(logFrame, wrap = tk.WORD)
+        log_text.columnconfigure(0, weight=1)
+        #text_area.grid(row=0, column=0, sticky='nsew')
+        log_text.pack(fill=tk.BOTH, expand=True)
+
+        testLogText = "Log of active session:\n"
+        log_text.insert('end', testLogText)
+        #log_text.configure(bg='black', fg='white')
+
+        # Add log tab to tab control
+        self.tab_control.add(self.log_tab, text="Log", sticky='e')
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill="both")
@@ -2880,6 +2901,7 @@ if __name__ == "__main__":
         print("ICON NOT LOADED, still opening GUI")
 
     app = SPRIT_App(root)
+    root.resizable(True, True)
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
