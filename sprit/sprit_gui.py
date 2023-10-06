@@ -8,6 +8,8 @@ import os
 import pathlib
 import pkg_resources
 import sys
+import threading
+import time
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -285,13 +287,14 @@ class SPRIT_App:
         #FUNCTION TO READ DATA
         @catch_errors
         def read_data():
-            self.log_text.insert('end', f'Reading data [{datetime.datetime.now()}]\n')
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo(title="Reading Data", message='Reading Data...')
+            self.log_text.insert('end', f'\n\nReading data [{datetime.datetime.now()}]\n\n')
             self.starttime, self.endtime = get_times()
 
 
-            self.log_text.insert('end', self.input_params_call['text'])
-            self.log_text.insert('end', '\n\n')
-            self.log_text.insert('end', self.fetch_data_call['text'])
+            self.log_text.insert('end', f"{self.input_params_call['text']}\n\n")
+            self.log_text.insert('end', f"{self.fetch_data_call['text']}\n\n")
 
             if self.file_source.get() == 'batch':
                 batchType = self.batch_type.get()
@@ -305,7 +308,7 @@ class SPRIT_App:
                     self.fpath = self.fpath[0]
 
 
-                
+                update_progress_bars(prog_percent=1)            
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -331,16 +334,18 @@ class SPRIT_App:
                 else:
                     trimDir=self.trim_dir.get()
 
+                update_progress_bars(prog_percent=2)            
                 self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(), 
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                    
+                
+                update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
 
-                self.log_text.insert('end', self.site_options.get())
+                self.log_text.insert('end', f"{self.site_options.get()}\n\n")
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -362,6 +367,7 @@ class SPRIT_App:
                 else:
                     self.fpath = self.fpath[0]
 
+                update_progress_bars(prog_percent=1)
                 self.params = sprit_hvsr.input_params( datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
@@ -386,14 +392,16 @@ class SPRIT_App:
                     trimDir=None
                 else:
                     trimDir=self.trim_dir.get()
-
+                
+                update_progress_bars(prog_percent=2)            
                 self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(),
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
-                
+
+                update_progress_bars(prog_percent=10)
                 update_input_labels(self.hvsr_data)
 
                 #Plot data in data preview tab
@@ -406,6 +414,7 @@ class SPRIT_App:
 
             self.data_read = True
             if not self.processingData:
+                update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
 
         def report_results(hvsr_results):
@@ -468,20 +477,23 @@ class SPRIT_App:
         #FUNCTION TO PROCESS DATA
         @catch_errors
         def process_data():
+            update_progress_bars(prog_percent=0)
+            #messagebox.showinfo("Processing Data", 'Processing Data...')
             self.processingData = True #Set to true while data processing algorithm is being run
             
             if self.data_read == False:
                 read_data()
+                update_progress_bars(prog_percent=12)
 
-            self.log_text.insert('end', f"Processing Data [{datetime.datetime.now()}]")
-            self.log_text.insert('end', '\n')
-            self.log_text.insert('end', self.generate_ppsd_call['text'])
+            self.log_text.insert('end', f"\n\nProcessing Data [{datetime.datetime.now()}]\n\n")
+            self.log_text.insert('end', f"{self.generate_ppsd_call['text']}\n\n")
 
             #Make this an option
             #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method='auto')
 
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
-
+            
+            update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
                                                 outlier_std=self.outlier_std.get(),
@@ -495,8 +507,9 @@ class SPRIT_App:
                                                 period_smoothing_width_octaves=self.perSmoothWidthOct.get(),
                                                 special_handling=special_handling#, verbose=True
                                                )
-            
-            self.log_text.insert('end', self.procHVSR_call['text'])
+            update_progress_bars(prog_percent=50)
+
+            self.log_text.insert('end', f"{self.procHVSR_call['text']}\n\n")
             self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
@@ -504,13 +517,17 @@ class SPRIT_App:
                                                    f_smooth_width=self.fSmoothWidth.get(), 
                                                    resample=self.hvresample_int,
                                                    outlier_curve_std=self.outlierRemStDev.get())
-            
-            self.log_text.insert('end', self.checkPeaks_Call['text'])
+            update_progress_bars(prog_percent=90)
+
+
+            self.log_text.insert('end', f"{self.checkPeaks_Call['text']}\n\n")
             self.hvsr_results = sprit_hvsr.check_peaks(hvsr_data=self.hvsr_results, 
                                                   hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()],
                                                   peak_freq_range=[self.peakFreqRange_min.get(), self.peakFreqRange_max.get()])
+            update_progress_bars(prog_percent=95)
 
-            self.log_text.insert('end', self.checkPeaks_Call['text'])
+
+            self.log_text.insert('end', f"{self.checkPeaks_Call['text']}\n\n")
             if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
                 report_results(self.hvsr_results)
                 self.results_siteSelectFrame.grid_forget()
@@ -519,13 +536,45 @@ class SPRIT_App:
                 report_results(self.hvsr_results[self.hvsr_results.sites[0]])
             else:
                 warnings.warn(f'Data is of type {type(self.hvsr_results)}; should be HVSRData or HVSRBatch type.')
+
+            #Log results
+            self.log_text.insert('end', f"Processing completed at [{datetime.datetime.now()}]\n\n")
             self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format='print', no_output=True)
-            self.log_text.insert('end', self.hvsr_results['Print_Report'])
+            self.log_text.insert('end', f"{self.hvsr_results['Print_Report']}\n\n")
             
             self.processingData = False
             self.tab_control.select(self.results_tab)
+            update_progress_bars(prog_percent=100)
 
-        
+
+        def update_progress_bars(prog_percent, process_name='Processing'):
+            progBarListList = [[self.inputProgBar,(0,0), True], 
+                                [self.prevProgBar,(0,0), True], 
+                                [self.noiseProgBar,(0,0), True], 
+                                [self.settingsProgBar_ppsd, (0, 0), True],
+                                [self.settingsProgBar_hvsr, (0,0), True],
+                                [self.settingsProgBar_plot,(0,0), True], 
+                                [self.logProgBar,(0,11), False], 
+                                [self.resultsProgBar,(0,26), False]]
+            
+            def prog_bar_update(progBarListList, progPercent, processName):
+                for bar in progBarListList:
+                    progBar = bar[0]
+                    barLoc = bar[1]
+
+                    progBar['value'] = progPercent
+
+                    if progPercent==0:
+                        progBar.master.columnconfigure(0, weight=1)
+                        progBar.grid(row=barLoc[0],column=barLoc[1], sticky='ew')
+                    elif progPercent==100:
+                        progBar.grid_forget()
+
+                    progBar.update()
+
+            threading.Thread(target=prog_bar_update(progBarListList=progBarListList, progPercent=prog_percent, processName=process_name)).start()
+            #self.update_idletasks()
+
         def update_input_params_call():
             self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
@@ -536,6 +585,7 @@ class SPRIT_App:
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
+        
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text="Site Name")
         siteLabel.grid(row=0, column=0, sticky='e', padx=5)
@@ -543,8 +593,6 @@ class SPRIT_App:
         self.site_name.set('HVSR Site')
         self.site_name_entry = ttk.Entry(hvsrFrame, textvariable=self.site_name, validate='focusout', validatecommand=update_input_params_call)
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky='ew', padx=5)
-
-        # source=file
         
         def on_source_select():
             try:
@@ -962,7 +1010,7 @@ class SPRIT_App:
                 float(self.peakFreqRange_min.get())
                 float(self.peakFreqRange_max.get())
 
-                peakFreqRange.configure(text='hvsr_band=[{}, {}]'.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                self.peakFreqRange.configure(text='hvsr_band=[{}, {}]'.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
                 update_check_peaks_call(self.checkPeaks_Call)
                 update_input_params_call()
                 return True
@@ -1128,14 +1176,18 @@ class SPRIT_App:
 
         #Set up frame for reading and running
         runFrame_hvsr = ttk.Frame(self.input_tab)
+        runFrame_hvsr.columnconfigure(0, weight=1)
+
+        self.inputProgBar = ttk.Progressbar(runFrame_hvsr, orient='horizontal')
+        self.inputProgBar.grid(row=0, column=0, sticky='ew')#.pack(fill='both',expand=True, side='left', anchor='sw')
 
         self.style.configure(style='Custom.TButton', background='#d49949')
         self.read_button = ttk.Button(runFrame_hvsr, text="Read Data", command=read_data, width=30, style='Custom.TButton')
 
         self.style.configure('Run.TButton', background='#8b9685', width=10, height=3)
         self.run_button = ttk.Button(runFrame_hvsr, text="Run", style='Run.TButton', command=process_data)        
-        self.run_button.pack(side='right', anchor='se', padx=(10,0))
-        self.read_button.pack(side='right', anchor='se')
+        self.run_button.grid(row=0, column=2, sticky='nsew', padx=2.5)#.pack(side='right', anchor='se', padx=(10,0))
+        self.read_button.grid(row=0, column=1, sticky='nsew', padx=2.5)#.pack(side='right', anchor='se')
 
         hvsrFrame.pack(fill='both', expand=True, side='top')#.grid(row=0, sticky="nsew")
         runFrame_hvsr.pack(fill='both', side='bottom')
@@ -1212,13 +1264,18 @@ class SPRIT_App:
         
         #preview-Run button
         runFrame_dataPrev = ttk.Frame(self.preview_data_tab)
+        runFrame_dataPrev.columnconfigure(0, weight=1)
+
+        self.prevProgBar = ttk.Progressbar(runFrame_dataPrev, orient='horizontal')
+        self.prevProgBar.grid(row=0, column=0, sticky='ew')#.pack(fill='both',expand=True, side='left', anchor='sw')
+
         self.run_button = ttk.Button(runFrame_dataPrev, text="Run", style='Run.TButton', command=process_data)
-        self.run_button.pack(side='bottom', anchor='e')#.grid(row=2, column=9, columnspan=20, sticky='e')
-        runFrame_dataPrev.pack(side='bottom', anchor='e')#grid(row=1, sticky='e')
+        self.run_button.grid(row=0, column=1, sticky='nsew', padx=2.5)#.pack(side='bottom', anchor='e')#.grid(row=2, column=9, columnspan=20, sticky='e')
+        runFrame_dataPrev.pack(side='bottom', anchor='e', fill='both')#grid(row=1, sticky='e')
 
         self.tab_control.add(self.preview_data_tab, text="Data Preview")
 
-        # Noise tab
+        # NOISE TAB
         self.noise_tab = ttk.Frame(self.tab_control)
         self.canvasFrame_noise = ttk.LabelFrame(self.noise_tab, text='Noise Viewer')
 
@@ -1530,8 +1587,13 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_noise = ttk.Frame(self.noise_tab)
-        
+        runFrame_noise.columnconfigure(0, weight=1)
+
         #Run area
+        #Progress Bar
+        self.noiseProgBar = ttk.Progressbar(runFrame_noise, orient='horizontal')
+        self.noiseProgBar.grid(row=0, column=0, sticky='ew')#.pack(fill='both',expand=True, side='left', anchor='sw')
+
         #Update Noise Windows button
         self.style.configure(style='Noise.TButton', background='#86a5ba')
         self.noise_button = ttk.Button(runFrame_noise, text="Update Noise Windows", command=plot_noise_windows, width=30, style='Noise.TButton')
@@ -1541,8 +1603,8 @@ class SPRIT_App:
 
         self.style.configure('Run.TButton', background='#8b9685', width=10, height=3)
         self.run_button = ttk.Button(runFrame_noise, text="Run", style='Run.TButton', command=process_data)        
-        self.run_button.pack(side='right', anchor='se', padx=(10,0))
-        self.noise_button.pack(side='right', anchor='se')
+        self.noise_button.grid(row=0, column=1, sticky='nsew', padx=2.5)#.pack(side='right', anchor='se')
+        self.run_button.grid(row=0, column=2, sticky='nsew', padx=2.5)#.pack(side='right', anchor='se', padx=(10,0))
 
         runFrame_noise.pack(fill='both',side='bottom', anchor='e')    
 
@@ -2141,8 +2203,12 @@ class SPRIT_App:
         #Run button frame
         runFrame_set_ppsd = ttk.Frame(ppsd_settings_tab)
         self.run_button = ttk.Button(runFrame_set_ppsd, text="Run", style='Run.TButton', command=process_data)
-        self.run_button.pack(side='bottom', anchor='e')
-        
+        self.run_button.grid(row=0, column=11, sticky='ew', padx=2.5)
+
+        self.settingsProgBar_ppsd = ttk.Progressbar(runFrame_set_ppsd, orient='horizontal')
+        self.settingsProgBar_ppsd.grid(row=0, column=0, columnspan=10, sticky='ew')
+        runFrame_set_ppsd.columnconfigure(0, weight=1)
+
         runFrame_set_ppsd.pack(fill='both', side='bottom', anchor='e')            
         obspyMetadataFrame.pack(fill='both', side='bottom',expand=True)#.grid(row=7, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
         obspyStatsFrame.pack(fill='both', side='bottom',expand=True)#.grid(row=6, column=0, columnspan=6, sticky='nsew')#.pack(side='bottom', fill='both', anchor='n', expand=True)
@@ -2153,7 +2219,7 @@ class SPRIT_App:
         ppsd_settings_tab.pack(fill='both', expand=True)
         settings_notebook.add(ppsd_settings_tab, text="PPSD")
 
-        #HVSR SETTINGS TAB
+        #HVSR SETTINGS SUBTAB
         hvsr_settings_tab = ttk.Frame(settings_notebook)
         
         hvsrSettingsFrame = ttk.LabelFrame(hvsr_settings_tab, text='H/V Processing Settings')#.pack(fill='both')
@@ -2378,8 +2444,13 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_set_hvsr = ttk.Frame(hvsr_settings_tab)
+        runFrame_set_hvsr.columnconfigure(0, weight=1)
+
+        self.settingsProgBar_hvsr = ttk.Progressbar(runFrame_set_hvsr, orient='horizontal')
+        self.settingsProgBar_hvsr.grid(row=0, column=0, sticky='nsew')#.pack(fill='both',expand=True, side='left', anchor='sw')
+
         self.run_button = ttk.Button(runFrame_set_hvsr, text="Run", style='Run.TButton', command=process_data)
-        self.run_button.pack(side='bottom', anchor='e')
+        self.run_button.grid(row=0, column=1, sticky='nsew', padx=2.5)#.pack(side='bottom', anchor='e')
 
         #Pack tab
         runFrame_set_hvsr.pack(fill='both', side='bottom', anchor='e')    
@@ -2600,7 +2671,10 @@ class SPRIT_App:
 
         #Run button frame
         runFrame_set_plot = ttk.Frame(plot_settings_tab)
+        runFrame_set_plot.columnconfigure(0, weight=1)
 
+        self.settingsProgBar_plot = ttk.Progressbar(runFrame_set_plot, orient='horizontal')
+        self.settingsProgBar_plot.grid(row=0, column=0, columnspan=10, sticky='ew')#.pack(fill='both',expand=True, side='left', anchor='sw')
         self.run_button = ttk.Button(runFrame_set_plot, text="Run", style='Run.TButton', command=process_data)
 
         
@@ -2610,8 +2684,8 @@ class SPRIT_App:
 
         self.update_results_plot_button = ttk.Button(runFrame_set_plot, text="Update Plot", style='Noise.TButton', command=update_results_plot, width=30)
         
-        self.run_button.pack(side='right', anchor='se', padx=(10,0))
-        self.update_results_plot_button.pack(side='right', anchor='se')
+        self.update_results_plot_button.grid(row=0, column=11, padx=2.5)#pack(side='right', anchor='se')
+        self.run_button.grid(row=0, column=12, padx=2.5)#(side='right', anchor='se', padx=(10,0))
 
         runFrame_set_plot.pack(fill='both', side='bottom', anchor='e')
         hvplot_label.pack(fill='both', expand=True, padx=(10,0))#.grid(column=0, row=0, padx=10, pady=10, sticky="w")
@@ -2655,6 +2729,9 @@ class SPRIT_App:
 
         self.browse_results_fig = ttk.Button(self.results_siteSelectFrame, text="Update site",command=on_site_select)
         self.browse_results_fig.grid(row=0, column=8, sticky='ew', padx=5)
+
+        self.results_siteSelectFrame.columnconfigure(9, weight=1)
+
 
         def update_site_dropdown():
             self.site_dropdown['values'] = self.site_options
@@ -2810,6 +2887,9 @@ class SPRIT_App:
 
         self.totalResult.grid(row=25, sticky='e', padx=5, pady=10 )
 
+        self.resultsProgBar = ttk.Progressbar(self.results_peakInfoFrame, orient='horizontal')
+        self.resultsProgBar.grid(row=26, column=0, sticky='ew')
+
         #Export results
         self.results_export_Frame = ttk.LabelFrame(self.results_tab, text="Export Results")
         
@@ -2877,29 +2957,35 @@ class SPRIT_App:
 
         # LOG TAB
         self.log_tab = ttk.Frame(self.tab_control)
-        from tkinter import scrolledtext
-        logFrame = ttk.LabelFrame(self.log_tab, text='Log')
-        logFrame.columnconfigure(0, weight=1)
-        #logFrame.grid(row=0, column=0, sticky='nsew')
-        logFrame.pack(fill='both', expand=True)
         
-        self.log_text = scrolledtext.ScrolledText(logFrame, wrap = tk.WORD, width=200, height=50)
-        self.log_text.columnconfigure(0, weight=1)
+        from tkinter import scrolledtext
+        self.logFrame = ttk.LabelFrame(self.log_tab, text='Log')
+        self.logFrame.columnconfigure(0, weight=1)
+        self.logFrame.rowconfigure(0, weight=1)
+        
+        self.log_text = scrolledtext.ScrolledText(self.logFrame, wrap = tk.WORD)#, width=200, height=50)
+        self.log_text.configure(font=("Courier", 11))
         #text_area.grid(row=0, column=0, sticky='nsew')
-        self.log_text.pack(fill='both', expand=True)
+        self.log_text.grid(row=0, rowspan=10, column=0, sticky='nsew')#.pack(fill='both', expand=True)
+
+        self.logProgBar = ttk.Progressbar(self.logFrame, orient='horizontal')
+        self.logProgBar.grid(row=11, column=0, sticky='nsew')
 
         introLogText = "Log of active session:\n"
         self.log_text.insert('end', introLogText)
         #log_text.configure(bg='black', fg='white')
+
+
+        self.logFrame.pack(fill='both', expand=True)#.pack(fill='both', expand=True, side='top', anchor='nw')
+        self.log_tab.pack(fill='both', expand=True, side='left', anchor='nw')
         
+        # Add log tab to tab control
+        self.tab_control.add(self.log_tab, text="Log")
+        # Add result tab to tab control
+        self.tab_control.add(self.results_tab, text="Results".center(11, ' ').center(15,'|'))
+
         # Pack tab control
         self.tab_control.pack(expand=True, fill="both")
-
-        # Add log tab to tab control
-        self.tab_control.add(self.log_tab, text="Log", sticky='e')
-        # Add result tab to tab control
-        self.tab_control.add(self.results_tab, text="Results")
-
 
 def on_closing():
     plt.close('all')

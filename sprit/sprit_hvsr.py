@@ -1585,46 +1585,29 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 #Make separators for nicely formatted print output
                 sepLen = 99
                 siteSepSymbol = '='
-                intSepSymbol = '-'
-
+                intSepSymbol = u"\u2013"
+                extSepSymbol = u"\u2014"
+                
                 if sepLen % 2 == 0:
                     remainVal = 1
                 else:
                     remainVal = 0
 
+                siteWhitespace = 2
                 #Format the separator lines internal to each site
-                internalSeparator = ''
-                for s in range(sepLen):
-                    if s % 2 == remainVal and s!=0 and s!=sepLen and s!=sepLen-1:
-                        internalSeparator = internalSeparator + intSepSymbol
-                    else:
-                        internalSeparator = internalSeparator + ' '
-                sepMidpoint = sepLen//2
-                sitenameLen = len(hvsr_results['input_params']['site'])
-                sitenameLenHalved = sitenameLen//2
-                sitenameStart = sepMidpoint - sitenameLenHalved
-                
-                #Format the site separator lines
-                sn=0
-                siteSeparator=''
-                endSiteSeparator=''
-                for i in range(sepLen):
-                    if i >=sitenameStart and i < sitenameStart+sitenameLen:
-                        siteSeparator = siteSeparator + hvsr_results['input_params']['site'][sn]
-                        sn+=1
-                    elif i == sitenameStart-1 or i == sitenameStart-2:
-                        siteSeparator = siteSeparator + ' '
-                    elif i == sitenameStart+sitenameLen or i ==sitenameStart+ sitenameLen+1:
-                        siteSeparator = siteSeparator + ' '
-                    else:
-                        siteSeparator = siteSeparator + siteSepSymbol
-                    endSiteSeparator = endSiteSeparator + siteSepSymbol
+                internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
+
+                extSiteSeparator = "".center(sepLen, extSepSymbol)
+                siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
+                endSiteSeparator = "".center(sepLen, siteSepSymbol)
 
                 #Start building list to print
                 report_string_list = []
                 report_string_list.append("") #Blank line to start
+                report_string_list.append(extSiteSeparator)
                 report_string_list.append(siteSeparator)
-                report_string_list.append(internalSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(internalSeparator)
                 report_string_list.append('')
                 report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
                 report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
@@ -1665,16 +1648,18 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]} Stability of Peak (Amp. StDev): {hvsr_results['BestPeak']['Report']['Sa']}")
                 report_string_list.append('')
                 report_string_list.append(f"Calculated using {hvsr_results['hvsr_df']['Use'].sum()}/{hvsr_results['hvsr_df']['Use'].count()} time windows".rjust(sepLen-1))
-                report_string_list.append(internalSeparator)
-                report_string_list.append(endSiteSeparator)
+                report_string_list.append(extSiteSeparator)
+                #report_string_list.append(endSiteSeparator)
+                #report_string_list.append(extSiteSeparator)
                 report_string_list.append('')
                 
                 reportStr=''
                 #Now print it
+                for line in report_string_list:
+                    reportStr = reportStr+'\n'+line
+
                 if not _no_output:
-                    for line in report_string_list:
-                        print(line)
-                        reportStr = reportStr+'\n'+line
+                    print(reportStr)
 
                 export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results['BestPeak']['Report']['Print_Report'] = reportStr
@@ -1889,7 +1874,9 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={'hspace':0.3})
                 axis = ax[p]
             elif use_subplots:
-                ax[p].clear()
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
+                    ax[p].clear()
                 axis = ax[p]
             else:
                 fig, axis = plt.subplots()
