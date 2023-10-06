@@ -299,25 +299,6 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
-#Importing HVSR data
-def import_data(input_file, filetype='pickle'):
-    if filetype=='json':
-        if "sites" in input_file and "batch" in input_file and "batch_dict" in input_file:
-            # obj is a HVSRBatch
-            return HVSRBatch(input_file["batch_dict"])
-        elif "params" in input_file and "batch" in input_file and "datastream" in input_file:
-            # obj is a HVSRData
-            return HVSRData(input_file["params"])
-        else:
-            # obj is neither
-            return input_file
-    else:
-        import pickle
-        with open(input_file, 'rb') as f:
-            datafile = pickle.load(f)
-
-        return datafile
-
 #Launch the tkinter gui
 def gui():
     """Function to open a window with a graphical user interface (gui)
@@ -326,7 +307,7 @@ def gui():
     """
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    from sprit.sprit_gui import  SPRIT_App
+    from sprit.sprit_gui import SPRIT_App
     
     try:
         import tkinter as tk
@@ -454,7 +435,6 @@ def run(datapath, source='file', verbose=False, **kwargs):
     #Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
-        from obspy.signal.spectral_estimation import PPSD
         PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
         generate_ppsds_kwargs.update(PPSDkwargs)
         ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
@@ -465,7 +445,8 @@ def run(datapath, source='file', verbose=False, **kwargs):
             else:
                 errMsg = e
             raise RuntimeError(f"generate_ppsds() error: {errMsg}")
-                #Reformat data so HVSRData and HVSRBatch data both work here
+
+        #Reformat data so HVSRData and HVSRBatch data both work here
         ppsd_data = data_noiseRemoved
         if isinstance(ppsd_data, HVSRData):
             ppsd_data = {'place_holder_sitename':ppsd_data}
@@ -1175,9 +1156,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
 
     #Get Probablistic power spectral densities (PPSDs)
-    from obspy.signal import PPSD
-
-    #Get default args for PPSD
+    #Get default args for function
     def get_default_args(func):
         signature = inspect.signature(func)
         return {
@@ -1361,7 +1340,6 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         for gap in params['ppsds']['Z']['times_gaps']:
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                 (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                                #((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['TimesProcessed_ObspyEnd']))
 
         hvsrDF.set_index('TimesProcessed', inplace=True)
         params['hvsr_df'] = hvsrDF
@@ -1402,7 +1380,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
-    if params['instrument'].lower() in  raspShakeInstNameList:
+    if params['instrument'].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
@@ -2115,7 +2093,7 @@ def input_params(datapath,
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
     #Raspberry shake stationxml is in the resources folder, double check we have right path
-    if instrument.lower() in  raspShakeInstNameList:
+    if instrument.lower() in raspShakeInstNameList:
         if metapath == r'resources/rs3dv7_metadata.inv':
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
@@ -2402,7 +2380,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                 if smooth or type(smooth) is int:
                     if smooth:
                         smooth = 51 #Default smoothing window
-                    elif smooth%2==0:
+                    elif smooth % 2==0:
                         smooth = smooth+1
 
                 #Resample raw ppsd values
@@ -2784,7 +2762,6 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                     gap = [trEndTime,trStartTime]
                     output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                     (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                                    #((gap[1] > hvsrDF['TimesProcessed_Obspy']) & (gap[1] < hvsrDF['TimesProcessed_ObspyEnd']))
                 
                 trEndTime = trace.stats.endtime
             
@@ -3220,9 +3197,9 @@ def _check_processing_status(hvsr_data):
                 statusOK = False
                 
         if statusOK:
-                hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = True
+            hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = True
         else:
-                hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = False
+            hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = False
 
     if isinstance(hvsr_data, HVSRData):
         hvsr_data = hvsr_interim[siteName]
@@ -4356,12 +4333,6 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         windows[wInd-1][1] = masked_array[-1] #Fill in last masked value (wInd-1 b/c wInd+=1 earlier)
     winTypeList = ['gaps'] * len(windows)
 
-
-        #if existing_xWindows != []:
-        #    windows = windows + existing_xWindows
-        #    existWinTypeList = ['removed'] * len(existing_xWindows)
-        #    winTypeList = winTypeList + existWinTypeList
-
     #Check if the windows are just gaps
     if len(existing_xWindows) > 0:
         existWin = []
@@ -4481,7 +4452,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         elif isinstance(origAxes, dict):
             origAxes[a] = ax
         else:
-                origAxes = ax
+            origAxes = ax
 
         ax = origAxes
 

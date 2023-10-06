@@ -882,27 +882,21 @@ class SPRIT_App:
         ttk.Label(hvsrFrame,text="Timezone").grid(row=3,column=7, sticky='w', padx=5)
         self.timezone_listbox.grid(row=4,column=7, rowspan=26, sticky='nsew', padx=5)
 
-        #ttk.Label(hvsrFrame, text="Timezone").grid(row=3, column=7)
-        #self.timezone_var = tk.StringVar(value="UTC")
-        #self.timezone_listbox = ttk.OptionMenu(hvsrFrame, self.timezone_var, "UTC", *pytz.all_timezones)
-        #self.timezone_listbox.grid(row=3,column=7)
-
         # DOY
         self.day_of_year = self.acq_date.timetuple().tm_yday
-        
-        ttk.Label(hvsrFrame,text="Day of Year:").grid(row=4,column=1, sticky='e', padx=5, pady=10)
-        self.doy_label = ttk.Label(hvsrFrame,text=str(self.day_of_year))
+
+        ttk.Label(hvsrFrame,text="Day of Year:").grid(row=4, column=1, sticky='e', padx=5, pady=10)
+        self.doy_label = ttk.Label(hvsrFrame, text=str(self.day_of_year))
         self.doy_label.grid(row=4, column=2, sticky='w')
 
         # UTC Time Output
         ttk.Label(hvsrFrame,text="UTC Time:").grid(row=4, column=3, sticky='e', padx=5, pady=10)
-        self.utc_time_output_label = ttk.Label(hvsrFrame,text="")
-        self.utc_time_output_label.grid(row=4,column=4)
+        self.utc_time_output_label = ttk.Label(hvsrFrame, text="")
+        self.utc_time_output_label.grid(row=4, column=4)
 
-        #Initialize as UTC
+        # Initialize as UTC
         self.tz = datetime.timezone.utc
-        #self.tz = pytz.timezone(self.timezone_listbox.get(self.timezone_listbox.curselection()))
-        #input_params() call
+
 
         self.starttime, self.endtime = get_times()
 
@@ -1015,7 +1009,7 @@ class SPRIT_App:
                 float(self.peakFreqRange_min.get())
                 float(self.peakFreqRange_max.get())
 
-                self.peakFreqRange.configure(text='hvsr_band=[{}, {}]'.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
+                peakFreqRangeLabel.configure(text='peak_freq_range=[{}, {}]'.format(self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))                
                 update_check_peaks_call(self.checkPeaks_Call)
                 update_input_params_call()
                 return True
@@ -1404,7 +1398,6 @@ class SPRIT_App:
                
         
         def select_windows(event, input=None, initialize=False):
-            import obspy
             """Function to manually select windows for exclusion from data.
 
             Parameters
@@ -1419,8 +1412,6 @@ class SPRIT_App:
             """
             from matplotlib.backend_bases import MouseButton
             import matplotlib.pyplot as plt
-            import matplotlib
-            import time
             
             #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
@@ -1660,7 +1651,7 @@ class SPRIT_App:
         #remove_noise Frame
         removeNoiseFrame = ttk.LabelFrame(self.noise_tab, text='remove_noise() call')
 
-        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text=f"remove_noise(hvsr_data, remove_method='auto',sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)")
+        self.remove_noise_call = ttk.Label(master=removeNoiseFrame, text="remove_noise(hvsr_data, remove_method='auto',sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False)")
         self.remove_noise_call.grid(row=0, column=0, padx=5, pady=(0,5))
         removeNoiseFrame.pack(fill='both', side='bottom')#.grid(row=0, column=1, sticky='nsew')
 
@@ -2429,7 +2420,7 @@ class SPRIT_App:
 
         
         def update_procHVSR_call(procHVSR_call):
-            procHVSR_call.configure(text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {}, {}, {})'
+            procHVSR_call.configure(text='process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})'
                   .format('params', hCombMethodLabel.cget('text'), hvSmoothLabel.cget('text'), freqSmoothLabel.cget('text'), fSmoothWidthlabel.cget('text'), resampleLabel.cget('text'), 
                           outlierValLabel.cget('text'), hvsrBandLabel.cget('text')))
         

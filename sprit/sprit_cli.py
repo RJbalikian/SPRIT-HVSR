@@ -62,7 +62,7 @@ def main():
                 if name == 'datapath':
                     parser.add_argument(name, help=f'{curr_doc_str}')
                 elif name == 'verbose':
-                    parser.add_argument('-v', '--verbose',  action='store_true', help=f'Print status and results to terminal.', default=parameter.default)
+                    parser.add_argument('-v', '--verbose',  action='store_true', help='Print status and results to terminal.', default=parameter.default)
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
                     parser.add_argument(F'--{name}', help=helpStr, default=parameter.default)
@@ -89,7 +89,7 @@ def main():
 
     if not kwargs['verbose']:
         print("Running sprit.run() with the following arguments (use --verbose for more information):")
-        print(f"sprit.run(", end='')
+        print("sprit.run(", end='')
         for key, value in kwargs.items():
             if 'kwargs' in str(key):
                 pass
