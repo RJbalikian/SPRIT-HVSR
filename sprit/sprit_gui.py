@@ -387,19 +387,24 @@ class SPRIT_App:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
+                self.hvsr_data = self.params
 
                 if self.trim_dir.get()=='':
                     trimDir=None
                 else:
                     trimDir=self.trim_dir.get()
                 
-                update_progress_bars(prog_percent=2)            
-                self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
+                update_progress_bars(prog_percent=2)
+                try:
+                    self.hvsr_data = sprit_hvsr.fetch_data(params=self.params,
                                             source=self.file_source.get(),
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
+                except:
+                    #print(dir(sys.exc_info()))
+                    traceback.print_exc()
 
                 update_progress_bars(prog_percent=10)
                 update_input_labels(self.hvsr_data)
@@ -2630,7 +2635,9 @@ class SPRIT_App:
                 if self.show_ind_curves.get():
                     kindstr_hv = kindstr_hv + ' t'
                 if self.show_ind_peaks.get():
-                    kindstr_hv = kindstr_hv + 'p'
+                    kindstr_hv = kindstr_hv.replace('t', 'tp')
+                    if 'tp' not in kindstr_hv:
+                        kindstr_hv = kindstr_hv+ ' tp'
                 if not self.show_stDev_hv.get():
                     kindstr_hv = kindstr_hv + ' -s'
             else:
@@ -3004,8 +3011,9 @@ if __name__ == "__main__":
     except Exception as e:
         print("ICON NOT LOADED, still opening GUI")
 
-    app = SPRIT_App(root)
     root.resizable(True, True)
+    SPRIT_App(root)
+
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()

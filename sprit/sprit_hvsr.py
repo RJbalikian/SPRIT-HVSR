@@ -327,7 +327,12 @@ def gui():
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     from sprit.sprit_gui import  SPRIT_App
-    import tkinter as tk
+    
+    try:
+        import tkinter as tk
+    except:
+        if sys.platform == 'linux':
+            raise ImportError('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
 
     def on_gui_closing():
         plt.close('all')
@@ -348,7 +353,8 @@ def gui():
             gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
         print("ICON NOT LOADED, still opening GUI")
-        
+
+    gui_root.resizable(True, True)
     SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
@@ -777,7 +783,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         params : HVSRData or HVSRBatch object
             Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
         """
-
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         print()
