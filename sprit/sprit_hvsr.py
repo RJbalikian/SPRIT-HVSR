@@ -307,7 +307,10 @@ def gui():
     """
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    from sprit.sprit_gui import SPRIT_App
+    try:
+        from sprit.sprit_gui import SPRIT_App
+    except:
+        from sprit_gui import SPRIT_App
     
     try:
         import tkinter as tk

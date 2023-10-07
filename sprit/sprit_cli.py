@@ -45,13 +45,13 @@ def main():
                      sprit.get_report,
                      sprit.plot_hvsr]
 
+    #Get default parameters from main functions
     parameters = []
-
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
+    #Add argument and options to the parser
     intermediate_params_list = ['params', 'input', 'hvsr_data', 'hvsr_results']
-
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -70,10 +70,8 @@ def main():
     # Add more arguments/options as needed
     args = parser.parse_args()
 
-    kwargs = {}
-    
-    #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
+    kwargs = {}
     for arg_name, arg_value in vars(args).items():
         if isinstance(arg_value, str):
             if "=" in arg_value:
@@ -87,23 +85,27 @@ def main():
                 arg_value = arg_value.split(',')
         kwargs[arg_name] = arg_value
 
-    if not kwargs['verbose']:
-        print("Running sprit.run() with the following arguments (use --verbose for more information):")
-        print("sprit.run(", end='')
-        for key, value in kwargs.items():
-            if 'kwargs' in str(key):
-                pass
-            else:
-                if type(value) is str:
-                    print(f"{key}='{value}'",end=', ')
-                else:
-                    print(f"{key}={value}",end=', ')
-        print('**ppsd_kwargs, **kwargs', end='')
-        print(')')
-
-    #print(kwargs['kwargs'])
     # Call the sprit.run function with the generated kwargs
-    sprit.run(**kwargs)
+    kwargs['datapath'] = kwargs['datapath'].replace("'", "")
+    if str(kwargs['datapath']).lower()=='gui':
+        sprit.gui()
+    else:
+        #Print a summary if not verbose
+        if not kwargs['verbose']:
+            print("Running sprit.run() with the following arguments (use --verbose for more information):")
+            print("sprit.run(", end='')
+            for key, value in kwargs.items():
+                if 'kwargs' in str(key):
+                    pass
+                else:
+                    if type(value) is str:
+                        print(f"{key}='{value}'",end=', ')
+                    else:
+                        print(f"{key}={value}",end=', ')
+            print('**ppsd_kwargs, **kwargs', end='')
+            print(')')
+    
+        sprit.run(**kwargs)
     
 if __name__ == '__main__':
     main()

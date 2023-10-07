@@ -3005,6 +3005,5 @@ if __name__ == "__main__":
     root.resizable(True, True)
     SPRIT_App(root)
 
-
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
