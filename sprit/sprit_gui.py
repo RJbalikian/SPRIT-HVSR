@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import MouseButton, MouseEvent
 import numpy as np
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 
 try: #For distribution
     from sprit import sprit_utils
