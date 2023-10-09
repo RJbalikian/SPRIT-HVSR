@@ -46,5 +46,6 @@ In very brief, the main learnings may be summarized as follows:
 
 # Citation
 If you are using this package, please use the following citation:
-Riley Balikian, Hongyu Xaio, Alexandra Sanchez, Jason Thomason. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.
+
+`Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.`
 
