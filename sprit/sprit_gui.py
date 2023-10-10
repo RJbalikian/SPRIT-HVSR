@@ -1193,7 +1193,7 @@ class SPRIT_App:
         fetch_data_LF.pack(fill='x', side='bottom')
         input_params_LF.pack(fill='x', side='bottom')
         self.input_tab.pack(fill='both', expand=True)
-        self.tab_control.add(self.input_tab, text="Input Params")
+        self.tab_control.add(self.input_tab, text="Input")
 
         #Data Preview Tab
         self.preview_data_tab = ttk.Frame(self.tab_control)
