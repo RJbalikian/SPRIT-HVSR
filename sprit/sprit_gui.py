@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import MouseButton, MouseEvent
 import numpy as np
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 
 try: #For distribution
     from sprit import sprit_utils
@@ -345,7 +345,7 @@ class SPRIT_App:
                 update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
 
-                self.log_text.insert('end', f"{self.site_options.get()}\n\n")
+                self.log_text.insert('end', f"{self.site_options}\n\n")
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)

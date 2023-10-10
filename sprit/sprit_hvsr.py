@@ -48,6 +48,30 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
+sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    '2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    '4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    '5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                    
+                    'sample1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    'sample2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    'sample3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    'sample4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    'sample5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    'sample6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+
+                    'sample_1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    'sample_2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    'sample_3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    'sample_4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    'sample_5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    'sample_6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                    
+                    'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
+
 #CLASSES
 
 #Check if the data is already the right class
@@ -65,6 +89,13 @@ def check_instance(init):
 
 #Class for batch data
 class HVSRBatch:
+    """HVSRBatch is the data container used for batch processing. It contains several HVSRData objects (one for each site). These can be accessed using their site name, either square brackets (HVSRBatchVariable["SiteName"]) or the dot (HVSRBatchVariable.SiteName) accessor.
+    
+    The dot accessor may not work if there is a space in the site name.
+    
+    All of the  functions in the sprit.pacakge are designed to perform the bulk of their operations iteratively on the individual HVSRData objects contained in the HVSRBatch object, and do little with the HVSRBatch object itself, besides using it determine which sites are contained within it.
+    
+    """
     @check_instance
     def __init__(self, sites_dict):
       
@@ -78,31 +109,82 @@ class HVSRBatch:
             
         self.sites = list(self._batch_dict.keys())
 
-    def to_json(self, filepath):
+    #METHODS
+    def __to_json(self, filepath):
+        """Not yet implemented, but may allow import/export to json files in the future, rather than just .hvsr pickles
+
+        Parameters
+        ----------
+        filepath : filepath object
+            Location to save HVSRBatch object as json
+        """
         # open the file with the given filepath
         with open(filepath, 'w') as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-    def export(self, export_path=None, ext='hvsr'):
+    def export(self, export_path=True, ext='hvsr'):
+        """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
+
+        Parameters
+        ----------
+        export_path : filepath, default=True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
+        ext : str, optional
+            The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+        """
         export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
-    #METHODS
     def keys(self):
+        """Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object listing the site names of each of the HVSRData objects contained in the HVSRBatch object
+        """
         return self.batch_dict.keys()
 
     def items(self):
+        """Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         return self.batch_dict.items()
 
-    def copy(self):
-        return HVSRBatch(copy.copy(self._batch_dict))
+    def copy(self, type='shallow'):
+        """Make a copy of the HVSRBatch object. Uses python copy module.
+        
+        Parameters
+        ----------
+        type : str {'shallow', 'deep'}
+            Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of 'deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+    
+        """
+        if type.lower()=='deep':
+            return HVSRBatch(copy.deepcopy(self._batch_dict))
+        else:
+            return HVSRBatch(copy.copy(self._batch_dict))
 
     #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
-        returnDict = {}
+        """Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData object
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
         for sitename in self:
-            returnDict[sitename] = plot_hvsr(self[sitename], **kwargs)
-        return returnDict
+            if 'return_fig' in kwargs.keys() and kwargs['return_fig']:
+                self[sitename]['Plot_Report'] = plot_hvsr(self[sitename], **kwargs)
+            else:
+                plot_hvsr(self[sitename], **kwargs)
+
+        return self
     
     def get_report(self, **kwargs):
         """Method to get report from processed data, in print, graphical, or tabular format.
@@ -147,6 +229,13 @@ class HVSRBatch:
 
 #Class for each HVSR site
 class HVSRData:
+    """HVSRData is the basic data class of the sprit package. It contains all the processed data, input parameters, and reports.
+    
+    These attributes and objects can be accessed using square brackets or the dot accessor. For example, to access the site name, HVSRData['site'] and HVSRData.site will both return the site name.
+    
+    Some of the methods that work on the HVSRData object (e.g., .plot() and .get_report()) are essentially wrappers for some of the main sprit package functions (sprit.plot_hvsr() and sprit.get_report(), respectively)
+    """
+    #Old way of using this
     #def __new__(cls, params):
     #    if isinstance(params, (cls, HVSRBatch)):
     #        return params
@@ -171,7 +260,8 @@ class HVSRData:
     def __getitem__(self, key):
         return getattr(self, key)
 
-    def to_json(self, filepath):
+    def __to_json(self, filepath):
+        """Not yet supported, will export HVSRData object to json"""
         # open the file with the given filepath
         def unseriable_fun(o):
             if isinstance(o, np.ndarray):
@@ -187,10 +277,26 @@ class HVSRData:
             json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)
 
     def export(self, export_path=None, ext='hvsr'):
+        """Method to export HVSRData objects to .hvsr pickle files.
+
+        Parameters
+        ----------
+        export_path : filepath, default=True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
+        ext : str, optional
+            The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+        """
         export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
     #METHODS (many reflect dictionary methods)
     def keys(self):
+        """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object of the HVSRData objects attributes, parameters, etc.
+        """        
         keyList = []
         for k in dir(self):
             if not k.startswith('_'):
@@ -198,17 +304,35 @@ class HVSRData:
         return keyList
 
     def items(self):
+        """Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        dict_items
+            A dict_items object of the HVSRData objects attributes, parameters, etc.
+        """                
         return self.params.items()
 
-    def copy(self):
-        return HVSRData(copy.copy(self.params))
-
+    def copy(self, type='shallow'):
+        """Make a copy of the HVSRData object. Uses python copy module.
+        
+        Parameters
+        ----------
+        type : str {'shallow', 'deep'}
+            Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type='deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+    
+        """
+        if type.lower()=='deep':
+            return HVSRData(copy.deepcopy(self.params))
+        else:
+            return HVSRData(copy.copy(self.params))
+        
     def plot(self, **kwargs):
         """Method to plot data, wrapper of sprit.plot_hvsr()
 
         Returns
         -------
-        matplotlib.Figure (if return_fig=True)
+        matplotlib.Figure, matplotlib.Axis (if return_fig=True)
         """
         if 'close_figs' not in kwargs.keys():
             kwargs['close_figs']=True
@@ -236,6 +360,13 @@ class HVSRData:
     #params
     @property
     def params(self):
+        """Dictionary containing the parameters used to process the data
+
+        Returns
+        -------
+        dict
+            Dictionary containing the process parameters
+        """
         return self._params
 
     @params.setter
@@ -247,6 +378,13 @@ class HVSRData:
     #datastream
     @property
     def datastream(self):
+        """A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
+
+        Returns
+        -------
+        obspy.core.Stream.stream
+            Obspy stream
+        """
         return self._datastream
 
     @datastream.setter
@@ -258,6 +396,13 @@ class HVSRData:
     #batch
     @property
     def batch(self):
+        """Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.
+
+        Returns
+        -------
+        bool
+            True if HVSRData object is part of HVSRBatch object, otherwise, False
+        """
         return self._batch
 
     @batch.setter
@@ -275,10 +420,12 @@ class HVSRData:
     #PPSD object from obspy (static)
     @property
     def ppsds_obspy(self):
+        """The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed."""        
         return self._ppsds_obspy
 
     @ppsds_obspy.setter
     def ppsds_obspy(self, value):
+        """Checks whether the ppsd_obspy is of the proper type before saving as attribute"""
         if not isinstance(value, obspy.signal.spectral_estimation.PPSD):
             if not isinstance(value, dict):
                 raise ValueError("ppsds_obspy must be obspy.PPSD or dict with osbpy.PPSDs")
@@ -291,6 +438,13 @@ class HVSRData:
     #PPSD dict, copied from obspy ppsds (dynamic)
     @property
     def ppsds(self):
+        """Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.
+
+        Returns
+        -------
+        dict
+            Dictionary copy of the PPSD information from generate_ppsds()
+        """
         return self._ppsds
 
     @ppsds.setter
@@ -910,27 +1064,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         elif source=='file':
             params['datapath'] = str(params['datapath']).lower()
             
-            sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                                '2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                                '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                                '4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                                '5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                                '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                                
-                                'sample1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                                'sample2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                                'sample3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                                'sample4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                                'sample5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                                'sample6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-
-                                'sample_1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                                'sample_2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                                'sample_3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                                'sample_4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                                'sample_5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                                'sample_6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED')}
-            
             if params['datapath'].lower() in sampleFileKeyMap.keys():
                 params['datapath'] = sampleFileKeyMap[params['datapath'].lower()]
             else:
@@ -1435,6 +1568,19 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     #Curve pass?
     orig_args = locals().copy() #Get the initial arguments
 
+    if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
+        if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
+            pass
+        else:
+            print('\nGetting HVSR Report: get_report()')
+            print('\tUsing the following parameters:')
+            for key, value in orig_args.items():
+                if key=='params':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
+            print()
+
     if isinstance(hvsr_results, HVSRBatch):
         if verbose:
             print('\nGetting Reports: Running in batch mode')
@@ -1462,7 +1608,12 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['CSV_Report']], ignore_index=True, join='inner')
         
         if export_path is not None:
-            if pathlib.Path(export_path).is_dir():
+            if export_path is True:
+                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                    csvExportPath = pathlib.Path(os.getcwd())
+                else:
+                    csvExportPath = pathlib.Path(hvsr_results['input_params']['datapath'])
+            elif pathlib.Path(export_path).is_dir():
                 csvExportPath = export_path
             elif pathlib.Path(export_path).is_file():
                 csvExportPath = export_path.parent
@@ -1526,7 +1677,15 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 fname = fname.replace(':', '')
 
                 if _export_path==True:
-                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                    #Check so we don't write in sample directory
+                    if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                        if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                            inFile = pathlib.Path.home() #Use the path to user's home if all else fails
+                        else:
+                            inFile = pathlib.Path(os.getcwd())
+                    else:
+                        inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                                 
                     if inFile.is_dir():
                         outFile = inFile.joinpath(fname)
                     else:

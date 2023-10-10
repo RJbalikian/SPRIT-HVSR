@@ -1032,27 +1032,6 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
         elif source==&#39;file&#39;:
             params[&#39;datapath&#39;] = str(params[&#39;datapath&#39;]).lower()
             
-            sampleFileKeyMap = {&#39;1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;),
-                                &#39;2&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;),
-                                &#39;3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
-                                &#39;4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
-                                &#39;5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
-                                &#39;6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;),
-                                
-                                &#39;sample1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;),
-                                &#39;sample2&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;),
-                                &#39;sample3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
-                                &#39;sample4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
-                                &#39;sample5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
-                                &#39;sample6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;),
-
-                                &#39;sample_1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;),
-                                &#39;sample_2&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;),
-                                &#39;sample_3&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;),
-                                &#39;sample_4&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;),
-                                &#39;sample_5&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;),
-                                &#39;sample_6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;)}
-            
             if params[&#39;datapath&#39;].lower() in sampleFileKeyMap.keys():
                 params[&#39;datapath&#39;] = sampleFileKeyMap[params[&#39;datapath&#39;].lower()]
             else:
@@ -1863,6 +1842,19 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
     #Curve pass?
     orig_args = locals().copy() #Get the initial arguments
 
+    if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results[&#39;batch&#39;]):
+        if isinstance(hvsr_results, HVSRData) and hvsr_results[&#39;batch&#39;]:
+            pass
+        else:
+            print(&#39;\nGetting HVSR Report: get_report()&#39;)
+            print(&#39;\tUsing the following parameters:&#39;)
+            for key, value in orig_args.items():
+                if key==&#39;params&#39;:
+                    pass
+                else:
+                    print(&#39;\t  {}={}&#39;.format(key, value))
+            print()
+
     if isinstance(hvsr_results, HVSRBatch):
         if verbose:
             print(&#39;\nGetting Reports: Running in batch mode&#39;)
@@ -1890,7 +1882,12 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name][&#39;CSV_Report&#39;]], ignore_index=True, join=&#39;inner&#39;)
         
         if export_path is not None:
-            if pathlib.Path(export_path).is_dir():
+            if export_path is True:
+                if pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;]) in sampleFileKeyMap.values():
+                    csvExportPath = pathlib.Path(os.getcwd())
+                else:
+                    csvExportPath = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
+            elif pathlib.Path(export_path).is_dir():
                 csvExportPath = export_path
             elif pathlib.Path(export_path).is_file():
                 csvExportPath = export_path.parent
@@ -1954,7 +1951,15 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 fname = fname.replace(&#39;:&#39;, &#39;&#39;)
 
                 if _export_path==True:
-                    inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
+                    #Check so we don&#39;t write in sample directory
+                    if pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;]) in sampleFileKeyMap.values():
+                        if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                            inFile = pathlib.Path.home() #Use the path to user&#39;s home if all else fails
+                        else:
+                            inFile = pathlib.Path(os.getcwd())
+                    else:
+                        inFile = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;datapath&#39;])
+                                 
                     if inFile.is_dir():
                         outFile = inFile.joinpath(fname)
                     else:
@@ -2169,7 +2174,10 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
     &#34;&#34;&#34;
     import pkg_resources
     #guiPath = pathlib.Path(os.path.realpath(__file__))
-    from sprit.sprit_gui import SPRIT_App
+    try:
+        from sprit.sprit_gui import SPRIT_App
+    except:
+        from sprit_gui import SPRIT_App
     
     try:
         import tkinter as tk
@@ -2268,7 +2276,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-06', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-09', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -3772,12 +3780,22 @@ For sample data, The following can be specified as the datapath parameter:
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>HVSRBatch is the data container used for batch processing. It contains several HVSRData objects (one for each site). These can be accessed using their site name, either square brackets (HVSRBatchVariable["SiteName"]) or the dot (HVSRBatchVariable.SiteName) accessor.</p>
+<p>The dot accessor may not work if there is a space in the site name.</p>
+<p>All of the
+functions in the sprit.pacakge are designed to perform the bulk of their operations iteratively on the individual HVSRData objects contained in the HVSRBatch object, and do little with the HVSRBatch object itself, besides using it determine which sites are contained within it.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class HVSRBatch:
+    &#34;&#34;&#34;HVSRBatch is the data container used for batch processing. It contains several HVSRData objects (one for each site). These can be accessed using their site name, either square brackets (HVSRBatchVariable[&#34;SiteName&#34;]) or the dot (HVSRBatchVariable.SiteName) accessor.
+    
+    The dot accessor may not work if there is a space in the site name.
+    
+    All of the  functions in the sprit.pacakge are designed to perform the bulk of their operations iteratively on the individual HVSRData objects contained in the HVSRBatch object, and do little with the HVSRBatch object itself, besides using it determine which sites are contained within it.
+    
+    &#34;&#34;&#34;
     @check_instance
     def __init__(self, sites_dict):
       
@@ -3791,31 +3809,82 @@ For sample data, The following can be specified as the datapath parameter:
             
         self.sites = list(self._batch_dict.keys())
 
-    def to_json(self, filepath):
+    #METHODS
+    def __to_json(self, filepath):
+        &#34;&#34;&#34;Not yet implemented, but may allow import/export to json files in the future, rather than just .hvsr pickles
+
+        Parameters
+        ----------
+        filepath : filepath object
+            Location to save HVSRBatch object as json
+        &#34;&#34;&#34;
         # open the file with the given filepath
         with open(filepath, &#39;w&#39;) as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-    def export(self, export_path=None, ext=&#39;hvsr&#39;):
+    def export(self, export_path=True, ext=&#39;hvsr&#39;):
+        &#34;&#34;&#34;Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
+
+        Parameters
+        ----------
+        export_path : filepath, default=True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user&#39;s home directory, by default True
+        ext : str, optional
+            The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+        &#34;&#34;&#34;
         export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
-    #METHODS
     def keys(self):
+        &#34;&#34;&#34;Method to return the &#34;keys&#34; of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object listing the site names of each of the HVSRData objects contained in the HVSRBatch object
+        &#34;&#34;&#34;
         return self.batch_dict.keys()
 
     def items(self):
+        &#34;&#34;&#34;Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        _type_
+            _description_
+        &#34;&#34;&#34;
         return self.batch_dict.items()
 
-    def copy(self):
-        return HVSRBatch(copy.copy(self._batch_dict))
+    def copy(self, type=&#39;shallow&#39;):
+        &#34;&#34;&#34;Make a copy of the HVSRBatch object. Uses python copy module.
+        
+        Parameters
+        ----------
+        type : str {&#39;shallow&#39;, &#39;deep&#39;}
+            Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of &#39;deep&#39; is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+    
+        &#34;&#34;&#34;
+        if type.lower()==&#39;deep&#39;:
+            return HVSRBatch(copy.deepcopy(self._batch_dict))
+        else:
+            return HVSRBatch(copy.copy(self._batch_dict))
 
     #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
-        returnDict = {}
+        &#34;&#34;&#34;Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the &#39;Plot_Report&#39; attribute of each HVSRData object
+
+        Returns
+        -------
+        _type_
+            _description_
+        &#34;&#34;&#34;
         for sitename in self:
-            returnDict[sitename] = plot_hvsr(self[sitename], **kwargs)
-        return returnDict
+            if &#39;return_fig&#39; in kwargs.keys() and kwargs[&#39;return_fig&#39;]:
+                self[sitename][&#39;Plot_Report&#39;] = plot_hvsr(self[sitename], **kwargs)
+            else:
+                plot_hvsr(self[sitename], **kwargs)
+
+        return self
     
     def get_report(self, **kwargs):
         &#34;&#34;&#34;Method to get report from processed data, in print, graphical, or tabular format.
@@ -3861,28 +3930,60 @@ For sample data, The following can be specified as the datapath parameter:
 <h3>Methods</h3>
 <dl>
 <dt id="sprit.HVSRBatch.copy"><code class="name flex">
-<span>def <span class="ident">copy</span></span>(<span>self)</span>
+<span>def <span class="ident">copy</span></span>(<span>self, type='shallow')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Make a copy of the HVSRBatch object. Uses python copy module.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>type</code></strong> :&ensp;<code>str {'shallow', 'deep'}</code></dt>
+<dd>Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of 'deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def copy(self):
-    return HVSRBatch(copy.copy(self._batch_dict))</code></pre>
+<pre><code class="python">def copy(self, type=&#39;shallow&#39;):
+    &#34;&#34;&#34;Make a copy of the HVSRBatch object. Uses python copy module.
+    
+    Parameters
+    ----------
+    type : str {&#39;shallow&#39;, &#39;deep&#39;}
+        Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of &#39;deep&#39; is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+
+    &#34;&#34;&#34;
+    if type.lower()==&#39;deep&#39;:
+        return HVSRBatch(copy.deepcopy(self._batch_dict))
+    else:
+        return HVSRBatch(copy.copy(self._batch_dict))</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRBatch.export"><code class="name flex">
-<span>def <span class="ident">export</span></span>(<span>self, export_path=None, ext='hvsr')</span>
+<span>def <span class="ident">export</span></span>(<span>self, export_path=True, ext='hvsr')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>export_path</code></strong> :&ensp;<code>filepath</code>, default=<code>True</code></dt>
+<dd>Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True</dd>
+<dt><strong><code>ext</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def export(self, export_path=None, ext=&#39;hvsr&#39;):
+<pre><code class="python">def export(self, export_path=True, ext=&#39;hvsr&#39;):
+    &#34;&#34;&#34;Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
+
+    Parameters
+    ----------
+    export_path : filepath, default=True
+        Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user&#39;s home directory, by default True
+    ext : str, optional
+        The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+    &#34;&#34;&#34;
     export_data(hvsr_data=self, export_path=export_path, ext=ext)</code></pre>
 </details>
 </dd>
@@ -3933,12 +4034,24 @@ For sample data, The following can be specified as the datapath parameter:
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>_type_</code></dt>
+<dd><em>description</em></dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def items(self):
+    &#34;&#34;&#34;Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
+
+    Returns
+    -------
+    _type_
+        _description_
+    &#34;&#34;&#34;
     return self.batch_dict.items()</code></pre>
 </details>
 </dd>
@@ -3946,12 +4059,24 @@ For sample data, The following can be specified as the datapath parameter:
 <span>def <span class="ident">keys</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict_keys</code></dt>
+<dd>A dict_keys object listing the site names of each of the HVSRData objects contained in the HVSRBatch object</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def keys(self):
+    &#34;&#34;&#34;Method to return the &#34;keys&#34; of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
+
+    Returns
+    -------
+    dict_keys
+        A dict_keys object listing the site names of each of the HVSRData objects contained in the HVSRBatch object
+    &#34;&#34;&#34;
     return self.batch_dict.keys()</code></pre>
 </details>
 </dd>
@@ -3959,16 +4084,31 @@ For sample data, The following can be specified as the datapath parameter:
 <span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData object</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>_type_</code></dt>
+<dd><em>description</em></dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot(self, **kwargs):
-    returnDict = {}
+    &#34;&#34;&#34;Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the &#39;Plot_Report&#39; attribute of each HVSRData object
+
+    Returns
+    -------
+    _type_
+        _description_
+    &#34;&#34;&#34;
     for sitename in self:
-        returnDict[sitename] = plot_hvsr(self[sitename], **kwargs)
-    return returnDict</code></pre>
+        if &#39;return_fig&#39; in kwargs.keys() and kwargs[&#39;return_fig&#39;]:
+            self[sitename][&#39;Plot_Report&#39;] = plot_hvsr(self[sitename], **kwargs)
+        else:
+            plot_hvsr(self[sitename], **kwargs)
+
+    return self</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRBatch.report"><code class="name flex">
@@ -3985,22 +4125,6 @@ For sample data, The following can be specified as the datapath parameter:
     return self.get_report(**kwargs)</code></pre>
 </details>
 </dd>
-<dt id="sprit.HVSRBatch.to_json"><code class="name flex">
-<span>def <span class="ident">to_json</span></span>(<span>self, filepath)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def to_json(self, filepath):
-    # open the file with the given filepath
-    with open(filepath, &#39;w&#39;) as f:
-        # dump the JSON string to the file
-        json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)</code></pre>
-</details>
-</dd>
 </dl>
 </dd>
 <dt id="sprit.HVSRData"><code class="flex name class">
@@ -4008,12 +4132,21 @@ For sample data, The following can be specified as the datapath parameter:
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>HVSRData is the basic data class of the sprit package. It contains all the processed data, input parameters, and reports.</p>
+<p>These attributes and objects can be accessed using square brackets or the dot accessor. For example, to access the site name, HVSRData['site'] and HVSRData.site will both return the site name.</p>
+<p>Some of the methods that work on the HVSRData object (e.g., .plot() and .get_report()) are essentially wrappers for some of the main sprit package functions (sprit.plot_hvsr() and sprit.get_report(), respectively)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class HVSRData:
+    &#34;&#34;&#34;HVSRData is the basic data class of the sprit package. It contains all the processed data, input parameters, and reports.
+    
+    These attributes and objects can be accessed using square brackets or the dot accessor. For example, to access the site name, HVSRData[&#39;site&#39;] and HVSRData.site will both return the site name.
+    
+    Some of the methods that work on the HVSRData object (e.g., .plot() and .get_report()) are essentially wrappers for some of the main sprit package functions (sprit.plot_hvsr() and sprit.get_report(), respectively)
+    &#34;&#34;&#34;
+    #Old way of using this
     #def __new__(cls, params):
     #    if isinstance(params, (cls, HVSRBatch)):
     #        return params
@@ -4038,7 +4171,8 @@ For sample data, The following can be specified as the datapath parameter:
     def __getitem__(self, key):
         return getattr(self, key)
 
-    def to_json(self, filepath):
+    def __to_json(self, filepath):
+        &#34;&#34;&#34;Not yet supported, will export HVSRData object to json&#34;&#34;&#34;
         # open the file with the given filepath
         def unseriable_fun(o):
             if isinstance(o, np.ndarray):
@@ -4054,10 +4188,26 @@ For sample data, The following can be specified as the datapath parameter:
             json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)
 
     def export(self, export_path=None, ext=&#39;hvsr&#39;):
+        &#34;&#34;&#34;Method to export HVSRData objects to .hvsr pickle files.
+
+        Parameters
+        ----------
+        export_path : filepath, default=True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user&#39;s home directory, by default True
+        ext : str, optional
+            The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+        &#34;&#34;&#34;
         export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
     #METHODS (many reflect dictionary methods)
     def keys(self):
+        &#34;&#34;&#34;Method to return the &#34;keys&#34; of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object of the HVSRData objects attributes, parameters, etc.
+        &#34;&#34;&#34;        
         keyList = []
         for k in dir(self):
             if not k.startswith(&#39;_&#39;):
@@ -4065,17 +4215,35 @@ For sample data, The following can be specified as the datapath parameter:
         return keyList
 
     def items(self):
+        &#34;&#34;&#34;Method to return the &#34;items&#34; of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        dict_items
+            A dict_items object of the HVSRData objects attributes, parameters, etc.
+        &#34;&#34;&#34;                
         return self.params.items()
 
-    def copy(self):
-        return HVSRData(copy.copy(self.params))
-
+    def copy(self, type=&#39;shallow&#39;):
+        &#34;&#34;&#34;Make a copy of the HVSRData object. Uses python copy module.
+        
+        Parameters
+        ----------
+        type : str {&#39;shallow&#39;, &#39;deep&#39;}
+            Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type=&#39;deep&#39; is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+    
+        &#34;&#34;&#34;
+        if type.lower()==&#39;deep&#39;:
+            return HVSRData(copy.deepcopy(self.params))
+        else:
+            return HVSRData(copy.copy(self.params))
+        
     def plot(self, **kwargs):
         &#34;&#34;&#34;Method to plot data, wrapper of sprit.plot_hvsr()
 
         Returns
         -------
-        matplotlib.Figure (if return_fig=True)
+        matplotlib.Figure, matplotlib.Axis (if return_fig=True)
         &#34;&#34;&#34;
         if &#39;close_figs&#39; not in kwargs.keys():
             kwargs[&#39;close_figs&#39;]=True
@@ -4103,6 +4271,13 @@ For sample data, The following can be specified as the datapath parameter:
     #params
     @property
     def params(self):
+        &#34;&#34;&#34;Dictionary containing the parameters used to process the data
+
+        Returns
+        -------
+        dict
+            Dictionary containing the process parameters
+        &#34;&#34;&#34;
         return self._params
 
     @params.setter
@@ -4114,6 +4289,13 @@ For sample data, The following can be specified as the datapath parameter:
     #datastream
     @property
     def datastream(self):
+        &#34;&#34;&#34;A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
+
+        Returns
+        -------
+        obspy.core.Stream.stream
+            Obspy stream
+        &#34;&#34;&#34;
         return self._datastream
 
     @datastream.setter
@@ -4125,6 +4307,13 @@ For sample data, The following can be specified as the datapath parameter:
     #batch
     @property
     def batch(self):
+        &#34;&#34;&#34;Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.
+
+        Returns
+        -------
+        bool
+            True if HVSRData object is part of HVSRBatch object, otherwise, False
+        &#34;&#34;&#34;
         return self._batch
 
     @batch.setter
@@ -4142,10 +4331,12 @@ For sample data, The following can be specified as the datapath parameter:
     #PPSD object from obspy (static)
     @property
     def ppsds_obspy(self):
+        &#34;&#34;&#34;The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed.&#34;&#34;&#34;        
         return self._ppsds_obspy
 
     @ppsds_obspy.setter
     def ppsds_obspy(self, value):
+        &#34;&#34;&#34;Checks whether the ppsd_obspy is of the proper type before saving as attribute&#34;&#34;&#34;
         if not isinstance(value, obspy.signal.spectral_estimation.PPSD):
             if not isinstance(value, dict):
                 raise ValueError(&#34;ppsds_obspy must be obspy.PPSD or dict with osbpy.PPSDs&#34;)
@@ -4158,6 +4349,13 @@ For sample data, The following can be specified as the datapath parameter:
     #PPSD dict, copied from obspy ppsds (dynamic)
     @property
     def ppsds(self):
+        &#34;&#34;&#34;Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.
+
+        Returns
+        -------
+        dict
+            Dictionary copy of the PPSD information from generate_ppsds()
+        &#34;&#34;&#34;
         return self._ppsds
 
     @ppsds.setter
@@ -4170,61 +4368,110 @@ For sample data, The following can be specified as the datapath parameter:
 <dl>
 <dt id="sprit.HVSRData.batch"><code class="name">var <span class="ident">batch</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>True if HVSRData object is part of HVSRBatch object, otherwise, False</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def batch(self):
+    &#34;&#34;&#34;Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.
+
+    Returns
+    -------
+    bool
+        True if HVSRData object is part of HVSRBatch object, otherwise, False
+    &#34;&#34;&#34;
     return self._batch</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRData.datastream"><code class="name">var <span class="ident">datastream</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>obspy.core.Stream.stream</code></dt>
+<dd>Obspy stream</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def datastream(self):
+    &#34;&#34;&#34;A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
+
+    Returns
+    -------
+    obspy.core.Stream.stream
+        Obspy stream
+    &#34;&#34;&#34;
     return self._datastream</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRData.params"><code class="name">var <span class="ident">params</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Dictionary containing the parameters used to process the data</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing the process parameters</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def params(self):
+    &#34;&#34;&#34;Dictionary containing the parameters used to process the data
+
+    Returns
+    -------
+    dict
+        Dictionary containing the process parameters
+    &#34;&#34;&#34;
     return self._params</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRData.ppsds"><code class="name">var <span class="ident">ppsds</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary copy of the PPSD information from generate_ppsds()</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def ppsds(self):
+    &#34;&#34;&#34;Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.
+
+    Returns
+    -------
+    dict
+        Dictionary copy of the PPSD information from generate_ppsds()
+    &#34;&#34;&#34;
     return self._ppsds</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRData.ppsds_obspy"><code class="name">var <span class="ident">ppsds_obspy</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def ppsds_obspy(self):
+    &#34;&#34;&#34;The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed.&#34;&#34;&#34;        
     return self._ppsds_obspy</code></pre>
 </details>
 </dd>
@@ -4232,28 +4479,60 @@ def ppsds_obspy(self):
 <h3>Methods</h3>
 <dl>
 <dt id="sprit.HVSRData.copy"><code class="name flex">
-<span>def <span class="ident">copy</span></span>(<span>self)</span>
+<span>def <span class="ident">copy</span></span>(<span>self, type='shallow')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Make a copy of the HVSRData object. Uses python copy module.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>type</code></strong> :&ensp;<code>str {'shallow', 'deep'}</code></dt>
+<dd>Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type='deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def copy(self):
-    return HVSRData(copy.copy(self.params))</code></pre>
+<pre><code class="python">def copy(self, type=&#39;shallow&#39;):
+    &#34;&#34;&#34;Make a copy of the HVSRData object. Uses python copy module.
+    
+    Parameters
+    ----------
+    type : str {&#39;shallow&#39;, &#39;deep&#39;}
+        Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type=&#39;deep&#39; is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+
+    &#34;&#34;&#34;
+    if type.lower()==&#39;deep&#39;:
+        return HVSRData(copy.deepcopy(self.params))
+    else:
+        return HVSRData(copy.copy(self.params))</code></pre>
 </details>
 </dd>
 <dt id="sprit.HVSRData.export"><code class="name flex">
 <span>def <span class="ident">export</span></span>(<span>self, export_path=None, ext='hvsr')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to export HVSRData objects to .hvsr pickle files.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>export_path</code></strong> :&ensp;<code>filepath</code>, default=<code>True</code></dt>
+<dd>Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True</dd>
+<dt><strong><code>ext</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def export(self, export_path=None, ext=&#39;hvsr&#39;):
+    &#34;&#34;&#34;Method to export HVSRData objects to .hvsr pickle files.
+
+    Parameters
+    ----------
+    export_path : filepath, default=True
+        Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user&#39;s home directory, by default True
+    ext : str, optional
+        The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+    &#34;&#34;&#34;
     export_data(hvsr_data=self, export_path=export_path, ext=ext)</code></pre>
 </details>
 </dd>
@@ -4287,12 +4566,24 @@ def ppsds_obspy(self):
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict_items</code></dt>
+<dd>A dict_items object of the HVSRData objects attributes, parameters, etc.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def items(self):
+    &#34;&#34;&#34;Method to return the &#34;items&#34; of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
+
+    Returns
+    -------
+    dict_items
+        A dict_items object of the HVSRData objects attributes, parameters, etc.
+    &#34;&#34;&#34;                
     return self.params.items()</code></pre>
 </details>
 </dd>
@@ -4300,12 +4591,24 @@ def ppsds_obspy(self):
 <span>def <span class="ident">keys</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict_keys</code></dt>
+<dd>A dict_keys object of the HVSRData objects attributes, parameters, etc.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def keys(self):
+    &#34;&#34;&#34;Method to return the &#34;keys&#34; of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
+
+    Returns
+    -------
+    dict_keys
+        A dict_keys object of the HVSRData objects attributes, parameters, etc.
+    &#34;&#34;&#34;        
     keyList = []
     for k in dir(self):
         if not k.startswith(&#39;_&#39;):
@@ -4320,7 +4623,7 @@ def ppsds_obspy(self):
 <div class="desc"><p>Method to plot data, wrapper of sprit.plot_hvsr()</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>matplotlib.Figure (if return_fig=True)</code></dt>
+<dt><code>matplotlib.Figure, matplotlib.Axis (if return_fig=True)</code></dt>
 <dd>&nbsp;</dd>
 </dl></div>
 <details class="source">
@@ -4332,7 +4635,7 @@ def ppsds_obspy(self):
 
     Returns
     -------
-    matplotlib.Figure (if return_fig=True)
+    matplotlib.Figure, matplotlib.Axis (if return_fig=True)
     &#34;&#34;&#34;
     if &#39;close_figs&#39; not in kwargs.keys():
         kwargs[&#39;close_figs&#39;]=True
@@ -4354,31 +4657,6 @@ def ppsds_obspy(self):
     &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
     report_return = get_report(self, **kwargs)
     return report_return</code></pre>
-</details>
-</dd>
-<dt id="sprit.HVSRData.to_json"><code class="name flex">
-<span>def <span class="ident">to_json</span></span>(<span>self, filepath)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def to_json(self, filepath):
-    # open the file with the given filepath
-    def unseriable_fun(o):
-        if isinstance(o, np.ndarray):
-            output = o.tolist()
-        try:
-            output = o.__dict__
-        except:
-            output = dir(o)
-        return output
-
-    with open(filepath, &#39;w&#39;) as f:
-        # dump the JSON string to the file
-        json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)</code></pre>
 </details>
 </dd>
 </dl>
@@ -4441,7 +4719,6 @@ def ppsds_obspy(self):
 <li><code><a title="sprit.HVSRBatch.keys" href="#sprit.HVSRBatch.keys">keys</a></code></li>
 <li><code><a title="sprit.HVSRBatch.plot" href="#sprit.HVSRBatch.plot">plot</a></code></li>
 <li><code><a title="sprit.HVSRBatch.report" href="#sprit.HVSRBatch.report">report</a></code></li>
-<li><code><a title="sprit.HVSRBatch.to_json" href="#sprit.HVSRBatch.to_json">to_json</a></code></li>
 </ul>
 </li>
 <li>
@@ -4459,7 +4736,6 @@ def ppsds_obspy(self):
 <li><code><a title="sprit.HVSRData.ppsds" href="#sprit.HVSRData.ppsds">ppsds</a></code></li>
 <li><code><a title="sprit.HVSRData.ppsds_obspy" href="#sprit.HVSRData.ppsds_obspy">ppsds_obspy</a></code></li>
 <li><code><a title="sprit.HVSRData.report" href="#sprit.HVSRData.report">report</a></code></li>
-<li><code><a title="sprit.HVSRData.to_json" href="#sprit.HVSRData.to_json">to_json</a></code></li>
 </ul>
 </li>
 </ul>

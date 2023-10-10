@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import MouseButton, MouseEvent
 import numpy as np
-matplotlib.use(&#39;TkAgg&#39;)
+#matplotlib.use(&#39;TkAgg&#39;)
 
 try: #For distribution
     from sprit import sprit_utils
@@ -3033,7 +3033,6 @@ if __name__ == &#34;__main__&#34;:
 
     root.resizable(True, True)
     SPRIT_App(root)
-
 
     root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
     root.mainloop()</code></pre>

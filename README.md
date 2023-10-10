@@ -43,3 +43,9 @@ In very brief, the main learnings may be summarized as follows:
 - The proximity of some specific noise sources should be considered with care (or avoided using an anti-trigger window selection to remove the transients): nearby walking, high speed car or truck traffic, industrial machinery, etc. 
 - Results tend to be stable with time (if other parameters, such as weather conditions, etc. are kept constant). 
 - No matter how strongly a parameter influences H/V amplitudes, the value of the frequency peak is usually not or slightly affected, with the noticeable exception of the wind in certain conditions.
+
+# Citation
+If you are using this package, please use the following citation:
+
+`Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.`
+

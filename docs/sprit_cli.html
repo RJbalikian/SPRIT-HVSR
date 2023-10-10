@@ -77,13 +77,13 @@ def main():
                      sprit.get_report,
                      sprit.plot_hvsr]
 
+    #Get default parameters from main functions
     parameters = []
-
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
+    #Add argument and options to the parser
     intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
-
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -102,41 +102,45 @@ def main():
     # Add more arguments/options as needed
     args = parser.parse_args()
 
-    kwargs = {}
-    
-    #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
+    kwargs = {}
     for arg_name, arg_value in vars(args).items():
         if isinstance(arg_value, str):
             if &#34;=&#34; in arg_value:
                 arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
-            if arg_value==&#39;True&#39;:
+            if arg_value.lower()==&#39;true&#39;:
                 arg_value = True
-            if arg_value==&#39;False&#39;:
+            elif arg_value.lower()==&#39;false&#39;:
                 arg_value = False
-            if &#34;[&#34; in arg_value:
+            elif &#34;[&#34; in arg_value:
                 arg_value = arg_value.replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;,&#39;&#39;)
                 arg_value = arg_value.split(&#39;,&#39;)
+            elif &#34;,&#34; in arg_value:
+                arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
-
-    if not kwargs[&#39;verbose&#39;]:
-        print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
-        print(&#34;sprit.run(&#34;, end=&#39;&#39;)
-        for key, value in kwargs.items():
-            if &#39;kwargs&#39; in str(key):
-                pass
-            else:
-                if type(value) is str:
-                    print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
-                else:
-                    print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
-        print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
-        print(&#39;)&#39;)
-
-    #print(kwargs[&#39;kwargs&#39;])
-    # Call the sprit.run function with the generated kwargs
-    sprit.run(**kwargs)
     
+    # Call the sprit.run function with the generated kwargs
+    kwargs[&#39;datapath&#39;] = kwargs[&#39;datapath&#39;].replace(&#34;&#39;&#34;, &#34;&#34;) #Remove single quotes to reduce errors
+    if str(kwargs[&#39;datapath&#39;]).lower()==&#39;gui&#39;:
+        sprit.gui()
+    else:
+        #Print a summary if not verbose
+        if not kwargs[&#39;verbose&#39;]:
+            print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
+            print(&#34;sprit.run(&#34;, end=&#39;&#39;)
+            for key, value in kwargs.items():
+                if &#39;kwargs&#39; in str(key):
+                    pass
+                else:
+                    if type(value) is str:
+                        print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
+                    else:
+                        print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
+            print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
+            print(&#39;)&#39;)
+    
+        sprit.run(**kwargs)
+            
 if __name__ == &#39;__main__&#39;:
     main()</code></pre>
 </details>
@@ -197,13 +201,13 @@ if __name__ == &#39;__main__&#39;:
                      sprit.get_report,
                      sprit.plot_hvsr]
 
+    #Get default parameters from main functions
     parameters = []
-
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
 
+    #Add argument and options to the parser
     intermediate_params_list = [&#39;params&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
-
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -222,40 +226,44 @@ if __name__ == &#39;__main__&#39;:
     # Add more arguments/options as needed
     args = parser.parse_args()
 
-    kwargs = {}
-    
-    #MAKE THIS A LOOP!!!
     # Map command-line arguments/options to kwargs
+    kwargs = {}
     for arg_name, arg_value in vars(args).items():
         if isinstance(arg_value, str):
             if &#34;=&#34; in arg_value:
                 arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
-            if arg_value==&#39;True&#39;:
+            if arg_value.lower()==&#39;true&#39;:
                 arg_value = True
-            if arg_value==&#39;False&#39;:
+            elif arg_value.lower()==&#39;false&#39;:
                 arg_value = False
-            if &#34;[&#34; in arg_value:
+            elif &#34;[&#34; in arg_value:
                 arg_value = arg_value.replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;,&#39;&#39;)
                 arg_value = arg_value.split(&#39;,&#39;)
+            elif &#34;,&#34; in arg_value:
+                arg_value = arg_value.split(&#39;,&#39;)
         kwargs[arg_name] = arg_value
-
-    if not kwargs[&#39;verbose&#39;]:
-        print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
-        print(&#34;sprit.run(&#34;, end=&#39;&#39;)
-        for key, value in kwargs.items():
-            if &#39;kwargs&#39; in str(key):
-                pass
-            else:
-                if type(value) is str:
-                    print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
-                else:
-                    print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
-        print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
-        print(&#39;)&#39;)
-
-    #print(kwargs[&#39;kwargs&#39;])
+    
     # Call the sprit.run function with the generated kwargs
-    sprit.run(**kwargs)</code></pre>
+    kwargs[&#39;datapath&#39;] = kwargs[&#39;datapath&#39;].replace(&#34;&#39;&#34;, &#34;&#34;) #Remove single quotes to reduce errors
+    if str(kwargs[&#39;datapath&#39;]).lower()==&#39;gui&#39;:
+        sprit.gui()
+    else:
+        #Print a summary if not verbose
+        if not kwargs[&#39;verbose&#39;]:
+            print(&#34;Running sprit.run() with the following arguments (use --verbose for more information):&#34;)
+            print(&#34;sprit.run(&#34;, end=&#39;&#39;)
+            for key, value in kwargs.items():
+                if &#39;kwargs&#39; in str(key):
+                    pass
+                else:
+                    if type(value) is str:
+                        print(f&#34;{key}=&#39;{value}&#39;&#34;,end=&#39;, &#39;)
+                    else:
+                        print(f&#34;{key}={value}&#34;,end=&#39;, &#39;)
+            print(&#39;**ppsd_kwargs, **kwargs&#39;, end=&#39;&#39;)
+            print(&#39;)&#39;)
+    
+        sprit.run(**kwargs)</code></pre>
 </details>
 </dd>
 </dl>

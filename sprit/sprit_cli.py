@@ -76,17 +76,19 @@ def main():
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
-            if arg_value=='True':
+            if arg_value.lower()=='true':
                 arg_value = True
-            if arg_value=='False':
+            elif arg_value.lower()=='false':
                 arg_value = False
-            if "[" in arg_value:
+            elif "[" in arg_value:
                 arg_value = arg_value.replace('[', '').replace(']','')
                 arg_value = arg_value.split(',')
+            elif "," in arg_value:
+                arg_value = arg_value.split(',')
         kwargs[arg_name] = arg_value
-
+    
     # Call the sprit.run function with the generated kwargs
-    kwargs['datapath'] = kwargs['datapath'].replace("'", "")
+    kwargs['datapath'] = kwargs['datapath'].replace("'", "") #Remove single quotes to reduce errors
     if str(kwargs['datapath']).lower()=='gui':
         sprit.gui()
     else:
@@ -106,6 +108,6 @@ def main():
             print(')')
     
         sprit.run(**kwargs)
-    
+            
 if __name__ == '__main__':
     main()
