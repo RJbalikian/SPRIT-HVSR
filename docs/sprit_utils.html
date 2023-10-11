@@ -30,6 +30,7 @@
 import functools
 import os
 import pathlib
+import subprocess
 import sys
 import warnings
 import zoneinfo
@@ -44,6 +45,34 @@ except: #For testing
 
 greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
 channel_order = {&#39;Z&#39;: 0, &#39;1&#39;: 1, &#39;N&#39;: 1, &#39;2&#39;: 2, &#39;E&#39;: 2}
+
+def check_gui_requirements():
+    print(&#34;Checking requirements for gui&#34;)
+    # Define a command that tries to open a window
+    command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
+
+    # Run the command and get the exit code
+    exit_code = os.system(command)
+    
+    # Check if tkinter gui could be created
+    if exit_code == 0:
+        #Tkinter 
+        oktoproceed=True
+    else:
+        oktoproceed=False
+        print(&#34;GUI window could not be created&#34;)
+
+    return oktoproceed
+
+    #if sys.platform == &#39;linux&#39;:
+    #    # Check if qtwayland5 is installed
+    #    output = subprocess.run([&#34;dpkg&#34;, &#34;-s&#34;, &#34;qtwayland5&#34;], capture_output=True, text=True)
+    #    if &#34;Status: install ok installed&#34; in output.stdout:
+    #        print(&#34;qtwayland5 is already installed&#34;)
+    #    else:
+    #        print(&#34;qtwayland5 is not installed&#34;)
+    #        # Install qtwayland5
+    #        os.system(&#34;sudo apt install qtwayland5&#34;)
 
 #Get check mark
 def check_mark(incolor=False, interminal=False):
@@ -425,6 +454,44 @@ def x_mark(incolor=False, inTerminal=False):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="sprit.sprit_utils.check_gui_requirements"><code class="name flex">
+<span>def <span class="ident">check_gui_requirements</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_gui_requirements():
+    print(&#34;Checking requirements for gui&#34;)
+    # Define a command that tries to open a window
+    command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
+
+    # Run the command and get the exit code
+    exit_code = os.system(command)
+    
+    # Check if tkinter gui could be created
+    if exit_code == 0:
+        #Tkinter 
+        oktoproceed=True
+    else:
+        oktoproceed=False
+        print(&#34;GUI window could not be created&#34;)
+
+    return oktoproceed
+
+    #if sys.platform == &#39;linux&#39;:
+    #    # Check if qtwayland5 is installed
+    #    output = subprocess.run([&#34;dpkg&#34;, &#34;-s&#34;, &#34;qtwayland5&#34;], capture_output=True, text=True)
+    #    if &#34;Status: install ok installed&#34; in output.stdout:
+    #        print(&#34;qtwayland5 is already installed&#34;)
+    #    else:
+    #        print(&#34;qtwayland5 is not installed&#34;)
+    #        # Install qtwayland5
+    #        os.system(&#34;sudo apt install qtwayland5&#34;)</code></pre>
+</details>
+</dd>
 <dt id="sprit.sprit_utils.check_mark"><code class="name flex">
 <span>def <span class="ident">check_mark</span></span>(<span>incolor=False, interminal=False)</span>
 </code></dt>
@@ -942,6 +1009,7 @@ This function returns another displayable character if platform is Windows</p></
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="sprit.sprit_utils.check_gui_requirements" href="#sprit.sprit_utils.check_gui_requirements">check_gui_requirements</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_mark" href="#sprit.sprit_utils.check_mark">check_mark</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_tsteps" href="#sprit.sprit_utils.check_tsteps">check_tsteps</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_xvalues" href="#sprit.sprit_utils.check_xvalues">check_xvalues</a></code></li>

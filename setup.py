@@ -7,7 +7,7 @@ setup(
     name="sprit",
     author= "Riley Balikian",
     author_email = "balikian@illinois.edu",
-    version="0.1.42",
+    version="0.1.43",
     package_data={'sprit': ['resources/*', 'resources/icon/*', 'resources/themes/*', 'resources/themes/forest-dark/*', 'resources/themes/forest-light/*', 'resources/sample_data/*',]},
     long_description_content_type="text/markdown",
     long_description=long_description,

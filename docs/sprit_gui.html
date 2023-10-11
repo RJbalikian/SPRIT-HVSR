@@ -29,7 +29,6 @@
 </summary>
 <pre><code class="python">&#34;&#34;&#34;This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.
 &#34;&#34;&#34;
-
 import datetime
 import functools
 import linecache
@@ -3067,22 +3066,27 @@ def on_closing():
     exit()
 
 if __name__ == &#34;__main__&#34;:
-    root = tk.Tk()
-    try:
+    can_gui = sprit_utils.check_gui_requirements()
+    print(can_gui)
+    if can_gui:
+        root = tk.Tk()
         try:
-            icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;)) 
-            root.iconbitmap(icon_path)
-        except:
-            icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))
-            root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
-    except Exception as e:
-        print(&#34;ICON NOT LOADED, still opening GUI&#34;)
+            try:
+                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon_alpha.ico&#39;)) 
+                root.iconbitmap(icon_path)
+            except:
+                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/icon/sprit_icon.png&#39;))
+                root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
+        except Exception as e:
+            print(&#34;ICON NOT LOADED, still opening GUI&#34;)
 
-    root.resizable(True, True)
-    spritApp =SPRIT_App(root)
+        root.resizable(True, True)
+        spritApp =SPRIT_App(root)
 
-    root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
-    root.mainloop()</code></pre>
+        root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
+        root.mainloop()
+    else:
+        print(&#34;GUI cannot be created&#34;)</code></pre>
 </details>
 </section>
 <section>
