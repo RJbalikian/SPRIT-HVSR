@@ -623,6 +623,7 @@ class SPRIT_App:
             #self.update_idletasks()
 
         def update_input_params_call():
+            self.data_read = False
             self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -643,7 +644,6 @@ class SPRIT_App:
         
         def on_source_select():
             self.data_read = False
-            print(self.file_source.get())
             try:
                 str(self.file_source.get())
                 sourceLabel.configure(text="source='{}'".format(self.file_source.get()))
@@ -723,8 +723,8 @@ class SPRIT_App:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
-        
         def filepath_update():
+            self.data_read = False
             self.fpath = self.data_path.get()
             self.data_read = False
             update_input_params_call()
@@ -770,6 +770,7 @@ class SPRIT_App:
         
         
         def browse_metadata_filepath():
+            self.data_read = False #New file will not have been read, set to False
             filepath = filedialog.askopenfilename()
             if filepath:
                 self.metadata_filepath_entry.delete(0, 'end')
@@ -860,6 +861,7 @@ class SPRIT_App:
 
         
         def any_time_change():
+            self.data_read = False #New file will not have been read, set to False            
             self.acq_date = self.date_entry.get_date()
             self.starttime, self.endtime = get_times()
             update_input_params_call()
@@ -1123,6 +1125,7 @@ class SPRIT_App:
             else:
                 trim_dir = self.trim_dir.get()
 
+            self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text="fetch_data(params, source='{}', trim_dir={}, export_format='{}', detrend='{}', detrend_order={})"
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
 

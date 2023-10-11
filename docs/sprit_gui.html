@@ -652,6 +652,7 @@ class SPRIT_App:
             #self.update_idletasks()
 
         def update_input_params_call():
+            self.data_read = False
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -672,7 +673,6 @@ class SPRIT_App:
         
         def on_source_select():
             self.data_read = False
-            print(self.file_source.get())
             try:
                 str(self.file_source.get())
                 sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -752,8 +752,8 @@ class SPRIT_App:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
-        
         def filepath_update():
+            self.data_read = False
             self.fpath = self.data_path.get()
             self.data_read = False
             update_input_params_call()
@@ -799,6 +799,7 @@ class SPRIT_App:
         
         
         def browse_metadata_filepath():
+            self.data_read = False #New file will not have been read, set to False
             filepath = filedialog.askopenfilename()
             if filepath:
                 self.metadata_filepath_entry.delete(0, &#39;end&#39;)
@@ -889,6 +890,7 @@ class SPRIT_App:
 
         
         def any_time_change():
+            self.data_read = False #New file will not have been read, set to False            
             self.acq_date = self.date_entry.get_date()
             self.starttime, self.endtime = get_times()
             update_input_params_call()
@@ -1152,6 +1154,7 @@ class SPRIT_App:
             else:
                 trim_dir = self.trim_dir.get()
 
+            self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
 
@@ -3715,6 +3718,7 @@ if __name__ == &#34;__main__&#34;:
             #self.update_idletasks()
 
         def update_input_params_call():
+            self.data_read = False
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -3735,7 +3739,6 @@ if __name__ == &#34;__main__&#34;:
         
         def on_source_select():
             self.data_read = False
-            print(self.file_source.get())
             try:
                 str(self.file_source.get())
                 sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -3815,8 +3818,8 @@ if __name__ == &#34;__main__&#34;:
             #This is primarily so that if just the Run button is pushed, it will know to first read the data
             self.data_read = False
         
-        
         def filepath_update():
+            self.data_read = False
             self.fpath = self.data_path.get()
             self.data_read = False
             update_input_params_call()
@@ -3862,6 +3865,7 @@ if __name__ == &#34;__main__&#34;:
         
         
         def browse_metadata_filepath():
+            self.data_read = False #New file will not have been read, set to False
             filepath = filedialog.askopenfilename()
             if filepath:
                 self.metadata_filepath_entry.delete(0, &#39;end&#39;)
@@ -3952,6 +3956,7 @@ if __name__ == &#34;__main__&#34;:
 
         
         def any_time_change():
+            self.data_read = False #New file will not have been read, set to False            
             self.acq_date = self.date_entry.get_date()
             self.starttime, self.endtime = get_times()
             update_input_params_call()
@@ -4215,6 +4220,7 @@ if __name__ == &#34;__main__&#34;:
             else:
                 trim_dir = self.trim_dir.get()
 
+            self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
 
@@ -6562,6 +6568,7 @@ if __name__ == &#34;__main__&#34;:
         #self.update_idletasks()
 
     def update_input_params_call():
+        self.data_read = False
         self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
@@ -6582,7 +6589,6 @@ if __name__ == &#34;__main__&#34;:
     
     def on_source_select():
         self.data_read = False
-        print(self.file_source.get())
         try:
             str(self.file_source.get())
             sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -6662,8 +6668,8 @@ if __name__ == &#34;__main__&#34;:
         #This is primarily so that if just the Run button is pushed, it will know to first read the data
         self.data_read = False
     
-    
     def filepath_update():
+        self.data_read = False
         self.fpath = self.data_path.get()
         self.data_read = False
         update_input_params_call()
@@ -6709,6 +6715,7 @@ if __name__ == &#34;__main__&#34;:
     
     
     def browse_metadata_filepath():
+        self.data_read = False #New file will not have been read, set to False
         filepath = filedialog.askopenfilename()
         if filepath:
             self.metadata_filepath_entry.delete(0, &#39;end&#39;)
@@ -6799,6 +6806,7 @@ if __name__ == &#34;__main__&#34;:
 
     
     def any_time_change():
+        self.data_read = False #New file will not have been read, set to False            
         self.acq_date = self.date_entry.get_date()
         self.starttime, self.endtime = get_times()
         update_input_params_call()
@@ -7062,6 +7070,7 @@ if __name__ == &#34;__main__&#34;:
         else:
             trim_dir = self.trim_dir.get()
 
+        self.data_read = False #New file will not have been read, set to False
         self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                         .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
 
