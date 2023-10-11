@@ -63,6 +63,8 @@ except: #For local testing
     import sprit_utils
     pass
 
+global spritApp
+
 #Decorator that catches errors and warnings (to be modified later for gui)
 def catch_errors(func):
     #Define a local function to get a list of warnings that we&#39;ll use in the output
@@ -108,35 +110,61 @@ def catch_errors(func):
                     warningMessage = &#34;WARNING:&#34;
                     for msg in messageList:
                         warningMessage = &#34;\n {}&#34;.format(msg)
-            
-                    print(warningMessage)
+
                     messagebox.showwarning(title=&#39;WARNINGS&#39;, message=warningMessage)
                     
         except Exception as e:
             messageList = get_warning_msg_list(w)
             errorObj = sys.exc_info()[2]
-                        
+
+            mainErrText = sys.exc_info()[1]
+
+            mainErrTb = traceback.extract_tb(sys.exc_info()[2])[-1]
+            mainErrFilePath = pathlib.Path(mainErrTb[0])
+            
+            mainErrFileName = mainErrFilePath.stem
+            mainErrLineNo = mainErrTb[1]
+            mainErrFunc = mainErrTb[2]
+            mainErrCodeLine = mainErrTb[3]
+
             errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
             error_message = f&#34;{e} ({errLineNo1})&#34;
             
-            #Print the function name where the error occured
-            errFunc = func.__name__
-            #print(sys.exc_info())
             #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
-            errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
-            errLineNo2=errorObj.tb_lineno
-            fullErrorMessage = f&#39;ERROR {errFilename}.{errFunc} ({errLineNo2}): {error_message}.&#39;
+
+            #Build error messages
+            tbTuple0 = sys.exc_info()[0]
+            tbTuple1 = sys.exc_info()[1]
+            tbTuple2 = traceback.extract_tb(sys.exc_info()[2])
+            
+            logMsg = f&#34;**ERROR**\n{tbTuple0.__name__}: {tbTuple1}&#34;
+            dialogErrMsg = logMsg.split(&#39;:&#39;)[1]
+            for tb in tbTuple2:
+                logMsg = logMsg + &#39;\n\t&#39;
+                logMsg = logMsg + f&#34;{pathlib.Path(tb[0]).stem}.{tb[2]}(): {tb[3]} (Line {tb[1]})&#34;
+                dialogErrMsg = dialogErrMsg + f&#34;\n{pathlib.Path(tb[0]).stem}.{tb[2]}(), Line {tb[1]}&#34;
+            logMsg = logMsg + &#39;\n\n&#39;
+
+            #fullErrorMessage = f&#39;ERROR {mainErrFileName}.{mainErrFunc} ({mainErrLineNo}): {mainErrText} \n\n {mainErrFileName} Line {mainErrLineNo}: {mainErrCodeLine}.&#39;
             if messageList == []:
                 pass
             else:
-                fullErrorMessage = fullErrorMessage+&#34;\n\n  Additional Warnings along the way:&#34;
+                dialogErrMsg = dialogErrMsg+&#34;\n\n  Additional Warnings along the way. See Log for more information.&#34;
+                logMsg = logMsg + &#34;\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
-                    fullErrorMessage = &#34;\n{}\n   {}&#34;.format(fullErrorMessage, addMsg)
+                    logMsg = logMsg+&#34;\n\t\t{}&#34;.format(addMsg)
+            #print(dir(func))
+            #for i, keys in enumerate(dir(func)):
+            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
+
+
+            SPRIT_App.log_errorMsg(spritApp, logMsg)
 
             messagebox.showerror(title=f&#39;ERROR ({error_category})&#39;,
-                                    message=fullErrorMessage)
+                                    message=dialogErrMsg)
+            update_progress_bars(100)
 
         # return the result of the function or the error/warning messages and categories
         return result
@@ -165,6 +193,7 @@ class SPRIT_App:
         self.master.rowconfigure(0, weight=1)
         self.master.columnconfigure(0, weight=1)        
 
+
         # Create the dark theme
         #self.style.theme_create(&#34;dark&#34;, parent=&#34;alt&#34;, settings={
         #    &#34;TLabel&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;black&#34;, &#34;foreground&#34;: &#34;white&#34;}},
@@ -178,7 +207,13 @@ class SPRIT_App:
         #    &#34;TButton&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;white&#34;, &#34;foreground&#34;: &#34;black&#34;}},
         #    # Add more options here to style other widgets
         #})
-        
+
+    #Method to log error message
+    def log_errorMsg(self, logMsg):
+
+        self.log_text.insert(&#39;end&#39;, logMsg)
+        self.tab_control.select(self.log_tab)
+
     #Not currently working
     def manual_label_update(self):
         for notebook in self.master.winfo_children():
@@ -374,7 +409,7 @@ class SPRIT_App:
                 update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
 
-                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
+                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options}\n\n&#34;)
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -574,13 +609,20 @@ class SPRIT_App:
             #Log results
             self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
             self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
-            self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+            if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
+                #format data to be same as HVSRBatch
+                hvsrResults = {&#39;sitename_placeholder&#39;:self.hvsr_results}
+            else:
+                hvsrResults = self.hvsr_results
+
+            for sitename in hvsrResults.keys():
+                self.log_text.insert(&#39;end&#39;, f&#34;{hvsrResults[sitename][&#39;Print_Report&#39;]}\n\n&#34;)
             
             self.processingData = False
             self.tab_control.select(self.results_tab)
             update_progress_bars(prog_percent=100)
 
-
+        global update_progress_bars
         def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
             progBarListList = [[self.inputProgBar,(0,0), True], 
                                 [self.prevProgBar,(0,0), True], 
@@ -629,6 +671,8 @@ class SPRIT_App:
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
         
         def on_source_select():
+            self.data_read = False
+            print(self.file_source.get())
             try:
                 str(self.file_source.get())
                 sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -1222,7 +1266,7 @@ class SPRIT_App:
         fetch_data_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
         input_params_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
         self.input_tab.pack(fill=&#39;both&#39;, expand=True)
-        self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
+        self.tab_control.add(self.input_tab, text=&#34;Input&#34;)
 
         #Data Preview Tab
         self.preview_data_tab = ttk.Frame(self.tab_control)
@@ -3009,7 +3053,7 @@ class SPRIT_App:
         # Add log tab to tab control
         self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
         # Add result tab to tab control
-        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
+        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(13,&#39;|&#39;))
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill=&#34;both&#34;)
@@ -3032,7 +3076,7 @@ if __name__ == &#34;__main__&#34;:
         print(&#34;ICON NOT LOADED, still opening GUI&#34;)
 
     root.resizable(True, True)
-    SPRIT_App(root)
+    spritApp =SPRIT_App(root)
 
     root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
     root.mainloop()</code></pre>
@@ -3098,35 +3142,61 @@ if __name__ == &#34;__main__&#34;:
                     warningMessage = &#34;WARNING:&#34;
                     for msg in messageList:
                         warningMessage = &#34;\n {}&#34;.format(msg)
-            
-                    print(warningMessage)
+
                     messagebox.showwarning(title=&#39;WARNINGS&#39;, message=warningMessage)
                     
         except Exception as e:
             messageList = get_warning_msg_list(w)
             errorObj = sys.exc_info()[2]
-                        
+
+            mainErrText = sys.exc_info()[1]
+
+            mainErrTb = traceback.extract_tb(sys.exc_info()[2])[-1]
+            mainErrFilePath = pathlib.Path(mainErrTb[0])
+            
+            mainErrFileName = mainErrFilePath.stem
+            mainErrLineNo = mainErrTb[1]
+            mainErrFunc = mainErrTb[2]
+            mainErrCodeLine = mainErrTb[3]
+
             errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
             error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
             error_message = f&#34;{e} ({errLineNo1})&#34;
             
-            #Print the function name where the error occured
-            errFunc = func.__name__
-            #print(sys.exc_info())
             #Get message list, [] if no messages, doesn&#39;t run at all if Error/exception in func
             warningMessageList = get_warning_msg_list(w)
-            errFilename = pathlib.Path(errorObj.tb_frame.f_code.co_filename).stem            
-            errLineNo2=errorObj.tb_lineno
-            fullErrorMessage = f&#39;ERROR {errFilename}.{errFunc} ({errLineNo2}): {error_message}.&#39;
+
+            #Build error messages
+            tbTuple0 = sys.exc_info()[0]
+            tbTuple1 = sys.exc_info()[1]
+            tbTuple2 = traceback.extract_tb(sys.exc_info()[2])
+            
+            logMsg = f&#34;**ERROR**\n{tbTuple0.__name__}: {tbTuple1}&#34;
+            dialogErrMsg = logMsg.split(&#39;:&#39;)[1]
+            for tb in tbTuple2:
+                logMsg = logMsg + &#39;\n\t&#39;
+                logMsg = logMsg + f&#34;{pathlib.Path(tb[0]).stem}.{tb[2]}(): {tb[3]} (Line {tb[1]})&#34;
+                dialogErrMsg = dialogErrMsg + f&#34;\n{pathlib.Path(tb[0]).stem}.{tb[2]}(), Line {tb[1]}&#34;
+            logMsg = logMsg + &#39;\n\n&#39;
+
+            #fullErrorMessage = f&#39;ERROR {mainErrFileName}.{mainErrFunc} ({mainErrLineNo}): {mainErrText} \n\n {mainErrFileName} Line {mainErrLineNo}: {mainErrCodeLine}.&#39;
             if messageList == []:
                 pass
             else:
-                fullErrorMessage = fullErrorMessage+&#34;\n\n  Additional Warnings along the way:&#34;
+                dialogErrMsg = dialogErrMsg+&#34;\n\n  Additional Warnings along the way. See Log for more information.&#34;
+                logMsg = logMsg + &#34;\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
-                    fullErrorMessage = &#34;\n{}\n   {}&#34;.format(fullErrorMessage, addMsg)
+                    logMsg = logMsg+&#34;\n\t\t{}&#34;.format(addMsg)
+            #print(dir(func))
+            #for i, keys in enumerate(dir(func)):
+            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
+
+
+            SPRIT_App.log_errorMsg(spritApp, logMsg)
 
             messagebox.showerror(title=f&#39;ERROR ({error_category})&#39;,
-                                    message=fullErrorMessage)
+                                    message=dialogErrMsg)
+            update_progress_bars(100)
 
         # return the result of the function or the error/warning messages and categories
         return result
@@ -3186,6 +3256,7 @@ if __name__ == &#34;__main__&#34;:
         self.master.rowconfigure(0, weight=1)
         self.master.columnconfigure(0, weight=1)        
 
+
         # Create the dark theme
         #self.style.theme_create(&#34;dark&#34;, parent=&#34;alt&#34;, settings={
         #    &#34;TLabel&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;black&#34;, &#34;foreground&#34;: &#34;white&#34;}},
@@ -3199,7 +3270,13 @@ if __name__ == &#34;__main__&#34;:
         #    &#34;TButton&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;white&#34;, &#34;foreground&#34;: &#34;black&#34;}},
         #    # Add more options here to style other widgets
         #})
-        
+
+    #Method to log error message
+    def log_errorMsg(self, logMsg):
+
+        self.log_text.insert(&#39;end&#39;, logMsg)
+        self.tab_control.select(self.log_tab)
+
     #Not currently working
     def manual_label_update(self):
         for notebook in self.master.winfo_children():
@@ -3395,7 +3472,7 @@ if __name__ == &#34;__main__&#34;:
                 update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
 
-                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
+                self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options}\n\n&#34;)
 
                 firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
                 update_input_labels(firstSite)
@@ -3595,13 +3672,20 @@ if __name__ == &#34;__main__&#34;:
             #Log results
             self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
             self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
-            self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+            if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
+                #format data to be same as HVSRBatch
+                hvsrResults = {&#39;sitename_placeholder&#39;:self.hvsr_results}
+            else:
+                hvsrResults = self.hvsr_results
+
+            for sitename in hvsrResults.keys():
+                self.log_text.insert(&#39;end&#39;, f&#34;{hvsrResults[sitename][&#39;Print_Report&#39;]}\n\n&#34;)
             
             self.processingData = False
             self.tab_control.select(self.results_tab)
             update_progress_bars(prog_percent=100)
 
-
+        global update_progress_bars
         def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
             progBarListList = [[self.inputProgBar,(0,0), True], 
                                 [self.prevProgBar,(0,0), True], 
@@ -3650,6 +3734,8 @@ if __name__ == &#34;__main__&#34;:
         self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
         
         def on_source_select():
+            self.data_read = False
+            print(self.file_source.get())
             try:
                 str(self.file_source.get())
                 sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -4243,7 +4329,7 @@ if __name__ == &#34;__main__&#34;:
         fetch_data_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
         input_params_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
         self.input_tab.pack(fill=&#39;both&#39;, expand=True)
-        self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
+        self.tab_control.add(self.input_tab, text=&#34;Input&#34;)
 
         #Data Preview Tab
         self.preview_data_tab = ttk.Frame(self.tab_control)
@@ -6030,7 +6116,7 @@ if __name__ == &#34;__main__&#34;:
         # Add log tab to tab control
         self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
         # Add result tab to tab control
-        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
+        self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(13,&#39;|&#39;))
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill=&#34;both&#34;)</code></pre>
@@ -6233,7 +6319,7 @@ if __name__ == &#34;__main__&#34;:
             update_progress_bars(prog_percent=10)                                
             self.site_options = self.hvsr_data.sites
 
-            self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options.get()}\n\n&#34;)
+            self.log_text.insert(&#39;end&#39;, f&#34;{self.site_options}\n\n&#34;)
 
             firstSite = self.hvsr_data[list(self.hvsr_data.keys())[0]]
             update_input_labels(firstSite)
@@ -6433,13 +6519,20 @@ if __name__ == &#34;__main__&#34;:
         #Log results
         self.log_text.insert(&#39;end&#39;, f&#34;Processing completed at [{datetime.datetime.now()}]\n\n&#34;)
         self.hvsr_results = sprit_hvsr.get_report(self.hvsr_results, report_format=&#39;print&#39;, no_output=True)
-        self.log_text.insert(&#39;end&#39;, f&#34;{self.hvsr_results[&#39;Print_Report&#39;]}\n\n&#34;)
+        if isinstance(self.hvsr_results, sprit_hvsr.HVSRData):
+            #format data to be same as HVSRBatch
+            hvsrResults = {&#39;sitename_placeholder&#39;:self.hvsr_results}
+        else:
+            hvsrResults = self.hvsr_results
+
+        for sitename in hvsrResults.keys():
+            self.log_text.insert(&#39;end&#39;, f&#34;{hvsrResults[sitename][&#39;Print_Report&#39;]}\n\n&#34;)
         
         self.processingData = False
         self.tab_control.select(self.results_tab)
         update_progress_bars(prog_percent=100)
 
-
+    global update_progress_bars
     def update_progress_bars(prog_percent, process_name=&#39;Processing&#39;):
         progBarListList = [[self.inputProgBar,(0,0), True], 
                             [self.prevProgBar,(0,0), True], 
@@ -6488,6 +6581,8 @@ if __name__ == &#34;__main__&#34;:
     self.site_name_entry.grid(row=0, column=1, columnspan=1, sticky=&#39;ew&#39;, padx=5)
     
     def on_source_select():
+        self.data_read = False
+        print(self.file_source.get())
         try:
             str(self.file_source.get())
             sourceLabel.configure(text=&#34;source=&#39;{}&#39;&#34;.format(self.file_source.get()))
@@ -7081,7 +7176,7 @@ if __name__ == &#34;__main__&#34;:
     fetch_data_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
     input_params_LF.pack(fill=&#39;x&#39;, side=&#39;bottom&#39;)
     self.input_tab.pack(fill=&#39;both&#39;, expand=True)
-    self.tab_control.add(self.input_tab, text=&#34;Input Params&#34;)
+    self.tab_control.add(self.input_tab, text=&#34;Input&#34;)
 
     #Data Preview Tab
     self.preview_data_tab = ttk.Frame(self.tab_control)
@@ -8868,10 +8963,25 @@ if __name__ == &#34;__main__&#34;:
     # Add log tab to tab control
     self.tab_control.add(self.log_tab, text=&#34;Log&#34;)
     # Add result tab to tab control
-    self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(15,&#39;|&#39;))
+    self.tab_control.add(self.results_tab, text=&#34;Results&#34;.center(11, &#39; &#39;).center(13,&#39;|&#39;))
 
     # Pack tab control
     self.tab_control.pack(expand=True, fill=&#34;both&#34;)</code></pre>
+</details>
+</dd>
+<dt id="sprit.sprit_gui.SPRIT_App.log_errorMsg"><code class="name flex">
+<span>def <span class="ident">log_errorMsg</span></span>(<span>self, logMsg)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def log_errorMsg(self, logMsg):
+
+    self.log_text.insert(&#39;end&#39;, logMsg)
+    self.tab_control.select(self.log_tab)</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_gui.SPRIT_App.manual_label_update"><code class="name flex">
@@ -8930,6 +9040,7 @@ if __name__ == &#34;__main__&#34;:
 <ul class="">
 <li><code><a title="sprit.sprit_gui.SPRIT_App.create_menubar" href="#sprit.sprit_gui.SPRIT_App.create_menubar">create_menubar</a></code></li>
 <li><code><a title="sprit.sprit_gui.SPRIT_App.create_tabs" href="#sprit.sprit_gui.SPRIT_App.create_tabs">create_tabs</a></code></li>
+<li><code><a title="sprit.sprit_gui.SPRIT_App.log_errorMsg" href="#sprit.sprit_gui.SPRIT_App.log_errorMsg">log_errorMsg</a></code></li>
 <li><code><a title="sprit.sprit_gui.SPRIT_App.manual_label_update" href="#sprit.sprit_gui.SPRIT_App.manual_label_update">manual_label_update</a></code></li>
 </ul>
 </li>

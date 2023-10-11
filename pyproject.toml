@@ -7,7 +7,7 @@ author = "Riley Balikian"
 name = "sprit"
 dynamic = ["readme"]
 license = {file = "LICENSE"}
-version="0.1.40"
+version="0.1.41"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
