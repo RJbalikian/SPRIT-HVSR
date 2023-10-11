@@ -3038,7 +3038,7 @@ def on_closing():
 
 if __name__ == "__main__":
     can_gui = sprit_utils.check_gui_requirements()
-    print(can_gui)
+
     if can_gui:
         root = tk.Tk()
         try:

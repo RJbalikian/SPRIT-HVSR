@@ -11,4 +11,5 @@ dependencies:
   - matplotlib
   - pandas
   - numpy
+  - pyqt5-sip
   - pyproj

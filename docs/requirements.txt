@@ -4,4 +4,4 @@ pandas
 obspy
 scipy
 pyproj
-PyQt5
+PyQt5-sip

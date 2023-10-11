@@ -32,7 +32,7 @@ def check_gui_requirements():
         oktoproceed=True
     else:
         oktoproceed=False
-        print("GUI window could not be created")
+        print("GUI window could not be created.")
 
     return oktoproceed
 
