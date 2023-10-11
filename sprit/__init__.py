@@ -27,6 +27,7 @@ from sprit.sprit_hvsr import(
 )
 
 from sprit.sprit_utils import(
+    check_gui_requirements,
     checkifpath,
     check_mark,
     check_tsteps,
@@ -67,6 +68,7 @@ __all__ =('sprit_hvsr',
             'HVSRData',
             'HVSRBatch',
         'sprit_utils',
+            'check_gui_requirements',
             'checkifpath',
             'check_mark',
             'check_tsteps',

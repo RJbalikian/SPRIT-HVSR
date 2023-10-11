@@ -1,6 +1,5 @@
 """This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.
 """
-
 import datetime
 import functools
 import linecache
@@ -3038,19 +3037,24 @@ def on_closing():
     exit()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    try:
+    can_gui = sprit_utils.check_gui_requirements()
+    print(can_gui)
+    if can_gui:
+        root = tk.Tk()
         try:
-            icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
-            root.iconbitmap(icon_path)
-        except:
-            icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
-            root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
-    except Exception as e:
-        print("ICON NOT LOADED, still opening GUI")
+            try:
+                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+                root.iconbitmap(icon_path)
+            except:
+                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+                root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
+        except Exception as e:
+            print("ICON NOT LOADED, still opening GUI")
 
-    root.resizable(True, True)
-    spritApp =SPRIT_App(root)
+        root.resizable(True, True)
+        spritApp =SPRIT_App(root)
 
-    root.protocol("WM_DELETE_WINDOW", on_closing)
-    root.mainloop()
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        root.mainloop()
+    else:
+        print("GUI cannot be created")

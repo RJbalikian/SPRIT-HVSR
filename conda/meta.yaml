@@ -23,7 +23,6 @@ requirements:
     - matplotlib
     - pandas
     - numpy
-    - PyQt5
     - pyproj
 
 about:

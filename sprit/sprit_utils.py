@@ -2,6 +2,7 @@ import datetime
 import functools
 import os
 import pathlib
+import subprocess
 import sys
 import warnings
 import zoneinfo
@@ -16,6 +17,34 @@ except: #For testing
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
+
+def check_gui_requirements():
+    print("Checking requirements for gui")
+    # Define a command that tries to open a window
+    command = "python -c \"import tkinter; tkinter.Tk()\""
+
+    # Run the command and get the exit code
+    exit_code = os.system(command)
+    
+    # Check if tkinter gui could be created
+    if exit_code == 0:
+        #Tkinter 
+        oktoproceed=True
+    else:
+        oktoproceed=False
+        print("GUI window could not be created")
+
+    return oktoproceed
+
+    #if sys.platform == 'linux':
+    #    # Check if qtwayland5 is installed
+    #    output = subprocess.run(["dpkg", "-s", "qtwayland5"], capture_output=True, text=True)
+    #    if "Status: install ok installed" in output.stdout:
+    #        print("qtwayland5 is already installed")
+    #    else:
+    #        print("qtwayland5 is not installed")
+    #        # Install qtwayland5
+    #        os.system("sudo apt install qtwayland5")
 
 #Get check mark
 def check_mark(incolor=False, interminal=False):
