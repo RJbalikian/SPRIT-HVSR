@@ -49,7 +49,6 @@ def main():
     parameters = []
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
-
     #Add argument and options to the parser
     intermediate_params_list = ['params', 'input', 'hvsr_data', 'hvsr_results']
     paramNamesList = []
@@ -69,17 +68,20 @@ def main():
     
     # Add more arguments/options as needed
     args = parser.parse_args()
-
+    
     # Map command-line arguments/options to kwargs
     kwargs = {}
     for arg_name, arg_value in vars(args).items():
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
+
             if arg_value.lower()=='true':
                 arg_value = True
             elif arg_value.lower()=='false':
                 arg_value = False
+            elif arg_value.lower() == 'none':
+                arg_value = None
             elif "[" in arg_value:
                 arg_value = arg_value.replace('[', '').replace(']','')
                 arg_value = arg_value.split(',')
