@@ -13,10 +13,20 @@ That version is intended to read data from the IRIS Data Management Center (DMC)
 
 For guidelines on acquisition, processing, and interpration of H/V data, see: <http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf>. 
 
-# Documentation
-- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)</a>
-- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki) (in progress)
+# Installation
+Sprit may be installed from the [pypi repository](https://pypi.org/project/sprit/) using the pip command:
 
+`pip install sprit`
+
+The sprit package is in active development. Add the `--upgrade` argument (`pip install --upgrade`) to ensure you have the latest version.
+
+This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see [this page](https://docs.python.org/3/library/venv.html). For the creation of anaconda environments, see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.
+
+For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
+# Documentation
+- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
+- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki) (in progress)
+- Pypi repository [here](https://pypi.org/project/sprit/)
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 
@@ -25,7 +35,7 @@ Aside from the modules in the python standard library, the following package dep
 - [Numpy](https://matplotlib.org/): "The fundamental package for scientific computing with Python"
 - [Scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
 - [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)
-- [pyqt5](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
+- [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
 - [pyproj](https://pyproj4.github.io/pyproj/stable/): Module for cartographic projections and coordinate transformations, a python interface to [PROJ](https://proj.org/en/9.2/)
 
 # References
@@ -45,7 +55,7 @@ In very brief, the main learnings may be summarized as follows:
 - No matter how strongly a parameter influences H/V amplitudes, the value of the frequency peak is usually not or slightly affected, with the noticeable exception of the wind in certain conditions.
 
 # Citation
-If you are using this package, please use the following citation:
+If you use the sprit package in your research, please use the following citation:
 
 `Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.`
 
