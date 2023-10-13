@@ -1194,11 +1194,14 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
     dataIN = dataIN.merge(method=1)
 
     if plot_input_stream:
-        #dataIN.plot(method='full', linewidth=0.25)
-        params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
-        _get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+        try:
+            params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+            _get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+        except:
+            print('Error with default plotting method, falling back to internal obspy plotting method')
+            dataIN.plot(method='full', linewidth=0.25)
 
-        #Sort channels (make sure Z is first, makes things easier later)
+    #Sort channels (make sure Z is first, makes things easier later)
     if isinstance(params, HVSRBatch):
         pass
     else:
