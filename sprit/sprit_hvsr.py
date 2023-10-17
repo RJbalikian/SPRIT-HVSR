@@ -1527,9 +1527,10 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
     else:
-        if not pathlib.Path(invPath).exists() or invPath=='':
+        if not invPath:
+            pass #if invPath is None
+        elif not pathlib.Path(invPath).exists() or invPath=='':
             warnings.warn(f"The metapath parameter was not specified correctly. Returning original params value {params['metapath']}")
-            return params
         readInvKwargs = {}
         argspecs = inspect.getfullargspec(obspy.read_inventory)
         for argName in argspecs[0]:
