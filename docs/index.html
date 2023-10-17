@@ -6,10 +6,17 @@
 <p>This python package is built in large part off the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.<sup><a href="#2">2</a></sup> Specifically, the computeHVSR.py tools that enable the ability to rank HVSR peaks, calculate data quality and peak quality, and the combining of the horizontal components was adapted directly from that package. Because the SpRĪT package is intended to be used to analyze data from rapid field data acquisitions (less than an hour per site), much of the IRIS package was adapted from daily to HV curve calculations to sub-hourly and even sub-minute HV calculations. Because there is limited data, there is no baseline to compare to, so that element is excluded from this package.</p>
 <p>That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup><a href="#3">3</a></sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.</p>
 <p>For guidelines on acquisition, processing, and interpration of H/V data, see: <a href="http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf">http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf</a>. </p>
+<h1>Installation</h1>
+<p>Sprit may be installed from the <a href="https://pypi.org/project/sprit/">pypi repository</a> using the pip command:</p>
+<p><code>pip install sprit</code></p>
+<p>The sprit package is in active development. Add the <code>--upgrade</code> argument (<code>pip install --upgrade</code>) to ensure you have the latest version.</p>
+<p>This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see <a href="https://docs.python.org/3/library/venv.html">this page</a>. For the creation of anaconda environments, see <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">here</a>. Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.</p>
+<p>For troubleshooting issues with installation or usage of the sprit package, see the <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting">Troubleshooting</a> page of the wiki.</p>
 <h1>Documentation</h1>
 <ul>
-<li>API Documentation <a href="https://rjbalikian.github.io/SPRIT-HVSR/main.html">here</a></a></li>
+<li>API Documentation <a href="https://rjbalikian.github.io/SPRIT-HVSR/main.html">here</a></li>
 <li>See Wiki for more information <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki">here</a> (in progress)</li>
+<li>Pypi repository <a href="https://pypi.org/project/sprit/">here</a></li>
 </ul>
 <h1>Dependencies</h1>
 <p>Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work</p>
@@ -19,7 +26,7 @@
 <li><a href="https://matplotlib.org/">Numpy</a>: "The fundamental package for scientific computing with Python"</li>
 <li><a href="https://scipy.org/">Scipy</a>: "Fundamental algorithms for scientific computing in Python"</li>
 <li><a href="https://pandas.pydata.org">Pandas</a>: "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)</li>
-<li><a href="https://pypi.org/project/PyQt5">pyqt5</a>: Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)</li>
+<li><a href="https://pypi.org/project/PyQt5">pyqt5-sip</a>: Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)</li>
 <li><a href="https://pyproj4.github.io/pyproj/stable/">pyproj</a>: Module for cartographic projections and coordinate transformations, a python interface to <a href="https://proj.org/en/9.2/">PROJ</a></li>
 </ul>
 <h1>References</h1>
@@ -40,5 +47,5 @@ In very brief, the main learnings may be summarized as follows: </p>
 <li>No matter how strongly a parameter influences H/V amplitudes, the value of the frequency peak is usually not or slightly affected, with the noticeable exception of the wind in certain conditions.</li>
 </ul>
 <h1>Citation</h1>
-<p>If you are using this package, please use the following citation:</p>
+<p>If you use the sprit package in your research, please use the following citation:</p>
 <p><code>Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.</code></p>
