@@ -904,7 +904,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 </details>
 </dd>
 <dt id="sprit.fetch_data"><code class="name flex">
-<span>def <span class="ident">fetch_data</span></span>(<span>params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs)</span>
+<span>def <span class="ident">fetch_data</span></span>(<span>params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -912,7 +912,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fetch_data(params, inv=None, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
+<pre><code class="python">def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     import warnings
 
     &#34;&#34;&#34;Fetch ambient seismic data from a source to read into obspy stream
@@ -922,8 +922,6 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
         params  : dict
             Dictionary containing all the necessary params to get data.
                 Parameters defined using input_params() function.
-        inv     : obspy inventory object, default=None
-            Obspy inventory object containing metadata for instrument that collected data to be fetched. By default, the inventory object is read from params[&#39;inv&#39;], but this can be manually specified here too.
         source  : str, {&#39;raw&#39;, &#39;dir&#39;, &#39;file&#39;, &#39;batch&#39;}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
@@ -1274,7 +1272,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
         dataIN.merge()
     
     params[&#39;batch&#39;] = False #Set False by default, will get corrected later in batch mode        
-    params[&#39;input_stream&#39;] = dataIN
+    params[&#39;input_stream&#39;] 
     params[&#39;stream&#39;] = dataIN.copy()
     params[&#39;ProcessingStatus&#39;][&#39;FetchDataStatus&#39;] = True
     if verbose and not isinstance(params, HVSRBatch):
@@ -1773,7 +1771,7 @@ If the following keywords are not specified, their defaults are amended in this 
 </details>
 </dd>
 <dt id="sprit.get_metadata"><code class="name flex">
-<span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='', update_metadata=True, source=None)</span>
+<span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get metadata and calculate or get paz parameter needed for PPSD</p>
@@ -1785,6 +1783,10 @@ Ouput from input_params() function</dd>
 <dt><strong><code>write_path</code></strong> :&ensp;<code>str</code></dt>
 <dd>String with output filepath of where to write updated inventory or metadata file
 If not specified, does not write file</dd>
+<dt><strong><code>update_metadata</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to update the metadata file itself, or just read as-is. If using provided raspberry shake metadata file, select True.</dd>
+<dt><strong><code>source</code></strong> :&ensp;<code>str</code>, default=<code>None</code></dt>
+<dd>This passes the source variable value to _read_RS_metadata. It is expected that this is passed directly from the source parameter of sprit.fetch_data()</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -1795,7 +1797,7 @@ If not specified, does not write file</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=None):
+<pre><code class="python">def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=None, **read_inventory_kwargs):
     &#34;&#34;&#34;Get metadata and calculate or get paz parameter needed for PPSD
 
     Parameters
@@ -1806,6 +1808,10 @@ If not specified, does not write file</dd>
     write_path : str
         String with output filepath of where to write updated inventory or metadata file
             If not specified, does not write file 
+    update_metadata : bool
+        Whether to update the metadata file itself, or just read as-is. If using provided raspberry shake metadata file, select True.
+    source : str, default=None
+        This passes the source variable value to _read_RS_metadata. It is expected that this is passed directly from the source parameter of sprit.fetch_data()
 
     Returns
     -------
@@ -1815,13 +1821,26 @@ If not specified, does not write file</dd>
     
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
+
     if params[&#39;instrument&#39;].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
     else:
-        warnings.warn(&#39;{} not currently supported\n Returning input params dictionary.&#39;.format(params[&#39;instrument&#39;]))
-        return params
+        if not pathlib.Path(invPath).exists() or invPath==&#39;&#39;:
+            warnings.warn(f&#34;The metapath parameter was not specified correctly. Returning original params value {params[&#39;metapath&#39;]}&#34;)
+            return params
+        readInvKwargs = {}
+        argspecs = inspect.getfullargspec(obspy.read_inventory)
+        for argName in argspecs[0]:
+            if argName in read_inventory_kwargs.keys():
+                readInvKwargs[argName] = read_inventory_kwargs[argName]
+
+        readInvKwargs[&#39;path_or_file_object&#39;] = invPath
+        params[&#39;inv&#39;] = obspy.read_inventory(invPath)
+        if &#39;params&#39; in params.keys():
+            params[&#39;params&#39;][&#39;inv&#39;] = params[&#39;inv&#39;]
+
     return params</code></pre>
 </details>
 </dd>
