@@ -878,7 +878,7 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     return
 
 #Reads in traces to obspy stream
-def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
+def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     import warnings
 
     """Fetch ambient seismic data from a source to read into obspy stream
@@ -888,8 +888,6 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         params  : dict
             Dictionary containing all the necessary params to get data.
                 Parameters defined using input_params() function.
-        inv     : obspy inventory object, default=None
-            Obspy inventory object containing metadata for instrument that collected data to be fetched. By default, the inventory object is read from params['inv'], but this can be manually specified here too.
         source  : str, {'raw', 'dir', 'file', 'batch'}
             String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
                 'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
@@ -1240,7 +1238,7 @@ def fetch_data(params, inv=None, source='file', trim_dir=None, export_format='ms
         dataIN.merge()
     
     params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['input_stream'] = dataIN
+    params['input_stream'] 
     params['stream'] = dataIN.copy()
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
@@ -1499,7 +1497,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
     return params
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path='', update_metadata=True, source=None):
+def get_metadata(params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs):
     """Get metadata and calculate or get paz parameter needed for PPSD
 
     Parameters
@@ -1510,6 +1508,10 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     write_path : str
         String with output filepath of where to write updated inventory or metadata file
             If not specified, does not write file 
+    update_metadata : bool
+        Whether to update the metadata file itself, or just read as-is. If using provided raspberry shake metadata file, select True.
+    source : str, default=None
+        This passes the source variable value to _read_RS_metadata. It is expected that this is passed directly from the source parameter of sprit.fetch_data()
 
     Returns
     -------
@@ -1519,13 +1521,26 @@ def get_metadata(params, write_path='', update_metadata=True, source=None):
     
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+
     if params['instrument'].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
     else:
-        warnings.warn('{} not currently supported\n Returning input params dictionary.'.format(params['instrument']))
-        return params
+        if not pathlib.Path(invPath).exists() or invPath=='':
+            warnings.warn(f"The metapath parameter was not specified correctly. Returning original params value {params['metapath']}")
+            return params
+        readInvKwargs = {}
+        argspecs = inspect.getfullargspec(obspy.read_inventory)
+        for argName in argspecs[0]:
+            if argName in read_inventory_kwargs.keys():
+                readInvKwargs[argName] = read_inventory_kwargs[argName]
+
+        readInvKwargs['path_or_file_object'] = invPath
+        params['inv'] = obspy.read_inventory(invPath)
+        if 'params' in params.keys():
+            params['params']['inv'] = params['inv']
+
     return params
 
 #Get or print report
