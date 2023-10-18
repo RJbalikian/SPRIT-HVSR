@@ -1238,7 +1238,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         dataIN.merge()
     
     params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['input_stream'] 
+    params['input_stream'] = dataIN.copy()
     params['stream'] = dataIN.copy()
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
@@ -5720,8 +5720,8 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     return
 
-##Helper functions for checking peaks
-#Initialize peaks
+# HELPER functions for checking peaks
+# Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
     """ Initialize peaks.
         
@@ -5759,7 +5759,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _mi
                           'PeakPasses':False})
     return _peak
 
-#Check reliability of HVSR of curve
+# Check reliability of HVSR of curve
 def __check_curve_reliability(hvsr_data, _peak):
     """Tests to check for reliable H/V curve
 
@@ -5938,7 +5938,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
 
     return _peak
 
-#Check the stability of the frequency peak
+# Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
     """Test peaks for satisfying stability conditions 
 
@@ -5962,12 +5962,10 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     """
     global max_rank
 
-    #
     # check σf and σA
-    #
     max_rank += 1
 
-    #First check below
+    # First check below
     _found_m = list()
     for _i in range(len(_peak)):
         _dx = 1000000.
@@ -5986,12 +5984,12 @@ def __check_freq_stability(_peak, _peakm, _peakp):
             _peak[_i]['Report']['P-'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakm[_j]['f0'], '%', ##changed i to j
                                                                              _peak[_i]['f0'], '✘')
 
-    #Then Check above
+    # Then Check above
     _found_p = list()
     for _i in range(len(_peak)):
         _dx = 1000000.
         _found_p.append(False)
-        _peak[_i]['Report']['P+'] = '✘'
+        _peak[_i]['Report']['P+'] = sprit_utils.x_mark()
         for _j in range(len(_peakp)):
             if abs(_peakp[_j]['f0'] - _peak[_i]['f0']) < _dx:
                 _index = _j
@@ -6010,13 +6008,14 @@ def __check_freq_stability(_peak, _peakm, _peakp):
             else:
                 _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (_peakp[_j]['f0'], '%', _peak[_i]['f0'], '✘')
                 _peak[_i]['PassList']['FreqStability'] = False                
-        if _peak[_i]['Report']['P+'] == '✘' and len(_peakp) > 0:
+        if _peak[_i]['Report']['P+'] == sprit_utils.x_mark() and len(_peakp) > 0:
             _peak[_i]['Report']['P+'] = '%0.3f within ±5%s of %0.3f %1s' % (
-                _peakp[_j]['f0'], '%', _peak[_i]['f0'], '✘')###changed i to j
+                _peakp[_j]['f0'], '%', _peak[_i]['f0'], sprit_utils.x_mark())  #changed i to j
 
     return _peak
 
-#Check stability
+
+# Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
     """Test peaks for satisfying stability conditions as outlined by SESAME 2004
     This includes:
@@ -6033,12 +6032,12 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
     _hvsr_log_std : list
         List of dictionaries containing log standard deviation along curve
     rank : int
-        Integer value, higher value is "higher-ranked" peak, helps determine which peak is actual hvsr peak  
+        Integer value, higher value is "higher-ranked" peak, helps determine which peak is actual hvsr peak
 
     Returns
     -------
     _peak : list
-        List of dictionaries containing output information about peak test  
+        List of dictionaries containing output information about peak test
     """
 
     global max_rank
@@ -6158,7 +6157,8 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
     return _peak
 
-#Get frequency standard deviation
+
+# Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
     """Private function to get frequency standard deviation, from multiple time-step HVSR curves"""
     stdf = list()
@@ -6170,16 +6170,16 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
                 if p is None:
                     p = hvsrPeaks.iloc[j][k]
                 else:
-                    #Find closest peak in current time to (current) main hvsr peak
+                    # Find closest peak in current time to (current) hvsr peak
                     if abs(index - hvsrPeaks.iloc[j][k]) < abs(index - p):
                         p = hvsrPeaks.iloc[j][k]
-                        #p = hvsrPeaks[j][k]
-                        #print(p=p1, p, p1)
+                        # p = hvsrPeaks[j][k]
+                        # print(p=p1, p, p1)
             if p is not None:
                 point.append(p)
         point.append(index)
         v = list()
-        for l in range(len(point)):
-            v.append(x_values[point[l]])
+        for pl in range(len(point)):
+            v.append(x_values[point[pl]])
         stdf.append(np.std(v))
     return stdf

@@ -8,7 +8,9 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.48'
+release_version= '0.1.49'
+run_tests=True
+lint_it=True
 
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
@@ -17,7 +19,7 @@ spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
 spritUtilsPath = spritDir.joinpath('sprit_utils.py')
 spritCLIPath = spritDir.joinpath('sprit_cli.py')
-spritPath = spritDir.joinpath('sprit_hvsr.py')
+spritHVSRPath = spritDir.joinpath('sprit_hvsr.py')
 resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 
@@ -173,3 +175,17 @@ for cFile in confFilePaths:
 
     with open(cFile.as_posix(), 'w') as f:
         f.write(cFileText)
+
+if lint_it:
+    print('Running linting')
+    fileList = [spritGUIPath, spritCLIPath, spritUtilsPath, spritHVSRPath]
+    for fileP in fileList:
+        print(f'\nLINTING {fileP}')
+        ignoreList = ['E501']
+        strIgnoreList =  "--ignore="+str(str(ignoreList)[1:-1].replace(' ', '').replace("'",""))
+        result = subprocess.run(['flake8', strIgnoreList, fileP.as_posix(),], stdout=subprocess.PIPE)
+        print(result.stdout.decode('utf-8'))
+
+if run_tests:
+    print('Testing sprit.run()')
+    subprocess.run(["pytest", repoDir.as_posix()], shell=True)

@@ -1269,7 +1269,7 @@ def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;
         dataIN.merge()
     
     params[&#39;batch&#39;] = False #Set False by default, will get corrected later in batch mode        
-    params[&#39;input_stream&#39;] 
+    params[&#39;input_stream&#39;] = dataIN.copy()
     params[&#39;stream&#39;] = dataIN.copy()
     params[&#39;ProcessingStatus&#39;][&#39;FetchDataStatus&#39;] = True
     if verbose and not isinstance(params, HVSRBatch):
@@ -6047,6 +6047,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
 
     return _peak
 
+
 #Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
     &#34;&#34;&#34;Test peaks for satisfying stability conditions as outlined by SESAME 2004
@@ -6189,6 +6190,7 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
     return _peak
 
+
 #Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
     &#34;&#34;&#34;Private function to get frequency standard deviation, from multiple time-step HVSR curves&#34;&#34;&#34;
@@ -6201,17 +6203,17 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
                 if p is None:
                     p = hvsrPeaks.iloc[j][k]
                 else:
-                    #Find closest peak in current time to (current) main hvsr peak
+                    # Find closest peak in current time to (current) hvsr peak
                     if abs(index - hvsrPeaks.iloc[j][k]) &lt; abs(index - p):
                         p = hvsrPeaks.iloc[j][k]
-                        #p = hvsrPeaks[j][k]
-                        #print(p=p1, p, p1)
+                        # p = hvsrPeaks[j][k]
+                        # print(p=p1, p, p1)
             if p is not None:
                 point.append(p)
         point.append(index)
         v = list()
-        for l in range(len(point)):
-            v.append(x_values[point[l]])
+        for pl in range(len(point)):
+            v.append(x_values[point[pl]])
         stdf.append(np.std(v))
     return stdf</code></pre>
 </details>
@@ -7096,7 +7098,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
         dataIN.merge()
     
     params[&#39;batch&#39;] = False #Set False by default, will get corrected later in batch mode        
-    params[&#39;input_stream&#39;] 
+    params[&#39;input_stream&#39;] = dataIN.copy()
     params[&#39;stream&#39;] = dataIN.copy()
     params[&#39;ProcessingStatus&#39;][&#39;FetchDataStatus&#39;] = True
     if verbose and not isinstance(params, HVSRBatch):
@@ -7963,7 +7965,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-17', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-18', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath='', hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
