@@ -562,7 +562,7 @@ class SPRIT_App:
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
             
             update_progress_bars(prog_percent=15)
-            self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
+            self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
                                                 outlier_std=self.outlier_std.get(),
                                                 
@@ -578,7 +578,7 @@ class SPRIT_App:
             update_progress_bars(prog_percent=50)
 
             self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-            self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
@@ -2194,7 +2194,7 @@ class SPRIT_App:
         self.ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+                  .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                           ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                           dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
         self.generate_ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
@@ -2206,7 +2206,7 @@ class SPRIT_App:
                           dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
 
             self.generate_ppsd_call.configure(text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                            .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+                            .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                                     ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                                     dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
                     
@@ -2489,14 +2489,14 @@ class SPRIT_App:
         hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
         
         self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+                  .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                            outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         
         def update_procHVSR_call(procHVSR_call):
             procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+                  .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
@@ -3633,7 +3633,7 @@ if __name__ == &#34;__main__&#34;:
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
             
             update_progress_bars(prog_percent=15)
-            self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
+            self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
                                                 outlier_std=self.outlier_std.get(),
                                                 
@@ -3649,7 +3649,7 @@ if __name__ == &#34;__main__&#34;:
             update_progress_bars(prog_percent=50)
 
             self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-            self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
@@ -5265,7 +5265,7 @@ if __name__ == &#34;__main__&#34;:
         self.ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+                  .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                           ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                           dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
         self.generate_ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
@@ -5277,7 +5277,7 @@ if __name__ == &#34;__main__&#34;:
                           dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
 
             self.generate_ppsd_call.configure(text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                            .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+                            .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                                     ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                                     dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
                     
@@ -5560,14 +5560,14 @@ if __name__ == &#34;__main__&#34;:
         hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
         
         self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+                  .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                            outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
         
         def update_procHVSR_call(procHVSR_call):
             procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                  .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+                  .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                           outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
         
         #Check Peaks Function Call
@@ -6483,7 +6483,7 @@ if __name__ == &#34;__main__&#34;:
         self.hvsr_data = plot_noise_windows(self.hvsr_data)
         
         update_progress_bars(prog_percent=15)
-        self.hvsr_data = sprit_hvsr.generate_ppsds(params=self.hvsr_data, 
+        self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                             remove_outliers=self.remove_outliers.get(), 
                                             outlier_std=self.outlier_std.get(),
                                             
@@ -6499,7 +6499,7 @@ if __name__ == &#34;__main__&#34;:
         update_progress_bars(prog_percent=50)
 
         self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-        self.hvsr_results = sprit_hvsr.process_hvsr(params=self.hvsr_data, 
+        self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
                                                method=self.method_ind,
                                                smooth=self.hvsmooth_param,
                                                freq_smooth=self.freq_smooth.get(),
@@ -8115,7 +8115,7 @@ if __name__ == &#34;__main__&#34;:
     self.ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
     self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-              .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+              .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                       ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                       dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
     self.generate_ppsd_call.pack(side=&#39;bottom&#39;, anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
@@ -8127,7 +8127,7 @@ if __name__ == &#34;__main__&#34;:
                       dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
 
         self.generate_ppsd_call.configure(text=&#39;generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-                        .format(&#39;params&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
+                        .format(&#39;hvsr_data&#39;, self.remove_outliers.get(), self.outlier_std.get(), 
                                 ppsdLenLabel.cget(&#39;text&#39;), overlapLabel.cget(&#39;text&#39;), pStepOctLabel.cget(&#39;text&#39;), sogLabel.cget(&#39;text&#39;), 
                                 dbbinsLabel.cget(&#39;text&#39;), perLimsLabel.cget(&#39;text&#39;), pSmoothWidthLabel.cget(&#39;text&#39;), specialHandlingLabel.cget(&#39;text&#39;)))
                 
@@ -8410,14 +8410,14 @@ if __name__ == &#34;__main__&#34;:
     hvsrCallFrame = ttk.LabelFrame(hvsr_settings_tab, text=&#39;sprit_hvsr.process_hvsr() Call&#39;)#.pack(fill=&#39;both&#39;)
     
     self.procHVSR_call = ttk.Label(master=hvsrCallFrame, text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-              .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+              .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                        outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
     self.procHVSR_call.pack(anchor=&#39;w&#39;, padx=(25,0), pady=(10,10))
 
     
     def update_procHVSR_call(procHVSR_call):
         procHVSR_call.configure(text=&#39;process_hvsr({}, {}, {}, {}, {}, \n\t{}, {}, {})&#39;
-              .format(&#39;params&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
+              .format(&#39;hvsr_data&#39;, hCombMethodLabel.cget(&#39;text&#39;), hvSmoothLabel.cget(&#39;text&#39;), freqSmoothLabel.cget(&#39;text&#39;), fSmoothWidthlabel.cget(&#39;text&#39;), resampleLabel.cget(&#39;text&#39;), 
                       outlierValLabel.cget(&#39;text&#39;), hvsrBandLabel.cget(&#39;text&#39;)))
     
     #Check Peaks Function Call

@@ -594,7 +594,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
         generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
         PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
         generate_ppsds_kwargs.update(PPSDkwargs)
-        ppsd_data = generate_ppsds(params=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
+        ppsd_data = generate_ppsds(hvsr_data=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
     except Exception as e:
         if source == 'file' or source=='raw':
             if hasattr(e, 'message'):
@@ -619,7 +619,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
     #Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
-        hvsr_results = process_hvsr(params=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
+        hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -793,7 +793,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             peak = __check_freq_stability(peak, peakm, peakp)
             peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
-            hvsr_data['Peak Report'] = peak
+            hvsr_data['PeakReport'] = peak
 
             #Iterate through peaks and 
             #   Get the BestPeak based on the peak score
@@ -802,7 +802,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             peakTests = ['PeakFreqClarityBelow', 'PeakFreqClarityAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
             bestPeakScore = 0
 
-            for p in hvsr_data['Peak Report']:
+            for p in hvsr_data['PeakReport']:
                 #Get BestPeak
                 if p['Score'] > bestPeakScore:
                     bestPeakScore = p['Score']
@@ -825,7 +825,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
                     p['PeakPasses'] = False
                 
             #Designate BestPeak in output dict
-            if len(hvsr_data['Peak Report']) == 0:
+            if len(hvsr_data['PeakReport']) == 0:
                 bestPeak={}
                 print(f"No Best Peak identified for {hvsr_data['site']}")
 
@@ -1251,7 +1251,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     return params
 
 #Generate PPSDs for each channel
-def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
+def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -1259,7 +1259,7 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         
         Parameters
         ----------
-        params : dict, HVSRData object, or HVSRBatch object
+        hvsr_data : dict, HVSRData object, or HVSRBatch object
             Data object containing all the parameters and other data of interest (stream and paz, for example)
         remove_outliers : bool, default=True
             Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.
@@ -1307,40 +1307,40 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
 
     orig_args['ppsd_kwargs'] = [ppsd_kwargs]
 
-    if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
-        if isinstance(params, HVSRData) and params['batch']:
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
         else:
             print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
             print('\tUsing the following parameters:')
             for key, value in orig_args.items():
-                if key=='params':
+                if key=='hvsr_data':
                     pass
                 else:
                     print('\t  {}={}'.format(key, value))
             print()
     
     #Site is in the keys anytime it's not batch
-    if isinstance(params, HVSRBatch):
+    if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each one
-        for site_name in params.keys():
+        for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            individual_params = params[site_name] #Get what would normally be the "params" variable for each site
-            args['params'] = individual_params #reset the params parameter we originally read in to an individual site params
-            #args['params']['batch'] = False #Set to false, since only running this time
-            if params[site_name]['ProcessingStatus']['OverallStatus']:
+            individual_params = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
+            args['hvsr_data'] = individual_params #reset the hvsr_data parameter we originally read in to an individual site hvsr_data
+            #args['hvsr_data']['batch'] = False #Set to false, since only running this time
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
                 try:
-                    params[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
+                    hvsr_data[site_name] = _generate_ppsds_batch(**args) #Call another function, that lets us run this function again
                 except:
-                    params[site_name]['ProcessingStatus']['PPSDStatus']=False
-                    params[site_name]['ProcessingStatus']['OverallStatus'] = False                     
+                    hvsr_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+                    hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                     
             else:
-                params[site_name]['ProcessingStatus']['PPSDStatus']=False
-                params[site_name]['ProcessingStatus']['OverallStatus'] = False                
-        return params
+                hvsr_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+                hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
+        return hvsr_data
     else:
-        paz=params['paz']
-        stream = params['stream']
+        paz=hvsr_data['paz']
+        stream = hvsr_data['stream']
 
         #Get ppsds of e component
         eStream = stream.select(component='E')
@@ -1363,15 +1363,15 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
 
         #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-        params['ppsds_obspy'] = ppsds
-        params['ppsds'] = {}
-        anyKey = list(params['ppsds_obspy'].keys())[0]
+        hvsr_data['ppsds_obspy'] = ppsds
+        hvsr_data['ppsds'] = {}
+        anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
         
         #Get ppsd class members
-        members = [mems for mems in dir(params['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-        params['ppsds']['Z'] = {}
-        params['ppsds']['E'] = {}
-        params['ppsds']['N'] = {}
+        members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+        hvsr_data['ppsds']['Z'] = {}
+        hvsr_data['ppsds']['E'] = {}
+        hvsr_data['ppsds']['N'] = {}
         
         #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
         listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
@@ -1381,32 +1381,32 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         time_data = {}
         time_dict = {}
         for m in members:
-            params['ppsds']['Z'][m] = getattr(params['ppsds_obspy']['Z'], m)
-            params['ppsds']['E'][m] = getattr(params['ppsds_obspy']['E'], m)
-            params['ppsds']['N'][m] = getattr(params['ppsds_obspy']['N'], m)
+            hvsr_data['ppsds']['Z'][m] = getattr(hvsr_data['ppsds_obspy']['Z'], m)
+            hvsr_data['ppsds']['E'][m] = getattr(hvsr_data['ppsds_obspy']['E'], m)
+            hvsr_data['ppsds']['N'][m] = getattr(hvsr_data['ppsds_obspy']['N'], m)
             if m in listList:
                
-                params['ppsds']['Z'][m] = np.array(params['ppsds']['Z'][m])
-                params['ppsds']['E'][m] = np.array(params['ppsds']['E'][m])
-                params['ppsds']['N'][m] = np.array(params['ppsds']['N'][m])
+                hvsr_data['ppsds']['Z'][m] = np.array(hvsr_data['ppsds']['Z'][m])
+                hvsr_data['ppsds']['E'][m] = np.array(hvsr_data['ppsds']['E'][m])
+                hvsr_data['ppsds']['N'][m] = np.array(hvsr_data['ppsds']['N'][m])
             
             if str(m)=='times_processed':
-                unique_times = np.unique(np.array([params['ppsds']['Z'][m],
-                                          params['ppsds']['E'][m],
-                                          params['ppsds']['N'][m]]))
+                unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
+                                          hvsr_data['ppsds']['E'][m],
+                                          hvsr_data['ppsds']['N'][m]]))
                 
                 common_times = []
                 for currTime in unique_times:
-                    if currTime in params['ppsds']['Z'][m]:
-                        if currTime in params['ppsds']['E'][m]:
-                            if currTime in params['ppsds']['N'][m]:
+                    if currTime in hvsr_data['ppsds']['Z'][m]:
+                        if currTime in hvsr_data['ppsds']['E'][m]:
+                            if currTime in hvsr_data['ppsds']['N'][m]:
                                 common_times.append(currTime)
 
                 cTimeIndList = []
                 for cTime in common_times:
-                    ZArr = params['ppsds']['Z'][m]
-                    EArr = params['ppsds']['E'][m]
-                    NArr = params['ppsds']['N'][m]
+                    ZArr = hvsr_data['ppsds']['Z'][m]
+                    EArr = hvsr_data['ppsds']['E'][m]
+                    NArr = hvsr_data['ppsds']['N'][m]
 
                     cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
                                         int(np.where(EArr == cTime)[0][0]),
@@ -1415,26 +1415,26 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
             #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
                 if str(m) != 'times_processed':
-                    time_data[str(m)] = (params['ppsds']['Z'][m], params['ppsds']['E'][m], params['ppsds']['N'][m])
+                    time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
 
-                #print(m, params['ppsds']['Z'][m])
+                #print(m, hvsr_data['ppsds']['Z'][m])
 
-                tSteps_same = params['ppsds']['Z'][m].shape[0] == params['ppsds']['E'][m].shape[0] == params['ppsds']['N'][m].shape[0]
+                tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
 
                 if not tSteps_same:
-                    shortestTimeLength = min(params['ppsds']['Z'][m].shape[0], params['ppsds']['E'][m].shape[0], params['ppsds']['N'][m].shape[0])
+                    shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
 
                     maxPctDiff = 0
-                    for comp in params['ppsds'].keys():
-                        currCompTimeLength = params['ppsds'][comp][m].shape[0]
+                    for comp in hvsr_data['ppsds'].keys():
+                        currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
                         timeLengthDiff = currCompTimeLength - shortestTimeLength
                         percentageDiff = timeLengthDiff / currCompTimeLength
                         if percentageDiff > maxPctDiff:
                             maxPctDiff = percentageDiff
 
-                    for comp in params['ppsds'].keys():
-                        while params['ppsds'][comp][m].shape[0] > shortestTimeLength:
-                            params['ppsds'][comp][m] = params['ppsds'][comp][m][:-1]
+                    for comp in hvsr_data['ppsds'].keys():
+                        while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
+                            hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
                     
                     
                     if maxPctDiff > 0.05 and timeDiffWarn:
@@ -1474,27 +1474,27 @@ def generate_ppsds(params, remove_outliers=True, outlier_std=3, verbose=False, *
         hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
         
         hvsrDF['Use'] = True
-        for gap in params['ppsds']['Z']['times_gaps']:
+        for gap in hvsr_data['ppsds']['Z']['times_gaps']:
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                 (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
 
         hvsrDF.set_index('TimesProcessed', inplace=True)
-        params['hvsr_df'] = hvsrDF
+        hvsr_data['hvsr_df'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-        params['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
-        #params['tsteps_used'] = [params['ppsds']['Z']['times_processed'].shape[0], params['ppsds']['Z']['times_processed'].shape[0]]
+        hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
+        #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
         
         #Remove outlier ppsds (those derived from data within the windows to be removed)
 
-        if remove_outliers and 'xwindows_out' in params.keys():
-            params = remove_outlier_curves(params, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
-        params['tsteps_used'][0] = params['ppsds']['Z']['current_times_used'].shape[0]
+        if remove_outliers and 'xwindows_out' in hvsr_data.keys():
+            hvsr_data = remove_outlier_curves(hvsr_data, outlier_std=outlier_std, ppsd_length=ppsd_kwargs['ppsd_length'])
+        hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
         
-        params = sprit_utils.make_it_classy(params)
+        hvsr_data = sprit_utils.make_it_classy(hvsr_data)
     
-    params['ProcessingStatus']['PPSDStatus'] = True
-    params = _check_processing_status(params)
-    return params
+    hvsr_data['ProcessingStatus']['PPSDStatus'] = True
+    hvsr_data = _check_processing_status(hvsr_data)
+    return hvsr_data
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
 def get_metadata(params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs):
@@ -2441,7 +2441,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
     return                 
 
 #Main function for processing HVSR Curve
-def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2449,7 +2449,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     Parameters
     ----------
-    params  : HVSRData or HVSRBatch
+    hvsr_data  : HVSRData or HVSRBatch
         Data object containing all the parameters input and generated by the user (usually, during sprit.input_params(), sprit.fetch_data(), sprit.generate_ppsds() and/or sprit.remove_noise()).
     method  : int or str, default=3
         Method to use for combining the horizontal components
@@ -2490,14 +2490,14 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     """
     orig_args = locals().copy() #Get the initial arguments
-    if (verbose and isinstance(params, HVSRBatch)) or (verbose and not params['batch']):
-        if isinstance(params, HVSRData) and params['batch']:
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
         else:
             print('\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
             print('\tUsing the following parameters:')
             for key, value in orig_args.items():
-                if key=='params':
+                if key=='hvsr_data':
                     pass
                 else:
                     print('\t  {}={}'.format(key, value))
@@ -2505,26 +2505,26 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
 
     #First, divide up for batch or not
     #Site is in the keys anytime it's not batch
-    if isinstance(params, HVSRBatch):
+    if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
-        for site_name in params.keys():
+        for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['params'] = params[site_name] #Get what would normally be the "params" variable for each site
-            if params[site_name]['ProcessingStatus']['OverallStatus']:
+            args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
                 try:
                     hvsr_out[site_name] = _process_hvsr_batch(**args) #Call another function, that lets us run this function again
                 except:
-                    hvsr_out = params
+                    hvsr_out = hvsr_data
                     hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
                     hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False                    
             else:
-                hvsr_out = params
+                hvsr_out = hvsr_data
                 hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
                 hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
         hvsr_out = HVSRBatch(hvsr_out)
     else:
-        ppsds = params['ppsds'].copy()#[k]['psd_values']
+        ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
         ppsds = sprit_utils.check_xvalues(ppsds)
 
         methodList = ['<placeholder_0>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
@@ -2537,7 +2537,7 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         stDevValsM = {}
         psdRaw={}
         currTimesUsed={}
-        hvsrDF = params['hvsr_df']
+        hvsrDF = hvsr_data['hvsr_df']
 
         for k in ppsds.keys():
             #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
@@ -2597,15 +2597,15 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         if type(method) is int:
             methodInt = method
             method = methodList[method]
-        params['method'] = method
+        hvsr_data['method'] = method
 
         #This gets the main hvsr curve averaged from all time steps
         anyK = list(x_freqs.keys())[0]
-        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=params, verbose=verbose)
-        origPPSD = params['ppsds_obspy'].copy()
+        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
+        origPPSD = hvsr_data['ppsds_obspy'].copy()
 
         #Add some other variables to our output dictionary
-        hvsr_data = {'input_params':params,
+        hvsr_data = {'input_params':hvsr_data,
                     'x_freqs':x_freqs,
                     'hvsr_curve':hvsr_curve,
                     'x_period':x_periods,
@@ -2618,15 +2618,15 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
                     'method':method,
                     'ppsds':ppsds,
                     'ppsds_obspy':origPPSD,
-                    'tsteps_used': params['tsteps_used'].copy(),
-                    'hvsr_df':params['hvsr_df']
+                    'tsteps_used': hvsr_data['tsteps_used'].copy(),
+                    'hvsr_df':hvsr_data['hvsr_df']
                     }
         
         hvsr_out = HVSRData(hvsr_data)
 
         #This is if manual editing was used (should probably be updated at some point to just use masks)
-        if 'xwindows_out' in params.keys():
-            hvsr_out['xwindows_out'] = params['xwindows_out']
+        if 'xwindows_out' in hvsr_data.keys():
+            hvsr_out['xwindows_out'] = hvsr_data['xwindows_out']
         else:
             hvsr_out['xwindows_out'] = []
 
@@ -2750,7 +2750,10 @@ def process_hvsr(params, method=3, smooth=True, freq_smooth='konno ohmachi', f_s
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
-        hvsr_out['input_stream'] = params['input_stream'] #input_stream
+        #print(hvsr_data.keys())
+        #print(type(hvsr_data))
+        #print(hvsr_data['input_params'].keys())
+        hvsr_out['input_stream'] = hvsr_data['input_params']['input_stream'] #input_stream
 
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
 
@@ -5206,7 +5209,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             plotSuff=plotSuff+'BestPeak_'
             
             bestPeakScore = 0
-            for i, p in enumerate(hvsr_data['Peak Report']):
+            for i, p in enumerate(hvsr_data['PeakReport']):
                 if p['Score'] > bestPeakScore:
                     bestPeakScore = p['Score']
                     bestPeak = p

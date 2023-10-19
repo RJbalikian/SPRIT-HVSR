@@ -8,7 +8,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.49'
+release_version= '0.1.50'
 run_tests=True
 lint_it=True
 
@@ -180,7 +180,7 @@ if lint_it:
     print('Running linting')
     fileList = [spritGUIPath, spritCLIPath, spritUtilsPath, spritHVSRPath]
     for fileP in fileList:
-        print(f'\nLINTING {fileP}')
+        print(f'\nLINTING {fileP.as_posix()}')
         ignoreList = ['E501']
         strIgnoreList =  "--ignore="+str(str(ignoreList)[1:-1].replace(' ', '').replace("'",""))
         result = subprocess.run(['flake8', strIgnoreList, fileP.as_posix(),], stdout=subprocess.PIPE)
@@ -188,4 +188,8 @@ if lint_it:
 
 if run_tests:
     print('Testing sprit.run()')
-    subprocess.run(["pytest", repoDir.as_posix()], shell=True)
+    try:
+        subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=True)
+    except:
+        subprocess.run(["pytest", repoDir.as_posix()], shell=True)
+
