@@ -25,7 +25,7 @@ This should be done using command line. It is recommended to do this in a virtua
 For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
 # Documentation
 - API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
-- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki) (in progress)
+- See Wiki for more information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
 - Pypi repository [here](https://pypi.org/project/sprit/)
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
