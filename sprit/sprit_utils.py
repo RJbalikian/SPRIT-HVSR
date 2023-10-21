@@ -19,7 +19,7 @@ greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
 def check_gui_requirements():
-    print("Checking requirements for gui")
+    #First, check requirements
     # Define a command that tries to open a window
     command = "python -c \"import tkinter; tkinter.Tk()\""
 
@@ -32,7 +32,7 @@ def check_gui_requirements():
         oktoproceed=True
     else:
         oktoproceed=False
-        print("GUI window could not be created.")
+        print("GUI window cannot be created.")
 
     return oktoproceed
 

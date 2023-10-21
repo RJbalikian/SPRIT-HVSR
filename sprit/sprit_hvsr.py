@@ -48,7 +48,11 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
-sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+#Get the main resources directory path, and the other paths as well
+resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+sample_data_dir = resource_dir.joinpath('sample_data')
+settings_dir = resource_dir.joinpath('settings')
+
 sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
                     '2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
                     '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
@@ -282,7 +286,9 @@ class HVSRData:
         Parameters
         ----------
         export_path : filepath, default=True
-            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). 
+            By default True. 
+            If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
@@ -711,6 +717,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
     """
     orig_args = locals().copy() #Get the initial arguments
 
+    hvsr_data['processing_parameters']['check_peaks'] = {}
+    for key, value in orig_args.items():
+        hvsr_data['processing_parameters']['check_peaks'][key] = value
+
     if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
@@ -994,6 +1004,12 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
 
+    #Get any kwargs that are included in obspy.read
+    obspyReadKwargs = {}
+    for argName in inspect.getfullargspec(obspy.read)[0]:
+        if argName in kwargs.keys():
+            obspyReadKwargs[argName] = kwargs[argName]
+
     #Select how reading will be done
     if source=='raw':
         if inst.lower() in raspShakeInstNameList:
@@ -1012,28 +1028,27 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 for f in temp_file_glob:
                     currParams = params
                     currParams['datapath'] = f
+
                     curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs), 
+                                trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                    curr_data.merge()
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
             return HVSRBatch(obspyFiles)
-        
     elif source=='file' and str(params['datapath']).lower() not in sampleList:
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawStreams = []
             for datafile in dPath:
-                rawStream = obspy.read(datafile)
+                rawStream = obspy.read(datafile, **obspyReadKwargs)
                 rawStreams.append(rawStream) #These are actually streams, not traces
-            
             for i, stream in enumerate(rawStreams):
                 if i == 0:
                     rawDataIN = obspy.Stream(stream) #Just in case
                 else:
                     rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-            
         elif str(dPath)[:6].lower()=='sample':
             pass
         else:
-            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+            rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
@@ -1080,6 +1095,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         except:
             RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
 
+    #Get metadata from the data itself, if not reading raw data
     try:
         dataIN = rawDataIN.copy()
         if source!='raw':
@@ -1191,6 +1207,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     #Remerge data
     dataIN = dataIN.merge(method=1)
 
+    #Plot the input stream?
     if plot_input_stream:
         try:
             params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
@@ -1205,6 +1222,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
+    #Clean up the ends of the data unless explicitly specified to do otherwise (this is a kwarg, not a parameter)
     if 'clean_ends' not in kwargs.keys():
         clean_ends=True 
     else:
@@ -1492,6 +1510,11 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         
         hvsr_data = sprit_utils.make_it_classy(hvsr_data)
     
+    hvsr_data['processing_parameters'] = {}
+    hvsr_data['processing_parameters']['generate_ppsds'] = {}
+    for key, value in orig_args.items():
+        hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data)
     return hvsr_data
@@ -1586,6 +1609,11 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     #Check if results are good
     #Curve pass?
     orig_args = locals().copy() #Get the initial arguments
+
+    hvsr_results['processing_parameters']['get_report'] = {}
+    for key, value in orig_args.items():
+        hvsr_results['processing_parameters']['get_report'][key] = value
+
 
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
@@ -2106,6 +2134,7 @@ def input_params(datapath,
                 metapath = '',
                 hvsr_band = [0.4, 40],
                 peak_freq_range=[0.4, 40],
+                instrument_settings=None,
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
@@ -2156,6 +2185,10 @@ def input_params(datapath,
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
     peak_freq_range : list or tuple, default=[0.4, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
+    instrument_settings : None, str, default=None
+        The instrument_settings parameter is intended to enable rapid reading in of settings pertaining to the instrument you use most. 
+        If set to "default" or True, will read in the default instrument settings (note, these are different than the default parameters of input_params(), even where names overlap).
+        The default settings can be reset using the save_settings() function with the parameter settings_path='default'.
     verbose : bool, default=False
         Whether to print output and results to terminal
 
@@ -2299,6 +2332,24 @@ def input_params(datapath,
                     'ProcessingStatus':{'InputStatus':True, 'OverallStatus':True}
                     }
     
+    #Replace any default parameter settings with those from json file of interest, potentially
+    if instrument_settings is None:
+        instrument_settings_dict = {}
+    elif instrument_settings == "default" or instrument_settings is True:
+        # Update inputParamDict with default file
+        default_settings_json = settings_dir.joinpath('instrument_settings.json')
+        with open(default_settings_json.as_posix(), 'r') as f:
+            instrument_settings_dict = json.load(f)
+    else:
+        # Update inputParamDict with file
+        with open(instrument_settings, 'r') as f:
+            instrument_settings_dict = json.load(f)        
+
+    for settingName in instrument_settings_dict.keys():
+        if settingName in inputParamDict.keys():
+            inputParamDict[settingName] = instrument_settings_dict[settingName]
+
+    #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
     params['ProcessingStatus']['InputParams'] = True
     params = _check_processing_status(params)
@@ -2760,6 +2811,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out['ProcessingStatus']['HVStatus'] = True
     hvsr_out = _check_processing_status(hvsr_out)
 
+    hvsr_data['processing_parameters']['process_hvsr'] = {}
+    for key, value in orig_args.items():
+        hvsr_data['processing_parameters']['process_hvsr'][key] = value
+
     return hvsr_out
 
 #Function to remove noise windows from data
@@ -3041,6 +3096,77 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
             params['ppsds'][k]['psd_values'] = np.delete(params['ppsds'][k]['psd_values'], index, axis=0)
             params['ppsds'][k]['current_times_used'] = np.delete(params['ppsds'][k]['current_times_used'], index, axis=0)
     return params
+
+###WORKING ON THIS
+#Save default instrument and processing settings to json file(s)
+def save_settings(hvsr_data, settings_path='default', settings_type='all', verbose=False):
+    """Save settings to json file
+
+    Parameters
+    ----------
+    settings_path : str, default="default"
+        Where to save the json file(s) containing the settings, by default 'default'. 
+        If "default," will save to sprit package resources. Otherwise, set a filepath location you would like for it to be saved to.
+        If 'all' is selected, a directory should be supplied. 
+        Otherwise, it will save in the directory of the provided file, if it exists. Otherwise, defaults to the home directory.
+    settings_type : str, {'all', 'instrument', 'processing'}
+        What kind of settings to save. 
+        If 'all', saves all possible types in their respective json files.
+        If 'instrument', save the instrument settings to their respective file.
+        If 'processing', saves the processing settings to their respective file. By default 'all'
+    verbose : bool, default=True
+        Whether to print outputs and information to the terminal
+
+    """
+    fnameDict = {}
+    fnameDict['instrument'] = "instrument_settings.json"
+    fnameDict['processing'] = "processing_settings.json"
+
+    if settings_path == 'default' or settings_path is True:
+        settingsPath = resource_dir
+    else:
+        settings_path = pathlib.Path(settings_path)
+        if not settings_path.exists():
+            if not settings_path.parent.exists():
+                print(f'The provided value for settings_path ({settings_path}) does not exist. Saving settings to the home directory: {pathlib.Path.home()}')
+                settingsPath = pathlib.Path.home()
+            else:
+                settingsPath = settings_path.parent
+        
+        if settings_path.is_dir():
+            settingsPath = settings_path
+        elif settings_path.is_file():
+            settingsPath = settings_path.parent
+            fnameDict['instrument'] = settings_path.name+"_instrumentSettings.json"
+            fnameDict['processing'] = settings_path.name+"_processingSettings.json"
+
+    #Get final filepaths        
+    instSetFPath = settingsPath.joinpath(fnameDict['instrument'])
+    procSetFPath = settingsPath.joinpath(fnameDict['processing'])
+
+    #Get settings values
+    instKeys = ["instrument", "network", "station", "loc", "channels", "depth", "metapath", "hvsr_band"]
+    procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
+
+    instrument_settings_dict = {}
+    processing_settings_dict = {}
+
+    for k in instKeys:
+        instrument_settings_dict[k] = hvsr_data[k]
+    
+    for func in procFuncs:
+        funcName = func.__name__
+        processing_settings_dict[funcName] = {}
+        for arg in inspect.getfullargspec(func)[0]:
+            processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
+    
+    #Save settings files
+    if settings_type.lower()=='instrument' or settings_type.lower()=='all':
+        with open(instSetFPath.as_posix(), 'w') as instSetF:
+            json.dump(instrument_settings_dict, instSetF)
+    if settings_type.lower()=='processing' or settings_type.lower()=='all':
+        with open(procSetFPath.as_posix(), 'w') as procSetF:
+            json.dump(processing_settings_dict, procSetF)        
 
 #Read data as batch
 def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):

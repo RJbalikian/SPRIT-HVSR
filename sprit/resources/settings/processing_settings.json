@@ -1,0 +1,15 @@
+{
+    "input_params":{},
+    "export_data":{},
+    "import_data":{},
+    "gui":{},
+    "fetch_data":{},
+    "batch_data_read":{},
+    "generate_ppsds":{},
+    "process_hvsr":{},
+    "plot_hvsr":{},
+    "remove_noise":{},
+    "save_settings":{},
+    "check_peaks":{},
+    "get_report":{}
+}

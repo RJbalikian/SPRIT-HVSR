@@ -3,6 +3,7 @@
 import datetime
 import functools
 import linecache
+import json
 import os
 import pathlib
 import pkg_resources
@@ -34,6 +35,14 @@ except: #For local testing
     pass
 
 global spritApp
+global current_theme_name
+
+resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+settings_dir = resource_dir.joinpath('settings')
+gui_theme_file = settings_dir.joinpath('gui_theme.json')
+with open(gui_theme_file, 'r') as f:
+    curr_gui_dict = json.load(f)
+current_theme_name = curr_gui_dict['theme_name']
 
 #Decorator that catches errors and warnings (to be modified later for gui)
 def catch_errors(func):
@@ -151,10 +160,11 @@ class SPRIT_App:
         self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-dark.tcl"))
         self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-light.tcl"))
         
+
+        
         # Create the style object
         self.style = ttk.Style(master)
-        self.master.tk.call('source', self.lightthemepath)
-        #self.style.theme_use('default')
+        #
         #self.style.theme_use('forest-light')
 
         self.create_menubar()
@@ -164,6 +174,13 @@ class SPRIT_App:
         self.master.columnconfigure(0, weight=1)        
 
 
+        if 'forest' in current_theme_name:
+            if 'light' in current_theme_name:
+                self.master.tk.call('source', self.lightthemepath)
+            else:
+                self.master.tk.call('source', self.darkthemepath)
+        else:
+            self.style.theme_use(current_theme_name)
         # Create the dark theme
         #self.style.theme_create("dark", parent="alt", settings={
         #    "TLabel": {"configure": {"background": "black", "foreground": "white"}},
@@ -211,7 +228,33 @@ class SPRIT_App:
         def on_theme_select():
             # Set the theme based on the selected value
             self.style = ttk.Style()
-            
+
+            #Update the theme file so the new theme opens on reboot
+            prev_theme = curr_gui_dict['theme_name']
+            curr_gui_dict['theme_name'] = self.theme_var.get()
+            with open(gui_theme_file, 'w') as f:
+                json.dump(curr_gui_dict, f)
+
+            def apply_theme():
+                if 'forest' in self.theme_var.get():
+                    if self.theme_var.get()=='forest-dark' and 'forest-dark' not in self.style.theme_names():
+                        self.master.tk.call('source', self.darkthemepath)
+                    elif self.theme_var.get()=='forest-light' and 'forest-light' not in self.style.theme_names():
+                        self.master.tk.call('source', self.lightthemepath)            
+                self.master.tk.call("ttk::style", "theme", "use", self.theme_var.get())
+
+            if curr_gui_dict['theme_name']=='forest-light' or curr_gui_dict['theme_name'] == 'forest-dark':
+                do_reboot = messagebox.askyesno('App Restart Required', 
+                                             f"It is recommended to restart the SpRIT GUI at this time to apply this theme. If not, you may continue but theme errors may occur. Click No to retain current theme ({prev_theme}) \nReboot now?",
+                                             )
+                print(do_reboot)
+                if do_reboot:
+                    reboot_app()
+                else:
+                    self.theme_var.set(prev_theme)
+            else:
+                apply_theme()
+
             """An attempt to get the backgrounds right
             def apply_to_all_children(widget, func):
                 Recursively apply a function to all child widgets of a given widget
@@ -229,12 +272,7 @@ class SPRIT_App:
             
             apply_to_all_children(self.master, change_background_color)
             """
-            if 'forest' in self.theme_var.get():
-                if self.theme_var.get()=='forest-dark' and 'forest-dark' not in self.style.theme_names():
-                    self.master.tk.call('source', self.darkthemepath)
-                elif self.theme_var.get()=='forest-light' and 'forest-light' not in self.style.theme_names():
-                    self.master.tk.call('source', self.lightthemepath)            
-            self.master.tk.call("ttk::style", "theme", "use", self.theme_var.get())
+
             #self.master.tk.call("ttk::setTheme", self.theme_var.get())
 
             #self.style.theme_use(self.theme_var.get())
@@ -250,7 +288,7 @@ class SPRIT_App:
             filepath = filedialog.asksaveasfilename()
 
         self.theme_menu = tk.Menu(self.menubar, tearoff=0)
-        self.theme_var = tk.StringVar(value="Default")
+        self.theme_var = tk.StringVar(value=current_theme_name)
         self.theme_menu.add_radiobutton(label="Default", variable=self.theme_var, value="default", command=on_theme_select)
         self.theme_menu.add_radiobutton(label="Clam", variable=self.theme_var, value="clam", command=on_theme_select)
         self.theme_menu.add_radiobutton(label="Alt", variable=self.theme_var, value="alt", command=on_theme_select)
@@ -3035,6 +3073,13 @@ def on_closing():
     plt.close('all')
     root.destroy()
     exit()
+
+def reboot_app():
+    """Restarts the current program.
+    Note: this function does not return. Any cleanup action (like
+    saving data) must be done before calling this function."""
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
 if __name__ == "__main__":
     can_gui = sprit_utils.check_gui_requirements()
