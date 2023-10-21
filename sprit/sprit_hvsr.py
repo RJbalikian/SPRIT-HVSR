@@ -2654,9 +2654,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         anyK = list(x_freqs.keys())[0]
         hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
         origPPSD = hvsr_data['ppsds_obspy'].copy()
-
         #Add some other variables to our output dictionary
-        hvsr_data = {'input_params':hvsr_data,
+        hvsr_dataUpdate = {'input_params':hvsr_data,
                     'x_freqs':x_freqs,
                     'hvsr_curve':hvsr_curve,
                     'x_period':x_periods,
@@ -2673,7 +2672,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     'hvsr_df':hvsr_data['hvsr_df']
                     }
         
-        hvsr_out = HVSRData(hvsr_data)
+        hvsr_out = HVSRData(hvsr_dataUpdate)
 
         #This is if manual editing was used (should probably be updated at some point to just use masks)
         if 'xwindows_out' in hvsr_data.keys():
@@ -2801,13 +2800,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out = __gethvsrparams(hvsr_out)
 
         #Include the original obspy stream in the output
-        #print(hvsr_data.keys())
-        #print(type(hvsr_data))
-        #print(hvsr_data['input_params'].keys())
-        hvsr_out['input_stream'] = hvsr_data['input_params']['input_stream'] #input_stream
-
+        hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
-
         hvsr_out['ProcessingStatus']['HVStatus'] = True
     hvsr_out = _check_processing_status(hvsr_out)
 
@@ -3123,7 +3117,7 @@ def save_settings(hvsr_data, settings_path='default', settings_type='all', verbo
     fnameDict['processing'] = "processing_settings.json"
 
     if settings_path == 'default' or settings_path is True:
-        settingsPath = resource_dir
+        settingsPath = resource_dir.joinpath('settings')
     else:
         settings_path = pathlib.Path(settings_path)
         if not settings_path.exists():
@@ -3145,20 +3139,26 @@ def save_settings(hvsr_data, settings_path='default', settings_type='all', verbo
     procSetFPath = settingsPath.joinpath(fnameDict['processing'])
 
     #Get settings values
-    instKeys = ["instrument", "network", "station", "loc", "channels", "depth", "metapath", "hvsr_band"]
+    instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
     procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
 
     instrument_settings_dict = {}
     processing_settings_dict = {}
 
     for k in instKeys:
-        instrument_settings_dict[k] = hvsr_data[k]
+        if isinstance(hvsr_data[k], pathlib.PurePath):
+            instrument_settings_dict[k] = hvsr_data[k].as_posix()
+        else:
+            instrument_settings_dict[k] = hvsr_data[k]
     
     for func in procFuncs:
         funcName = func.__name__
         processing_settings_dict[funcName] = {}
         for arg in inspect.getfullargspec(func)[0]:
-            processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
+            if isinstance(hvsr_data['processing_parameters'][funcName][arg], (HVSRBatch, HVSRData)):
+                pass
+            else:
+                processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
     
     #Save settings files
     if settings_type.lower()=='instrument' or settings_type.lower()=='all':

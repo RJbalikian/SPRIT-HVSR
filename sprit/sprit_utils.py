@@ -311,6 +311,11 @@ def has_required_channels(stream):
 #Make input data (dict) into sprit_hvsr class
 def make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
+        for k, v in input_data.items():
+            if k=='input_params':
+                for kin in input_data['input_params'].keys():
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data['input_params'][kin]
         output_class = input_data
     else:
         output_class = sprit_hvsr.HVSRData(input_data)
