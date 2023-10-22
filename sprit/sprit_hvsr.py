@@ -951,7 +951,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     #Make sure datapath is pointing to an actual file
     if isinstance(params['datapath'],list):
         for i, d in enumerate(params['datapath']):
-            params['datapath'][i] = sprit_utils.checkifpath(str(d).strip())
+            params['datapath'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=sampleList)
+        dPath = params['datapath']
     else:
         dPath = sprit_utils.checkifpath(params['datapath'], sample_list=sampleList)
 
@@ -1102,6 +1103,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             #Use metadata from file for;
             # site
             if params['site'] == "HVSR Site":
+                if isinstance(dPath, (list, tuple)):
+                    dPath = dPath[0]
                 params['site'] = dPath.stem
                 params['params']['site'] = dPath.stem
             
@@ -1138,11 +1141,13 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
-            maxStarttime = datetime.time(hour=0, minute=0, second=0, microsecond=0)
+            maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
+                                             hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
             if str(params['starttime']) == str(today_Starttime):
                 for tr in dataIN.merge():
-                    currTime = datetime.time(hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
-                                       second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond)
+                    currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
+                                        hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
+                                       second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond, tzinfo=datetime.timezone.utc)
                     if currTime > maxStarttime:
                         maxStarttime = currTime
 
@@ -1157,17 +1162,19 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=23, minute=59, second=59, microsecond=999999))
-            minEndtime = datetime.time(hour=23, minute=59, second=59, microsecond=999999)
-            if str(params['endtime']) == str(today_Endtime):
+            tomorrow_Endtime = today_Endtime + (60*60*24)
+            minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
+            if str(params['endtime']) == str(today_Endtime) or str(params['endtime'])==tomorrow_Endtime:
                 for tr in dataIN.merge():
-                    currTime = datetime.time(hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
-                                       second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond)
+                    currTime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day,
+                                        hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
+                                       second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond, tzinfo=datetime.timezone.utc)
                     if currTime < minEndtime:
                         minEndtime = currTime
-                newEndtime = obspy.UTCDateTime(datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month,
-                                                                 day = params['acq_date'].day,
+                newEndtime = obspy.UTCDateTime(datetime.datetime(year=minEndtime.year, month=minEndtime.month,
+                                                                 day = minEndtime.day,
                                                                 hour=minEndtime.hour, minute=minEndtime.minute, 
-                                                                second=minEndtime.second, microsecond=minEndtime.microsecond))
+                                                                second=minEndtime.second, microsecond=minEndtime.microsecond, tzinfo=datetime.timezone.utc))
                 params['endtime'] = newEndtime
                 params['params']['endtime'] = newEndtime
 
