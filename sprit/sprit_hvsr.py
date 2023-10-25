@@ -14,6 +14,7 @@ import os
 import pathlib
 import pickle
 import pkg_resources
+import struct
 import tempfile
 import traceback
 import warnings
@@ -938,7 +939,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     date=params['acq_date']
 
     #Cleanup for gui input
-    if '}' in str(params['datapath']):
+    if isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
+        pass
+    elif '}' in str(params['datapath']):
         params['datapath'] = params['datapath'].as_posix().replace('{','')
         params['datapath'] = params['datapath'].split('}')
     
@@ -953,6 +956,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         for i, d in enumerate(params['datapath']):
             params['datapath'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=sampleList)
         dPath = params['datapath']
+    elif isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
+        pass
     else:
         dPath = sprit_utils.checkifpath(params['datapath'], sample_list=sampleList)
 
@@ -1004,6 +1009,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     #Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
     #Get any kwargs that are included in obspy.read
     obspyReadKwargs = {}
@@ -1013,12 +1019,16 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     #Select how reading will be done
     if source=='raw':
-        if inst.lower() in raspShakeInstNameList:
-            try:
+        try:
+            if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-            except:
-                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
-                return params
+
+            elif inst.lower() in trominoNameList:
+                rawDataIN = __read_tromino_files(dPath, params, verbose=verbose)
+        except:
+            raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
+    elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
+        rawDataIN = params['datapath'].copy()
     elif source=='dir':
         if inst.lower() in raspShakeInstNameList:
             rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -1548,14 +1558,57 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
-    
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    trominoNameList = ['tromino', 'trom', 'trm', 't']
 
     if params['instrument'].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
         params = _read_RS_Metadata(params, source=source)
+    elif params['instrument'].lower() in trominoNameList:
+        params['paz'] = {'Z':{}, 'E':{}, 'N':{}}
+        #ALL THESE VALUES ARE PLACEHOLDERS, SAME AS RASPBERRY SHAKE!
+        params['paz']['Z'] = {'sensitivity': 360000000.0,
+                              'gain': 360000000.0,
+                              'poles': [(-1+0j), (-3.03+0j), (-3.03+0j), (-666.67+0j)],  
+                              'zeros': [0j, 0j, 0j]}
+        params['paz']['E'] =  params['paz']['Z']
+        params['paz']['N'] =  params['paz']['Z']
+        
+        channelObj_Z = obspy.core.inventory.channel.Channel(code='BHZ', location_code='00', latitude=params['params']['latitude'], 
+                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+                                                azimuth=0, dip=90, types=None, external_references=None, 
+                                                sample_rate=None, sample_rate_ratio_number_samples=None, sample_rate_ratio_number_seconds=None,
+                                                storage_format=None, clock_drift_in_seconds_per_sample=None, calibration_units=None, 
+                                                calibration_units_description=None, sensor=None, pre_amplifier=None, data_logger=None,
+                                                equipments=None, response=None, description=None, comments=None, start_date=None, end_date=None, 
+                                                restricted_status=None, alternate_code=None, historical_code=None, data_availability=None, 
+                                                identifiers=None, water_level=None, source_id=None)
+        channelObj_E = obspy.core.inventory.channel.Channel(code='BHE', location_code='00', latitude=params['params']['latitude'], 
+                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+                                                azimuth=90, dip=0) 
+        
+        channelObj_N = obspy.core.inventory.channel.Channel(code='BHN', location_code='00', latitude=params['params']['latitude'], 
+                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+                                                azimuth=0, dip=0) 
+        
+        siteObj = obspy.core.inventory.util.Site(name=params['params']['site'], description=None, town=None, county=None, region=None, country=None)
+        stationObj = obspy.core.inventory.station.Station(code='TZ', latitude=params['params']['latitude'], longitude=params['params']['longitude'], 
+                                            elevation=params['params']['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
+                                            vault=None, geology=None, equipments=None, operators=None, creation_date=datetime.datetime.today(),
+                                            termination_date=None, total_number_of_channels=None, 
+                                            selected_number_of_channels=None, description='Estimated data for Tromino, this is NOT from the manufacturer',
+                                            comments=None, start_date=None, 
+                                            end_date=None, restricted_status=None, alternate_code=None, historical_code=None, 
+                                            data_availability=None, identifiers=None, water_level=None, source_id=None)
+
+        network = [obspy.core.inventory.network.Network(code='TROM', stations=[stationObj], total_number_of_stations=None, 
+                                            selected_number_of_stations=None, description=None, comments=None, start_date=None, 
+                                            end_date=None, restricted_status=None, alternate_code=None, historical_code=None, 
+                                            data_availability=None, identifiers=None, operators=None, source_id=None)]
+        
+        params['inv'] = obspy.Inventory(networks=network)
     else:
         if not invPath:
             pass #if invPath is None
@@ -4033,6 +4086,88 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
 
     return rawDataIN
 
+#Read data from Tromino
+def __read_tromino_files(datapath, params, verbose=False):
+    """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
+
+    Parameters
+    ----------
+    datapath : str, pathlib.Path()
+        The input parameter _datapath_ from sprit.input_params()
+    params : HVSRData or HVSRBatch
+        The parameters as read in from input_params() and and fetch_data()
+    verbose : bool, optional
+        Whether to print results to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        An obspy.Stream object containing the trace data from the Tromino instrument
+    """
+    dPath = datapath
+
+    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
+                'h':2,'H':2,'e':2,
+                'i':4,'I':4,'l':4,'L':4,'f':4,
+                'q':8,'Q':8,'d':8,
+                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
+
+    #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
+    structFormat = 'H'
+    structSize = strucSizes[structFormat]
+
+    dataList = []
+    with open(dPath, 'rb') as f:
+        while True:
+            data = f.read(structSize)  # Read 4 bytes
+            if not data:  # End of file
+                break
+            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
+            dataList.append(value)
+        
+    import numpy as np
+    dataArr = np.array(dataList)
+    import matplotlib.pyplot as plt
+
+    medVal = np.nanmedian(dataArr[50000:100000])
+
+    startByte=24576
+    comp1 = dataArr[startByte::3] - medVal
+    comp2 = dataArr[startByte+1::3] - medVal
+    comp3 = dataArr[startByte+2::3] - medVal
+    headerBytes = dataArr[:startByte]
+
+    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
+    #ax[0].plot(comp1, linewidth=0.1, c='k')
+    #ax[1].plot(comp2, linewidth=0.1, c='k')
+    #ax[2].plot(comp3, linewidth=0.1, c='k')
+
+    sTime = obspy.UTCDateTime(params['acq_date'].year, params['acq_date'].month, params['acq_date'].day,
+                              params['starttime'].hour, params['starttime'].minute,
+                              params['starttime'].second,params['starttime'].microsecond)
+    eTime = sTime + (((len(comp1))/128)/60)*60
+
+    traceHeader1 = {'sampling_rate':128,
+            'calib' : 1,
+            'npts':len(comp1),
+            'network':'AM',
+            'location':'00',
+            'station' : 'TRMNO',
+            'channel':'BHE',
+            'starttime':sTime}
+    
+    traceHeader2=traceHeader1.copy()
+    traceHeader3=traceHeader1.copy()
+    traceHeader2['channel'] = 'BHN'
+    traceHeader3['channel'] = 'BHZ'
+
+    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
+    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
+    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
+
+    st = obspy.Stream([trace1, trace2, trace3])    
+    return st
+
 ##Helper functions for remove_noise()
 #Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
@@ -5588,7 +5723,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.zorder=1
     ax.set_facecolor('#ffffff00') #Create transparent background for front axis
     #plt.sca(axy)  
-    im = ax.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
+    psdArr = np.flip(psdArr, axis=0)
+    print(extList)
+    im = axy.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
     if peak_plot:
