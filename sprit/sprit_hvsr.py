@@ -571,7 +571,6 @@ def run(datapath, source='file', verbose=False, **kwargs):
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
-    
     #Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
@@ -677,8 +676,9 @@ def run(datapath, source='file', verbose=False, **kwargs):
                 #We do not need to plot another report if already plotted
                 pass
             else:
-                hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
-                hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, **hvplot_kwargs)
+                #hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
+                #hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
+                pass
         else:
             pass
     
@@ -1374,7 +1374,7 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                 hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
         return hvsr_data
     else:
-        paz=hvsr_data['paz']
+        paz = hvsr_data['paz']
         stream = hvsr_data['stream']
 
         #Get ppsds of e component
@@ -1509,10 +1509,18 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
         
         hvsrDF['Use'] = True
+        hvsrDF['Use']=hvsrDF['Use'].astype(bool)
         for gap in hvsr_data['ppsds']['Z']['times_gaps']:
-            hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
-                                (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-
+            hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
+                            (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date))# | \
+        
+        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+        if 'xwindows_out' in hvsr_data.keys():
+            for window in hvsr_data['xwindows_out']:
+                hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
+                        (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1]))
+            hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+            
         hvsrDF.set_index('TimesProcessed', inplace=True)
         hvsr_data['hvsr_df'] = hvsrDF
         #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
@@ -1568,14 +1576,14 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         params = _read_RS_Metadata(params, source=source)
     elif params['instrument'].lower() in trominoNameList:
         params['paz'] = {'Z':{}, 'E':{}, 'N':{}}
-        #ALL THESE VALUES ARE PLACEHOLDERS, SAME AS RASPBERRY SHAKE!
+        #ALL THESE VALUES ARE PLACEHOLDERS, taken from RASPBERRY SHAKE! (Needed for PPSDs)
         params['paz']['Z'] = {'sensitivity': 360000000.0,
                               'gain': 360000000.0,
                               'poles': [(-1+0j), (-3.03+0j), (-3.03+0j), (-666.67+0j)],  
                               'zeros': [0j, 0j, 0j]}
         params['paz']['E'] =  params['paz']['Z']
         params['paz']['N'] =  params['paz']['Z']
-        
+
         channelObj_Z = obspy.core.inventory.channel.Channel(code='BHZ', location_code='00', latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=90, types=None, external_references=None, 
@@ -1673,7 +1681,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     hvsr_results['processing_parameters']['get_report'] = {}
     for key, value in orig_args.items():
         hvsr_results['processing_parameters']['get_report'][key] = value
-
 
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
@@ -2806,7 +2813,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             bool_col='Use'
             eval_col='HV_Curves'
     
-            testCol = hvsr_out['hvsr_df'].loc[hvsr_out['hvsr_df'][bool_col], eval_col].apply(np.nanstd).gt((avg_stdT + (std_stdT * outlier_curve_std)))
             low_std_val = avg_stdT - (std_stdT * outlier_curve_std)
             hi_std_val = avg_stdT + (std_stdT * outlier_curve_std)
 
@@ -3034,12 +3040,15 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
 
     #Add output
     if isinstance(output, (HVSRData, dict)):
-        output['stream'] = outStream
+        if isinstance(outStream, (obspy.Stream, obspy.Trace)):
+            output['stream'] = outStream
+        else:
+            output['stream'] = outStream['stream']
         output['input_stream'] = hvsr_data['input_stream']
         output['ProcessingStatus']['RemoveNoiseStatus'] = True
         output = _check_processing_status(output)
 
-        if 'hvsr_df' in output.keys():
+        if 'hvsr_df' in output.keys() or ('params' in output.keys() and 'hvsr_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_df' in output['input_params'].keys()):
             hvsrDF = output['hvsr_df']
             
             outStream = output['stream'].split()
@@ -3053,8 +3062,10 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 
                 if trEndTime < trStartTime and comp_end==comp_start:
                     gap = [trEndTime,trStartTime]
+
                     output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                     (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+                    output['hvsr_df']['Use'] = output['hvsr_df']['Use'].astype(bool)
                 
                 trEndTime = trace.stats.endtime
             
@@ -3065,8 +3076,10 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     else:
         warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
         return hvsr_data
-
-
+    
+    output = sprit_utils.make_it_classy(output)
+    if 'xwindows_out' not in output.keys():
+        output['xwindows_out'] = []
     return output
 
 #Remove outlier ppsds
@@ -3131,16 +3144,19 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
                     psds_to_rid.append(i)
     
         #Use dataframe
-        hvsrDF = params['hvsr_df']
+        hvsrDF = params['hvsr_df'].copy()
         psdVals = hvsrDF['psd_values_'+k]
-        params['hvsr_df'][k+'_CurveMedian'] = psdVals.apply(np.nanmedian)
-        params['hvsr_df'][k+'_CurveMean'] = psdVals.apply(np.nanmean)
+        hvsrDF[k+'_CurveMedian'] = psdVals.apply(np.nanmedian)
+        hvsrDF[k+'_CurveMean'] = psdVals.apply(np.nanmean)
 
-        totMean = np.nanmean(params['hvsr_df'][k+'_CurveMean'])
-        stds[k] = np.nanstd(params['hvsr_df'][k+'_CurveMean'])
-
-        meanArr = params['hvsr_df'][k+'_CurveMean']
-        params['hvsr_df']['Use'] = meanArr < (totMean + outlier_std * stds[k])
+        totMean = np.nanmean(hvsrDF[k+'_CurveMean'])
+        stds[k] = np.nanstd(hvsrDF[k+'_CurveMean'])
+        
+        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+        #meanArr = hvsrDF[k+'_CurveMean'].loc[hvsrDF['Use']]
+        threshVal = totMean + outlier_std * stds[k]
+        hvsrDF['Use'] = hvsrDF[k+'_CurveMean'][hvsrDF['Use']].lt(threshVal)
+        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
 
     psds_to_rid = np.unique(psds_to_rid)
 
@@ -4701,13 +4717,13 @@ def _select_windows(input):
         if 'hvsr_curve' in input.keys():
             fig, ax = plot_hvsr(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
         else:
-            params = input.copy()
-            input = input['stream']
+            hvsr_data = input#.copy()
+            input_stream = hvsr_data['stream']
     
-    if isinstance(input, obspy.core.stream.Stream):
-        fig, ax = _plot_specgram_stream(input, component=['Z'])
-    elif isinstance(input, obspy.core.trace.Trace):
-        fig, ax = _plot_specgram_stream(input)
+    if isinstance(input_stream, obspy.core.stream.Stream):
+        fig, ax = _plot_specgram_stream(input_stream, component=['Z'])
+    elif isinstance(input_stream, obspy.core.trace.Trace):
+        fig, ax = _plot_specgram_stream(input_stream)
 
     global lineArtist
     global winArtist
@@ -4731,10 +4747,10 @@ def _select_windows(input):
         fig.canvas.mpl_connect('close_event', _on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
         plt.pause(1)
 
-    params['xwindows_out'] = xWindows
-    params['fig'] = fig
-    params['ax'] = ax
-    return params
+    hvsr_data['xwindows_out'] = xWindows
+    hvsr_data['fig_noise'] = fig
+    hvsr_data['ax_noise'] = ax
+    return hvsr_data
 
 #Support function to help select_windows run properly
 def _on_fig_close(event):
@@ -5724,7 +5740,6 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.set_facecolor('#ffffff00') #Create transparent background for front axis
     #plt.sca(axy)  
     psdArr = np.flip(psdArr, axis=0)
-    print(extList)
     im = axy.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
     ax.tick_params(left=False, right=False)
     #plt.sca(ax)
