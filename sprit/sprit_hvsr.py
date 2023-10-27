@@ -552,8 +552,14 @@ def run(datapath, source='file', verbose=False, **kwargs):
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
+    if 'hvsr_band' not in kwargs.keys():
+        kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
+    if 'peak_freq_range' not in kwargs.keys():
+        kwargs['peak_freq_range'] = inspect.signature(input_params).parameters['peak_freq_range'].default
+
     #Get the input parameters
-    input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in input_params.__code__.co_varnames}
+    input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(input_params).parameters.keys())}  
+
     try:
         params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
     except:
@@ -566,14 +572,14 @@ def run(datapath, source='file', verbose=False, **kwargs):
 
     #Fetch Data
     try:
-        fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in fetch_data.__code__.co_varnames}
+        fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
         dataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     #Remove Noise
     try:
-        remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in remove_noise.__code__.co_varnames}
+        remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
     except:
         data_noiseRemoved = dataIN
@@ -597,8 +603,8 @@ def run(datapath, source='file', verbose=False, **kwargs):
     
     #Generate PPSDs
     try:
-        generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in generate_ppsds.__code__.co_varnames}
-        PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in PPSD.__init__.__code__.co_varnames}
+        generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
+        PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
         generate_ppsds_kwargs.update(PPSDkwargs)
         ppsd_data = generate_ppsds(hvsr_data=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
     except Exception as e:
@@ -624,7 +630,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
     
     #Process HVSR Curves
     try:
-        process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in process_hvsr.__code__.co_varnames}
+        process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
@@ -654,10 +660,10 @@ def run(datapath, source='file', verbose=False, **kwargs):
     #Final post-processing/reporting
 
     #Check peaks
-    check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in check_peaks.__code__.co_varnames}
+    check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
-    get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in get_report.__code__.co_varnames}
+    get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(get_report).parameters.keys())}
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
@@ -697,7 +703,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[1, 20], verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -706,6 +712,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
         hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
+        peak_selection : str or numeric, default='max'
+            How to select the "best" peak used in the analysis. For peak_selection="max" (default value), the highest peak within peak_freq_range is used.
+            For peak_selection='scored', an algorithm is used to select the peak based in part on which peak passes the most SESAME criteria.
+            If a numeric value is used (e.g., int or float), this should be a frequency value to manually select as the peak of interest.
         peak_freq_range : tuple or list, default=[1, 20];
             The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.
         verbose : bool, default=False
@@ -757,13 +767,38 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
         if hvsr_data['ProcessingStatus']['OverallStatus']:
             if not hvsr_band:
                 hvsr_band = [0.4,40]
+            
             hvsr_data['hvsr_band'] = hvsr_band
 
             anyK = list(hvsr_data['x_freqs'].keys())[0]
 
             x = hvsr_data['x_freqs'][anyK] #Consistent for all curves
             y = hvsr_data['hvsr_curve'] #Calculated based on "Use" column
-            index_list = hvsr_data['hvsr_peak_indices'] #Calculated based on hvsr_curve
+
+            scorelist = ['score', 'scored', 'best', 's']
+            maxlist = ['max', 'highest', 'm']
+            # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
+            try:
+                peak_val = float(peak_selection)
+                index_list = [np.argmin(np.abs(x - peak_val))]        
+            except:
+                # If score method is being used, get index list for __init_peaks()
+                if peak_selection in scorelist:
+                    index_list = hvsr_data['hvsr_peak_indices'] #Calculated based on hvsr_curve
+                elif peak_selection in maxlist:
+                    #Get max index as item in list for __init_peaks()
+                    startInd = np.argmin(np.abs(x - peak_freq_range[0]))
+                    endInd = np.argmin(np.abs(x - peak_freq_range[1]))
+                    if startInd > endInd:
+                        holder = startInd
+                        startInd = endInd
+                        endInd = holder
+                    subArrayMax = np.argmax(y[startInd:endInd])
+                    
+                    # If max val is in subarray, this will be the same as the max of curve
+                    # Otherwise, it will be the index of the value that is max within peak_freq_range
+                    index_list = [subArrayMax+startInd]
+            
             hvsrp = hvsr_data['hvsrp'] #Calculated based on "Use" column
             hvsrm = hvsr_data['hvsrm'] #Calculated based on "Use" column
 
@@ -789,7 +824,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
             peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
 
-            #Do for hvsrm
+            # Do for hvsrm
             # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
             if not np.isnan(np.sum(hvsrm)):
                 index_m = __find_peaks(hvsrm)
@@ -799,6 +834,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_freq_range=[1, 20], verbose
             peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
             peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
+            # Get standard deviation of time peaks
             stdf = __get_stdf(x, index_list, hvsrPeaks)
 
             peak = __check_freq_stability(peak, peakm, peakp)
@@ -1228,7 +1264,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     if plot_input_stream:
         try:
             params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
-            _get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+            #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+            plt.show()
         except:
             print('Error with default plotting method, falling back to internal obspy plotting method')
             dataIN.plot(method='full', linewidth=0.25)
@@ -6301,7 +6338,6 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                 _peakp[_j]['f0'], '%', _peak[_i]['f0'], sprit_utils.x_mark())  #changed i to j
 
     return _peak
-
 
 # Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
