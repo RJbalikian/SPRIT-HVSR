@@ -2191,7 +2191,6 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
             elif p=='spec':
                 plottypeKwargs = {}
                 for c in plotComponents:
-                    print(c)
                     plottypeKwargs[c] = True
                 kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
@@ -5690,7 +5689,6 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     if fig is None and ax is None:
         fig, ax = plt.subplots()    
 
-    print(kwargs.keys())
     if 'kwargs' in kwargs.keys():
         kwargs = kwargs['kwargs']
 
