@@ -533,8 +533,8 @@ class SPRIT_App:
             self.peakTest6ResultText.configure(text=hvsr_results['BestPeak']['Report']['Sa'][:-1])
             self.peakTest6Result.configure(text=hvsr_results['BestPeak']['Report']['Sa'][-1])
 
-            peakPass = (hvsr_results['BestPeak']['PassList']['PeakFreqClarityBelow'] +
-                    hvsr_results['BestPeak']['PassList']['PeakFreqClarityAbove']+
+            peakPass = (hvsr_results['BestPeak']['PassList']['PeakProminenceBelow'] +
+                    hvsr_results['BestPeak']['PassList']['PeakProminenceAbove']+
                     hvsr_results['BestPeak']['PassList']['PeakAmpClarity']+
                     hvsr_results['BestPeak']['PassList']['FreqStability']+
                     hvsr_results['BestPeak']['PassList']['PeakStability_FreqStD']+
