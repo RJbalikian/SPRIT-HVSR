@@ -6206,9 +6206,9 @@ def __check_curve_reliability(hvsr_data, _peak):
             _peak[_i][&#39;Report&#39;][&#39;Nc&#39;] = f&#39;{int(nc)} &gt; 200  {sprit_utils.x_mark()}&#39;
 
         if test3:
-            _peak[_i][&#39;Report&#39;][&#39;σ_A(f)&#39;] = f&#39;σ_A for all freqs {round(peakFreq*0.5, 3)}-{round(peakFreq*2, 3)} &lt; {compVal}  {sprit_utils.check_mark()}&#39;
+            _peak[_i][&#39;Report&#39;][&#39;σ_A(f)&#39;] = f&#39;H/V Amp. St.Dev. for {peakFreq*0.5:0.3f}-{peakFreq*2:0.3f}Hz &lt; {compVal}  {sprit_utils.check_mark()}&#39;
         else:
-            _peak[_i][&#39;Report&#39;][&#39;σ_A(f)&#39;] = f&#39;σ_A for all freqs {round(peakFreq*0.5, 3)}-{round(peakFreq*2, 3)} &lt; {compVal}  {sprit_utils.x_mark()}&#39;
+            _peak[_i][&#39;Report&#39;][&#39;σ_A(f)&#39;] = f&#39;H/V Amp. St.Dev. for {peakFreq*0.5:0.3f}-{peakFreq*2:0.3f}Hz &lt; {compVal}  {sprit_utils.x_mark()}&#39;
 
         _peak[_i][&#39;PassList&#39;][&#39;WindowLengthFreq.&#39;] = test1
         _peak[_i][&#39;PassList&#39;][&#39;SignificantCycles&#39;] = test2
@@ -6262,7 +6262,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
             if (float(_peak[_i][&#39;f0&#39;]) / 4.0 &lt;= _x[_j] &lt; float(_peak[_i][&#39;f0&#39;])) and float(_peak[_i][&#39;A0&#39;]) / _y[_j] &gt; 2.0:
                 _peak[_i][&#39;Score&#39;] += 1
                 _peak[_i][&#39;f-&#39;] = &#39;%10.3f %1s&#39; % (_x[_j], sprit_utils.check_mark())
-                _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = f&#34;Amp. of H/V Curve @{_x[_j]:0.3f}Hz ({_y[_j]:0.3f}) &lt; {_peak[_i][&#39;A0&#39;]/2:0.3f} (peak amp. {_peak[_i][&#39;A0&#39;]:0.3f}) {sprit_utils.check_mark()}&#34;
+                _peak[_i][&#39;Report&#39;][&#39;A(f-)&#39;] = f&#34;Amp. of H/V Curve @{_x[_j]:0.3f}Hz ({_y[_j]:0.3f}) &lt; {_peak[_i][&#39;A0&#39;]/2:0.3f} {sprit_utils.check_mark()}&#34;
                 _peak[_i][&#39;PassList&#39;][&#39;PeakProminenceBelow&#39;] = True
                 break
             else:
