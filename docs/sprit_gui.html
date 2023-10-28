@@ -32,6 +32,7 @@
 import datetime
 import functools
 import linecache
+import json
 import os
 import pathlib
 import pkg_resources
@@ -63,6 +64,14 @@ except: #For local testing
     pass
 
 global spritApp
+global current_theme_name
+
+resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/&#39;))
+settings_dir = resource_dir.joinpath(&#39;settings&#39;)
+gui_theme_file = settings_dir.joinpath(&#39;gui_theme.json&#39;)
+with open(gui_theme_file, &#39;r&#39;) as f:
+    curr_gui_dict = json.load(f)
+current_theme_name = curr_gui_dict[&#39;theme_name&#39;]
 
 #Decorator that catches errors and warnings (to be modified later for gui)
 def catch_errors(func):
@@ -180,10 +189,11 @@ class SPRIT_App:
         self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, &#34;resources/themes/forest-dark.tcl&#34;))
         self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, &#34;resources/themes/forest-light.tcl&#34;))
         
+
+        
         # Create the style object
         self.style = ttk.Style(master)
-        self.master.tk.call(&#39;source&#39;, self.lightthemepath)
-        #self.style.theme_use(&#39;default&#39;)
+        #
         #self.style.theme_use(&#39;forest-light&#39;)
 
         self.create_menubar()
@@ -193,6 +203,13 @@ class SPRIT_App:
         self.master.columnconfigure(0, weight=1)        
 
 
+        if &#39;forest&#39; in current_theme_name:
+            if &#39;light&#39; in current_theme_name:
+                self.master.tk.call(&#39;source&#39;, self.lightthemepath)
+            else:
+                self.master.tk.call(&#39;source&#39;, self.darkthemepath)
+        else:
+            self.style.theme_use(current_theme_name)
         # Create the dark theme
         #self.style.theme_create(&#34;dark&#34;, parent=&#34;alt&#34;, settings={
         #    &#34;TLabel&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;black&#34;, &#34;foreground&#34;: &#34;white&#34;}},
@@ -240,7 +257,33 @@ class SPRIT_App:
         def on_theme_select():
             # Set the theme based on the selected value
             self.style = ttk.Style()
-            
+
+            #Update the theme file so the new theme opens on reboot
+            prev_theme = curr_gui_dict[&#39;theme_name&#39;]
+            curr_gui_dict[&#39;theme_name&#39;] = self.theme_var.get()
+            with open(gui_theme_file, &#39;w&#39;) as f:
+                json.dump(curr_gui_dict, f)
+
+            def apply_theme():
+                if &#39;forest&#39; in self.theme_var.get():
+                    if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
+                        self.master.tk.call(&#39;source&#39;, self.darkthemepath)
+                    elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
+                        self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
+                self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
+            if curr_gui_dict[&#39;theme_name&#39;]==&#39;forest-light&#39; or curr_gui_dict[&#39;theme_name&#39;] == &#39;forest-dark&#39;:
+                do_reboot = messagebox.askyesno(&#39;App Restart Required&#39;, 
+                                             f&#34;It is recommended to restart the SpRIT GUI at this time to apply this theme. If not, you may continue but theme errors may occur. Click No to retain current theme ({prev_theme}) \nReboot now?&#34;,
+                                             )
+                print(do_reboot)
+                if do_reboot:
+                    reboot_app()
+                else:
+                    self.theme_var.set(prev_theme)
+            else:
+                apply_theme()
+
             &#34;&#34;&#34;An attempt to get the backgrounds right
             def apply_to_all_children(widget, func):
                 Recursively apply a function to all child widgets of a given widget
@@ -258,12 +301,7 @@ class SPRIT_App:
             
             apply_to_all_children(self.master, change_background_color)
             &#34;&#34;&#34;
-            if &#39;forest&#39; in self.theme_var.get():
-                if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
-                    self.master.tk.call(&#39;source&#39;, self.darkthemepath)
-                elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
-                    self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
-            self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
             #self.master.tk.call(&#34;ttk::setTheme&#34;, self.theme_var.get())
 
             #self.style.theme_use(self.theme_var.get())
@@ -279,7 +317,7 @@ class SPRIT_App:
             filepath = filedialog.asksaveasfilename()
 
         self.theme_menu = tk.Menu(self.menubar, tearoff=0)
-        self.theme_var = tk.StringVar(value=&#34;Default&#34;)
+        self.theme_var = tk.StringVar(value=current_theme_name)
         self.theme_menu.add_radiobutton(label=&#34;Default&#34;, variable=self.theme_var, value=&#34;default&#34;, command=on_theme_select)
         self.theme_menu.add_radiobutton(label=&#34;Clam&#34;, variable=self.theme_var, value=&#34;clam&#34;, command=on_theme_select)
         self.theme_menu.add_radiobutton(label=&#34;Alt&#34;, variable=self.theme_var, value=&#34;alt&#34;, command=on_theme_select)
@@ -524,8 +562,8 @@ class SPRIT_App:
             self.peakTest6ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][:-1])
             self.peakTest6Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1])
 
-            peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] +
-                    hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;]+
+            peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceBelow&#39;] +
+                    hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceAbove&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
@@ -3065,6 +3103,13 @@ def on_closing():
     root.destroy()
     exit()
 
+def reboot_app():
+    &#34;&#34;&#34;Restarts the current program.
+    Note: this function does not return. Any cleanup action (like
+    saving data) must be done before calling this function.&#34;&#34;&#34;
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
+
 if __name__ == &#34;__main__&#34;:
     can_gui = sprit_utils.check_gui_requirements()
 
@@ -3226,6 +3271,25 @@ if __name__ == &#34;__main__&#34;:
     exit()</code></pre>
 </details>
 </dd>
+<dt id="sprit.sprit_gui.reboot_app"><code class="name flex">
+<span>def <span class="ident">reboot_app</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restarts the current program.
+Note: this function does not return. Any cleanup action (like
+saving data) must be done before calling this function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reboot_app():
+    &#34;&#34;&#34;Restarts the current program.
+    Note: this function does not return. Any cleanup action (like
+    saving data) must be done before calling this function.&#34;&#34;&#34;
+    python = sys.executable
+    os.execl(python, python, * sys.argv)</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -3251,10 +3315,11 @@ if __name__ == &#34;__main__&#34;:
         self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, &#34;resources/themes/forest-dark.tcl&#34;))
         self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, &#34;resources/themes/forest-light.tcl&#34;))
         
+
+        
         # Create the style object
         self.style = ttk.Style(master)
-        self.master.tk.call(&#39;source&#39;, self.lightthemepath)
-        #self.style.theme_use(&#39;default&#39;)
+        #
         #self.style.theme_use(&#39;forest-light&#39;)
 
         self.create_menubar()
@@ -3264,6 +3329,13 @@ if __name__ == &#34;__main__&#34;:
         self.master.columnconfigure(0, weight=1)        
 
 
+        if &#39;forest&#39; in current_theme_name:
+            if &#39;light&#39; in current_theme_name:
+                self.master.tk.call(&#39;source&#39;, self.lightthemepath)
+            else:
+                self.master.tk.call(&#39;source&#39;, self.darkthemepath)
+        else:
+            self.style.theme_use(current_theme_name)
         # Create the dark theme
         #self.style.theme_create(&#34;dark&#34;, parent=&#34;alt&#34;, settings={
         #    &#34;TLabel&#34;: {&#34;configure&#34;: {&#34;background&#34;: &#34;black&#34;, &#34;foreground&#34;: &#34;white&#34;}},
@@ -3311,7 +3383,33 @@ if __name__ == &#34;__main__&#34;:
         def on_theme_select():
             # Set the theme based on the selected value
             self.style = ttk.Style()
-            
+
+            #Update the theme file so the new theme opens on reboot
+            prev_theme = curr_gui_dict[&#39;theme_name&#39;]
+            curr_gui_dict[&#39;theme_name&#39;] = self.theme_var.get()
+            with open(gui_theme_file, &#39;w&#39;) as f:
+                json.dump(curr_gui_dict, f)
+
+            def apply_theme():
+                if &#39;forest&#39; in self.theme_var.get():
+                    if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
+                        self.master.tk.call(&#39;source&#39;, self.darkthemepath)
+                    elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
+                        self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
+                self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
+            if curr_gui_dict[&#39;theme_name&#39;]==&#39;forest-light&#39; or curr_gui_dict[&#39;theme_name&#39;] == &#39;forest-dark&#39;:
+                do_reboot = messagebox.askyesno(&#39;App Restart Required&#39;, 
+                                             f&#34;It is recommended to restart the SpRIT GUI at this time to apply this theme. If not, you may continue but theme errors may occur. Click No to retain current theme ({prev_theme}) \nReboot now?&#34;,
+                                             )
+                print(do_reboot)
+                if do_reboot:
+                    reboot_app()
+                else:
+                    self.theme_var.set(prev_theme)
+            else:
+                apply_theme()
+
             &#34;&#34;&#34;An attempt to get the backgrounds right
             def apply_to_all_children(widget, func):
                 Recursively apply a function to all child widgets of a given widget
@@ -3329,12 +3427,7 @@ if __name__ == &#34;__main__&#34;:
             
             apply_to_all_children(self.master, change_background_color)
             &#34;&#34;&#34;
-            if &#39;forest&#39; in self.theme_var.get():
-                if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
-                    self.master.tk.call(&#39;source&#39;, self.darkthemepath)
-                elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
-                    self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
-            self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
             #self.master.tk.call(&#34;ttk::setTheme&#34;, self.theme_var.get())
 
             #self.style.theme_use(self.theme_var.get())
@@ -3350,7 +3443,7 @@ if __name__ == &#34;__main__&#34;:
             filepath = filedialog.asksaveasfilename()
 
         self.theme_menu = tk.Menu(self.menubar, tearoff=0)
-        self.theme_var = tk.StringVar(value=&#34;Default&#34;)
+        self.theme_var = tk.StringVar(value=current_theme_name)
         self.theme_menu.add_radiobutton(label=&#34;Default&#34;, variable=self.theme_var, value=&#34;default&#34;, command=on_theme_select)
         self.theme_menu.add_radiobutton(label=&#34;Clam&#34;, variable=self.theme_var, value=&#34;clam&#34;, command=on_theme_select)
         self.theme_menu.add_radiobutton(label=&#34;Alt&#34;, variable=self.theme_var, value=&#34;alt&#34;, command=on_theme_select)
@@ -3595,8 +3688,8 @@ if __name__ == &#34;__main__&#34;:
             self.peakTest6ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][:-1])
             self.peakTest6Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1])
 
-            peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] +
-                    hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;]+
+            peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceBelow&#39;] +
+                    hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceAbove&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
@@ -6151,7 +6244,33 @@ if __name__ == &#34;__main__&#34;:
     def on_theme_select():
         # Set the theme based on the selected value
         self.style = ttk.Style()
-        
+
+        #Update the theme file so the new theme opens on reboot
+        prev_theme = curr_gui_dict[&#39;theme_name&#39;]
+        curr_gui_dict[&#39;theme_name&#39;] = self.theme_var.get()
+        with open(gui_theme_file, &#39;w&#39;) as f:
+            json.dump(curr_gui_dict, f)
+
+        def apply_theme():
+            if &#39;forest&#39; in self.theme_var.get():
+                if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
+                    self.master.tk.call(&#39;source&#39;, self.darkthemepath)
+                elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
+                    self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
+            self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
+        if curr_gui_dict[&#39;theme_name&#39;]==&#39;forest-light&#39; or curr_gui_dict[&#39;theme_name&#39;] == &#39;forest-dark&#39;:
+            do_reboot = messagebox.askyesno(&#39;App Restart Required&#39;, 
+                                         f&#34;It is recommended to restart the SpRIT GUI at this time to apply this theme. If not, you may continue but theme errors may occur. Click No to retain current theme ({prev_theme}) \nReboot now?&#34;,
+                                         )
+            print(do_reboot)
+            if do_reboot:
+                reboot_app()
+            else:
+                self.theme_var.set(prev_theme)
+        else:
+            apply_theme()
+
         &#34;&#34;&#34;An attempt to get the backgrounds right
         def apply_to_all_children(widget, func):
             Recursively apply a function to all child widgets of a given widget
@@ -6169,12 +6288,7 @@ if __name__ == &#34;__main__&#34;:
         
         apply_to_all_children(self.master, change_background_color)
         &#34;&#34;&#34;
-        if &#39;forest&#39; in self.theme_var.get():
-            if self.theme_var.get()==&#39;forest-dark&#39; and &#39;forest-dark&#39; not in self.style.theme_names():
-                self.master.tk.call(&#39;source&#39;, self.darkthemepath)
-            elif self.theme_var.get()==&#39;forest-light&#39; and &#39;forest-light&#39; not in self.style.theme_names():
-                self.master.tk.call(&#39;source&#39;, self.lightthemepath)            
-        self.master.tk.call(&#34;ttk::style&#34;, &#34;theme&#34;, &#34;use&#34;, self.theme_var.get())
+
         #self.master.tk.call(&#34;ttk::setTheme&#34;, self.theme_var.get())
 
         #self.style.theme_use(self.theme_var.get())
@@ -6190,7 +6304,7 @@ if __name__ == &#34;__main__&#34;:
         filepath = filedialog.asksaveasfilename()
 
     self.theme_menu = tk.Menu(self.menubar, tearoff=0)
-    self.theme_var = tk.StringVar(value=&#34;Default&#34;)
+    self.theme_var = tk.StringVar(value=current_theme_name)
     self.theme_menu.add_radiobutton(label=&#34;Default&#34;, variable=self.theme_var, value=&#34;default&#34;, command=on_theme_select)
     self.theme_menu.add_radiobutton(label=&#34;Clam&#34;, variable=self.theme_var, value=&#34;clam&#34;, command=on_theme_select)
     self.theme_menu.add_radiobutton(label=&#34;Alt&#34;, variable=self.theme_var, value=&#34;alt&#34;, command=on_theme_select)
@@ -6445,8 +6559,8 @@ if __name__ == &#34;__main__&#34;:
         self.peakTest6ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][:-1])
         self.peakTest6Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Sa&#39;][-1])
 
-        peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityBelow&#39;] +
-                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakFreqClarityAbove&#39;]+
+        peakPass = (hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceBelow&#39;] +
+                hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakProminenceAbove&#39;]+
                 hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakAmpClarity&#39;]+
                 hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;FreqStability&#39;]+
                 hvsr_results[&#39;BestPeak&#39;][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
@@ -9044,6 +9158,7 @@ if __name__ == &#34;__main__&#34;:
 <ul class="">
 <li><code><a title="sprit.sprit_gui.catch_errors" href="#sprit.sprit_gui.catch_errors">catch_errors</a></code></li>
 <li><code><a title="sprit.sprit_gui.on_closing" href="#sprit.sprit_gui.on_closing">on_closing</a></code></li>
+<li><code><a title="sprit.sprit_gui.reboot_app" href="#sprit.sprit_gui.reboot_app">reboot_app</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

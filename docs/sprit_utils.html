@@ -47,7 +47,7 @@ greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03
 channel_order = {&#39;Z&#39;: 0, &#39;1&#39;: 1, &#39;N&#39;: 1, &#39;2&#39;: 2, &#39;E&#39;: 2}
 
 def check_gui_requirements():
-    print(&#34;Checking requirements for gui&#34;)
+    #First, check requirements
     # Define a command that tries to open a window
     command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
 
@@ -60,7 +60,7 @@ def check_gui_requirements():
         oktoproceed=True
     else:
         oktoproceed=False
-        print(&#34;GUI window could not be created.&#34;)
+        print(&#34;GUI window cannot be created.&#34;)
 
     return oktoproceed
 
@@ -339,6 +339,16 @@ def has_required_channels(stream):
 #Make input data (dict) into sprit_hvsr class
 def make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
+        for k, v in input_data.items():
+            if k==&#39;input_params&#39;:
+                for kin in input_data[&#39;input_params&#39;].keys():
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data[&#39;input_params&#39;][kin]
+            if k==&#39;params&#39;:
+                for kin in input_data[&#39;params&#39;].keys():
+                    print(kin)
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data[&#39;params&#39;][kin]                
         output_class = input_data
     else:
         output_class = sprit_hvsr.HVSRData(input_data)
@@ -464,7 +474,7 @@ def x_mark(incolor=False, inTerminal=False):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def check_gui_requirements():
-    print(&#34;Checking requirements for gui&#34;)
+    #First, check requirements
     # Define a command that tries to open a window
     command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
 
@@ -477,7 +487,7 @@ def x_mark(incolor=False, inTerminal=False):
         oktoproceed=True
     else:
         oktoproceed=False
-        print(&#34;GUI window could not be created.&#34;)
+        print(&#34;GUI window cannot be created.&#34;)
 
     return oktoproceed
 
@@ -855,6 +865,16 @@ If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT
 </summary>
 <pre><code class="python">def make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
+        for k, v in input_data.items():
+            if k==&#39;input_params&#39;:
+                for kin in input_data[&#39;input_params&#39;].keys():
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data[&#39;input_params&#39;][kin]
+            if k==&#39;params&#39;:
+                for kin in input_data[&#39;params&#39;].keys():
+                    print(kin)
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data[&#39;params&#39;][kin]                
         output_class = input_data
     else:
         output_class = sprit_hvsr.HVSRData(input_data)

@@ -2040,32 +2040,32 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     return hvsr_results
 
 #Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, xtype='freq', fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
     ----------
     hvsr_data : dict                  
         Dictionary containing output from process_hvsr function
-    plot_type : str='HVSR' or list    
+    plot_type : str or list, default = 'HVSR ann p C+ ann p SPEC'
         The plot_type of plot(s) to plot. If list, will plot all plots listed
-        'HVSR' : Standard HVSR plot, including standard deviation
-        - '[HVSR] p' : HVSR plot with BestPeaks shown
-        - '[HVSR] p' : HVSR plot with best picked peak shown                
-        - '[HVSR] p* all' : HVSR plot with all picked peaks shown                
-        - '[HVSR] p* t' : HVSR plot with peaks from all time steps in background                
-        - '[HVSR p* ann] : Annotates plot with peaks
-        - '[HVSR] -s' : HVSR plots don't show standard deviation
-        - '[HVSR] t' : HVSR plot with individual hv curves for each time step shown
-        - '[HVSR] c' : HVSR plot with each components' spectra. Recommended to do this last (or just before 'specgram'), since doing c+ can make the component chart its own chart
-        'Specgram' : Combined spectrogram of all components
-        - '[spec]' : basic spectrogram plot of H/V curve
+        - 'HVSR' - Standard HVSR plot, including standard deviation. Options are included below:
+            - 'p' shows a vertical dotted line at frequency of the "best" peak
+            - 'ann' annotates the frequency value of of the "best" peak
+            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
+            - 't' shows the H/V curve for all time windows
+                -'tp' shows all the peaks from the H/V curves of all the time windows
+        - 'COMP' - plot of the PPSD curves for each individual component ("C" also works)
+            - '+' (as a suffix in 'C+' or 'COMP+') plots C on a plot separate from HVSR (C+ is default, but without + will plot on the same plot as HVSR)
+            - 'p' shows a vertical dotted line at frequency of the "best" peak
+            - 'ann' annotates the frequency value of of the "best" peak
+            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
+            - 't' shows the H/V curve for all time windows
+        - 'SPEC' - spectrogram style plot of the H/V curve over time
+            - 'p' shows a horizontal dotted line at the frequency of the "best" peak
+            - 'ann' annotates the frequency value of the "best" peak
     use_subplots : bool, default = True
         Whether to output the plots as subplots (True) or as separate plots (False)
-    xtype : str, default = 'freq'    
-        String for what to use, between frequency or period
-            For frequency, the following are accepted (case does not matter): 'f', 'Hz', 'freq', 'frequency'
-            For period, the following are accepted (case does not matter): 'p', 'T', 's', 'sec', 'second', 'per', 'period'
     fig : matplotlib.Figure, default = None
         If not None, matplotlib figure on which plot is plotted
     ax : matplotlib.Axis, default = None
@@ -2189,6 +2189,11 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 plotComponents[0] = plotComponents[0][:-1]
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='spec':
+                plottypeKwargs = {}
+                for c in plotComponents:
+                    print(c)
+                    plottypeKwargs[c] = True
+                kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
@@ -5681,18 +5686,28 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
 def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
+    # Get all input parameters
     if fig is None and ax is None:
         fig, ax = plt.subplots()    
 
+    print(kwargs.keys())
     if 'kwargs' in kwargs.keys():
         kwargs = kwargs['kwargs']
 
-    if 'peak_plot' in kwargs.keys():
+    if 'spec' in kwargs.keys():
+        del kwargs['spec']
+
+    if 'p' in kwargs.keys():
         peak_plot=True
-        del kwargs['peak_plot']
+        del kwargs['p']
     else:
         peak_plot=False
-        
+
+    if 'ann' in kwargs.keys():
+        annotate=True
+        del kwargs['ann']
+    else:
+        annotate=False
 
     if 'grid' in kwargs.keys():
         ax.grid(which=kwargs['grid'], alpha=0.25)
@@ -5725,33 +5740,22 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     else:
         kwargs['cmap'] = 'turbo'
 
+    # Setup
     ppsds = hvsr_data['ppsds']#[k]['current_times_used']
     import matplotlib.dates as mdates
     anyKey = list(ppsds.keys())[0]
-
-    psdHList = []
-    psdZList = []
-    for k in hvsr_data['psd_raw']:
-        if 'z' in k.lower():
-            psdZList.append(hvsr_data['psd_raw'][k])    
-        else:
-            psdHList.append(hvsr_data['psd_raw'][k])
     
-    #if detrend:
-    #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
+    # Get data
     psdArr = np.stack(hvsr_data['hvsr_df']['HV_Curves'].apply(np.flip))
     useArr = np.array(hvsr_data['hvsr_df']['Use'])
     useArr = np.tile(useArr, (psdArr.shape[1], 1)).astype(int)
-    useArr = np.clip(useArr, a_min=0.3, a_max=1)
-    #psdArr = hvsr_data['ind_hvsr_curves'].T
-    #print(psdArr.shape)
+    useArr = np.clip(useArr, a_min=0.15, a_max=1)
 
+    # Get times
     xmin = hvsr_data['hvsr_df']['TimesProcessed_MPL'].min()
     xmax = hvsr_data['hvsr_df']['TimesProcessed_MPL'].max()
 
-    #xmin = min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
-    #xmax = max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
-  
+    #Format times
     tTicks = mdates.MinuteLocator(byminute=range(0,60,5))
     ax.xaxis.set_major_locator(tTicks)
     tTicks_minor = mdates.SecondLocator(bysecond=[0])
@@ -5761,14 +5765,15 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.xaxis.set_major_formatter(tLabels)
     ax.tick_params(axis='x', labelsize=8)
 
+    #Get day label for bottom of chart
     if hvsr_data['hvsr_df'].index[0].date() != hvsr_data['hvsr_df'].index[-1].date():
         day = str(hvsr_data['hvsr_df'].index[0].date())+' - '+str(hvsr_data['hvsr_df'].index[-1].date())
     else:
         day = str(hvsr_data['hvsr_df'].index[0].date())
 
+    #Get extents
     ymin = hvsr_data['input_params']['hvsr_band'][0]
     ymax = hvsr_data['input_params']['hvsr_band'][1]
-
 
     freqticks = np.flip(hvsr_data['x_freqs'][anyKey])
     yminind = np.argmin(np.abs(ymin-freqticks))
@@ -5778,40 +5783,29 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     extList = [xmin, xmax, ymin, ymax]
 
-    #Set up axes, since data is already in semilog
-    #axy = ax.twinx()
-    #axy.set_yticks([])
-    #axy.zorder=1
-    #ax.zorder=0
-    ax.set_facecolor([0,0,0]) #Create transparent background for front axis
-    #ax.set_facecolor('#ffffff00') #Create transparent background for front axis
-    #plt.sca(axy)  
-    #psdArr = np.flip(psdArr, axis=0)
+    #Set up axes
+    ax.set_facecolor([0,0,0]) #Create black background for transparency to look darker
 
+    # Interpolate into linear
     new_indices = np.linspace(freqticks[0], freqticks[-1], len(freqticks))
-    # use nupy.interp to interpolate your original array onto the new indices
     linList = []
     for row in psdArr:
         row = row.astype(np.float16)
         linList.append(np.interp(new_indices, freqticks, row))
     linear_arr = np.stack(linList)
 
-    #im = ax.imshow(psdArr.T, origin='lower', extent=extList, aspect='auto', interpolation=None, alpha=useArr, **kwargs)
-    im = ax.imshow(linear_arr.T, origin='lower', extent=extList, aspect='auto',alpha=useArr, **kwargs)
-    #x=hvsr_data['hvsr_df']['TimesProcessed_MPL']
-    #y=freqticks
-    #z=psdArr.T
-    #im = ax.pcolormesh(x, y, z, alpha=useArr, **kwargs)
-    ax.tick_params(left=True, right=True)
-    #plt.sca(ax)
-    peak_plot=True
+    # Create chart 
+    im = ax.imshow(linear_arr.T, origin='lower', extent=extList, aspect='auto', alpha=useArr, **kwargs)
+    ax.tick_params(left=True, right=True, top=True)
+
     if peak_plot:
         ax.axhline(hvsr_data['BestPeak']['f0'], c='k',  linestyle='dotted', zorder=1000)
 
-    #FreqTicks =np.arange(1,np.round(max(hvsr_data['x_freqs'][anyKey]),0), 10)
-    #specTitle = ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
-    #bgClr = (fig.get_facecolor()[0], fig.get_facecolor()[1], fig.get_facecolor()[2], 0.1)
-    #specTitle.set_color(bgClr)
+    if annotate:
+        xLocation = float(xmin) + (float(xmax)-float(xmin))*0.98
+        ann = ax.text(x=xLocation, y=float(hvsr_data['BestPeak']['f0'])+0.3, fontsize='small', s=f"{hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va='bottom', 
+                      bbox={'alpha':0.8, 'edgecolor':'w', 'fc':'w', 'pad':0.3})
+
     ax.set_xlabel('UTC Time \n'+day)
     if colorbar:
         cbar = plt.colorbar(mappable=im, orientation='horizontal')
@@ -5819,16 +5813,12 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     ax.set_ylabel(ylabel)
     ax.set_yscale('log')
-    #ax.semilogy()
 
-    #ax.set_ylim(hvsr_data['input_params']['hvsr_band'])
-
-    #fig.tight_layout()
+    #plt.sca(ax)
     #plt.rcParams['figure.dpi'] = 500
     #plt.rcParams['figure.figsize'] = (12,4)
     fig.canvas.draw()
-    #fig.tight_layout()
-    #plt.show()
+
     return fig, ax
 
 #Plot spectrogram from stream
