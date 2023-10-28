@@ -1367,6 +1367,8 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         ppsd_kwargs_sprit_defaults['skip_on_gaps'] = True
     if 'period_step_octaves' not in ppsd_kwargs:
         ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
+    if 'period_limits' not in ppsd_kwargs:
+        ppsd_kwargs_sprit_defaults['period_limits'] =  [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
 
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
@@ -1380,7 +1382,6 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
     
     ppsd_kwargs = get_default_args(PPSD)
     ppsd_kwargs.update(ppsd_kwargs_sprit_defaults)#Update with sprit defaults, or user input
-
     orig_args['ppsd_kwargs'] = [ppsd_kwargs]
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
@@ -2183,12 +2184,12 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 fig, axis = plt.subplots()
                     
             if p == 'hvsr':
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax)
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='comp':
                 plotComponents[0] = plotComponents[0][:-1]
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax)
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='spec':
-                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False)
+                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
@@ -2714,10 +2715,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
                 xValMin = min(ppsds[k]['period_bin_centers'])
                 xValMax = max(ppsds[k]['period_bin_centers'])
-
                 #Resample period bin values
                 x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
-
                 if smooth or type(smooth) is int:
                     if smooth:
                         smooth = 51 #Default smoothing window
@@ -2745,7 +2744,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
             x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
-
             stDev[k] = np.std(psdRaw[k], axis=0)
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
@@ -5528,7 +5526,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']')
     ax.set_title(hvsr_data['input_params']['site'])
 
-    
     #print("label='comp'" in str(ax.__dict__['_axes']))
     for k in plot_type:   
         if k=='p' and 'all' not in plot_type:
@@ -5581,7 +5578,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             plotSuff = plotSuff+'IndComponents_'
             
             if 'c' not in plot_type[0]:#This is part of the hvsr axis
-                fig.tight_layout()
+                #fig.tight_layout()
                 axis2 = ax.twinx()
                 compAxis = axis2
                 #axis2 = plt.gca()
@@ -5651,7 +5648,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
         axisbox.append(float(i))
 
     if kwargs['show_legend']:
-        ax.legend(loc=legendLoc)
+        ax.legend(loc=legendLoc,bbox_to_anchor=(1.05, 1))
 
     __plot_current_fig(save_dir=save_dir, 
                         filename=filename, 
@@ -5732,8 +5729,8 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     import matplotlib.dates as mdates
     anyKey = list(ppsds.keys())[0]
 
-    psdHList =[]
-    psdZList =[]
+    psdHList = []
+    psdZList = []
     for k in hvsr_data['psd_raw']:
         if 'z' in k.lower():
             psdZList.append(hvsr_data['psd_raw'][k])    
@@ -5742,10 +5739,18 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     
     #if detrend:
     #    psdArr = np.subtract(psdArr, np.median(psdArr, axis=0))
-    psdArr = hvsr_data['ind_hvsr_curves'].T
+    psdArr = np.stack(hvsr_data['hvsr_df']['HV_Curves'].apply(np.flip))
+    useArr = np.array(hvsr_data['hvsr_df']['Use'])
+    useArr = np.tile(useArr, (psdArr.shape[1], 1)).astype(int)
+    useArr = np.clip(useArr, a_min=0.3, a_max=1)
+    #psdArr = hvsr_data['ind_hvsr_curves'].T
+    #print(psdArr.shape)
 
-    xmin = min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
-    xmax = max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
+    xmin = hvsr_data['hvsr_df']['TimesProcessed_MPL'].min()
+    xmax = hvsr_data['hvsr_df']['TimesProcessed_MPL'].max()
+
+    #xmin = min(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
+    #xmax = max(hvsr_data['ppsds'][anyKey]['current_times_used'][:-1]).matplotlib_date
   
     tTicks = mdates.MinuteLocator(byminute=range(0,60,5))
     ax.xaxis.set_major_locator(tTicks)
@@ -5756,52 +5761,67 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.xaxis.set_major_formatter(tLabels)
     ax.tick_params(axis='x', labelsize=8)
 
-    if hvsr_data['ppsds'][anyKey]['current_times_used'][0].date != hvsr_data['ppsds'][anyKey]['current_times_used'][-1].date:
-        day = str(hvsr_data['ppsds'][anyKey]['current_times_used'][0].date)+' - '+str(hvsr_data['ppsds'][anyKey]['current_times_used'][1].date)
+    if hvsr_data['hvsr_df'].index[0].date() != hvsr_data['hvsr_df'].index[-1].date():
+        day = str(hvsr_data['hvsr_df'].index[0].date())+' - '+str(hvsr_data['hvsr_df'].index[-1].date())
     else:
-        day = str(hvsr_data['ppsds'][anyKey]['current_times_used'][0].date)
+        day = str(hvsr_data['hvsr_df'].index[0].date())
 
     ymin = hvsr_data['input_params']['hvsr_band'][0]
     ymax = hvsr_data['input_params']['hvsr_band'][1]
 
-    extList = [xmin, xmax, ymin, ymax]
-  
-    #ax = plt.gca()
-    #fig = plt.gcf()
 
     freqticks = np.flip(hvsr_data['x_freqs'][anyKey])
     yminind = np.argmin(np.abs(ymin-freqticks))
     ymaxind = np.argmin(np.abs(ymax-freqticks))
     freqticks = freqticks[yminind:ymaxind]
+    freqticks = np.logspace(np.log10(freqticks[0]), np.log10(freqticks[-1]), num=999)
+
+    extList = [xmin, xmax, ymin, ymax]
 
     #Set up axes, since data is already in semilog
-    axy = ax.twinx()
-    axy.set_yticks([])
-    axy.zorder=0
-    ax.zorder=1
-    ax.set_facecolor('#ffffff00') #Create transparent background for front axis
+    #axy = ax.twinx()
+    #axy.set_yticks([])
+    #axy.zorder=1
+    #ax.zorder=0
+    ax.set_facecolor([0,0,0]) #Create transparent background for front axis
+    #ax.set_facecolor('#ffffff00') #Create transparent background for front axis
     #plt.sca(axy)  
-    psdArr = np.flip(psdArr, axis=0)
-    im = axy.imshow(psdArr, origin='lower', extent=extList, aspect='auto', interpolation='nearest', **kwargs)
-    ax.tick_params(left=False, right=False)
+    #psdArr = np.flip(psdArr, axis=0)
+
+    new_indices = np.linspace(freqticks[0], freqticks[-1], len(freqticks))
+    # use nupy.interp to interpolate your original array onto the new indices
+    linList = []
+    for row in psdArr:
+        row = row.astype(np.float16)
+        linList.append(np.interp(new_indices, freqticks, row))
+    linear_arr = np.stack(linList)
+
+    #im = ax.imshow(psdArr.T, origin='lower', extent=extList, aspect='auto', interpolation=None, alpha=useArr, **kwargs)
+    im = ax.imshow(linear_arr.T, origin='lower', extent=extList, aspect='auto',alpha=useArr, **kwargs)
+    #x=hvsr_data['hvsr_df']['TimesProcessed_MPL']
+    #y=freqticks
+    #z=psdArr.T
+    #im = ax.pcolormesh(x, y, z, alpha=useArr, **kwargs)
+    ax.tick_params(left=True, right=True)
     #plt.sca(ax)
+    peak_plot=True
     if peak_plot:
-        ax.hlines(hvsr_data['BestPeak']['f0'], xmin, xmax, colors='k', linestyles='dashed', alpha=0.5)
+        ax.axhline(hvsr_data['BestPeak']['f0'], c='k',  linestyle='dotted', zorder=1000)
 
     #FreqTicks =np.arange(1,np.round(max(hvsr_data['x_freqs'][anyKey]),0), 10)
-    specTitle = ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
-    bgClr = (fig.get_facecolor()[0], fig.get_facecolor()[1], fig.get_facecolor()[2], 0.1)
-    specTitle.set_color(bgClr)
+    #specTitle = ax.set_title(hvsr_data['input_params']['site']+': Spectrogram')
+    #bgClr = (fig.get_facecolor()[0], fig.get_facecolor()[1], fig.get_facecolor()[2], 0.1)
+    #specTitle.set_color(bgClr)
     ax.set_xlabel('UTC Time \n'+day)
-    
     if colorbar:
-        cbar = plt.colorbar(mappable=im)
+        cbar = plt.colorbar(mappable=im, orientation='horizontal')
         cbar.set_label('H/V Ratio')
 
     ax.set_ylabel(ylabel)
-    ax.set_yticks(freqticks)
-    ax.semilogy()
-    ax.set_ylim(hvsr_data['input_params']['hvsr_band'])
+    ax.set_yscale('log')
+    #ax.semilogy()
+
+    #ax.set_ylim(hvsr_data['input_params']['hvsr_band'])
 
     #fig.tight_layout()
     #plt.rcParams['figure.dpi'] = 500
