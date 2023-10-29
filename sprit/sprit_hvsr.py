@@ -2146,171 +2146,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
     return hvsr_results
 
-#Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
-    """Function to plot HVSR data
-
-    Parameters
-    ----------
-    hvsr_data : dict                  
-        Dictionary containing output from process_hvsr function
-    plot_type : str or list, default = 'HVSR ann p C+ ann p SPEC'
-        The plot_type of plot(s) to plot. If list, will plot all plots listed
-        - 'HVSR' - Standard HVSR plot, including standard deviation. Options are included below:
-            - 'p' shows a vertical dotted line at frequency of the "best" peak
-            - 'ann' annotates the frequency value of of the "best" peak
-            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
-            - 't' shows the H/V curve for all time windows
-                -'tp' shows all the peaks from the H/V curves of all the time windows
-        - 'COMP' - plot of the PPSD curves for each individual component ("C" also works)
-            - '+' (as a suffix in 'C+' or 'COMP+') plots C on a plot separate from HVSR (C+ is default, but without + will plot on the same plot as HVSR)
-            - 'p' shows a vertical dotted line at frequency of the "best" peak
-            - 'ann' annotates the frequency value of of the "best" peak
-            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
-            - 't' shows the H/V curve for all time windows
-        - 'SPEC' - spectrogram style plot of the H/V curve over time
-            - 'p' shows a horizontal dotted line at the frequency of the "best" peak
-            - 'ann' annotates the frequency value of the "best" peak
-    use_subplots : bool, default = True
-        Whether to output the plots as subplots (True) or as separate plots (False)
-    fig : matplotlib.Figure, default = None
-        If not None, matplotlib figure on which plot is plotted
-    ax : matplotlib.Axis, default = None
-        If not None, matplotlib axis on which plot is plotted
-    return_fig : bool
-        Whether to return figure and axis objects
-    save_dir : str or None
-        Directory in which to save figures
-    save_suffix : str
-        Suffix to add to end of figure filename(s), if save_dir is used
-    show_legend : bool, default=False
-        Whether to show legend in plot
-    show : bool
-        Whether to show plot
-    close_figs : bool, default=False
-        Whether to close figures before plotting
-    clear_fig : bool, default=True
-        Whether to clear figures before plotting
-    **kwargs : keyword arguments
-        Keyword arguments for matplotlib.pyplot
-
-    Returns
-    -------
-    fig, ax : matplotlib figure and axis objects
-        Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
-    """
-    orig_args = locals().copy() #Get the initial arguments
-    if isinstance(hvsr_data, HVSRBatch):
-        #If running batch, we'll loop through each site
-        for site_name in hvsr_data.keys():
-            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
-            args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
-                try:
-                    _hvsr_plot_batch(**args) #Call another function, that lets us run this function again
-                except:
-                    print(f"{site_name} not able to be plotted.")
-    else:
-        if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
-            #Clear everything
-            for key in ax:
-                ax[key].clear()
-            fig.clear()
-        if close_figs:
-            plt.close('all')
-
-        compList = ['c', 'comp', 'component', 'components']
-        specgramList = ['spec', 'specgram', 'spectrogram']
-        hvsrList = ['hvsr', 'hv', 'h']
-
-        hvsrInd = np.nan
-        compInd = np.nan
-        specInd = np.nan
-
-        kList = plot_type.split(' ')
-        for i, k in enumerate(kList):
-            kList[i] = k.lower()
-
-        #Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
-        #HVSR index
-        if len(set(hvsrList).intersection(kList)):
-            for i, hv in enumerate(hvsrList):
-                if hv in kList:
-                    hvsrInd = kList.index(hv)
-                    break
-        #Component index
-        #if len(set(compList).intersection(kList)):
-        for i, c in enumerate(kList):
-            if '+' in c and c[:-1] in compList:
-                compInd = kList.index(c)
-                break
-            
-        #Specgram index
-        if len(set(specgramList).intersection(kList)):
-            for i, sp in enumerate(specgramList):
-                if sp in kList:
-                    specInd = kList.index(sp)
-                    break        
-
-        indList = [hvsrInd, compInd, specInd]
-        indListCopy = indList.copy()
-        plotTypeList = ['hvsr', 'comp', 'spec']
-
-        plotTypeOrder = []
-        plotIndOrder = []
-
-        lastVal = 0
-        while lastVal != 99:
-            firstInd = np.nanargmin(indListCopy)
-            plotTypeOrder.append(plotTypeList[firstInd])
-            plotIndOrder.append(indList[firstInd])
-            lastVal = indListCopy[firstInd]
-            indListCopy[firstInd] = 99 #just a high number
-
-        plotTypeOrder.pop()
-        plotIndOrder[-1]=len(kList)
-
-        for i, p in enumerate(plotTypeOrder):
-            pStartInd = plotIndOrder[i]
-            pEndInd = plotIndOrder[i+1]
-            plotComponents = kList[pStartInd:pEndInd]
-
-            if use_subplots and i==0 and fig is None and ax is None:
-                mosaicPlots = []
-                for pto in plotTypeOrder:
-                    mosaicPlots.append([pto])
-                fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={'hspace':0.3})
-                axis = ax[p]
-            elif use_subplots:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
-                    ax[p].clear()
-                axis = ax[p]
-            else:
-                fig, axis = plt.subplots()
-                    
-            if p == 'hvsr':
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p=='comp':
-                plotComponents[0] = plotComponents[0][:-1]
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p=='spec':
-                plottypeKwargs = {}
-                for c in plotComponents:
-                    plottypeKwargs[c] = True
-                kwargs.update(plottypeKwargs)
-                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
-            else:
-                warnings.warn('Plot type {p} not recognized', UserWarning)   
-
-        if show:
-            fig.canvas.draw()
-            
-        if return_fig:
-            return fig, ax
-    return
-
 #Import data
 def import_data(import_filepath, data_format='pickle'):
     """Function to import .hvsr (or other extension) data exported using export_data() function
@@ -2552,7 +2387,7 @@ def input_params(datapath,
     #Replace any default parameter settings with those from json file of interest, potentially
     instrument_settings_dict = {}
     if pathlib.Path(instrument).exists():
-        instrument_settings = import_settings(settings_import_path=instrument, export_settings_type='instrument', verbose=verbose)
+        instrument_settings = import_settings(settings_import_path=instrument, settings_import_type='instrument', verbose=verbose)
         for k, settings_value in instrument_settings.items():
             if k in inspect.getfullargspec(input_params).args:
                 instrument_settings_dict[k] = settings_value
@@ -2574,6 +2409,171 @@ def input_params(datapath,
     params['ProcessingStatus']['InputParams'] = True
     params = _check_processing_status(params)
     return params
+
+#Main function for plotting results
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
+    """Function to plot HVSR data
+
+    Parameters
+    ----------
+    hvsr_data : dict                  
+        Dictionary containing output from process_hvsr function
+    plot_type : str or list, default = 'HVSR ann p C+ ann p SPEC'
+        The plot_type of plot(s) to plot. If list, will plot all plots listed
+        - 'HVSR' - Standard HVSR plot, including standard deviation. Options are included below:
+            - 'p' shows a vertical dotted line at frequency of the "best" peak
+            - 'ann' annotates the frequency value of of the "best" peak
+            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
+            - 't' shows the H/V curve for all time windows
+                -'tp' shows all the peaks from the H/V curves of all the time windows
+        - 'COMP' - plot of the PPSD curves for each individual component ("C" also works)
+            - '+' (as a suffix in 'C+' or 'COMP+') plots C on a plot separate from HVSR (C+ is default, but without + will plot on the same plot as HVSR)
+            - 'p' shows a vertical dotted line at frequency of the "best" peak
+            - 'ann' annotates the frequency value of of the "best" peak
+            - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
+            - 't' shows the H/V curve for all time windows
+        - 'SPEC' - spectrogram style plot of the H/V curve over time
+            - 'p' shows a horizontal dotted line at the frequency of the "best" peak
+            - 'ann' annotates the frequency value of the "best" peak
+    use_subplots : bool, default = True
+        Whether to output the plots as subplots (True) or as separate plots (False)
+    fig : matplotlib.Figure, default = None
+        If not None, matplotlib figure on which plot is plotted
+    ax : matplotlib.Axis, default = None
+        If not None, matplotlib axis on which plot is plotted
+    return_fig : bool
+        Whether to return figure and axis objects
+    save_dir : str or None
+        Directory in which to save figures
+    save_suffix : str
+        Suffix to add to end of figure filename(s), if save_dir is used
+    show_legend : bool, default=False
+        Whether to show legend in plot
+    show : bool
+        Whether to show plot
+    close_figs : bool, default=False
+        Whether to close figures before plotting
+    clear_fig : bool, default=True
+        Whether to clear figures before plotting
+    **kwargs : keyword arguments
+        Keyword arguments for matplotlib.pyplot
+
+    Returns
+    -------
+    fig, ax : matplotlib figure and axis objects
+        Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures
+    """
+    orig_args = locals().copy() #Get the initial arguments
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we'll loop through each site
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    _hvsr_plot_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    print(f"{site_name} not able to be plotted.")
+    else:
+        if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+            #Clear everything
+            for key in ax:
+                ax[key].clear()
+            fig.clear()
+        if close_figs:
+            plt.close('all')
+
+        compList = ['c', 'comp', 'component', 'components']
+        specgramList = ['spec', 'specgram', 'spectrogram']
+        hvsrList = ['hvsr', 'hv', 'h']
+
+        hvsrInd = np.nan
+        compInd = np.nan
+        specInd = np.nan
+
+        kList = plot_type.split(' ')
+        for i, k in enumerate(kList):
+            kList[i] = k.lower()
+
+        #Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
+        #HVSR index
+        if len(set(hvsrList).intersection(kList)):
+            for i, hv in enumerate(hvsrList):
+                if hv in kList:
+                    hvsrInd = kList.index(hv)
+                    break
+        #Component index
+        #if len(set(compList).intersection(kList)):
+        for i, c in enumerate(kList):
+            if '+' in c and c[:-1] in compList:
+                compInd = kList.index(c)
+                break
+            
+        #Specgram index
+        if len(set(specgramList).intersection(kList)):
+            for i, sp in enumerate(specgramList):
+                if sp in kList:
+                    specInd = kList.index(sp)
+                    break        
+
+        indList = [hvsrInd, compInd, specInd]
+        indListCopy = indList.copy()
+        plotTypeList = ['hvsr', 'comp', 'spec']
+
+        plotTypeOrder = []
+        plotIndOrder = []
+
+        lastVal = 0
+        while lastVal != 99:
+            firstInd = np.nanargmin(indListCopy)
+            plotTypeOrder.append(plotTypeList[firstInd])
+            plotIndOrder.append(indList[firstInd])
+            lastVal = indListCopy[firstInd]
+            indListCopy[firstInd] = 99 #just a high number
+
+        plotTypeOrder.pop()
+        plotIndOrder[-1]=len(kList)
+
+        for i, p in enumerate(plotTypeOrder):
+            pStartInd = plotIndOrder[i]
+            pEndInd = plotIndOrder[i+1]
+            plotComponents = kList[pStartInd:pEndInd]
+
+            if use_subplots and i==0 and fig is None and ax is None:
+                mosaicPlots = []
+                for pto in plotTypeOrder:
+                    mosaicPlots.append([pto])
+                fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={'hspace':0.3})
+                axis = ax[p]
+            elif use_subplots:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
+                    ax[p].clear()
+                axis = ax[p]
+            else:
+                fig, axis = plt.subplots()
+                    
+            if p == 'hvsr':
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+            elif p=='comp':
+                plotComponents[0] = plotComponents[0][:-1]
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+            elif p=='spec':
+                plottypeKwargs = {}
+                for c in plotComponents:
+                    plottypeKwargs[c] = True
+                kwargs.update(plottypeKwargs)
+                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
+            else:
+                warnings.warn('Plot type {p} not recognized', UserWarning)   
+
+        if show:
+            fig.canvas.draw()
+            
+        if return_fig:
+            return fig, ax
+    return
 
 #Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True):
@@ -5829,8 +5829,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
         ax.axhline(hvsr_data['BestPeak']['f0'], c='k',  linestyle='dotted', zorder=1000)
 
     if annotate:
-        xLocation = float(xmin) + (float(xmax)-float(xmin))*0.98
-        ann = ax.text(x=xLocation, y=float(hvsr_data['BestPeak']['f0'])+0.3, fontsize='small', s=f"{hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va='bottom', 
+        xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
+        yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(0.002)
+        ann = ax.text(x=xLocation, y=yLocation, fontsize='small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va='bottom', 
                       bbox={'alpha':0.8, 'edgecolor':'w', 'fc':'w', 'pad':0.3})
 
     ax.set_xlabel('UTC Time \n'+day)
