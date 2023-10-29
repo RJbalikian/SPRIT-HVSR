@@ -931,21 +931,23 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
 
 ###WORKING ON THIS
 #Save default instrument and processing settings to json file(s)
-def export_settings(hvsr_data, settings_path='default', settings_type='all', verbose=False):
+def export_settings(hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=False):
     """Save settings to json file
 
     Parameters
     ----------
-    settings_path : str, default="default"
+    export_settings_path : str, default="default"
         Where to save the json file(s) containing the settings, by default 'default'. 
         If "default," will save to sprit package resources. Otherwise, set a filepath location you would like for it to be saved to.
         If 'all' is selected, a directory should be supplied. 
         Otherwise, it will save in the directory of the provided file, if it exists. Otherwise, defaults to the home directory.
-    settings_type : str, {'all', 'instrument', 'processing'}
+    export_settings_type : str, {'all', 'instrument', 'processing'}
         What kind of settings to save. 
         If 'all', saves all possible types in their respective json files.
         If 'instrument', save the instrument settings to their respective file.
         If 'processing', saves the processing settings to their respective file. By default 'all'
+    include_location : bool, default=False, input CRS
+        Whether to include the location parametersin the exported settings document.This includes xcoord, ycoord, elevation, elev_unit, and input_crs
     verbose : bool, default=True
         Whether to print outputs and information to the terminal
 
@@ -954,23 +956,23 @@ def export_settings(hvsr_data, settings_path='default', settings_type='all', ver
     fnameDict['instrument'] = "instrument_settings.json"
     fnameDict['processing'] = "processing_settings.json"
 
-    if settings_path == 'default' or settings_path is True:
+    if export_settings_path == 'default' or export_settings_path is True:
         settingsPath = resource_dir.joinpath('settings')
     else:
-        settings_path = pathlib.Path(settings_path)
-        if not settings_path.exists():
-            if not settings_path.parent.exists():
-                print(f'The provided value for settings_path ({settings_path}) does not exist. Saving settings to the home directory: {pathlib.Path.home()}')
+        export_settings_path = pathlib.Path(export_settings_path)
+        if not export_settings_path.exists():
+            if not export_settings_path.parent.exists():
+                print(f'The provided value for export_settings_path ({export_settings_path}) does not exist. Saving settings to the home directory: {pathlib.Path.home()}')
                 settingsPath = pathlib.Path.home()
             else:
-                settingsPath = settings_path.parent
+                settingsPath = export_settings_path.parent
         
-        if settings_path.is_dir():
-            settingsPath = settings_path
-        elif settings_path.is_file():
-            settingsPath = settings_path.parent
-            fnameDict['instrument'] = settings_path.name+"_instrumentSettings.json"
-            fnameDict['processing'] = settings_path.name+"_processingSettings.json"
+        if export_settings_path.is_dir():
+            settingsPath = export_settings_path
+        elif export_settings_path.is_file():
+            settingsPath = export_settings_path.parent
+            fnameDict['instrument'] = export_settings_path.name+"_instrumentSettings.json"
+            fnameDict['processing'] = export_settings_path.name+"_processingSettings.json"
 
     #Get final filepaths        
     instSetFPath = settingsPath.joinpath(fnameDict['instrument'])
@@ -978,6 +980,7 @@ def export_settings(hvsr_data, settings_path='default', settings_type='all', ver
 
     #Get settings values
     instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
+    inst_location_keys = ['xcoord', 'ycoord', 'elevation', 'elev_unit', 'input_crs']
     procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
 
     instrument_settings_dict = {}
@@ -989,6 +992,15 @@ def export_settings(hvsr_data, settings_path='default', settings_type='all', ver
             instrument_settings_dict[k] = hvsr_data[k].as_posix()
         else:
             instrument_settings_dict[k] = hvsr_data[k]
+
+    if include_location:
+        for k in inst_location_keys:
+            if isinstance(hvsr_data[k], pathlib.PurePath):
+                #For those that are paths and cannot be serialized
+                instrument_settings_dict[k] = hvsr_data[k].as_posix()
+            else:
+                instrument_settings_dict[k] = hvsr_data[k]
+
     
     for func in procFuncs:
         funcName = func.__name__
@@ -1000,16 +1012,27 @@ def export_settings(hvsr_data, settings_path='default', settings_type='all', ver
                 processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
     
     #Save settings files
-    if settings_type.lower()=='instrument' or settings_type.lower()=='all':
-        with open(instSetFPath.as_posix(), 'w') as instSetF:
+    if export_settings_type.lower()=='instrument' or export_settings_type.lower()=='all':
+        with open(instSetFPath.with_suffix('.inst').as_posix(), 'w') as instSetF:
             jsonString = json.dumps(instrument_settings_dict, indent=2)
+            #Format output for readability
             jsonString = jsonString.replace('\n    ', ' ')
             jsonString = jsonString.replace('[ ', '[')
             jsonString = jsonString.replace('\n  ]', ']')
+            #Export
             instSetF.write(jsonString)
-    if settings_type.lower()=='processing' or settings_type.lower()=='all':
-        with open(procSetFPath.as_posix(), 'w') as procSetF:
-            json.dump(processing_settings_dict, procSetF)        
+    if export_settings_type.lower()=='processing' or export_settings_type.lower()=='all':
+        with open(procSetFPath.with_suffix('.proc').as_posix(), 'w') as procSetF:
+            jsonString = json.dumps(processing_settings_dict, indent=2)
+            #Format output for readability
+            jsonString = jsonString.replace('\n    ', ' ')
+            jsonString = jsonString.replace('[ ', '[')
+            jsonString = jsonString.replace('\n  ]', ']')
+            jsonString = jsonString.replace('\n  },','\n\t\t},')
+            jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t\t"')
+            jsonString = jsonString.replace(', "', ',\n\t\t\t"')
+            #Export
+            procSetF.write(jsonString)
 
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
@@ -1057,6 +1080,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         print('\nFetching data (fetch_data())')
         print()
 
+    print(params.items())
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
     date=params['acq_date']
@@ -2310,8 +2334,26 @@ def import_data(import_filepath, data_format='pickle'):
     return dataIN
 
 #Import settings
-def import_settings():
-    return
+def import_settings(settings_import_path, settings_import_type='instrument', verbose=False):
+
+    allList = ['all', ':', 'both', 'any']
+    if settings_import_type.lower() not in allList:
+        # if just a single settings dict is desired
+        with open(settings_import_path, 'r') as f:
+            settingsDict = json.load(f)
+    else:
+        # Either a directory or list
+        if isinstance(settings_import_path, (list, tuple)):
+            for setPath in settings_import_path:
+                pass
+        else:
+            settings_import_path = sprit_utils.checkifpath(settings_import_path)
+            if not settings_import_path.is_dir():
+                raise RuntimeError(f'settings_import_type={settings_import_type}, but settings_import_path is not list/tuple or filepath to directory')
+            else:
+                instFile = settings_import_path.glob('*.inst')
+                procFile = settings_import_path.glob('*.proc')
+    return settingsDict
 
 #Define input parameters
 def input_params(datapath,
@@ -2332,10 +2374,9 @@ def input_params(datapath,
                 elev_unit = 'feet',
                 depth = 0,
                 instrument = 'Raspberry Shake',
-                metapath = '',
+                metapath = None,
                 hvsr_band = [0.4, 40],
                 peak_freq_range=[0.4, 40],
-                instrument_settings=None,
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
@@ -2380,16 +2421,12 @@ def input_params(datapath,
         Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str or list {'Raspberry Shake')
         Instrument from which the data was acquired. 
-    metapath : str or pathlib.Path object, default=''
-        Filepath of metadata, in format supported by obspy.read_inventory. If default value of '', will read from resources folder of repository (only supported for Raspberry Shake).
+    metapath : str or pathlib.Path object, default=None
+        Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
     hvsr_band : list, default=[0.4, 40]
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
     peak_freq_range : list or tuple, default=[0.4, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
-    instrument_settings : None, str, default=None
-        The instrument_settings parameter is intended to enable rapid reading in of settings pertaining to the instrument you use most. 
-        If set to "default" or True, will read in the default instrument settings (note, these are different than the default parameters of input_params(), even where names overlap).
-        The default settings can be reset using the save_settings() function with the parameter settings_path='default'.
     verbose : bool, default=False
         Whether to print output and results to terminal
 
@@ -2409,21 +2446,6 @@ def input_params(datapath,
         for key, value in orig_args.items():
             print('\t  {}={}'.format(key, value))
         print()
-
-    #Make Sure metapath is all good
-    if not pathlib.Path(metapath).exists() or metapath=='':
-        if metapath == '':
-            pass
-        else:
-            print('Specified metadata file cannot be read!')
-        repoDir = pathlib.Path(os.path.dirname(__file__))
-        metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv'))
-        #print('Using default metadata file for Raspberry Shake v.7 distributed with package')
-    else:
-        if isinstance(metapath, pathlib.PurePath):
-            metapath = metapath.as_posix()
-        else:
-            metapath = pathlib.Path(metapath).as_posix()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -2507,12 +2529,6 @@ def input_params(datapath,
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
-    #Raspberry shake stationxml is in the resources folder, double check we have right path
-    if instrument.lower() in raspShakeInstNameList:
-        if metapath == r'resources/rs3dv7_metadata.inv':
-            metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv7_metadata.inv'))
-            #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
-
     if output_crs is None:
         output_crs='EPSG:4326'
 
@@ -2534,17 +2550,20 @@ def input_params(datapath,
                     }
     
     #Replace any default parameter settings with those from json file of interest, potentially
-    if instrument_settings is None:
-        instrument_settings_dict = {}
-    elif instrument_settings == "default" or instrument_settings is True:
-        # Update inputParamDict with default file
-        default_settings_json = settings_dir.joinpath('instrument_settings.json')
-        with open(default_settings_json.as_posix(), 'r') as f:
-            instrument_settings_dict = json.load(f)
-    else:
-        # Update inputParamDict with file
-        with open(instrument_settings, 'r') as f:
-            instrument_settings_dict = json.load(f)        
+    instrument_settings_dict = {}
+    if pathlib.Path(instrument).exists():
+        instrument_settings = import_settings(settings_import_path=instrument, export_settings_type='instrument', verbose=verbose)
+        for k, settings_value in instrument_settings.items():
+            if k in inspect.getfullargspec(input_params).args:
+                instrument_settings_dict[k] = settings_value
+        inputParamDict['instrument_settings'] = inputParamDict['instrument']
+        inputParamDict.update(instrument_settings_dict)
+    
+    if instrument.lower() in raspShakeInstNameList:
+        if metapath is None:
+            metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
+            inputParamDict['metapath'] = metapath
+            #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
     for settingName in instrument_settings_dict.keys():
         if settingName in inputParamDict.keys():
