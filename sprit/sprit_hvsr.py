@@ -14,12 +14,13 @@ import os
 import pathlib
 import pickle
 import pkg_resources
+import re
 import struct
+import sys
 import tempfile
 import traceback
 import warnings
 import xml.etree.ElementTree as ET
-import sys
 
 import matplotlib
 from matplotlib.backend_bases import MouseButton
@@ -927,6 +928,88 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     return
+
+###WORKING ON THIS
+#Save default instrument and processing settings to json file(s)
+def export_settings(hvsr_data, settings_path='default', settings_type='all', verbose=False):
+    """Save settings to json file
+
+    Parameters
+    ----------
+    settings_path : str, default="default"
+        Where to save the json file(s) containing the settings, by default 'default'. 
+        If "default," will save to sprit package resources. Otherwise, set a filepath location you would like for it to be saved to.
+        If 'all' is selected, a directory should be supplied. 
+        Otherwise, it will save in the directory of the provided file, if it exists. Otherwise, defaults to the home directory.
+    settings_type : str, {'all', 'instrument', 'processing'}
+        What kind of settings to save. 
+        If 'all', saves all possible types in their respective json files.
+        If 'instrument', save the instrument settings to their respective file.
+        If 'processing', saves the processing settings to their respective file. By default 'all'
+    verbose : bool, default=True
+        Whether to print outputs and information to the terminal
+
+    """
+    fnameDict = {}
+    fnameDict['instrument'] = "instrument_settings.json"
+    fnameDict['processing'] = "processing_settings.json"
+
+    if settings_path == 'default' or settings_path is True:
+        settingsPath = resource_dir.joinpath('settings')
+    else:
+        settings_path = pathlib.Path(settings_path)
+        if not settings_path.exists():
+            if not settings_path.parent.exists():
+                print(f'The provided value for settings_path ({settings_path}) does not exist. Saving settings to the home directory: {pathlib.Path.home()}')
+                settingsPath = pathlib.Path.home()
+            else:
+                settingsPath = settings_path.parent
+        
+        if settings_path.is_dir():
+            settingsPath = settings_path
+        elif settings_path.is_file():
+            settingsPath = settings_path.parent
+            fnameDict['instrument'] = settings_path.name+"_instrumentSettings.json"
+            fnameDict['processing'] = settings_path.name+"_processingSettings.json"
+
+    #Get final filepaths        
+    instSetFPath = settingsPath.joinpath(fnameDict['instrument'])
+    procSetFPath = settingsPath.joinpath(fnameDict['processing'])
+
+    #Get settings values
+    instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
+    procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
+
+    instrument_settings_dict = {}
+    processing_settings_dict = {}
+
+    for k in instKeys:
+        if isinstance(hvsr_data[k], pathlib.PurePath):
+            #For those that are paths and cannot be serialized
+            instrument_settings_dict[k] = hvsr_data[k].as_posix()
+        else:
+            instrument_settings_dict[k] = hvsr_data[k]
+    
+    for func in procFuncs:
+        funcName = func.__name__
+        processing_settings_dict[funcName] = {}
+        for arg in inspect.getfullargspec(func)[0]:
+            if isinstance(hvsr_data['processing_parameters'][funcName][arg], (HVSRBatch, HVSRData)):
+                pass
+            else:
+                processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
+    
+    #Save settings files
+    if settings_type.lower()=='instrument' or settings_type.lower()=='all':
+        with open(instSetFPath.as_posix(), 'w') as instSetF:
+            jsonString = json.dumps(instrument_settings_dict, indent=2)
+            jsonString = jsonString.replace('\n    ', ' ')
+            jsonString = jsonString.replace('[ ', '[')
+            jsonString = jsonString.replace('\n  ]', ']')
+            instSetF.write(jsonString)
+    if settings_type.lower()=='processing' or settings_type.lower()=='all':
+        with open(procSetFPath.as_posix(), 'w') as procSetF:
+            json.dump(processing_settings_dict, procSetF)        
 
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
@@ -2226,6 +2309,10 @@ def import_data(import_filepath, data_format='pickle'):
         dataIN = import_filepath
     return dataIN
 
+#Import settings
+def import_settings():
+    return
+
 #Define input parameters
 def input_params(datapath,
                 site='HVSR Site',
@@ -3210,83 +3297,6 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
             params['ppsds'][k]['psd_values'] = np.delete(params['ppsds'][k]['psd_values'], index, axis=0)
             params['ppsds'][k]['current_times_used'] = np.delete(params['ppsds'][k]['current_times_used'], index, axis=0)
     return params
-
-###WORKING ON THIS
-#Save default instrument and processing settings to json file(s)
-def save_settings(hvsr_data, settings_path='default', settings_type='all', verbose=False):
-    """Save settings to json file
-
-    Parameters
-    ----------
-    settings_path : str, default="default"
-        Where to save the json file(s) containing the settings, by default 'default'. 
-        If "default," will save to sprit package resources. Otherwise, set a filepath location you would like for it to be saved to.
-        If 'all' is selected, a directory should be supplied. 
-        Otherwise, it will save in the directory of the provided file, if it exists. Otherwise, defaults to the home directory.
-    settings_type : str, {'all', 'instrument', 'processing'}
-        What kind of settings to save. 
-        If 'all', saves all possible types in their respective json files.
-        If 'instrument', save the instrument settings to their respective file.
-        If 'processing', saves the processing settings to their respective file. By default 'all'
-    verbose : bool, default=True
-        Whether to print outputs and information to the terminal
-
-    """
-    fnameDict = {}
-    fnameDict['instrument'] = "instrument_settings.json"
-    fnameDict['processing'] = "processing_settings.json"
-
-    if settings_path == 'default' or settings_path is True:
-        settingsPath = resource_dir.joinpath('settings')
-    else:
-        settings_path = pathlib.Path(settings_path)
-        if not settings_path.exists():
-            if not settings_path.parent.exists():
-                print(f'The provided value for settings_path ({settings_path}) does not exist. Saving settings to the home directory: {pathlib.Path.home()}')
-                settingsPath = pathlib.Path.home()
-            else:
-                settingsPath = settings_path.parent
-        
-        if settings_path.is_dir():
-            settingsPath = settings_path
-        elif settings_path.is_file():
-            settingsPath = settings_path.parent
-            fnameDict['instrument'] = settings_path.name+"_instrumentSettings.json"
-            fnameDict['processing'] = settings_path.name+"_processingSettings.json"
-
-    #Get final filepaths        
-    instSetFPath = settingsPath.joinpath(fnameDict['instrument'])
-    procSetFPath = settingsPath.joinpath(fnameDict['processing'])
-
-    #Get settings values
-    instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
-    procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
-
-    instrument_settings_dict = {}
-    processing_settings_dict = {}
-
-    for k in instKeys:
-        if isinstance(hvsr_data[k], pathlib.PurePath):
-            instrument_settings_dict[k] = hvsr_data[k].as_posix()
-        else:
-            instrument_settings_dict[k] = hvsr_data[k]
-    
-    for func in procFuncs:
-        funcName = func.__name__
-        processing_settings_dict[funcName] = {}
-        for arg in inspect.getfullargspec(func)[0]:
-            if isinstance(hvsr_data['processing_parameters'][funcName][arg], (HVSRBatch, HVSRData)):
-                pass
-            else:
-                processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
-    
-    #Save settings files
-    if settings_type.lower()=='instrument' or settings_type.lower()=='all':
-        with open(instSetFPath.as_posix(), 'w') as instSetF:
-            json.dump(instrument_settings_dict, instSetF)
-    if settings_type.lower()=='processing' or settings_type.lower()=='all':
-        with open(procSetFPath.as_posix(), 'w') as procSetF:
-            json.dump(processing_settings_dict, procSetF)        
 
 #Read data as batch
 def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
