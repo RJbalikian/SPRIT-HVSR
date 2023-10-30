@@ -14,7 +14,6 @@ import os
 import pathlib
 import pickle
 import pkg_resources
-import re
 import struct
 import sys
 import tempfile
@@ -729,6 +728,21 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
     """
     orig_args = locals().copy() #Get the initial arguments
 
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_data.keys():
+        if 'check_peaks' in hvsr_data['processing_parameters'].keys():
+            for k, v in hvsr_data['processing_parameters']['check_peaks'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(check_peaks).args[1:], 
+                                        inspect.getfullargspec(check_peaks).defaults))
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+
+    hvsr_band = orig_args['hvsr_band']
+    peak_selection = orig_args['peak_selection']
+    peak_freq_range = orig_args['peak_freq_range']
+    verbose = orig_args['verbose']
+
     hvsr_data['processing_parameters']['check_peaks'] = {}
     for key, value in orig_args.items():
         hvsr_data['processing_parameters']['check_peaks'][key] = value
@@ -981,7 +995,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
     #Get settings values
     instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
     inst_location_keys = ['xcoord', 'ycoord', 'elevation', 'elev_unit', 'input_crs']
-    procFuncs = [generate_ppsds, process_hvsr, check_peaks, get_report]
+    procFuncs = [fetch_data, remove_noise, generate_ppsds, process_hvsr, check_peaks, get_report]
 
     instrument_settings_dict = {}
     processing_settings_dict = {}
@@ -1005,7 +1019,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
     for func in procFuncs:
         funcName = func.__name__
         processing_settings_dict[funcName] = {}
-        for arg in inspect.getfullargspec(func)[0]:
+        for arg in hvsr_data['processing_parameters'][funcName]:
             if isinstance(hvsr_data['processing_parameters'][funcName][arg], (HVSRBatch, HVSRData)):
                 pass
             else:
@@ -1028,15 +1042,41 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             jsonString = jsonString.replace('\n    ', ' ')
             jsonString = jsonString.replace('[ ', '[')
             jsonString = jsonString.replace('\n  ]', ']')
-            jsonString = jsonString.replace('\n  },','\n\t\t},')
-            jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t\t"')
-            jsonString = jsonString.replace(', "', ',\n\t\t\t"')
+            jsonString = jsonString.replace('\n  },','\n\t\t},\n')
+            jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t"')
+            jsonString = jsonString.replace(', "', ',\n\t\t"')
+            jsonString = jsonString.replace('\n  }', '\n\t\t}')
+            jsonString = jsonString.replace(': {', ':\n\t\t\t{')
+               
             #Export
             procSetF.write(jsonString)
 
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
-    import warnings
+    #Get intput paramaters
+    orig_args = locals().copy()
+    
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in params.keys():
+        if 'fetch_data' in params['processing_parameters'].keys():
+            defaultVDict = dict(zip(inspect.getfullargspec(fetch_data).args[1:], 
+                        inspect.getfullargspec(fetch_data).defaults))
+            defaultVDict['kwargs'] = kwargs
+            for k, v in params['processing_parameters']['fetch_data'].items():
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+
+    #Update local variables, in case of previously-specified parameters
+    source=orig_args['source']
+    trim_dir=orig_args['trim_dir']
+    export_format=orig_args['export_format']
+    detrend=orig_args['detrend']
+    detrend_order=orig_args['detrend_order']
+    update_metadata=orig_args['update_metadata']
+    plot_input_stream=orig_args['plot_input_stream']
+    verbose=orig_args['verbose']
+    kwargs=orig_args['kwargs']
 
     """Fetch ambient seismic data from a source to read into obspy stream
         
@@ -1422,6 +1462,14 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     params['batch'] = False #Set False by default, will get corrected later in batch mode        
     params['input_stream'] = dataIN.copy()
     params['stream'] = dataIN.copy()
+    
+    if 'processing_parameters' not in params.keys():
+        params['processing_parameters'] = {}
+    params['processing_parameters']['fetch_data'] = {}
+    for key, value in orig_args.items():
+        params['processing_parameters']['fetch_data'][key] = value
+
+    
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
@@ -1488,7 +1536,24 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
     
     ppsd_kwargs = get_default_args(PPSD)
     ppsd_kwargs.update(ppsd_kwargs_sprit_defaults)#Update with sprit defaults, or user input
-    orig_args['ppsd_kwargs'] = [ppsd_kwargs]
+    orig_args['ppsd_kwargs'] = ppsd_kwargs
+
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_data.keys():
+        if 'generate_ppsds' in hvsr_data['processing_parameters'].keys():
+            defaultVDict = dict(zip(inspect.getfullargspec(generate_ppsds).args[1:], 
+                                    inspect.getfullargspec(generate_ppsds).defaults))
+            defaultVDict['ppsd_kwargs'] = ppsd_kwargs
+            for k, v in hvsr_data['processing_parameters']['generate_ppsds'].items():
+
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+
+    remove_outliers = orig_args['remove_outliers']
+    outlier_std = orig_args['outlier_std']
+    verbose = orig_args['verbose']
+    ppsd_kwargs = orig_args['ppsd_kwargs']
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
@@ -1683,7 +1748,8 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         
         hvsr_data = sprit_utils.make_it_classy(hvsr_data)
     
-    hvsr_data['processing_parameters'] = {}
+    if 'processing_parameters' not in hvsr_data.keys():
+        hvsr_data['processing_parameters'] = {}
     hvsr_data['processing_parameters']['generate_ppsds'] = {}
     for key, value in orig_args.items():
         hvsr_data['processing_parameters']['generate_ppsds'][key] = value
@@ -1821,11 +1887,26 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
 
     """
-    #print statement
-    #Check if results are good
-    #Curve pass?
     orig_args = locals().copy() #Get the initial arguments
 
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_results.keys():
+        if 'get_report' in hvsr_results['processing_parameters'].keys():
+            for k, v in hvsr_results['processing_parameters']['get_report'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
+                                        inspect.getfullargspec(get_report).defaults))
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+
+    report_format = orig_args['report_format']
+    plot_type = orig_args['plot_type']
+    export_path = orig_args['export_path']
+    return_results = orig_args['return_results']
+    csv_overwrite_opt = orig_args['csv_overwrite_opt']
+    no_output = orig_args['no_output']
+    verbose = orig_args['verbose']
+    
     hvsr_results['processing_parameters']['get_report'] = {}
     for key, value in orig_args.items():
         hvsr_results['processing_parameters']['get_report'][key] = value
@@ -2211,6 +2292,7 @@ def input_params(datapath,
                 metapath = None,
                 hvsr_band = [0.4, 40],
                 peak_freq_range=[0.4, 40],
+                processing_parameters={},
                 verbose=False
                 ):
     """Function for designating input parameters for reading in and processing data
@@ -2261,6 +2343,13 @@ def input_params(datapath,
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
     peak_freq_range : list or tuple, default=[0.4, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
+    processing_parameters={} : dict or filepath, default={}
+        If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
+        Note that this only applies to parameters for the functions: 'fetch_data', 'remove_noise', 'generate_ppsds', 'process_hvsr', 'check_peaks', and 'get_report.'
+        If dictionary, dictionary containing nested dictionaries of function names as they key, and the parameter names/values as key/value pairs for each key. 
+        If a function name is not present, or if a parameter name is not present, default values will be used.
+        For example: 
+            `{ 'fetch_data' : {'source':'batch', 'trim_dir':"/path/to/trimmed/data", 'export_format':'mseed', 'detrend':'spline', 'plot_input_stream':True, 'verbose':False, kwargs:{'kwargskey':'kwargsvalue'}} }`
     verbose : bool, default=False
         Whether to print output and results to terminal
 
@@ -2403,6 +2492,12 @@ def input_params(datapath,
         for key, value in inputParamDict.items():
             print('\t  {}={}'.format(key, value))
         print()
+
+    if isinstance(processing_parameters, dict):
+        inputParamDict['processing_parameters'] = processing_parameters
+    else:
+        processing_parameters = sprit_utils.checkifpath(processing_parameters)
+        inputParamDict['processing_parameters'] = import_settings(processing_parameters, settings_import_type='processing', verbose=verbose)
 
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
@@ -2761,6 +2856,27 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
     """
     orig_args = locals().copy() #Get the initial arguments
+
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_data.keys():
+        if 'process_hvsr' in hvsr_data['processing_parameters'].keys():
+            for k, v in hvsr_data['processing_parameters']['process_hvsr'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(process_hvsr).args[1:], 
+                                        inspect.getfullargspec(process_hvsr).defaults))
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+                    
+    method = orig_args['method']
+    smooth = orig_args['smooth']
+    freq_smooth = orig_args['freq_smooth']
+    f_smooth_width = orig_args['f_smooth_width']
+    resample = orig_args['resample']
+    outlier_curve_std = orig_args['outlier_curve_std']
+    verbose = orig_args['verbose']
+
+
+
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
@@ -3073,7 +3189,30 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     output : dict
         Dictionary similar to hvsr_data, but containing modified data with 'noise' removed
     """
-    orig_args = locals().copy() #Get the initial arguments
+    #Get intput paramaters
+    orig_args = locals().copy()
+    
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_data.keys():
+        if 'remove_noise' in hvsr_data['processing_parameters'].keys():
+            for k, v in hvsr_data['processing_parameters']['remove_noise'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(remove_noise).args[1:], 
+                                        inspect.getfullargspec(remove_noise).defaults))
+                # Manual input to function overrides the imported parameter values
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                    orig_args[k] = v
+
+    remove_method = orig_args['remove_method']
+    sat_percent = orig_args['sat_percent']
+    noise_percent = orig_args['noise_percent']
+    sta = orig_args['sta']
+    lta = orig_args['lta']
+    stalta_thresh = orig_args['stalta_thresh']
+    warmup_time = orig_args['warmup_time']
+    cooldown_time = orig_args['cooldown_time']
+    min_win_size = orig_args['min_win_size']
+    remove_raw_noise = orig_args['remove_raw_noise']
+    verbose = orig_args['verbose']
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
@@ -3195,6 +3334,13 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
         else:
             output['stream'] = outStream['stream']
         output['input_stream'] = hvsr_data['input_stream']
+        
+        if 'processing_parameters' not in output.keys():
+            output['processing_parameters'] = {}
+        output['processing_parameters']['remove_noise'] = {}
+        for key, value in orig_args.items():
+            output['processing_parameters']['remove_noise'][key] = value
+        
         output['ProcessingStatus']['RemoveNoiseStatus'] = True
         output = _check_processing_status(output)
 
@@ -3220,12 +3366,15 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 trEndTime = trace.stats.endtime
             
             outStream.merge()
-            output['stream'] = outStream        
+            output['stream'] = outStream
+                
     elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
         output = outStream
     else:
         warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
         return hvsr_data
+    
+
     
     output = sprit_utils.make_it_classy(output)
     if 'xwindows_out' not in output.keys():
