@@ -19,7 +19,7 @@ greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
 def check_gui_requirements():
-    print("Checking requirements for gui")
+    #First, check requirements
     # Define a command that tries to open a window
     command = "python -c \"import tkinter; tkinter.Tk()\""
 
@@ -32,7 +32,7 @@ def check_gui_requirements():
         oktoproceed=True
     else:
         oktoproceed=False
-        print("GUI window could not be created.")
+        print("GUI window cannot be created.")
 
     return oktoproceed
 
@@ -311,6 +311,16 @@ def has_required_channels(stream):
 #Make input data (dict) into sprit_hvsr class
 def make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
+        for k, v in input_data.items():
+            if k=='input_params':
+                for kin in input_data['input_params'].keys():
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data['input_params'][kin]
+            if k=='params':
+                for kin in input_data['params'].keys():
+                    print(kin)
+                    if kin not in input_data.keys():
+                        input_data[kin] = input_data['params'][kin]                
         output_class = input_data
     else:
         output_class = sprit_hvsr.HVSRData(input_data)
