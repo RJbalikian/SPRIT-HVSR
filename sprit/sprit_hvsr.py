@@ -223,6 +223,29 @@ class HVSRBatch:
         """Wrapper of get_report()"""
         return self.get_report(**kwargs)
 
+    def export_settings(self, site_name=None, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
+        """Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        site_name : str, default=None
+            The name of the site whose settings should be exported. If None, will default to the first site, by default None.
+        export_settings_path : str, optional
+            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
+        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
+            They type of settings to save, by default 'all'
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        """
+        #If no site name selected, use first site
+        if site_name is None:
+            site_name = self.sites[0]
+            
+        export_settings(hvsr_data=self[site_name], 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
+
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -362,6 +385,23 @@ class HVSRData:
         """Wrapper of get_report()"""
         report_return = get_report(self, **kwargs)
         return report_return
+
+    def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
+        """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        export_settings_path : str, optional
+            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
+        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
+            They type of settings to save, by default 'all'
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        """
+        export_settings(hvsr_data=self, 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
     
     #ATTRIBUTES
     #params
@@ -945,7 +985,7 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
 
 ###WORKING ON THIS
 #Save default instrument and processing settings to json file(s)
-def export_settings(hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=False):
+def export_settings(hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
     """Save settings to json file
 
     Parameters
@@ -1025,32 +1065,70 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             else:
                 processing_settings_dict[funcName][arg] = hvsr_data['processing_parameters'][funcName][arg]
     
+    if verbose:
+        print("Exporting Settings")
     #Save settings files
     if export_settings_type.lower()=='instrument' or export_settings_type.lower()=='all':
-        with open(instSetFPath.with_suffix('.inst').as_posix(), 'w') as instSetF:
-            jsonString = json.dumps(instrument_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace('\n    ', ' ')
-            jsonString = jsonString.replace('[ ', '[')
-            jsonString = jsonString.replace('\n  ]', ']')
-            #Export
-            instSetF.write(jsonString)
+        try:
+            with open(instSetFPath.with_suffix('.inst').as_posix(), 'w') as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace('\n    ', ' ')
+                jsonString = jsonString.replace('[ ', '[')
+                jsonString = jsonString.replace('\n  ]', ']')
+                #Export
+                instSetF.write(jsonString)
+        except:
+            instSetFPath = pathlib.Path.home().joinpath(instSetFPath.name)
+            with open(instSetFPath.with_suffix('.inst').as_posix(), 'w') as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace('\n    ', ' ')
+                jsonString = jsonString.replace('[ ', '[')
+                jsonString = jsonString.replace('\n  ]', ']')
+                #Export
+                instSetF.write(jsonString)
+                            
+        if verbose:
+            print(f"Instrument settings exported to {instSetFPath}")
+            print(f"{jsonString}")
+            print()
     if export_settings_type.lower()=='processing' or export_settings_type.lower()=='all':
-        with open(procSetFPath.with_suffix('.proc').as_posix(), 'w') as procSetF:
-            jsonString = json.dumps(processing_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace('\n    ', ' ')
-            jsonString = jsonString.replace('[ ', '[')
-            jsonString = jsonString.replace('\n  ]', ']')
-            jsonString = jsonString.replace('\n  },','\n\t\t},\n')
-            jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t"')
-            jsonString = jsonString.replace(', "', ',\n\t\t"')
-            jsonString = jsonString.replace('\n  }', '\n\t\t}')
-            jsonString = jsonString.replace(': {', ':\n\t\t\t{')
-               
-            #Export
-            procSetF.write(jsonString)
-
+        try:
+            with open(procSetFPath.with_suffix('.proc').as_posix(), 'w') as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace('\n    ', ' ')
+                jsonString = jsonString.replace('[ ', '[')
+                jsonString = jsonString.replace('\n  ]', ']')
+                jsonString = jsonString.replace('\n  },','\n\t\t},\n')
+                jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t"')
+                jsonString = jsonString.replace(', "', ',\n\t\t"')
+                jsonString = jsonString.replace('\n  }', '\n\t\t}')
+                jsonString = jsonString.replace(': {', ':\n\t\t\t{')
+                
+                #Export
+                procSetF.write(jsonString)
+        except:
+            procSetFPath = pathlib.Path.home().joinpath(procSetFPath.name)
+            with open(procSetFPath.with_suffix('.proc').as_posix(), 'w') as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace('\n    ', ' ')
+                jsonString = jsonString.replace('[ ', '[')
+                jsonString = jsonString.replace('\n  ]', ']')
+                jsonString = jsonString.replace('\n  },','\n\t\t},\n')
+                jsonString = jsonString.replace('{ "', '\n\t\t{\n\t\t"')
+                jsonString = jsonString.replace(', "', ',\n\t\t"')
+                jsonString = jsonString.replace('\n  }', '\n\t\t}')
+                jsonString = jsonString.replace(': {', ':\n\t\t\t{')
+                
+                #Export
+                procSetF.write(jsonString)            
+        if verbose:
+            print(f"Processing settings exported to {procSetFPath}")
+            print(f"{jsonString}")
+            print()
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     #Get intput paramaters
