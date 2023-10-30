@@ -1080,7 +1080,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         print('\nFetching data (fetch_data())')
         print()
 
-    print(params.items())
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
     date=params['acq_date']
@@ -2273,15 +2272,6 @@ def input_params(datapath,
     """
     orig_args = locals().copy() #Get the initial arguments
 
-    #Declare obspy here instead of at top of file for (for example) colab, where obspy first needs to be installed on environment
-    global obspy
-    import obspy
-    if verbose:
-        print('Gathering input parameters (input_params())')
-        for key, value in orig_args.items():
-            print('\t  {}={}'.format(key, value))
-        print()
-
     #Reformat times
     if type(acq_date) is datetime.datetime:
         date = str(acq_date.date())
@@ -2388,8 +2378,11 @@ def input_params(datapath,
     instrument_settings_dict = {}
     if pathlib.Path(instrument).exists():
         instrument_settings = import_settings(settings_import_path=instrument, settings_import_type='instrument', verbose=verbose)
+        input_params_args = inspect.getfullargspec(input_params).args
+        input_params_args.append('net')
+        input_params_args.append('sta')
         for k, settings_value in instrument_settings.items():
-            if k in inspect.getfullargspec(input_params).args:
+            if k in input_params_args:
                 instrument_settings_dict[k] = settings_value
         inputParamDict['instrument_settings'] = inputParamDict['instrument']
         inputParamDict.update(instrument_settings_dict)
@@ -2403,6 +2396,13 @@ def input_params(datapath,
     for settingName in instrument_settings_dict.keys():
         if settingName in inputParamDict.keys():
             inputParamDict[settingName] = instrument_settings_dict[settingName]
+
+    #Declare obspy here instead of at top of file for (for example) colab, where obspy first needs to be installed on environment
+    if verbose:
+        print('Gathering input parameters (input_params())')
+        for key, value in inputParamDict.items():
+            print('\t  {}={}'.format(key, value))
+        print()
 
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
@@ -5829,9 +5829,15 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
         ax.axhline(hvsr_data['BestPeak']['f0'], c='k',  linestyle='dotted', zorder=1000)
 
     if annotate:
+        if float(hvsr_data['BestPeak']['f0']) < 1:
+            boxYPerc = 0.998
+            vertAlign = 'top'
+        else:
+            boxYPerc = 0.002
+            vertAlign = 'bottom'
         xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
-        yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(0.002)
-        ann = ax.text(x=xLocation, y=yLocation, fontsize='small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va='bottom', 
+        yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(boxYPerc)
+        ann = ax.text(x=xLocation, y=yLocation, fontsize='small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va=vertAlign, 
                       bbox={'alpha':0.8, 'edgecolor':'w', 'fc':'w', 'pad':0.3})
 
     ax.set_xlabel('UTC Time \n'+day)
