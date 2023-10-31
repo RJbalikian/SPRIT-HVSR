@@ -77,6 +77,9 @@ sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     
                     'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
 
+plt.rcParams['figure.figsize'] = (10.5,8)
+plt.rcParams['figure.dpi'] = 220
+
 #CLASSES
 
 #Check if the data is already the right class
