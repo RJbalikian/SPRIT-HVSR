@@ -784,10 +784,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
     peak_freq_range = orig_args['peak_freq_range']
     verbose = orig_args['verbose']
 
-    hvsr_data['processing_parameters']['check_peaks'] = {}
-    for key, value in orig_args.items():
-        hvsr_data['processing_parameters']['check_peaks'][key] = value
-
     if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
@@ -940,7 +936,12 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 hvsr_data.plot()
             except:
                 pass
-            
+
+        hvsr_data['processing_parameters']['check_peaks'] = {}
+        for key, value in orig_args.items():
+            hvsr_data['processing_parameters']['check_peaks'][key] = value
+
+
     return hvsr_data
 
 #Function to export data to file
@@ -1592,20 +1593,19 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                 Dictionary containing entries with ppsds for each channel
     """
     #First, divide up for batch or not
-    print(locals())
     orig_args = locals().copy() #Get the initial arguments
     start_time = datetime.datetime.now()
 
     ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
     #Set defaults here that are different than obspy defaults
-    if 'ppsd_length' not in ppsd_kwargs:
+    if 'ppsd_length' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['ppsd_length'] = 30.0
-    if 'skip_on_gaps' not in ppsd_kwargs:
+    if 'skip_on_gaps' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['skip_on_gaps'] = True
-    if 'period_step_octaves' not in ppsd_kwargs:
+    if 'period_step_octaves' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
-    if 'period_limits' not in ppsd_kwargs:
-        ppsd_kwargs_sprit_defaults['period_limits'] =  [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
+    if 'period_limits' not in ppsd_kwargs.keys():
+        ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
 
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
@@ -1830,11 +1830,11 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         
         hvsr_data = sprit_utils.make_it_classy(hvsr_data)
     
-    if 'processing_parameters' not in hvsr_data.keys():
-        hvsr_data['processing_parameters'] = {}
-    hvsr_data['processing_parameters']['generate_ppsds'] = {}
-    for key, value in orig_args.items():
-        hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+        if 'processing_parameters' not in hvsr_data.keys():
+            hvsr_data['processing_parameters'] = {}
+        hvsr_data['processing_parameters']['generate_ppsds'] = {}
+        for key, value in orig_args.items():
+            hvsr_data['processing_parameters']['generate_ppsds'][key] = value
 
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
@@ -1989,10 +1989,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     no_output = orig_args['no_output']
     verbose = orig_args['verbose']
     
-    hvsr_results['processing_parameters']['get_report'] = {}
-    for key, value in orig_args.items():
-        hvsr_results['processing_parameters']['get_report'][key] = value
-
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
             pass
@@ -2053,7 +2049,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         
         if return_results:
             return hvsr_results
-    else:
+    else:       
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
             curvTestsPassed = (hvsr_results['BestPeak']['PassList']['WindowLengthFreq.'] +
@@ -2306,6 +2302,11 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
             else:
                 exp_path = export_path
             hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+
+        hvsr_results['processing_parameters']['get_report'] = {}
+        for key, value in orig_args.items():
+            hvsr_results['processing_parameters']['get_report'][key] = value
+
     return hvsr_results
 
 #Import data
@@ -2959,8 +2960,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
     outlier_curve_std = orig_args['outlier_curve_std']
     verbose = orig_args['verbose']
 
-
-
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
@@ -3060,7 +3059,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
             currTimesUsed[k] = np.array(hvsrDF['TimesProcessed_Obspy'][hvsrDF['Use']].values)
             #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
-            
+        
         #Get string of method type
         if type(method) is int:
             methodInt = method
@@ -3071,6 +3070,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         anyK = list(x_freqs.keys())[0]
         hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
         origPPSD = hvsr_data['ppsds_obspy'].copy()
+
+
         #Add some other variables to our output dictionary
         hvsr_dataUpdate = {'input_params':hvsr_data,
                     'x_freqs':x_freqs,
@@ -3097,10 +3098,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         else:
             hvsr_out['xwindows_out'] = []
 
-        #These are in other places in the hvsr_out dict, so are redudant
-        #del dir(hvsr_out['input_params'])['_ppsds_obspy']
-        #del hvsr_out['input_params']['_ppsds']
-        #del hvsr_out['input_params']['tsteps_used']
 
         freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
         freq_smooth_constant = ['constant', 'const', 'c']
@@ -3145,7 +3142,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
                 hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
                 hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
-
         hvsr_out['hvsr_df']['HV_Curves'] = hvsr_tSteps
 
         hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
@@ -3219,11 +3215,14 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
         hvsr_out['ProcessingStatus']['HVStatus'] = True
-    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
-    hvsr_data['processing_parameters']['process_hvsr'] = {}
-    for key, value in orig_args.items():
-        hvsr_data['processing_parameters']['process_hvsr'][key] = value
+        if 'processing_parameters' not in hvsr_out.keys():
+            hvsr_out['processing_parameters'] = {}
+        hvsr_out['processing_parameters']['generate_ppsds'] = {}
+        for key, value in orig_args.items():
+            hvsr_out['processing_parameters']['generate_ppsds'][key] = value
+
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return hvsr_out
 
@@ -3284,7 +3283,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 defaultVDict = dict(zip(inspect.getfullargspec(remove_noise).args[1:], 
                                         inspect.getfullargspec(remove_noise).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     remove_method = orig_args['remove_method']
@@ -3329,141 +3328,141 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
                 try:
                    hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
-                except:
+                except Exception as e:
                     hvsr_out[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
                     hvsr_out[site_name]['ProcessingStatus']['OverallStatus']=False
+                    if verbose:
+                        print(e)
             else:
                 hvsr_data[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
                 hvsr_data[site_name]['ProcessingStatus']['OverallStatus']=False
                 hvsr_out = hvsr_data
-                
+
         output = HVSRBatch(hvsr_out)
         return output
-
-    elif isinstance(hvsr_data, (HVSRData, dict)):
-        if remove_raw_noise:
-            inStream = hvsr_data['input_stream'].copy()
+    elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream, obspy.Trace)):
+        if isinstance(hvsr_data, (HVSRData, dict)):
+            if remove_raw_noise:
+                inStream = hvsr_data['input_stream'].copy()
+            else:
+                inStream = hvsr_data['stream'].copy()
+            output = hvsr_data#.copy()
         else:
-            inStream = hvsr_data['stream'].copy()
-        output = hvsr_data#.copy()
-    elif isinstance(hvsr_data, (obspy.core.stream.Stream, obspy.core.trace.Trace)):
-        inStream = hvsr_data.copy()
-        output = inStream.copy()
+            inStream = hvsr_data.copy()
+            output = inStream.copy()
+
+        outStream = inStream
+        
+        if isinstance(remove_method, str):
+            if ',' in remove_method:
+                remove_method = remove_method.split(',')
+            else:
+                remove_method = [remove_method]
+        elif isinstance(remove_method, (list, tuple)):
+            pass
+        elif not remove_method:
+            remove_method=[None]
+        else:
+            warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+            return output
+            
+        #Reorder list so manual is always first
+        if len(set(remove_method).intersection(manualList)) > 0:
+            manInd = list(set(remove_method).intersection(manualList))[0]
+            remove_method.remove(manInd)
+            remove_method.insert(0, manInd)
+            
+        #Go through each type of removal and remove
+        for rem_kind in remove_method:
+            if not rem_kind:
+                break
+            elif rem_kind.lower() in manualList:
+                if isinstance(output, (HVSRData, dict)):
+                    if 'xwindows_out' in output.keys():
+                        pass
+                    else:
+                        output = _select_windows(output)
+                    window_list = output['xwindows_out']
+                if isinstance(outStream, obspy.core.stream.Stream):
+                    if window_list is not None:
+                        output['stream'] = __remove_windows(inStream, window_list, warmup_time)
+                    else:
+                        output = _select_windows(output)
+                elif isinstance(output, (HVSRData, dict)):
+                    pass
+                else:
+                    RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
+            elif rem_kind.lower() in autoList:
+                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+            elif rem_kind.lower() in antitrigger:
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+            elif rem_kind.lower() in saturationThresh:
+                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+            elif rem_kind.lower() in noiseThresh:
+                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+            elif rem_kind.lower() in warmup_cooldown:
+                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+            else:
+                if len(remove_method)==1:
+                    warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+                    break
+                warnings.warn(f"Input value remove_method={remove_method} is not recognized. Continuing with other noise removal methods.")
+
+        #Add output
+        if isinstance(output, (HVSRData, dict)):
+            if isinstance(outStream, (obspy.Stream, obspy.Trace)):
+                output['stream'] = outStream
+            else:
+                output['stream'] = outStream['stream']
+            output['input_stream'] = hvsr_data['input_stream']
+            
+            if 'processing_parameters' not in output.keys():
+                output['processing_parameters'] = {}
+            output['processing_parameters']['remove_noise'] = {}
+            for key, value in orig_args.items():
+                output['processing_parameters']['remove_noise'][key] = value
+            
+            output['ProcessingStatus']['RemoveNoiseStatus'] = True
+            output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+
+            if 'hvsr_df' in output.keys() or ('params' in output.keys() and 'hvsr_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_df' in output['input_params'].keys()):
+                hvsrDF = output['hvsr_df']
+                
+                outStream = output['stream'].split()
+                for i, trace in enumerate(outStream):
+                    if i ==0:
+                        trEndTime = trace.stats.endtime
+                        comp_end = trace.stats.component
+                        continue
+                    trStartTime = trace.stats.starttime
+                    comp_start = trace.stats.component
+                    
+                    if trEndTime < trStartTime and comp_end==comp_start:
+                        gap = [trEndTime,trStartTime]
+
+                        output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
+                                        (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+                        output['hvsr_df']['Use'] = output['hvsr_df']['Use'].astype(bool)
+                    
+                    trEndTime = trace.stats.endtime
+                
+                outStream.merge()
+                output['stream'] = outStream
+                    
+        elif isinstance(hvsr_data, obspy.Stream) or isinstance(hvsr_data, obspy.Trace):
+            output = outStream
+        else:
+            warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
+            return hvsr_data
+        output = sprit_utils.make_it_classy(output)
+        if 'xwindows_out' not in output.keys():
+            output['xwindows_out'] = []
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     
-    outStream = inStream
-    
-    if isinstance(remove_method, str):
-        if ',' in remove_method:
-            remove_method = remove_method.split(',')
-        else:
-            remove_method = [remove_method]
-    elif isinstance(remove_method, (list, tuple)):
-        pass
-    elif not remove_method:
-        remove_method=[None]
-    else:
-        warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
-        return output
-        
-    #Reorder list so manual is always first
-    if len(set(remove_method).intersection(manualList)) > 0:
-        manInd = list(set(remove_method).intersection(manualList))[0]
-        remove_method.remove(manInd)
-        remove_method.insert(0, manInd)
-        
-    #Go through each type of removal and remove
-    for rem_kind in remove_method:
-        if not rem_kind:
-            break
-        elif rem_kind.lower() in manualList:
-            if isinstance(output, (HVSRData, dict)):
-                if 'xwindows_out' in output.keys():
-                    pass
-                else:
-                    output = _select_windows(output)
-                window_list = output['xwindows_out']
-            if isinstance(outStream, obspy.core.stream.Stream):
-                if window_list is not None:
-                    output['stream'] = __remove_windows(inStream, window_list, warmup_time)
-                else:
-                    output = _select_windows(output)
-            elif isinstance(output, (HVSRData, dict)):
-                pass
-            else:
-                RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
-        elif rem_kind.lower() in autoList:
-            outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-            outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
-            outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
-            outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
-        elif rem_kind.lower() in antitrigger:
-            outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
-        elif rem_kind.lower() in saturationThresh:
-            outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
-        elif rem_kind.lower() in noiseThresh:
-            outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-        elif rem_kind.lower() in warmup_cooldown:
-            outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
-        else:
-            if len(remove_method)==1:
-                warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
-                break
-            warnings.warn(f"Input value remove_method={remove_method} is not recognized. Continuing with other noise removal methods.")
-
-    #Add output
-    if isinstance(output, (HVSRData, dict)):
-        if isinstance(outStream, (obspy.Stream, obspy.Trace)):
-            output['stream'] = outStream
-        else:
-            output['stream'] = outStream['stream']
-        output['input_stream'] = hvsr_data['input_stream']
-        
-        if 'processing_parameters' not in output.keys():
-            output['processing_parameters'] = {}
-        output['processing_parameters']['remove_noise'] = {}
-        for key, value in orig_args.items():
-            output['processing_parameters']['remove_noise'][key] = value
-        
-        output['ProcessingStatus']['RemoveNoiseStatus'] = True
-        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
-
-        if 'hvsr_df' in output.keys() or ('params' in output.keys() and 'hvsr_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_df' in output['input_params'].keys()):
-            hvsrDF = output['hvsr_df']
-            
-            outStream = output['stream'].split()
-            for i, trace in enumerate(outStream):
-                if i ==0:
-                    trEndTime = trace.stats.endtime
-                    comp_end = trace.stats.component
-                    continue
-                trStartTime = trace.stats.starttime
-                comp_start = trace.stats.component
-                
-                if trEndTime < trStartTime and comp_end==comp_start:
-                    gap = [trEndTime,trStartTime]
-
-                    output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
-                                    (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                    output['hvsr_df']['Use'] = output['hvsr_df']['Use'].astype(bool)
-                
-                trEndTime = trace.stats.endtime
-            
-            outStream.merge()
-            output['stream'] = outStream
-                
-    elif isinstance(hvsr_data, obspy.core.stream.Stream) or isinstance(hvsr_data, obspy.core.trace.Trace):
-        output = outStream
-    else:
-        warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
-        return hvsr_data
-    
-
-    
-    output = sprit_utils.make_it_classy(output)
-    if 'xwindows_out' not in output.keys():
-        output['xwindows_out'] = []
     return output
 
 #Remove outlier ppsds
@@ -3831,7 +3830,7 @@ def __remove_noise_batch(**remove_noise_kwargs):
                 print('\t{} successfully completed remove_noise()'.format(hvsr_data['input_params']['site']))
             elif 'site' in hvsr_data.keys():
                 print('\t{} successfully completed remove_noise()'.format(hvsr_data['site']))
-    except:
+    except Exception as e:
         warnings.warn(f"Error in remove_noise({remove_noise_kwargs['input']['site']}, **remove_noise_kwargs)", RuntimeWarning)
 
     return hvsr_data
@@ -3877,12 +3876,14 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
         Data being processed, with updated the 'OverallStatus' key of the attribute ProcessingStatus updated.
     """
     
+    #Convert HVSRData to same format as HVSRBatch so same code works the same on both
     if isinstance(hvsr_data, HVSRData):
         siteName = hvsr_data['site']
         hvsr_interim = {siteName: hvsr_data}
     else:
         hvsr_interim = hvsr_data
-        
+    
+    # Check overall processing status on all (or only 1 if HVSRData) site(s)
     for sitename in hvsr_interim.keys():
         statusOK = True
         for status_type, status_value in hvsr_interim[sitename]['ProcessingStatus'].items():
@@ -3894,9 +3895,11 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
         else:
             hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = False
 
+    # Get back original data in HVSRData format, if that was the input
     if isinstance(hvsr_data, HVSRData):
         hvsr_data = hvsr_interim[siteName]
     
+    # Print how long it took to perform function
     if verbose:
         elapsed = (datetime.datetime.now()-start_time)
         print(f"\t\t{func_name} completed in  {str(elapsed)[:-3]}")
@@ -5607,6 +5610,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
             4: math.sqrt(_p1 + _p2), #Vector summation
             5: math.sqrt((_p1 + _p2) / 2.0), #Quadratic mean
             6: max(_h1, _h2)} #Max horizontal value
+    
     _hvsr = _h[use_method] / _hz
     return _hvsr
 

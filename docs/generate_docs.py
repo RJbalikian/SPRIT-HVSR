@@ -8,7 +8,7 @@ import sys
 #Whether to convert_md using markdown library (True), or let github do it (False)
 convert_md=True
 rtd_theme=False #Not currently working
-release_version= '0.1.51'
+release_version= '0.1.52'
 run_tests=True
 lint_it=True
 
@@ -188,8 +188,11 @@ if lint_it:
 
 if run_tests:
     print('Testing sprit.run()')
+    shelltype=True
+    if sys.platform == 'linux':
+        shelltype = False
     try:
-        subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=True)
+        subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=shelltype)
     except:
-        subprocess.run(["pytest", repoDir.as_posix()], shell=True)
+        subprocess.run(["pytest", repoDir.as_posix()], shell=shelltype)
 

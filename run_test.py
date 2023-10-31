@@ -8,3 +8,12 @@ def test_run():
         test_passed = False
 
     assert test_passed
+
+def test_batch():
+    try:
+        sprit.run('sample', source='batch')
+        test_passed=True
+    except:
+        test_passed = False
+    
+    assert test_passed 
