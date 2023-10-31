@@ -592,6 +592,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
+   
     if 'hvsr_band' not in kwargs.keys():
         kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
     if 'peak_freq_range' not in kwargs.keys():
@@ -775,7 +776,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 defaultVDict = dict(zip(inspect.getfullargspec(check_peaks).args[1:], 
                                         inspect.getfullargspec(check_peaks).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     hvsr_band = orig_args['hvsr_band']
@@ -1129,10 +1130,12 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             print(f"Processing settings exported to {procSetFPath}")
             print(f"{jsonString}")
             print()
+
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in params.keys():
@@ -1142,7 +1145,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             defaultVDict['kwargs'] = kwargs
             for k, v in params['processing_parameters']['fetch_data'].items():
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if k!='params' and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     orig_args[k] = v
 
     #Update local variables, in case of previously-specified parameters
@@ -1554,7 +1557,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         for line in dataINStr:
             print('\t',line)
     
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return params
 
@@ -1589,7 +1592,9 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                 Dictionary containing entries with ppsds for each channel
     """
     #First, divide up for batch or not
+    print(locals())
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
     #Set defaults here that are different than obspy defaults
@@ -1623,9 +1628,8 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                                     inspect.getfullargspec(generate_ppsds).defaults))
             defaultVDict['ppsd_kwargs'] = ppsd_kwargs
             for k, v in hvsr_data['processing_parameters']['generate_ppsds'].items():
-
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     remove_outliers = orig_args['remove_outliers']
@@ -1833,7 +1837,7 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         hvsr_data['processing_parameters']['generate_ppsds'][key] = value
 
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
-    hvsr_data = _check_processing_status(hvsr_data)
+    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
@@ -1974,7 +1978,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
                                         inspect.getfullargspec(get_report).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     report_format = orig_args['report_format']
@@ -2438,6 +2442,7 @@ def input_params(datapath,
 
     """
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -2580,7 +2585,7 @@ def input_params(datapath,
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
     params['ProcessingStatus']['InputParams'] = True
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
 #Main function for plotting results
@@ -2934,6 +2939,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
     """
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
@@ -2942,7 +2948,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 defaultVDict = dict(zip(inspect.getfullargspec(process_hvsr).args[1:], 
                                         inspect.getfullargspec(process_hvsr).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
                     
     method = orig_args['method']
@@ -3213,7 +3219,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
         hvsr_out['ProcessingStatus']['HVStatus'] = True
-    hvsr_out = _check_processing_status(hvsr_out)
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     hvsr_data['processing_parameters']['process_hvsr'] = {}
     for key, value in orig_args.items():
@@ -3269,6 +3275,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     """
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
@@ -3420,7 +3427,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output['processing_parameters']['remove_noise'][key] = value
         
         output['ProcessingStatus']['RemoveNoiseStatus'] = True
-        output = _check_processing_status(output)
+        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
         if 'hvsr_df' in output.keys() or ('params' in output.keys() and 'hvsr_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_df' in output['input_params'].keys()):
             hvsrDF = output['hvsr_df']
@@ -3856,7 +3863,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
     return hvsr_data
 
 #Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
-def _check_processing_status(hvsr_data):
+def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
     """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
 
     Parameters
@@ -3889,7 +3896,11 @@ def _check_processing_status(hvsr_data):
 
     if isinstance(hvsr_data, HVSRData):
         hvsr_data = hvsr_interim[siteName]
-    return hvsr_data    
+    
+    if verbose:
+        elapsed = (datetime.datetime.now()-start_time)
+        print(f"\t\t{func_name} completed in  {str(elapsed)[:-3]}")
+    return hvsr_data
 
 #HELPER functions for fetch_data() and get_metadata()
 #Read in metadata .inv file, specifically for RaspShake

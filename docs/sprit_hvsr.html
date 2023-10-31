@@ -254,6 +254,29 @@ class HVSRBatch:
         &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
         return self.get_report(**kwargs)
 
+    def export_settings(self, site_name=None, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+        &#34;&#34;&#34;Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        site_name : str, default=None
+            The name of the site whose settings should be exported. If None, will default to the first site, by default None.
+        export_settings_path : str, optional
+            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+            They type of settings to save, by default &#39;all&#39;
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        &#34;&#34;&#34;
+        #If no site name selected, use first site
+        if site_name is None:
+            site_name = self.sites[0]
+            
+        export_settings(hvsr_data=self[site_name], 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
+
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -393,6 +416,23 @@ class HVSRData:
         &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
         report_return = get_report(self, **kwargs)
         return report_return
+
+    def export_settings(self, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+        &#34;&#34;&#34;Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        export_settings_path : str, optional
+            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+            They type of settings to save, by default &#39;all&#39;
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        &#34;&#34;&#34;
+        export_settings(hvsr_data=self, 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
     
     #ATTRIBUTES
     #params
@@ -583,6 +623,7 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
+   
     if &#39;hvsr_band&#39; not in kwargs.keys():
         kwargs[&#39;hvsr_band&#39;] = inspect.signature(input_params).parameters[&#39;hvsr_band&#39;].default
     if &#39;peak_freq_range&#39; not in kwargs.keys():
@@ -766,7 +807,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection=&#39;max&#39;, pe
                 defaultVDict = dict(zip(inspect.getfullargspec(check_peaks).args[1:], 
                                         inspect.getfullargspec(check_peaks).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     hvsr_band = orig_args[&#39;hvsr_band&#39;]
@@ -976,7 +1017,7 @@ def export_data(hvsr_data, export_path=None, ext=&#39;hvsr&#39;, verbose=False):
 
 ###WORKING ON THIS
 #Save default instrument and processing settings to json file(s)
-def export_settings(hvsr_data, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=False):
+def export_settings(hvsr_data, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
     &#34;&#34;&#34;Save settings to json file
 
     Parameters
@@ -1056,36 +1097,76 @@ def export_settings(hvsr_data, export_settings_path=&#39;default&#39;, export_se
             else:
                 processing_settings_dict[funcName][arg] = hvsr_data[&#39;processing_parameters&#39;][funcName][arg]
     
+    if verbose:
+        print(&#34;Exporting Settings&#34;)
     #Save settings files
     if export_settings_type.lower()==&#39;instrument&#39; or export_settings_type.lower()==&#39;all&#39;:
-        with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
-            jsonString = json.dumps(instrument_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
-            jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
-            jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
-            #Export
-            instSetF.write(jsonString)
+        try:
+            with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                #Export
+                instSetF.write(jsonString)
+        except:
+            instSetFPath = pathlib.Path.home().joinpath(instSetFPath.name)
+            with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                #Export
+                instSetF.write(jsonString)
+                            
+        if verbose:
+            print(f&#34;Instrument settings exported to {instSetFPath}&#34;)
+            print(f&#34;{jsonString}&#34;)
+            print()
     if export_settings_type.lower()==&#39;processing&#39; or export_settings_type.lower()==&#39;all&#39;:
-        with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
-            jsonString = json.dumps(processing_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
-            jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
-            jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
-            jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
-            jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
-            jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
-            jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
-            jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
-               
-            #Export
-            procSetF.write(jsonString)
+        try:
+            with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
+                jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
+                jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
+                
+                #Export
+                procSetF.write(jsonString)
+        except:
+            procSetFPath = pathlib.Path.home().joinpath(procSetFPath.name)
+            with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
+                jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
+                jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
+                
+                #Export
+                procSetF.write(jsonString)            
+        if verbose:
+            print(f&#34;Processing settings exported to {procSetFPath}&#34;)
+            print(f&#34;{jsonString}&#34;)
+            print()
 
 #Reads in traces to obspy stream
 def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in params.keys():
@@ -1095,7 +1176,7 @@ def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;
             defaultVDict[&#39;kwargs&#39;] = kwargs
             for k, v in params[&#39;processing_parameters&#39;][&#39;fetch_data&#39;].items():
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if k!=&#39;params&#39; and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     orig_args[k] = v
 
     #Update local variables, in case of previously-specified parameters
@@ -1507,7 +1588,7 @@ def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;
         for line in dataINStr:
             print(&#39;\t&#39;,line)
     
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return params
 
@@ -1542,7 +1623,9 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                 Dictionary containing entries with ppsds for each channel
     &#34;&#34;&#34;
     #First, divide up for batch or not
+    print(locals())
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
     #Set defaults here that are different than obspy defaults
@@ -1576,9 +1659,8 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
                                     inspect.getfullargspec(generate_ppsds).defaults))
             defaultVDict[&#39;ppsd_kwargs&#39;] = ppsd_kwargs
             for k, v in hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;].items():
-
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     remove_outliers = orig_args[&#39;remove_outliers&#39;]
@@ -1786,7 +1868,7 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;][key] = value
 
     hvsr_data[&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;] = True
-    hvsr_data = _check_processing_status(hvsr_data)
+    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
 
 #Gets the metadata for Raspberry Shake, specifically for 3D v.7
@@ -1927,7 +2009,7 @@ def get_report(hvsr_results, report_format=&#39;print&#39;, plot_type=&#39;HVSR 
                 defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
                                         inspect.getfullargspec(get_report).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     report_format = orig_args[&#39;report_format&#39;]
@@ -2391,6 +2473,7 @@ def input_params(datapath,
 
     &#34;&#34;&#34;
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -2533,7 +2616,7 @@ def input_params(datapath,
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
     params[&#39;ProcessingStatus&#39;][&#39;InputParams&#39;] = True
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
 #Main function for plotting results
@@ -2887,6 +2970,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
 
     &#34;&#34;&#34;
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in hvsr_data.keys():
@@ -2895,7 +2979,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
                 defaultVDict = dict(zip(inspect.getfullargspec(process_hvsr).args[1:], 
                                         inspect.getfullargspec(process_hvsr).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
                     
     method = orig_args[&#39;method&#39;]
@@ -3166,7 +3250,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
         hvsr_out[&#39;input_stream&#39;] = hvsr_dataUpdate[&#39;input_params&#39;][&#39;input_stream&#39;] #input_stream
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
         hvsr_out[&#39;ProcessingStatus&#39;][&#39;HVStatus&#39;] = True
-    hvsr_out = _check_processing_status(hvsr_out)
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     hvsr_data[&#39;processing_parameters&#39;][&#39;process_hvsr&#39;] = {}
     for key, value in orig_args.items():
@@ -3222,6 +3306,7 @@ def remove_noise(hvsr_data, remove_method=&#39;auto&#39;, sat_percent=0.995, noi
     &#34;&#34;&#34;
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in hvsr_data.keys():
@@ -3373,7 +3458,7 @@ def remove_noise(hvsr_data, remove_method=&#39;auto&#39;, sat_percent=0.995, noi
             output[&#39;processing_parameters&#39;][&#39;remove_noise&#39;][key] = value
         
         output[&#39;ProcessingStatus&#39;][&#39;RemoveNoiseStatus&#39;] = True
-        output = _check_processing_status(output)
+        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
         if &#39;hvsr_df&#39; in output.keys() or (&#39;params&#39; in output.keys() and &#39;hvsr_df&#39; in output[&#39;params&#39;].keys())or (&#39;input_params&#39; in output.keys() and &#39;hvsr_df&#39; in output[&#39;input_params&#39;].keys()):
             hvsrDF = output[&#39;hvsr_df&#39;]
@@ -3809,7 +3894,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
     return hvsr_data
 
 #Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
-def _check_processing_status(hvsr_data):
+def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name=&#39;&#39;, verbose=False):
     &#34;&#34;&#34;Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
 
     Parameters
@@ -3842,7 +3927,11 @@ def _check_processing_status(hvsr_data):
 
     if isinstance(hvsr_data, HVSRData):
         hvsr_data = hvsr_interim[siteName]
-    return hvsr_data    
+    
+    if verbose:
+        elapsed = (datetime.datetime.now()-start_time)
+        print(f&#34;\t\t{func_name} completed in  {str(elapsed)[:-3]}&#34;)
+    return hvsr_data
 
 #HELPER functions for fetch_data() and get_metadata()
 #Read in metadata .inv file, specifically for RaspShake
@@ -7061,7 +7150,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                 defaultVDict = dict(zip(inspect.getfullargspec(check_peaks).args[1:], 
                                         inspect.getfullargspec(check_peaks).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     hvsr_band = orig_args[&#39;hvsr_band&#39;]
@@ -7290,7 +7379,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.export_settings"><code class="name flex">
-<span>def <span class="ident">export_settings</span></span>(<span>hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=False)</span>
+<span>def <span class="ident">export_settings</span></span>(<span>hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Save settings to json file</p>
@@ -7315,7 +7404,7 @@ If 'processing', saves the processing settings to their respective file. By defa
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def export_settings(hvsr_data, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=False):
+<pre><code class="python">def export_settings(hvsr_data, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
     &#34;&#34;&#34;Save settings to json file
 
     Parameters
@@ -7395,31 +7484,70 @@ If 'processing', saves the processing settings to their respective file. By defa
             else:
                 processing_settings_dict[funcName][arg] = hvsr_data[&#39;processing_parameters&#39;][funcName][arg]
     
+    if verbose:
+        print(&#34;Exporting Settings&#34;)
     #Save settings files
     if export_settings_type.lower()==&#39;instrument&#39; or export_settings_type.lower()==&#39;all&#39;:
-        with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
-            jsonString = json.dumps(instrument_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
-            jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
-            jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
-            #Export
-            instSetF.write(jsonString)
+        try:
+            with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                #Export
+                instSetF.write(jsonString)
+        except:
+            instSetFPath = pathlib.Path.home().joinpath(instSetFPath.name)
+            with open(instSetFPath.with_suffix(&#39;.inst&#39;).as_posix(), &#39;w&#39;) as instSetF:
+                jsonString = json.dumps(instrument_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                #Export
+                instSetF.write(jsonString)
+                            
+        if verbose:
+            print(f&#34;Instrument settings exported to {instSetFPath}&#34;)
+            print(f&#34;{jsonString}&#34;)
+            print()
     if export_settings_type.lower()==&#39;processing&#39; or export_settings_type.lower()==&#39;all&#39;:
-        with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
-            jsonString = json.dumps(processing_settings_dict, indent=2)
-            #Format output for readability
-            jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
-            jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
-            jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
-            jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
-            jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
-            jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
-            jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
-            jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
-               
-            #Export
-            procSetF.write(jsonString)</code></pre>
+        try:
+            with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
+                jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
+                jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
+                
+                #Export
+                procSetF.write(jsonString)
+        except:
+            procSetFPath = pathlib.Path.home().joinpath(procSetFPath.name)
+            with open(procSetFPath.with_suffix(&#39;.proc&#39;).as_posix(), &#39;w&#39;) as procSetF:
+                jsonString = json.dumps(processing_settings_dict, indent=2)
+                #Format output for readability
+                jsonString = jsonString.replace(&#39;\n    &#39;, &#39; &#39;)
+                jsonString = jsonString.replace(&#39;[ &#39;, &#39;[&#39;)
+                jsonString = jsonString.replace(&#39;\n  ]&#39;, &#39;]&#39;)
+                jsonString = jsonString.replace(&#39;\n  },&#39;,&#39;\n\t\t},\n&#39;)
+                jsonString = jsonString.replace(&#39;{ &#34;&#39;, &#39;\n\t\t{\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;, &#34;&#39;, &#39;,\n\t\t&#34;&#39;)
+                jsonString = jsonString.replace(&#39;\n  }&#39;, &#39;\n\t\t}&#39;)
+                jsonString = jsonString.replace(&#39;: {&#39;, &#39;:\n\t\t\t{&#39;)
+                
+                #Export
+                procSetF.write(jsonString)            
+        if verbose:
+            print(f&#34;Processing settings exported to {procSetFPath}&#34;)
+            print(f&#34;{jsonString}&#34;)
+            print()</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.fetch_data"><code class="name flex">
@@ -7434,6 +7562,7 @@ If 'processing', saves the processing settings to their respective file. By defa
 <pre><code class="python">def fetch_data(params, source=&#39;file&#39;, trim_dir=None, export_format=&#39;mseed&#39;, detrend=&#39;spline&#39;, detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in params.keys():
@@ -7443,7 +7572,7 @@ If 'processing', saves the processing settings to their respective file. By defa
             defaultVDict[&#39;kwargs&#39;] = kwargs
             for k, v in params[&#39;processing_parameters&#39;][&#39;fetch_data&#39;].items():
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if k!=&#39;params&#39; and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     orig_args[k] = v
 
     #Update local variables, in case of previously-specified parameters
@@ -7855,7 +7984,7 @@ If 'processing', saves the processing settings to their respective file. By defa
         for line in dataINStr:
             print(&#39;\t&#39;,line)
     
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return params</code></pre>
 </details>
@@ -7923,7 +8052,9 @@ If the following keywords are not specified, their defaults are amended in this 
                 Dictionary containing entries with ppsds for each channel
     &#34;&#34;&#34;
     #First, divide up for batch or not
+    print(locals())
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
     #Set defaults here that are different than obspy defaults
@@ -7957,9 +8088,8 @@ If the following keywords are not specified, their defaults are amended in this 
                                     inspect.getfullargspec(generate_ppsds).defaults))
             defaultVDict[&#39;ppsd_kwargs&#39;] = ppsd_kwargs
             for k, v in hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;].items():
-
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     remove_outliers = orig_args[&#39;remove_outliers&#39;]
@@ -8167,7 +8297,7 @@ If the following keywords are not specified, their defaults are amended in this 
         hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;][key] = value
 
     hvsr_data[&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;] = True
-    hvsr_data = _check_processing_status(hvsr_data)
+    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data</code></pre>
 </details>
 </dd>
@@ -8379,7 +8509,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
                 defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
                                         inspect.getfullargspec(get_report).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
     report_format = orig_args[&#39;report_format&#39;]
@@ -8840,7 +8970,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-30', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-31', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -8998,6 +9128,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
 
     &#34;&#34;&#34;
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     #Reformat times
     if type(acq_date) is datetime.datetime:
@@ -9140,7 +9271,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
     params[&#39;ProcessingStatus&#39;][&#39;InputParams&#39;] = True
-    params = _check_processing_status(params)
+    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params</code></pre>
 </details>
 </dd>
@@ -9642,6 +9773,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 
     &#34;&#34;&#34;
     orig_args = locals().copy() #Get the initial arguments
+    start_time = datetime.datetime.now()
 
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in hvsr_data.keys():
@@ -9650,7 +9782,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
                 defaultVDict = dict(zip(inspect.getfullargspec(process_hvsr).args[1:], 
                                         inspect.getfullargspec(process_hvsr).defaults))
                 # Manual input to function overrides the imported parameter values
-                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
                     
     method = orig_args[&#39;method&#39;]
@@ -9921,7 +10053,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         hvsr_out[&#39;input_stream&#39;] = hvsr_dataUpdate[&#39;input_params&#39;][&#39;input_stream&#39;] #input_stream
         hvsr_out = sprit_utils.make_it_classy(hvsr_out)
         hvsr_out[&#39;ProcessingStatus&#39;][&#39;HVStatus&#39;] = True
-    hvsr_out = _check_processing_status(hvsr_out)
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     hvsr_data[&#39;processing_parameters&#39;][&#39;process_hvsr&#39;] = {}
     for key, value in orig_args.items():
@@ -10027,6 +10159,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
     &#34;&#34;&#34;
     #Get intput paramaters
     orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in hvsr_data.keys():
@@ -10178,7 +10311,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
             output[&#39;processing_parameters&#39;][&#39;remove_noise&#39;][key] = value
         
         output[&#39;ProcessingStatus&#39;][&#39;RemoveNoiseStatus&#39;] = True
-        output = _check_processing_status(output)
+        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
         if &#39;hvsr_df&#39; in output.keys() or (&#39;params&#39; in output.keys() and &#39;hvsr_df&#39; in output[&#39;params&#39;].keys())or (&#39;input_params&#39; in output.keys() and &#39;hvsr_df&#39; in output[&#39;input_params&#39;].keys()):
             hvsrDF = output[&#39;hvsr_df&#39;]
@@ -10424,6 +10557,7 @@ For sample data, The following can be specified as the datapath parameter:
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
+   
     if &#39;hvsr_band&#39; not in kwargs.keys():
         kwargs[&#39;hvsr_band&#39;] = inspect.signature(input_params).parameters[&#39;hvsr_band&#39;].default
     if &#39;peak_freq_range&#39; not in kwargs.keys():
@@ -10735,6 +10869,29 @@ functions in the sprit.pacakge are designed to perform the bulk of their operati
         &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
         return self.get_report(**kwargs)
 
+    def export_settings(self, site_name=None, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+        &#34;&#34;&#34;Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        site_name : str, default=None
+            The name of the site whose settings should be exported. If None, will default to the first site, by default None.
+        export_settings_path : str, optional
+            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+            They type of settings to save, by default &#39;all&#39;
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        &#34;&#34;&#34;
+        #If no site name selected, use first site
+        if site_name is None:
+            site_name = self.sites[0]
+            
+        export_settings(hvsr_data=self[site_name], 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
+
     def __iter__(self):
         return iter(self._batch_dict.keys())
 
@@ -10802,6 +10959,52 @@ functions in the sprit.pacakge are designed to perform the bulk of their operati
         The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
     &#34;&#34;&#34;
     export_data(hvsr_data=self, export_path=export_path, ext=ext)</code></pre>
+</details>
+</dd>
+<dt id="sprit.sprit_hvsr.HVSRBatch.export_settings"><code class="name flex">
+<span>def <span class="ident">export_settings</span></span>(<span>self, site_name=None, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>site_name</code></strong> :&ensp;<code>str</code>, default=<code>None</code></dt>
+<dd>The name of the site whose settings should be exported. If None, will default to the first site, by default None.</dd>
+<dt><strong><code>export_settings_path</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'</dd>
+<dt><strong><code>export_settings_type</code></strong> :&ensp;<code>str, {'all', 'instrument', 'processing'}</code>, optional</dt>
+<dd>They type of settings to save, by default 'all'</dd>
+<dt><strong><code>include_location</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to include the location information in the instrument settings, if that settings type is selected, by default False</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to print output (filepath and settings) to terminal, by default True</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def export_settings(self, site_name=None, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+    &#34;&#34;&#34;Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.
+
+    Parameters
+    ----------
+    site_name : str, default=None
+        The name of the site whose settings should be exported. If None, will default to the first site, by default None.
+    export_settings_path : str, optional
+        Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+    export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+        They type of settings to save, by default &#39;all&#39;
+    include_location : bool, optional
+        Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+    verbose : bool, optional
+        Whether to print output (filepath and settings) to terminal, by default True
+    &#34;&#34;&#34;
+    #If no site name selected, use first site
+    if site_name is None:
+        site_name = self.sites[0]
+        
+    export_settings(hvsr_data=self[site_name], 
+                    export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.HVSRBatch.get_report"><code class="name flex">
@@ -11085,6 +11288,23 @@ functions in the sprit.pacakge are designed to perform the bulk of their operati
         &#34;&#34;&#34;Wrapper of get_report()&#34;&#34;&#34;
         report_return = get_report(self, **kwargs)
         return report_return
+
+    def export_settings(self, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+        &#34;&#34;&#34;Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        export_settings_path : str, optional
+            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+            They type of settings to save, by default &#39;all&#39;
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        &#34;&#34;&#34;
+        export_settings(hvsr_data=self, 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
     
     #ATTRIBUTES
     #params
@@ -11359,6 +11579,44 @@ If True, it will first try to save each file to the same directory as datapath, 
     export_data(hvsr_data=self, export_path=export_path, ext=ext)</code></pre>
 </details>
 </dd>
+<dt id="sprit.sprit_hvsr.HVSRData.export_settings"><code class="name flex">
+<span>def <span class="ident">export_settings</span></span>(<span>self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>export_settings_path</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'</dd>
+<dt><strong><code>export_settings_type</code></strong> :&ensp;<code>str, {'all', 'instrument', 'processing'}</code>, optional</dt>
+<dd>They type of settings to save, by default 'all'</dd>
+<dt><strong><code>include_location</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to include the location information in the instrument settings, if that settings type is selected, by default False</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to print output (filepath and settings) to terminal, by default True</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def export_settings(self, export_settings_path=&#39;default&#39;, export_settings_type=&#39;all&#39;, include_location=False, verbose=True):
+    &#34;&#34;&#34;Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+    Parameters
+    ----------
+    export_settings_path : str, optional
+        Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;
+    export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional
+        They type of settings to save, by default &#39;all&#39;
+    include_location : bool, optional
+        Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+    verbose : bool, optional
+        Whether to print output (filepath and settings) to terminal, by default True
+    &#34;&#34;&#34;
+    export_settings(hvsr_data=self, 
+                    export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)</code></pre>
+</details>
+</dd>
 <dt id="sprit.sprit_hvsr.HVSRData.get_report"><code class="name flex">
 <span>def <span class="ident">get_report</span></span>(<span>self, **kwargs)</span>
 </code></dt>
@@ -11529,6 +11787,7 @@ If True, it will first try to save each file to the same directory as datapath, 
 <ul class="two-column">
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.copy" href="#sprit.sprit_hvsr.HVSRBatch.copy">copy</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.export" href="#sprit.sprit_hvsr.HVSRBatch.export">export</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.export_settings" href="#sprit.sprit_hvsr.HVSRBatch.export_settings">export_settings</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.get_report" href="#sprit.sprit_hvsr.HVSRBatch.get_report">get_report</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.items" href="#sprit.sprit_hvsr.HVSRBatch.items">items</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.keys" href="#sprit.sprit_hvsr.HVSRBatch.keys">keys</a></code></li>
@@ -11543,6 +11802,7 @@ If True, it will first try to save each file to the same directory as datapath, 
 <li><code><a title="sprit.sprit_hvsr.HVSRData.copy" href="#sprit.sprit_hvsr.HVSRData.copy">copy</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRData.datastream" href="#sprit.sprit_hvsr.HVSRData.datastream">datastream</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRData.export" href="#sprit.sprit_hvsr.HVSRData.export">export</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRData.export_settings" href="#sprit.sprit_hvsr.HVSRData.export_settings">export_settings</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRData.get_report" href="#sprit.sprit_hvsr.HVSRData.get_report">get_report</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRData.items" href="#sprit.sprit_hvsr.HVSRData.items">items</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRData.keys" href="#sprit.sprit_hvsr.HVSRData.keys">keys</a></code></li>
