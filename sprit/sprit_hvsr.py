@@ -1868,7 +1868,6 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'trm', 't']
-
     if params['instrument'].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
@@ -2564,7 +2563,7 @@ def input_params(datapath,
         inputParamDict.update(instrument_settings_dict)
     
     if instrument.lower() in raspShakeInstNameList:
-        if metapath is None:
+        if metapath is None or metapath=='':
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
             inputParamDict['metapath'] = metapath
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
@@ -3945,7 +3944,6 @@ def _update_shake_metadata(filepath, params, write_path=''):
     enddate=str(datetime.datetime.today())
 
     filepath = sprit_utils.checkifpath(filepath)
-
     tree = ET.parse(str(filepath))
     root = tree.getroot()
 
