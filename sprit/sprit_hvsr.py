@@ -77,8 +77,8 @@ sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     
                     'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
 
-plt.rcParams['figure.figsize'] = (10.5,8)
-plt.rcParams['figure.dpi'] = 220
+plt.rcParams['figure.figsize'] = (8,5.25)
+plt.rcParams['figure.dpi'] = 500
 
 #CLASSES
 
@@ -5773,9 +5773,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     else:
         filename = ""
 
-    #ax = plt.gca()
-    #fig = plt.gcf()
-
     anyKey = list(hvsr_data[xtype].keys())[0]
     x = hvsr_data[xtype][anyKey][:-1]
     y = hvsr_data['hvsr_curve']
@@ -5800,8 +5797,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']')
+    ax.set_xlabel(xlabel, labelpad=-12, fontsize='x-small', loc='left')
+    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']', fontsize='small',)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=5)
     ax.set_title(hvsr_data['input_params']['site'])
 
     #print("label='comp'" in str(ax.__dict__['_axes']))
@@ -5817,9 +5816,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
 
             ax.axvline(bestPeak['f0'],color='k', linestyle='dotted', label='Peak')          
             if 'ann' in plot_type:
-                ax.annotate('Peak at '+str(round(bestPeak['f0'],2))+'Hz', (bestPeak['f0'], ax.get_ylim()[0]), xycoords='data', 
-                                horizontalalignment='center', verticalalignment='bottom', 
-                                bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+                xLoc = bestPeak['f0']
+                yLoc = ylim[0] + (ylim[1] - ylim[0]) * 0.008
+                ax.text(x=xLoc, y=yLoc, s="Peak at "+str(round(bestPeak['f0'],2))+'Hz',
+                            fontsize='xx-small', horizontalalignment='center', verticalalignment='bottom', 
+                            bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
                 plotSuff = plotSuff+'ann_'
 
         elif k=='p'  and 'all' in plot_type:
@@ -6035,7 +6036,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     tLabels = mdates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(tLabels)
-    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='both', labelsize='x-small')
 
     #Get day label for bottom of chart
     if hvsr_data['hvsr_df'].index[0].date() != hvsr_data['hvsr_df'].index[-1].date():
@@ -6082,15 +6083,25 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
             vertAlign = 'bottom'
         xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
         yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(boxYPerc)
-        ann = ax.text(x=xLocation, y=yLocation, fontsize='small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va=vertAlign, 
-                      bbox={'alpha':0.8, 'edgecolor':'w', 'fc':'w', 'pad':0.3})
+        ann = ax.text(x=xLocation, y=yLocation, fontsize='x-small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va=vertAlign, 
+                      bbox={'alpha':0.8, 'edgecolor':None, 'linewidth':0, 'fc':'w', 'pad':0.3})
 
-    ax.set_xlabel('UTC Time \n'+day)
+
+    xLoc = xmin + (xmax - xmin) * 0.001
+    yLoc = ymin + (ymax - ymin) * 0.97
+    ax.text(x=xLoc, y=yLoc, s=day,
+                fontsize='small', horizontalalignment='left', verticalalignment='top', 
+                bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=0.6, pad=0.2))
+
     if colorbar:
         cbar = plt.colorbar(mappable=im, orientation='horizontal')
         cbar.set_label('H/V Ratio')
 
-    ax.set_ylabel(ylabel)
+    yLoc = ymin - (ymin * 2.5e-1)
+    ax.text(x=xmin, y=yLoc,s="UTC Time", 
+                fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
+                bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+    ax.set_ylabel(ylabel, fontsize='x-small')
     ax.set_yscale('log')
 
     #plt.sca(ax)
