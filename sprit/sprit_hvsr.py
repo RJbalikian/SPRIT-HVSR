@@ -77,8 +77,8 @@ sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     
                     'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
 
-plt.rcParams['figure.figsize'] = (8,5.25)
-plt.rcParams['figure.dpi'] = 500
+#plt.rcParams['figure.figsize'] = (8,5.25)
+#plt.rcParams['figure.dpi'] = 500
 
 #CLASSES
 
@@ -2748,6 +2748,9 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
+
+        windowsUsedStr = f"{hvsr_data['hvsr_df']['Use'].sum()}/{hvsr_data['hvsr_df'].shape[0]} windows used"
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom',fontsize='x-small')
 
         if show:
             fig.canvas.draw()
@@ -5795,7 +5798,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
-    ax.set_xlabel(xlabel, labelpad=-12, fontsize='x-small', loc='left')
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']', fontsize='small',)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=5)
@@ -5885,7 +5887,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
         
             compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
-
+            yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
+            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+                        fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
+                        bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
             #Modify based on whether there are multiple charts
             if plotHVSR:
                 linalpha = 0.2
@@ -5913,7 +5918,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                     compAxis.legend(loc=legendLoc2)
             else:
                 pass#ax.legend(loc=legendLoc)
-
+        else:
+            yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
+            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+                fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
+                bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
     bbox = ax.get_window_extent()
     bboxStart = bbox.__str__().find('Bbox(',0,50)+5
     bboxStr = bbox.__str__()[bboxStart:].split(',')[:4]
@@ -6089,12 +6098,13 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     yLoc = ymin + (ymax - ymin) * 0.97
     ax.text(x=xLoc, y=yLoc, s=day,
                 fontsize='small', horizontalalignment='left', verticalalignment='top', 
-                bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=0.6, pad=0.2))
+                bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=0.8, pad=0.2))
 
     if colorbar:
         cbar = plt.colorbar(mappable=im, orientation='horizontal')
         cbar.set_label('H/V Ratio')
 
+    #Set x and y labels
     yLoc = ymin - (ymin * 2.5e-1)
     ax.text(x=xmin, y=yLoc,s="UTC Time", 
                 fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
@@ -6766,7 +6776,6 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _this_peak['PassList']['PeakStability_FreqStD'] = False
 
     return _peak
-
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
