@@ -34,10 +34,14 @@ import scipy
 
 try: #For distribution
     from sprit import sprit_utils
+    from sprit import sprit_gui
 except: #For testing
     import sprit_utils
+    import sprit_gui
     pass
 
+
+global spritApp
 
 #Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
@@ -1670,6 +1674,12 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
             else:
                 hvsr_data[site_name]['ProcessingStatus']['PPSDStatus']=False
                 hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
+            
+            try:
+                sprit_gui.update_progress_bars(prog_percent=5)
+            except Exception as e:
+                pass
+                #print(e)
         return hvsr_data
     else:
         paz = hvsr_data['paz']
@@ -2661,6 +2671,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
             #Clear everything
             for key in ax:
                 ax[key].clear()
+            for t in fig.texts:
+                del t
             fig.clear()
         if close_figs:
             plt.close('all')
@@ -2715,8 +2727,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
-
-        for i, p in enumerate(plotTypeOrder):
+        
+         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
             plotComponents = kList[pStartInd:pEndInd]
@@ -2750,7 +2762,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
         windowsUsedStr = f"{hvsr_data['hvsr_df']['Use'].sum()}/{hvsr_data['hvsr_df'].shape[0]} windows used"
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom',fontsize='x-small')
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small')
 
         if show:
             fig.canvas.draw()
@@ -6482,7 +6494,7 @@ def __check_curve_reliability(hvsr_data, _peak):
         _peak[_i]['PassList']['LowCurveStDevOverTime'] = test3
     return _peak
 
-#Check clarity of peaks
+# Check clarity of peaks
 def __check_clarity(_x, _y, _peak, do_rank=True):
     """Check clarity of peak amplitude(s)
 
@@ -6555,7 +6567,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
             else:
                 pass
 
-    #Amplitude Clarity test
+    # Amplitude Clarity test
     # Only peaks with A0 > 2 pass
     if do_rank:
         max_rank += 1
@@ -6572,9 +6584,10 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
 
     return _peak
 
+
 # Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
-    """Test peaks for satisfying stability conditions 
+    """Test peaks for satisfying stability conditions
 
     Test as outlined by SESAME 2004:
         - the _peak should appear at the same frequency (within a percentage ± 5%) on the H/V
@@ -6587,12 +6600,12 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     _peakm : list
         List of dictionaries containing input information about peakm (peak minus one StDev in freq)
     _peakp : list
-        List of dictionaries containing input information about peak (peak plus one StDev in freq)  
+        List of dictionaries containing input information about peak (peak plus one StDev in freq)
 
     Returns
     -------
     _peak : list
-        List of dictionaries containing output information about peak test  
+        List of dictionaries containing output information about peak test
     """
     global max_rank
 
@@ -6624,7 +6637,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
         _peak[_i]['Report']['P+'] = sprit_utils.x_mark()
         for _j in range(len(_peakp)):
             if abs(_peakp[_j]['f0'] - _peak[_i]['f0']) < _dx:
-                _index = _j
+
                 _dx = abs(_peakp[_j]['f0'] - _peak[_i]['f0'])
             if _peak[_i]['f0'] * 0.95 <= _peakp[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
                 if _found_m[_i]:
@@ -6642,6 +6655,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
             _peak[_i]['Report']['P+'] = f"{_peakp[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.x_mark()}"
 
     return _peak
+
 
 # Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
@@ -6670,7 +6684,6 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
     global max_rank
 
-    peakPassList = []
     #
     # check σf and σA
     #
@@ -6776,6 +6789,7 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _this_peak['PassList']['PeakStability_FreqStD'] = False
 
     return _peak
+
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):

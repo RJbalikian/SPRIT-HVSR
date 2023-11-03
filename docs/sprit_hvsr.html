@@ -65,10 +65,14 @@ import scipy
 
 try: #For distribution
     from sprit import sprit_utils
+    from sprit import sprit_gui
 except: #For testing
     import sprit_utils
+    import sprit_gui
     pass
 
+
+global spritApp
 
 #Main variables
 greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
@@ -107,6 +111,9 @@ sampleFileKeyMap = {&#39;1&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite1_AM
                     &#39;sample_6&#39;:sample_data_dir.joinpath(&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;),
                     
                     &#39;batch&#39;:sample_data_dir.joinpath(&#39;Batch_SampleData.csv&#39;)}
+
+#plt.rcParams[&#39;figure.figsize&#39;] = (8,5.25)
+#plt.rcParams[&#39;figure.dpi&#39;] = 500
 
 #CLASSES
 
@@ -1698,6 +1705,12 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
             else:
                 hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;]=False
                 hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False                
+            
+            try:
+                sprit_gui.update_progress_bars(prog_percent=5)
+            except Exception as e:
+                pass
+                #print(e)
         return hvsr_data
     else:
         paz = hvsr_data[&#39;paz&#39;]
@@ -1896,7 +1909,6 @@ def get_metadata(params, write_path=&#39;&#39;, update_metadata=True, source=Non
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     trominoNameList = [&#39;tromino&#39;, &#39;trom&#39;, &#39;trm&#39;, &#39;t&#39;]
-
     if params[&#39;instrument&#39;].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
@@ -2592,7 +2604,7 @@ def input_params(datapath,
         inputParamDict.update(instrument_settings_dict)
     
     if instrument.lower() in raspShakeInstNameList:
-        if metapath is None:
+        if metapath is None or metapath==&#39;&#39;:
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv5plus_metadata.inv&#39;)).as_posix()
             inputParamDict[&#39;metapath&#39;] = metapath
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
@@ -2690,6 +2702,9 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
             #Clear everything
             for key in ax:
                 ax[key].clear()
+            for t in fig.texts:
+                print(t)
+                del t
             fig.clear()
         if close_figs:
             plt.close(&#39;all&#39;)
@@ -2777,6 +2792,9 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
             else:
                 warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
+
+        windowsUsedStr = f&#34;{hvsr_data[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]} windows used&#34;
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;,fontsize=&#39;x-small&#39;)
 
         if show:
             fig.canvas.draw()
@@ -3973,7 +3991,6 @@ def _update_shake_metadata(filepath, params, write_path=&#39;&#39;):
     enddate=str(datetime.datetime.today())
 
     filepath = sprit_utils.checkifpath(filepath)
-
     tree = ET.parse(str(filepath))
     root = tree.getroot()
 
@@ -5801,9 +5818,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype=&#39;frequency&#39;, fig=None, ax=Non
     else:
         filename = &#34;&#34;
 
-    #ax = plt.gca()
-    #fig = plt.gcf()
-
     anyKey = list(hvsr_data[xtype].keys())[0]
     x = hvsr_data[xtype][anyKey][:-1]
     y = hvsr_data[&#39;hvsr_curve&#39;]
@@ -5828,8 +5842,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype=&#39;frequency&#39;, fig=None, ax=Non
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(&#39;H/V Ratio&#39;+&#39;\n[&#39;+hvsr_data[&#39;method&#39;]+&#39;]&#39;)
+    ax.set_ylabel(&#39;H/V Ratio&#39;+&#39;\n[&#39;+hvsr_data[&#39;method&#39;]+&#39;]&#39;, fontsize=&#39;small&#39;,)
+    ax.tick_params(axis=&#39;x&#39;, labelsize=8)
+    ax.tick_params(axis=&#39;y&#39;, labelsize=5)
     ax.set_title(hvsr_data[&#39;input_params&#39;][&#39;site&#39;])
 
     #print(&#34;label=&#39;comp&#39;&#34; in str(ax.__dict__[&#39;_axes&#39;]))
@@ -5845,9 +5860,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype=&#39;frequency&#39;, fig=None, ax=Non
 
             ax.axvline(bestPeak[&#39;f0&#39;],color=&#39;k&#39;, linestyle=&#39;dotted&#39;, label=&#39;Peak&#39;)          
             if &#39;ann&#39; in plot_type:
-                ax.annotate(&#39;Peak at &#39;+str(round(bestPeak[&#39;f0&#39;],2))+&#39;Hz&#39;, (bestPeak[&#39;f0&#39;], ax.get_ylim()[0]), xycoords=&#39;data&#39;, 
-                                horizontalalignment=&#39;center&#39;, verticalalignment=&#39;bottom&#39;, 
-                                bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
+                xLoc = bestPeak[&#39;f0&#39;]
+                yLoc = ylim[0] + (ylim[1] - ylim[0]) * 0.008
+                ax.text(x=xLoc, y=yLoc, s=&#34;Peak at &#34;+str(round(bestPeak[&#39;f0&#39;],2))+&#39;Hz&#39;,
+                            fontsize=&#39;xx-small&#39;, horizontalalignment=&#39;center&#39;, verticalalignment=&#39;bottom&#39;, 
+                            bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
                 plotSuff = plotSuff+&#39;ann_&#39;
 
         elif k==&#39;p&#39;  and &#39;all&#39; in plot_type:
@@ -5914,7 +5931,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype=&#39;frequency&#39;, fig=None, ax=Non
         
             compAxis.set_ylabel(&#39;COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]&#39;)
             compAxis.set_ylim(ylim)
-
+            yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
+            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+                        fontsize=&#39;x-small&#39;, horizontalalignment=&#39;right&#39;, verticalalignment=&#39;top&#39;, 
+                        bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
             #Modify based on whether there are multiple charts
             if plotHVSR:
                 linalpha = 0.2
@@ -5942,7 +5962,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype=&#39;frequency&#39;, fig=None, ax=Non
                     compAxis.legend(loc=legendLoc2)
             else:
                 pass#ax.legend(loc=legendLoc)
-
+        else:
+            yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
+            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+                fontsize=&#39;x-small&#39;, horizontalalignment=&#39;right&#39;, verticalalignment=&#39;top&#39;, 
+                bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
     bbox = ax.get_window_extent()
     bboxStart = bbox.__str__().find(&#39;Bbox(&#39;,0,50)+5
     bboxStr = bbox.__str__()[bboxStart:].split(&#39;,&#39;)[:4]
@@ -6063,7 +6087,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     tLabels = mdates.DateFormatter(&#39;%H:%M&#39;)
     ax.xaxis.set_major_formatter(tLabels)
-    ax.tick_params(axis=&#39;x&#39;, labelsize=8)
+    ax.tick_params(axis=&#39;both&#39;, labelsize=&#39;x-small&#39;)
 
     #Get day label for bottom of chart
     if hvsr_data[&#39;hvsr_df&#39;].index[0].date() != hvsr_data[&#39;hvsr_df&#39;].index[-1].date():
@@ -6110,15 +6134,26 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
             vertAlign = &#39;bottom&#39;
         xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
         yLocation = hvsr_data[&#39;input_params&#39;][&#39;hvsr_band&#39;][0] + (hvsr_data[&#39;input_params&#39;][&#39;hvsr_band&#39;][1]-hvsr_data[&#39;input_params&#39;][&#39;hvsr_band&#39;][0])*(boxYPerc)
-        ann = ax.text(x=xLocation, y=yLocation, fontsize=&#39;small&#39;, s=f&#34;Peak at {hvsr_data[&#39;BestPeak&#39;][&#39;f0&#39;]:0.2f} Hz&#34;, ha=&#39;right&#39;, va=vertAlign, 
-                      bbox={&#39;alpha&#39;:0.8, &#39;edgecolor&#39;:&#39;w&#39;, &#39;fc&#39;:&#39;w&#39;, &#39;pad&#39;:0.3})
+        ann = ax.text(x=xLocation, y=yLocation, fontsize=&#39;x-small&#39;, s=f&#34;Peak at {hvsr_data[&#39;BestPeak&#39;][&#39;f0&#39;]:0.2f} Hz&#34;, ha=&#39;right&#39;, va=vertAlign, 
+                      bbox={&#39;alpha&#39;:0.8, &#39;edgecolor&#39;:None, &#39;linewidth&#39;:0, &#39;fc&#39;:&#39;w&#39;, &#39;pad&#39;:0.3})
 
-    ax.set_xlabel(&#39;UTC Time \n&#39;+day)
+
+    xLoc = xmin + (xmax - xmin) * 0.001
+    yLoc = ymin + (ymax - ymin) * 0.97
+    ax.text(x=xLoc, y=yLoc, s=day,
+                fontsize=&#39;small&#39;, horizontalalignment=&#39;left&#39;, verticalalignment=&#39;top&#39;, 
+                bbox=dict(facecolor=&#39;w&#39;, edgecolor=None, linewidth=0, alpha=0.8, pad=0.2))
+
     if colorbar:
         cbar = plt.colorbar(mappable=im, orientation=&#39;horizontal&#39;)
         cbar.set_label(&#39;H/V Ratio&#39;)
 
-    ax.set_ylabel(ylabel)
+    #Set x and y labels
+    yLoc = ymin - (ymin * 2.5e-1)
+    ax.text(x=xmin, y=yLoc,s=&#34;UTC Time&#34;, 
+                fontsize=&#39;x-small&#39;, horizontalalignment=&#39;right&#39;, verticalalignment=&#39;top&#39;, 
+                bbox=dict(facecolor=&#39;w&#39;, edgecolor=&#39;none&#39;, alpha=0.8, pad=0.1))
+    ax.set_ylabel(ylabel, fontsize=&#39;x-small&#39;)
     ax.set_yscale(&#39;log&#39;)
 
     #plt.sca(ax)
@@ -6785,7 +6820,6 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
     return _peak
-
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
@@ -8131,6 +8165,12 @@ If the following keywords are not specified, their defaults are amended in this 
             else:
                 hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;]=False
                 hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False                
+            
+            try:
+                sprit_gui.update_progress_bars(prog_percent=5)
+            except Exception as e:
+                pass
+                #print(e)
         return hvsr_data
     else:
         paz = hvsr_data[&#39;paz&#39;]
@@ -8356,7 +8396,6 @@ If not specified, does not write file</dd>
     invPath = params[&#39;metapath&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     trominoNameList = [&#39;tromino&#39;, &#39;trom&#39;, &#39;trm&#39;, &#39;t&#39;]
-
     if params[&#39;instrument&#39;].lower() in raspShakeInstNameList:
         if update_metadata:
             params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
@@ -8975,7 +9014,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-10-31', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-11-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -9251,7 +9290,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
         inputParamDict.update(instrument_settings_dict)
     
     if instrument.lower() in raspShakeInstNameList:
-        if metapath is None:
+        if metapath is None or metapath==&#39;&#39;:
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/rs3dv5plus_metadata.inv&#39;)).as_posix()
             inputParamDict[&#39;metapath&#39;] = metapath
             #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath(&#39;/resources/rs3dv7_metadata.inv&#39;)
@@ -9408,6 +9447,9 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
             #Clear everything
             for key in ax:
                 ax[key].clear()
+            for t in fig.texts:
+                print(t)
+                del t
             fig.clear()
         if close_figs:
             plt.close(&#39;all&#39;)
@@ -9495,6 +9537,9 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
             else:
                 warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
+
+        windowsUsedStr = f&#34;{hvsr_data[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]} windows used&#34;
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;,fontsize=&#39;x-small&#39;)
 
         if show:
             fig.canvas.draw()
