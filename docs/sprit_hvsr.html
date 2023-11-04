@@ -2703,7 +2703,6 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
             for key in ax:
                 ax[key].clear()
             for t in fig.texts:
-                print(t)
                 del t
             fig.clear()
         if close_figs:
@@ -2759,7 +2758,7 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
-
+        
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -2794,7 +2793,8 @@ def plot_hvsr(hvsr_data, plot_type=&#39;HVSR ann p C+ ann p SPEC&#39;, use_subpl
                 warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
 
         windowsUsedStr = f&#34;{hvsr_data[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]} windows used&#34;
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;,fontsize=&#39;x-small&#39;)
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;, fontsize=&#39;x-small&#39;,
+                 bbox=dict(facecolor=&#39;w&#39;, edgecolor=None, linewidth=0, alpha=1, pad=9))
 
         if show:
             fig.canvas.draw()
@@ -6163,6 +6163,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     return fig, ax
 
+
 #Plot spectrogram from stream
 def _plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type=&#39;linear&#39;, detrend=&#39;mean&#39;, dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     &#34;&#34;&#34;Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
@@ -6402,6 +6403,7 @@ def _plot_specgram_stream(stream, params=None, component=&#39;Z&#39;, stack_type
     
     return
 
+
 # HELPER functions for checking peaks
 # Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
@@ -6440,6 +6442,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _mi
                           &#39;PassList&#39;:{},
                           &#39;PeakPasses&#39;:False})
     return _peak
+
 
 # Check reliability of HVSR of curve
 def __check_curve_reliability(hvsr_data, _peak):
@@ -6526,7 +6529,8 @@ def __check_curve_reliability(hvsr_data, _peak):
         _peak[_i][&#39;PassList&#39;][&#39;LowCurveStDevOverTime&#39;] = test3
     return _peak
 
-#Check clarity of peaks
+
+# Check clarity of peaks
 def __check_clarity(_x, _y, _peak, do_rank=True):
     &#34;&#34;&#34;Check clarity of peak amplitude(s)
 
@@ -6599,7 +6603,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
             else:
                 pass
 
-    #Amplitude Clarity test
+    # Amplitude Clarity test
     # Only peaks with A0 &gt; 2 pass
     if do_rank:
         max_rank += 1
@@ -6616,9 +6620,10 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
 
     return _peak
 
+
 # Check the stability of the frequency peak
 def __check_freq_stability(_peak, _peakm, _peakp):
-    &#34;&#34;&#34;Test peaks for satisfying stability conditions 
+    &#34;&#34;&#34;Test peaks for satisfying stability conditions
 
     Test as outlined by SESAME 2004:
         - the _peak should appear at the same frequency (within a percentage ± 5%) on the H/V
@@ -6631,12 +6636,12 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     _peakm : list
         List of dictionaries containing input information about peakm (peak minus one StDev in freq)
     _peakp : list
-        List of dictionaries containing input information about peak (peak plus one StDev in freq)  
+        List of dictionaries containing input information about peak (peak plus one StDev in freq)
 
     Returns
     -------
     _peak : list
-        List of dictionaries containing output information about peak test  
+        List of dictionaries containing output information about peak test
     &#34;&#34;&#34;
     global max_rank
 
@@ -6668,7 +6673,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
         _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = sprit_utils.x_mark()
         for _j in range(len(_peakp)):
             if abs(_peakp[_j][&#39;f0&#39;] - _peak[_i][&#39;f0&#39;]) &lt; _dx:
-                _index = _j
+
                 _dx = abs(_peakp[_j][&#39;f0&#39;] - _peak[_i][&#39;f0&#39;])
             if _peak[_i][&#39;f0&#39;] * 0.95 &lt;= _peakp[_j][&#39;f0&#39;] &lt;= _peak[_i][&#39;f0&#39;] * 1.05:
                 if _found_m[_i]:
@@ -6686,6 +6691,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
             _peak[_i][&#39;Report&#39;][&#39;P+&#39;] = f&#34;{_peakp[_j][&#39;f0&#39;]:0.2f} Hz within ±5% of {_peak[_i][&#39;f0&#39;]:0.2f} Hz {sprit_utils.x_mark()}&#34;
 
     return _peak
+
 
 # Check stability
 def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
@@ -6714,7 +6720,6 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
     global max_rank
 
-    peakPassList = []
     #
     # check σf and σA
     #
@@ -6820,6 +6825,7 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
                 _this_peak[&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;] = False
 
     return _peak
+
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
@@ -9014,7 +9020,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-11-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-11-04', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -9448,7 +9454,6 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
             for key in ax:
                 ax[key].clear()
             for t in fig.texts:
-                print(t)
                 del t
             fig.clear()
         if close_figs:
@@ -9504,7 +9509,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
-
+        
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -9539,7 +9544,8 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
                 warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
 
         windowsUsedStr = f&#34;{hvsr_data[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]} windows used&#34;
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;,fontsize=&#39;x-small&#39;)
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;, fontsize=&#39;x-small&#39;,
+                 bbox=dict(facecolor=&#39;w&#39;, edgecolor=None, linewidth=0, alpha=1, pad=9))
 
         if show:
             fig.canvas.draw()

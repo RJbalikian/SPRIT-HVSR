@@ -2728,7 +2728,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
         
-         for i, p in enumerate(plotTypeOrder):
+        for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
             plotComponents = kList[pStartInd:pEndInd]
@@ -2762,7 +2762,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
         windowsUsedStr = f"{hvsr_data['hvsr_df']['Use'].sum()}/{hvsr_data['hvsr_df'].shape[0]} windows used"
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small')
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small',
+                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=9))
 
         if show:
             fig.canvas.draw()
@@ -6131,6 +6132,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     return fig, ax
 
+
 #Plot spectrogram from stream
 def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
@@ -6370,6 +6372,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     return
 
+
 # HELPER functions for checking peaks
 # Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
@@ -6408,6 +6411,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _mi
                           'PassList':{},
                           'PeakPasses':False})
     return _peak
+
 
 # Check reliability of HVSR of curve
 def __check_curve_reliability(hvsr_data, _peak):
@@ -6493,6 +6497,7 @@ def __check_curve_reliability(hvsr_data, _peak):
         _peak[_i]['PassList']['SignificantCycles'] = test2
         _peak[_i]['PassList']['LowCurveStDevOverTime'] = test3
     return _peak
+
 
 # Check clarity of peaks
 def __check_clarity(_x, _y, _peak, do_rank=True):

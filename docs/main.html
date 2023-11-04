@@ -2788,7 +2788,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-11-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-11-04', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -3251,7 +3251,6 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
             for key in ax:
                 ax[key].clear()
             for t in fig.texts:
-                print(t)
                 del t
             fig.clear()
         if close_figs:
@@ -3307,7 +3306,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
 
         plotTypeOrder.pop()
         plotIndOrder[-1]=len(kList)
-
+        
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -3342,7 +3341,8 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
                 warnings.warn(&#39;Plot type {p} not recognized&#39;, UserWarning)   
 
         windowsUsedStr = f&#34;{hvsr_data[&#39;hvsr_df&#39;][&#39;Use&#39;].sum()}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]} windows used&#34;
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;,fontsize=&#39;x-small&#39;)
+        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha=&#39;right&#39;, va=&#39;bottom&#39;, fontsize=&#39;x-small&#39;,
+                 bbox=dict(facecolor=&#39;w&#39;, edgecolor=None, linewidth=0, alpha=1, pad=9))
 
         if show:
             fig.canvas.draw()
