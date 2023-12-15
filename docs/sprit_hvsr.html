@@ -638,7 +638,6 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
 
     #Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(input_params).parameters.keys())}  
-
     try:
         params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
     except:
@@ -656,7 +655,8 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError(&#39;Data not read correctly, see sprit.fetch_data() function and parameters for more details.&#39;)
-    #Remove Noise
+    
+    # Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
@@ -706,6 +706,24 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
             #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
             if not ppsd_data[site_name][&#39;batch&#39;]:
                 ppsd_data = ppsd_data[site_name]
+    
+    # Remove Outlier Curves
+    try:
+        remove_outlier_curve_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+        data_curvesRemoved = remove_outlier_curves(hvsr_data=ppsd_data, verbose=verbose,**remove_outlier_curve_kwargs)   
+    except:
+        #Reformat data so HVSRData and HVSRBatch data both work here
+        data_curvesRemoved = ppsd_data
+        if isinstance(data_curvesRemoved, HVSRData):
+            data_curvesRemoved = {&#39;place_holder_sitename&#39;:data_curvesRemoved}
+            
+        for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
+            data_curvesRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;] = False
+            data_curvesRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+    
+            #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
+            if not data_curvesRemoved[site_name][&#39;batch&#39;]:
+                data_curvesRemoved = data_curvesRemoved[site_name]
     
     #Process HVSR Curves
     try:
@@ -1866,10 +1884,6 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         hvsr_data[&#39;tsteps_used&#39;] = [hvsrDF[&#39;Use&#39;].sum(), hvsrDF[&#39;Use&#39;].shape[0]]
         #hvsr_data[&#39;tsteps_used&#39;] = [hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
         
-        #Remove outlier ppsds (those derived from data within the windows to be removed)
-
-        if remove_outliers and &#39;xwindows_out&#39; in hvsr_data.keys():
-            hvsr_data = remove_outlier_curves(hvsr_data, outlier_std=outlier_std, ppsd_length=ppsd_kwargs[&#39;ppsd_length&#39;])
         hvsr_data[&#39;tsteps_used&#39;][0] = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
         
         hvsr_data = sprit_utils.make_it_classy(hvsr_data)
@@ -2628,7 +2642,7 @@ def input_params(datapath,
 
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
-    params[&#39;ProcessingStatus&#39;][&#39;InputParams&#39;] = True
+    params[&#39;ProcessingStatus&#39;][&#39;InputParamsStatus&#39;] = True
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
@@ -2940,7 +2954,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
     return                 
 
 #Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False):
+def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, outlier_curve_rmse_thresh=False, verbose=False):
     &#34;&#34;&#34;Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2977,7 +2991,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
-    outlier_curve_std : float, default = 1.75
+    outlier_curve_rmse_thresh : float, default = 1.75
         Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an &#39;outlier&#39;
     verbose : bool, defualt=False
         Whether to print output to terminal
@@ -3006,7 +3020,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
     freq_smooth = orig_args[&#39;freq_smooth&#39;]
     f_smooth_width = orig_args[&#39;f_smooth_width&#39;]
     resample = orig_args[&#39;resample&#39;]
-    outlier_curve_std = orig_args[&#39;outlier_curve_std&#39;]
+    outlier_curve_rmse_thresh = orig_args[&#39;outlier_curve_rmse_thresh&#39;]
     verbose = orig_args[&#39;verbose&#39;]
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data[&#39;batch&#39;]):
@@ -3200,36 +3214,9 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmach
         indHVCurvesArr = np.stack(hvsr_out[&#39;hvsr_df&#39;][&#39;HV_Curves&#39;][hvsr_out[&#39;hvsr_df&#39;][&#39;Use&#39;]])
         #indHVCurvesArr = hvsr_out[&#39;ind_hvsr_curves&#39;]
 
-        if outlier_curve_std:
-            #use the standard deviation of each individual curve to determine if it overlapped
-            stdT = np.nanstd(indHVCurvesArr, axis=1)
-            std_stdT= np.nanstd(stdT)
-            avg_stdT= np.nanmean(stdT)
-            bool_col=&#39;Use&#39;
-            eval_col=&#39;HV_Curves&#39;
-    
-            low_std_val = avg_stdT - (std_stdT * outlier_curve_std)
-            hi_std_val = avg_stdT + (std_stdT * outlier_curve_std)
-
-            #First, do pandas version of it
-            updateUseCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).between(low_std_val, hi_std_val, inclusive=&#39;both&#39;)
-            hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], bool_col] = updateUseCol
-
-            #Find psds to get rid of based on standard deviation of each curve (i.e., how curvy is the curve)
-            psds_to_rid = []
-            for i,t in enumerate(indHVCurvesArr):
-                if stdT[i] &lt; avg_stdT - std_stdT*outlier_curve_std or stdT[i] &gt; avg_stdT + std_stdT*outlier_curve_std:
-                    psds_to_rid.append(i)
-
-            for i, r in enumerate(psds_to_rid):
-                index = int(r-i)
-                indHVCurvesArr = np.delete(indHVCurvesArr, index, axis=0)
-
-                for k in hvsr_out[&#39;ppsds&#39;]:
-                    hvsr_out[&#39;psd_raw&#39;][k] = np.delete(hvsr_out[&#39;psd_raw&#39;][k], index, axis=0)         
-                    hvsr_out[&#39;current_times_used&#39;][k] = np.delete(hvsr_out[&#39;current_times_used&#39;][k], index)
-            hvsr_out[&#39;tsteps_used&#39;][0] = hvsr_out[&#39;ppsds&#39;][k][&#39;current_times_used&#39;].shape[0]
-
+        if outlier_curve_rmse_thresh:
+            hvsr_out = remove_outlier_curves(hvsr_out, rmse_thresh=outlier_curve_rmse_thresh, use_hv_curve=True, verbose=verbose)
+  
         hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.nanstd(indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
@@ -3515,29 +3502,192 @@ def remove_noise(hvsr_data, remove_method=&#39;auto&#39;, sat_percent=0.995, noi
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
-    &#34;&#34;&#34;Function used in generate_ppsds() to remove outliers. May also be used independently.
+def remove_outlier_curves(hvsr_data, rmse_thresh=5, use_hv_curve=False, show_plot=False, verbose=False):
+    &#34;&#34;&#34;Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
+    Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
+    It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
     
-    This uses the mean value of the entirety of each ppsd curve. This is not very robust, but it is intended only to remove curves who are well outside of the what would be expected.
-    These abberant curves often occur due to the remove_noise() function.
+    Some abberant curves often occur due to the remove_noise() function, so this should be run some time after remove_noise(). 
+    In general, the recommended workflow is to run this immediately following the generate_ppsds() function.
 
     Parameters
     ----------
-    params : dict
+    hvsr_data : dict
         Input dictionary containing all the values and parameters of interest
-    outlier_std :  float, default=3
-        The standard deviation value to use as a threshold for determining whether a curve is an outlier. 
+    rmse_thresh :  float, default=5
+        The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
         This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
-    ppsd_length : float, optional
-        Length of data segments passed to psd in seconds, by default 60.
+    use_hv_curve : bool, default=False
+        Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.
+    show_plot : bool, default=False
+        Whether to show a plot of the removed data
+    verbose : bool, default=False
+        Whether to print output of function to terminal
 
     Returns
     -------
-    params : dict
+    hvsr_data : dict
         Input dictionary with values modified based on work of function.
     &#34;&#34;&#34;
+    # Setup function
+    #Get intput paramaters
+    orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
-    ppsds = params[&#39;ppsds&#39;]
+    # Update with processing parameters specified previously in input_params, if applicable
+    if &#39;processing_parameters&#39; in hvsr_data.keys():
+        if &#39;remove_outlier_curves&#39; in hvsr_data[&#39;processing_parameters&#39;].keys():
+            for k, v in hvsr_data[&#39;processing_parameters&#39;][&#39;remove_noise&#39;].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(remove_outlier_curves).args[1:], 
+                                        inspect.getfullargspec(remove_outlier_curves).defaults))
+                # Manual input to function overrides the imported parameter values
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
+                    orig_args[k] = v
+
+    # Reset parameters in case of manual override of imported parameters
+    rmse_thresh = orig_args[&#39;rmse_thresh&#39;]
+    show_plot = orig_args[&#39;show_plot&#39;]
+    verbose = orig_args[&#39;verbose&#39;]
+
+    #Print if verbose, which changes depending on if batch data or not
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data[&#39;batch&#39;]):
+        if isinstance(hvsr_data, HVSRData) and hvsr_data[&#39;batch&#39;]:
+            pass
+        else:
+            print(&#39;\nRemoving outlier curves from further analysis (remove_outlier_curves())&#39;)
+            print(&#39;\tUsing the following parameters:&#39;)
+            for key, value in orig_args.items():
+                if key==&#39;hvsr_data&#39;:
+                    pass
+                else:
+                    print(&#39;\t  {}={}&#39;.format(key, value))
+            print()
+    
+    #First, divide up for batch or not
+    #Site is in the keys anytime it&#39;s not batch
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we&#39;ll loop through each site
+        hvsr_out = {}
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            args[&#39;hvsr_data&#39;] = hvsr_data[site_name] #Get what would normally be the &#34;hvsr_data&#34; variable for each site
+            if hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;]:
+                try:
+                    hvsr_out[site_name] = __remove_outlier_curves(**args) #Call another function, that lets us run this function again
+                except:
+                    hvsr_out = hvsr_data
+                    hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurves&#39;] = False
+                    hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False                    
+            else:
+                hvsr_out = hvsr_data
+                hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurves&#39;] = False
+                hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+        hvsr_out = HVSRBatch(hvsr_out)
+    else:    
+        #Create plot if designated        
+        if not use_hv_curve:
+            compNames = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+            colNames = compNames
+        else:
+            compNames=[&#39;HV Curve&#39;]
+            colNames = [&#39;HV_Curves&#39;]
+        if show_plot:
+            if use_hv_curve:
+                spMosaic = [&#39;HV Curve&#39;]
+            else:
+                spMosaic = [[&#39;Z&#39;],
+                            [&#39;E&#39;],
+                            [&#39;N&#39;]]
+            fig, ax=plt.subplot_mosaic(spMosaic, sharex=True)
+
+        #Loop through each component, and determine which curves are outliers
+        bad_rmse=[]
+        for i, column in enumerate(colNames):
+            if column in compNames:
+                column = &#39;psd_values_&#39;+column
+            # Retrieve data from dataframe (use all windows, just in case)
+            curr_data = np.stack(hvsr_data[&#39;hvsr_df&#39;][column])
+            
+            # Calculate a median curve, and reshape so same size as original
+            medCurve = np.nanmedian(curr_data, axis=0)
+            medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+            
+            # Calculate RMSE
+            rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+            
+            # Retrieve index of those RMSE values that lie outside the threshold
+            for j, curve in enumerate(curr_data):
+                if rmse[j] &gt; rmse_thresh:
+                    bad_rmse.append(j)
+
+            # Show plot of removed/retained data
+            if show_plot:
+                # Intialize to only get unique labels
+                rem_label_got = False
+                keep_label_got = False
+                
+                # Iterate through each curve to determine if it&#39;s rmse is outside threshold, for plot
+                for j, curve in enumerate(curr_data):
+                    label=None
+                    if rmse[j] &gt; rmse_thresh:
+                        linestyle = &#39;dashed&#39;
+                        linecolor=&#39;darkred&#39;
+                        alpha = 1
+                        linewidth = 1
+                        if not rem_label_got:
+                            label=&#39;Removed Curve&#39;
+                            rem_label_got=True
+                    else:
+                        linestyle=&#39;solid&#39;
+                        linecolor = &#39;rosybrown&#39;
+                        alpha = 0.25
+                        linewidth=0.5
+                        if not keep_label_got:
+                            keep_label_got=True
+                            label=&#39;Retained Curve&#39;
+
+                    # Plot each individual curve
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                
+                # Plot the median curve
+                ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
+                
+                # Format axis
+                ax[compNames[i]].set_title(f&#34;{compNames[i]}&#34;)
+                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
+                ax[compNames[i]].semilogx()             
+        if show_plot:
+            plt.show()
+                    
+        # Get unique values of bad_rmse indices and set the &#34;Use&#34; column of the hvsr_df to False for that window
+        bad_rmse = np.unique(bad_rmse)
+        if len(bad_rmse) &gt; 0:
+            bad_index = hvsr_data[&#39;hvsr_df&#39;].index[pd.Series(bad_rmse)]
+            hvsr_data[&#39;hvsr_df&#39;].loc[bad_index, &#34;Use&#34;] = False   
+        
+        if verbose:
+            if len(bad_rmse)&gt;0:
+                print(f&#34;\tThe windows starting at the following times have been removed from further analysis ({len(bad_index)}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]}):&#34;)
+                for b in bad_index:
+                    print(f&#34;\t\t{b}&#34;)
+            else:
+                print(&#39;\tNo outlier curves have been removed&#39;)
+                    
+        hvsr_out = hvsr_data
+
+        if &#39;processing_parameters&#39; not in hvsr_out.keys():
+            hvsr_out[&#39;processing_parameters&#39;] = {}
+        hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;] = {}
+        for key, value in orig_args.items():
+            hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;][key] = value
+
+        hvsr_data[&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurvesStatus&#39;] = True
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    
+    return hvsr_out
+
+    &#34;&#34;&#34; OLD Code
+    ppsds = hvsr_data[&#39;ppsds&#39;]
     newPPsds = {}
     stds = {}
     psds_to_rid = []
@@ -3569,14 +3719,14 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
         #Check if any times fall in excluded zone
         for i, t in enumerate(curr_times_mpl):
             nextT = t + ppsd_length_mpl
-            for w, win in enumerate(params[&#39;xwindows_out&#39;]):
+            for w, win in enumerate(hvsr_data[&#39;xwindows_out&#39;]):
                 if t &gt; win[0] and t &lt; win[1]:
                     psds_to_rid.append(i)
                 elif nextT &gt; win[0] and nextT &lt; win[1]:
                     psds_to_rid.append(i)
     
         #Use dataframe
-        hvsrDF = params[&#39;hvsr_df&#39;].copy()
+        hvsrDF = hvsr_data[&#39;hvsr_df&#39;].copy()
         psdVals = hvsrDF[&#39;psd_values_&#39;+k]
         hvsrDF[k+&#39;_CurveMedian&#39;] = psdVals.apply(np.nanmedian)
         hvsrDF[k+&#39;_CurveMean&#39;] = psdVals.apply(np.nanmean)
@@ -3592,12 +3742,11 @@ def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
 
     psds_to_rid = np.unique(psds_to_rid)
 
-    for k in params[&#39;ppsds&#39;]:
+    for k in hvsr_data[&#39;ppsds&#39;]:
         for i, r in enumerate(psds_to_rid):
             index = int(r-i)
-            params[&#39;ppsds&#39;][k][&#39;psd_values&#39;] = np.delete(params[&#39;ppsds&#39;][k][&#39;psd_values&#39;], index, axis=0)
-            params[&#39;ppsds&#39;][k][&#39;current_times_used&#39;] = np.delete(params[&#39;ppsds&#39;][k][&#39;current_times_used&#39;], index, axis=0)
-    return params
+            hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;], index, axis=0)
+            hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;], index, axis=0)&#34;&#34;&#34;
 
 #Read data as batch
 def batch_data_read(input_data, batch_type=&#39;table&#39;, param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
@@ -3884,6 +4033,21 @@ def __remove_noise_batch(**remove_noise_kwargs):
 
     return hvsr_data
 
+# Helper function batch processing of remove_outlier_curves
+def __remove_outlier_curves(**remove_outlier_curves_kwargs):
+    try:
+        hvsr_data = remove_outlier_curves(**remove_outlier_curves_kwargs)
+
+        if remove_outlier_curves_kwargs[&#39;verbose&#39;]:
+            if &#39;input_params&#39; in hvsr_data.keys():
+                print(&#39;\t{} successfully completed remove_outlier_curves()&#39;.format(hvsr_data[&#39;input_params&#39;][&#39;site&#39;]))
+            elif &#39;site&#39; in hvsr_data.keys():
+                print(&#39;\t{} successfully completed remove_outlier_curves()&#39;.format(hvsr_data[&#39;site&#39;]))
+    except Exception as e:
+        warnings.warn(f&#34;Error in remove_outlier_curves({remove_outlier_curves_kwargs[&#39;input&#39;][&#39;site&#39;]}, **remove_outlier_curves_kwargs)&#34;, RuntimeWarning)
+
+    return hvsr_data
+
 #Batch function for plot_hvsr()
 def _hvsr_plot_batch(**hvsr_plot_kwargs):
     try:
@@ -3924,7 +4088,6 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
     sprit.HVSRData
         Data being processed, with updated the &#39;OverallStatus&#39; key of the attribute ProcessingStatus updated.
     &#34;&#34;&#34;
-    
     #Convert HVSRData to same format as HVSRBatch so same code works the same on both
     if isinstance(hvsr_data, HVSRData):
         siteName = hvsr_data[&#39;site&#39;]
@@ -8332,10 +8495,6 @@ If the following keywords are not specified, their defaults are amended in this 
         hvsr_data[&#39;tsteps_used&#39;] = [hvsrDF[&#39;Use&#39;].sum(), hvsrDF[&#39;Use&#39;].shape[0]]
         #hvsr_data[&#39;tsteps_used&#39;] = [hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
         
-        #Remove outlier ppsds (those derived from data within the windows to be removed)
-
-        if remove_outliers and &#39;xwindows_out&#39; in hvsr_data.keys():
-            hvsr_data = remove_outlier_curves(hvsr_data, outlier_std=outlier_std, ppsd_length=ppsd_kwargs[&#39;ppsd_length&#39;])
         hvsr_data[&#39;tsteps_used&#39;][0] = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
         
         hvsr_data = sprit_utils.make_it_classy(hvsr_data)
@@ -9020,7 +9179,7 @@ list/tuple - a list or tuple of the above objects, in the same order they are in
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-12-08', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2023-12-15', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -9320,7 +9479,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
 
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
-    params[&#39;ProcessingStatus&#39;][&#39;InputParams&#39;] = True
+    params[&#39;ProcessingStatus&#39;][&#39;InputParamsStatus&#39;] = True
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params</code></pre>
 </details>
@@ -9722,7 +9881,7 @@ Tuple containing the figure and axes of the resulting plot, only returned if ret
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.process_hvsr"><code class="name flex">
-<span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False)</span>
+<span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_thresh=False, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Process the input data and get HVSR data</p>
@@ -9767,7 +9926,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <dt>bool or int.</dt>
 <dt>If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis</dt>
 <dt>If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.</dt>
-<dt><strong><code>outlier_curve_std</code></strong> :&ensp;<code>float</code>, default <code>= 1.75</code></dt>
+<dt><strong><code>outlier_curve_rmse_thresh</code></strong> :&ensp;<code>float</code>, default <code>= 1.75</code></dt>
 <dd>Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an 'outlier'</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool, defualt=False</code></dt>
 <dd>Whether to print output to terminal</dd>
@@ -9780,7 +9939,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, outlier_curve_std=1.75, verbose=False):
+<pre><code class="python">def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, resample=True, outlier_curve_rmse_thresh=False, verbose=False):
     &#34;&#34;&#34;Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -9817,7 +9976,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
-    outlier_curve_std : float, default = 1.75
+    outlier_curve_rmse_thresh : float, default = 1.75
         Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an &#39;outlier&#39;
     verbose : bool, defualt=False
         Whether to print output to terminal
@@ -9846,7 +10005,7 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
     freq_smooth = orig_args[&#39;freq_smooth&#39;]
     f_smooth_width = orig_args[&#39;f_smooth_width&#39;]
     resample = orig_args[&#39;resample&#39;]
-    outlier_curve_std = orig_args[&#39;outlier_curve_std&#39;]
+    outlier_curve_rmse_thresh = orig_args[&#39;outlier_curve_rmse_thresh&#39;]
     verbose = orig_args[&#39;verbose&#39;]
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data[&#39;batch&#39;]):
@@ -10040,36 +10199,9 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
         indHVCurvesArr = np.stack(hvsr_out[&#39;hvsr_df&#39;][&#39;HV_Curves&#39;][hvsr_out[&#39;hvsr_df&#39;][&#39;Use&#39;]])
         #indHVCurvesArr = hvsr_out[&#39;ind_hvsr_curves&#39;]
 
-        if outlier_curve_std:
-            #use the standard deviation of each individual curve to determine if it overlapped
-            stdT = np.nanstd(indHVCurvesArr, axis=1)
-            std_stdT= np.nanstd(stdT)
-            avg_stdT= np.nanmean(stdT)
-            bool_col=&#39;Use&#39;
-            eval_col=&#39;HV_Curves&#39;
-    
-            low_std_val = avg_stdT - (std_stdT * outlier_curve_std)
-            hi_std_val = avg_stdT + (std_stdT * outlier_curve_std)
-
-            #First, do pandas version of it
-            updateUseCol = hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], eval_col].apply(np.nanstd).between(low_std_val, hi_std_val, inclusive=&#39;both&#39;)
-            hvsr_out[&#39;hvsr_df&#39;].loc[hvsr_out[&#39;hvsr_df&#39;][bool_col], bool_col] = updateUseCol
-
-            #Find psds to get rid of based on standard deviation of each curve (i.e., how curvy is the curve)
-            psds_to_rid = []
-            for i,t in enumerate(indHVCurvesArr):
-                if stdT[i] &lt; avg_stdT - std_stdT*outlier_curve_std or stdT[i] &gt; avg_stdT + std_stdT*outlier_curve_std:
-                    psds_to_rid.append(i)
-
-            for i, r in enumerate(psds_to_rid):
-                index = int(r-i)
-                indHVCurvesArr = np.delete(indHVCurvesArr, index, axis=0)
-
-                for k in hvsr_out[&#39;ppsds&#39;]:
-                    hvsr_out[&#39;psd_raw&#39;][k] = np.delete(hvsr_out[&#39;psd_raw&#39;][k], index, axis=0)         
-                    hvsr_out[&#39;current_times_used&#39;][k] = np.delete(hvsr_out[&#39;current_times_used&#39;][k], index)
-            hvsr_out[&#39;tsteps_used&#39;][0] = hvsr_out[&#39;ppsds&#39;][k][&#39;current_times_used&#39;].shape[0]
-
+        if outlier_curve_rmse_thresh:
+            hvsr_out = remove_outlier_curves(hvsr_out, rmse_thresh=outlier_curve_rmse_thresh, use_hv_curve=True, verbose=verbose)
+  
         hvsr_out[&#39;ind_hvsr_stdDev&#39;] = np.nanstd(indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
@@ -10406,54 +10538,223 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.remove_outlier_curves"><code class="name flex">
-<span>def <span class="ident">remove_outlier_curves</span></span>(<span>params, outlier_std=3, ppsd_length=30)</span>
+<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=5, use_hv_curve=False, show_plot=False, verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function used in generate_ppsds() to remove outliers. May also be used independently.</p>
-<p>This uses the mean value of the entirety of each ppsd curve. This is not very robust, but it is intended only to remove curves who are well outside of the what would be expected.
-These abberant curves often occur due to the remove_noise() function.</p>
+<div class="desc"><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
+Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
+It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.</p>
+<p>Some abberant curves often occur due to the remove_noise() function, so this should be run some time after remove_noise().
+In general, the recommended workflow is to run this immediately following the generate_ppsds() function.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
+<dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Input dictionary containing all the values and parameters of interest</dd>
-<dt><strong><code>outlier_std</code></strong> :&ensp;<code> float</code>, default=<code>3</code></dt>
-<dd>The standard deviation value to use as a threshold for determining whether a curve is an outlier.
+<dt><strong><code>rmse_thresh</code></strong> :&ensp;<code> float</code>, default=<code>5</code></dt>
+<dd>The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier.
 This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.</dd>
-<dt><strong><code>ppsd_length</code></strong> :&ensp;<code>float</code>, optional</dt>
-<dd>Length of data segments passed to psd in seconds, by default 60.</dd>
+<dt><strong><code>use_hv_curve</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.</dd>
+<dt><strong><code>show_plot</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to show a plot of the removed data</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to print output of function to terminal</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
+<dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Input dictionary with values modified based on work of function.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_outlier_curves(params, outlier_std=3, ppsd_length=30):
-    &#34;&#34;&#34;Function used in generate_ppsds() to remove outliers. May also be used independently.
+<pre><code class="python">def remove_outlier_curves(hvsr_data, rmse_thresh=5, use_hv_curve=False, show_plot=False, verbose=False):
+    &#34;&#34;&#34;Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
+    Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
+    It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
     
-    This uses the mean value of the entirety of each ppsd curve. This is not very robust, but it is intended only to remove curves who are well outside of the what would be expected.
-    These abberant curves often occur due to the remove_noise() function.
+    Some abberant curves often occur due to the remove_noise() function, so this should be run some time after remove_noise(). 
+    In general, the recommended workflow is to run this immediately following the generate_ppsds() function.
 
     Parameters
     ----------
-    params : dict
+    hvsr_data : dict
         Input dictionary containing all the values and parameters of interest
-    outlier_std :  float, default=3
-        The standard deviation value to use as a threshold for determining whether a curve is an outlier. 
+    rmse_thresh :  float, default=5
+        The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
         This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
-    ppsd_length : float, optional
-        Length of data segments passed to psd in seconds, by default 60.
+    use_hv_curve : bool, default=False
+        Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.
+    show_plot : bool, default=False
+        Whether to show a plot of the removed data
+    verbose : bool, default=False
+        Whether to print output of function to terminal
 
     Returns
     -------
-    params : dict
+    hvsr_data : dict
         Input dictionary with values modified based on work of function.
     &#34;&#34;&#34;
+    # Setup function
+    #Get intput paramaters
+    orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
-    ppsds = params[&#39;ppsds&#39;]
+    # Update with processing parameters specified previously in input_params, if applicable
+    if &#39;processing_parameters&#39; in hvsr_data.keys():
+        if &#39;remove_outlier_curves&#39; in hvsr_data[&#39;processing_parameters&#39;].keys():
+            for k, v in hvsr_data[&#39;processing_parameters&#39;][&#39;remove_noise&#39;].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(remove_outlier_curves).args[1:], 
+                                        inspect.getfullargspec(remove_outlier_curves).defaults))
+                # Manual input to function overrides the imported parameter values
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
+                    orig_args[k] = v
+
+    # Reset parameters in case of manual override of imported parameters
+    rmse_thresh = orig_args[&#39;rmse_thresh&#39;]
+    show_plot = orig_args[&#39;show_plot&#39;]
+    verbose = orig_args[&#39;verbose&#39;]
+
+    #Print if verbose, which changes depending on if batch data or not
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data[&#39;batch&#39;]):
+        if isinstance(hvsr_data, HVSRData) and hvsr_data[&#39;batch&#39;]:
+            pass
+        else:
+            print(&#39;\nRemoving outlier curves from further analysis (remove_outlier_curves())&#39;)
+            print(&#39;\tUsing the following parameters:&#39;)
+            for key, value in orig_args.items():
+                if key==&#39;hvsr_data&#39;:
+                    pass
+                else:
+                    print(&#39;\t  {}={}&#39;.format(key, value))
+            print()
+    
+    #First, divide up for batch or not
+    #Site is in the keys anytime it&#39;s not batch
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we&#39;ll loop through each site
+        hvsr_out = {}
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don&#39;t accidentally overwrite
+            args[&#39;hvsr_data&#39;] = hvsr_data[site_name] #Get what would normally be the &#34;hvsr_data&#34; variable for each site
+            if hvsr_data[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;]:
+                try:
+                    hvsr_out[site_name] = __remove_outlier_curves(**args) #Call another function, that lets us run this function again
+                except:
+                    hvsr_out = hvsr_data
+                    hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurves&#39;] = False
+                    hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False                    
+            else:
+                hvsr_out = hvsr_data
+                hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurves&#39;] = False
+                hvsr_out[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+        hvsr_out = HVSRBatch(hvsr_out)
+    else:    
+        #Create plot if designated        
+        if not use_hv_curve:
+            compNames = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+            colNames = compNames
+        else:
+            compNames=[&#39;HV Curve&#39;]
+            colNames = [&#39;HV_Curves&#39;]
+        if show_plot:
+            if use_hv_curve:
+                spMosaic = [&#39;HV Curve&#39;]
+            else:
+                spMosaic = [[&#39;Z&#39;],
+                            [&#39;E&#39;],
+                            [&#39;N&#39;]]
+            fig, ax=plt.subplot_mosaic(spMosaic, sharex=True)
+
+        #Loop through each component, and determine which curves are outliers
+        bad_rmse=[]
+        for i, column in enumerate(colNames):
+            if column in compNames:
+                column = &#39;psd_values_&#39;+column
+            # Retrieve data from dataframe (use all windows, just in case)
+            curr_data = np.stack(hvsr_data[&#39;hvsr_df&#39;][column])
+            
+            # Calculate a median curve, and reshape so same size as original
+            medCurve = np.nanmedian(curr_data, axis=0)
+            medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+            
+            # Calculate RMSE
+            rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+            
+            # Retrieve index of those RMSE values that lie outside the threshold
+            for j, curve in enumerate(curr_data):
+                if rmse[j] &gt; rmse_thresh:
+                    bad_rmse.append(j)
+
+            # Show plot of removed/retained data
+            if show_plot:
+                # Intialize to only get unique labels
+                rem_label_got = False
+                keep_label_got = False
+                
+                # Iterate through each curve to determine if it&#39;s rmse is outside threshold, for plot
+                for j, curve in enumerate(curr_data):
+                    label=None
+                    if rmse[j] &gt; rmse_thresh:
+                        linestyle = &#39;dashed&#39;
+                        linecolor=&#39;darkred&#39;
+                        alpha = 1
+                        linewidth = 1
+                        if not rem_label_got:
+                            label=&#39;Removed Curve&#39;
+                            rem_label_got=True
+                    else:
+                        linestyle=&#39;solid&#39;
+                        linecolor = &#39;rosybrown&#39;
+                        alpha = 0.25
+                        linewidth=0.5
+                        if not keep_label_got:
+                            keep_label_got=True
+                            label=&#39;Retained Curve&#39;
+
+                    # Plot each individual curve
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                
+                # Plot the median curve
+                ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
+                
+                # Format axis
+                ax[compNames[i]].set_title(f&#34;{compNames[i]}&#34;)
+                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
+                ax[compNames[i]].semilogx()             
+        if show_plot:
+            plt.show()
+                    
+        # Get unique values of bad_rmse indices and set the &#34;Use&#34; column of the hvsr_df to False for that window
+        bad_rmse = np.unique(bad_rmse)
+        if len(bad_rmse) &gt; 0:
+            bad_index = hvsr_data[&#39;hvsr_df&#39;].index[pd.Series(bad_rmse)]
+            hvsr_data[&#39;hvsr_df&#39;].loc[bad_index, &#34;Use&#34;] = False   
+        
+        if verbose:
+            if len(bad_rmse)&gt;0:
+                print(f&#34;\tThe windows starting at the following times have been removed from further analysis ({len(bad_index)}/{hvsr_data[&#39;hvsr_df&#39;].shape[0]}):&#34;)
+                for b in bad_index:
+                    print(f&#34;\t\t{b}&#34;)
+            else:
+                print(&#39;\tNo outlier curves have been removed&#39;)
+                    
+        hvsr_out = hvsr_data
+
+        if &#39;processing_parameters&#39; not in hvsr_out.keys():
+            hvsr_out[&#39;processing_parameters&#39;] = {}
+        hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;] = {}
+        for key, value in orig_args.items():
+            hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;][key] = value
+
+        hvsr_data[&#39;ProcessingStatus&#39;][&#39;RemoveOutlierCurvesStatus&#39;] = True
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    
+    return hvsr_out
+
+    &#34;&#34;&#34; OLD Code
+    ppsds = hvsr_data[&#39;ppsds&#39;]
     newPPsds = {}
     stds = {}
     psds_to_rid = []
@@ -10485,14 +10786,14 @@ This averages over each individual entire curve so that curves with very abberan
         #Check if any times fall in excluded zone
         for i, t in enumerate(curr_times_mpl):
             nextT = t + ppsd_length_mpl
-            for w, win in enumerate(params[&#39;xwindows_out&#39;]):
+            for w, win in enumerate(hvsr_data[&#39;xwindows_out&#39;]):
                 if t &gt; win[0] and t &lt; win[1]:
                     psds_to_rid.append(i)
                 elif nextT &gt; win[0] and nextT &lt; win[1]:
                     psds_to_rid.append(i)
     
         #Use dataframe
-        hvsrDF = params[&#39;hvsr_df&#39;].copy()
+        hvsrDF = hvsr_data[&#39;hvsr_df&#39;].copy()
         psdVals = hvsrDF[&#39;psd_values_&#39;+k]
         hvsrDF[k+&#39;_CurveMedian&#39;] = psdVals.apply(np.nanmedian)
         hvsrDF[k+&#39;_CurveMean&#39;] = psdVals.apply(np.nanmean)
@@ -10508,12 +10809,11 @@ This averages over each individual entire curve so that curves with very abberan
 
     psds_to_rid = np.unique(psds_to_rid)
 
-    for k in params[&#39;ppsds&#39;]:
+    for k in hvsr_data[&#39;ppsds&#39;]:
         for i, r in enumerate(psds_to_rid):
             index = int(r-i)
-            params[&#39;ppsds&#39;][k][&#39;psd_values&#39;] = np.delete(params[&#39;ppsds&#39;][k][&#39;psd_values&#39;], index, axis=0)
-            params[&#39;ppsds&#39;][k][&#39;current_times_used&#39;] = np.delete(params[&#39;ppsds&#39;][k][&#39;current_times_used&#39;], index, axis=0)
-    return params</code></pre>
+            hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;], index, axis=0)
+            hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;], index, axis=0)&#34;&#34;&#34;</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.run"><code class="name flex">
@@ -10619,7 +10919,6 @@ For sample data, The following can be specified as the datapath parameter:
 
     #Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(input_params).parameters.keys())}  
-
     try:
         params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
     except:
@@ -10637,7 +10936,8 @@ For sample data, The following can be specified as the datapath parameter:
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError(&#39;Data not read correctly, see sprit.fetch_data() function and parameters for more details.&#39;)
-    #Remove Noise
+    
+    # Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
@@ -10687,6 +10987,24 @@ For sample data, The following can be specified as the datapath parameter:
             #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
             if not ppsd_data[site_name][&#39;batch&#39;]:
                 ppsd_data = ppsd_data[site_name]
+    
+    # Remove Outlier Curves
+    try:
+        remove_outlier_curve_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+        data_curvesRemoved = remove_outlier_curves(hvsr_data=ppsd_data, verbose=verbose,**remove_outlier_curve_kwargs)   
+    except:
+        #Reformat data so HVSRData and HVSRBatch data both work here
+        data_curvesRemoved = ppsd_data
+        if isinstance(data_curvesRemoved, HVSRData):
+            data_curvesRemoved = {&#39;place_holder_sitename&#39;:data_curvesRemoved}
+            
+        for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
+            data_curvesRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;] = False
+            data_curvesRemoved[site_name][&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;] = False
+    
+            #If it wasn&#39;t originally HVSRBatch, make it HVSRData object again
+            if not data_curvesRemoved[site_name][&#39;batch&#39;]:
+                data_curvesRemoved = data_curvesRemoved[site_name]
     
     #Process HVSR Curves
     try:
