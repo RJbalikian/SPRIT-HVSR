@@ -35,11 +35,11 @@ import scipy
 try: #For distribution
     from sprit import sprit_utils
     from sprit import sprit_gui
+    from sprit import sprit_jupyter_UI
 except: #For testing
     import sprit_utils
     import sprit_gui
-    pass
-
+    import sprit_jupyter_UI
 
 global spritApp
 
@@ -508,49 +508,64 @@ class HVSRData:
         self._ppsds=value
 
 #Launch the tkinter gui
-def gui():
-    """Function to open a window with a graphical user interface (gui)
-    
-    No parameters, no returns; just opens the gui window.
+def gui(gui_type='default'):
+    """Function to open a graphical user interface (gui)
+
+    Parameters
+    ----------
+    gui_type : str, optional
+        What type of gui to open. "default" opens regular windowed interface, 
+        "widget" opens jupyter widget'
+        "lite" open lite (pending update), by default 'default'
+
     """
-    import pkg_resources
-    #guiPath = pathlib.Path(os.path.realpath(__file__))
-    try:
-        from sprit.sprit_gui import SPRIT_App
-    except:
-        from sprit_gui import SPRIT_App
-    
-    try:
-        import tkinter as tk
-    except:
-        if sys.platform == 'linux':
-            raise ImportError('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
 
-    def on_gui_closing():
-        plt.close('all')
-        gui_root.quit()
-        gui_root.destroy()
+    defaultList = ['windowed', 'window', 'default', 'd']
+    widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
+    liteList = ['lite', 'light', 'basic', 'l', 'b']
 
-    if sys.platform == 'linux':
-        if not pathlib.Path("/usr/share/doc/python3-tk").exists():
-            warnings.warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
-
-    gui_root = tk.Tk()
-    try:
+    if gui_type.lower() in defaultList:
+        import pkg_resources
+        #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
-            icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
-            gui_root.iconbitmap(icon_path)
+            from sprit.sprit_gui import SPRIT_App
         except:
-            icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
-            gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
-    except Exception as e:
-        print("ICON NOT LOADED, still opening GUI")
+            from sprit_gui import SPRIT_App
+        
+        try:
+            import tkinter as tk
+        except:
+            if sys.platform == 'linux':
+                raise ImportError('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
 
-    gui_root.resizable(True, True)
-    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+        def on_gui_closing():
+            plt.close('all')
+            gui_root.quit()
+            gui_root.destroy()
 
-    gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
-    gui_root.mainloop() #Run the main loop
+        if sys.platform == 'linux':
+            if not pathlib.Path("/usr/share/doc/python3-tk").exists():
+                warnings.warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
+
+        gui_root = tk.Tk()
+        try:
+            try:
+                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+                gui_root.iconbitmap(icon_path)
+            except:
+                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+                gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
+        except Exception as e:
+            print("ICON NOT LOADED, still opening GUI")
+
+        gui_root.resizable(True, True)
+        SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+
+        gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
+        gui_root.mainloop() #Run the main loop
+    elif gui_type in widgetList:
+        sprit_jupyter_UI.create_jupyter_ui()
+    
 
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
