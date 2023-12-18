@@ -6,6 +6,7 @@ from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display
+import plotly.graph_objs as go
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
@@ -215,7 +216,81 @@ def create_jupyter_ui():
     input_tab[11, 19:] = process_hvsr_button
 
     # PREVIEW TAB
-    preview_tab = widgets.GridspecLayout(ui_height, ui_width)
+    preview_graph_tab = widgets.GridspecLayout(ui_height, ui_width)
+    preview_noise_tab = widgets.GridspecLayout(ui_height, ui_width)
+    preview_tab = widgets.Tab([preview_graph_tab, preview_noise_tab])
+    preview_tab.set_title(0, "Data Preview")
+    preview_tab.set_title(1, "Noise Removal")
+
+    preview_fig = go.FigureWidget()
+    preview_graph_widget = widgets.Output()
+    preview_graph_tab[:,:]=preview_graph_widget
+    with preview_graph_widget:
+        display(preview_fig)
+
+    #STA/LTA Antitrigger
+    stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description='STA/LTA Antitrigger')
+    sta = widgets.FloatText(description='STA [s]',  style={'description_width': 'initial'}, placeholder=5, value=5,layout=widgets.Layout(height='auto', width='auto'))
+    lta = widgets.FloatText(description='LTA [s]',  style={'description_width': 'initial'}, placeholder=30, value=30,layout=widgets.Layout(height='auto', width='auto'))
+    stalta_thresh_low = widgets.FloatText(description='STA/LTA Thresholds (low, high)',  style={'description_width': 'initial'}, placeholder=0.5, value=0.5,layout=widgets.Layout(height='auto', width='auto'))
+    stalta_thresh_hi = widgets.FloatText(style={'description_width': 'initial'}, placeholder=5, value=5,layout=widgets.Layout(height='auto', width='auto'))
+
+    #% Saturation Threshold
+    max_saturation_check = widgets.Checkbox(description='Percentage Threshold (Instantaneous)', value=False, disabled=False, indent=False)
+    max_saturation_pct = widgets.FloatText(description='Max Saturation %:',  style={'description_width': 'initial'}, placeholder=0.995, value=0.995,layout=widgets.Layout(height='auto', width='auto'))
+
+    #Noise Windows
+    noisy_windows_check = widgets.Checkbox(description='Noisy Windows', value=False, disabled=False, indent=False)
+    max_window_pct = widgets.FloatText(description='Max Window %:',  style={'description_width': 'initial'}, placeholder=0.8, value=0.8,layout=widgets.Layout(height='auto', width='auto'))
+    noisy_window_length = widgets.FloatText(description='Window Length [s]:',  style={'description_width': 'initial'}, placeholder=30, value=30,layout=widgets.Layout(height='auto', width='auto'))
+
+    #Warmup/cooldown
+    warmcool_check = widgets.Checkbox(description='Warmup & Cooldown Time', value=False, disabled=False, indent=False)
+    warmup_time = widgets.FloatText(description='Warmup time [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'))
+    cooldown_time = widgets.FloatText(description='Cooldown time [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'))
+
+    #STD Ratio
+    std_ratio_check = widgets.Checkbox(description='Standard Deviation Antitrigger (not yet implemented)', value=False, disabled=True, indent=False)
+    std_ratio_text = widgets.FloatText(description='StdDev Ratio:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'), disabled=True)
+    std_window_length_text = widgets.FloatText(description='Moving window Length [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'),disabled=True)
+
+    #Autoremove
+    auto_remove_check = widgets.Checkbox(description='Use Auto Remove', value=False, disabled=False, indent=False)
+
+    #Remove from raw data
+    raw_data_remove_check = widgets.Checkbox(description='Remove Noise From Raw Data', value=False, disabled=False, indent=False)
+
+    #remove_noise call
+    remove_noise_call = widgets.Label(value=f"removes_noise()")
+
+    #progress bar (same as above)
+
+    #Update noise windows
+    update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
+
+    #Run (same as above)
+
+    # Add it all in
+    preview_noise_tab[0,1:5] = stalta_check
+    preview_noise_tab[0,5:7] = sta
+    preview_noise_tab[0,7:9] = lta
+    preview_noise_tab[0,9:13] = stalta_thresh_low
+    preview_noise_tab[0,13:15] = stalta_thresh_hi
+
+    preview_noise_tab[1,1:5] = max_saturation_check
+    preview_noise_tab[1,6:8] = max_saturation_pct
+
+    preview_noise_tab[2,1:5] = noisy_windows_check
+    preview_noise_tab[2,6:9] = max_window_pct
+    preview_noise_tab[2,10:13] = noisy_window_length
+
+    preview_noise_tab[3,1:5] = warmcool_check
+    preview_noise_tab[3,6:9] = warmup_time
+    preview_noise_tab[3,10:13] = cooldown_time
+
+    preview_noise_tab[4,1:5] = std_ratio_check
+    preview_noise_tab[4,6:9] = std_ratio_text
+    preview_noise_tab[4,10:13] = std_window_length_text
 
     # SETTINGS TAB
     settings_tab = widgets.GridspecLayout(ui_height, ui_width)
