@@ -6,7 +6,10 @@ from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display
+import numpy as np
 import plotly.graph_objs as go
+import plotly
+from scipy import signal
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
@@ -224,10 +227,41 @@ def create_jupyter_ui():
 
     preview_fig = go.FigureWidget()
     preview_graph_widget = widgets.Output()
+
+    preview_fig2 = plotly.subplots.make_subplots(rows=10, cols=1, shared_xaxes=True)
+    
+
     preview_graph_tab[:,:]=preview_graph_widget
     with preview_graph_widget:
         display(preview_fig)
 
+    def update_preview_fig(hvsr_data, preview_fig):
+        stream_z = hvsr_data['stream'].select(component='Z') #np.ma.masked_array
+
+        # Get iso_times
+        utcdt = stream_z[0].times(type='utcdatetime')
+        iso_times=[]
+        dt_times = []
+        for t in utcdt:
+            if t is not np.ma.masked:
+                iso_times.append(t.isoformat())
+                dt_times.append(datetime.datetime.fromisoformat(t.isoformat()))
+            else:
+                iso_times.append(np.nan)
+        iso_times=np.array(iso_times)
+        dt_times = np.array (dt_times)
+
+        f, t, Sxx = signal.spectrogram(x=stream_z[0].data, fs=stream_z[0].stats.sampling_rate, mode='magnitude')
+        axisTimes = []
+        for tpass in t:
+            axisTimes.append((dt_times[0]+datetime.timedelta(seconds=tpass)).isoformat())
+
+        preview_fig.add_trace(px.imshow(Sxx, x=axisTimes, y=f,  range_color=[0,2500],
+                        labels={'x':'Time [UTC]', 'y':'Frequency [Hz]', 'color':'Intensity'}).data[0])
+
+        preview_fig.update_yaxes(type='log')
+        preview_fig.update_coloraxes(cmin=0, cmax=3000, colorscale='turbo')
+        
     #STA/LTA Antitrigger
     stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description='STA/LTA Antitrigger')
     sta = widgets.FloatText(description='STA [s]',  style={'description_width': 'initial'}, placeholder=5, value=5,layout=widgets.Layout(height='auto', width='auto'))
@@ -309,7 +343,7 @@ def create_jupyter_ui():
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    plot_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_tab = widgets.Tab([ppsd_settings_tab, hvsr_settings_tab, plot_settings_tab])
     settings_tab.set_title(0, "PPSD Settings")
     settings_tab.set_title(1, "HVSR Settings")
@@ -450,73 +484,76 @@ def create_jupyter_ui():
     hvsr_settings_tab[9:11, 1:] = check_peaks_call
 
     # PLOT SETTINGS SUBTAB
-    hv_plot_label = widgets.Label(value='HVSR Plot')
-    component_plot_label = widgets.Label(value='Component Plot')
-    spec_plot_label = widgets.Label(value='Spectrogram Plot')
+    hv_plot_label = widgets.Label(value='HVSR Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
+    component_plot_label = widgets.Label(value='Component Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
+    spec_plot_label = widgets.Label(value='Spectrogram Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
 
-    use_plot_label = widgets.Label(value='Use Plot')
-    use_plot_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+    use_plot_label = widgets.Label(value='Use Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    use_plot_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    use_plot_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+    use_plot_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    use_plot_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-
-    comibne_plot_label = widgets.Label(value='Combine HV and Comp. Plot')
-    combine_hv_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    use_plot_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    show_peak_label = widgets.Label(value='Show Best Peak')
-    show_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-    show_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-    show_best_peak_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    comibne_plot_label = widgets.Label(value='Combine HV and Comp. Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    combine_hv_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    annotate_peak_label = widgets.Label(value='Annotate Best Peak')
-    ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+    show_peak_label = widgets.Label(value='Show Best Peak', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+    show_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-
-    show_all_peaks_label = widgets.Label(value='Show All Peaks')
-    show_all_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    show_best_peak_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    show_all_curves_label = widgets.Label(value='Show All Curves')
-    show_all_curves_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    annotate_peak_label = widgets.Label(value='Annotate Best Peak', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    show_all_curves_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-
-    show_ind_peaks_label = widgets.Label(value='Show Individual Peaks')
-    show_ind_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    show_std_label = widgets.Label(value='Show Standard Deviation')
-    show_std_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-    show_std_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+    show_all_peaks_label = widgets.Label(value='Show All Peaks', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_all_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    show_legend_label = widgets.Label(value='Show Legend')
-    show_legend_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    show_all_curves_label = widgets.Label(value='Show All Curves', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_all_curves_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    show_legend_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
-                                   style={'description_width': 'initial'})
-    show_legend_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+    show_all_curves_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
-    x_type_label = widgets.Label(value='X Type')
+    show_ind_peaks_label = widgets.Label(value='Show Individual Peaks', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_ind_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+
+    show_std_label = widgets.Label(value='Show Standard Deviation', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_std_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+    show_std_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+
+    show_legend_label = widgets.Label(value='Show Legend', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    show_legend_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+    show_legend_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+    show_legend_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                   style={'description_width': 'initial'})
+
+    x_type_label = widgets.Label(value='X Type', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     x_type = widgets.Dropdown(options=[('Frequency', 'freq'), ('Period', 'period')],
                               layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'})
 
-    plotly_kwargs = widgets.Text(description='Plotly Kwargs', style={'description_width': 'initial'},
+    plotly_kwargs_label = widgets.Label(value='Plotly Kwargs', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    plotly_kwargs = widgets.Text(style={'description_width': 'initial'},
                                 layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    mpl_kwargs = widgets.Text(description='Matplotlib Kwargs', style={'description_width': 'initial'},
+
+    mpl_kwargs_label = widgets.Label(value='Matplotlib Kwargs', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
+    mpl_kwargs = widgets.Text(style={'description_width': 'initial'},
                                 layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     plot_hvsr_call = widgets.Label(value='plot_hvsr()')
@@ -526,21 +563,88 @@ def create_jupyter_ui():
     plot_settings_tab[0, 10:15]  = component_plot_label
     plot_settings_tab[0, 15:] = spec_plot_label
 
+    plot_settings_tab[1, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
-    # LOG TAB
-    log_tab = widgets.GridspecLayout(ui_height, ui_width)
+    plot_settings_tab[2, :5] = use_plot_label
+    plot_settings_tab[2, 5:10] = use_plot_hv
+    plot_settings_tab[2, 10:15] = use_plot_comp
+    plot_settings_tab[2, 15:] = use_plot_spec
+
+    plot_settings_tab[3, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
+
+    plot_settings_tab[4, :5] = comibne_plot_label
+    plot_settings_tab[4, 10:15] =combine_hv_comp
+
+    plot_settings_tab[5, :5] = show_peak_label
+    plot_settings_tab[5, 5:10] = show_best_peak_hv
+    plot_settings_tab[5, 10:15] = show_best_peak_comp
+    plot_settings_tab[5, 15:] = show_best_peak_spec
+
+    
+    plot_settings_tab[6, :5] = annotate_peak_label
+    plot_settings_tab[6, 5:10] = ann_best_peak_hv
+    plot_settings_tab[6, 10:15] = ann_best_peak_comp
+    plot_settings_tab[6, 15:] = ann_best_peak_spec
+
+    plot_settings_tab[7, :5] = show_all_peaks_label
+    plot_settings_tab[7, 5:10] = show_all_peaks_hv
+
+    plot_settings_tab[8, :5] = show_all_curves_label
+    plot_settings_tab[8, 5:10] = show_all_curves_hv
+    plot_settings_tab[8, 10:15] = show_all_curves_comp
+
+    plot_settings_tab[9, :5] = show_ind_peaks_label
+    plot_settings_tab[9, 5:10] = show_ind_peaks_hv
+
+    plot_settings_tab[10, :5] = show_std_label
+    plot_settings_tab[10, 5:10] = show_std_hv
+    plot_settings_tab[10, 10:15] = show_std_comp
+
+    plot_settings_tab[11, :5] = show_legend_label
+    plot_settings_tab[11, 5:10] = show_legend_hv
+    plot_settings_tab[11, 10:15] = show_legend_comp
+    plot_settings_tab[11, 15:] = show_legend_spec
+
+    plot_settings_tab[12, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
+
+    plot_settings_tab[13, :5] = x_type_label
+    plot_settings_tab[13, 6:] = x_type
+
+    plot_settings_tab[14, :5] = plotly_kwargs_label
+    plot_settings_tab[14, 6:] = plotly_kwargs
+
+    plot_settings_tab[15, :5] = mpl_kwargs_label
+    plot_settings_tab[15, 6:] = mpl_kwargs
+
+    plot_settings_tab[16, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
+
+    plot_settings_tab[17, :] = plot_hvsr_call
+
+    # LOG TAB - not currently using
+    #log_tab = widgets.GridspecLayout(ui_height, ui_width)
+    #log_tab = widgets.Output()
 
     # RESULTS TAB
     results_tab = widgets.GridspecLayout(ui_height, ui_width)
 
+    results_fig = go.FigureWidget()
+    results_graph_widget = widgets.Output()
+
+    results_label = widgets.Label(value='test')
+
+    results_tab[:,:15] = results_graph_widget
+    results_tab[:,15:] = results_label
+
+    with results_graph_widget:
+        display(results_fig)
+
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
-    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
+    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab,results_tab])
     sprit_widget.set_title(0, "Input")
     sprit_widget.set_title(1, "Preview")
     sprit_widget.set_title(2, "Settings")
-    sprit_widget.set_title(3, "Log")
-    sprit_widget.set_title(4, "Results")
+    sprit_widget.set_title(3, "Results")
 
     # Display the tab
     display(sprit_widget)
