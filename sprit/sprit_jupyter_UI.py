@@ -2,14 +2,25 @@
 """
 
 import datetime
+import pathlib
 from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display
 import numpy as np
+import plotly.express as px
 import plotly.graph_objs as go
+import plotly.subplots as subplots
 import plotly
 from scipy import signal
+
+try: #For distribution
+    from sprit import sprit_utils
+    from sprit import sprit_hvsr
+except: #For local testing
+    import sprit_hvsr 
+    import sprit_utils
+
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
@@ -26,9 +37,18 @@ def create_jupyter_ui():
                                             style={'description_width': 'initial'},
                                             layout=widgets.Layout(height='auto', width='auto'))
 
+    
+    
+    # A text box for the site name
+    site_name = widgets.Text(description='Site Name:',
+                            value='HVSR_Site',
+                            placeholder='HVSR_Site',
+                            style={'description_width': 'initial'},
+                            layout=widgets.Layout(height='auto', width='auto'))
+    
     # A text box labeled Data Filepath
     data_filepath = widgets.Text(description='Data Filepath:',
-                                 placeholder='sample',
+                                 placeholder='sample', value='sample',
                                  style={'description_width': 'initial'},
                                  layout=widgets.Layout(height='auto', width='auto'))
 
@@ -148,10 +168,16 @@ def create_jupyter_ui():
             value='MSEED',
             description='Data Formats:', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
             
-    # A radio selector labeled "Detrend type" with "Spline", "Polynomial", or "None"
+    # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=['Spline', 'Polynomial', 'None'],
                             description='Detrend type:', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
-                            
+    detrend_order = widgets.FloatText(description='Detrend order', placeholder=2, value=2,layout=widgets.Layout(height='auto', width='auto'))
+
+    # A text to specify the trim directory
+    trim_directory = widgets.Text(description='Directory for Trimmed Files:', value="None",#pathlib.Path().home().as_posix(),
+                                 style={'description_width': 'initial'},
+                                 layout=widgets.Layout(height='auto', width='auto'))
+
     # A text label with "input_params()"
     input_params_call =  widgets.Label(value='input_params():', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
 
@@ -168,6 +194,7 @@ def create_jupyter_ui():
     read_data_button = widgets.Button(description='Read Data',
                                     button_style='warning',layout=widgets.Layout(height='auto', width='auto'))
 
+
     # A forest green button labeled "Process HVSR"
     process_hvsr_button = widgets.Button(description='Run',
                                          button_style='success',layout=widgets.Layout(height='auto', width='auto'))
@@ -175,7 +202,8 @@ def create_jupyter_ui():
 
     
     # Create a 2x2 grid and add the buttons to it
-    input_tab = widgets.GridspecLayout(ui_height, ui_width)
+    input_tab = widgets.GridspecLayout(ui_height+1, ui_width)
+    input_tab[0, 0:5] = site_name
     input_tab[0, 10:15] = data_source_type
     input_tab[0, 15:] = instrument_dropdown
 
@@ -209,14 +237,203 @@ def create_jupyter_ui():
     input_tab[7, 10:] = peak_freq_range_hbox
 
     input_tab[8, :10] = data_format_dropdown
-    input_tab[8, 10:] = detrend_type_dropdown
+    input_tab[8, 10:17] = detrend_type_dropdown
+    input_tab[8, 17:] = detrend_order
 
-    input_tab[9, :] = input_params_call
-    input_tab[10, :] = fetch_data_call
+    input_tab[9, :] = trim_directory
 
-    input_tab[11, :17] = progress_bar
-    input_tab[11, 17:19] = read_data_button
-    input_tab[11, 19:] = process_hvsr_button
+    input_tab[10, :] = input_params_call
+    input_tab[11, :] = fetch_data_call
+
+    input_tab[12, :17] = progress_bar
+    input_tab[12, 17:19] = read_data_button
+    input_tab[12, 19:] = process_hvsr_button
+
+    def get_input_params():
+        input_params_kwargs={
+            'datapath':data_filepath.value,
+            'metapath':metadata_filepath.value,
+            'site':site_name.value,
+            'instrument':instrument_dropdown.value,
+            'network':network_textbox.value, 'station':station_textbox.value, 'loc':location_textbox.value, 
+            'channels':[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value],
+            'starttime':start_time_picker.value,
+            'endtime':end_time_picker.value,
+            'tzone':time_zone_dropdown.value,
+            'xcoord':xcoord_textbox.value,
+            'ycoord':ycoord_textbox.value,
+            'elevation':zcoord_textbox.value, 'elev_unit':elevation_unit_textbox.value,'depth':0,
+            'input_crs':input_crs_textbox.value,'output_crs':output_crs_textbox.value,
+            'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
+            'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}
+        return input_params_kwargs
+
+    def get_fetch_data_params():
+        fetch_data_kwargs = {
+            'source':data_source_type.value, 
+            'trim_dir':trim_directory.value,
+            'export_format':data_format_dropdown.value,
+            'detrend':detrend_type_dropdown.value,
+            'detrend_order':detrend_order.value}
+        return fetch_data_kwargs
+
+    def read_data(button):
+        ip_kwargs = get_input_params()
+        hvsr_data = sprit_hvsr.input_params(**ip_kwargs)
+        if button.description=='Read Data':
+            progress_bar.value=0.333
+        else:
+            progress_bar.value=0.1
+        fd_kwargs = get_fetch_data_params()
+        hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs)
+        if button.description=='Read Data':
+            progress_bar.value=0.666
+        else:
+            progress_bar.value=0.2
+        update_preview_fig(hvsr_data, preview_fig)
+        sprit_widget.selected_index=1
+        any_update()
+        return hvsr_data
+    
+    read_data_button.on_click(read_data)
+
+    def get_remove_noise_kwargs():
+        def get_remove_method():
+            remove_method_list=[]
+            do_stalta = stalta_check.value
+            do_sat_pct = max_saturation_check.value
+            do_noiseWin=noisy_windows_check.value
+            do_warmcool=warmcool_check.value
+            
+            if auto_remove_check.value:
+                remove_method_list=['stalta', 'saturation', 'noise', 'warmcool']
+            else:
+                if do_stalta:
+                    remove_method_list.append('stalta')
+                if do_sat_pct:
+                    remove_method_list.append('saturation')
+                if do_noiseWin:
+                    remove_method_list.append('noise')
+                if do_warmcool:
+                    remove_method_list.append('warmcool')
+            
+            if not remove_method_list:
+                remove_method_list = None
+            return remove_method_list
+        
+        remove_noise_kwargs = {'remove_method':get_remove_method(),
+                                'sat_percent':max_saturation_pct.value, 
+                                'noise_percent':max_window_pct.value,
+                                'sta':sta.value,
+                                'lta':lta.value, 
+                                'stalta_thresh':[stalta_thresh_low.value, stalta_thresh_hi.value], 
+                                'warmup_time':warmup_time.value,
+                                'cooldown_time':cooldown_time.value,
+                                'min_win_size':noisy_window_length.value,
+                                'remove_raw_noise':raw_data_remove_check.value}
+        return remove_noise_kwargs
+
+    def get_generate_ppsd_kwargs():
+        ppsd_kwargs = {
+            'skip_on_gaps':skip_on_gaps.value,
+            'db_bins':[db_bins_min.value, db_bins_max.value, db_bins_step.value],
+            'ppsd_length':ppsd_length.value,
+            'overlap':overlap_pct.value,
+            'special_handling':special_handling_dropdown.value,
+            'period_smoothing_width_octaves':period_smoothing_width.value,
+            'period_step_octaves':period_step_octave.value,
+            'period_limits':[period_limits_min.value, period_limits_max.value],
+            }
+        return ppsd_kwargs
+
+    def get_remove_outlier_curve_kwargs():
+        roc_kwargs = {
+                'use_percentile':rmse_pctile_check.value,
+                'rmse_thresh':rmse_thresh.value,
+                'use_hv_curve':False#use_hv_curve_rmse.value
+            }
+        return roc_kwargs
+
+    def get_process_hvsr_kwargs():
+        if smooth_hv_curve_bool.value:
+            smooth_value = smooth_hv_curve.value
+        else:
+            smooth_value = smooth_hv_curve_bool.value
+
+        if resample_hv_curve_bool.value:
+            resample_value = resample_hv_curve.value
+        else:
+            resample_value =resample_hv_curve_bool.value
+
+        ph_kwargs={'method':h_combine_meth.value,
+                   'smooth':smooth_value,
+                   'freq_smooth':freq_smoothing.value,
+                   'f_smooth_width':freq_smooth_width.value,
+                   'resample':resample_value,
+                   'outlier_curve_rmse_percentile':use_hv_curve_rmse.value}
+        return ph_kwargs
+
+    def get_check_peaks_kwargs():
+        cp_kwargs = {'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
+                    'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value],
+                    'peak_selection':peak_selection_type.value}
+        return cp_kwargs
+
+    def get_get_report_kwargs():
+        def get_formatted_plot_str():
+            ### PLOT STRING!!!
+            hvsr_plot_str = ''
+            comp_plot_str = ''
+            spec_plot_str = ''
+
+            if use_plot_hv.value:
+                hvsr_plot_str=hvsr_plot_str + "HVSR"
+            if use_plot_comp.value:
+                comp_plot_str=comp_plot_str + "C"
+            if use_plot_spec.value:
+                spec_plot_str=spec_plot_str + "SPEC"
+
+            if not combine_hv_comp.value:
+                comp_plot_str=comp_plot_str + "+"
+
+            if show_all_curves_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " t"
+
+
+            plot_str = ''
+            return plot_str
+
+        gr_kwargs = {'report_format':['print','csv'],
+                     'plot_type':get_formatted_plot_str(),
+                     'export_path':None,
+                     'return_results':False, 
+                     'csv_overwrite_opt':'overwrite',
+                     'no_output':False
+                     }
+        return gr_kwargs
+
+    def process_data(button):
+        hvsr_data = read_data(button)
+
+        remove_noise_kwargs = get_remove_noise_kwargs()
+        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+
+        generate_ppsd_kwargs = get_generate_ppsd_kwargs()
+        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+
+        roc_kwargs = get_remove_outlier_curve_kwargs()
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+
+        ph_kwargs = get_process_hvsr_kwargs()
+        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+
+        cp_kwargs = get_check_peaks_kwargs()
+        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+
+        gr_kwargs = get_get_report_kwargs()
+        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+
+    process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
     preview_graph_tab = widgets.GridspecLayout(ui_height-1, ui_width)
@@ -225,18 +442,25 @@ def create_jupyter_ui():
     preview_tab.set_title(0, "Data Preview")
     preview_tab.set_title(1, "Noise Removal")
 
-    preview_fig = go.FigureWidget()
-    preview_graph_widget = widgets.Output()
 
-    preview_fig2 = plotly.subplots.make_subplots(rows=10, cols=1, shared_xaxes=True)
-    
+
+    subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
+    preview_fig = go.FigureWidget(subp)
+    preview_graph_widget = widgets.Output()    
 
     preview_graph_tab[:,:]=preview_graph_widget
     with preview_graph_widget:
         display(preview_fig)
 
     def update_preview_fig(hvsr_data, preview_fig):
+        preview_fig.data = []
+
+        if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+            hvsr_data=hvsr_data[0]
+
         stream_z = hvsr_data['stream'].select(component='Z') #np.ma.masked_array
+        stream_e = hvsr_data['stream'].select(component='E') #np.ma.masked_array
+        stream_n = hvsr_data['stream'].select(component='N') #np.ma.masked_array
 
         # Get iso_times
         utcdt = stream_z[0].times(type='utcdatetime')
@@ -256,12 +480,27 @@ def create_jupyter_ui():
         for tpass in t:
             axisTimes.append((dt_times[0]+datetime.timedelta(seconds=tpass)).isoformat())
 
-        preview_fig.add_trace(px.imshow(Sxx, x=axisTimes, y=f,  range_color=[0,2500],
-                        labels={'x':'Time [UTC]', 'y':'Frequency [Hz]', 'color':'Intensity'}).data[0])
+        preview_fig.add_trace(px.imshow(Sxx, x=axisTimes, y=f, color_continuous_scale='turbo',
+                        labels={'x':'Time [UTC]', 'y':'Frequency [Hz]', 'color':'Intensity'}).data[0], row=1, col=1)
+        preview_fig.update_yaxes(type='log', range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], row=1, col=1)
+        preview_fig.update_yaxes(title={'text':'Spectrogram (Z)'}, row=1, col=1)
+        #preview_fig.update_coloraxes({'cmin':0, 'cmax':3000, 'colorscale':px.colors.sequential.Turbo}, row=1, col=1)
 
-        preview_fig.update_yaxes(type='log')
-        preview_fig.update_coloraxes(cmin=0, cmax=3000, colorscale='turbo')
-        
+        dec_factor=5
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
+                                        line={'color':'black', 'width':0.5},marker=None), row=2, col='all')
+        preview_fig.update_yaxes(title={'text':'Z'}, row=2, col=1)
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_e[0].data[::dec_factor],
+                                        line={'color':'blue', 'width':0.5},marker=None),row=3, col='all')
+        preview_fig.update_yaxes(title={'text':'E'}, row=3, col=1)
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
+                                        line={'color':'red', 'width':0.5},marker=None), row=4, col='all')
+        preview_fig.update_yaxes(title={'text':'N'}, row=4, col=1)
+
+        #preview_fig.add_trace(p)
+        preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
+                                  title=hvsr_data['site'])
+
     #STA/LTA Antitrigger
     stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description='STA/LTA Antitrigger')
     sta = widgets.FloatText(description='STA [s]',  style={'description_width': 'initial'}, placeholder=5, value=5,layout=widgets.Layout(height='auto', width='auto'))
@@ -342,12 +581,14 @@ def create_jupyter_ui():
 
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    outlier_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
-    settings_tab = widgets.Tab([ppsd_settings_tab, hvsr_settings_tab, plot_settings_tab])
+    settings_tab = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, hvsr_settings_tab, plot_settings_tab])
     settings_tab.set_title(0, "PPSD Settings")
-    settings_tab.set_title(1, "HVSR Settings")
-    settings_tab.set_title(2, "Plot Settings")
+    settings_tab.set_title(1, "Outlier Settings")
+    settings_tab.set_title(2, "HVSR Settings")
+    settings_tab.set_title(3, "Plot Settings")
 
     # PPSD SETTINGS SUBTAB
     ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
@@ -374,10 +615,12 @@ def create_jupyter_ui():
                                     placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     
     period_limit_label = widgets.Label(value='Period Limits:')
-    period_limits_min = widgets.Text(description='Min. Period Limit', style={'description_width': 'initial'},
-                                    placeholder='None', value=None, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    period_limits_max = widgets.Text(description='Max. Period Limit', style={'description_width': 'initial'},
-                                    placeholder='None', value=None, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    minPLim = round(1/(hvsr_band_max_box.value),2)
+    maxPLim = round(1/(hvsr_band_min_box.value),2)
+    period_limits_min = widgets.FloatText(description='Min. Period Limit', style={'description_width': 'initial'},
+                                    placeholder=minPLim, value=minPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    period_limits_max = widgets.FloatText(description='Max. Period Limit', style={'description_width': 'initial'},
+                                    placeholder=maxPLim, value=maxPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     period_smoothing_width = widgets.FloatText(description='Period Smoothing Width', style={'description_width': 'initial'},
                                     placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
@@ -409,13 +652,23 @@ def create_jupyter_ui():
 
     ppsd_settings_tab[5, 0:5] = period_limit_label
     ppsd_settings_tab[5, 5:8] = period_limits_min
-    ppsd_settings_tab[5, 5:8] = period_limits_max
-    ppsd_settings_tab[5, 5:8] = period_smoothing_width
+    ppsd_settings_tab[5, 8:11] = period_limits_max
+    ppsd_settings_tab[5, 11:] = period_smoothing_width
 
     ppsd_settings_tab[6, 0:8] = special_handling_dropdown
 
     ppsd_settings_tab[7:9, :] = generate_ppsd_call
     ppsd_settings_tab[9:11, :] = obspy_ppsd_call
+
+    # OUTLIER SETTINGS SUBTAB
+    rmse_pctile_check = widgets.Checkbox(description='Value is percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+    rmse_thresh = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
+                                    placeholder=98, value=98, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+
+    outlier_settings_tab[0, :5] = rmse_pctile_check
+    outlier_settings_tab[0, 5:10] = rmse_thresh
+    outlier_settings_tab[1, :5] = use_hv_curve_rmse
 
     # HVSR SETTINGS SUBTAB
     h_combine_meth = widgets.Dropdown(description='Horizontal Combination Method', value=3,
@@ -458,6 +711,10 @@ def create_jupyter_ui():
     #                                                    layout=widgets.Layout(height='auto', width='auto'))
     peak_freq_range_hbox_hvsrSet = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(height='auto', width='auto'))
 
+    peak_selection_type = widgets.Dropdown(description='Peak Selection Method', value='max',
+                                    options=[('Highest Peak', 'max'),
+                                             ('Best Scored','scored')],
+                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     process_hvsr_call = widgets.Label(value='process_hvsr()')
 
@@ -475,9 +732,11 @@ def create_jupyter_ui():
     hvsr_settings_tab[3, 0] = smooth_hv_curve_bool
     hvsr_settings_tab[3, 1:6] = smooth_hv_curve
 
-    hvsr_settings_tab[5, 1:] = hvsr_band_hbox_hvsrSet
+    hvsr_settings_tab[4, 1:] = hvsr_band_hbox_hvsrSet
 
-    hvsr_settings_tab[6, 1:] = peak_freq_range_hbox_hvsrSet
+    hvsr_settings_tab[5, 1:] = peak_freq_range_hbox_hvsrSet
+
+    hvsr_settings_tab[6, 1:] = peak_selection_type
 
     hvsr_settings_tab[7:9, 1:] = process_hvsr_call
 
@@ -645,6 +904,9 @@ def create_jupyter_ui():
     sprit_widget.set_title(1, "Preview")
     sprit_widget.set_title(2, "Settings")
     sprit_widget.set_title(3, "Results")
+
+    def any_update():
+        pass
 
     # Display the tab
     display(sprit_widget)

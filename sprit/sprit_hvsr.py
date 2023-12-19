@@ -1520,6 +1520,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
         
     #Trim and save data as specified
+    if trim_dir=='None':
+        trim_dir=None
     if not trim_dir:
         pass
     else:
@@ -1615,7 +1617,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     return params
 
 #Generate PPSDs for each channel
-def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False, **ppsd_kwargs):
+def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -1625,11 +1627,6 @@ def generate_ppsds(hvsr_data, remove_outliers=True, outlier_std=3, verbose=False
         ----------
         hvsr_data : dict, HVSRData object, or HVSRBatch object
             Data object containing all the parameters and other data of interest (stream and paz, for example)
-        remove_outliers : bool, default=True
-            Whether to remove outlier h/v curves. This is recommended, particularly if remove_noise() has been used.
-        outlier_std :  float, default=3
-            The standard deviation value to use as a threshold for determining whether a curve is an outlier. 
-            This averages over the entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
         verbose : bool, default=True
             Whether to print inputs and results to terminal
         **ppsd_kwargs : dict
@@ -1985,7 +1982,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 #Get or print report
 def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', no_output=False, verbose=False):    
-    """Print a report of the HVSR analysis (not currently implemented)
+    """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
     ----------
@@ -2560,7 +2557,7 @@ def input_params(datapath,
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
-    starttime = date+"T"+starttime
+    starttime = str(date)+"T"+str(starttime)
     starttime = obspy.UTCDateTime(sprit_utils.format_time(starttime, tzone=tzone))
     
     if type(endtime) is str:
@@ -2573,7 +2570,7 @@ def input_params(datapath,
     elif type(endtime) is datetime.time():
         endtime = str(endtime)
 
-    endtime = date+"T"+endtime
+    endtime = str(date)+"T"+str(endtime)
     endtime = obspy.UTCDateTime(sprit_utils.format_time(endtime, tzone=tzone))
 
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
@@ -2949,7 +2946,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
     return                 
 
 #Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_thresh=False, verbose=False):
+def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -2986,8 +2983,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
-    outlier_curve_rmse_thresh : float, default = 1.75
-        Standard deviation of mean of each H/V curve to use as cuttoff for whether an H/V curve is considered an 'outlier'
+    outlier_curve_rmse_percentile : bool, float, default = False
+        If False, outlier curve removal is not carried out here. 
+        If True, defaults to 98 (98th percentile). 
+        Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().
     verbose : bool, defualt=False
         Whether to print output to terminal
 
@@ -3015,7 +3014,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
     freq_smooth = orig_args['freq_smooth']
     f_smooth_width = orig_args['f_smooth_width']
     resample = orig_args['resample']
-    outlier_curve_rmse_thresh = orig_args['outlier_curve_rmse_thresh']
+    outlier_curve_rmse_percentile = orig_args['outlier_curve_rmse_percentile']
     verbose = orig_args['verbose']
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
@@ -3209,8 +3208,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         indHVCurvesArr = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
         #indHVCurvesArr = hvsr_out['ind_hvsr_curves']
 
-        if outlier_curve_rmse_thresh:
-            hvsr_out = remove_outlier_curves(hvsr_out, rmse_thresh=outlier_curve_rmse_thresh, use_hv_curve_rmse=True, verbose=verbose)
+        if outlier_curve_rmse_percentile:
+            if outlier_curve_rmse_percentile is True:
+                outlier_curve_rmse_percentile = 98
+            hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
   
         hvsr_out['ind_hvsr_stdDev'] = np.nanstd(indHVCurvesArr, axis=0)
 
@@ -3497,7 +3498,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=True, rmse_percentile=98, use_hv_curve_rmse=False, show_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -3509,14 +3510,13 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=True, rmse_percentile=98, use_h
     ----------
     hvsr_data : dict
         Input dictionary containing all the values and parameters of interest
-    rmse_thresh :  float, default=True
+    rmse_thresh : float or int, default=98
         The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
         This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
-        If True, will default to using the 98th percentile of the RMSE values for the curves.
         Otherwise, specify a float or integer to use as the cutoff RMSE value (all curves with RMSE above will be removed)
-    rmse_percentile : float or int, default=98
-        Only used if rmse_thresh is True. If so, this is the percentile used to calculate the threshold for removing outlier curves.
-    use_hv_curve_rmse : bool, default=False
+    use_percentile :  float, default=True
+        Whether rmse_thresh should be interepreted as a raw RMSE value or as a percentile of the RMSE values.
+    use_hv_curve : bool, default=False
         Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.
     show_plot : bool, default=False
         Whether to show a plot of the removed data
@@ -3544,9 +3544,9 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=True, rmse_percentile=98, use_h
                     orig_args[k] = v
 
     # Reset parameters in case of manual override of imported parameters
+    use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
-    rmse_percentile = orig_args['rmse_percentile']
-    use_hv_curve_rmse = orig_args['use_hv_curve_rmse']
+    use_hv_curve = orig_args['use_hv_curve']
     show_plot = orig_args['show_plot']
     verbose = orig_args['verbose']
 
@@ -3586,14 +3586,14 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=True, rmse_percentile=98, use_h
         hvsr_out = HVSRBatch(hvsr_out)
     else:  
         #Create plot if designated        
-        if not use_hv_curve_rmse:
+        if not use_hv_curve:
             compNames = ['Z', 'E', 'N']
             colNames = compNames
         else:
             compNames=['HV Curve']
             colNames = ['HV_Curves']
         if show_plot:
-            if use_hv_curve_rmse:
+            if use_hv_curve:
                 spMosaic = ['HV Curve']
             else:
                 spMosaic = [['Z'],
@@ -3616,12 +3616,12 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=True, rmse_percentile=98, use_h
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
 
-            if rmse_thresh is True:
-                rmse_threshold = np.percentile(rmse, rmse_percentile)
+            if use_percentile is True:
+                rmse_threshold = np.percentile(rmse, rmse_thresh)
                 if verbose:
-                    print(f'\tRMSE Threshold (rmse_thresh) not designated. Calculated at {rmse_percentile}th percentile for {column}: {rmse_threshold:.2f}')
-            else:
-                rmse_threshold = rmse_thresh
+                    print(f'Use_percentile is designated. Calculated at {rmse_thresh}th percentile for {column}: {rmse_threshold:.2f}')
+                else:
+                    rmse_threshold = rmse_thresh
             
             # Retrieve index of those RMSE values that lie outside the threshold
             for j, curve in enumerate(curr_data):
