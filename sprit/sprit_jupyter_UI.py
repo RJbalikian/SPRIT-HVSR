@@ -216,8 +216,8 @@ def create_jupyter_ui():
     input_tab[11, 19:] = process_hvsr_button
 
     # PREVIEW TAB
-    preview_graph_tab = widgets.GridspecLayout(ui_height, ui_width)
-    preview_noise_tab = widgets.GridspecLayout(ui_height, ui_width)
+    preview_graph_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    preview_noise_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     preview_tab = widgets.Tab([preview_graph_tab, preview_noise_tab])
     preview_tab.set_title(0, "Data Preview")
     preview_tab.set_title(1, "Noise Removal")
@@ -261,14 +261,19 @@ def create_jupyter_ui():
     raw_data_remove_check = widgets.Checkbox(description='Remove Noise From Raw Data', value=False, disabled=False, indent=False)
 
     #remove_noise call
-    remove_noise_call = widgets.Label(value=f"removes_noise()")
+    remove_noise_call = widgets.Label(value=f"remove_noise()")
 
     #progress bar (same as above)
-
+    # A progress bar
+    progress_bar_preview = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
+                                    bar_style='info',
+                                    orientation='horizontal',layout=widgets.Layout(height='auto', width='auto'))
     #Update noise windows
     update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
 
-    #Run (same as above)
+    # A forest green button labeled "Process HVSR"
+    process_hvsr_button_preview = widgets.Button(description='Run',
+                                         button_style='success',layout=widgets.Layout(height='auto', width='auto'))
 
     # Add it all in
     preview_noise_tab[0,1:5] = stalta_check
@@ -292,8 +297,235 @@ def create_jupyter_ui():
     preview_noise_tab[4,6:9] = std_ratio_text
     preview_noise_tab[4,10:13] = std_window_length_text
 
+    preview_noise_tab[6,:] = auto_remove_check
+    preview_noise_tab[7,:] = raw_data_remove_check
+
+    preview_noise_tab[9,:] = remove_noise_call
+
+    preview_noise_tab[10,:15] = progress_bar_preview
+    preview_noise_tab[10,15:19] = update_noise_windows_button
+    preview_noise_tab[10,19] = process_hvsr_button_preview
+
     # SETTINGS TAB
-    settings_tab = widgets.GridspecLayout(ui_height, ui_width)
+    ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    plot_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    settings_tab = widgets.Tab([ppsd_settings_tab, hvsr_settings_tab, plot_settings_tab])
+    settings_tab.set_title(0, "PPSD Settings")
+    settings_tab.set_title(1, "HVSR Settings")
+    settings_tab.set_title(2, "Plot Settings")
+
+    # PPSD SETTINGS SUBTAB
+    ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
+    ppsd_length = widgets.FloatText(style={'description_width': 'initial'}, 
+                                    placeholder=20, value=20,layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    
+    overlap_pct_label = widgets.Label(value='Overlap %:')
+    overlap_pct = widgets.FloatText(style={'description_width': 'initial'}, 
+                                    placeholder=0.5, value=0.5, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    period_step_label = widgets.Label(value='Period Step Octaves:')
+    period_step_octave = widgets.FloatText(style={'description_width': 'initial'}, 
+                                           placeholder=0.0625, value=0.0625, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    skip_on_gaps_label = widgets.Label(value='Skip on gaps:')
+    skip_on_gaps = widgets.Checkbox(value=False, disabled=False, indent=False)
+
+    db_step_label = widgets.Label(value='dB bins:')
+    db_bins_min = widgets.FloatText(description='Min. dB', style={'description_width': 'initial'},
+                                    placeholder=-200, value=-200, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    db_bins_max = widgets.FloatText(description='Max. dB', style={'description_width': 'initial'},
+                                    placeholder=-50, value=-50, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    db_bins_step = widgets.FloatText(description='dB Step', style={'description_width': 'initial'},
+                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    
+    period_limit_label = widgets.Label(value='Period Limits:')
+    period_limits_min = widgets.Text(description='Min. Period Limit', style={'description_width': 'initial'},
+                                    placeholder='None', value=None, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    period_limits_max = widgets.Text(description='Max. Period Limit', style={'description_width': 'initial'},
+                                    placeholder='None', value=None, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    period_smoothing_width = widgets.FloatText(description='Period Smoothing Width', style={'description_width': 'initial'},
+                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    special_handling_dropdown = widgets.Dropdown(description='Special Handling', value=None,
+                                                options=[('None', None), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
+                                            style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    generate_ppsd_call = widgets.Label(value='generate_ppsds()')
+
+    obspy_ppsd_call = widgets.Label(value='obpsy...PPSD()')
+
+    # Set up grid for ppsd_settings subtab
+    ppsd_settings_tab[0, 0:5] = ppsd_length_label
+    ppsd_settings_tab[0, 5:8] = ppsd_length
+
+    ppsd_settings_tab[1, 0:5] = overlap_pct_label
+    ppsd_settings_tab[1, 5:8] = overlap_pct
+
+    ppsd_settings_tab[2, 0:5] = period_step_label
+    ppsd_settings_tab[2, 5:8] = period_step_octave
+
+    ppsd_settings_tab[3, 0:5] = skip_on_gaps_label
+    ppsd_settings_tab[3, 5:8] = skip_on_gaps
+
+    ppsd_settings_tab[4, 0:5] = db_step_label
+    ppsd_settings_tab[4, 5:7] = db_bins_min
+    ppsd_settings_tab[4, 7:10] = db_bins_max
+    ppsd_settings_tab[4, 10:12] = db_bins_step
+
+    ppsd_settings_tab[5, 0:5] = period_limit_label
+    ppsd_settings_tab[5, 5:8] = period_limits_min
+    ppsd_settings_tab[5, 5:8] = period_limits_max
+    ppsd_settings_tab[5, 5:8] = period_smoothing_width
+
+    ppsd_settings_tab[6, 0:8] = special_handling_dropdown
+
+    ppsd_settings_tab[7:9, :] = generate_ppsd_call
+    ppsd_settings_tab[9:11, :] = obspy_ppsd_call
+
+    # HVSR SETTINGS SUBTAB
+    h_combine_meth = widgets.Dropdown(description='Horizontal Combination Method', value=3,
+                                    options=[('1. Differential Field Assumption (not implemented)', 1), 
+                                             ('2. Arithmetic Mean |  H = (N + E)/2', 2), 
+                                             ('3. Geometric Mean | H = √(N * E) (SESAME recommended)', 3),
+                                             ('4. Vector Summation | H = √(N^2 + E^2)', 4),
+                                             ('5. Quadratic Mean | H = √(N^2 + E^2)/2', 5),
+                                             ('6. Maximum Horizontal Value | H = max(N, E)', 6)],
+                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    freq_smoothing = widgets.Dropdown(description='Frequency Smoothing Operations', value='ko',
+                                    options=[('Konno-Ohmachi', 'ko'),
+                                             ('Constant','constant'),
+                                             ('Proportional', 'proportional'),
+                                             ('None', None)],
+                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    freq_smooth_width = widgets.FloatText(description='Freq. Smoothing Width', style={'description_width': 'initial'},
+                                    placeholder=40, value=40, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    resample_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+    resample_hv_curve = widgets.FloatText(description='Resample H/V Curve', style={'description_width': 'initial'},
+                                    placeholder=500, value=500, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    smooth_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+    smooth_hv_curve = widgets.FloatText(description='Smooth H/V Curve', style={'description_width': 'initial'},
+                                    placeholder=51, value=51, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    #hvsr_band_min_box_hvsrSet = widgets.FloatText(description='HVSR Band:', style={'description_width': 'initial'}, 
+    #                                              placeholder=hvsr_band_min_box.value, value=hvsr_band_min_box.value,
+    #                                              layout=widgets.Layout(height='auto', width='auto'))
+    #hvsr_band_max_box_hvsrSet = widgets.FloatText(placeholder=hvsr_band_max_box.value, value=hvsr_band_max_box.value,
+    #                                              layout=widgets.Layout(height='auto', width='auto'))
+    hvsr_band_hbox_hvsrSet = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(height='auto', width='auto'))
+
+    #peak_freq_range_min_box_hvsrSet = widgets.FloatText(description='Peak Freq. Range:',  style={'description_width': 'initial'},
+    #                                                    placeholder=peak_freq_range_min_box.value, value=peak_freq_range_min_box.value,
+    #                                                    layout=widgets.Layout(height='auto', width='auto'))
+    #peak_freq_range_max_box_hvsrSet = widgets.FloatText(placeholder=peak_freq_range_max_box.value, value=peak_freq_range_max_box.value,
+    #                                                    layout=widgets.Layout(height='auto', width='auto'))
+    peak_freq_range_hbox_hvsrSet = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(height='auto', width='auto'))
+
+
+    process_hvsr_call = widgets.Label(value='process_hvsr()')
+
+    check_peaks_call = widgets.Label(value='check_peaks()')
+
+    # Set up grid for ppsd_settings subtab
+    hvsr_settings_tab[0, 1:] = h_combine_meth
+
+    hvsr_settings_tab[1, 1:12] = freq_smoothing
+    hvsr_settings_tab[1, 12:17] = freq_smooth_width
+
+    hvsr_settings_tab[2, 0] = resample_hv_curve_bool
+    hvsr_settings_tab[2, 1:6] = resample_hv_curve
+
+    hvsr_settings_tab[3, 0] = smooth_hv_curve_bool
+    hvsr_settings_tab[3, 1:6] = smooth_hv_curve
+
+    hvsr_settings_tab[5, 1:] = hvsr_band_hbox_hvsrSet
+
+    hvsr_settings_tab[6, 1:] = peak_freq_range_hbox_hvsrSet
+
+    hvsr_settings_tab[7:9, 1:] = process_hvsr_call
+
+    hvsr_settings_tab[9:11, 1:] = check_peaks_call
+
+    # PLOT SETTINGS SUBTAB
+    hv_plot_label = widgets.Label(value='HVSR Plot')
+    component_plot_label = widgets.Label(value='Component Plot')
+    spec_plot_label = widgets.Label(value='Spectrogram Plot')
+
+    use_plot_label = widgets.Label(value='Use Plot')
+    use_plot_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    use_plot_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    use_plot_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    comibne_plot_label = widgets.Label(value='Combine HV and Comp. Plot')
+    combine_hv_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_peak_label = widgets.Label(value='Show Best Peak')
+    show_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_best_peak_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    annotate_peak_label = widgets.Label(value='Annotate Best Peak')
+    ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_all_peaks_label = widgets.Label(value='Show All Peaks')
+    show_all_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_all_curves_label = widgets.Label(value='Show All Curves')
+    show_all_curves_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_all_curves_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_ind_peaks_label = widgets.Label(value='Show Individual Peaks')
+    show_ind_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_std_label = widgets.Label(value='Show Standard Deviation')
+    show_std_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_std_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    show_legend_label = widgets.Label(value='Show Legend')
+    show_legend_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_legend_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+    show_legend_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto'), 
+                                   style={'description_width': 'initial'})
+
+    x_type_label = widgets.Label(value='X Type')
+    x_type = widgets.Dropdown(options=[('Frequency', 'freq'), ('Period', 'period')],
+                              layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'})
+
+    plotly_kwargs = widgets.Text(description='Plotly Kwargs', style={'description_width': 'initial'},
+                                layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    mpl_kwargs = widgets.Text(description='Matplotlib Kwargs', style={'description_width': 'initial'},
+                                layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    plot_hvsr_call = widgets.Label(value='plot_hvsr()')
+
+    # Set up grid for ppsd_settings subtab
+    plot_settings_tab[0, 5:10]   = hv_plot_label
+    plot_settings_tab[0, 10:15]  = component_plot_label
+    plot_settings_tab[0, 15:] = spec_plot_label
+
 
     # LOG TAB
     log_tab = widgets.GridspecLayout(ui_height, ui_width)
