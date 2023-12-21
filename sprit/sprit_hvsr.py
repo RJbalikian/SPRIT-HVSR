@@ -1681,8 +1681,6 @@ def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
                 if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
-    remove_outliers = orig_args['remove_outliers']
-    outlier_std = orig_args['outlier_std']
     verbose = orig_args['verbose']
     ppsd_kwargs = orig_args['ppsd_kwargs']
 

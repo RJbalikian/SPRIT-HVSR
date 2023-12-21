@@ -381,11 +381,12 @@ def create_jupyter_ui():
 
     def get_get_report_kwargs():
         def get_formatted_plot_str():
-            ### PLOT STRING!!!
+            # Initialize plot string
             hvsr_plot_str = ''
             comp_plot_str = ''
             spec_plot_str = ''
 
+            # Whether to use each plot
             if use_plot_hv.value:
                 hvsr_plot_str=hvsr_plot_str + "HVSR"
             if use_plot_comp.value:
@@ -393,14 +394,52 @@ def create_jupyter_ui():
             if use_plot_spec.value:
                 spec_plot_str=spec_plot_str + "SPEC"
 
+            # Whether components be on the same plot as HV curve?
             if not combine_hv_comp.value:
                 comp_plot_str=comp_plot_str + "+"
 
+            # Whether to show (log) standard deviations
+            if not show_std_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " -s"
+            if not show_std_comp.value:
+                comp_plot_str=comp_plot_str + " -s"                
+
+            # Whether curves from each time window are shown
             if show_all_curves_hv.value:
                 hvsr_plot_str=hvsr_plot_str + " t"
+            if show_all_curves_comp.value:
+                comp_plot_str=comp_plot_str + " t"
 
+            # Whether the best peak is displayed
+            if show_best_peak_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " p"
+            if show_best_peak_comp.value:
+                comp_plot_str=comp_plot_str + " p"
+            if show_best_peak_spec.value:
+                spec_plot_str=spec_plot_str + " p"
 
-            plot_str = ''
+            # Whether best peak value is annotated
+            if ann_best_peak_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " ann"
+            if ann_best_peak_comp.value:
+                comp_plot_str=comp_plot_str + " ann"
+            if ann_best_peak_spec.value:
+                spec_plot_str=spec_plot_str + " ann"
+
+            # Whether peaks from individual time windows are shown
+            if show_ind_peaks_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " tp"            
+
+            # Whether to show legend
+            if show_legend_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " leg"
+            if ann_best_peak_comp.value:
+                show_legend_comp=comp_plot_str + " leg"
+            if show_legend_spec.value:
+                spec_plot_str=spec_plot_str + " leg"            
+
+            # Combine string into one
+            plot_str = hvsr_plot_str + ' ' + comp_plot_str+ ' ' + spec_plot_str
             return plot_str
 
         gr_kwargs = {'report_format':['print','csv'],
@@ -417,22 +456,414 @@ def create_jupyter_ui():
 
         remove_noise_kwargs = get_remove_noise_kwargs()
         hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+        progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
         hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+        progress_bar.value = 0.5
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
         hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        progress_bar.value = 0.6
 
         ph_kwargs = get_process_hvsr_kwargs()
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+        progress_bar.value = 0.85
 
         cp_kwargs = get_check_peaks_kwargs()
         hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+        progress_bar.value = 0.9
 
         gr_kwargs = get_get_report_kwargs()
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+        progress_bar.value = 0.95
 
+        update_results_fig(hvsr_data, results_fig, gr_kwargs['plot_type'])
+        progress_bar.value = 0
+        
+
+    def parse_plot_string(plot_string):
+        plot_list = plot_string.split()
+
+        hvsrList = ['hvsr', 'hv', 'h']
+        compList = ['component', 'comp', 'c']
+        compPlus = [item + '+' for item in compList]
+        specList = ['spectrogram', 'specgram', 'spec','sg', 's']
+
+        hvInd = np.nan
+        compInd = np.nan
+        specInd = np.nan
+
+        hvIndFound = False
+        compIndFound = False
+        specIndFound = False
+
+        for i, item in enumerate(plot_list):
+            if item.lower() in hvsrList and not hvIndFound:
+                # assign the index
+                hvInd = i
+                hvIndFound = True
+            if (item.lower() in compList or item.lower() in compPlus) and not compIndFound:
+                # assign the index
+                compInd = i
+                compIndFound = True
+            if item.lower() in specList and not specIndFound:
+                # assign the index
+                specInd = i
+                specIndFound = True
+
+        # Get individual plot lists (should already be correctly ordered)
+        if hvInd is np.nan:
+            hvsr_plot_list = ['HVSR']
+
+        if compInd is np.nan:
+            comp_plot_list = []
+            if specInd is np.nan:
+                if hvInd is not np.nan:
+                    hvsr_plot_list = plot_list
+                spec_plot_list = []
+            else:
+                if hvInd is not np.nan:
+                    hvsr_plot_list = plot_list[hvInd:specInd]
+                spec_plot_list = plot_list[specInd:]
+        else:
+            if hvInd is not np.nan:
+                hvsr_plot_list = plot_list[hvInd:compInd]
+            
+            if specInd is np.nan:
+                comp_plot_list = plot_list[compInd:]
+                spec_plot_list = []
+            else:
+                comp_plot_list = plot_list[compInd:specInd]
+                spec_plot_list = plot_list[specInd:]
+
+        # Figure out how many subplots there will be
+        plot_list_list = [hvsr_plot_list, comp_plot_list, spec_plot_list]
+
+        return plot_list_list
+
+    def parse_hv_plot_list(hvsr_data, hvsr_plot_list, results_fig):
+        x_data = hvsr_data.x_freqs['Z']
+        hvsrDF = hvsr_data.hvsr_df
+
+        if 'tp' in hvsr_plot_list:
+            allpeaks = []
+            for row in hvsrDF[hvsrDF['Use']]['CurvesPeakFreqs'].values:
+                for peak in row:
+                    allpeaks.append(peak)
+            x_vals = []
+            y_vals = []
+            y_max = np.nanmax(hvsr_data.hvsrp)
+            for tp in allpeaks:
+                x_vals.extend([tp, tp, None]) # add two x values and a None
+                y_vals.extend([0, y_max, None]) # add the first and last y values and a None            
+
+            results_fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines',
+                                            line=dict(width=4, dash="solid", 
+                                            color="rgba(128,0,0,0.1)"), 
+                                            name='Best Peaks Over Time'),
+                                            row=1, col=1)
+
+        if 't' in hvsr_plot_list:
+            alltimecurves = np.stack(hvsrDF[hvsrDF['Use']]['HV_Curves'])
+            for i, row in enumerate(alltimecurves):
+                if i==0:
+                    showLeg = True
+                else:
+                    showLeg= False
+                results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode='lines',
+                                            line=dict(width=0.5, dash="solid", 
+                                            color="rgba(100, 110, 100, 0.8)"), 
+                                            showlegend=showLeg, 
+                                            name='Ind. time win. curve', 
+                                            hoverinfo='none'),
+                                            row=1, col=1)
+
+        if 'all' in hvsr_plot_list:
+            for i, p in enumerate(hvsr_data['hvsr_peak_freqs']):
+                if i==0:
+                    showLeg = True
+                else:
+                    showLeg= False
+
+                results_fig.add_trace(go.Scatter(
+                    x=[p, p, None], # set x to None
+                    y=[0, np.nanmax(np.stack(hvsrDF['HV_Curves'])),None], # set y to None
+                    mode="lines", # set mode to lines
+                    line=dict(width=1, dash="dot", color="gray"), # set line properties
+                    name="All checked peaks", # set legend name
+                    showlegend=showLeg),
+                    row=1, col=1)
+
+        if '-s' not in hvsr_plot_list:
+            # Show standard deviation
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2,
+                                    line={'color':'black', 'width':0.1},marker=None, 
+                                    showlegend=False, name='Log. St.Dev. Upper',
+                                    hoverinfo='none'),
+                                    row=1, col=1)
+            
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrm2,
+                                    line={'color':'black', 'width':0.1},marker=None,
+                                    fill='tonexty', fillcolor="rgba(128, 128, 128, 0.6)",
+                                    name='Log. St.Dev.', hoverinfo='none'),
+                                    row=1, col=1)
+                
+        if 'p' in hvsr_plot_list:
+            results_fig.add_trace(go.Scatter(
+                x=[hvsr_data['BestPeak']['f0'], hvsr_data['BestPeak']['f0'], None], # set x to None
+                y=[0,np.nanmax(np.stack(hvsrDF['HV_Curves'])),None], # set y to None
+                mode="lines", # set mode to lines
+                line=dict(width=1, dash="dash", color="black"), # set line properties
+                name="Best Peak"),
+                row=1, col=1)
+
+        if 'ann' in hvsr_plot_list:
+            # Annotate best peak
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']), 
+                                    y=0, 
+                                    text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                                    bgcolor='rgba(255, 255, 255, 0.7)',
+                                    showarrow=False,
+                                    row=1, col=1)
+        return results_fig
+
+    def parse_comp_plot_list(hvsr_data, comp_plot_list, results_fig):
+
+        # Initial setup
+        x_data = hvsr_data.x_freqs['Z']
+        hvsrDF = hvsr_data.hvsr_df
+        same_plot = (comp_plot_list != [] and '+' not in comp_plot_list[0])
+        if same_plot:
+            yaxis_to_use = 'y2'
+            use_secondary = True
+            transparency_modifier = 0.5
+        else:
+            yaxis_to_use = 'y'
+            use_secondary=False
+            transparency_modifier = 1
+
+        alpha = 0.4 * transparency_modifier
+        components = ['Z', 'E', 'N']
+        compColor_semi_light = {'Z':f'rgba(128,128,128,{alpha})',
+                    'E':f'rgba(0,0,128,{alpha})',
+                    'N':f'rgba(128,0,0,{alpha})'}
+
+        alpha = 0.7 * transparency_modifier
+        compColor_semi = {'Z':f'rgba(128,128,128,{alpha})', 
+                        'E':f'rgba(100,100,128,{alpha})', 
+                        'N':f'rgba(128,100,100,{alpha})'}
+
+        compColor = {'Z':f'rgba(128,128,128,{alpha})', 
+                    'E':f'rgba(100,100,250,{alpha})', 
+                    'N':f'rgba(250,100,100,{alpha})'}
+
+        # Whether to plot in new subplot or not
+        if '+' in comp_plot_list[0]:
+            compRow=2
+        else:
+            compRow=1
+
+        # Whether to plot individual time curves
+        if 't' in comp_plot_list:
+            for comp in components:
+                alltimecurves = np.stack(hvsrDF[hvsrDF['Use']]['psd_values_'+comp])
+                for i, row in enumerate(alltimecurves):
+                    if i==0:
+                        showLeg = True
+                    else:
+                        showLeg= False
+                    
+                    results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode='lines',
+                                    line=dict(width=0.5, dash="solid", 
+                                    color=compColor_semi[comp]),
+                                    name='Ind. time win. curve',
+                                    showlegend=False,
+                                    hoverinfo='none',
+                                    yaxis=yaxis_to_use),
+                                    secondary_y=use_secondary,
+                                    row=compRow, col=1)
+
+        # Code to plot standard deviation windows, if not removed
+        if '-s' not in comp_plot_list:
+            for comp in components:
+                # Show standard deviation
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_p[comp],
+                                        line={'color':compColor_semi_light[comp], 'width':0.1},marker=None, 
+                                        showlegend=False, name='Log. St.Dev. Upper',
+                                        hoverinfo='none',    
+                                        yaxis=yaxis_to_use),
+                                        secondary_y=use_secondary,
+                                        row=compRow, col=1)
+                
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+                                        line={'color':compColor_semi_light[comp], 'width':0.1},marker=None,
+                                        fill='tonexty', fillcolor=compColor_semi_light[comp],
+                                        name=f'St.Dev. [{comp}]', hoverinfo='none', showlegend=False, 
+                                        yaxis=yaxis_to_use),
+                                        secondary_y=use_secondary,
+                                        row=compRow, col=1)
+                
+        # Code to plot location of best peak
+        if 'p' in comp_plot_list:
+            minVal = 10000
+            maxVal = -10000
+            for comp in components:
+                currPPSDCurve = hvsr_data['psd_values_tavg'][comp]
+                if np.nanmin(currPPSDCurve) < minVal:
+                    minVal = np.nanmin(currPPSDCurve)
+                if np.nanmax(currPPSDCurve) > maxVal:
+                    maxVal = np.nanmax(currPPSDCurve)
+
+            results_fig.add_trace(go.Scatter(
+                x=[hvsr_data['BestPeak']['f0'], hvsr_data['BestPeak']['f0'], None], # set x to None
+                y=[minVal,maxVal,None], # set y to None
+                mode="lines", # set mode to lines
+                line=dict(width=1, dash="dash", color="black"), # set line properties
+                name="Best Peak",
+                yaxis=yaxis_to_use),
+                secondary_y=use_secondary,
+                row=compRow, col=1)
+            
+        # Code to annotate value of best peak
+        if 'ann' in comp_plot_list:
+            minVal = 10000
+            for comp in components:
+                currPPSDCurve = hvsr_data['psd_values_tavg'][comp]
+                if np.nanmin(currPPSDCurve) < minVal:
+                    minVal = np.nanmin(currPPSDCurve)
+
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0'],), 
+                            y=minVal, 
+                            text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                            bgcolor='rgba(255, 255, 255, 0.7)',
+                            showarrow=False,
+                            yref=yaxis_to_use,
+                            secondary_y=use_secondary,
+                            row=compRow, col=1)
+
+        # Plot the main averaged component PPSDs
+        for comp in components:
+            results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs[comp],
+                                            y=hvsr_data['psd_values_tavg'][comp],
+                                            line=dict(width=2, dash="solid", 
+                                            color=compColor[comp]),marker=None, 
+                                            name='PPSD Curve '+comp,    
+                                            yaxis=yaxis_to_use), 
+                                            secondary_y=use_secondary,
+                                        row=compRow, col='all')
+
+        # If new subplot, update accordingly
+        if compRow==2:
+            results_fig.update_xaxes(type='log', 
+                            range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], 
+                            row=compRow, col=1)
+
+        return results_fig
+
+    def  parse_spec_plot_list(hvsr_data, spec_plot_list, subplot_num, results_fig):
+
+        # Initial setup
+        hvsrDF = hvsr_data.hvsr_df
+        specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
+        y_data = hvsr_data.x_freqs['Z'][1:]
+        image_data = np.stack(hvsrDF['HV_Curves']).T
+
+        
+        maxZ = np.percentile(image_data, 100)
+        minZ = np.percentile(image_data, 0)
+
+        hmap = go.Heatmap(z=image_data,
+                    x=specAxisTimes,
+                    y=y_data,
+                    colorscale='Cividis',
+                    showlegend=False,
+                    zmin=minZ,zmax=maxZ,showscale=False)
+        results_fig.add_trace(hmap, row=subplot_num, col=1)
+
+
+        use_mask = hvsr_data.hvsr_df.Use.values
+        use_mask = np.tile(use_mask, (image_data.shape[0],1)).astype(int)
+
+        data_used = go.Heatmap(
+            x=specAxisTimes,
+            y=y_data,
+            z=use_mask,
+            showlegend=False,
+            colorscale=[[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']],
+            showscale=False)
+        results_fig.add_trace(data_used, row=subplot_num, col=1)
+
+        results_fig.update_yaxes(type='log', 
+                        range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                        row=subplot_num, col=1)
+
+        results_fig.add_annotation(
+            text=f"{hvsrDF['Use'].sum()}/{hvsrDF.shape[0]} windows used",
+            x=max(specAxisTimes), 
+            y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
+            xanchor="right", yanchor="bottom",bgcolor='rgba(256,256,256,0.7)',
+            showarrow=False,row=subplot_num, col=1)
+
+        #results_fig.update_layout(legend=dict(traceorder='original'),
+        #                          row=subplot_num, col=1) 
+
+        return results_fig
+
+    def update_results_fig(hvsr_data, results_fig, plot_string):
+        results_fig.data = []
+
+        if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+            hvsr_data=hvsr_data[0]
+
+        hvsrDF = hvsr_data.hvsr_df
+
+        plot_list = parse_plot_string(plot_string)
+
+        noSubplots = 3 - plot_list.count([])
+        if plot_list[1] != [] and '+' not in plot_list[1][0]:
+            noSubplots -= 1
+
+
+        # Re-initialize results_fig
+        results_fig.update_layout(grid={'rows': noSubplots, 'xgap': 0.01, 'ygap': 0.01})
+
+        # Get all data for each plotted item
+        # HVSR Plot
+        results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0], results_fig=results_fig)
+        # Will always plot the HV Curve
+        results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
+                            line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'), row=1, col='all')
+
+        # COMP Plot
+        # Figure out which subplot is which
+        if plot_list[1] == [] or '+' not in plot_list[1][0]:
+            spec_plot_row = 2
+        else:
+            spec_plot_row = 3
+
+        results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1], results_fig=results_fig)
+
+        # SPEC plot
+        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
+
+        # Final figure updating
+        showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
+        if showtickLabels:
+            side='bottom'
+        else:
+            side='top'
+        results_fig.update_xaxes(type='log', 
+                        range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                        #showticklabels=showtickLabels,
+                        side=side,
+                        row=1, col=1)
+    
+        results_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, 
+                                showlegend=False,
+                                title=hvsr_data['site'])
+        results_fig.show()
+    
     process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
@@ -442,12 +873,12 @@ def create_jupyter_ui():
     preview_tab.set_title(0, "Data Preview")
     preview_tab.set_title(1, "Noise Removal")
 
-
-
+    #Initialize plot
     subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
     preview_fig = go.FigureWidget(subp)
-    preview_graph_widget = widgets.Output()    
+    preview_graph_widget = widgets.Output()  
 
+    # Initialize tab
     preview_graph_tab[:,:]=preview_graph_widget
     with preview_graph_widget:
         display(preview_fig)
@@ -458,11 +889,11 @@ def create_jupyter_ui():
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
             hvsr_data=hvsr_data[0]
 
-        stream_z = hvsr_data['stream'].select(component='Z') #np.ma.masked_array
-        stream_e = hvsr_data['stream'].select(component='E') #np.ma.masked_array
-        stream_n = hvsr_data['stream'].select(component='N') #np.ma.masked_array
+        stream_z = hvsr_data['stream'].select(component='Z') #may be np.ma.masked_array
+        stream_e = hvsr_data['stream'].select(component='E') #may be np.ma.masked_array
+        stream_n = hvsr_data['stream'].select(component='N') #may be np.ma.masked_array
 
-        # Get iso_times
+        # Get iso_times and datetime.datetime
         utcdt = stream_z[0].times(type='utcdatetime')
         iso_times=[]
         dt_times = []
@@ -475,18 +906,24 @@ def create_jupyter_ui():
         iso_times=np.array(iso_times)
         dt_times = np.array (dt_times)
 
+        # Generate spectrogram
         f, t, Sxx = signal.spectrogram(x=stream_z[0].data, fs=stream_z[0].stats.sampling_rate, mode='magnitude')
+        
+        # Get times for the axis (one time per window)
         axisTimes = []
         for tpass in t:
             axisTimes.append((dt_times[0]+datetime.timedelta(seconds=tpass)).isoformat())
 
+        # Add data to preview_fig
+        # Add spectrogram of Z component
         preview_fig.add_trace(px.imshow(Sxx, x=axisTimes, y=f, color_continuous_scale='turbo',
                         labels={'x':'Time [UTC]', 'y':'Frequency [Hz]', 'color':'Intensity'}).data[0], row=1, col=1)
         preview_fig.update_yaxes(type='log', range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], row=1, col=1)
         preview_fig.update_yaxes(title={'text':'Spectrogram (Z)'}, row=1, col=1)
         #preview_fig.update_coloraxes({'cmin':0, 'cmax':3000, 'colorscale':px.colors.sequential.Turbo}, row=1, col=1)
 
-        dec_factor=5
+        # Add raw traces
+        dec_factor=5 #This just makes the plotting go faster, by "decimating" the data
         preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
                                         line={'color':'black', 'width':0.5},marker=None), row=2, col='all')
         preview_fig.update_yaxes(title={'text':'Z'}, row=2, col=1)
@@ -548,7 +985,7 @@ def create_jupyter_ui():
     process_hvsr_button_preview = widgets.Button(description='Run',
                                          button_style='success',layout=widgets.Layout(height='auto', width='auto'))
 
-    # Add it all in
+    # Add it all in to the tab
     preview_noise_tab[0,1:5] = stalta_check
     preview_noise_tab[0,5:7] = sta
     preview_noise_tab[0,7:9] = lta
@@ -884,10 +1321,10 @@ def create_jupyter_ui():
     #log_tab = widgets.Output()
 
     # RESULTS TAB
-    results_tab = widgets.GridspecLayout(ui_height, ui_width)
-
-    results_fig = go.FigureWidget()
-    results_graph_widget = widgets.Output()
+    subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
+    results_fig = go.FigureWidget(subp)
+    results_graph_widget = widgets.Output()    
+    results_tab = widgets.GridspecLayout(12, 20)
 
     results_label = widgets.Label(value='test')
 
