@@ -34,9 +34,10 @@ import scipy
 
 try: #For distribution
     from sprit import sprit_utils
+    from sprit import sprit_gui
 except: #For testing
     import sprit_utils
-    pass
+    import sprit_gui
 
 
 #Main variables
@@ -503,19 +504,27 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
+def gui_test():
+    import subprocess
+    print(sprit_gui.__file__)
+    guiFile = sprit_gui.__file__
+    subprocess.call(guiFile, shell=True)
+
+    
+
 #Launch the tkinter gui
 def gui():
     """Function to open a window with a graphical user interface (gui)
     
     No parameters, no returns; just opens the gui window.
     """
-    import pkg_resources
+    
     #guiPath = pathlib.Path(os.path.realpath(__file__))
     try:
         from sprit.sprit_gui import SPRIT_App
     except:
         from sprit_gui import SPRIT_App
-    
+
     try:
         import tkinter as tk
     except:
@@ -541,9 +550,9 @@ def gui():
             gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
     except Exception as e:
         print("ICON NOT LOADED, still opening GUI")
-
+    global spritApp
     gui_root.resizable(True, True)
-    SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+    spritApp = SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
     gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
     gui_root.mainloop() #Run the main loop
