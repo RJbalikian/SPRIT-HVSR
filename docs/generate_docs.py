@@ -1,3 +1,5 @@
+"""Generate automatic documentation"""
+
 import os
 import pathlib
 import re
@@ -5,13 +7,16 @@ import shutil
 import subprocess
 import sys
 
-#Whether to convert_md using markdown library (True), or let github do it (False)
-convert_md=True
-rtd_theme=False #Not currently working
-release_version= '0.1.52'
-run_tests=True
-lint_it=True
+import markdown
 
+#Whether to CONVERT_MD using markdown library (True), or let github do it (False)
+CONVERT_MD=True
+RTD_THEME=False #Not currently working
+RELEASE_VERSION= '0.1.54'
+RUN_TESTS=False
+LINT_IT=False
+
+#Setup relevant paths
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir
 repoDir = docsDir.parent
@@ -23,8 +28,8 @@ spritHVSRPath = spritDir.joinpath('sprit_hvsr.py')
 resourcesDir = spritDir.joinpath('resources')
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 
-# Set the package name, subdirectory, and output directory
-subdir = './sprit'
+# Set the package name, SUB_DIRectory, and output directory
+SUB_DIR = './sprit'
 output_dir = docsDir
 
 venvPath = pathlib.Path(sys.executable).parent.parent
@@ -32,15 +37,15 @@ venvPath = pathlib.Path(sys.executable).parent.parent
 os.environ['PYTHONPATH'] = '..' + os.pathsep + os.environ.get('PYTHONPATH', '')
 
 # Run the pdoc command
-if rtd_theme:
-    themePath = venvPath.as_posix()+'/lib/site-packages/sphinx_rtd_theme/'
-    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', '--template-dir', themePath, str(spritDir)])
+if RTD_THEME:
+    THEME_PATH = venvPath.as_posix()+'/lib/site-packages/sphinx_RTD_THEME/'
+    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', '--template-dir', THEME_PATH, str(spritDir)], check=False)
 else:
-    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', str(spritDir)])
+    subprocess.run(['pdoc', '--html', '-o', str(docsDir), '--force', str(spritDir)],check=False)
     
 #Set up a working directory for the files generated from pdoc
 workDir = pathlib.Path(os.getcwd())
-
+print('workdir:',workDir)
 if workDir.stem == 'docs':
     pass
 elif 'docs' in str(workDir):
@@ -52,30 +57,30 @@ else:
             os.chdir(docsPath)
             break
 
-src_path = spritDir#pathlib.Path(subdir)
-trg_path = docsDir#src_path.parent.joinpath(output_dir) # this ends up being main repo folder, usually
+src_path = spritDir # pathlib.Path(SUB_DIR)
+trg_path = docsDir # src_path.parent.joinpath(output_dir) # this is main repo folder, usually
 
 print('Reading .py files from', src_path.absolute())
 print('Placing html files in', trg_path.absolute())
-#Move items back into the main docs folder
+
+# Move items back into the main docs folder
 keepList = ['generate_docs.py', 'conf.py', 'requirements.txt', 'wiki', 'pyinstaller']
 for t in trg_path.iterdir():
     #print('main folder', t)
     if t.name in keepList:
-        #Don't do anything to requirements.txt or wiki folder
+        # Don't do anything to requirements.txt or wiki folder
         pass
     elif t.is_dir():
         for file in t.iterdir():
             if file.is_dir():
                 if file.name == 'resources':
                     for f in file.iterdir():
-                        #We don't want the resources folder in docs folder, remove all items
+                        # We don't want the resources folder in docs folder, remove all items
                         os.remove(f)
                 elif file.name == 'wiki':
-                    #Keep wiki folder
+                    # Keep wiki folder
                     pass
                 else:
-                    #print('file', file.name)
                     for f in file.iterdir():
                         destFilePath = trg_path.joinpath(f.name)
                         if destFilePath.exists():
@@ -101,13 +106,12 @@ for t in trg_path.iterdir():
         if t.name not in keepList:
             os.remove(t)
 
-#Update html files
+# Update html files
 readmePath = repoDir.joinpath('README.md')
 print("Using Readme for landing page")
-if convert_md:
-    import markdown
+if CONVERT_MD:
 
-    with open(readmePath.as_posix(), 'r') as f:
+    with open(readmePath.as_posix(), mode='r', encoding='utf-8') as f:
         markdown_text = f.read()
 
     html = markdown.markdown(markdown_text)
@@ -140,7 +144,7 @@ if convert_md:
     html = html.replace('</table></p>', '</table>', 1)
 
     dst = docsDir.joinpath('index.html')
-    with open(dst, 'w') as f:
+    with open(dst, mode='w', encoding='utf-8') as f:
         f.write(html)
     print('hmtl landing page:', dst)
 else:
@@ -154,45 +158,45 @@ condaFPath = repoDir.joinpath('conda/meta.yaml')
 
 confFilePaths = [setupFPath, pyprojectFPath, condaFPath]
 for cFile in confFilePaths:
-    with open(cFile.as_posix(), 'r') as f:
+    with open(cFile.as_posix(), mode='r', encoding='utf-8') as f:
         cFileText = f.read()
 
 
-
     #Update which file is being analyzed for creating exe
-    verText = r'version=".*?"'
-    newVerText = r'version="'+release_version+'"'
-    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+    VER_TEXT = r'version=".*?"'
+    NEW_VER_TEXT = r'version="'+RELEASE_VERSION+'"'
+    cFileText = re.sub(VER_TEXT, NEW_VER_TEXT, cFileText, flags=re.DOTALL)
 
-    verText = r'version:\s+\d+\.\d+\.\d+[^\n]*'
-    newVerText = r'version: '+release_version
-    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+    VER_TEXT = r'version:\s+\d+\.\d+\.\d+[^\n]*'
+    NEW_VER_TEXT = r'version: '+RELEASE_VERSION
+    cFileText = re.sub(VER_TEXT, NEW_VER_TEXT, cFileText, flags=re.DOTALL)
 
-    verText = r'git_tag:\s+v+\d+\.\d+\.\d+[^\n]*'
-    newVerText = r'git_tag: v'+release_version
-    cFileText = re.sub(verText, newVerText, cFileText, flags=re.DOTALL)
+    VER_TEXT = r'git_tag:\s+v+\d+\.\d+\.\d+[^\n]*'
+    NEW_VER_TEXT = r'git_tag: v'+RELEASE_VERSION
+    cFileText = re.sub(VER_TEXT, NEW_VER_TEXT, cFileText, flags=re.DOTALL)
 
 
-    with open(cFile.as_posix(), 'w') as f:
+    with open(cFile.as_posix(), mode='w', encoding='utf-8') as f:
         f.write(cFileText)
 
-if lint_it:
+if LINT_IT:
     print('Running linting')
     fileList = [spritGUIPath, spritCLIPath, spritUtilsPath, spritHVSRPath]
     for fileP in fileList:
         print(f'\nLINTING {fileP.as_posix()}')
         ignoreList = ['E501']
         strIgnoreList =  "--ignore="+str(str(ignoreList)[1:-1].replace(' ', '').replace("'",""))
-        result = subprocess.run(['flake8', strIgnoreList, fileP.as_posix(),], stdout=subprocess.PIPE)
+        result = subprocess.run(['flake8', strIgnoreList, fileP.as_posix(),], 
+                                stdout=subprocess.PIPE, check=False)
         print(result.stdout.decode('utf-8'))
 
-if run_tests:
+if RUN_TESTS:
     print('Testing sprit.run()')
-    shelltype=True
+    SHELL_TYPE=True
     if sys.platform == 'linux':
-        shelltype = False
+        SHELL_TYPE = False
     try:
-        subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=shelltype)
-    except:
-        subprocess.run(["pytest", repoDir.as_posix()], shell=shelltype)
+        subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=SHELL_TYPE, check=False)
+    except Exception:
+        subprocess.run(["pytest", repoDir.as_posix()], shell=SHELL_TYPE, check=False)
 
