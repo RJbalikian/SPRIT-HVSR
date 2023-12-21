@@ -2,7 +2,7 @@
 """
 
 import datetime
-import pathlib
+import inspect
 from zoneinfo import available_timezones
 
 import ipywidgets as widgets
@@ -11,7 +11,6 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
-import plotly
 from scipy import signal
 
 try: #For distribution
@@ -24,102 +23,81 @@ except: #For local testing
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
+def get_default(func, param):
+    return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
 
     ui_width = 20
     ui_height= 12
+
     # INPUT TAB
-    # Radio button labelled Data Source Type with options: "File" "Raw" "Batch" "Directory"
-    data_source_type = widgets.Dropdown(options=[('File', 'file'), ('Raw', 'raw'), ('Batch', 'batch'), ('Directory', 'dir')],
-                                            description='Data Source type:',
-                                            value='file',orientation='horizontal', 
-                                            style={'description_width': 'initial'},
-                                            layout=widgets.Layout(height='auto', width='auto'))
+    # Create a VBox for the accordions
+    input_accordion_box = widgets.VBox()
+    input_accordion = widgets.Accordion()
 
-    
-    
-    # A text box for the site name
-    site_name = widgets.Text(description='Site Name:',
-                            value='HVSR_Site',
-                            placeholder='HVSR_Site',
-                            style={'description_width': 'initial'},
-                            layout=widgets.Layout(height='auto', width='auto'))
-    
-    # A text box labeled Data Filepath
-    data_filepath = widgets.Text(description='Data Filepath:',
-                                 placeholder='sample', value='sample',
-                                 style={'description_width': 'initial'},
-                                 layout=widgets.Layout(height='auto', width='auto'))
-
-    # A button next to it labeled "Browse"
-    browse_data_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=True, layout=widgets.Layout(height='auto', width='auto'))
-    
-    # A text box labeled Metadata Filepath
-    metadata_filepath = widgets.Text(description='Metadata Filepath:',
-                                     style={'description_width': 'initial'},
-                                     layout=widgets.Layout(height='auto', width='auto'))
-
-    # A button next to it labeled "Browse"
-    browse_metadata_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=False, layout=widgets.Layout(height='auto', width='auto'))
-
-    # Dropdown labeled "Instrument" with options "Raspberry Shake", "Tromino", "Other"
-    instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
-                                        style={'description_width': 'initial'},
-                                        description='Instrument:',layout=widgets.Layout(height='auto', width='auto'))
-
+    # Metadata accordion
+    metadata_grid = widgets.GridspecLayout(6, 10)
     network_textbox = widgets.Text(description='Network:',
-                                   placeholder='AM',
-                                   value='AM',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'network'),
+                                    value=get_default(sprit_hvsr.input_params, 'network'),
+                                    tooltip="input_params(network)")
+    metadata_grid[0,0] = network_textbox
 
     station_textbox = widgets.Text(description='Station:',
-                                   placeholder='RAC84',style={'description_width': 'initial'},
-                                   value='RAC84',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'station'),
+                                    value=get_default(sprit_hvsr.input_params, 'station'))
+    metadata_grid[1,0] = station_textbox
 
     location_textbox = widgets.Text(description='Location:',
-                                   placeholder='00',
-                                   value='00',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'loc'),
+                                    value=get_default(sprit_hvsr.input_params, 'loc'))
+    metadata_grid[2,0] = location_textbox
 
     z_channel_textbox = widgets.Text(description='Z Channel:',
-                                   placeholder='EHZ',
-                                   value='EHZ',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[0],
+                                    value=get_default(sprit_hvsr.input_params, 'channels')[0])
+    metadata_grid[3,0] = z_channel_textbox
 
     e_channel_textbox = widgets.Text(description='E Channel:',
-                                   placeholder='EHE',
-                                   value='EHE',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[2],
+                                    value=get_default(sprit_hvsr.input_params, 'channels')[2])
+    metadata_grid[4,0] = e_channel_textbox
 
     n_channel_textbox = widgets.Text(description='N Channel:',
-                                   placeholder='EHN',
-                                   value='EHN',layout=widgets.Layout(height='auto', width='auto'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[1],
+                                    value=get_default(sprit_hvsr.input_params, 'channels')[1])
+    metadata_grid[5,0] = n_channel_textbox
 
+
+    # Acquisition Accordion
+    instrument_grid = widgets.GridspecLayout(5, 10)
     # Date Picker labelled "Acquisition Date"
     acquisition_date_picker = widgets.DatePicker(description='Acq.Date:',
                                             placeholder=datetime.datetime.today().date(),
-                                            style={'description_width': 'initial'},
-                                            value=datetime.datetime.today().date(),layout=widgets.Layout(height='auto', width='auto'))
- 
+                                            value=datetime.datetime.today().date())
+    instrument_grid[0,0] = acquisition_date_picker
+
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.FloatText(description='DOY',
-                                               style={'description_width': 'initial'},
-                                               placeholder=f"{acquisition_date_picker.value.timetuple().tm_yday}",
-                                               value=f"{acquisition_date_picker.value.timetuple().tm_yday}",
-                                               layout=widgets.Layout(height='auto', width='auto'))
+                                                placeholder=f"{acquisition_date_picker.value.timetuple().tm_yday}",
+                                                value=f"{acquisition_date_picker.value.timetuple().tm_yday}",
+                                                layout=widgets.Layout(width='auto'))
+    instrument_grid[0,1] = acquisition_doy
 
     # Time selector (hour and minute) labelled "Start Time".
     start_time_picker = widgets.TimePicker(description='Start Time:',
-                                           placeholder=datetime.time(0,0,0),
-                                           value=datetime.time(0,0,0),
-                                           style={'description_width': 'initial'},
-                                           layout=widgets.Layout(height='auto', width='auto'))
+                                            placeholder=datetime.time(0,0,0),
+                                            value=datetime.time(0,0,0),
+                                            layout=widgets.Layout(width='auto'))
+    instrument_grid[1,0] = start_time_picker
 
     # Time selector (hour and minute) labelled "End Time". Same as Start Time otherwise.
     end_time_picker = widgets.TimePicker(description='End Time:',
                                         placeholder=datetime.time(23,59),
                                         value=datetime.time(23,59),
-                                        style={'description_width': 'initial'},
-                                        layout=widgets.Layout(height='auto', width='auto'))
+                                        layout=widgets.Layout(width='auto'))
+    instrument_grid[2,0] = end_time_picker
 
     tzlist = list(available_timezones())
     tzlist.sort()
@@ -128,126 +106,226 @@ def create_jupyter_ui():
     tzlist.insert(0, 'US/Central')
     tzlist.insert(0, 'UTC')
     # A dropdown list with all the items from zoneinfo.available_timezones(), default 'UTC'
-    time_zone_dropdown = widgets.Dropdown(options=tzlist,value='UTC',style={'description_width': 'initial'},
-                                          description='Time Zone:',layout=widgets.Layout(height='auto', width='fill'))
+    time_zone_dropdown = widgets.Dropdown(options=tzlist,value=get_default(sprit_hvsr.input_params, 'tzone'),
+                                            description='Time Zone:',layout=widgets.Layout(width='fill'))
+    instrument_grid[3,0] = time_zone_dropdown
 
-    # Separate textboxes for each of the following labels: "xcoord" ,"ycoord", "zcoord", "Input CRS", "Output CRS", "Elevation Unit", "Network", "Station", "Location", "Z Channel", "H1 Channel", "H2 Channel", "HVSR Band", "Peak Freq. Range"
-    xcoord_textbox = widgets.FloatText(description='xcoord:',style={'description_width': 'initial'},
-                                       layout=widgets.Layout(height='auto', width='auto'))
 
-    ycoord_textbox = widgets.FloatText(description='ycoord:',style={'description_width': 'initial'},
-                                       layout=widgets.Layout(height='auto', width='auto'))
+    # LOCATION ACCORDION
+    location_grid = widgets.GridspecLayout(4, 10)
+    # X coordinate input
+    xcoord_textbox = widgets.FloatText(description='X Coordinate:', tooltip='xcoord',
+                                        value=get_default(sprit_hvsr.input_params, 'xcoord'), 
+                                        placeholder=get_default(sprit_hvsr.input_params, 'xcoord'),
+                                        layout=widgets.Layout(width='auto'))
+    location_grid[0, 0] = xcoord_textbox
 
-    zcoord_textbox = widgets.FloatText(description='zcoord:',style={'description_width': 'initial'},
-                                       layout=widgets.Layout(height='auto', width='auto'))
+    # Y coordinate input
+    ycoord_textbox = widgets.FloatText(description='Y Coordinate', tooltip='ycoord:',
+                                        value=get_default(sprit_hvsr.input_params, 'ycoord'), 
+                                        placeholder=get_default(sprit_hvsr.input_params, 'ycoord'),
+                                        layout=widgets.Layout(width='auto'))
+    location_grid[1, 0] = ycoord_textbox
 
+    # Z coordinate input
+    zcoord_textbox = widgets.FloatText(description='Z Coordinate', tooltip='elevation:',
+                                        value=get_default(sprit_hvsr.input_params, 'elevation'),
+                                        placeholder=get_default(sprit_hvsr.input_params, 'elevation'),                                     
+                                        layout=widgets.Layout(width='auto'))
+    location_grid[2, 0] = zcoord_textbox
+
+    # Z coordinate unit input
     elevation_unit_textbox = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
-                                                value='meters',
-                                                description='Z Unit:',style={'description_width': 'initial'},
-                                                layout=widgets.Layout(height='auto', width='auto'))
+                                                value=get_default(sprit_hvsr.input_params, 'elev_unit'),
+                                                description='Z Unit:', tooltip='elev_unit',
+                                                layout=widgets.Layout(width='auto'))
+    location_grid[2, 1] = elevation_unit_textbox
 
-    input_crs_textbox = widgets.Text(description='Input CRS:',style={'description_width': 'initial'},
-                                     layout=widgets.Layout(height='auto', width='auto'),
-                                      placholder='EPSG:4326',value='EPSG:4326')
+    # Input CRS input
+    input_crs_textbox = widgets.Text(description='Input CRS:',
+                                        layout=widgets.Layout(width='auto'),
+                                        placholder=get_default(sprit_hvsr.input_params, 'input_crs'),
+                                        value=get_default(sprit_hvsr.input_params, 'input_crs'))
+    location_grid[3, 0] = input_crs_textbox
 
-    output_crs_textbox = widgets.Text(description='Output CRS:',style={'description_width': 'initial'},
-                                      layout=widgets.Layout(height='auto', width='auto'),
-                                      placholder='EPSG:4326',value='EPSG:4326')
+    # Output CRS input
+    output_crs_textbox = widgets.Text(description='Output CRS:',
+                                        layout=widgets.Layout(width='auto'),
+                                        placholder=get_default(sprit_hvsr.input_params, 'output_crs'),
+                                        value=get_default(sprit_hvsr.input_params, 'output_crs'))
+    location_grid[3, 1] = output_crs_textbox
 
+    # IO PARAMS ACCORDION
+    ioparam_grid = widgets.GridspecLayout(5, 10)
 
-    hvsr_band_min_box = widgets.FloatText(description='HVSR Band:', style={'description_width': 'initial'}, placeholder=0.4, value=0.4,layout=widgets.Layout(height='auto', width='auto'))
-    hvsr_band_max_box = widgets.FloatText(placeholder=40, value=40,layout=widgets.Layout(height='auto', width='auto'))
-    hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(height='auto', width='auto'))
-
-    peak_freq_range_min_box = widgets.FloatText(description='Peak Freq. Range:',  style={'description_width': 'initial'},placeholder=0.4, value=0.4,layout=widgets.Layout(height='auto', width='auto'))
-    peak_freq_range_max_box = widgets.FloatText(placeholder=40, value=40,layout=widgets.Layout(height='auto', width='auto'))
-    peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(height='auto', width='auto'))
-
+    # Data format (for obspy format to use to read in)
     data_format_dropdown = widgets.Dropdown(
             options=OBSPY_FORMATS,
             value='MSEED',
-            description='Data Formats:', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
-            
+            description='Data Formats:', layout=widgets.Layout(width='auto'))
+    ioparam_grid[0,0] = data_format_dropdown
+
+    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]', 
+                                          placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0], 
+                                          value=get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
+    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1], 
+                                          value=get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
+    hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width='auto'))
+    ioparam_grid[1,:5] = hvsr_band_hbox
+
+
+    peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
+                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],layout=widgets.Layout(width='auto'))
+    peak_freq_range_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
+                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
+    peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width='auto'))
+    ioparam_grid[2,:5] = peak_freq_range_hbox
+
+
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=['Spline', 'Polynomial', 'None'],
-                            description='Detrend type:', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
-    detrend_order = widgets.FloatText(description='Detrend order', placeholder=2, value=2,layout=widgets.Layout(height='auto', width='auto'))
+                            description='Detrend Type:',  layout=widgets.Layout(width='auto'))
+    detrend_order = widgets.FloatText(description='Order:', tooltip='detrend_order', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_order'), 
+                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_order'),layout=widgets.Layout(width='auto'))
+    ioparam_grid[3,:1] = detrend_type_dropdown
+    ioparam_grid[3,1] = detrend_order
 
     # A text to specify the trim directory
-    trim_directory = widgets.Text(description='Directory for Trimmed Files:', value="None",#pathlib.Path().home().as_posix(),
-                                 style={'description_width': 'initial'},
-                                 layout=widgets.Layout(height='auto', width='auto'))
+    trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
+                                    layout=widgets.Layout(width='auto'))
+    trim_export_dropdown = widgets.Dropdown(
+                options=OBSPY_FORMATS,
+                value='MSEED',
+                description='Trim Format:', layout=widgets.Layout(width='auto'))
+    trim_directory_upload = widgets.FileUpload(
+                            accept='', 
+                            multiple=False, layout=widgets.Layout(width='auto'))
+    ioparam_grid[4,:6] = trim_directory
+    ioparam_grid[4, 6:8] = trim_export_dropdown
+    ioparam_grid[4, 8] = trim_directory_upload
 
+
+    # PYTHON API ACCORDION
+    inputAPI_grid = widgets.GridspecLayout(2, 10)
     # A text label with "input_params()"
-    input_params_call =  widgets.Label(value='input_params():', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
+    input_params_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'input_params' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    input_params_call = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + '()' + '</p>',
+                                     layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
+    #input_params_call =  widgets.Label(value='input_params()', layout=widgets.Layout(width='auto'))
+    inputAPI_grid[0, 0] = input_params_prefix
+    inputAPI_grid[0, 1:] = input_params_call
 
-        # A text label with "fetch_data()"
-    fetch_data_call = widgets.Label(value='fetch_data():', style={'description_width': 'initial'}, layout=widgets.Layout(height='auto', width='auto'))
+    # A text label with "fetch_data()"
+    fetch_data_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'fetch_data' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    fetch_data_call = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + '()' + '</p>',
+                                     layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
+    inputAPI_grid[1, 0] = fetch_data_prefix
+    inputAPI_grid[1, 1:] = fetch_data_call
 
+    # Set it all in place
+    input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
+    input_accordion.titles = ["Instrument Metadata", "Acquisition Information", "Location Information", "I/O and Parameters", "See Python API Call"]
+
+    input_accordion.layout.width = '99%'
+
+
+    # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
+    # A text box for the site name
+    site_name = widgets.Text(description='Site Name:',
+                            value='HVSR_Site',
+                            placeholder='HVSR_Site',
+                            style={'description_width': 'initial'}, layout=widgets.Layout(width='30%'))
+
+    tenpct_spacer = widgets.Button(description='', layout=widgets.Layout(width='20%', visibility='hidden'))
+
+    # Dropdown with different source types 
+    data_source_type = widgets.Dropdown(options=[('File', 'file'), ('Raw', 'raw'), ('Batch', 'batch'), ('Directory', 'dir')],
+                                            description='Data Source type:',
+                                            value='file',orientation='horizontal', 
+                                            style={'description_width': 'initial'},
+                                            layout=widgets.Layout(width='20%'))
+
+    # Dropdown labeled "Instrument" with options "Raspberry Shake", "Tromino", "Other"
+    instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
+                                        style={'description_width': 'initial'},
+                                        description='Instrument:',layout=widgets.Layout(width='20%'))
+
+    # Whether to print to terminal
+    verbose_check = widgets.Checkbox(description='Verbose', value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width='10%', justify_content='flex-end'))
+
+    # A text box labeled Data Filepath
+    data_filepath = widgets.Text(description='Data Filepath:',
+                                    placeholder='sample', value='sample',
+                                    style={'description_width': 'initial'},layout=widgets.Layout(width='95%'))
+
+    # A button next to it labeled "Browse"
+    browse_data_button = widgets.FileUpload(accept='', description='Browse',
+                                            multiple=True,layout=widgets.Layout(width='5%'))
+
+    # A text box labeled Metadata Filepath
+    metadata_filepath = widgets.Text(description='Metadata Filepath:',
+                                        style={'description_width': 'initial'},layout=widgets.Layout(width='95%'))
+
+    # A button next to it labeled "Browse"
+    browse_metadata_button = widgets.FileUpload(accept='', description='Browse',
+                                            multiple=False,layout=widgets.Layout(width='5%'))
 
     # A progress bar
     progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
                                     bar_style='info',
-                                    orientation='horizontal',layout=widgets.Layout(height='auto', width='auto'))
+                                    orientation='horizontal',layout=widgets.Layout(width='85%'))
 
     # A dark yellow button labeled "Read Data"
     read_data_button = widgets.Button(description='Read Data',
-                                    button_style='warning',layout=widgets.Layout(height='auto', width='auto'))
+                                    button_style='warning',layout=widgets.Layout(width='10%'))
 
 
     # A forest green button labeled "Process HVSR"
     process_hvsr_button = widgets.Button(description='Run',
-                                         button_style='success',layout=widgets.Layout(height='auto', width='auto'))
+                                            button_style='success',layout=widgets.Layout(width='5%'))
 
-
+    # Update input_param call
+    input_param_text = f"""(datapath='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
+                    station='{station_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
+                    acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
+                    xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
+                    input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elevation_unit_textbox.value}',
+                    instrument='{instrument_dropdown.value}', hvsr_band={[hvsr_band_min_box.value, hvsr_band_max_box.value]}, 
+                    peak_freq_range={[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}, verbose={verbose_check.value})"""
+    input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
     
-    # Create a 2x2 grid and add the buttons to it
-    input_tab = widgets.GridspecLayout(ui_height+1, ui_width)
-    input_tab[0, 0:5] = site_name
-    input_tab[0, 10:15] = data_source_type
-    input_tab[0, 15:] = instrument_dropdown
+    # Update fetch_data call
+    fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
+                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_order={detrend_order.value}, verbose={verbose_check.value})"""
+    fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
 
-    input_tab[1, :18] = data_filepath
-    input_tab[1, 18:] = browse_data_button
+    site_hbox = widgets.HBox()
+    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, data_source_type, instrument_dropdown, verbose_check]
+    datapath_hbox = widgets.HBox()
+    datapath_hbox.children = [data_filepath, browse_data_button]
+    metadata_hbox = widgets.HBox()
+    metadata_hbox.children = [metadata_filepath, browse_metadata_button]
+    progress_hbox = widgets.HBox()
+    progress_hbox.children = [progress_bar, read_data_button, process_hvsr_button]
 
-    input_tab[2, :18] = metadata_filepath
-    input_tab[2, 18:] = browse_metadata_button
+    input_params_vbox = widgets.VBox()
+    input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
-    input_tab[3, :4] = network_textbox
-    input_tab[3, 4:8] = station_textbox
-    input_tab[3, 8:11] = location_textbox
-    input_tab[3, 11:14] = z_channel_textbox
-    input_tab[3, 14:17] = e_channel_textbox
-    input_tab[3, 17:] = n_channel_textbox
+    input_accordion_box.children = [input_accordion]
 
-    input_tab[5, :4] = acquisition_date_picker
-    input_tab[5, 4:6] = acquisition_doy
-    input_tab[5, 9:13]= start_time_picker
-    input_tab[5, 13:17]= end_time_picker
-    input_tab[5, 17:] = time_zone_dropdown
+    # Create a GridBox with 12 rows and 20 columns
+    input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns='repeat(10, 1)',
+                                                grid_template_rows='repeat(12, 1)'))
 
-    input_tab[6, :4] = xcoord_textbox
-    input_tab[6, 4:8] = ycoord_textbox
-    input_tab[6, 8:11] = zcoord_textbox
-    input_tab[6, 11:14] = elevation_unit_textbox
-    input_tab[6, 14:17] = input_crs_textbox
-    input_tab[6, 17:20] = output_crs_textbox
-
-    input_tab[7, :10] = hvsr_band_hbox
-    input_tab[7, 10:] = peak_freq_range_hbox
-
-    input_tab[8, :10] = data_format_dropdown
-    input_tab[8, 10:17] = detrend_type_dropdown
-    input_tab[8, 17:] = detrend_order
-
-    input_tab[9, :] = trim_directory
-
-    input_tab[10, :] = input_params_call
-    input_tab[11, :] = fetch_data_call
-
-    input_tab[12, :17] = progress_bar
-    input_tab[12, 17:19] = read_data_button
-    input_tab[12, 19:] = process_hvsr_button
+    # Add the VBox to the GridBox
+    input_tab.children = [site_hbox,
+                            datapath_hbox,
+                            metadata_hbox,
+                            input_accordion_box,
+                            progress_hbox]
 
     def get_input_params():
         input_params_kwargs={
@@ -279,19 +357,23 @@ def create_jupyter_ui():
 
     def read_data(button):
         ip_kwargs = get_input_params()
-        hvsr_data = sprit_hvsr.input_params(**ip_kwargs)
+        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         if button.description=='Read Data':
             progress_bar.value=0.333
         else:
             progress_bar.value=0.1
         fd_kwargs = get_fetch_data_params()
-        hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs)
+        hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
         if button.description=='Read Data':
             progress_bar.value=0.666
         else:
             progress_bar.value=0.2
+        
         update_preview_fig(hvsr_data, preview_fig)
-        sprit_widget.selected_index=1
+
+        if button.description=='Read Data':
+            sprit_widget.selected_index=1
+            progress_bar.value=0
         any_update()
         return hvsr_data
     
@@ -455,33 +537,33 @@ def create_jupyter_ui():
         hvsr_data = read_data(button)
 
         remove_noise_kwargs = get_remove_noise_kwargs()
-        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
-        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.5
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
-        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.6
 
         ph_kwargs = get_process_hvsr_kwargs()
-        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.85
 
         cp_kwargs = get_check_peaks_kwargs()
-        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.9
 
         gr_kwargs = get_get_report_kwargs()
-        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs, verbose=verbose_check.value)
         progress_bar.value = 0.95
 
         update_results_fig(hvsr_data, results_fig, gr_kwargs['plot_type'])
+        progress_bar.value = 1
         progress_bar.value = 0
         
-
     def parse_plot_string(plot_string):
         plot_list = plot_string.split()
 
@@ -620,7 +702,7 @@ def create_jupyter_ui():
 
         if 'ann' in hvsr_plot_list:
             # Annotate best peak
-            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']), 
+            results_fig.add_annotation(x=hvsr_data['BestPeak']['f0'],
                                     y=0, 
                                     text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
@@ -761,7 +843,7 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def  parse_spec_plot_list(hvsr_data, spec_plot_list, subplot_num, results_fig):
+    def parse_spec_plot_list(hvsr_data, spec_plot_list, subplot_num, results_fig):
 
         # Initial setup
         hvsrDF = hvsr_data.hvsr_df
@@ -773,26 +855,27 @@ def create_jupyter_ui():
         maxZ = np.percentile(image_data, 100)
         minZ = np.percentile(image_data, 0)
 
-        hmap = go.Heatmap(z=image_data,
-                    x=specAxisTimes,
-                    y=y_data,
-                    colorscale='Cividis',
-                    showlegend=False,
-                    zmin=minZ,zmax=maxZ,showscale=False)
-        results_fig.add_trace(hmap, row=subplot_num, col=1)
-
-
         use_mask = hvsr_data.hvsr_df.Use.values
-        use_mask = np.tile(use_mask, (image_data.shape[0],1)).astype(int)
-
+        use_mask = np.tile(use_mask, (image_data.shape[0],1))#.astype(int)
+        use_mask = np.where(use_mask is False, np.nan, use_mask)
         data_used = go.Heatmap(
             x=specAxisTimes,
             y=y_data,
             z=use_mask,
             showlegend=False,
-            colorscale=[[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']],
-            showscale=False)
+            colorscale=[[0, 'rgba(0,0,0,1)'], [1, 'rgba(250,250,250,0)']],
+            showscale=False, name='Used')
         results_fig.add_trace(data_used, row=subplot_num, col=1)
+
+        hmap = go.Heatmap(z=image_data,
+                    x=specAxisTimes,
+                    y=y_data,
+                    colorscale='Turbo',
+                    showlegend=False,
+                    opacity=0.7,
+                    hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>H/V Amplitude: %{z:.2f}<extra></extra>',
+                    zmin=minZ,zmax=maxZ, showscale=False, name='HV Curve Amp. over Time')
+        results_fig.add_trace(hmap, row=subplot_num, col=1)
 
         results_fig.update_yaxes(type='log', 
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
@@ -853,7 +936,7 @@ def create_jupyter_ui():
             side='bottom'
         else:
             side='top'
-        results_fig.update_xaxes(type='log', 
+        results_fig.update_xaxes(type='log',
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                         #showticklabels=showtickLabels,
                         side=side,
@@ -863,7 +946,8 @@ def create_jupyter_ui():
                                 showlegend=False,
                                 title=hvsr_data['site'])
         results_fig.show()
-    
+        sprit_widget.selected_index=3
+
     process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
@@ -916,22 +1000,29 @@ def create_jupyter_ui():
 
         # Add data to preview_fig
         # Add spectrogram of Z component
-        preview_fig.add_trace(px.imshow(Sxx, x=axisTimes, y=f, color_continuous_scale='turbo',
-                        labels={'x':'Time [UTC]', 'y':'Frequency [Hz]', 'color':'Intensity'}).data[0], row=1, col=1)
+        minz = np.percentile(Sxx, 1)
+        maxz = np.percentile(Sxx, 99)
+        hmap = go.Heatmap(z=Sxx,
+                    x=axisTimes,
+                    y=f,
+                    colorscale='Turbo',
+                    showlegend=False,
+                    hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                    zmin=minz, zmax=maxz, showscale=False, name='Z Component Spectrogram')
+        preview_fig.add_trace(hmap, row=1, col=1)
         preview_fig.update_yaxes(type='log', range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], row=1, col=1)
         preview_fig.update_yaxes(title={'text':'Spectrogram (Z)'}, row=1, col=1)
-        #preview_fig.update_coloraxes({'cmin':0, 'cmax':3000, 'colorscale':px.colors.sequential.Turbo}, row=1, col=1)
 
         # Add raw traces
         dec_factor=5 #This just makes the plotting go faster, by "decimating" the data
         preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
-                                        line={'color':'black', 'width':0.5},marker=None), row=2, col='all')
+                                        line={'color':'black', 'width':0.5},marker=None, name='Z component data'), row=2, col='all')
         preview_fig.update_yaxes(title={'text':'Z'}, row=2, col=1)
         preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_e[0].data[::dec_factor],
-                                        line={'color':'blue', 'width':0.5},marker=None),row=3, col='all')
+                                        line={'color':'blue', 'width':0.5},marker=None, name='E component data'),row=3, col='all')
         preview_fig.update_yaxes(title={'text':'E'}, row=3, col=1)
         preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
-                                        line={'color':'red', 'width':0.5},marker=None), row=4, col='all')
+                                        line={'color':'red', 'width':0.5},marker=None, name='N component data'), row=4, col='all')
         preview_fig.update_yaxes(title={'text':'N'}, row=4, col=1)
 
         #preview_fig.add_trace(p)

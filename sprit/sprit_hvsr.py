@@ -1186,7 +1186,45 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 #Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
-    #Get intput paramaters
+    """Fetch ambient seismic data from a source to read into obspy stream
+    
+    Parameters
+    ----------
+    params  : dict
+        Dictionary containing all the necessary params to get data.
+            Parameters defined using input_params() function.
+    source  : str, {'raw', 'dir', 'file', 'batch'}
+        String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
+            'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
+            'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
+            'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+            'batch' is used to read a list or specified set of seismic files. 
+                Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
+    trim_dir : None or str or pathlib obj, default=None
+        If None (or False), data is not trimmed in this function.
+        Otherwise, this is the directory to save trimmed and exported data.
+    export_format: str='mseed'
+        If trim_dir is not None, this is the format in which to save the data
+    detrend : str or bool, default='spline'
+        If False, data is not detrended.
+        Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
+    detrend_order : int, default=2
+        If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
+    update_metadata : bool, default=True
+        Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
+    plot_input_stream : bool, default=False
+        Whether to plot the raw input stream. This plot includes a spectrogram (Z component) and the raw (with decimation for speed) plots of each component signal.
+    verbose : bool, default=False
+        Whether to print outputs and inputs to the terminal
+    **kwargs
+        Keywords arguments, primarily for 'batch' and 'dir' sources
+        
+    Returns
+    -------
+    params : HVSRData or HVSRBatch object
+        Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+    """
+    # Get intput paramaters
     orig_args = locals().copy()
     start_time = datetime.datetime.now()
     
@@ -1212,44 +1250,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     verbose=orig_args['verbose']
     kwargs=orig_args['kwargs']
 
-    """Fetch ambient seismic data from a source to read into obspy stream
-        
-        Parameters
-        ----------
-        params  : dict
-            Dictionary containing all the necessary params to get data.
-                Parameters defined using input_params() function.
-        source  : str, {'raw', 'dir', 'file', 'batch'}
-            String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
-                'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
-                'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-                'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
-                'batch' is used to read a list or specified set of seismic files. 
-                    Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
-        trim_dir : None or str or pathlib obj, default=None
-            If None (or False), data is not trimmed in this function.
-            Otherwise, this is the directory to save trimmed and exported data.
-        export_format: str='mseed'
-            If trim_dir is not False, this is the format in which to save the data
-        detrend : str or bool, default='spline'
-            If False, data is not detrended.
-            Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
-        detrend_order : int, default=2
-            If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
-        update_metadata : bool, default=True
-            Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
-        plot_input_stream : bool, default=False
-            Whether to plot the raw input stream. This plot includes a spectrogram (Z component) and the raw (with decimation for speed) plots of each component signal.
-        verbose : bool, default=False
-            Whether to print outputs and inputs to the terminal
-        **kwargs
-            Keywords arguments, primarily for 'batch' and 'dir' sources
-            
-        Returns
-        -------
-        params : HVSRData or HVSRBatch object
-            Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
-        """
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         print()
