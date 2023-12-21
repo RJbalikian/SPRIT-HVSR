@@ -38,11 +38,6 @@ try: #For distribution
 except: #For testing
     import sprit_utils
     import sprit_gui
-<<<<<<< HEAD
-=======
-    pass
->>>>>>> 7bb50ed40d24d9223f0e0b6e677c7657612ce083
-
 
 global spritApp
 
