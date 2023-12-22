@@ -882,8 +882,6 @@ def create_jupyter_ui():
         return results_fig
 
     def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num):
-        
-
         hvsr_data = hv_data
         # Initial setup
         hvsrDF = hvsr_data.hvsr_df
@@ -916,7 +914,7 @@ def create_jupyter_ui():
                     zmin=minZ,zmax=maxZ, showscale=False, name='HV Curve Amp. over Time')
         results_fig.add_trace(hmap, row=subplot_num, col=1)
 
-
+        # tp currently is not being added to spec_plot_list
         if 'tp' in spec_plot_list:
             yvals = []
             for row in hvsrDF['HV_Curves'].itterow():
@@ -927,7 +925,7 @@ def create_jupyter_ui():
             results_fig.add_trace(tp_trace, row=subplot_num, col='all')
 
         if 'p' in spec_plot_list:
-            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1.5, line_dash='dash', line_color='black', col=subplot_num, row='all')
+            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1.5, line_dash='dash', line_color='black', row=subplot_num, col='all')
 
         if 'ann' in spec_plot_list:
             results_fig.add_annotation(x=specAxisTimes[-1],
@@ -935,7 +933,7 @@ def create_jupyter_ui():
                                     text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False, xanchor='right', yanchor='bottom',
-                                    row=subplot_num, col=1)
+                                    row=subplot_num, col='all')
 
         if 'leg' in spec_plot_list:
             pass
