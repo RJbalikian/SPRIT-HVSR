@@ -3071,9 +3071,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
             used_ppsds = np.stack(currPPSDs)
             
-
             #if reasmpling has been selected
-            if resample is True or type(resample) is int:
+            if resample is True or isinstance(resample, (int, float)):
                 if resample is True:
                     resample = 1000 #Default smooth value
 
@@ -3081,7 +3080,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 xValMax = max(ppsds[k]['period_bin_centers'])
                 #Resample period bin values
                 x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
-                if smooth or type(smooth) is int:
+                if smooth or isinstance(smooth, (int, float)):
                     if smooth:
                         smooth = 51 #Default smoothing window
                     elif smooth % 2==0:

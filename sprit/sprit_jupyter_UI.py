@@ -30,6 +30,7 @@ def create_jupyter_ui():
 
     ui_width = 20
     ui_height= 12
+    global results_fig
 
     # INPUT TAB
     # Create a VBox for the accordions
@@ -79,11 +80,22 @@ def create_jupyter_ui():
     instrument_grid[0,0] = acquisition_date_picker
 
     # Label that shows the Date currently selected in the Date Picker
-    acquisition_doy = widgets.FloatText(description='DOY',
+    acquisition_doy = widgets.IntText(description='DOY',
                                                 placeholder=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 value=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 layout=widgets.Layout(width='auto'))
     instrument_grid[0,1] = acquisition_doy
+
+    def on_acq_date_change(change):
+        acquisition_doy.value = acquisition_date_picker.value.timetuple().tm_yday
+    acquisition_date_picker.observe(on_acq_date_change)
+
+    def on_doy_change(change):
+        curr_year = datetime.datetime.today().year
+        if acquisition_doy.value > datetime.datetime.today().timetuple().tm_yday:
+            curr_year -= 1
+        acquisition_date_picker.value = (datetime.datetime(curr_year, 1, 1) + datetime.timedelta(days = acquisition_doy.value-1)).date()
+    acquisition_doy.observe(on_doy_change)
 
     # Time selector (hour and minute) labelled "Start Time".
     start_time_picker = widgets.TimePicker(description='Start Time:',
@@ -204,7 +216,6 @@ def create_jupyter_ui():
     ioparam_grid[4, 6:8] = trim_export_dropdown
     ioparam_grid[4, 8] = trim_directory_upload
 
-
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(2, 10)
     # A text label with "input_params()"
@@ -288,19 +299,23 @@ def create_jupyter_ui():
                                             button_style='success',layout=widgets.Layout(width='5%'))
 
     # Update input_param call
-    input_param_text = f"""(datapath='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
+    def update_input_param_call():
+        input_param_text = f"""(datapath='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
                     station='{station_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
                     input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elevation_unit_textbox.value}',
                     instrument='{instrument_dropdown.value}', hvsr_band={[hvsr_band_min_box.value, hvsr_band_max_box.value]}, 
                     peak_freq_range={[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}, verbose={verbose_check.value})"""
-    input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
+        input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
+    update_input_param_call()
     
     # Update fetch_data call
-    fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
+    def update_fetch_data_call():
+        fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
                             export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_order={detrend_order.value}, verbose={verbose_check.value})"""
-    fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
+        fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
+    update_fetch_data_call()
 
     site_hbox = widgets.HBox()
     site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, data_source_type, instrument_dropdown, verbose_check]
@@ -356,6 +371,8 @@ def create_jupyter_ui():
         return fetch_data_kwargs
 
     def read_data(button):
+        progress_bar.value = 0
+        
         ip_kwargs = get_input_params()
         hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         if button.description=='Read Data':
@@ -374,7 +391,6 @@ def create_jupyter_ui():
         if button.description=='Read Data':
             sprit_widget.selected_index=1
             progress_bar.value=0
-        any_update()
         return hvsr_data
     
     read_data_button.on_click(read_data)
@@ -412,7 +428,8 @@ def create_jupyter_ui():
                                 'warmup_time':warmup_time.value,
                                 'cooldown_time':cooldown_time.value,
                                 'min_win_size':noisy_window_length.value,
-                                'remove_raw_noise':raw_data_remove_check.value}
+                                'remove_raw_noise':raw_data_remove_check.value,
+                                'verbose':verbose_check.value}
         return remove_noise_kwargs
 
     def get_generate_ppsd_kwargs():
@@ -425,6 +442,7 @@ def create_jupyter_ui():
             'period_smoothing_width_octaves':period_smoothing_width.value,
             'period_step_octaves':period_step_octave.value,
             'period_limits':[period_limits_min.value, period_limits_max.value],
+            'verbose':verbose_check.value
             }
         return ppsd_kwargs
 
@@ -432,7 +450,8 @@ def create_jupyter_ui():
         roc_kwargs = {
                 'use_percentile':rmse_pctile_check.value,
                 'rmse_thresh':rmse_thresh.value,
-                'use_hv_curve':False#use_hv_curve_rmse.value
+                'use_hv_curve':False,
+                'verbose':verbose_check.value
             }
         return roc_kwargs
 
@@ -445,20 +464,22 @@ def create_jupyter_ui():
         if resample_hv_curve_bool.value:
             resample_value = resample_hv_curve.value
         else:
-            resample_value =resample_hv_curve_bool.value
+            resample_value = resample_hv_curve_bool.value
 
         ph_kwargs={'method':h_combine_meth.value,
-                   'smooth':smooth_value,
-                   'freq_smooth':freq_smoothing.value,
-                   'f_smooth_width':freq_smooth_width.value,
-                   'resample':resample_value,
-                   'outlier_curve_rmse_percentile':use_hv_curve_rmse.value}
+                    'smooth':smooth_value,
+                    'freq_smooth':freq_smoothing.value,
+                    'f_smooth_width':freq_smooth_width.value,
+                    'resample':resample_value,
+                    'outlier_curve_rmse_percentile':use_hv_curve_rmse.value,
+                    'verbose':verbose_check.value}
         return ph_kwargs
 
     def get_check_peaks_kwargs():
         cp_kwargs = {'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
                     'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value],
-                    'peak_selection':peak_selection_type.value}
+                    'peak_selection':peak_selection_type.value,
+                    'verbose':verbose_check.value}
         return cp_kwargs
 
     def get_get_report_kwargs():
@@ -485,6 +506,10 @@ def create_jupyter_ui():
                 hvsr_plot_str=hvsr_plot_str + " -s"
             if not show_std_comp.value:
                 comp_plot_str=comp_plot_str + " -s"                
+
+            # Whether to show all peaks
+            if show_all_peaks_hv.value:
+                hvsr_plot_str=hvsr_plot_str + " all"
 
             # Whether curves from each time window are shown
             if show_all_curves_hv.value:
@@ -516,7 +541,7 @@ def create_jupyter_ui():
             if show_legend_hv.value:
                 hvsr_plot_str=hvsr_plot_str + " leg"
             if ann_best_peak_comp.value:
-                show_legend_comp=comp_plot_str + " leg"
+                comp_plot_str=comp_plot_str + " leg"
             if show_legend_spec.value:
                 spec_plot_str=spec_plot_str + " leg"            
 
@@ -529,41 +554,45 @@ def create_jupyter_ui():
                      'export_path':None,
                      'return_results':False, 
                      'csv_overwrite_opt':'overwrite',
-                     'no_output':False
+                     'no_output':False,
+                    'verbose':verbose_check.value
                      }
         return gr_kwargs
 
     def process_data(button):
+        progress_bar.value = 0
+        
         hvsr_data = read_data(button)
 
         remove_noise_kwargs = get_remove_noise_kwargs()
-        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
         progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
-        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
         progress_bar.value = 0.5
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
-        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
         progress_bar.value = 0.6
 
         ph_kwargs = get_process_hvsr_kwargs()
-        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
         progress_bar.value = 0.85
 
         cp_kwargs = get_check_peaks_kwargs()
-        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
         progress_bar.value = 0.9
 
         gr_kwargs = get_get_report_kwargs()
-        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs, verbose=verbose_check.value)
+        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
         progress_bar.value = 0.95
 
-        update_results_fig(hvsr_data, results_fig, gr_kwargs['plot_type'])
+        update_results_fig(hvsr_data, gr_kwargs['plot_type'], results_fig)
         progress_bar.value = 1
-        progress_bar.value = 0
-        
+        global hvsr_results
+        hvsr_results = hvsr_data
+
     def parse_plot_string(plot_string):
         plot_list = plot_string.split()
 
@@ -624,7 +653,9 @@ def create_jupyter_ui():
 
         return plot_list_list
 
-    def parse_hv_plot_list(hvsr_data, hvsr_plot_list, results_fig):
+    def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig):
+        
+        hvsr_data = hv_data
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_df
 
@@ -633,12 +664,17 @@ def create_jupyter_ui():
             for row in hvsrDF[hvsrDF['Use']]['CurvesPeakFreqs'].values:
                 for peak in row:
                     allpeaks.append(peak)
+            allInd = []
+            for row, peakList in enumerate(hvsrDF[hvsrDF['Use']]['CurvesPeakIndices'].values):
+                for ind in peakList:
+                    allInd.append((row, ind))
             x_vals = []
             y_vals = []
             y_max = np.nanmax(hvsr_data.hvsrp)
-            for tp in allpeaks:
+            hvCurveInd = list(hvsrDF.columns).index('HV_Curves')
+            for i, tp in enumerate(allpeaks):
                 x_vals.extend([tp, tp, None]) # add two x values and a None
-                y_vals.extend([0, y_max, None]) # add the first and last y values and a None            
+                y_vals.extend([0, hvsrDF.iloc[allInd[i][0], hvCurveInd][allInd[i][1]], None]) # add the first and last y values and a None            
 
             results_fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines',
                                             line=dict(width=4, dash="solid", 
@@ -710,8 +746,9 @@ def create_jupyter_ui():
                                     row=1, col=1)
         return results_fig
 
-    def parse_comp_plot_list(hvsr_data, comp_plot_list, results_fig):
-
+    def parse_comp_plot_list(hv_data, comp_plot_list, results_fig):
+        
+        hvsr_data = hv_data
         # Initial setup
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_df
@@ -843,8 +880,10 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def parse_spec_plot_list(hvsr_data, spec_plot_list, subplot_num, results_fig):
+    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig):
+        
 
+        hvsr_data = hv_data
         # Initial setup
         hvsrDF = hvsr_data.hvsr_df
         specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
@@ -893,8 +932,11 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def update_results_fig(hvsr_data, results_fig, plot_string):
+    def update_results_fig(hv_data, plot_string, res_fig):
+        results_fig = res_fig
         results_fig.data = []
+        
+        hvsr_data = hv_data
 
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
             hvsr_data=hvsr_data[0]
@@ -909,7 +951,7 @@ def create_jupyter_ui():
 
 
         # Re-initialize results_fig
-        results_fig.update_layout(grid={'rows': noSubplots, 'xgap': 0.01, 'ygap': 0.01})
+        results_fig.update_layout(grid={'rows': noSubplots})
 
         # Get all data for each plotted item
         # HVSR Plot
@@ -938,38 +980,27 @@ def create_jupyter_ui():
             side='top'
         results_fig.update_xaxes(type='log',
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                        #showticklabels=showtickLabels,
                         side=side,
                         row=1, col=1)
-    
-        results_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, 
+        results_fig.update_xaxes(showticklabels=showtickLabels, row=spec_plot_row-1, col=1)
+        results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
                                 showlegend=False,
                                 title=hvsr_data['site'])
+
         results_fig.show()
         sprit_widget.selected_index=3
 
     process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
-    preview_graph_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    preview_noise_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    preview_tab = widgets.Tab([preview_graph_tab, preview_noise_tab])
-    preview_tab.set_title(0, "Data Preview")
-    preview_tab.set_title(1, "Noise Removal")
-
     #Initialize plot
     subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
     preview_fig = go.FigureWidget(subp)
-    preview_graph_widget = widgets.Output()  
 
-    # Initialize tab
-    preview_graph_tab[:,:]=preview_graph_widget
-    with preview_graph_widget:
-        display(preview_fig)
-
-    def update_preview_fig(hvsr_data, preview_fig):
+    def update_preview_fig(hv_data, preview_fig):
         preview_fig.data = []
-
+        
+        hvsr_data = hv_data
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
             hvsr_data=hvsr_data[0]
 
@@ -1064,18 +1095,26 @@ def create_jupyter_ui():
     #remove_noise call
     remove_noise_call = widgets.Label(value=f"remove_noise()")
 
-    #progress bar (same as above)
-    # A progress bar
-    progress_bar_preview = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
-                                    bar_style='info',
-                                    orientation='horizontal',layout=widgets.Layout(height='auto', width='auto'))
     #Update noise windows
     update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
 
-    # A forest green button labeled "Process HVSR"
-    process_hvsr_button_preview = widgets.Button(description='Run',
-                                         button_style='success',layout=widgets.Layout(height='auto', width='auto'))
+    preview_graph_widget = widgets.Output()
+    #progress bar (same as above)
+    preview_progress_hbox = widgets.HBox(children=[progress_bar, update_noise_windows_button, process_hvsr_button])
 
+    preview_graph_tab = widgets.VBox(children=[preview_graph_widget])
+    preview_noise_tab = widgets.GridspecLayout(10, ui_width)
+    preview_subtabs = widgets.Tab([preview_graph_tab, preview_noise_tab])
+    preview_tab = widgets.VBox()
+
+    preview_subtabs.set_title(0, "Data Preview")
+    preview_subtabs.set_title(1, "Noise Removal")
+
+    preview_tab.children = [preview_subtabs, preview_progress_hbox]
+    # Initialize tab
+    with preview_graph_widget:
+        display(preview_fig)
+    
     # Add it all in to the tab
     preview_noise_tab[0,1:5] = stalta_check
     preview_noise_tab[0,5:7] = sta
@@ -1103,20 +1142,22 @@ def create_jupyter_ui():
 
     preview_noise_tab[9,:] = remove_noise_call
 
-    preview_noise_tab[10,:15] = progress_bar_preview
-    preview_noise_tab[10,15:19] = update_noise_windows_button
-    preview_noise_tab[10,19] = process_hvsr_button_preview
+    #preview_noise_tab[10,:] = preview_progress_hbox
+    #preview_noise_tab[10,15:19] = update_noise_windows_button
+    #preview_noise_tab[10,19] = process_hvsr_button_preview
 
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     outlier_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
-    settings_tab = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, hvsr_settings_tab, plot_settings_tab])
-    settings_tab.set_title(0, "PPSD Settings")
-    settings_tab.set_title(1, "Outlier Settings")
-    settings_tab.set_title(2, "HVSR Settings")
-    settings_tab.set_title(3, "Plot Settings")
+    settings_subtabs = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, hvsr_settings_tab, plot_settings_tab])
+    settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
+    settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
+    settings_subtabs.set_title(0, "PPSD Settings")
+    settings_subtabs.set_title(1, "Outlier Settings")
+    settings_subtabs.set_title(2, "HVSR Settings")
+    settings_subtabs.set_title(3, "Plot Settings")
 
     # PPSD SETTINGS SUBTAB
     ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
@@ -1218,11 +1259,11 @@ def create_jupyter_ui():
                                     placeholder=40, value=40, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     resample_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    resample_hv_curve = widgets.FloatText(description='Resample H/V Curve', style={'description_width': 'initial'},
+    resample_hv_curve = widgets.IntText(description='Resample H/V Curve', style={'description_width': 'initial'},
                                     placeholder=500, value=500, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     smooth_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    smooth_hv_curve = widgets.FloatText(description='Smooth H/V Curve', style={'description_width': 'initial'},
+    smooth_hv_curve = widgets.IntText(description='Smooth H/V Curve', style={'description_width': 'initial'},
                                     placeholder=51, value=51, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     #hvsr_band_min_box_hvsrSet = widgets.FloatText(description='HVSR Band:', style={'description_width': 'initial'}, 
@@ -1343,7 +1384,17 @@ def create_jupyter_ui():
     mpl_kwargs = widgets.Text(style={'description_width': 'initial'},
                                 layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    plot_hvsr_call = widgets.Label(value='plot_hvsr()')
+    plot_hvsr_call = widgets.Label(value=f"Plot String: '{get_default(sprit_hvsr.get_report, 'plot_type')}'")
+    def update_plot_string():
+        plot_hvsr_text = f"""Plot String: {get_get_report_kwargs()['plot_type']}"""
+        plot_hvsr_call.value = plot_hvsr_text
+    update_plot_string()
+
+    update_plot_button = widgets.Button(description='Update Plot',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
+    def manually_update_results_fig(change):
+        plot_string = get_get_report_kwargs()['plot_type']
+        update_results_fig(hvsr_results, plot_string, results_fig)
+        sprit_widget.selected_index = 3
 
     # Set up grid for ppsd_settings subtab
     plot_settings_tab[0, 5:10]   = hv_plot_label
@@ -1360,7 +1411,7 @@ def create_jupyter_ui():
     plot_settings_tab[3, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
     plot_settings_tab[4, :5] = comibne_plot_label
-    plot_settings_tab[4, 10:15] =combine_hv_comp
+    plot_settings_tab[4, 10:15] = combine_hv_comp
 
     plot_settings_tab[5, :5] = show_peak_label
     plot_settings_tab[5, 5:10] = show_best_peak_hv
@@ -1405,7 +1456,9 @@ def create_jupyter_ui():
 
     plot_settings_tab[16, :] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
-    plot_settings_tab[17, :] = plot_hvsr_call
+    plot_settings_tab[17, :18] = plot_hvsr_call
+    plot_settings_tab[17, 18:] = update_plot_button
+    update_plot_button.on_click(manually_update_results_fig)
 
     # LOG TAB - not currently using
     #log_tab = widgets.GridspecLayout(ui_height, ui_width)
@@ -1427,14 +1480,24 @@ def create_jupyter_ui():
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
-    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab,results_tab])
+    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, results_tab])
     sprit_widget.set_title(0, "Input")
     sprit_widget.set_title(1, "Preview")
     sprit_widget.set_title(2, "Settings")
     sprit_widget.set_title(3, "Results")
 
-    def any_update():
-        pass
+    def observe_children(widget, callback):
+        if hasattr(widget, 'children'):
+            for child in widget.children:
+                child.observe(callback)
+                observe_children(child, callback)
+
+    def any_update(change):
+        update_input_param_call()
+        update_fetch_data_call()
+        update_plot_string()
+
+    observe_children(sprit_widget, any_update)    
 
     # Display the tab
     display(sprit_widget)
