@@ -891,12 +891,11 @@ def create_jupyter_ui():
         y_data = hvsr_data.x_freqs['Z'][1:]
         image_data = np.stack(hvsrDF['HV_Curves']).T
 
-        
         maxZ = np.percentile(image_data, 100)
         minZ = np.percentile(image_data, 0)
 
         use_mask = hvsr_data.hvsr_df.Use.values
-        use_mask = np.tile(use_mask, (image_data.shape[0],1))#.astype(int)
+        use_mask = np.tile(use_mask, (image_data.shape[0],1))
         use_mask = np.where(use_mask is False, np.nan, use_mask)
         data_used = go.Heatmap(
             x=specAxisTimes,
@@ -917,6 +916,30 @@ def create_jupyter_ui():
                     zmin=minZ,zmax=maxZ, showscale=False, name='HV Curve Amp. over Time')
         results_fig.add_trace(hmap, row=subplot_num, col=1)
 
+
+        if 'tp' in spec_plot_list:
+            yvals = []
+            for row in hvsrDF['HV_Curves'].itterow():
+                maxInd = np.argmax(row[1])
+                yvals.append(y_data[maxInd])
+            tp_trace = go.Scatter(x=specAxisTimes, y=yvals,
+                                    line=None, marker=dict(color='white', size=1.5, line=dict(color='black', width=0.1)), name='Individual H/V Peaks')
+            results_fig.add_trace(tp_trace, row=subplot_num, col='all')
+
+        if 'p' in spec_plot_list:
+            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1.5, line_dash='dash', line_color='black', col=subplot_num, row='all')
+
+        if 'ann' in spec_plot_list:
+            results_fig.add_annotation(x=specAxisTimes[-1],
+                                    y=hvsr_data['hvsr_band'][0], 
+                                    text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                                    bgcolor='rgba(255, 255, 255, 0.7)',
+                                    showarrow=False, xanchor='right', yanchor='bottom',
+                                    row=subplot_num, col=1)
+
+        if 'leg' in spec_plot_list:
+            pass
+
         results_fig.update_yaxes(type='log', 
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                         row=subplot_num, col=1)
@@ -927,9 +950,6 @@ def create_jupyter_ui():
             y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
             xanchor="right", yanchor="bottom",bgcolor='rgba(256,256,256,0.7)',
             showarrow=False,row=subplot_num, col=1)
-
-        #results_fig.update_layout(legend=dict(traceorder='original'),
-        #                          row=subplot_num, col=1) 
 
         return results_fig
 
@@ -1180,10 +1200,6 @@ def create_jupyter_ui():
 
     preview_noise_tab[9,:] = remove_noise_call
 
-    #preview_noise_tab[10,:] = preview_progress_hbox
-    #preview_noise_tab[10,15:19] = update_noise_windows_button
-    #preview_noise_tab[10,19] = process_hvsr_button_preview
-
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     outlier_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
@@ -1304,18 +1320,8 @@ def create_jupyter_ui():
     smooth_hv_curve = widgets.IntText(description='Smooth H/V Curve', style={'description_width': 'initial'},
                                     placeholder=51, value=51, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    #hvsr_band_min_box_hvsrSet = widgets.FloatText(description='HVSR Band:', style={'description_width': 'initial'}, 
-    #                                              placeholder=hvsr_band_min_box.value, value=hvsr_band_min_box.value,
-    #                                              layout=widgets.Layout(height='auto', width='auto'))
-    #hvsr_band_max_box_hvsrSet = widgets.FloatText(placeholder=hvsr_band_max_box.value, value=hvsr_band_max_box.value,
-    #                                              layout=widgets.Layout(height='auto', width='auto'))
     hvsr_band_hbox_hvsrSet = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(height='auto', width='auto'))
 
-    #peak_freq_range_min_box_hvsrSet = widgets.FloatText(description='Peak Freq. Range:',  style={'description_width': 'initial'},
-    #                                                    placeholder=peak_freq_range_min_box.value, value=peak_freq_range_min_box.value,
-    #                                                    layout=widgets.Layout(height='auto', width='auto'))
-    #peak_freq_range_max_box_hvsrSet = widgets.FloatText(placeholder=peak_freq_range_max_box.value, value=peak_freq_range_max_box.value,
-    #                                                    layout=widgets.Layout(height='auto', width='auto'))
     peak_freq_range_hbox_hvsrSet = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(height='auto', width='auto'))
 
     peak_selection_type = widgets.Dropdown(description='Peak Selection Method', value='max',
@@ -1369,7 +1375,7 @@ def create_jupyter_ui():
     show_peak_label = widgets.Label(value='Show Best Peak', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     show_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    show_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+    show_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
     show_best_peak_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
@@ -1377,7 +1383,7 @@ def create_jupyter_ui():
     annotate_peak_label = widgets.Label(value='Annotate Best Peak', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+    ann_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
     ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
@@ -1395,6 +1401,8 @@ def create_jupyter_ui():
     show_ind_peaks_label = widgets.Label(value='Show Individual Peaks', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     show_ind_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
+    show_ind_peaks_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+                                       style={'description_width': 'initial'})
 
     show_std_label = widgets.Label(value='Show Standard Deviation', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     show_std_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
@@ -1456,7 +1464,6 @@ def create_jupyter_ui():
     plot_settings_tab[5, 10:15] = show_best_peak_comp
     plot_settings_tab[5, 15:] = show_best_peak_spec
 
-    
     plot_settings_tab[6, :5] = annotate_peak_label
     plot_settings_tab[6, 5:10] = ann_best_peak_hv
     plot_settings_tab[6, 10:15] = ann_best_peak_comp
@@ -1471,7 +1478,8 @@ def create_jupyter_ui():
 
     plot_settings_tab[9, :5] = show_ind_peaks_label
     plot_settings_tab[9, 5:10] = show_ind_peaks_hv
-
+    plot_settings_tab[9, 15:] = show_ind_peaks_spec
+   
     plot_settings_tab[10, :5] = show_std_label
     plot_settings_tab[10, 5:10] = show_std_hv
     plot_settings_tab[10, 10:15] = show_std_comp
