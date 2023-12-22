@@ -950,7 +950,6 @@ def create_jupyter_ui():
             combinedComp = True
             noSubplots -= 1
         
-        print("Combined?", combinedComp)
         # Get all data for each plotted item
         # COMP Plot
         # Figure out which subplot is which
@@ -969,7 +968,6 @@ def create_jupyter_ui():
                                                 row_heights=[2, 1.5, 1])
             #results_fig.update_layout(rows=3, cols=1,  horizontal_spacing=0.01, vertical_spacing=0.01,
         else:
-            print('making sunplot')
             subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                     specs =[[{'secondary_y': True}],
                                             [{'secondary_y': False}]],
@@ -1012,9 +1010,9 @@ def create_jupyter_ui():
                                 title=hvsr_data['site'])
         results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
         if comp_plot_row==1:
-            results_fig.update_yaxes(title_text="PPSD Amplitude\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
+            results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
         else:
-            results_fig.update_yaxes(title_text="PPSD Amplitude\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
+            results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
         
         # Reset results_graph_widget and display 
         #results_graph_widget = widgets.Output()
