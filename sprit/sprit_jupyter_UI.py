@@ -6,7 +6,7 @@ import inspect
 from zoneinfo import available_timezones
 
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, clear_output
 import numpy as np
 import plotly.express as px
 import plotly.graph_objs as go
@@ -270,19 +270,19 @@ def create_jupyter_ui():
     # A text box labeled Data Filepath
     data_filepath = widgets.Text(description='Data Filepath:',
                                     placeholder='sample', value='sample',
-                                    style={'description_width': 'initial'},layout=widgets.Layout(width='95%'))
+                                    style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
 
     # A button next to it labeled "Browse"
     browse_data_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=True,layout=widgets.Layout(width='5%'))
+                                            multiple=True,layout=widgets.Layout(width='10%'))
 
     # A text box labeled Metadata Filepath
     metadata_filepath = widgets.Text(description='Metadata Filepath:',
-                                        style={'description_width': 'initial'},layout=widgets.Layout(width='95%'))
+                                        style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
 
     # A button next to it labeled "Browse"
     browse_metadata_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=False,layout=widgets.Layout(width='5%'))
+                                            multiple=False,layout=widgets.Layout(width='10%'))
 
     # A progress bar
     progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
@@ -500,6 +500,8 @@ def create_jupyter_ui():
             # Whether components be on the same plot as HV curve?
             if not combine_hv_comp.value:
                 comp_plot_str=comp_plot_str + "+"
+            else:
+                comp_plot_str=comp_plot_str.replace('+','')
 
             # Whether to show (log) standard deviations
             if not show_std_hv.value:
@@ -588,7 +590,7 @@ def create_jupyter_ui():
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
         progress_bar.value = 0.95
 
-        update_results_fig(hvsr_data, gr_kwargs['plot_type'], results_fig)
+        update_results_fig(hvsr_data, gr_kwargs['plot_type'])
         progress_bar.value = 1
         global hvsr_results
         hvsr_results = hvsr_data
@@ -653,8 +655,7 @@ def create_jupyter_ui():
 
         return plot_list_list
 
-    def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig):
-        
+    def parse_hv_plot_list(hv_data, hvsr_plot_list):
         hvsr_data = hv_data
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_df
@@ -746,13 +747,14 @@ def create_jupyter_ui():
                                     row=1, col=1)
         return results_fig
 
-    def parse_comp_plot_list(hv_data, comp_plot_list, results_fig):
+    def parse_comp_plot_list(hv_data, comp_plot_list):
         
         hvsr_data = hv_data
         # Initial setup
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_df
-        same_plot = (comp_plot_list != [] and '+' not in comp_plot_list[0])
+        same_plot = ((comp_plot_list != []) and ('+' not in comp_plot_list[0]))
+
         if same_plot:
             yaxis_to_use = 'y2'
             use_secondary = True
@@ -778,7 +780,7 @@ def create_jupyter_ui():
                     'N':f'rgba(250,100,100,{alpha})'}
 
         # Whether to plot in new subplot or not
-        if '+' in comp_plot_list[0]:
+        if  comp_plot_list != [] and '+' in comp_plot_list[0]:
             compRow=2
         else:
             compRow=1
@@ -870,17 +872,16 @@ def create_jupyter_ui():
                                             name='PPSD Curve '+comp,    
                                             yaxis=yaxis_to_use), 
                                             secondary_y=use_secondary,
-                                        row=compRow, col='all')
+                                            row=compRow, col='all')
 
         # If new subplot, update accordingly
         if compRow==2:
-            results_fig.update_xaxes(type='log', 
-                            range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], 
+            results_fig.update_xaxes(type='log',
+                            range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                             row=compRow, col=1)
-
         return results_fig
 
-    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig):
+    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num):
         
 
         hvsr_data = hv_data
@@ -932,10 +933,8 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def update_results_fig(hv_data, plot_string, res_fig):
-        results_fig = res_fig
-        results_fig.data = []
-        
+    def update_results_fig(hv_data, plot_string):        
+        global results_fig
         hvsr_data = hv_data
 
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
@@ -945,32 +944,52 @@ def create_jupyter_ui():
 
         plot_list = parse_plot_string(plot_string)
 
+        combinedComp=False
         noSubplots = 3 - plot_list.count([])
         if plot_list[1] != [] and '+' not in plot_list[1][0]:
+            combinedComp = True
             noSubplots -= 1
-
-
-        # Re-initialize results_fig
-        results_fig.update_layout(grid={'rows': noSubplots})
-
+        
+        print("Combined?", combinedComp)
         # Get all data for each plotted item
-        # HVSR Plot
-        results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0], results_fig=results_fig)
-        # Will always plot the HV Curve
-        results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
-                            line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'), row=1, col='all')
-
         # COMP Plot
         # Figure out which subplot is which
-        if plot_list[1] == [] or '+' not in plot_list[1][0]:
+        if combinedComp:
+            comp_plot_row = 1
             spec_plot_row = 2
         else:
+            comp_plot_row = 2
             spec_plot_row = 3
 
-        results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1], results_fig=results_fig)
+        # Re-initialize results_fig
+        results_fig.data = []
+        results_fig.update_layout(grid=None)  # Clear the existing grid layout
+        if not combinedComp: 
+            subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+                                                row_heights=[2, 1.5, 1])
+            #results_fig.update_layout(rows=3, cols=1,  horizontal_spacing=0.01, vertical_spacing=0.01,
+        else:
+            print('making sunplot')
+            subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+                                    specs =[[{'secondary_y': True}],
+                                            [{'secondary_y': False}]],
+                                            row_heights=[1, 1])
+        results_fig.update_layout(grid={'rows': noSubplots})
+        #del results_fig
+        results_fig = go.FigureWidget(subp)
+        # results_fig.update_layout(grid={'rows': noSubplots})
+
+        results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
+
+        # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
+        results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
+        # Will always plot the HV Curve
+        results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
+                            line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'),
+                            row=1, col='all')
 
         # SPEC plot
-        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
+        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
 
         # Final figure updating
         showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
@@ -980,14 +999,35 @@ def create_jupyter_ui():
             side='top'
         results_fig.update_xaxes(type='log',
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                        side=side,
+                        side='top',
                         row=1, col=1)
-        results_fig.update_xaxes(showticklabels=showtickLabels, row=spec_plot_row-1, col=1)
+        results_fig.update_xaxes(type='log',overlaying='x',
+                        range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                        side='bottom',
+                        row=1, col=1)
+        if comp_plot_row!=1:
+            results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
                                 showlegend=False,
                                 title=hvsr_data['site'])
+        results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
+        if comp_plot_row==1:
+            results_fig.update_yaxes(title_text="PPSD Amplitude\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
+        else:
+            results_fig.update_yaxes(title_text="PPSD Amplitude\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
+        
+        # Reset results_graph_widget and display 
+        #results_graph_widget = widgets.Output()
+        #results_tab = widgets.GridspecLayout(12, 20)
+        
+        #results_tab[:,:15] = results_graph_widget
+        #results_tab[:,15:] = results_label
 
-        results_fig.show()
+        with results_graph_widget:
+            clear_output(wait=True)
+            display(results_fig)
+        #sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, results_tab])
+        #results_fig.show()
         sprit_widget.selected_index=3
 
     process_hvsr_button.on_click(process_data)
@@ -1393,7 +1433,7 @@ def create_jupyter_ui():
     update_plot_button = widgets.Button(description='Update Plot',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
     def manually_update_results_fig(change):
         plot_string = get_get_report_kwargs()['plot_type']
-        update_results_fig(hvsr_results, plot_string, results_fig)
+        update_results_fig(hvsr_results, plot_string)
         sprit_widget.selected_index = 3
 
     # Set up grid for ppsd_settings subtab
@@ -1467,9 +1507,12 @@ def create_jupyter_ui():
     # RESULTS TAB
     subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
     results_fig = go.FigureWidget(subp)
+    global results_graph_widget
     results_graph_widget = widgets.Output()    
+    global results_tab
     results_tab = widgets.GridspecLayout(12, 20)
 
+    global results_label
     results_label = widgets.Label(value='test')
 
     results_tab[:,:15] = results_graph_widget
@@ -1480,6 +1523,7 @@ def create_jupyter_ui():
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
+    global sprit_widget
     sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, results_tab])
     sprit_widget.set_title(0, "Input")
     sprit_widget.set_title(1, "Preview")
