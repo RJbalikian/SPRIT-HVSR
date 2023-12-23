@@ -538,7 +538,7 @@ def create_jupyter_ui():
             # Whether peaks from individual time windows are shown
             if show_ind_peaks_hv.value:
                 hvsr_plot_str=hvsr_plot_str + " tp"
-            if show_ind_peaks_spec:
+            if show_ind_peaks_spec.value:
                 spec_plot_str=spec_plot_str + ' tp'
             
             # Whether to show legend
