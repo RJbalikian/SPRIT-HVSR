@@ -742,7 +742,7 @@ def create_jupyter_ui():
         if 'ann' in hvsr_plot_list:
             # Annotate best peak
             results_fig.add_annotation(x=hvsr_data['BestPeak']['f0'],
-                                    y=0, 
+                                    y=0, yanchor='bottom',
                                     text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False,
@@ -922,16 +922,16 @@ def create_jupyter_ui():
             for row in hvsrDF['HV_Curves'].values:
                 maxInd = np.argmax(row)
                 yvals.append(y_data[maxInd])
-            tp_trace = go.Scatter(x=specAxisTimes, y=yvals,
-                                    line=None, marker=dict(color='white', size=0.5, line=dict(color='black', width=0.1)), name='Individual H/V Peaks')
+            tp_trace = go.Scatter(x=specAxisTimes, y=yvals, mode='markers',
+                                    line=None, marker=dict(color='white', size=2, line=dict(color='black', width=0.1)), name='Individual H/V Peaks')
             results_fig.add_trace(tp_trace, row=subplot_num, col='all')
 
         if 'p' in spec_plot_list:
-            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1.5, line_dash='dash', line_color='black', row=subplot_num, col='all')
+            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1, line_dash='dash', line_color='black', row=subplot_num, col='all')
 
         if 'ann' in spec_plot_list:
             results_fig.add_annotation(x=specAxisTimes[-1],
-                                    y=hvsr_data['hvsr_band'][1], 
+                                    y=hvsr_data['hvsr_band'][1],
                                     text=f"Peak: {hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False, xanchor='right', yanchor='top',
@@ -940,13 +940,13 @@ def create_jupyter_ui():
         if 'leg' in spec_plot_list:
             pass
 
-        results_fig.update_yaxes(type='log', 
+        results_fig.update_yaxes(type='log',
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                         row=subplot_num, col=1)
 
         results_fig.add_annotation(
             text=f"{hvsrDF['Use'].sum()}/{hvsrDF.shape[0]} windows used",
-            x=max(specAxisTimes), 
+            x=max(specAxisTimes),
             y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
             xanchor="right", yanchor="bottom",bgcolor='rgba(256,256,256,0.7)',
             showarrow=False,row=subplot_num, col=1)
