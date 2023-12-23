@@ -3,6 +3,7 @@
 
 import datetime
 import inspect
+import pathlib
 from zoneinfo import available_timezones
 
 import ipywidgets as widgets
@@ -27,10 +28,11 @@ def get_default(func, param):
     return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
-
     ui_width = 20
     ui_height= 12
     global results_fig
+    global log_textArea
+    log_textArea = widgets.Textarea(value="SESSION LOG", disabled=True, layout={'height': '300px','width': '99%', 'overflow': 'scroll'})
 
     # INPUT TAB
     # Create a VBox for the accordions
@@ -270,7 +272,7 @@ def create_jupyter_ui():
     # A text box labeled Data Filepath
     data_filepath = widgets.Text(description='Data Filepath:',
                                     placeholder='sample', value='sample',
-                                    style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
+                                    style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
 
     # A button next to it labeled "Browse"
     browse_data_button = widgets.FileUpload(accept='', description='Browse',
@@ -278,7 +280,7 @@ def create_jupyter_ui():
 
     # A text box labeled Metadata Filepath
     metadata_filepath = widgets.Text(description='Metadata Filepath:',
-                                        style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
+                                        style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
 
     # A button next to it labeled "Browse"
     browse_metadata_button = widgets.FileUpload(accept='', description='Browse',
@@ -318,11 +320,11 @@ def create_jupyter_ui():
     update_fetch_data_call()
 
     site_hbox = widgets.HBox()
-    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, data_source_type, instrument_dropdown, verbose_check]
+    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, verbose_check]
     datapath_hbox = widgets.HBox()
-    datapath_hbox.children = [data_filepath, browse_data_button]
+    datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
     metadata_hbox = widgets.HBox()
-    metadata_hbox.children = [metadata_filepath, browse_metadata_button]
+    metadata_hbox.children = [metadata_filepath, browse_metadata_button, instrument_dropdown]
     progress_hbox = widgets.HBox()
     progress_hbox.children = [progress_bar, read_data_button, process_hvsr_button]
 
@@ -372,15 +374,18 @@ def create_jupyter_ui():
 
     def read_data(button):
         progress_bar.value = 0
-        
+        log_textArea.value += f"\n\nREADING DATA [{datetime.datetime.now()}]"
+
         ip_kwargs = get_input_params()
         hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\ninput_params():\n'{ip_kwargs}"
         if button.description=='Read Data':
             progress_bar.value=0.333
         else:
             progress_bar.value=0.1
         fd_kwargs = get_fetch_data_params()
         hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
+        log_textArea.value += '\n\n'+str(datetime.datetime.now())+'\nfetch_data():\n\t'+str(fd_kwargs)
         if button.description=='Read Data':
             progress_bar.value=0.666
         else:
@@ -565,31 +570,41 @@ def create_jupyter_ui():
 
     def process_data(button):
         progress_bar.value = 0
+        log_textArea.value += f"\n\nPROCESSING DATA [{datetime.datetime.now()}]"
         
-        hvsr_data = read_data(button)
+        # Read data again only if internal hvsr_data datapath variable is different from what is in the gui
+        if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'datapath') or \
+                (pathlib.Path(hvsr_data.datapath).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
+            hvsr_data = read_data(button)
 
         remove_noise_kwargs = get_remove_noise_kwargs()
         hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_noise()\n\t{remove_noise_kwargs}"
         progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
         hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
         progress_bar.value = 0.5
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
         hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
         progress_bar.value = 0.6
 
         ph_kwargs = get_process_hvsr_kwargs()
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
         progress_bar.value = 0.85
 
         cp_kwargs = get_check_peaks_kwargs()
         hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\ncheck_peaks()\n\t{cp_kwargs}"
         progress_bar.value = 0.9
 
         gr_kwargs = get_get_report_kwargs()
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}"
         progress_bar.value = 0.95
 
         update_results_fig(hvsr_data, gr_kwargs['plot_type'])
@@ -1038,6 +1053,7 @@ def create_jupyter_ui():
             display(results_fig)
 
         sprit_widget.selected_index=3
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
 
     process_hvsr_button.on_click(process_data)
 
@@ -1167,24 +1183,24 @@ def create_jupyter_ui():
     # Add it all in to the tab
     preview_noise_tab[0,1:5] = stalta_check
     preview_noise_tab[0,5:7] = sta
-    preview_noise_tab[0,7:9] = lta
-    preview_noise_tab[0,9:13] = stalta_thresh_low
-    preview_noise_tab[0,13:15] = stalta_thresh_hi
+    preview_noise_tab[0,7:10] = lta
+    preview_noise_tab[0,10:16] = stalta_thresh_low
+    preview_noise_tab[0,16:17] = stalta_thresh_hi
 
     preview_noise_tab[1,1:5] = max_saturation_check
-    preview_noise_tab[1,6:8] = max_saturation_pct
+    preview_noise_tab[1,6:11] = max_saturation_pct
 
     preview_noise_tab[2,1:5] = noisy_windows_check
-    preview_noise_tab[2,6:9] = max_window_pct
-    preview_noise_tab[2,10:13] = noisy_window_length
+    preview_noise_tab[2,6:11] = max_window_pct
+    preview_noise_tab[2,12:17] = noisy_window_length
 
     preview_noise_tab[3,1:5] = warmcool_check
-    preview_noise_tab[3,6:9] = warmup_time
-    preview_noise_tab[3,10:13] = cooldown_time
+    preview_noise_tab[3,6:11] = warmup_time
+    preview_noise_tab[3,12:17] = cooldown_time
 
     preview_noise_tab[4,1:5] = std_ratio_check
-    preview_noise_tab[4,6:9] = std_ratio_text
-    preview_noise_tab[4,10:13] = std_window_length_text
+    preview_noise_tab[4,6:11] = std_ratio_text
+    preview_noise_tab[4,12:17] = std_window_length_text
 
     preview_noise_tab[6,:] = auto_remove_check
     preview_noise_tab[7,:] = raw_data_remove_check
@@ -1498,8 +1514,8 @@ def create_jupyter_ui():
     update_plot_button.on_click(manually_update_results_fig)
 
     # LOG TAB - not currently using
-    #log_tab = widgets.GridspecLayout(ui_height, ui_width)
-    #log_tab = widgets.Output()
+    log_tab = widgets.VBox(children=[log_textArea])
+    #log_textArea = widgets.Textarea(value="SESSION LOG", disabled=True, layout={'height': '99%','width': '99%', 'overflow': 'scroll'})
 
     # RESULTS TAB
     subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
@@ -1521,11 +1537,12 @@ def create_jupyter_ui():
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
     global sprit_widget
-    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, results_tab])
+    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
     sprit_widget.set_title(0, "Input")
     sprit_widget.set_title(1, "Preview")
     sprit_widget.set_title(2, "Settings")
-    sprit_widget.set_title(3, "Results")
+    sprit_widget.set_title(3, "Log")
+    sprit_widget.set_title(4, "Results")
 
     def observe_children(widget, callback):
         if hasattr(widget, 'children'):
