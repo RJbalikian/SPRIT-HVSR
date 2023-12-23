@@ -537,8 +537,10 @@ def create_jupyter_ui():
 
             # Whether peaks from individual time windows are shown
             if show_ind_peaks_hv.value:
-                hvsr_plot_str=hvsr_plot_str + " tp"            
-
+                hvsr_plot_str=hvsr_plot_str + " tp"
+            if show_ind_peaks_spec:
+                spec_plot_str=spec_plot_str + ' tp'
+            
             # Whether to show legend
             if show_legend_hv.value:
                 hvsr_plot_str=hvsr_plot_str + " leg"
@@ -917,11 +919,11 @@ def create_jupyter_ui():
         # tp currently is not being added to spec_plot_list
         if 'tp' in spec_plot_list:
             yvals = []
-            for row in hvsrDF['HV_Curves'].itterow():
-                maxInd = np.argmax(row[1])
+            for row in hvsrDF['HV_Curves'].values:
+                maxInd = np.argmax(row)
                 yvals.append(y_data[maxInd])
             tp_trace = go.Scatter(x=specAxisTimes, y=yvals,
-                                    line=None, marker=dict(color='white', size=1.5, line=dict(color='black', width=0.1)), name='Individual H/V Peaks')
+                                    line=None, marker=dict(color='white', size=0.5, line=dict(color='black', width=0.1)), name='Individual H/V Peaks')
             results_fig.add_trace(tp_trace, row=subplot_num, col='all')
 
         if 'p' in spec_plot_list:
@@ -929,10 +931,10 @@ def create_jupyter_ui():
 
         if 'ann' in spec_plot_list:
             results_fig.add_annotation(x=specAxisTimes[-1],
-                                    y=hvsr_data['hvsr_band'][0], 
-                                    text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                                    y=hvsr_data['hvsr_band'][1], 
+                                    text=f"Peak: {hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
-                                    showarrow=False, xanchor='right', yanchor='bottom',
+                                    showarrow=False, xanchor='right', yanchor='top',
                                     row=subplot_num, col='all')
 
         if 'leg' in spec_plot_list:
@@ -984,7 +986,6 @@ def create_jupyter_ui():
         if not combinedComp: 
             subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                                 row_heights=[2, 1.5, 1])
-            #results_fig.update_layout(rows=3, cols=1,  horizontal_spacing=0.01, vertical_spacing=0.01,
         else:
             subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                     specs =[[{'secondary_y': True}],
@@ -993,7 +994,6 @@ def create_jupyter_ui():
         results_fig.update_layout(grid={'rows': noSubplots})
         #del results_fig
         results_fig = go.FigureWidget(subp)
-        # results_fig.update_layout(grid={'rows': noSubplots})
 
         results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
 
@@ -1033,17 +1033,10 @@ def create_jupyter_ui():
             results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
         
         # Reset results_graph_widget and display 
-        #results_graph_widget = widgets.Output()
-        #results_tab = widgets.GridspecLayout(12, 20)
-        
-        #results_tab[:,:15] = results_graph_widget
-        #results_tab[:,15:] = results_label
-
         with results_graph_widget:
             clear_output(wait=True)
             display(results_fig)
-        #sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, results_tab])
-        #results_fig.show()
+
         sprit_widget.selected_index=3
 
     process_hvsr_button.on_click(process_data)
