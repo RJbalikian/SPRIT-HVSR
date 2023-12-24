@@ -593,7 +593,7 @@ def create_jupyter_ui():
         use_hv_curve_rmse.value=False
         use_hv_curve_rmse.disabled=False
 
-        outlier_fig = update_outlier_fig()
+        outlier_fig, hvsr_data = update_outlier_fig(hvsr_data)
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
         hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
@@ -1326,7 +1326,7 @@ def create_jupyter_ui():
         global outlier_fig
 
         if 'PPSDStatus' in hv_data.ProcessingStatus.keys() and hv_data.ProcessingStatus['PPSDStatus']:
-            if 'RemoveOutlierCurvesStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['RemoveOutlierCurvesStatus']:
+            if 'RemoveOutlierCurvesStatus' in hv_data.ProcessingStatus.keys() and hv_data.ProcessingStatus['RemoveOutlierCurvesStatus']:
                 hvsr_data = hv_data
             else:
                 hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=hv_data, rmse_thresh=_rmse_thresh,
@@ -1344,27 +1344,30 @@ def create_jupyter_ui():
                     curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
                 outlier_fig.add_traces(curve_traces)
         else:
+            x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
             z_curve_traces = []
             z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
             for z_data in z_curve_data:
-                z_curve_traces.append(go.Scatter(x=x_data, y=z_data))
+                z_curve_traces.append(go.Scatter(x=x_data, y=z_data, line=dict(color='black')))
 
             e_curve_traces = []
             e_curve_data = hvsr_data['ppsds']['E']['psd_values']
             for e_data in e_curve_data:
-                e_curve_traces.append(go.Scatter(x=x_data, y=e_data))
+                e_curve_traces.append(go.Scatter(x=x_data, y=e_data, line=dict(color='blue')))
 
             n_curve_traces = []
-            n_curve_data = n_curve_traces = hvsr_data['ppsds']['N']['psd_values']
+            n_curve_data = hvsr_data['ppsds']['N']['psd_values']
             for n_data in n_curve_data:
-                n_curve_traces.append(go.Scatter(x=x_data, y=n_data))      
+                n_curve_traces.append(go.Scatter(x=x_data, y=n_data, line=dict(color='red')))
 
             curve_traces = z_curve_traces
             curve_traces.extend(e_curve_traces)
             curve_traces.extend(n_curve_traces)
             outlier_fig.add_traces(curve_traces)
 
-            display(outlier_fig)
+            outlier_fig.update_xaxes(type='log')
+            with outlier_graph_widget:
+                display(outlier_fig)
          
         return outlier_fig, hvsr_data
 
