@@ -1363,6 +1363,8 @@ def create_jupyter_ui():
             curve_traces.extend(e_curve_traces)
             curve_traces.extend(n_curve_traces)
             outlier_fig.add_traces(curve_traces)
+
+            display(outlier_fig)
          
         return outlier_fig, hvsr_data
 
