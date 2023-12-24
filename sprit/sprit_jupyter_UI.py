@@ -391,10 +391,13 @@ def create_jupyter_ui():
         else:
             progress_bar.value=0.2
         
+        use_hv_curve_rmse.value=False
+        use_hv_curve_rmse.disabled=True
+
         update_preview_fig(hvsr_data, preview_fig)
 
         if button.description=='Read Data':
-            sprit_widget.selected_index=1
+            sprit_widget.selected_index = 1
             progress_bar.value=0
         return hvsr_data
     
@@ -586,6 +589,11 @@ def create_jupyter_ui():
         hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
         progress_bar.value = 0.5
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
+        
+        use_hv_curve_rmse.value=False
+        use_hv_curve_rmse.disabled=False
+
+        outlier_fig = update_outlier_fig()
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
         hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
@@ -1052,7 +1060,7 @@ def create_jupyter_ui():
             clear_output(wait=True)
             display(results_fig)
 
-        sprit_widget.selected_index=3
+        sprit_widget.selected_index = 4
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
 
     process_hvsr_button.on_click(process_data)
@@ -1209,16 +1217,9 @@ def create_jupyter_ui():
 
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    outlier_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
-    settings_subtabs = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, hvsr_settings_tab, plot_settings_tab])
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
-    settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
-    settings_subtabs.set_title(0, "PPSD Settings")
-    settings_subtabs.set_title(1, "Outlier Settings")
-    settings_subtabs.set_title(2, "HVSR Settings")
-    settings_subtabs.set_title(3, "Plot Settings")
 
     # PPSD SETTINGS SUBTAB
     ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
@@ -1294,11 +1295,76 @@ def create_jupyter_ui():
     rmse_pctile_check = widgets.Checkbox(description='Value is percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
     rmse_thresh = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
                                     placeholder=98, value=98, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+    use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers (may only be used after they have been calculated during the process_hvsr() step))', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=False, disabled=True)
 
-    outlier_settings_tab[0, :5] = rmse_pctile_check
-    outlier_settings_tab[0, 5:10] = rmse_thresh
-    outlier_settings_tab[1, :5] = use_hv_curve_rmse
+    outlier_threshbox_hbox = widgets.HBox(children=[rmse_thresh, rmse_pctile_check])
+    outlier_params_vbox = widgets.VBox(children=[outlier_threshbox_hbox, use_hv_curve_rmse])
+    #outFigInit = go.Figure()
+    global outlier_fig
+    outlier_fig = go.FigureWidget()
+    outlier_graph_widget = widgets.Output()
+
+    outlier_thresh_slider_label = widgets.Label(value='RMSE Thresholds:')
+    rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),)
+    rmse_pctile_slider = widgets.FloatSlider(value=rmse_thresh.value, min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
+
+    use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_ppsds() step)', layout=widgets.Layout(height='auto', width='80%'))
+    generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'))
+    outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button])
+
+    outlier_settings_tab = widgets.VBox(children=[outlier_params_vbox,
+                                                  outlier_graph_widget,
+                                                  outlier_thresh_slider_label,
+                                                  rmse_thresh_slider,
+                                                  rmse_pctile_slider,
+                                                  outlier_ppsd_hbox])
+
+    with outlier_graph_widget:
+        display(outlier_fig)
+
+    def update_outlier_fig(hv_data, _rmse_thresh=rmse_pctile_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_rmse.value, _verbose=verbose_check.value):
+        global outlier_fig
+
+        if 'PPSDStatus' in hv_data.ProcessingStatus.keys() and hv_data.ProcessingStatus['PPSDStatus']:
+            if 'RemoveOutlierCurvesStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['RemoveOutlierCurvesStatus']:
+                hvsr_data = hv_data
+            else:
+                hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=hv_data, rmse_thresh=_rmse_thresh,
+                                         use_percentile=_use_percentile, use_hv_curve=_use_hv_curve,
+                                         show_plot=False, verbose=_verbose)
+        else:
+            hvsr_data = hv_data
+            return outlier_fig, hvsr_data
+        
+        if _use_hv_curve:
+            if hasattr(hvsr_data, 'hvsr_df') and 'HV_Curves' in hvsr_data.hvsr_df.columns:
+                x_data = hvsr_data['x_freqs']
+                curve_traces = []
+                for hv in hvsr_data.hvsr_df['HV_Curves'].iterrows():
+                    curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
+                outlier_fig.add_traces(curve_traces)
+        else:
+            z_curve_traces = []
+            z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
+            for z_data in z_curve_data:
+                z_curve_traces.append(go.Scatter(x=x_data, y=z_data))
+
+            e_curve_traces = []
+            e_curve_data = hvsr_data['ppsds']['E']['psd_values']
+            for e_data in e_curve_data:
+                e_curve_traces.append(go.Scatter(x=x_data, y=e_data))
+
+            n_curve_traces = []
+            n_curve_data = n_curve_traces = hvsr_data['ppsds']['N']['psd_values']
+            for n_data in n_curve_data:
+                n_curve_traces.append(go.Scatter(x=x_data, y=n_data))      
+
+            curve_traces = z_curve_traces
+            curve_traces.extend(e_curve_traces)
+            curve_traces.extend(n_curve_traces)
+            outlier_fig.add_traces(curve_traces)
+         
+        return outlier_fig, hvsr_data
 
     # HVSR SETTINGS SUBTAB
     h_combine_meth = widgets.Dropdown(description='Horizontal Combination Method', value=3,
@@ -1447,7 +1513,7 @@ def create_jupyter_ui():
     def manually_update_results_fig(change):
         plot_string = get_get_report_kwargs()['plot_type']
         update_results_fig(hvsr_results, plot_string)
-        sprit_widget.selected_index = 3
+        sprit_widget.selected_index = 4
 
     # Set up grid for ppsd_settings subtab
     plot_settings_tab[0, 5:10]   = hv_plot_label
@@ -1512,6 +1578,14 @@ def create_jupyter_ui():
     plot_settings_tab[17, :18] = plot_hvsr_call
     plot_settings_tab[17, 18:] = update_plot_button
     update_plot_button.on_click(manually_update_results_fig)
+
+    # Place everything in Settings Tab
+    settings_subtabs = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, hvsr_settings_tab, plot_settings_tab])
+    settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
+    settings_subtabs.set_title(0, "PPSD Settings")
+    settings_subtabs.set_title(1, "Outlier Settings")
+    settings_subtabs.set_title(2, "HVSR Settings")
+    settings_subtabs.set_title(3, "Plot Settings")
 
     # LOG TAB - not currently using
     log_tab = widgets.VBox(children=[log_textArea])
