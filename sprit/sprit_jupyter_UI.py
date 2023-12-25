@@ -243,7 +243,6 @@ def create_jupyter_ui():
 
     input_accordion.layout.width = '99%'
 
-
     # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
     # A text box for the site name
     site_name = widgets.Text(description='Site Name:',
@@ -1347,18 +1346,24 @@ def create_jupyter_ui():
             x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
             z_curve_traces = []
             z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
+            z_median = np.nanmedian(z_curve_data, axis=0)
             for z_data in z_curve_data:
-                z_curve_traces.append(go.Scatter(x=x_data, y=z_data, line=dict(color='black')))
+                z_curve_traces.append(go.Scatter(x=x_data, y=z_data, opacity=0.05, line=dict(color='black')))
+            z_curve_traces.append(go.Scatter(x=x_data, y=z_median, line=dict(color='black')))
 
             e_curve_traces = []
             e_curve_data = hvsr_data['ppsds']['E']['psd_values']
+            e_median = np.nanmedian(e_curve_data, axis=0)
             for e_data in e_curve_data:
-                e_curve_traces.append(go.Scatter(x=x_data, y=e_data, line=dict(color='blue')))
+                e_curve_traces.append(go.Scatter(x=x_data, y=e_data, opacity=0.05, line=dict(color='blue', width=0.5)))
+            e_curve_traces.append(go.Scatter(x=x_data, y=e_median, line=dict(color='blue')))
 
             n_curve_traces = []
             n_curve_data = hvsr_data['ppsds']['N']['psd_values']
+            n_median = np.nanmedian(n_curve_data, axis=0)
             for n_data in n_curve_data:
-                n_curve_traces.append(go.Scatter(x=x_data, y=n_data, line=dict(color='red')))
+                n_curve_traces.append(go.Scatter(x=x_data, y=n_data, opacity=0.05, line=dict(color='red', width=0.5)))
+            n_curve_traces.append(go.Scatter(x=x_data, y=n_median, line=dict(color='red')))
 
             curve_traces = z_curve_traces
             curve_traces.extend(e_curve_traces)
@@ -1367,6 +1372,7 @@ def create_jupyter_ui():
 
             outlier_fig.update_xaxes(type='log')
             with outlier_graph_widget:
+                clear_output(wait=True)
                 display(outlier_fig)
          
         return outlier_fig, hvsr_data
