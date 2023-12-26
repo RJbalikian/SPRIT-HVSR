@@ -1334,7 +1334,7 @@ def create_jupyter_ui():
         else:
             hvsr_data = hv_data
             return outlier_fig, hvsr_data
-        
+
         if _use_hv_curve:
             if hasattr(hvsr_data, 'hvsr_df') and 'HV_Curves' in hvsr_data.hvsr_df.columns:
                 x_data = hvsr_data['x_freqs']
@@ -1343,6 +1343,33 @@ def create_jupyter_ui():
                     curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
                 outlier_fig.add_traces(curve_traces)
         else:
+            colNames = ['psd_values_Z', 'psd_values_E', 'psd_values_N']
+            bad_rmse=[]
+            """ The next bit isn't working yet
+            for i, column in enumerate(colNames):
+                # Retrieve data from dataframe (use all windows, just in case)
+                curr_data = np.stack(hvsr_data['hvsr_df'][column])
+                
+                # Calculate a median curve, and reshape so same size as original
+                medCurve = np.nanmedian(curr_data, axis=0)
+                medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+                
+                # Calculate RMSE
+                rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+
+                if use_percentile is True:
+                    rmse_threshold = np.percentile(rmse, rmse_thresh)
+                    if verbose:
+                        print(f'Use_percentile is designated. Calculated at {rmse_thresh}th percentile for {column}: {rmse_threshold:.2f}')
+                    else:
+                        rmse_threshold = rmse_thresh
+                
+                # Retrieve index of those RMSE values that lie outside the threshold
+                for j, curve in enumerate(curr_data):
+                    if rmse[j] > rmse_threshold:
+                        bad_rmse.append(j)
+            """
+
             x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
             z_curve_traces = []
             z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
