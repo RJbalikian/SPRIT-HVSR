@@ -1342,34 +1342,60 @@ def create_jupyter_ui():
                 for hv in hvsr_data.hvsr_df['HV_Curves'].iterrows():
                     curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
                 outlier_fig.add_traces(curve_traces)
-        else:
-            colNames = ['psd_values_Z', 'psd_values_E', 'psd_values_N']
-            bad_rmse=[]
-            """ The next bit isn't working yet
-            for i, column in enumerate(colNames):
-                # Retrieve data from dataframe (use all windows, just in case)
-                curr_data = np.stack(hvsr_data['hvsr_df'][column])
                 
                 # Calculate a median curve, and reshape so same size as original
                 medCurve = np.nanmedian(curr_data, axis=0)
+                outlier_fig.add_trace(go.Scatter(x=x_data, y=medCurve, line=dict(color='rgba(0,0,0,1)', width=1.5),showlegend=False))
+
                 medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
-                
-                # Calculate RMSE
-                rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
 
-                if use_percentile is True:
-                    rmse_threshold = np.percentile(rmse, rmse_thresh)
-                    if verbose:
-                        print(f'Use_percentile is designated. Calculated at {rmse_thresh}th percentile for {column}: {rmse_threshold:.2f}')
-                    else:
-                        rmse_threshold = rmse_thresh
-                
-                # Retrieve index of those RMSE values that lie outside the threshold
-                for j, curve in enumerate(curr_data):
-                    if rmse[j] > rmse_threshold:
-                        bad_rmse.append(j)
-            """
+        else:
+            if hasattr(hvsr_data, 'hvsr_df'):
+                #x_data = hvsr_data['x_freqs']
+                x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
 
+                def comp_rgba(comp, a):
+                    compstr = ''
+                    if comp=='Z':
+                        compstr = f'rgba(0, 0, 0, {a})'
+                    if comp=='E':
+                        compstr = f'rgba(50, 50, 250, {a})'
+                    if comp=='N':
+                        compstr = f'rgba(250, 50, 50, {a})'
+                    return compstr                         
+                compNames = ['Z', 'E', 'N']
+                rmse_to_plot=[]
+                med_traces=[]
+                # The next bit isn't working yet
+                for i, comp in enumerate(compNames):
+                    column = 'psd_values_'+comp
+                    # Retrieve data from dataframe (use all windows, just in case)
+                    curr_data = np.stack(hvsr_data['hvsr_df'][column])
+                    
+                    # Calculate a median curve, and reshape so same size as original
+                    medCurve = np.nanmedian(curr_data, axis=0)
+                    medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+                    med_traces.append(go.Scatter(x=x_data, y=medCurve, line=dict(color=comp_rgba(comp, 1), width=1.5), name=f'{comp} median', showlegend=False))
+                    # Calculate RMSE
+                    rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+
+                    rmse_threshold = np.percentile(rmse, _rmse_thresh)
+                    
+                    # Retrieve index of those RMSE values that lie outside the threshold
+                    for j, curve in enumerate(curr_data):
+                        if rmse[j] > rmse_threshold:
+                            badTrace = go.Scatter(x=x_data, y=curr_data[j], 
+                                                  line=dict(color=comp_rgba(comp, 0.025)),
+                                                  marker=dict(color=comp_rgba(comp, 1), size=0.5, 
+                                                              symbol='x-thin', line_color=comp_rgba(comp, 1)),showlegend=False)
+                            rmse_to_plot.append(badTrace)
+                        else:
+                            goodTrace = go.Scatter(x=x_data, y=curr_data[j],
+                                                  line=dict(color=comp_rgba(comp, 0.05)),showlegend=False)              
+                            rmse_to_plot.append(goodTrace)
+                outlier_fig.add_traces(rmse_to_plot)
+                outlier_fig.add_traces(med_traces)
+            """"
             x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
             z_curve_traces = []
             z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
@@ -1396,6 +1422,7 @@ def create_jupyter_ui():
             curve_traces.extend(e_curve_traces)
             curve_traces.extend(n_curve_traces)
             outlier_fig.add_traces(curve_traces)
+            """
 
             outlier_fig.update_xaxes(type='log')
             with outlier_graph_widget:

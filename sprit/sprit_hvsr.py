@@ -3612,11 +3612,12 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+            hvsr_data['hvsr_df']['RMSE'] = rmse
 
             if use_percentile is True:
                 rmse_threshold = np.percentile(rmse, rmse_thresh)
                 if verbose:
-                    print(f'Use_percentile is designated. Calculated at {rmse_thresh}th percentile for {column}: {rmse_threshold:.2f}')
+                    print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
                 else:
                     rmse_threshold = rmse_thresh
             
@@ -3658,7 +3659,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                 ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
                 
                 # Format axis
-                ax[compNames[i]].set_title(f"{compNames[i]}")
+                ax[compNames[i]].set_ylabel(f"{compNames[i]}")
                 ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
                 ax[compNames[i]].semilogx()             
         if show_plot:
@@ -3667,13 +3668,13 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_df to False for that window
         bad_rmse = np.unique(bad_rmse)
         if len(bad_rmse) > 0:
-            bad_index = hvsr_data['hvsr_df'].index[pd.Series(bad_rmse)]
-            hvsr_data['hvsr_df'].loc[bad_index, "Use"] = False   
+            hvsr_data['hvsr_df']['Use'] = hvsr_data['hvsr_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_df']['RMSE'])
+            #hvsr_data['hvsr_df'].loc[bad_index, "Use"] = False   
         
         if verbose:
             if len(bad_rmse)>0:
-                print(f"\tThe windows starting at the following times have been removed from further analysis ({len(bad_index)}/{hvsr_data['hvsr_df'].shape[0]}):")
-                for b in bad_index:
+                print(f"\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_df'].shape[0]}):")
+                for b in hvsr_data['hvsr_df'].index[pd.Series(bad_rmse)]:
                     print(f"\t\t{b}")
             else:
                 print('\tNo outlier curves have been removed')
