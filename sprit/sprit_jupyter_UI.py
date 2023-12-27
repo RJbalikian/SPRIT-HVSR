@@ -625,6 +625,9 @@ def create_jupyter_ui():
             rmse_thresh_slider.max = maxRMSE
             rmse_thresh_slider.value = maxRMSE
         get_rmse_range()
+        
+        if button.description == 'Generate PPSDs':
+            return
 
         ph_kwargs = get_process_hvsr_kwargs()
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
@@ -1392,8 +1395,16 @@ def create_jupyter_ui():
     rmse_thresh.observe(on_update_rmse_thresh)
 
     use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_ppsds() step)', layout=widgets.Layout(height='auto', width='80%'))
-    generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'))
-    outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button])
+    generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
+    update_outlier_plot_button = widgets.Button(description='Update Plot', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
+    outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
+
+    def update_outlier_fig_button(button):
+        update_outlier_fig(hv_data=hvsr_data)
+
+    generate_ppsd_button.on_click(process_data)
+
+    update_outlier_plot_button.on_click(update_outlier_fig_button)
 
     outlier_settings_tab = widgets.VBox(children=[outlier_params_vbox,
                                                   outlier_graph_widget,
@@ -1484,13 +1495,13 @@ def create_jupyter_ui():
                     for j, curve in enumerate(curr_data):
                         if rmse[j] > rmse_threshold:
                             badTrace = go.Scatter(x=x_data, y=curr_data[j],
-                                                  line=dict(color=comp_rgba(comp, 1), width=1.5, dash='dash'),
-                                                  #marker=dict(color=comp_rgba(comp, 1), size=3),
-                                                              showlegend=False)
+                                                line=dict(color=comp_rgba(comp, 1), width=1.5, dash='dash'),
+                                                #marker=dict(color=comp_rgba(comp, 1), size=3),
+                                                name=str(hvsr_data.hvsr_df.index[j]), showlegend=False)
                             outlier_fig.add_trace(badTrace, row=rowDict[comp], col=1)
                         else:
                             goodTrace = go.Scatter(x=x_data, y=curr_data[j],
-                                                  line=dict(color=comp_rgba(comp, 0.01)),showlegend=False)
+                                                  line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_df.index[j]), showlegend=False)
                             outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
                     outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
 
@@ -1499,34 +1510,6 @@ def create_jupyter_ui():
                     outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
                     outlier_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                   title=hvsr_data['site'])
-            """"
-            x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
-            z_curve_traces = []
-            z_curve_data = hvsr_data['ppsds']['Z']['psd_values']
-            z_median = np.nanmedian(z_curve_data, axis=0)
-            for z_data in z_curve_data:
-                z_curve_traces.append(go.Scatter(x=x_data, y=z_data, opacity=0.05, line=dict(color='black')))
-            z_curve_traces.append(go.Scatter(x=x_data, y=z_median, line=dict(color='black')))
-
-            e_curve_traces = []
-            e_curve_data = hvsr_data['ppsds']['E']['psd_values']
-            e_median = np.nanmedian(e_curve_data, axis=0)
-            for e_data in e_curve_data:
-                e_curve_traces.append(go.Scatter(x=x_data, y=e_data, opacity=0.05, line=dict(color='blue', width=0.5)))
-            e_curve_traces.append(go.Scatter(x=x_data, y=e_median, line=dict(color='blue')))
-
-            n_curve_traces = []
-            n_curve_data = hvsr_data['ppsds']['N']['psd_values']
-            n_median = np.nanmedian(n_curve_data, axis=0)
-            for n_data in n_curve_data:
-                n_curve_traces.append(go.Scatter(x=x_data, y=n_data, opacity=0.05, line=dict(color='red', width=0.5)))
-            n_curve_traces.append(go.Scatter(x=x_data, y=n_median, line=dict(color='red')))
-
-            curve_traces = z_curve_traces
-            curve_traces.extend(e_curve_traces)
-            curve_traces.extend(n_curve_traces)
-            outlier_fig.add_traces(curve_traces)
-            """
 
             outlier_fig.update_xaxes(type='log')
             with outlier_graph_widget:
