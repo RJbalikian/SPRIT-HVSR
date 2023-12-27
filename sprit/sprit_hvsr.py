@@ -3612,7 +3612,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
-            hvsr_data['hvsr_df']['RMSE'] = rmse
+            hvsr_data['hvsr_df']['RMSE_'+column] = rmse
 
             if use_percentile is True:
                 rmse_threshold = np.percentile(rmse, rmse_thresh)
@@ -3668,7 +3668,8 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_df to False for that window
         bad_rmse = np.unique(bad_rmse)
         if len(bad_rmse) > 0:
-            hvsr_data['hvsr_df']['Use'] = hvsr_data['hvsr_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_df']['RMSE'])
+            
+            hvsr_data['hvsr_df']['Use'] = hvsr_data['hvsr_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_df']['RMSE_'+column])
             #hvsr_data['hvsr_df'].loc[bad_index, "Use"] = False   
         
         if verbose:

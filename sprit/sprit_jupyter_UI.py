@@ -13,6 +13,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
 from scipy import signal
+import traitlets
 
 try: #For distribution
     from sprit import sprit_utils
@@ -21,6 +22,7 @@ except: #For local testing
     import sprit_hvsr 
     import sprit_utils
 
+global hvsr_data
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
@@ -28,6 +30,8 @@ def get_default(func, param):
     return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
+    global hvsr_data
+
     ui_width = 20
     ui_height= 12
     global results_fig
@@ -573,7 +577,7 @@ def create_jupyter_ui():
     def process_data(button):
         progress_bar.value = 0
         log_textArea.value += f"\n\nPROCESSING DATA [{datetime.datetime.now()}]"
-        
+        global hvsr_data
         # Read data again only if internal hvsr_data datapath variable is different from what is in the gui
         if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'datapath') or \
                 (pathlib.Path(hvsr_data.datapath).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
@@ -599,6 +603,29 @@ def create_jupyter_ui():
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
         progress_bar.value = 0.6
 
+        def get_rmse_range():
+            minRMSE = 10000
+            maxRMSE = -1
+            if roc_kwargs['use_hv_curve']:
+                colnames = ['HV_Curves']
+            else:
+                colnames = ['psd_values_Z',
+                            'psd_values_E',
+                            'psd_values_N']
+            dataList = []
+            for col in colnames:
+                dataArr = np.stack(hvsr_data.hvsr_df[col])
+                medCurveArr = np.nanmedian(dataArr, axis=0)
+                rmse = np.sqrt(((np.subtract(dataArr, medCurveArr)**2).sum(axis=1))/dataArr.shape[1])
+                if rmse.min() < minRMSE:
+                    minRMSE = rmse.min()
+                if rmse.max() > maxRMSE:
+                    maxRMSE = rmse.max()
+            rmse_thresh_slider.min = minRMSE
+            rmse_thresh_slider.max = maxRMSE
+            rmse_thresh_slider.value = maxRMSE
+        get_rmse_range()
+
         ph_kwargs = get_process_hvsr_kwargs()
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
@@ -615,6 +642,7 @@ def create_jupyter_ui():
         progress_bar.value = 0.95
 
         update_results_fig(hvsr_data, gr_kwargs['plot_type'])
+        
         progress_bar.value = 1
         global hvsr_results
         hvsr_results = hvsr_data
@@ -1291,7 +1319,7 @@ def create_jupyter_ui():
     ppsd_settings_tab[9:11, :] = obspy_ppsd_call
 
     # OUTLIER SETTINGS SUBTAB
-    rmse_pctile_check = widgets.Checkbox(description='Value is percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
+    rmse_pctile_check = widgets.Checkbox(description='Using percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
     rmse_thresh = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
                                     placeholder=98, value=98, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers (may only be used after they have been calculated during the process_hvsr() step))', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=False, disabled=True)
@@ -1304,8 +1332,64 @@ def create_jupyter_ui():
     outlier_graph_widget = widgets.Output()
 
     outlier_thresh_slider_label = widgets.Label(value='RMSE Thresholds:')
-    rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),)
-    rmse_pctile_slider = widgets.FloatSlider(value=rmse_thresh.value, min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
+    rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),disabled=True)
+    rmse_pctile_slider = widgets.FloatSlider(value=get_default(sprit_hvsr.remove_outlier_curves, 'rmse_thresh'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
+    
+    def calc_rmse(array_2d):
+        medArray = np.nanmedian(array_2d, axis=0)
+        rmse = np.sqrt(((np.subtract(array_2d, medArray)**2).sum(axis=1))/array_2d.shape[1])
+        return rmse
+    
+    def on_update_rmse_thresh_slider(change):
+        if use_hv_curve_rmse.value:
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_df['HV_Curves']))
+        else:
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_Z']))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_E']))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_N']))
+
+            rmse = np.stack([rmsez, rmsee, rmsen]).flatten()
+
+        if rmse_pctile_check.value:
+            rmse_thresh.value = rmse_pctile_slider.value
+        else:
+            rmse_thresh.value = rmse_thresh_slider.value
+            rmse_pctile_slider.value = ((rmse < rmse_thresh_slider.value).sum() / len(rmse)) * 100
+
+    def on_update_rmse_pctile_slider(change):
+        if use_hv_curve_rmse.value:
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_df['HV_Curves']))
+        else:
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_Z']))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_E']))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_N']))
+
+            rmse = np.stack([rmsez, rmsee, rmsen])
+
+        if rmse_pctile_check.value:
+            rmse_thresh_slider.value = np.percentile(rmse, rmse_pctile_slider.value)
+            rmse_thresh.value = rmse_pctile_slider.value
+        else:
+            rmse_thresh.value = rmse_thresh_slider.value
+
+    def on_update_rmse_pctile_check(change):
+        if rmse_pctile_check.value:
+            rmse_pctile_slider.disabled = False
+            rmse_thresh_slider.disabled = True
+        else:
+            rmse_pctile_slider.disabled = True
+            rmse_thresh_slider.disabled = False
+    
+    def on_update_rmse_thresh(change):
+        if rmse_pctile_check.value:
+            rmse_pctile_slider.value = rmse_thresh.value
+        else:
+            rmse_thresh_slider.value = rmse_thresh.value
+
+    rmse_pctile_check.observe(on_update_rmse_pctile_check)
+    rmse_thresh_slider.observe(on_update_rmse_thresh_slider)
+    rmse_pctile_slider.observe(on_update_rmse_pctile_slider)
+    rmse_thresh.observe(on_update_rmse_thresh)
 
     use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_ppsds() step)', layout=widgets.Layout(height='auto', width='80%'))
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'))
@@ -1337,6 +1421,12 @@ def create_jupyter_ui():
 
         if _use_hv_curve:
             if hasattr(hvsr_data, 'hvsr_df') and 'HV_Curves' in hvsr_data.hvsr_df.columns:
+                outlier_fig.data = []
+                outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+                subp = subplots.make_subplots(rows=1, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
+                outlier_fig.update_layout(grid={'rows': 1})
+                outlier_fig = go.FigureWidget(subp)
+
                 x_data = hvsr_data['x_freqs']
                 curve_traces = []
                 for hv in hvsr_data.hvsr_df['HV_Curves'].iterrows():
@@ -1344,16 +1434,24 @@ def create_jupyter_ui():
                 outlier_fig.add_traces(curve_traces)
                 
                 # Calculate a median curve, and reshape so same size as original
-                medCurve = np.nanmedian(curr_data, axis=0)
+                medCurve = np.nanmedian(np.stack(hvsr_data.hvsr_df['HV_Curves']), axis=0)
                 outlier_fig.add_trace(go.Scatter(x=x_data, y=medCurve, line=dict(color='rgba(0,0,0,1)', width=1.5),showlegend=False))
 
-                medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+                #medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
 
         else:
+            outlier_fig.data = []
+            outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+            subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
+                                                    row_heights=[1, 1, 1])
+            outlier_fig.update_layout(grid={'rows': 3})
+            outlier_fig = go.FigureWidget(subp)
+
             if hasattr(hvsr_data, 'hvsr_df'):
                 #x_data = hvsr_data['x_freqs']
                 x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
-
+                rowDict = {'Z':1, 'E':2, 'N':3}
+                showTLabelsDict={'Z':False, 'E':False, 'N':True}
                 def comp_rgba(comp, a):
                     compstr = ''
                     if comp=='Z':
@@ -1375,7 +1473,8 @@ def create_jupyter_ui():
                     # Calculate a median curve, and reshape so same size as original
                     medCurve = np.nanmedian(curr_data, axis=0)
                     medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
-                    med_traces.append(go.Scatter(x=x_data, y=medCurve, line=dict(color=comp_rgba(comp, 1), width=1.5), name=f'{comp} median', showlegend=False))
+                    medTrace = go.Scatter(x=x_data, y=medCurve, line=dict(color=comp_rgba(comp, 1), width=1.5), 
+                                                 name=f'{comp} median', showlegend=False)
                     # Calculate RMSE
                     rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
 
@@ -1384,17 +1483,22 @@ def create_jupyter_ui():
                     # Retrieve index of those RMSE values that lie outside the threshold
                     for j, curve in enumerate(curr_data):
                         if rmse[j] > rmse_threshold:
-                            badTrace = go.Scatter(x=x_data, y=curr_data[j], 
-                                                  line=dict(color=comp_rgba(comp, 0.025)),
-                                                  marker=dict(color=comp_rgba(comp, 1), size=0.5, 
-                                                              symbol='x-thin', line_color=comp_rgba(comp, 1)),showlegend=False)
-                            rmse_to_plot.append(badTrace)
+                            badTrace = go.Scatter(x=x_data, y=curr_data[j],
+                                                  line=dict(color=comp_rgba(comp, 1), width=1.5, dash='dash'),
+                                                  #marker=dict(color=comp_rgba(comp, 1), size=3),
+                                                              showlegend=False)
+                            outlier_fig.add_trace(badTrace, row=rowDict[comp], col=1)
                         else:
                             goodTrace = go.Scatter(x=x_data, y=curr_data[j],
-                                                  line=dict(color=comp_rgba(comp, 0.05)),showlegend=False)              
-                            rmse_to_plot.append(goodTrace)
-                outlier_fig.add_traces(rmse_to_plot)
-                outlier_fig.add_traces(med_traces)
+                                                  line=dict(color=comp_rgba(comp, 0.01)),showlegend=False)
+                            outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
+                    outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
+
+                    outlier_fig.update_xaxes(showticklabels=False, row=1, col=1)
+                    outlier_fig.update_xaxes(showticklabels=False, row=2, col=1)
+                    outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
+                    outlier_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
+                                  title=hvsr_data['site'])
             """"
             x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
             z_curve_traces = []
