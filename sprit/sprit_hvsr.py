@@ -1852,7 +1852,7 @@ def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
             return obspyUTCDateTime.matplotlib_date
 
         hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
-        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length']) 
+        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length'])
         hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
         hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
         
@@ -3064,6 +3064,13 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         currTimesUsed={}
         hvsrDF = hvsr_data['hvsr_df']
 
+        def move_avg(y, box_pts):
+            #box = np.ones(box_pts)/box_pts
+            box = np.hanning(box_pts)
+
+            y_smooth = np.convolve(y, box, mode='same') / sum(box)
+            return y_smooth
+
         for k in ppsds.keys():
             #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
             input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
@@ -3083,19 +3090,30 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 if smooth or isinstance(smooth, (int, float)):
                     if smooth:
                         smooth = 51 #Default smoothing window
+                        padVal = 25
                     elif smooth % 2==0:
-                        smooth = smooth+1
+                        smooth +1 #Otherwise, needs to be odd
+                        padVal = smooth//2
+                        if padVal %2==0:
+                            padVal += 1
 
                 #Resample raw ppsd values
                 for i, ppsd_t in enumerate(input_ppsds):
                     if i==0:
                         psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
                         if smooth is not False:
-                            psdRaw[k] = scipy.signal.savgol_filter(psdRaw[k], smooth, 3)
+                            padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
+                            #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
+                            padRawKPadSmooth = move_avg(padRawKPad, smooth)
+                            psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
+
                     else:
                         psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)))
                         if smooth is not False:
-                            psdRaw[k][i] = scipy.signal.savgol_filter(psdRaw[k][i], smooth, 3)
+                            padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
+                            #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
+                            padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
+                            psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
 
             else:
                 #If no resampling desired
@@ -3613,7 +3631,6 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
             hvsr_data['hvsr_df']['RMSE_'+column] = rmse
-
             if use_percentile is True:
                 rmse_threshold = np.percentile(rmse, rmse_thresh)
                 if verbose:

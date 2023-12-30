@@ -596,13 +596,6 @@ def create_jupyter_ui():
         use_hv_curve_rmse.value=False
         use_hv_curve_rmse.disabled=False
 
-        outlier_fig, hvsr_data = update_outlier_fig(hvsr_data)
-
-        roc_kwargs = get_remove_outlier_curve_kwargs()
-        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
-        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
-        progress_bar.value = 0.6
-
         def get_rmse_range():
             minRMSE = 10000
             maxRMSE = -1
@@ -623,9 +616,11 @@ def create_jupyter_ui():
                     maxRMSE = rmse.max()
             rmse_thresh_slider.min = minRMSE
             rmse_thresh_slider.max = maxRMSE
+            rmse_thresh_slider.step = round((maxRMSE-minRMSE)/100, 2)
             rmse_thresh_slider.value = maxRMSE
         get_rmse_range()
         
+        # If this was started by clicking "Generate PPSDs", stop here
         if button.description == 'Generate PPSDs':
             return
 
@@ -633,6 +628,13 @@ def create_jupyter_ui():
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
         progress_bar.value = 0.85
+        update_outlier_fig()
+
+        roc_kwargs = get_remove_outlier_curve_kwargs()
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
+        progress_bar.value = 0.6
+        outlier_fig, hvsr_data = update_outlier_fig()
 
         cp_kwargs = get_check_peaks_kwargs()
         hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
@@ -1158,7 +1160,7 @@ def create_jupyter_ui():
         preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
                                         line={'color':'red', 'width':0.5},marker=None, name='N component data'), row=4, col='all')
         preview_fig.update_yaxes(title={'text':'N'}, row=4, col=1)
-
+        
         #preview_fig.add_trace(p)
         preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                   title=hvsr_data['site'])
@@ -1398,9 +1400,19 @@ def create_jupyter_ui():
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     update_outlier_plot_button = widgets.Button(description='Update Plot', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
+    remove_outlier_curve_prefix = widgets.Label(value='remove_outlier_curves')
+    remove_outlier_curve_call = widgets.HTML(value='()')
+    remove_outlier_hbox = widgets.HBox([remove_outlier_curve_prefix, remove_outlier_curve_call])
+
+    # Update remove_outlier call
+    def update_remove_outlier_curve_call():
+        roc_text = f"""(hvsr_data=hvsr_data, rmse_thresh={rmse_thresh.value}, use_percentile={rmse_pctile_check.value},
+                            use_hv_curve={use_hv_curve_rmse.value}...verbose={verbose_check.value})"""
+        remove_outlier_curve_call.value='<style>p {word-wrap: break-word}</style> <p>' + roc_text + '</p>'
+    update_remove_outlier_curve_call()
 
     def update_outlier_fig_button(button):
-        update_outlier_fig(hv_data=hvsr_data)
+        outlier_fig, hvsr_data = update_outlier_fig()
 
     generate_ppsd_button.on_click(process_data)
 
@@ -1411,23 +1423,25 @@ def create_jupyter_ui():
                                                   outlier_thresh_slider_label,
                                                   rmse_thresh_slider,
                                                   rmse_pctile_slider,
-                                                  outlier_ppsd_hbox])
+                                                  outlier_ppsd_hbox,
+                                                  remove_outlier_hbox])
 
     with outlier_graph_widget:
         display(outlier_fig)
 
-    def update_outlier_fig(hv_data, _rmse_thresh=rmse_pctile_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_rmse.value, _verbose=verbose_check.value):
+    def update_outlier_fig(_rmse_thresh=rmse_pctile_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_rmse.value, _verbose=verbose_check.value):
         global outlier_fig
-
-        if 'PPSDStatus' in hv_data.ProcessingStatus.keys() and hv_data.ProcessingStatus['PPSDStatus']:
-            if 'RemoveOutlierCurvesStatus' in hv_data.ProcessingStatus.keys() and hv_data.ProcessingStatus['RemoveOutlierCurvesStatus']:
-                hvsr_data = hv_data
-            else:
-                hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=hv_data, rmse_thresh=_rmse_thresh,
+        global hvsr_data
+        hv_data = hvsr_data
+        if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
+            #if 'RemoveOutlierCurvesStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['RemoveOutlierCurvesStatus']:
+            #    print('already removed once')
+            #    # pass
+            #else:
+            hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, rmse_thresh=_rmse_thresh,
                                          use_percentile=_use_percentile, use_hv_curve=_use_hv_curve,
                                          show_plot=False, verbose=_verbose)
         else:
-            hvsr_data = hv_data
             return outlier_fig, hvsr_data
 
         if _use_hv_curve:
@@ -1459,8 +1473,6 @@ def create_jupyter_ui():
             outlier_fig = go.FigureWidget(subp)
 
             if hasattr(hvsr_data, 'hvsr_df'):
-                #x_data = hvsr_data['x_freqs']
-                x_data = [1/p for p in hvsr_data['ppsds']['Z']['period_bin_centers']]
                 rowDict = {'Z':1, 'E':2, 'N':3}
                 showTLabelsDict={'Z':False, 'E':False, 'N':True}
                 def comp_rgba(comp, a):
@@ -1477,6 +1489,10 @@ def create_jupyter_ui():
                 med_traces=[]
                 # The next bit isn't working yet
                 for i, comp in enumerate(compNames):
+                    if hasattr(hvsr_data, 'x_freqs'):
+                        x_data = hvsr_data['x_freqs'][comp]
+                    else:
+                        x_data = [1/p for p in hvsr_data['ppsds'][comp]['period_bin_centers']]                    
                     column = 'psd_values_'+comp
                     # Retrieve data from dataframe (use all windows, just in case)
                     curr_data = np.stack(hvsr_data['hvsr_df'][column])
@@ -1511,10 +1527,10 @@ def create_jupyter_ui():
                     outlier_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                   title=hvsr_data['site'])
 
-            outlier_fig.update_xaxes(type='log')
-            with outlier_graph_widget:
-                clear_output(wait=True)
-                display(outlier_fig)
+        outlier_fig.update_xaxes(type='log')
+        with outlier_graph_widget:
+            clear_output(wait=True)
+            display(outlier_fig)
          
         return outlier_fig, hvsr_data
 
@@ -1779,7 +1795,9 @@ def create_jupyter_ui():
     def any_update(change):
         update_input_param_call()
         update_fetch_data_call()
+        update_remove_outlier_curve_call()
         update_plot_string()
+
 
     observe_children(sprit_widget, any_update)    
 
