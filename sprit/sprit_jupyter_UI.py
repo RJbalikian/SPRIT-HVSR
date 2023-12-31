@@ -593,6 +593,23 @@ def create_jupyter_ui():
         progress_bar.value = 0.5
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
         
+       
+        # If this was started by clicking "Generate PPSDs", stop here
+        if button.description == 'Generate PPSDs':
+            return
+
+        ph_kwargs = get_process_hvsr_kwargs()
+        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
+        progress_bar.value = 0.85
+        update_outlier_fig()
+
+        roc_kwargs = get_remove_outlier_curve_kwargs()
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
+        progress_bar.value = 0.6
+        outlier_fig, hvsr_data = update_outlier_fig()
+
         use_hv_curve_rmse.value=False
         use_hv_curve_rmse.disabled=False
 
@@ -619,22 +636,6 @@ def create_jupyter_ui():
             rmse_thresh_slider.step = round((maxRMSE-minRMSE)/100, 2)
             rmse_thresh_slider.value = maxRMSE
         get_rmse_range()
-        
-        # If this was started by clicking "Generate PPSDs", stop here
-        if button.description == 'Generate PPSDs':
-            return
-
-        ph_kwargs = get_process_hvsr_kwargs()
-        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
-        log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
-        progress_bar.value = 0.85
-        update_outlier_fig()
-
-        roc_kwargs = get_remove_outlier_curve_kwargs()
-        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
-        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
-        progress_bar.value = 0.6
-        outlier_fig, hvsr_data = update_outlier_fig()
 
         cp_kwargs = get_check_peaks_kwargs()
         hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)

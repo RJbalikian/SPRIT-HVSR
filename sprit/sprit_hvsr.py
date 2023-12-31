@@ -3067,7 +3067,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         def move_avg(y, box_pts):
             #box = np.ones(box_pts)/box_pts
             box = np.hanning(box_pts)
-
             y_smooth = np.convolve(y, box, mode='same') / sum(box)
             return y_smooth
 
@@ -3083,8 +3082,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 if resample is True:
                     resample = 1000 #Default smooth value
 
-                xValMin = min(ppsds[k]['period_bin_centers'])
-                xValMax = max(ppsds[k]['period_bin_centers'])
+                #xValMin = min(ppsds[k]['period_bin_centers'])
+                #xValMax = max(ppsds[k]['period_bin_centers'])
+                xValMin = 1/hvsr_data['hvsr_band'][1]
+                xValMax = 1/hvsr_data['hvsr_band'][0]
                 #Resample period bin values
                 x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
                 if smooth or isinstance(smooth, (int, float)):
@@ -3117,14 +3118,17 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
             else:
                 #If no resampling desired
-                x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
+                #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
+                x_periods[k] = np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]],3)
+                x_periods[k][0] = hvsr_data['hvsr_band'][1]
+                x_periods[k][-1] = hvsr_data['hvsr_band'][0]
                 psdRaw[k] = np.array(input_ppsds)
 
             hvsrDF['psd_values_'+k] = list(psdRaw[k])
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
-            x_freqs[k] = np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+            x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
             stDev[k] = np.std(psdRaw[k], axis=0)
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
@@ -3176,7 +3180,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
 
         #Frequency Smoothing
-        if freq_smooth is False:
+        if not freq_smooth:
             if verbose:
                 warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
         elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
@@ -3187,10 +3191,31 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 ppsd_data = np.stack(hvsr_out['hvsr_df'][colName])
                 ppsd_data = hvsr_out['psd_raw'][k]
 
+
                 freqs = hvsr_out['x_freqs'][k]
+                padding_length = int(f_smooth_width)
+
+                padding_value_R = np.nanmean(ppsd_data[:,-1*padding_length:])
+                padding_value_L = np.nanmean(ppsd_data[:,:padding_length])
+
+                # Pad the data to prevent boundary anamolies
+                padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 'constant', constant_values=(padding_value_L, padding_value_R))
+
+                # Pad the frequencies
+                ratio = freqs[1] / freqs[0]
+                # Generate new elements on either side and combine
+                left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
+                right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
+                padded_freqs = np.concatenate([left_padding, freqs, right_padding])
+                print(freqs.shape, padded_freqs.shape)
+                print(ppsd_data.shape, padded_ppsd_data.shape)
+
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
-                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(ppsd_data, freqs, bandwidth=f_smooth_width, normalize=True)
+                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, bandwidth=f_smooth_width, normalize=True)
+                
+                #Just use the original data
+                smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
                 hvsr_out['hvsr_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_df'].index)
 
