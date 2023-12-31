@@ -3199,7 +3199,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 padding_value_L = np.nanmean(ppsd_data[:,:padding_length])
 
                 # Pad the data to prevent boundary anamolies
-                padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 'constant', constant_values=(padding_value_L, padding_value_R))
+                padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 
+                                          'constant', constant_values=(padding_value_L, padding_value_R))
 
                 # Pad the frequencies
                 ratio = freqs[1] / freqs[0]
@@ -3207,12 +3208,12 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
                 right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
                 padded_freqs = np.concatenate([left_padding, freqs, right_padding])
-                print(freqs.shape, padded_freqs.shape)
-                print(ppsd_data.shape, padded_ppsd_data.shape)
-
+                
+                #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', category=UserWarning) #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
-                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, bandwidth=f_smooth_width, normalize=True)
+                    warnings.simplefilter('ignore', category=UserWarning)
+                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, 
+                                                    padded_freqs, bandwidth=f_smooth_width, normalize=True)
                 
                 #Just use the original data
                 smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
