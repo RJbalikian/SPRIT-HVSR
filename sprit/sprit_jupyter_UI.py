@@ -603,13 +603,13 @@ def create_jupyter_ui():
         ph_kwargs = get_process_hvsr_kwargs()
         hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}"
-        progress_bar.value = 0.85
+        progress_bar.value = 0.75
         update_outlier_fig()
 
         roc_kwargs = get_remove_outlier_curve_kwargs()
         hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}"
-        progress_bar.value = 0.6
+        progress_bar.value = 0.85
         outlier_fig, hvsr_data = update_outlier_fig()
 
         use_hv_curve_rmse.value=False
@@ -1819,21 +1819,43 @@ def create_jupyter_ui():
     #log_textArea = widgets.Textarea(value="SESSION LOG", disabled=True, layout={'height': '99%','width': '99%', 'overflow': 'scroll'})
 
     # RESULTS TAB
+    # PLOT SUBTAB
     subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
     results_fig = go.FigureWidget(subp)
     global results_graph_widget
-    results_graph_widget = widgets.Output()    
-    global results_tab
-    results_tab = widgets.GridspecLayout(12, 20)
-
-    global results_label
-    results_label = widgets.Label(value='test')
-
-    results_tab[:,:15] = results_graph_widget
-    results_tab[:,15:] = results_label
+    results_graph_widget = widgets.Output()   
 
     with results_graph_widget:
         display(results_fig)
+
+    global printed_results_textArea
+    printed_results_textArea = widgets.Textarea(value="RESULTS", disabled=True, layout={'height': '300px','width': '99%', 'overflow': 'scroll'})
+
+    global results_table
+    initialTableCols=['SiteName', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation',
+                      'PeakFrequency', 'WindowLengthFreq.', 'SignificantCycles', 'LowCurveStDevOverTime', 
+                      'PeakProminenceBelow', 'PeakProminenceAbove', 'PeakAmpClarity', 
+                      'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD', 'PeakPasses']
+    results_table = widgets.HTML(value=pd.DataFrame(columns=initialTableCols).to_html())
+
+    # A text box labeled Data Filepath
+    export_results_table_filepath = widgets.Text(description='Export Filepath:',
+                                    placeholder='', value='',
+                                    style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
+
+    # A button next to it labeled "Browse"
+    export_results_table_button = widgets.Button(description='Export Table',
+                                            layout=widgets.Layout(width='10%'))
+
+
+    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
+    results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
+    global results_tab
+    results_subtabs = widgets.Tab([results_graph_widget, printed_results_textArea, results_table_vbox])
+    results_tab = widgets.VBox(children=[results_subtabs])
+    results_subtabs.set_title(0, "Plot")
+    results_subtabs.set_title(1, "Peak Tests")
+    results_subtabs.set_title(2, "Peak Table")
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
