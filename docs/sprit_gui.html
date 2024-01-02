@@ -180,6 +180,7 @@ def catch_errors(func):
     return wrapper
 
 class SPRIT_App:
+    global spritApp
     def __init__(self, master):
         self.master = master
         self.master.title(&#34;SPRIT&#34;)
@@ -594,16 +595,25 @@ class SPRIT_App:
             self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
             self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
-            #Make this an option
-            #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
-
-            self.hvsr_data = plot_noise_windows(self.hvsr_data)
             
+            self.hvsr_data = sprit_hvsr.remove_noise(hvsr_data=self.hvsr_data,
+                                                     remove_method=&#39;auto&#39;,
+                                                     sat_percent=0.995,
+                                                     noise_percent=0.8,
+                                                     sta=2,
+                                                     lta=30,
+                                                     stalta_thresh=[0.5, 5],
+                                                     warmup_time=0,
+                                                     cooldown_time=0,
+                                                     min_win_size=1,
+                                                     remove_raw_noise=False)
+            update_progress_bars(prog_percent=12)
+            self.hvsr_data = plot_noise_windows(self.hvsr_data)
+
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),
-                                                
+                                                outlier_std=self.outlier_std.get(),             
                                                 ppsd_length=self.ppsd_length.get(), 
                                                 overlap=self.overlap.get(), 
                                                 period_step_octaves=self.perStepOct.get(), 
@@ -615,14 +625,21 @@ class SPRIT_App:
                                                )
             update_progress_bars(prog_percent=50)
 
+            self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
+                                            rmse_thresh=98,
+                                            use_percentile=True,
+                                            use_hv_curve = False,
+                                            show_plot = False)
+            update_progress_bars(prog_percent=60)
+
             self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data,
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
-                                                   f_smooth_width=self.fSmoothWidth.get(), 
+                                                   f_smooth_width=self.fSmoothWidth.get(),
                                                    resample=self.hvresample_int,
-                                                   outlier_curve_std=self.outlierRemStDev.get())
+                                                   outlier_curve_rmse_percentile=True)
             update_progress_bars(prog_percent=90)
 
 
@@ -689,7 +706,7 @@ class SPRIT_App:
             #self.update_idletasks()
 
         def update_input_params_call():
-            self.data_read = False
+            prevCall = self.input_params_call.cget(&#39;text&#39;)
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -699,7 +716,13 @@ class SPRIT_App:
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
-        
+            
+            newCall = self.input_params_call.cget(&#39;text&#39;)
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
+
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -1186,15 +1209,20 @@ class SPRIT_App:
 
         
         def update_fetch_call():
+            prevCall = self.input_params_call.cget(&#39;text&#39;)
             if self.trim_dir.get()==&#39;&#39;:
                 trim_dir = None
             else:
                 trim_dir = self.trim_dir.get()
-
             self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
+            
+            newCall = self.input_params_call.cget(&#39;text&#39;)
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
         #export_format=&#39;.mseed&#39;
         
         def on_obspyFormatSelect(self):
@@ -1569,7 +1597,7 @@ class SPRIT_App:
         #Support function to help select_windows run properly
         
         def _on_fig_close(event):
-            self.fig_closed
+            #self.fig_closed
             fig_closed = True
             return
 
@@ -2480,16 +2508,6 @@ class SPRIT_App:
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
         outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
-        
-        def on_outlier_std():
-            try:
-                float(self.outlierRemStDev.get())
-                outlierValLabel.configure(text=&#39;resample={}&#39;.format(self.outlierRemStDev.get()))                
-                update_procHVSR_call(self.procHVSR_call)
-                return True
-            except ValueError:
-                return False
-            
         ttk.Label(master=hvsrSettingsFrame, text=&#39;Outlier St. Dev. [float]&#39;).grid(row=6, column=0, columnspan=2, padx=(5,0), sticky=&#39;w&#39;)
         self.outlierRemStDev = tk.DoubleVar()
         self.outlierRemStDev.set(1.75)
@@ -3111,9 +3129,10 @@ def reboot_app():
     os.execl(python, python, * sys.argv)
 
 if __name__ == &#34;__main__&#34;:
-    can_gui = sprit_utils.check_gui_requirements()
+    can_gui = sprit_utils.check_gui_requirements()  
 
     if can_gui:
+        global root
         root = tk.Tk()
         try:
             try:
@@ -3126,8 +3145,7 @@ if __name__ == &#34;__main__&#34;:
             print(&#34;ICON NOT LOADED, still opening GUI&#34;)
 
         root.resizable(True, True)
-        spritApp =SPRIT_App(root)
-
+        spritApp = SPRIT_App(root)
         root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_closing)
         root.mainloop()
     else:
@@ -3306,6 +3324,7 @@ saving data) must be done before calling this function.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class SPRIT_App:
+    global spritApp
     def __init__(self, master):
         self.master = master
         self.master.title(&#34;SPRIT&#34;)
@@ -3720,16 +3739,25 @@ saving data) must be done before calling this function.</p></div>
             self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
             self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
-            #Make this an option
-            #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
-
-            self.hvsr_data = plot_noise_windows(self.hvsr_data)
             
+            self.hvsr_data = sprit_hvsr.remove_noise(hvsr_data=self.hvsr_data,
+                                                     remove_method=&#39;auto&#39;,
+                                                     sat_percent=0.995,
+                                                     noise_percent=0.8,
+                                                     sta=2,
+                                                     lta=30,
+                                                     stalta_thresh=[0.5, 5],
+                                                     warmup_time=0,
+                                                     cooldown_time=0,
+                                                     min_win_size=1,
+                                                     remove_raw_noise=False)
+            update_progress_bars(prog_percent=12)
+            self.hvsr_data = plot_noise_windows(self.hvsr_data)
+
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),
-                                                
+                                                outlier_std=self.outlier_std.get(),             
                                                 ppsd_length=self.ppsd_length.get(), 
                                                 overlap=self.overlap.get(), 
                                                 period_step_octaves=self.perStepOct.get(), 
@@ -3741,14 +3769,21 @@ saving data) must be done before calling this function.</p></div>
                                                )
             update_progress_bars(prog_percent=50)
 
+            self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
+                                            rmse_thresh=98,
+                                            use_percentile=True,
+                                            use_hv_curve = False,
+                                            show_plot = False)
+            update_progress_bars(prog_percent=60)
+
             self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data,
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
-                                                   f_smooth_width=self.fSmoothWidth.get(), 
+                                                   f_smooth_width=self.fSmoothWidth.get(),
                                                    resample=self.hvresample_int,
-                                                   outlier_curve_std=self.outlierRemStDev.get())
+                                                   outlier_curve_rmse_percentile=True)
             update_progress_bars(prog_percent=90)
 
 
@@ -3815,7 +3850,7 @@ saving data) must be done before calling this function.</p></div>
             #self.update_idletasks()
 
         def update_input_params_call():
-            self.data_read = False
+            prevCall = self.input_params_call.cget(&#39;text&#39;)
             self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -3825,7 +3860,13 @@ saving data) must be done before calling this function.</p></div>
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
-        
+            
+            newCall = self.input_params_call.cget(&#39;text&#39;)
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
+
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
         siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -4312,15 +4353,20 @@ saving data) must be done before calling this function.</p></div>
 
         
         def update_fetch_call():
+            prevCall = self.input_params_call.cget(&#39;text&#39;)
             if self.trim_dir.get()==&#39;&#39;:
                 trim_dir = None
             else:
                 trim_dir = self.trim_dir.get()
-
             self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
+            
+            newCall = self.input_params_call.cget(&#39;text&#39;)
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
         #export_format=&#39;.mseed&#39;
         
         def on_obspyFormatSelect(self):
@@ -4695,7 +4741,7 @@ saving data) must be done before calling this function.</p></div>
         #Support function to help select_windows run properly
         
         def _on_fig_close(event):
-            self.fig_closed
+            #self.fig_closed
             fig_closed = True
             return
 
@@ -5606,16 +5652,6 @@ saving data) must be done before calling this function.</p></div>
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
         outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
-        
-        def on_outlier_std():
-            try:
-                float(self.outlierRemStDev.get())
-                outlierValLabel.configure(text=&#39;resample={}&#39;.format(self.outlierRemStDev.get()))                
-                update_procHVSR_call(self.procHVSR_call)
-                return True
-            except ValueError:
-                return False
-            
         ttk.Label(master=hvsrSettingsFrame, text=&#39;Outlier St. Dev. [float]&#39;).grid(row=6, column=0, columnspan=2, padx=(5,0), sticky=&#39;w&#39;)
         self.outlierRemStDev = tk.DoubleVar()
         self.outlierRemStDev.set(1.75)
@@ -6591,16 +6627,25 @@ saving data) must be done before calling this function.</p></div>
         self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
         self.log_text.insert(&#39;end&#39;, f&#34;{self.generate_ppsd_call[&#39;text&#39;]}\n\n&#34;)
 
-        #Make this an option
-        #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method=&#39;auto&#39;)
-
-        self.hvsr_data = plot_noise_windows(self.hvsr_data)
         
+        self.hvsr_data = sprit_hvsr.remove_noise(hvsr_data=self.hvsr_data,
+                                                 remove_method=&#39;auto&#39;,
+                                                 sat_percent=0.995,
+                                                 noise_percent=0.8,
+                                                 sta=2,
+                                                 lta=30,
+                                                 stalta_thresh=[0.5, 5],
+                                                 warmup_time=0,
+                                                 cooldown_time=0,
+                                                 min_win_size=1,
+                                                 remove_raw_noise=False)
+        update_progress_bars(prog_percent=12)
+        self.hvsr_data = plot_noise_windows(self.hvsr_data)
+
         update_progress_bars(prog_percent=15)
         self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                             remove_outliers=self.remove_outliers.get(), 
-                                            outlier_std=self.outlier_std.get(),
-                                            
+                                            outlier_std=self.outlier_std.get(),             
                                             ppsd_length=self.ppsd_length.get(), 
                                             overlap=self.overlap.get(), 
                                             period_step_octaves=self.perStepOct.get(), 
@@ -6612,14 +6657,21 @@ saving data) must be done before calling this function.</p></div>
                                            )
         update_progress_bars(prog_percent=50)
 
+        self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
+                                        rmse_thresh=98,
+                                        use_percentile=True,
+                                        use_hv_curve = False,
+                                        show_plot = False)
+        update_progress_bars(prog_percent=60)
+
         self.log_text.insert(&#39;end&#39;, f&#34;{self.procHVSR_call[&#39;text&#39;]}\n\n&#34;)
-        self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
+        self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data,
                                                method=self.method_ind,
                                                smooth=self.hvsmooth_param,
                                                freq_smooth=self.freq_smooth.get(),
-                                               f_smooth_width=self.fSmoothWidth.get(), 
+                                               f_smooth_width=self.fSmoothWidth.get(),
                                                resample=self.hvresample_int,
-                                               outlier_curve_std=self.outlierRemStDev.get())
+                                               outlier_curve_rmse_percentile=True)
         update_progress_bars(prog_percent=90)
 
 
@@ -6686,7 +6738,7 @@ saving data) must be done before calling this function.</p></div>
         #self.update_idletasks()
 
     def update_input_params_call():
-        self.data_read = False
+        prevCall = self.input_params_call.cget(&#39;text&#39;)
         self.input_params_call.configure(text=&#34;input_params( datapath=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, loc=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                         self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                         self.network.get(), self.station.get(), self.location.get(),
@@ -6696,7 +6748,13 @@ saving data) must be done before calling this function.</p></div>
                                         self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                         self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                         self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
-    
+        
+        newCall = self.input_params_call.cget(&#39;text&#39;)
+        if prevCall==newCall:
+            self.data_read=True
+        else:
+            self.data_read = False
+
     #Specify site name        
     siteLabel = ttk.Label(hvsrFrame, text=&#34;Site Name&#34;)
     siteLabel.grid(row=0, column=0, sticky=&#39;e&#39;, padx=5)
@@ -7183,15 +7241,20 @@ saving data) must be done before calling this function.</p></div>
 
     
     def update_fetch_call():
+        prevCall = self.input_params_call.cget(&#39;text&#39;)
         if self.trim_dir.get()==&#39;&#39;:
             trim_dir = None
         else:
             trim_dir = self.trim_dir.get()
-
         self.data_read = False #New file will not have been read, set to False
         self.fetch_data_call.configure(text=&#34;fetch_data(params, source=&#39;{}&#39;, trim_dir={}, export_format=&#39;{}&#39;, detrend=&#39;{}&#39;, detrend_order={})&#34;
                                         .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
+        
+        newCall = self.input_params_call.cget(&#39;text&#39;)
+        if prevCall==newCall:
+            self.data_read=True
+        else:
+            self.data_read = False
     #export_format=&#39;.mseed&#39;
     
     def on_obspyFormatSelect(self):
@@ -7566,7 +7629,7 @@ saving data) must be done before calling this function.</p></div>
     #Support function to help select_windows run properly
     
     def _on_fig_close(event):
-        self.fig_closed
+        #self.fig_closed
         fig_closed = True
         return
 
@@ -8477,16 +8540,6 @@ saving data) must be done before calling this function.</p></div>
     outlierValLabel = ttk.Label(master=hvsrParamsFrame, text=&#34;outlier_curve_std=1.75&#34;, width=30)
     outlierValLabel.grid(row=5, column=0, sticky=&#39;ew&#39;, pady=(6,6), padx=5)        
 
-    
-    def on_outlier_std():
-        try:
-            float(self.outlierRemStDev.get())
-            outlierValLabel.configure(text=&#39;resample={}&#39;.format(self.outlierRemStDev.get()))                
-            update_procHVSR_call(self.procHVSR_call)
-            return True
-        except ValueError:
-            return False
-        
     ttk.Label(master=hvsrSettingsFrame, text=&#39;Outlier St. Dev. [float]&#39;).grid(row=6, column=0, columnspan=2, padx=(5,0), sticky=&#39;w&#39;)
     self.outlierRemStDev = tk.DoubleVar()
     self.outlierRemStDev.set(1.75)
