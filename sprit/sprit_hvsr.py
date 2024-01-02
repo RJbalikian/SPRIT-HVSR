@@ -41,6 +41,7 @@ except: #For testing
     import sprit_gui
     import sprit_jupyter_UI
 
+
 global spritApp
 
 #Main variables
@@ -507,6 +508,14 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
+def gui_test():
+    import subprocess
+    print(sprit_gui.__file__)
+    guiFile = sprit_gui.__file__
+    subprocess.call(guiFile, shell=True)
+
+    
+
 #Launch the tkinter gui
 def gui(kind='default'):
     """Function to open a graphical user interface (gui)
@@ -559,7 +568,7 @@ def gui(kind='default'):
             print("ICON NOT LOADED, still opening GUI")
 
         gui_root.resizable(True, True)
-        SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+        spritApp = SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
 
         gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
         gui_root.mainloop() #Run the main loop

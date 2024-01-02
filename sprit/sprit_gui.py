@@ -151,6 +151,7 @@ def catch_errors(func):
     return wrapper
 
 class SPRIT_App:
+    global spritApp
     def __init__(self, master):
         self.master = master
         self.master.title("SPRIT")
@@ -676,7 +677,7 @@ class SPRIT_App:
             #self.update_idletasks()
 
         def update_input_params_call():
-            self.data_read = False
+            prevCall = self.input_params_call.cget('text')
             self.input_params_call.configure(text="input_params( datapath='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', loc='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
@@ -686,7 +687,13 @@ class SPRIT_App:
                                             self.input_crs.get(), self.output_crs.get(), self.elev_unit.get(), 
                                             self.hvsrBand_min.get(), self.hvsrBand_max.get(),
                                             self.peakFreqRange_min.get(), self.peakFreqRange_max.get()))
-        
+            
+            newCall = self.input_params_call.cget('text')
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
+
         #Specify site name        
         siteLabel = ttk.Label(hvsrFrame, text="Site Name")
         siteLabel.grid(row=0, column=0, sticky='e', padx=5)
@@ -1173,15 +1180,20 @@ class SPRIT_App:
 
         
         def update_fetch_call():
+            prevCall = self.input_params_call.cget('text')
             if self.trim_dir.get()=='':
                 trim_dir = None
             else:
                 trim_dir = self.trim_dir.get()
-
             self.data_read = False #New file will not have been read, set to False
             self.fetch_data_call.configure(text="fetch_data(params, source='{}', trim_dir={}, export_format='{}', detrend='{}', detrend_order={})"
                                             .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
-
+            
+            newCall = self.input_params_call.cget('text')
+            if prevCall==newCall:
+                self.data_read=True
+            else:
+                self.data_read = False
         #export_format='.mseed'
         
         def on_obspyFormatSelect(self):
@@ -3088,7 +3100,7 @@ def reboot_app():
     os.execl(python, python, * sys.argv)
 
 if __name__ == "__main__":
-    can_gui = sprit_utils.check_gui_requirements()
+    can_gui = sprit_utils.check_gui_requirements()  
 
     if can_gui:
         global root
@@ -3104,8 +3116,7 @@ if __name__ == "__main__":
             print("ICON NOT LOADED, still opening GUI")
 
         root.resizable(True, True)
-        spritApp =SPRIT_App(root)
-
+        spritApp = SPRIT_App(root)
         root.protocol("WM_DELETE_WINDOW", on_closing)
         root.mainloop()
     else:
