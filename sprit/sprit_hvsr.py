@@ -508,12 +508,12 @@ class HVSRData:
         self._ppsds=value
 
 #Launch the tkinter gui
-def gui(gui_type='default'):
+def gui(kind='default'):
     """Function to open a graphical user interface (gui)
 
     Parameters
     ----------
-    gui_type : str, optional
+    kind : str, optional
         What type of gui to open. "default" opens regular windowed interface, 
         "widget" opens jupyter widget'
         "lite" open lite (pending update), by default 'default'
@@ -524,7 +524,7 @@ def gui(gui_type='default'):
     widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
     liteList = ['lite', 'light', 'basic', 'l', 'b']
 
-    if gui_type.lower() in defaultList:
+    if kind.lower() in defaultList:
         import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
@@ -563,7 +563,7 @@ def gui(gui_type='default'):
 
         gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
         gui_root.mainloop() #Run the main loop
-    elif gui_type in widgetList:
+    elif kind.lower() in widgetList:
         sprit_jupyter_UI.create_jupyter_ui()
     
 
@@ -1979,7 +1979,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, return_results=False, csv_overwrite_opt='append', no_output=False, verbose=False):    
+def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -1988,18 +1988,17 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         Dictionary containing all the information about the processed hvsr data
     report_format : {'csv', 'print', plot}
         Format in which to print or export the report.
+        The following report_formats return the following items in the following attributes:
+            - 'plot': hvsr_results['Print_Report'] as a str str
+            - 'print': hvsr_results['HV_Plot'] - matplotlib.Figure object
+            - 'csv':  hvsr_results['CSV_Report']- pandas.DataFrame object
+                - list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     plot_type : str, default = 'HVSR p ann C+ p ann Spec
         What type of plot to plot, if 'plot' part of report_format input
     export_path : None, bool, or filepath, default = None
         If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
         If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". The suffix defaults to png for report_format="plot", csv for 'csv', and does not export if 'print.'
-    return_results : bool, default=False
-        Whether to return results. The following report_formats return the following items:
-            'plot'- str
-            'print' - matplotlib.Figure object
-            'csv' - pandas.DataFrame object
-            list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
         How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
     no_output : bool, default=False
@@ -2009,12 +2008,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
 
     Returns
     -------
-    If return_results=True, the following report_formats return the following items:
-        'plot'-  matplotlib.Figure object
-        'print' - str
-        'csv' - pandas.DataFrame object
-        list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
-
+    sprit.HVSRData
     """
     orig_args = locals().copy() #Get the initial arguments
 
@@ -2031,7 +2025,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
     report_format = orig_args['report_format']
     plot_type = orig_args['plot_type']
     export_path = orig_args['export_path']
-    return_results = orig_args['return_results']
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
     no_output = orig_args['no_output']
     verbose = orig_args['verbose']
@@ -2094,8 +2087,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 
             combined_csvReport.to_csv(csvExportPath, index=False)
         
-        if return_results:
-            return hvsr_results
     else:       
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
@@ -2191,7 +2182,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 plt.savefig(outFile)
             return 
 
-        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _return_results=False, _export_path=None, _no_output=False, verbose=False):
+        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _export_path=None, _no_output=False, verbose=False):
             if _report_format=='print':
                 #Print results
 
@@ -2348,7 +2339,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _return_results=return_results, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _export_path=exp_path, _no_output=no_output, verbose=verbose)
 
         hvsr_results['processing_parameters']['get_report'] = {}
         for key, value in orig_args.items():
