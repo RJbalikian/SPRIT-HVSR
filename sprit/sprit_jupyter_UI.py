@@ -568,7 +568,6 @@ def create_jupyter_ui():
         gr_kwargs = {'report_format':['print','csv'],
                      'plot_type':get_formatted_plot_str(),
                      'export_path':None,
-                     'return_results':False, 
                      'csv_overwrite_opt':'overwrite',
                      'no_output':False,
                     'verbose':verbose_check.value
@@ -647,8 +646,12 @@ def create_jupyter_ui():
         gr_kwargs = get_get_report_kwargs()
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}\n\n"
-        hvsr_data.get_report(report_format='print', return_results=True) # Just in case print wasn't included
+        hvsr_data.get_report(report_format='print') # Just in case print wasn't included
         log_textArea.value += hvsr_data['Print_Report']
+        printed_results_textArea.value = hvsr_data['Print_Report']
+        hvsr_data.get_report(report_format='csv') 
+        results_table.value = hvsr_data['CSV_Report'].to_html()
+        
         log_textArea.value += f'Processing time: {datetime.datetime.now() - startProc}'
         progress_bar.value = 0.95
 
@@ -802,8 +805,8 @@ def create_jupyter_ui():
 
         if 'ann' in hvsr_plot_list:
             # Annotate best peak
-            results_fig.add_annotation(x=hvsr_data['BestPeak']['f0'],
-                                    y=0, yanchor='bottom',
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']),
+                                    y=0, yanchor='bottom', xanchor='center',
                                     text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False,
@@ -916,9 +919,8 @@ def create_jupyter_ui():
                 currPPSDCurve = hvsr_data['psd_values_tavg'][comp]
                 if np.nanmin(currPPSDCurve) < minVal:
                     minVal = np.nanmin(currPPSDCurve)
-
-            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0'],), 
-                            y=minVal, 
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']),
+                            y=minVal,
                             text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
                             bgcolor='rgba(255, 255, 255, 0.7)',
                             showarrow=False,
@@ -1014,7 +1016,7 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def update_results_fig(hv_data, plot_string):        
+    def update_results_fig(hv_data, plot_string):
         global results_fig
         hvsr_data = hv_data
 
@@ -1204,7 +1206,28 @@ def create_jupyter_ui():
     raw_data_remove_check = widgets.Checkbox(description='Remove Noise From Raw Data', value=False, disabled=False, indent=False)
 
     #remove_noise call
-    remove_noise_call = widgets.Label(value=f"remove_noise()")
+    remove_noise_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'remove_noise' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    remove_noise_call = widgets.HTML(value='()')
+    remove_noise_call_hbox = widgets.HBox([remove_noise_prefix, remove_noise_call])
+
+    # Update remove_outlier call
+    def update_remove_noise_call():
+        rnkwargs = get_remove_noise_kwargs()
+        rn_text = f"""(hvsr_data=hvsr_data, remove_method={rnkwargs['remove_method']}, 
+                    sat_percent={rnkwargs['sat_percent']}, 
+                    noise_percent={rnkwargs['noise_percent']}, 
+                    sta={rnkwargs['sta']}, 
+                    lta={rnkwargs['lta']}, 
+                    stalta_thresh={rnkwargs['stalta_thresh']}, 
+                    warmup_time={rnkwargs['warmup_time']}, 
+                    cooldown_time={rnkwargs['cooldown_time']}, 
+                    min_win_size={rnkwargs['min_win_size']}, 
+                    remove_raw_noise={rnkwargs['remove_raw_noise']}, 
+                    verbose={verbose_check.value})"""
+        remove_noise_call.value='<style>p {word-wrap: break-word}</style> <p>' + rn_text + '</p>'
+    update_remove_noise_call()
+
 
     #Update noise windows
     update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
@@ -1213,8 +1236,26 @@ def create_jupyter_ui():
     #progress bar (same as above)
     preview_progress_hbox = widgets.HBox(children=[progress_bar, update_noise_windows_button, process_hvsr_button])
 
+
+    # Add it all in to the tab
+    stalta_hbox = widgets.HBox([stalta_check, sta, lta, stalta_thresh_low, stalta_thresh_hi])
+    sat_hbox = widgets.HBox([max_saturation_check, max_saturation_pct])
+    noise_win_hbox = widgets.HBox([noisy_windows_check, max_window_pct, noisy_window_length])
+    warmcool_hbox = widgets.HBox([warmcool_check, warmup_time, cooldown_time])
+    std_ratio_hbox = widgets.HBox([std_ratio_check, std_ratio_text, std_window_length_text])
+    spacer_hbox = widgets.HBox([tenpct_spacer])
+
+    preview_noise_tab = widgets.VBox([stalta_hbox,
+                                      sat_hbox,
+                                      noise_win_hbox,
+                                      warmcool_hbox,
+                                      std_ratio_hbox,
+                                      auto_remove_check,
+                                      raw_data_remove_check,
+                                      spacer_hbox,
+                                      remove_noise_call_hbox])
+
     preview_graph_tab = widgets.VBox(children=[preview_graph_widget])
-    preview_noise_tab = widgets.GridspecLayout(10, ui_width)
     preview_subtabs = widgets.Tab([preview_graph_tab, preview_noise_tab])
     preview_tab = widgets.VBox()
 
@@ -1225,37 +1266,10 @@ def create_jupyter_ui():
     # Initialize tab
     with preview_graph_widget:
         display(preview_fig)
-    
-    # Add it all in to the tab
-    preview_noise_tab[0,1:5] = stalta_check
-    preview_noise_tab[0,5:7] = sta
-    preview_noise_tab[0,7:10] = lta
-    preview_noise_tab[0,10:16] = stalta_thresh_low
-    preview_noise_tab[0,16:17] = stalta_thresh_hi
-
-    preview_noise_tab[1,1:5] = max_saturation_check
-    preview_noise_tab[1,6:11] = max_saturation_pct
-
-    preview_noise_tab[2,1:5] = noisy_windows_check
-    preview_noise_tab[2,6:11] = max_window_pct
-    preview_noise_tab[2,12:17] = noisy_window_length
-
-    preview_noise_tab[3,1:5] = warmcool_check
-    preview_noise_tab[3,6:11] = warmup_time
-    preview_noise_tab[3,12:17] = cooldown_time
-
-    preview_noise_tab[4,1:5] = std_ratio_check
-    preview_noise_tab[4,6:11] = std_ratio_text
-    preview_noise_tab[4,12:17] = std_window_length_text
-
-    preview_noise_tab[6,:] = auto_remove_check
-    preview_noise_tab[7,:] = raw_data_remove_check
-
-    preview_noise_tab[9,:] = remove_noise_call
 
     # SETTINGS TAB
     ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    hvsr_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
+    hvsr_settings_tab = widgets.GridspecLayout(9, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
 
@@ -1297,9 +1311,29 @@ def create_jupyter_ui():
                                                 options=[('None', None), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
                                             style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    generate_ppsd_call = widgets.Label(value='generate_ppsds()')
+    #remove_noise call
+    generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_ppsds' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    generate_ppsd_call = widgets.HTML(value='()')
+    generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_ppsd_call])
 
-    obspy_ppsd_call = widgets.Label(value='obpsy...PPSD()')
+    # Update generate_ppsds() call
+    def update_generate_ppsd_call():
+        gppsdkwargs = get_generate_ppsd_kwargs()
+        gppsd_text = f"""(hvsr_data=hvsr_data, 
+                        stats=hvsr_data['stream'].select(component='*').traces[0].stats, 
+                        metadata=hvsr_data['paz']['*'], 
+                        skip_on_gaps={gppsdkwargs['skip_on_gaps']}, 
+                        db_bins={gppsdkwargs['db_bins']}, 
+                        ppsd_length={gppsdkwargs['ppsd_length']}, 
+                        overlap={gppsdkwargs['overlap']}, 
+                        special_handling={gppsdkwargs['special_handling']}, 
+                        period_smoothing_width_octaves={gppsdkwargs['period_smoothing_width_octaves']}, 
+                        period_step_octaves={gppsdkwargs['period_step_octaves']}, 
+                        period_limits={gppsdkwargs['period_limits']}, 
+                        verbose={verbose_check.value})"""
+        generate_ppsd_call.value='<style>p {word-wrap: break-word}</style> <p>' + gppsd_text + '</p>'
+    update_generate_ppsd_call()
 
     # Set up grid for ppsd_settings subtab
     ppsd_settings_tab[0, 0:5] = ppsd_length_label
@@ -1326,8 +1360,7 @@ def create_jupyter_ui():
 
     ppsd_settings_tab[6, 0:8] = special_handling_dropdown
 
-    ppsd_settings_tab[7:9, :] = generate_ppsd_call
-    ppsd_settings_tab[9:11, :] = obspy_ppsd_call
+    ppsd_settings_tab[7:9, :] = generate_ppsd_call_hbox
 
     # OUTLIER SETTINGS SUBTAB
     rmse_pctile_check = widgets.Checkbox(description='Using percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
@@ -1406,7 +1439,8 @@ def create_jupyter_ui():
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     update_outlier_plot_button = widgets.Button(description='Remove Outliers', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
-    remove_outlier_curve_prefix = widgets.Label(value='remove_outlier_curves')
+    remove_outlier_curve_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'remove_outlier_curves' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
     remove_outlier_curve_call = widgets.HTML(value='()')
     remove_outlier_hbox = widgets.HBox([remove_outlier_curve_prefix, remove_outlier_curve_call])
 
@@ -1568,29 +1602,6 @@ def create_jupyter_ui():
             clear_output(wait=True)
             display(outlier_fig)
         
-        #if not smooth_hv_curve_bool.value:
-        #    smooth_val=False
-        #else:
-        #    smooth_val = smooth_hv_curve.value
-
-        #if not resample_hv_curve_bool.value:
-        #    resample_val = False
-        #else:
-        #    resample_val = resample_hv_curve.value
-        #if use_hv_curve_rmse.value:
-        #    outCurveRemove = rmse_thresh.value
-        #else:
-        #    outCurveRemove = False
-
-        #ph_kwargs = {'method':h_combine_meth.value,
-        #             'smooth':smooth_val,
-        #             'freq_smooth':freq_smoothing.value,
-        #             'f_smooth_width':freq_smooth_width.value,
-        #             'resample':resample_val,
-        #             'outlier_curve_rmse_percentile':outCurveRemove,
-        #             'verbose':verbose_check.value}
-        #sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
-        
         return outlier_fig, hvsr_data
 
     # HVSR SETTINGS SUBTAB
@@ -1629,9 +1640,40 @@ def create_jupyter_ui():
                                              ('Best Scored','scored')],
                                     style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    process_hvsr_call = widgets.Label(value='process_hvsr()')
+    process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', 
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    process_hvsr_call = widgets.HTML(value='()')
+    process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
 
-    check_peaks_call = widgets.Label(value='check_peaks()')
+    # Update process_hvsr call
+    def update_process_hvsr_call():
+        ph_kwargs = get_process_hvsr_kwargs()
+        ph_text = f"""(hvsr_data=hvsr_data, 
+                        method={ph_kwargs['method']}, 
+                        smooth={ph_kwargs['smooth']}, 
+                        freq_smooth={ph_kwargs['freq_smooth']}, 
+                        f_smooth_width={ph_kwargs['f_smooth_width']}, 
+                        resample={ph_kwargs['resample']}, 
+                        outlier_curve_rmse_percentile={ph_kwargs['outlier_curve_rmse_percentile']}, 
+                        verbose={verbose_check.value})"""
+        process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
+    update_process_hvsr_call()
+
+    check_peaks_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>'+'check_peaks' + '</p>',
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    check_peaks_call = widgets.HTML(value='()')
+    check_peaks_call_hbox = widgets.HBox([check_peaks_call_prefix, check_peaks_call])
+
+    # Update process_hvsr call
+    def update_check_peaks_call():
+        cp_kwargs = get_check_peaks_kwargs()
+        cp_text = f"""(hvsr_data=hvsr_data, 
+                        hvsr_band={cp_kwargs['hvsr_band']}, 
+                        peak_selection={cp_kwargs['peak_selection']}, 
+                        peak_freq_range={cp_kwargs['peak_freq_range']}, 
+                        verbose={verbose_check.value})"""
+        check_peaks_call.value='<style>p {word-wrap: break-word}</style> <p>' + cp_text + '</p>'
+    update_check_peaks_call()
 
     # Set up grid for ppsd_settings subtab
     hvsr_settings_tab[0, 1:] = h_combine_meth
@@ -1651,9 +1693,9 @@ def create_jupyter_ui():
 
     hvsr_settings_tab[6, 1:] = peak_selection_type
 
-    hvsr_settings_tab[7:9, 1:] = process_hvsr_call
+    hvsr_settings_tab[7, :] = process_hvsr_call_hbox
 
-    hvsr_settings_tab[9:11, 1:] = check_peaks_call
+    hvsr_settings_tab[8, :] = check_peaks_call_hbox
 
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value='HVSR Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
@@ -1829,7 +1871,7 @@ def create_jupyter_ui():
         display(results_fig)
 
     global printed_results_textArea
-    printed_results_textArea = widgets.Textarea(value="RESULTS", disabled=True, layout={'height': '300px','width': '99%', 'overflow': 'scroll'})
+    printed_results_textArea = widgets.Textarea(value="RESULTS", disabled=True, layout={'height': '500px','width': '99%', 'overflow': 'scroll'})
 
     global results_table
     initialTableCols=['SiteName', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation',
@@ -1876,11 +1918,14 @@ def create_jupyter_ui():
     def any_update(change):
         update_input_param_call()
         update_fetch_data_call()
+        update_remove_noise_call()
+        update_generate_ppsd_call()
+        update_process_hvsr_call()
         update_remove_outlier_curve_call()
+        update_check_peaks_call()
         update_plot_string()
 
-
-    observe_children(sprit_widget, any_update)    
+    observe_children(sprit_widget, any_update)
 
     # Display the tab
     display(sprit_widget)
