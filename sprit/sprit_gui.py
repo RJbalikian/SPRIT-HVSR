@@ -566,16 +566,25 @@ class SPRIT_App:
             self.log_text.insert('end', f"\n\nProcessing Data [{datetime.datetime.now()}]\n\n")
             self.log_text.insert('end', f"{self.generate_ppsd_call['text']}\n\n")
 
-            #Make this an option
-            #self.hvsr_data = sprit_hvsr.remove_noise(self.hvsr_data, remove_method='auto')
-
-            self.hvsr_data = plot_noise_windows(self.hvsr_data)
             
+            self.hvsr_data = sprit_hvsr.remove_noise(hvsr_data=self.hvsr_data,
+                                                     remove_method='auto',
+                                                     sat_percent=0.995,
+                                                     noise_percent=0.8,
+                                                     sta=2,
+                                                     lta=30,
+                                                     stalta_thresh=[0.5, 5],
+                                                     warmup_time=0,
+                                                     cooldown_time=0,
+                                                     min_win_size=1,
+                                                     remove_raw_noise=False)
+            update_progress_bars(prog_percent=12)
+            self.hvsr_data = plot_noise_windows(self.hvsr_data)
+
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),
-                                                
+                                                outlier_std=self.outlier_std.get(),             
                                                 ppsd_length=self.ppsd_length.get(), 
                                                 overlap=self.overlap.get(), 
                                                 period_step_octaves=self.perStepOct.get(), 
@@ -587,14 +596,21 @@ class SPRIT_App:
                                                )
             update_progress_bars(prog_percent=50)
 
+            self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
+                                            rmse_thresh=98,
+                                            use_percentile=True,
+                                            use_hv_curve = False,
+                                            show_plot = False)
+            update_progress_bars(prog_percent=60)
+
             self.log_text.insert('end', f"{self.procHVSR_call['text']}\n\n")
-            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data, 
+            self.hvsr_results = sprit_hvsr.process_hvsr(hvsr_data=self.hvsr_data,
                                                    method=self.method_ind,
                                                    smooth=self.hvsmooth_param,
                                                    freq_smooth=self.freq_smooth.get(),
-                                                   f_smooth_width=self.fSmoothWidth.get(), 
+                                                   f_smooth_width=self.fSmoothWidth.get(),
                                                    resample=self.hvresample_int,
-                                                   outlier_curve_std=self.outlierRemStDev.get())
+                                                   outlier_curve_rmse_percentile=True)
             update_progress_bars(prog_percent=90)
 
 
@@ -1552,7 +1568,7 @@ class SPRIT_App:
         #Support function to help select_windows run properly
         
         def _on_fig_close(event):
-            self.fig_closed
+            #self.fig_closed
             fig_closed = True
             return
 
@@ -2463,16 +2479,6 @@ class SPRIT_App:
         outlierValLabel = ttk.Label(master=hvsrParamsFrame, text="outlier_curve_std=1.75", width=30)
         outlierValLabel.grid(row=5, column=0, sticky='ew', pady=(6,6), padx=5)        
 
-        
-        def on_outlier_std():
-            try:
-                float(self.outlierRemStDev.get())
-                outlierValLabel.configure(text='resample={}'.format(self.outlierRemStDev.get()))                
-                update_procHVSR_call(self.procHVSR_call)
-                return True
-            except ValueError:
-                return False
-            
         ttk.Label(master=hvsrSettingsFrame, text='Outlier St. Dev. [float]').grid(row=6, column=0, columnspan=2, padx=(5,0), sticky='w')
         self.outlierRemStDev = tk.DoubleVar()
         self.outlierRemStDev.set(1.75)
@@ -3097,6 +3103,7 @@ if __name__ == "__main__":
     can_gui = sprit_utils.check_gui_requirements()  
 
     if can_gui:
+        global root
         root = tk.Tk()
         try:
             try:
