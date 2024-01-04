@@ -14,7 +14,6 @@ import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
 from scipy import signal
-import traitlets
 
 try: #For distribution
     from sprit import sprit_utils
@@ -268,6 +267,14 @@ def create_jupyter_ui():
     instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
                                         style={'description_width': 'initial'},
                                         description='Instrument:',layout=widgets.Layout(width='20%'))
+
+    # Instrument Settings
+    instrument_settings_button = widgets.FileUpload(accept='.inst', description='Instrument Settings',
+                                            multiple=False,layout=widgets.Layout(width='10%'))
+
+    # Processing Settings
+    processing_settings_button = widgets.FileUpload(accept='.proc', description='Processing Settings',
+                                            multiple=False,layout=widgets.Layout(width='10%'))
 
     # Whether to print to terminal
     verbose_check = widgets.Checkbox(description='Verbose', value=False, disabled=False, indent=False,
