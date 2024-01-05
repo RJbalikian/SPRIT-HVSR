@@ -83,6 +83,7 @@ def create_jupyter_ui():
     instrument_settings_button = widgets.Button(description='Select .inst file',
                                             layout=widgets.Layout(width='10%'))
     inst_settings_hbox = widgets.HBox([inst_settings_text,instrument_read_button, instrument_settings_button])
+    
     def select_inst(event):
         try:
             if event.description == 'Select .inst file':
@@ -138,16 +139,17 @@ def create_jupyter_ui():
             print(e)
             instrument_settings_button.disabled=True
             instrument_settings_button.description='Use Text Field'
+    
     instrument_settings_button.on_click(select_inst)
     instrument_read_button.on_click(select_inst)
 
-    metadata_grid[0,0] = network_textbox
-    metadata_grid[1,0] = station_textbox
-    metadata_grid[2,0] = location_textbox
-    metadata_grid[3,0] = z_channel_textbox
-    metadata_grid[4,0] = e_channel_textbox
-    metadata_grid[5,0] = n_channel_textbox
-    metadata_grid[6,:] = inst_settings_hbox
+    metadata_grid[0,:] = inst_settings_hbox
+    metadata_grid[1,0] = network_textbox
+    metadata_grid[2,0] = station_textbox
+    metadata_grid[3,0] = location_textbox
+    metadata_grid[4,0] = z_channel_textbox
+    metadata_grid[5,0] = e_channel_textbox
+    metadata_grid[6,0] = n_channel_textbox
 
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
@@ -246,14 +248,13 @@ def create_jupyter_ui():
     location_grid[3, 1] = output_crs_textbox
 
     # IO PARAMS ACCORDION
-    ioparam_grid = widgets.GridspecLayout(5, 10)
+    ioparam_grid = widgets.GridspecLayout(6, 10)
 
     # Data format (for obspy format to use to read in)
     data_format_dropdown = widgets.Dropdown(
             options=OBSPY_FORMATS,
             value='MSEED',
             description='Data Formats:', layout=widgets.Layout(width='auto'))
-    ioparam_grid[0,0] = data_format_dropdown
 
     hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]',
                                           placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0], 
@@ -261,7 +262,6 @@ def create_jupyter_ui():
     hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1], 
                                           value=get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
     hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width='auto'))
-    ioparam_grid[1,:5] = hvsr_band_hbox
 
 
     peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
@@ -269,16 +269,13 @@ def create_jupyter_ui():
     peak_freq_range_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
                                                 value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
     peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width='auto'))
-    ioparam_grid[2,:5] = peak_freq_range_hbox
 
 
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
-    detrend_type_dropdown = widgets.Dropdown(options=['Spline', 'Polynomial', 'None'],
+    detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
                             description='Detrend Type:',  layout=widgets.Layout(width='auto'))
     detrend_order = widgets.FloatText(description='Order:', tooltip='detrend_order', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_order'), 
                                       value=get_default(sprit_hvsr.fetch_data, 'detrend_order'),layout=widgets.Layout(width='auto'))
-    ioparam_grid[3,:1] = detrend_type_dropdown
-    ioparam_grid[3,1] = detrend_order
 
     # A text to specify the trim directory
     trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
@@ -290,9 +287,78 @@ def create_jupyter_ui():
     trim_directory_upload = widgets.FileUpload(
                             accept='', 
                             multiple=False, layout=widgets.Layout(width='auto'))
-    ioparam_grid[4,:6] = trim_directory
-    ioparam_grid[4, 6:8] = trim_export_dropdown
-    ioparam_grid[4, 8] = trim_directory_upload
+
+    # Processing Settings
+    proc_settings_text = widgets.Text(placeholder='Instrument Settings Filepath', layout=widgets.Layout(width='55%'))
+    proc_settings_read_button = widgets.Button(icon='fa-file-import',button_style='success',
+                                            layout=widgets.Layout(width='4%'))
+    proc_settings_browse_button = widgets.Button(description='Select .proc file',
+                                            layout=widgets.Layout(width='10%'))
+    proc_settings_hbox = widgets.HBox([proc_settings_text, proc_settings_read_button, proc_settings_browse_button])
+    
+    excluded_params = ['hvsr_data', 'params', 'hvsr_results']
+    funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
+                sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr,
+                sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
+                sprit_hvsr.get_report]
+
+    def select_proc(event):
+        try:
+            if event.description == 'Select .proc file':
+                root = tk.Tk()
+                root.wm_attributes('-topmost', True)
+                root.withdraw()
+                proc_files = filedialog.askopenfilenames(defaultextension='.proc', filetypes=[('PROC', '.proc')],
+                                                                    title="Select Processing Settings File")
+                if isinstance(proc_files, tuple):
+                    pass
+                else:
+                    proc_files = tuple(proc_files)
+                root.destroy()
+            else:
+                proc_files = tuple([proc_settings_text.value])
+
+            for i, proc_f in enumerate(proc_files):
+                proc_settings_text.value = pathlib.Path(proc_f).as_posix()
+                proc_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(proc_f).as_posix(), settings_import_type='processing')
+                
+                for func, params in proc_settings.items():
+                    if func in widget_param_dict.keys():
+                        for prm, val in params.items():
+                            if prm in widget_param_dict[func].keys():
+                                print(prm, ':', widget_param_dict[func][prm],' |  ', val)
+                                if val is None or val=='None':
+                                    val='none'
+                                if prm == 'export_format':
+                                    val = val.upper()
+                                if prm == 'smooth':
+                                    if val is True:
+                                        val = 51
+                                if prm == 'resample':
+                                    if val is True:
+                                        val = 1000
+                                if isinstance(widget_param_dict[func][prm], list):
+                                    for i, item in enumerate(widget_param_dict[func][prm]):
+                                        item.value = val[i]
+                                else:
+                                    widget_param_dict[func][prm].value = val
+        except Exception as e:
+            print(e)
+            proc_settings_browse_button.disabled=True
+            proc_settings_browse_button.description='Use Text Field'
+    
+    proc_settings_read_button.on_click(select_proc)
+    proc_settings_browse_button.on_click(select_proc)
+
+    ioparam_grid[0,:] = proc_settings_hbox
+    ioparam_grid[1,0] = data_format_dropdown
+    ioparam_grid[2,:5] = hvsr_band_hbox
+    ioparam_grid[3,:5] = peak_freq_range_hbox
+    ioparam_grid[4,:1] = detrend_type_dropdown
+    ioparam_grid[4,1] = detrend_order
+    ioparam_grid[5,:6] = trim_directory
+    ioparam_grid[5, 6:8] = trim_export_dropdown
+    ioparam_grid[5, 8] = trim_directory_upload
 
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(2, 10)
@@ -479,6 +545,11 @@ def create_jupyter_ui():
             'export_format':data_format_dropdown.value,
             'detrend':detrend_type_dropdown.value,
             'detrend_order':detrend_order.value}
+        if str(fetch_data_kwargs['detrend']).lower() == 'none':
+            fetch_data_kwargs['detrend'] = None
+        
+        if str(fetch_data_kwargs['trim_dir']).lower() == 'none':
+            fetch_data_kwargs['trim_dir'] = None
         return fetch_data_kwargs
 
     def read_data(button):
@@ -561,6 +632,9 @@ def create_jupyter_ui():
             'period_limits':[period_limits_min.value, period_limits_max.value],
             'verbose':verbose_check.value
             }
+
+        if str(ppsd_kwargs['special_handling']).lower() == 'none':
+            ppsd_kwargs['special_handling'] = None        
         return ppsd_kwargs
 
     def get_remove_outlier_curve_kwargs():
@@ -1412,8 +1486,8 @@ def create_jupyter_ui():
     period_smoothing_width = widgets.FloatText(description='Period Smoothing Width', style={'description_width': 'initial'},
                                     placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    special_handling_dropdown = widgets.Dropdown(description='Special Handling', value=None,
-                                                options=[('None', None), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
+    special_handling_dropdown = widgets.Dropdown(description='Special Handling', value='none',
+                                                options=[('None', 'none'), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
                                             style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     #remove_noise call
@@ -1719,8 +1793,8 @@ def create_jupyter_ui():
                                              ('6. Maximum Horizontal Value | H = max(N, E)', 6)],
                                     style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    freq_smoothing = widgets.Dropdown(description='Frequency Smoothing Operations', value='ko',
-                                    options=[('Konno-Ohmachi', 'ko'),
+    freq_smoothing = widgets.Dropdown(description='Frequency Smoothing Operations', value='konno ohmachi',
+                                    options=[('Konno-Ohmachi', 'konno ohmachi'),
                                              ('Constant','constant'),
                                              ('Proportional', 'proportional'),
                                              ('None', None)],
@@ -2003,6 +2077,57 @@ def create_jupyter_ui():
     results_subtabs.set_title(0, "Plot")
     results_subtabs.set_title(1, "Peak Tests")
     results_subtabs.set_title(2, "Peak Table")
+
+    widget_param_dict = {
+        'fetch_data': 
+            {'source': data_source_type,
+            'trim_dir': trim_directory,
+            'export_format': trim_export_dropdown,
+            'detrend': detrend_type_dropdown,
+            'detrend_order': detrend_order,
+            'verbose': verbose_check},
+        'remove_noise': 
+            {
+            'sat_percent': max_saturation_pct,
+            'noise_percent': max_window_pct,
+            'sta': sta,
+            'lta': lta,
+            'stalta_thresh': [stalta_thresh_low, stalta_thresh_hi],
+            'warmup_time': warmup_time,
+            'cooldown_time': cooldown_time,
+            'min_win_size': noisy_window_length,
+            'remove_raw_noise': raw_data_remove_check,
+            'verbose': verbose_check},
+        'generate_ppsds': 
+            {'verbose': verbose_check,
+             'skip_on_gaps':skip_on_gaps, 
+             'db_bins':[db_bins_min, db_bins_max, db_bins_step],
+             'ppsd_length':ppsd_length, 
+             'overlap':overlap_pct, 
+             'special_handling':special_handling_dropdown, 
+             'period_smoothing_width_octaves':period_smoothing_width, 
+             'period_step_octaves':period_step_octave, 
+             'period_limits':[hvsr_band_min_box, hvsr_band_max_box]},
+        'process_hvsr': 
+            {'method': h_combine_meth,
+            'smooth': smooth_hv_curve,
+            'freq_smooth': freq_smoothing,
+            'f_smooth_width': freq_smooth_width,
+            'resample': resample_hv_curve,
+            'verbose': verbose_check},
+        'remove_outlier_curves': 
+            {'rmse_thresh': rmse_thresh,
+            'use_percentile': rmse_pctile_check,
+            'use_hv_curve': use_hv_curve_rmse,
+            'verbose': verbose_check},
+        'check_peaks': 
+            {'hvsr_band': [hvsr_band_min_box, hvsr_band_max_box],
+            'peak_freq_range': [peak_freq_range_min_box, peak_freq_range_max_box],
+            'verbose': verbose_check},
+        'get_report': 
+            {
+            'export_path': export_results_table_filepath,
+            'verbose': verbose_check}}
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it

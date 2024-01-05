@@ -4534,7 +4534,6 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
     if source!='batch':
         input = {'SITENAME': {'stream':input}} #Make same structure as batch
 
-
     for key in input.keys():
         dataIN = input[key]['stream']
         if detrend==False:
@@ -4546,21 +4545,21 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         else:
             data_undetrended = dataIN.copy()
             try:
-                if detrend=='simple':
+                if str(detrend).lower()=='simple':
                     for tr in dataIN:
                         tr.detrend(type=detrend)
-                if detrend=='linear':
+                if str(detrend).lower()=='linear':
                     for tr in dataIN:
                         tr.detrend(type=detrend)
-                if detrend=='constant' or detrend=='demean':
+                if str(detrend).lower()=='constant' or detrend=='demean':
                     for tr in dataIN:
                         tr.detrend(type=detrend)                
-                if detrend=='polynomial':
+                if str(detrend).lower()=='polynomial':
                     for tr in dataIN:
                         tr.detrend(type=detrend, order=detrend_order)   
-                if detrend=='spline':
+                if str(detrend).lower()=='spline':
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+                        tr.detrend(type=detrend, order=int(detrend_order), dspline=1000)       
             except:
                 dataIN = data_undetrended
                 if verbose:
