@@ -3,7 +3,11 @@
 
 import datetime
 import inspect
+import os
 import pathlib
+import tkinter as tk
+from tkinter import filedialog
+
 from zoneinfo import available_timezones
 
 import ipywidgets as widgets
@@ -23,6 +27,7 @@ except: #For local testing
     import sprit_utils
 
 global hvsr_data
+    
 
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
@@ -183,7 +188,7 @@ def create_jupyter_ui():
             description='Data Formats:', layout=widgets.Layout(width='auto'))
     ioparam_grid[0,0] = data_format_dropdown
 
-    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]', 
+    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]',
                                           placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0], 
                                           value=get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
     hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1], 
@@ -262,7 +267,12 @@ def create_jupyter_ui():
                                             value='file',orientation='horizontal', 
                                             style={'description_width': 'initial'},
                                             layout=widgets.Layout(width='20%'))
-
+    def on_ds_change(event):
+        if data_source_type.value == 'file' or data_source_type.value== 'batch':
+            browse_data_button.description = 'Select Files'
+        else:
+            browse_data_button.description = 'Select Folders'
+    data_source_type.observe(on_ds_change)
     # Dropdown labeled "Instrument" with options "Raspberry Shake", "Tromino", "Other"
     instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
                                         style={'description_width': 'initial'},
@@ -286,16 +296,41 @@ def create_jupyter_ui():
                                     style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
 
     # A button next to it labeled "Browse"
-    browse_data_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=True,layout=widgets.Layout(width='10%'))
+    browse_data_button = widgets.Button(description='Select Files', layout=widgets.Layout(width='10%'))
+    def select_datapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes('-topmost', True)
+            root.withdraw()
+            if data_source_type.value=='file' or data_source_type.value=='batch':
+                data_filepath.value = str(filedialog.askopenfilenames(defaultextension='.MSEED', title='Select Data File'))
+            else:
+                data_filepath.value = str(filedialog.askdirectory(mustexist=True, title="Select Data Directory"))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_data_button.disabled=True
+            browse_data_button.description='Use Text Field'
+    browse_data_button.on_click(select_datapath)
 
     # A text box labeled Metadata Filepath
     metadata_filepath = widgets.Text(description='Metadata Filepath:',
                                         style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
 
     # A button next to it labeled "Browse"
-    browse_metadata_button = widgets.FileUpload(accept='', description='Browse',
-                                            multiple=False,layout=widgets.Layout(width='10%'))
+    browse_metadata_button = widgets.Button(description='Select File(s)', layout=widgets.Layout(width='10%'))
+    def select_metapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes('-topmost', True)
+            root.withdraw()
+            metadata_filepath.value = str(filedialog.askopenfilenames(title='Select Metadata File(s)'))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_metadata_button.disabled=True
+            browse_metadata_button.description='Use Text Field'
+    browse_metadata_button.on_click(select_metapath)
 
     # A progress bar
     progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
