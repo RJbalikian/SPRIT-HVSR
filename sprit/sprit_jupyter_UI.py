@@ -49,38 +49,105 @@ def create_jupyter_ui():
     input_accordion = widgets.Accordion()
 
     # Metadata accordion
-    metadata_grid = widgets.GridspecLayout(6, 10)
+    metadata_grid = widgets.GridspecLayout(7, 10)
     network_textbox = widgets.Text(description='Network:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'network'),
                                     value=get_default(sprit_hvsr.input_params, 'network'),
                                     tooltip="input_params(network)")
-    metadata_grid[0,0] = network_textbox
 
     station_textbox = widgets.Text(description='Station:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'station'),
                                     value=get_default(sprit_hvsr.input_params, 'station'))
-    metadata_grid[1,0] = station_textbox
 
     location_textbox = widgets.Text(description='Location:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'loc'),
                                     value=get_default(sprit_hvsr.input_params, 'loc'))
-    metadata_grid[2,0] = location_textbox
 
     z_channel_textbox = widgets.Text(description='Z Channel:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'channels')[0],
                                     value=get_default(sprit_hvsr.input_params, 'channels')[0])
-    metadata_grid[3,0] = z_channel_textbox
 
     e_channel_textbox = widgets.Text(description='E Channel:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'channels')[2],
                                     value=get_default(sprit_hvsr.input_params, 'channels')[2])
-    metadata_grid[4,0] = e_channel_textbox
 
     n_channel_textbox = widgets.Text(description='N Channel:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'channels')[1],
                                     value=get_default(sprit_hvsr.input_params, 'channels')[1])
-    metadata_grid[5,0] = n_channel_textbox
 
+
+    # Instrument Settings
+    inst_settings_text = widgets.Text(placeholder='Instrument Settings Filepath', layout=widgets.Layout(width='55%'))
+    instrument_read_button = widgets.Button(icon='fa-file-import',button_style='success',
+                                            layout=widgets.Layout(width='4%'))
+    instrument_settings_button = widgets.Button(description='Select .inst file',
+                                            layout=widgets.Layout(width='10%'))
+    inst_settings_hbox = widgets.HBox([inst_settings_text,instrument_read_button, instrument_settings_button])
+    def select_inst(event):
+        try:
+            if event.description == 'Select .inst file':
+                root = tk.Tk()
+                root.wm_attributes('-topmost', True)
+                root.withdraw()
+                inst_files = filedialog.askopenfilenames(defaultextension='.inst', filetypes=[('Inst', '.inst')],
+                                                                    title="Select Instrument Settings File")
+                if isinstance(inst_files, tuple):
+                    pass
+                else:
+                    inst_files = tuple(inst_files)
+                root.destroy()
+            else:
+                inst_files = tuple([inst_settings_text.value])
+
+            for i, inst_f in enumerate(inst_files):
+                inst_settings_text.value = pathlib.Path(inst_f).as_posix()
+                inst_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(inst_f).as_posix(), settings_import_type='instrument')
+                
+                # Go through all items and add them
+                if 'instrument' in inst_settings.keys():
+                    if inst_settings['instrument'] not in instrument_dropdown.options:
+                        instrument_dropdown.options.append(inst_settings['instrument'])
+                    instrument_dropdown.value = inst_settings['instrument']
+                
+                if 'net' in inst_settings.keys():
+                    network_textbox.value = inst_settings['net']
+
+                if 'sta' in inst_settings.keys():
+                    station_textbox.value = inst_settings['sta']
+
+                if 'loc' in inst_settings.keys():
+                    location_textbox.value = inst_settings['loc']
+
+                if 'cha' in inst_settings.keys():
+                    for c in inst_settings['cha']:
+                        if c.lower()[2]=='z':
+                            z_channel_textbox.value = c
+                        if c.lower()[2]=='e':
+                            e_channel_textbox.value = c
+                        if c.lower()[2] =='n':
+                            n_channel_textbox.value = c
+                
+                if 'metapath' in inst_settings.keys():
+                    metadata_filepath.value = inst_settings['metapath']
+
+                if 'hvsr_band' in inst_settings.keys():
+                    hvsr_band_min_box.value = inst_settings['hvsr_band'][0]
+                    hvsr_band_max_box.value = inst_settings['hvsr_band'][1]
+
+        except Exception as e:
+            print(e)
+            instrument_settings_button.disabled=True
+            instrument_settings_button.description='Use Text Field'
+    instrument_settings_button.on_click(select_inst)
+    instrument_read_button.on_click(select_inst)
+
+    metadata_grid[0,0] = network_textbox
+    metadata_grid[1,0] = station_textbox
+    metadata_grid[2,0] = location_textbox
+    metadata_grid[3,0] = z_channel_textbox
+    metadata_grid[4,0] = e_channel_textbox
+    metadata_grid[5,0] = n_channel_textbox
+    metadata_grid[6,:] = inst_settings_hbox
 
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
@@ -88,14 +155,12 @@ def create_jupyter_ui():
     acquisition_date_picker = widgets.DatePicker(description='Acq.Date:',
                                             placeholder=datetime.datetime.today().date(),
                                             value=datetime.datetime.today().date())
-    instrument_grid[0,0] = acquisition_date_picker
 
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.IntText(description='DOY',
                                                 placeholder=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 value=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 layout=widgets.Layout(width='auto'))
-    instrument_grid[0,1] = acquisition_doy
 
     def on_acq_date_change(change):
         acquisition_doy.value = acquisition_date_picker.value.timetuple().tm_yday
@@ -113,14 +178,12 @@ def create_jupyter_ui():
                                             placeholder=datetime.time(0,0,0),
                                             value=datetime.time(0,0,0),
                                             layout=widgets.Layout(width='auto'))
-    instrument_grid[1,0] = start_time_picker
 
     # Time selector (hour and minute) labelled "End Time". Same as Start Time otherwise.
     end_time_picker = widgets.TimePicker(description='End Time:',
                                         placeholder=datetime.time(23,59),
                                         value=datetime.time(23,59),
                                         layout=widgets.Layout(width='auto'))
-    instrument_grid[2,0] = end_time_picker
 
     tzlist = list(available_timezones())
     tzlist.sort()
@@ -131,8 +194,12 @@ def create_jupyter_ui():
     # A dropdown list with all the items from zoneinfo.available_timezones(), default 'UTC'
     time_zone_dropdown = widgets.Dropdown(options=tzlist,value=get_default(sprit_hvsr.input_params, 'tzone'),
                                             description='Time Zone:',layout=widgets.Layout(width='fill'))
-    instrument_grid[3,0] = time_zone_dropdown
 
+    instrument_grid[0,0] = acquisition_date_picker
+    instrument_grid[0,1] = acquisition_doy
+    instrument_grid[1,0] = start_time_picker
+    instrument_grid[2,0] = end_time_picker
+    instrument_grid[3,0] = time_zone_dropdown
 
     # LOCATION ACCORDION
     location_grid = widgets.GridspecLayout(4, 10)
@@ -277,10 +344,6 @@ def create_jupyter_ui():
     instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
                                         style={'description_width': 'initial'},
                                         description='Instrument:',layout=widgets.Layout(width='20%'))
-
-    # Instrument Settings
-    instrument_settings_button = widgets.FileUpload(accept='.inst', description='Instrument Settings',
-                                            multiple=False,layout=widgets.Layout(width='10%'))
 
     # Processing Settings
     processing_settings_button = widgets.FileUpload(accept='.proc', description='Processing Settings',
