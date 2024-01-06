@@ -6547,69 +6547,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
     
     hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     
-    return hvsr_out
-
-    &#34;&#34;&#34; OLD Code
-    ppsds = hvsr_data[&#39;ppsds&#39;]
-    newPPsds = {}
-    stds = {}
-    psds_to_rid = []
-
-    for k in ppsds:
-        #Get the average ppsd curve value
-        psdVals = np.array(ppsds[k][&#39;psd_values&#39;])
-        meanArr = np.nanmean(psdVals, axis=1)
-        medArr = np.nanmedian(psdVals, axis=1)
-        
-        newPPsds[k] = []
-        totMean = np.nanmean(meanArr)
-        totMed = np.nanmedian(medArr)
-
-        stds[k] = np.std(meanArr)
-
-        for i, m in enumerate(meanArr):
-            if m &gt; totMean + outlier_std*stds[k] or m &lt; totMean - outlier_std*stds[k]:
-                psds_to_rid.append(i)
-
-        curr_times_mpl = []
-        for i, t in enumerate(ppsds[k][&#39;current_times_used&#39;]):
-            curr_times_mpl.append(t.matplotlib_date)
-
-        #Get ppsd length in seconds in matplotlib format
-        ppsd_length_mpl = ppsd_length/86400
-
-        ##UPDATE THIS NOT TO USE xWindows_out (calculate from mask)
-        #Check if any times fall in excluded zone
-        for i, t in enumerate(curr_times_mpl):
-            nextT = t + ppsd_length_mpl
-            for w, win in enumerate(hvsr_data[&#39;xwindows_out&#39;]):
-                if t &gt; win[0] and t &lt; win[1]:
-                    psds_to_rid.append(i)
-                elif nextT &gt; win[0] and nextT &lt; win[1]:
-                    psds_to_rid.append(i)
-    
-        #Use dataframe
-        hvsrDF = hvsr_data[&#39;hvsr_df&#39;].copy()
-        psdVals = hvsrDF[&#39;psd_values_&#39;+k]
-        hvsrDF[k+&#39;_CurveMedian&#39;] = psdVals.apply(np.nanmedian)
-        hvsrDF[k+&#39;_CurveMean&#39;] = psdVals.apply(np.nanmean)
-
-        totMean = np.nanmean(hvsrDF[k+&#39;_CurveMean&#39;])
-        stds[k] = np.nanstd(hvsrDF[k+&#39;_CurveMean&#39;])
-        
-        hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
-        #meanArr = hvsrDF[k+&#39;_CurveMean&#39;].loc[hvsrDF[&#39;Use&#39;]]
-        threshVal = totMean + outlier_std * stds[k]
-        hvsrDF[&#39;Use&#39;] = hvsrDF[k+&#39;_CurveMean&#39;][hvsrDF[&#39;Use&#39;]].lt(threshVal)
-        hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
-
-    psds_to_rid = np.unique(psds_to_rid)
-
-    for k in hvsr_data[&#39;ppsds&#39;]:
-        for i, r in enumerate(psds_to_rid):
-            index = int(r-i)
-            hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;psd_values&#39;], index, axis=0)
-            hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;] = np.delete(hvsr_data[&#39;ppsds&#39;][k][&#39;current_times_used&#39;], index, axis=0)&#34;&#34;&#34;</code></pre>
+    return hvsr_out</code></pre>
 </details>
 </dd>
 <dt id="sprit.run"><code class="name flex">
