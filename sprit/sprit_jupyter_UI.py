@@ -2080,7 +2080,7 @@ def create_jupyter_ui():
     export_results_table_browse_button.on_click(export_results_table)
     export_results_table_read_button.on_click(export_results_table)
 
-    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
+    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
     global results_tab
     results_subtabs = widgets.Tab([results_graph_widget, printed_results_textArea, results_table_vbox])
