@@ -4565,7 +4565,6 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
     if source!=&#39;batch&#39;:
         input = {&#39;SITENAME&#39;: {&#39;stream&#39;:input}} #Make same structure as batch
 
-
     for key in input.keys():
         dataIN = input[key][&#39;stream&#39;]
         if detrend==False:
@@ -4577,21 +4576,21 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         else:
             data_undetrended = dataIN.copy()
             try:
-                if detrend==&#39;simple&#39;:
+                if str(detrend).lower()==&#39;simple&#39;:
                     for tr in dataIN:
                         tr.detrend(type=detrend)
-                if detrend==&#39;linear&#39;:
+                if str(detrend).lower()==&#39;linear&#39;:
                     for tr in dataIN:
                         tr.detrend(type=detrend)
-                if detrend==&#39;constant&#39; or detrend==&#39;demean&#39;:
+                if str(detrend).lower()==&#39;constant&#39; or detrend==&#39;demean&#39;:
                     for tr in dataIN:
                         tr.detrend(type=detrend)                
-                if detrend==&#39;polynomial&#39;:
+                if str(detrend).lower()==&#39;polynomial&#39;:
                     for tr in dataIN:
                         tr.detrend(type=detrend, order=detrend_order)   
-                if detrend==&#39;spline&#39;:
+                if str(detrend).lower()==&#39;spline&#39;:
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=detrend_order, dspline=1000)       
+                        tr.detrend(type=detrend, order=int(detrend_order), dspline=1000)       
             except:
                 dataIN = data_undetrended
                 if verbose:
@@ -9311,7 +9310,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-06', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>

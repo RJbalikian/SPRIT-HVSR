@@ -946,38 +946,107 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     input_accordion = widgets.Accordion()
 
     # Metadata accordion
-    metadata_grid = widgets.GridspecLayout(6, 10)
+    metadata_grid = widgets.GridspecLayout(7, 10)
     network_textbox = widgets.Text(description=&#39;Network:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;network&#39;),
                                     value=get_default(sprit_hvsr.input_params, &#39;network&#39;),
                                     tooltip=&#34;input_params(network)&#34;)
-    metadata_grid[0,0] = network_textbox
 
     station_textbox = widgets.Text(description=&#39;Station:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;station&#39;),
                                     value=get_default(sprit_hvsr.input_params, &#39;station&#39;))
-    metadata_grid[1,0] = station_textbox
 
     location_textbox = widgets.Text(description=&#39;Location:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;loc&#39;),
                                     value=get_default(sprit_hvsr.input_params, &#39;loc&#39;))
-    metadata_grid[2,0] = location_textbox
 
     z_channel_textbox = widgets.Text(description=&#39;Z Channel:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[0],
                                     value=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[0])
-    metadata_grid[3,0] = z_channel_textbox
 
     e_channel_textbox = widgets.Text(description=&#39;E Channel:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[2],
                                     value=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[2])
-    metadata_grid[4,0] = e_channel_textbox
 
     n_channel_textbox = widgets.Text(description=&#39;N Channel:&#39;,
                                     placeholder=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[1],
                                     value=get_default(sprit_hvsr.input_params, &#39;channels&#39;)[1])
-    metadata_grid[5,0] = n_channel_textbox
 
+
+    # Instrument Settings
+    inst_settings_text = widgets.Text(placeholder=&#39;Instrument Settings Filepath&#39;, layout=widgets.Layout(width=&#39;55%&#39;))
+    instrument_read_button = widgets.Button(icon=&#39;fa-file-import&#39;,button_style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;4%&#39;))
+    instrument_settings_button = widgets.Button(description=&#39;Select .inst file&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    inst_settings_hbox = widgets.HBox([inst_settings_text,instrument_read_button, instrument_settings_button])
+    
+    def select_inst(event):
+        try:
+            if event.description == &#39;Select .inst file&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                inst_files = filedialog.askopenfilenames(defaultextension=&#39;.inst&#39;, filetypes=[(&#39;Inst&#39;, &#39;.inst&#39;)],
+                                                                    title=&#34;Select Instrument Settings File&#34;)
+                if isinstance(inst_files, tuple):
+                    pass
+                else:
+                    inst_files = tuple(inst_files)
+                root.destroy()
+            else:
+                inst_files = tuple([inst_settings_text.value])
+
+            for i, inst_f in enumerate(inst_files):
+                inst_settings_text.value = pathlib.Path(inst_f).as_posix()
+                inst_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(inst_f).as_posix(), settings_import_type=&#39;instrument&#39;)
+                
+                # Go through all items and add them
+                if &#39;instrument&#39; in inst_settings.keys():
+                    if inst_settings[&#39;instrument&#39;] not in instrument_dropdown.options:
+                        instrument_dropdown.options.append(inst_settings[&#39;instrument&#39;])
+                    instrument_dropdown.value = inst_settings[&#39;instrument&#39;]
+                
+                if &#39;net&#39; in inst_settings.keys():
+                    network_textbox.value = inst_settings[&#39;net&#39;]
+
+                if &#39;sta&#39; in inst_settings.keys():
+                    station_textbox.value = inst_settings[&#39;sta&#39;]
+
+                if &#39;loc&#39; in inst_settings.keys():
+                    location_textbox.value = inst_settings[&#39;loc&#39;]
+
+                if &#39;cha&#39; in inst_settings.keys():
+                    for c in inst_settings[&#39;cha&#39;]:
+                        if c.lower()[2]==&#39;z&#39;:
+                            z_channel_textbox.value = c
+                        if c.lower()[2]==&#39;e&#39;:
+                            e_channel_textbox.value = c
+                        if c.lower()[2] ==&#39;n&#39;:
+                            n_channel_textbox.value = c
+                
+                if &#39;metapath&#39; in inst_settings.keys():
+                    metadata_filepath.value = inst_settings[&#39;metapath&#39;]
+
+                if &#39;hvsr_band&#39; in inst_settings.keys():
+                    hvsr_band_min_box.value = inst_settings[&#39;hvsr_band&#39;][0]
+                    hvsr_band_max_box.value = inst_settings[&#39;hvsr_band&#39;][1]
+
+        except Exception as e:
+            print(e)
+            instrument_settings_button.disabled=True
+            instrument_settings_button.description=&#39;Use Text Field&#39;
+    
+    instrument_settings_button.on_click(select_inst)
+    instrument_read_button.on_click(select_inst)
+
+    metadata_grid[0,:] = inst_settings_hbox
+    metadata_grid[1,0] = network_textbox
+    metadata_grid[2,0] = station_textbox
+    metadata_grid[3,0] = location_textbox
+    metadata_grid[4,0] = z_channel_textbox
+    metadata_grid[5,0] = e_channel_textbox
+    metadata_grid[6,0] = n_channel_textbox
 
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
@@ -985,14 +1054,12 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     acquisition_date_picker = widgets.DatePicker(description=&#39;Acq.Date:&#39;,
                                             placeholder=datetime.datetime.today().date(),
                                             value=datetime.datetime.today().date())
-    instrument_grid[0,0] = acquisition_date_picker
 
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.IntText(description=&#39;DOY&#39;,
                                                 placeholder=f&#34;{acquisition_date_picker.value.timetuple().tm_yday}&#34;,
                                                 value=f&#34;{acquisition_date_picker.value.timetuple().tm_yday}&#34;,
                                                 layout=widgets.Layout(width=&#39;auto&#39;))
-    instrument_grid[0,1] = acquisition_doy
 
     def on_acq_date_change(change):
         acquisition_doy.value = acquisition_date_picker.value.timetuple().tm_yday
@@ -1006,18 +1073,28 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     acquisition_doy.observe(on_doy_change)
 
     # Time selector (hour and minute) labelled &#34;Start Time&#34;.
-    start_time_picker = widgets.TimePicker(description=&#39;Start Time:&#39;,
+    try:
+        start_time_picker = widgets.TimePicker(description=&#39;Start Time:&#39;,
                                             placeholder=datetime.time(0,0,0),
                                             value=datetime.time(0,0,0),
                                             layout=widgets.Layout(width=&#39;auto&#39;))
-    instrument_grid[1,0] = start_time_picker
+    except Exception as e:
+        start_time_picker = widgets.Text(description=&#39;Start Time:&#39;,
+                                        placeholder=&#39;00:00&#39;,
+                                        value=&#39;00:00&#39;,
+                                        layout=widgets.Layout(width=&#39;auto&#39;))
 
     # Time selector (hour and minute) labelled &#34;End Time&#34;. Same as Start Time otherwise.
-    end_time_picker = widgets.TimePicker(description=&#39;End Time:&#39;,
+    try:
+        end_time_picker = widgets.TimePicker(description=&#39;End Time:&#39;,
                                         placeholder=datetime.time(23,59),
                                         value=datetime.time(23,59),
                                         layout=widgets.Layout(width=&#39;auto&#39;))
-    instrument_grid[2,0] = end_time_picker
+    except Exception as e:
+        end_time_picker = widgets.Text(description=&#39;End Time:&#39;,
+                                        placeholder=&#39;23:59:59.999999&#39;,
+                                        value=&#39;23:59:59.999999&#39;,
+                                        layout=widgets.Layout(width=&#39;auto&#39;))
 
     tzlist = list(available_timezones())
     tzlist.sort()
@@ -1028,8 +1105,12 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     # A dropdown list with all the items from zoneinfo.available_timezones(), default &#39;UTC&#39;
     time_zone_dropdown = widgets.Dropdown(options=tzlist,value=get_default(sprit_hvsr.input_params, &#39;tzone&#39;),
                                             description=&#39;Time Zone:&#39;,layout=widgets.Layout(width=&#39;fill&#39;))
-    instrument_grid[3,0] = time_zone_dropdown
 
+    instrument_grid[0,0] = acquisition_date_picker
+    instrument_grid[0,1] = acquisition_doy
+    instrument_grid[1,0] = start_time_picker
+    instrument_grid[2,0] = end_time_picker
+    instrument_grid[3,0] = time_zone_dropdown
 
     # LOCATION ACCORDION
     location_grid = widgets.GridspecLayout(4, 10)
@@ -1076,39 +1157,35 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     location_grid[3, 1] = output_crs_textbox
 
     # IO PARAMS ACCORDION
-    ioparam_grid = widgets.GridspecLayout(5, 10)
+    ioparam_grid = widgets.GridspecLayout(6, 10)
 
     # Data format (for obspy format to use to read in)
     data_format_dropdown = widgets.Dropdown(
             options=OBSPY_FORMATS,
             value=&#39;MSEED&#39;,
             description=&#39;Data Formats:&#39;, layout=widgets.Layout(width=&#39;auto&#39;))
-    ioparam_grid[0,0] = data_format_dropdown
 
-    hvsr_band_min_box = widgets.FloatText(description=&#39;HVSR Band [Hz]&#39;, 
-                                          placeholder=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[0], 
+    hvsr_band_min_box = widgets.FloatText(description=&#39;HVSR Band [Hz]&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                          placeholder=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[0],
                                           value=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[0])
-    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[1], 
+    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[1],
                                           value=get_default(sprit_hvsr.input_params, &#39;hvsr_band&#39;)[1])
     hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width=&#39;auto&#39;))
-    ioparam_grid[1,:5] = hvsr_band_hbox
 
 
     peak_freq_range_min_box = widgets.FloatText(description=&#39;Peak Range [Hz]&#39;,placeholder=get_default(sprit_hvsr.input_params, &#39;peak_freq_range&#39;)[0], 
-                                                value=get_default(sprit_hvsr.input_params, &#39;peak_freq_range&#39;)[0],layout=widgets.Layout(width=&#39;auto&#39;))
+                                                value=get_default(sprit_hvsr.input_params, &#39;peak_freq_range&#39;)[0],
+                                                style={&#39;description_width&#39;: &#39;initial&#39;}, layout=widgets.Layout(width=&#39;auto&#39;))
     peak_freq_range_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, &#39;peak_freq_range&#39;)[1], 
                                                 value=get_default(sprit_hvsr.input_params, &#39;peak_freq_range&#39;)[1],layout=widgets.Layout(width=&#39;auto&#39;))
     peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width=&#39;auto&#39;))
-    ioparam_grid[2,:5] = peak_freq_range_hbox
 
 
     # A dropdown labeled &#34;Detrend type&#34; with &#34;Spline&#34;, &#34;Polynomial&#34;, or &#34;None&#34;
-    detrend_type_dropdown = widgets.Dropdown(options=[&#39;Spline&#39;, &#39;Polynomial&#39;, &#39;None&#39;],
+    detrend_type_dropdown = widgets.Dropdown(options=[(&#39;Spline&#39;, &#39;spline&#39;), (&#39;Polynomial&#39;, &#39;polynomial&#39;), (&#39;None&#39;, &#39;none&#39;)],
                             description=&#39;Detrend Type:&#39;,  layout=widgets.Layout(width=&#39;auto&#39;))
     detrend_order = widgets.FloatText(description=&#39;Order:&#39;, tooltip=&#39;detrend_order&#39;, placeholder=get_default(sprit_hvsr.fetch_data, &#39;detrend_order&#39;), 
                                       value=get_default(sprit_hvsr.fetch_data, &#39;detrend_order&#39;),layout=widgets.Layout(width=&#39;auto&#39;))
-    ioparam_grid[3,:1] = detrend_type_dropdown
-    ioparam_grid[3,1] = detrend_order
 
     # A text to specify the trim directory
     trim_directory = widgets.Text(description=&#39;Trim Dir.:&#39;, value=&#34;None&#34;,#pathlib.Path().home().as_posix(),
@@ -1120,9 +1197,78 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     trim_directory_upload = widgets.FileUpload(
                             accept=&#39;&#39;, 
                             multiple=False, layout=widgets.Layout(width=&#39;auto&#39;))
-    ioparam_grid[4,:6] = trim_directory
-    ioparam_grid[4, 6:8] = trim_export_dropdown
-    ioparam_grid[4, 8] = trim_directory_upload
+
+    # Processing Settings
+    proc_settings_text = widgets.Text(placeholder=&#39;Instrument Settings Filepath&#39;, layout=widgets.Layout(width=&#39;55%&#39;))
+    proc_settings_read_button = widgets.Button(icon=&#39;fa-file-import&#39;,button_style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;4%&#39;))
+    proc_settings_browse_button = widgets.Button(description=&#39;Select .proc file&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    proc_settings_hbox = widgets.HBox([proc_settings_text, proc_settings_read_button, proc_settings_browse_button])
+    
+    excluded_params = [&#39;hvsr_data&#39;, &#39;params&#39;, &#39;hvsr_results&#39;]
+    funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
+                sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr,
+                sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
+                sprit_hvsr.get_report]
+
+    def select_proc(event):
+        try:
+            if event.description == &#39;Select .proc file&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                proc_files = filedialog.askopenfilenames(defaultextension=&#39;.proc&#39;, filetypes=[(&#39;PROC&#39;, &#39;.proc&#39;)],
+                                                                    title=&#34;Select Processing Settings File&#34;)
+                if isinstance(proc_files, tuple):
+                    pass
+                else:
+                    proc_files = tuple(proc_files)
+                root.destroy()
+            else:
+                proc_files = tuple([proc_settings_text.value])
+
+            for i, proc_f in enumerate(proc_files):
+                proc_settings_text.value = pathlib.Path(proc_f).as_posix()
+                proc_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(proc_f).as_posix(), settings_import_type=&#39;processing&#39;)
+                
+                for func, params in proc_settings.items():
+                    if func in widget_param_dict.keys():
+                        for prm, val in params.items():
+                            if prm in widget_param_dict[func].keys():
+                                print(prm, &#39;:&#39;, widget_param_dict[func][prm],&#39; |  &#39;, val)
+                                if val is None or val==&#39;None&#39;:
+                                    val=&#39;none&#39;
+                                if prm == &#39;export_format&#39;:
+                                    val = val.upper()
+                                if prm == &#39;smooth&#39;:
+                                    if val is True:
+                                        val = 51
+                                if prm == &#39;resample&#39;:
+                                    if val is True:
+                                        val = 1000
+                                if isinstance(widget_param_dict[func][prm], list):
+                                    for i, item in enumerate(widget_param_dict[func][prm]):
+                                        item.value = val[i]
+                                else:
+                                    widget_param_dict[func][prm].value = val
+        except Exception as e:
+            print(e)
+            proc_settings_browse_button.disabled=True
+            proc_settings_browse_button.description=&#39;Use Text Field&#39;
+    
+    proc_settings_read_button.on_click(select_proc)
+    proc_settings_browse_button.on_click(select_proc)
+
+    ioparam_grid[0,:] = proc_settings_hbox
+    ioparam_grid[1,0] = data_format_dropdown
+    ioparam_grid[2,:5] = hvsr_band_hbox
+    ioparam_grid[3,:5] = peak_freq_range_hbox
+    ioparam_grid[4,:1] = detrend_type_dropdown
+    ioparam_grid[4,1] = detrend_order
+    ioparam_grid[5,:6] = trim_directory
+    ioparam_grid[5, 6:8] = trim_export_dropdown
+    ioparam_grid[5, 8] = trim_directory_upload
 
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(2, 10)
@@ -1164,11 +1310,20 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                             value=&#39;file&#39;,orientation=&#39;horizontal&#39;, 
                                             style={&#39;description_width&#39;: &#39;initial&#39;},
                                             layout=widgets.Layout(width=&#39;20%&#39;))
-
+    def on_ds_change(event):
+        if data_source_type.value == &#39;file&#39; or data_source_type.value== &#39;batch&#39;:
+            browse_data_button.description = &#39;Select Files&#39;
+        else:
+            browse_data_button.description = &#39;Select Folders&#39;
+    data_source_type.observe(on_ds_change)
     # Dropdown labeled &#34;Instrument&#34; with options &#34;Raspberry Shake&#34;, &#34;Tromino&#34;, &#34;Other&#34;
     instrument_dropdown = widgets.Dropdown(options=[&#39;Raspberry Shake&#39;, &#39;Tromino&#39;, &#39;Other&#39;],
                                         style={&#39;description_width&#39;: &#39;initial&#39;},
                                         description=&#39;Instrument:&#39;,layout=widgets.Layout(width=&#39;20%&#39;))
+
+    # Processing Settings
+    processing_settings_button = widgets.FileUpload(accept=&#39;.proc&#39;, description=&#39;Processing Settings&#39;,
+                                            multiple=False,layout=widgets.Layout(width=&#39;10%&#39;))
 
     # Whether to print to terminal
     verbose_check = widgets.Checkbox(description=&#39;Verbose&#39;, value=False, disabled=False, indent=False,
@@ -1180,16 +1335,41 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                     style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;70%&#39;))
 
     # A button next to it labeled &#34;Browse&#34;
-    browse_data_button = widgets.FileUpload(accept=&#39;&#39;, description=&#39;Browse&#39;,
-                                            multiple=True,layout=widgets.Layout(width=&#39;10%&#39;))
+    browse_data_button = widgets.Button(description=&#39;Select Files&#39;, layout=widgets.Layout(width=&#39;10%&#39;))
+    def select_datapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            if data_source_type.value==&#39;file&#39; or data_source_type.value==&#39;batch&#39;:
+                data_filepath.value = str(filedialog.askopenfilenames(defaultextension=&#39;.MSEED&#39;, title=&#39;Select Data File&#39;))
+            else:
+                data_filepath.value = str(filedialog.askdirectory(mustexist=True, title=&#34;Select Data Directory&#34;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_data_button.disabled=True
+            browse_data_button.description=&#39;Use Text Field&#39;
+    browse_data_button.on_click(select_datapath)
 
     # A text box labeled Metadata Filepath
     metadata_filepath = widgets.Text(description=&#39;Metadata Filepath:&#39;,
                                         style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;70%&#39;))
 
     # A button next to it labeled &#34;Browse&#34;
-    browse_metadata_button = widgets.FileUpload(accept=&#39;&#39;, description=&#39;Browse&#39;,
-                                            multiple=False,layout=widgets.Layout(width=&#39;10%&#39;))
+    browse_metadata_button = widgets.Button(description=&#39;Select File(s)&#39;, layout=widgets.Layout(width=&#39;10%&#39;))
+    def select_metapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            metadata_filepath.value = str(filedialog.askopenfilenames(title=&#39;Select Metadata File(s)&#39;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_metadata_button.disabled=True
+            browse_metadata_button.description=&#39;Use Text Field&#39;
+    browse_metadata_button.on_click(select_metapath)
 
     # A progress bar
     progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
@@ -1275,6 +1455,11 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
             &#39;export_format&#39;:data_format_dropdown.value,
             &#39;detrend&#39;:detrend_type_dropdown.value,
             &#39;detrend_order&#39;:detrend_order.value}
+        if str(fetch_data_kwargs[&#39;detrend&#39;]).lower() == &#39;none&#39;:
+            fetch_data_kwargs[&#39;detrend&#39;] = None
+        
+        if str(fetch_data_kwargs[&#39;trim_dir&#39;]).lower() == &#39;none&#39;:
+            fetch_data_kwargs[&#39;trim_dir&#39;] = None
         return fetch_data_kwargs
 
     def read_data(button):
@@ -1357,6 +1542,9 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
             &#39;period_limits&#39;:[period_limits_min.value, period_limits_max.value],
             &#39;verbose&#39;:verbose_check.value
             }
+
+        if str(ppsd_kwargs[&#39;special_handling&#39;]).lower() == &#39;none&#39;:
+            ppsd_kwargs[&#39;special_handling&#39;] = None        
         return ppsd_kwargs
 
     def get_remove_outlier_curve_kwargs():
@@ -2074,7 +2262,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         preview_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=False,
                                   title=hvsr_data[&#39;site&#39;])
 
-    #STA/LTA Antitrigger
+    # REMOVE NOISE SUBTAB
+    # STA/LTA Antitrigger
     stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description=&#39;STA/LTA Antitrigger&#39;)
     sta = widgets.FloatText(description=&#39;STA [s]&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=5, value=5,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
     lta = widgets.FloatText(description=&#39;LTA [s]&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=30, value=30,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
@@ -2129,14 +2318,12 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         remove_noise_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + rn_text + &#39;&lt;/p&gt;&#39;
     update_remove_noise_call()
 
-
     #Update noise windows
-    update_noise_windows_button = widgets.Button(description=&#39;Update Noise Windows&#39;,button_style=&#39;info&#39;,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    update_noise_windows_button = widgets.Button(description=&#39;Update Noise Windows&#39;,button_style=&#39;info&#39;,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=True)
 
     preview_graph_widget = widgets.Output()
     #progress bar (same as above)
     preview_progress_hbox = widgets.HBox(children=[progress_bar, update_noise_windows_button, process_hvsr_button])
-
 
     # Add it all in to the tab
     stalta_hbox = widgets.HBox([stalta_check, sta, lta, stalta_thresh_low, stalta_thresh_hi])
@@ -2169,8 +2356,6 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         display(preview_fig)
 
     # SETTINGS TAB
-    ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    hvsr_settings_tab = widgets.GridspecLayout(9, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
 
@@ -2199,8 +2384,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                     placeholder=1, value=1, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
     
     period_limit_label = widgets.Label(value=&#39;Period Limits:&#39;)
-    minPLim = round(1/(hvsr_band_max_box.value),2)
-    maxPLim = round(1/(hvsr_band_min_box.value),2)
+    minPLim = round(1/(hvsr_band_max_box.value), 3)
+    maxPLim = round(1/(hvsr_band_min_box.value), 3)
     period_limits_min = widgets.FloatText(description=&#39;Min. Period Limit&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
                                     placeholder=minPLim, value=minPLim, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
     period_limits_max = widgets.FloatText(description=&#39;Max. Period Limit&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
@@ -2208,8 +2393,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     period_smoothing_width = widgets.FloatText(description=&#39;Period Smoothing Width&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
                                     placeholder=1, value=1, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
 
-    special_handling_dropdown = widgets.Dropdown(description=&#39;Special Handling&#39;, value=None,
-                                                options=[(&#39;None&#39;, None), (&#39;Ringlaser&#39;, &#39;ringlaser&#39;), (&#39;Hydrophone&#39;, &#39;hydrophone&#39;)],
+    special_handling_dropdown = widgets.Dropdown(description=&#39;Special Handling&#39;, value=&#39;none&#39;,
+                                                options=[(&#39;None&#39;, &#39;none&#39;), (&#39;Ringlaser&#39;, &#39;ringlaser&#39;), (&#39;Hydrophone&#39;, &#39;hydrophone&#39;)],
                                             style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
 
     #remove_noise call
@@ -2236,32 +2421,21 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         generate_ppsd_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + gppsd_text + &#39;&lt;/p&gt;&#39;
     update_generate_ppsd_call()
 
-    # Set up grid for ppsd_settings subtab
-    ppsd_settings_tab[0, 0:5] = ppsd_length_label
-    ppsd_settings_tab[0, 5:8] = ppsd_length
+    ppsd_length_hbox = widgets.HBox([ppsd_length_label, ppsd_length])
+    overlap_pct_hbox = widgets.HBox([overlap_pct_label, overlap_pct])
+    pstep_hbox = widgets.HBox([period_step_label, period_step_octave])
+    skipgaps_hbox = widgets.HBox([skip_on_gaps_label, skip_on_gaps])
+    db_bins_hbox = widgets.HBox([db_step_label, db_bins_min, db_bins_max, db_bins_step])
+    plim_hbox = widgets.HBox([period_limit_label, period_limits_min, period_limits_max, period_smoothing_width])
 
-    ppsd_settings_tab[1, 0:5] = overlap_pct_label
-    ppsd_settings_tab[1, 5:8] = overlap_pct
-
-    ppsd_settings_tab[2, 0:5] = period_step_label
-    ppsd_settings_tab[2, 5:8] = period_step_octave
-
-    ppsd_settings_tab[3, 0:5] = skip_on_gaps_label
-    ppsd_settings_tab[3, 5:8] = skip_on_gaps
-
-    ppsd_settings_tab[4, 0:5] = db_step_label
-    ppsd_settings_tab[4, 5:7] = db_bins_min
-    ppsd_settings_tab[4, 7:10] = db_bins_max
-    ppsd_settings_tab[4, 10:12] = db_bins_step
-
-    ppsd_settings_tab[5, 0:5] = period_limit_label
-    ppsd_settings_tab[5, 5:8] = period_limits_min
-    ppsd_settings_tab[5, 8:11] = period_limits_max
-    ppsd_settings_tab[5, 11:] = period_smoothing_width
-
-    ppsd_settings_tab[6, 0:8] = special_handling_dropdown
-
-    ppsd_settings_tab[7:9, :] = generate_ppsd_call_hbox
+    ppsd_settings_tab = widgets.VBox([ppsd_length_hbox,
+                                      overlap_pct_hbox,
+                                      pstep_hbox,
+                                      skipgaps_hbox,
+                                      db_bins_hbox,
+                                      plim_hbox,
+                                      special_handling_dropdown,
+                                      generate_ppsd_call_hbox])
 
     # OUTLIER SETTINGS SUBTAB
     rmse_pctile_check = widgets.Checkbox(description=&#39;Using percentile&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), style={&#39;description_width&#39;: &#39;initial&#39;}, value=True)
@@ -2271,7 +2445,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 
     outlier_threshbox_hbox = widgets.HBox(children=[rmse_thresh, rmse_pctile_check])
     outlier_params_vbox = widgets.VBox(children=[outlier_threshbox_hbox, use_hv_curve_rmse])
-    #outFigInit = go.Figure()
+
     global outlier_fig
     outlier_fig = go.FigureWidget()
     outlier_graph_widget = widgets.Output()
@@ -2515,8 +2689,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                              (&#39;6. Maximum Horizontal Value | H = max(N, E)&#39;, 6)],
                                     style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
 
-    freq_smoothing = widgets.Dropdown(description=&#39;Frequency Smoothing Operations&#39;, value=&#39;ko&#39;,
-                                    options=[(&#39;Konno-Ohmachi&#39;, &#39;ko&#39;),
+    freq_smoothing = widgets.Dropdown(description=&#39;Frequency Smoothing Operations&#39;, value=&#39;konno ohmachi&#39;,
+                                    options=[(&#39;Konno-Ohmachi&#39;, &#39;konno ohmachi&#39;),
                                              (&#39;Constant&#39;,&#39;constant&#39;),
                                              (&#39;Proportional&#39;, &#39;proportional&#39;),
                                              (&#39;None&#39;, None)],
@@ -2576,27 +2750,20 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         check_peaks_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + cp_text + &#39;&lt;/p&gt;&#39;
     update_check_peaks_call()
 
-    # Set up grid for ppsd_settings subtab
-    hvsr_settings_tab[0, 1:] = h_combine_meth
-
-    hvsr_settings_tab[1, 1:12] = freq_smoothing
-    hvsr_settings_tab[1, 12:17] = freq_smooth_width
-
-    hvsr_settings_tab[2, 0] = resample_hv_curve_bool
-    hvsr_settings_tab[2, 1:6] = resample_hv_curve
-
-    hvsr_settings_tab[3, 0] = smooth_hv_curve_bool
-    hvsr_settings_tab[3, 1:6] = smooth_hv_curve
-
-    hvsr_settings_tab[4, 1:] = hvsr_band_hbox_hvsrSet
-
-    hvsr_settings_tab[5, 1:] = peak_freq_range_hbox_hvsrSet
-
-    hvsr_settings_tab[6, 1:] = peak_selection_type
-
-    hvsr_settings_tab[7, :] = process_hvsr_call_hbox
-
-    hvsr_settings_tab[8, :] = check_peaks_call_hbox
+    freq_smooth_hbox = widgets.HBox([freq_smoothing, freq_smooth_width])
+    resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
+    smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
+    
+    # Set up vbox for hvsr_settings subtab
+    hvsr_settings_tab = widgets.VBox([h_combine_meth,
+                                    freq_smooth_hbox,
+                                    resample_hbox,
+                                    smooth_hbox,
+                                    hvsr_band_hbox_hvsrSet,
+                                    peak_freq_range_hbox_hvsrSet,
+                                    peak_selection_type,
+                                    process_hvsr_call_hbox,
+                                    check_peaks_call_hbox])
 
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value=&#39;HVSR Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
@@ -2799,6 +2966,57 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     results_subtabs.set_title(0, &#34;Plot&#34;)
     results_subtabs.set_title(1, &#34;Peak Tests&#34;)
     results_subtabs.set_title(2, &#34;Peak Table&#34;)
+
+    widget_param_dict = {
+        &#39;fetch_data&#39;: 
+            {&#39;source&#39;: data_source_type,
+            &#39;trim_dir&#39;: trim_directory,
+            &#39;export_format&#39;: trim_export_dropdown,
+            &#39;detrend&#39;: detrend_type_dropdown,
+            &#39;detrend_order&#39;: detrend_order,
+            &#39;verbose&#39;: verbose_check},
+        &#39;remove_noise&#39;: 
+            {
+            &#39;sat_percent&#39;: max_saturation_pct,
+            &#39;noise_percent&#39;: max_window_pct,
+            &#39;sta&#39;: sta,
+            &#39;lta&#39;: lta,
+            &#39;stalta_thresh&#39;: [stalta_thresh_low, stalta_thresh_hi],
+            &#39;warmup_time&#39;: warmup_time,
+            &#39;cooldown_time&#39;: cooldown_time,
+            &#39;min_win_size&#39;: noisy_window_length,
+            &#39;remove_raw_noise&#39;: raw_data_remove_check,
+            &#39;verbose&#39;: verbose_check},
+        &#39;generate_ppsds&#39;: 
+            {&#39;verbose&#39;: verbose_check,
+             &#39;skip_on_gaps&#39;:skip_on_gaps, 
+             &#39;db_bins&#39;:[db_bins_min, db_bins_max, db_bins_step],
+             &#39;ppsd_length&#39;:ppsd_length, 
+             &#39;overlap&#39;:overlap_pct, 
+             &#39;special_handling&#39;:special_handling_dropdown, 
+             &#39;period_smoothing_width_octaves&#39;:period_smoothing_width, 
+             &#39;period_step_octaves&#39;:period_step_octave, 
+             &#39;period_limits&#39;:[hvsr_band_min_box, hvsr_band_max_box]},
+        &#39;process_hvsr&#39;: 
+            {&#39;method&#39;: h_combine_meth,
+            &#39;smooth&#39;: smooth_hv_curve,
+            &#39;freq_smooth&#39;: freq_smoothing,
+            &#39;f_smooth_width&#39;: freq_smooth_width,
+            &#39;resample&#39;: resample_hv_curve,
+            &#39;verbose&#39;: verbose_check},
+        &#39;remove_outlier_curves&#39;: 
+            {&#39;rmse_thresh&#39;: rmse_thresh,
+            &#39;use_percentile&#39;: rmse_pctile_check,
+            &#39;use_hv_curve&#39;: use_hv_curve_rmse,
+            &#39;verbose&#39;: verbose_check},
+        &#39;check_peaks&#39;: 
+            {&#39;hvsr_band&#39;: [hvsr_band_min_box, hvsr_band_max_box],
+            &#39;peak_freq_range&#39;: [peak_freq_range_min_box, peak_freq_range_max_box],
+            &#39;verbose&#39;: verbose_check},
+        &#39;get_report&#39;: 
+            {
+            &#39;export_path&#39;: export_results_table_filepath,
+            &#39;verbose&#39;: verbose_check}}
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
@@ -4745,7 +4963,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-02', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-06', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>

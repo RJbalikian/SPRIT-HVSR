@@ -3737,68 +3737,6 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     
     return hvsr_out
 
-    """ OLD Code
-    ppsds = hvsr_data['ppsds']
-    newPPsds = {}
-    stds = {}
-    psds_to_rid = []
-
-    for k in ppsds:
-        #Get the average ppsd curve value
-        psdVals = np.array(ppsds[k]['psd_values'])
-        meanArr = np.nanmean(psdVals, axis=1)
-        medArr = np.nanmedian(psdVals, axis=1)
-        
-        newPPsds[k] = []
-        totMean = np.nanmean(meanArr)
-        totMed = np.nanmedian(medArr)
-
-        stds[k] = np.std(meanArr)
-
-        for i, m in enumerate(meanArr):
-            if m > totMean + outlier_std*stds[k] or m < totMean - outlier_std*stds[k]:
-                psds_to_rid.append(i)
-
-        curr_times_mpl = []
-        for i, t in enumerate(ppsds[k]['current_times_used']):
-            curr_times_mpl.append(t.matplotlib_date)
-
-        #Get ppsd length in seconds in matplotlib format
-        ppsd_length_mpl = ppsd_length/86400
-
-        ##UPDATE THIS NOT TO USE xWindows_out (calculate from mask)
-        #Check if any times fall in excluded zone
-        for i, t in enumerate(curr_times_mpl):
-            nextT = t + ppsd_length_mpl
-            for w, win in enumerate(hvsr_data['xwindows_out']):
-                if t > win[0] and t < win[1]:
-                    psds_to_rid.append(i)
-                elif nextT > win[0] and nextT < win[1]:
-                    psds_to_rid.append(i)
-    
-        #Use dataframe
-        hvsrDF = hvsr_data['hvsr_df'].copy()
-        psdVals = hvsrDF['psd_values_'+k]
-        hvsrDF[k+'_CurveMedian'] = psdVals.apply(np.nanmedian)
-        hvsrDF[k+'_CurveMean'] = psdVals.apply(np.nanmean)
-
-        totMean = np.nanmean(hvsrDF[k+'_CurveMean'])
-        stds[k] = np.nanstd(hvsrDF[k+'_CurveMean'])
-        
-        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-        #meanArr = hvsrDF[k+'_CurveMean'].loc[hvsrDF['Use']]
-        threshVal = totMean + outlier_std * stds[k]
-        hvsrDF['Use'] = hvsrDF[k+'_CurveMean'][hvsrDF['Use']].lt(threshVal)
-        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-
-    psds_to_rid = np.unique(psds_to_rid)
-
-    for k in hvsr_data['ppsds']:
-        for i, r in enumerate(psds_to_rid):
-            index = int(r-i)
-            hvsr_data['ppsds'][k]['psd_values'] = np.delete(hvsr_data['ppsds'][k]['psd_values'], index, axis=0)
-            hvsr_data['ppsds'][k]['current_times_used'] = np.delete(hvsr_data['ppsds'][k]['current_times_used'], index, axis=0)"""
-
 #Read data as batch
 def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
     """Function to read data in data as a batch of multiple data files. This is best used through sprit.fetch_data(*args, source='batch', **other_kwargs).
