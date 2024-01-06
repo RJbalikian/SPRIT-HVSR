@@ -2085,28 +2085,31 @@ def create_jupyter_ui():
                                     placeholder=&#39;&#39;, value=&#39;&#39;,
                                     style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;90%&#39;))
 
-    # A button next to it labeled &#34;Browse&#34;
-    export_results_table_button = widgets.Button(description=&#39;Export Table&#39;,
+    export_results_table_read_button = widgets.Button(description=&#39;&#39;, style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    export_results_table_browse_button = widgets.Button(description=&#39;Export Table&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
     def export_results_table(button):
         try:
-            root = tk.Tk()
-            root.wm_attributes(&#39;-topmost&#39;, True)
-            root.withdraw()
-            export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
-            root.destroy()
+            if button.value == &#39;Export Table&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
+                root.destroy()
         except Exception as e:
             print(e)
-            export_results_table_button.disabled=True
-            export_results_table_button.description=&#39;Use Text Field&#39;
+            export_results_table_browse_button.disabled=True
+            export_results_table_browse_button.description=&#39;Use Text Field&#39;
 
         out_path = export_results_table_filepath.value
         sprit_hvsr.get_report(hvsr_results, report_format=&#39;csv&#39;, export_path=out_path,
                               csv_overwrite_opt=&#39;overwrite&#39;)
 
-    export_results_table_button.on_click(export_results_table)
+    export_results_table_browse_button.on_click(export_results_table)
+    export_results_table_read_button.on_click(export_results_table)
 
-    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
+    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
     global results_tab
     results_subtabs = widgets.Tab([results_graph_widget, printed_results_textArea, results_table_vbox])
@@ -4267,28 +4270,31 @@ def create_jupyter_ui():
                                     placeholder=&#39;&#39;, value=&#39;&#39;,
                                     style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;90%&#39;))
 
-    # A button next to it labeled &#34;Browse&#34;
-    export_results_table_button = widgets.Button(description=&#39;Export Table&#39;,
+    export_results_table_read_button = widgets.Button(description=&#39;&#39;, style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    export_results_table_browse_button = widgets.Button(description=&#39;Export Table&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
     def export_results_table(button):
         try:
-            root = tk.Tk()
-            root.wm_attributes(&#39;-topmost&#39;, True)
-            root.withdraw()
-            export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
-            root.destroy()
+            if button.value == &#39;Export Table&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
+                root.destroy()
         except Exception as e:
             print(e)
-            export_results_table_button.disabled=True
-            export_results_table_button.description=&#39;Use Text Field&#39;
+            export_results_table_browse_button.disabled=True
+            export_results_table_browse_button.description=&#39;Use Text Field&#39;
 
         out_path = export_results_table_filepath.value
         sprit_hvsr.get_report(hvsr_results, report_format=&#39;csv&#39;, export_path=out_path,
                               csv_overwrite_opt=&#39;overwrite&#39;)
 
-    export_results_table_button.on_click(export_results_table)
+    export_results_table_browse_button.on_click(export_results_table)
+    export_results_table_read_button.on_click(export_results_table)
 
-    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
+    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
     global results_tab
     results_subtabs = widgets.Tab([results_graph_widget, printed_results_textArea, results_table_vbox])
