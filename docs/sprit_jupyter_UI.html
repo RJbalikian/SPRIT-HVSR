@@ -619,7 +619,7 @@ def create_jupyter_ui():
         update_preview_fig(hvsr_data, preview_fig)
 
         if button.description==&#39;Read Data&#39;:
-            sprit_widget.selected_index = 1
+            sprit_tabs.selected_index = 1
             progress_bar.value=0
         return hvsr_data
     
@@ -1308,7 +1308,7 @@ def create_jupyter_ui():
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
-                                showlegend=False,
+                                showlegend=False, autosize=False, height=200*noSubplots, width=900,
                                 title=hvsr_data[&#39;site&#39;])
         results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
         if comp_plot_row==1:
@@ -1321,7 +1321,7 @@ def create_jupyter_ui():
             clear_output(wait=True)
             display(results_fig)
 
-        sprit_widget.selected_index = 4
+        sprit_tabs.selected_index = 4
         log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}&#34;
 
     process_hvsr_button.on_click(process_data)
@@ -1848,7 +1848,7 @@ def create_jupyter_ui():
                                     style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
 
     process_hvsr_call_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;process_hvsr&#39; + &#39;&lt;/p&gt;&#39;, 
-                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;, align_content=&#39;flex-start&#39;))
     process_hvsr_call = widgets.HTML(value=&#39;()&#39;)
     process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
 
@@ -1982,7 +1982,7 @@ def create_jupyter_ui():
     def manually_update_results_fig(change):
         plot_string = get_get_report_kwargs()[&#39;plot_type&#39;]
         update_results_fig(hvsr_results, plot_string)
-        sprit_widget.selected_index = 4
+        sprit_tabs.selected_index = 4
 
     # Set up grid for ppsd_settings subtab
     plot_settings_tab[0, 5:10]   = hv_plot_label
@@ -2088,7 +2088,23 @@ def create_jupyter_ui():
     # A button next to it labeled &#34;Browse&#34;
     export_results_table_button = widgets.Button(description=&#39;Export Table&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
+    def export_results_table(button):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            export_results_table_button.disabled=True
+            export_results_table_button.description=&#39;Use Text Field&#39;
 
+        out_path = export_results_table_filepath.value
+        sprit_hvsr.get_report(hvsr_results, report_format=&#39;csv&#39;, export_path=out_path,
+                              csv_overwrite_opt=&#39;overwrite&#39;)
+
+    export_results_table_button.on_click(export_results_table)
 
     results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
@@ -2152,13 +2168,44 @@ def create_jupyter_ui():
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
-    global sprit_widget
-    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
-    sprit_widget.set_title(0, &#34;Input&#34;)
-    sprit_widget.set_title(1, &#34;Preview&#34;)
-    sprit_widget.set_title(2, &#34;Settings&#34;)
-    sprit_widget.set_title(3, &#34;Log&#34;)
-    sprit_widget.set_title(4, &#34;Results&#34;)
+    global sprit_tabs
+    sprit_tabs = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
+    sprit_tabs.set_title(0, &#34;Input&#34;)
+    sprit_tabs.set_title(1, &#34;Preview&#34;)
+    sprit_tabs.set_title(2, &#34;Settings&#34;)
+    sprit_tabs.set_title(3, &#34;Log&#34;)
+    sprit_tabs.set_title(4, &#34;Results&#34;)
+
+    sprit_title = widgets.Label(value=&#39;SPRIT&#39;)
+    sprit_subtitle = widgets.Label(value=&#39;Tools for ambient siesmic noise analysis using HVSR&#39;,
+                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-end&#39;))
+    import webbrowser
+
+    # Function to open a link
+    def open_link(button):
+        link = &#39;https://rjbalikian.github.io/SPRIT-HVSR/main.html&#39;
+        webbrowser.open_new_tab(link)
+
+    # Create a button
+    docsbutton = widgets.Button(description=&#34;Docs&#34;,
+                                layout=widgets.Layout(width=&#39;5%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+
+    # Attach the open_link function to the button&#39;s on_click event
+    docsbutton.on_click(open_link)
+
+    titlehbox = widgets.HBox([sprit_title, sprit_subtitle,docsbutton])
+    
+    title_style = {
+        &#39;font_family&#39;: &#39;Arial, sans-serif&#39;,
+        &#39;font_size&#39;: &#39;36px&#39;,
+        &#39;font_weight&#39;: &#39;bold&#39;,
+        &#39;color&#39;: &#39;black&#39;
+    }
+
+    # Apply the style to the label
+    sprit_title.style = title_style
+
+    sprit_widget = widgets.VBox([titlehbox, sprit_tabs])
 
     def observe_children(widget, callback):
         if hasattr(widget, &#39;children&#39;):
@@ -2176,7 +2223,7 @@ def create_jupyter_ui():
         update_check_peaks_call()
         update_plot_string()
 
-    observe_children(sprit_widget, any_update)
+    observe_children(sprit_tabs, any_update)
 
     # Display the tab
     display(sprit_widget)</code></pre>
@@ -2754,7 +2801,7 @@ def create_jupyter_ui():
         update_preview_fig(hvsr_data, preview_fig)
 
         if button.description==&#39;Read Data&#39;:
-            sprit_widget.selected_index = 1
+            sprit_tabs.selected_index = 1
             progress_bar.value=0
         return hvsr_data
     
@@ -3443,7 +3490,7 @@ def create_jupyter_ui():
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
-                                showlegend=False,
+                                showlegend=False, autosize=False, height=200*noSubplots, width=900,
                                 title=hvsr_data[&#39;site&#39;])
         results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
         if comp_plot_row==1:
@@ -3456,7 +3503,7 @@ def create_jupyter_ui():
             clear_output(wait=True)
             display(results_fig)
 
-        sprit_widget.selected_index = 4
+        sprit_tabs.selected_index = 4
         log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}&#34;
 
     process_hvsr_button.on_click(process_data)
@@ -3983,7 +4030,7 @@ def create_jupyter_ui():
                                     style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
 
     process_hvsr_call_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;process_hvsr&#39; + &#39;&lt;/p&gt;&#39;, 
-                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;, align_content=&#39;flex-start&#39;))
     process_hvsr_call = widgets.HTML(value=&#39;()&#39;)
     process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
 
@@ -4117,7 +4164,7 @@ def create_jupyter_ui():
     def manually_update_results_fig(change):
         plot_string = get_get_report_kwargs()[&#39;plot_type&#39;]
         update_results_fig(hvsr_results, plot_string)
-        sprit_widget.selected_index = 4
+        sprit_tabs.selected_index = 4
 
     # Set up grid for ppsd_settings subtab
     plot_settings_tab[0, 5:10]   = hv_plot_label
@@ -4223,7 +4270,23 @@ def create_jupyter_ui():
     # A button next to it labeled &#34;Browse&#34;
     export_results_table_button = widgets.Button(description=&#39;Export Table&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
+    def export_results_table(button):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save CSV Report&#39;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            export_results_table_button.disabled=True
+            export_results_table_button.description=&#39;Use Text Field&#39;
 
+        out_path = export_results_table_filepath.value
+        sprit_hvsr.get_report(hvsr_results, report_format=&#39;csv&#39;, export_path=out_path,
+                              csv_overwrite_opt=&#39;overwrite&#39;)
+
+    export_results_table_button.on_click(export_results_table)
 
     results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
@@ -4287,13 +4350,44 @@ def create_jupyter_ui():
 
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
-    global sprit_widget
-    sprit_widget = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
-    sprit_widget.set_title(0, &#34;Input&#34;)
-    sprit_widget.set_title(1, &#34;Preview&#34;)
-    sprit_widget.set_title(2, &#34;Settings&#34;)
-    sprit_widget.set_title(3, &#34;Log&#34;)
-    sprit_widget.set_title(4, &#34;Results&#34;)
+    global sprit_tabs
+    sprit_tabs = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
+    sprit_tabs.set_title(0, &#34;Input&#34;)
+    sprit_tabs.set_title(1, &#34;Preview&#34;)
+    sprit_tabs.set_title(2, &#34;Settings&#34;)
+    sprit_tabs.set_title(3, &#34;Log&#34;)
+    sprit_tabs.set_title(4, &#34;Results&#34;)
+
+    sprit_title = widgets.Label(value=&#39;SPRIT&#39;)
+    sprit_subtitle = widgets.Label(value=&#39;Tools for ambient siesmic noise analysis using HVSR&#39;,
+                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-end&#39;))
+    import webbrowser
+
+    # Function to open a link
+    def open_link(button):
+        link = &#39;https://rjbalikian.github.io/SPRIT-HVSR/main.html&#39;
+        webbrowser.open_new_tab(link)
+
+    # Create a button
+    docsbutton = widgets.Button(description=&#34;Docs&#34;,
+                                layout=widgets.Layout(width=&#39;5%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+
+    # Attach the open_link function to the button&#39;s on_click event
+    docsbutton.on_click(open_link)
+
+    titlehbox = widgets.HBox([sprit_title, sprit_subtitle,docsbutton])
+    
+    title_style = {
+        &#39;font_family&#39;: &#39;Arial, sans-serif&#39;,
+        &#39;font_size&#39;: &#39;36px&#39;,
+        &#39;font_weight&#39;: &#39;bold&#39;,
+        &#39;color&#39;: &#39;black&#39;
+    }
+
+    # Apply the style to the label
+    sprit_title.style = title_style
+
+    sprit_widget = widgets.VBox([titlehbox, sprit_tabs])
 
     def observe_children(widget, callback):
         if hasattr(widget, &#39;children&#39;):
@@ -4311,7 +4405,7 @@ def create_jupyter_ui():
         update_check_peaks_call()
         update_plot_string()
 
-    observe_children(sprit_widget, any_update)
+    observe_children(sprit_tabs, any_update)
 
     # Display the tab
     display(sprit_widget)</code></pre>
