@@ -2056,26 +2056,29 @@ def create_jupyter_ui():
                                     placeholder='', value='',
                                     style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
 
-    # A button next to it labeled "Browse"
-    export_results_table_button = widgets.Button(description='Export Table',
+    export_results_table_read_button = widgets.Button(description='', style='success',
+                                            layout=widgets.Layout(width='10%'))
+    export_results_table_browse_button = widgets.Button(description='Export Table',
                                             layout=widgets.Layout(width='10%'))
     def export_results_table(button):
         try:
-            root = tk.Tk()
-            root.wm_attributes('-topmost', True)
-            root.withdraw()
-            export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension='.csv', title='Save CSV Report'))
-            root.destroy()
+            if button.value == 'Export Table':
+                root = tk.Tk()
+                root.wm_attributes('-topmost', True)
+                root.withdraw()
+                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension='.csv', title='Save CSV Report'))
+                root.destroy()
         except Exception as e:
             print(e)
-            export_results_table_button.disabled=True
-            export_results_table_button.description='Use Text Field'
+            export_results_table_browse_button.disabled=True
+            export_results_table_browse_button.description='Use Text Field'
 
         out_path = export_results_table_filepath.value
         sprit_hvsr.get_report(hvsr_results, report_format='csv', export_path=out_path,
                               csv_overwrite_opt='overwrite')
 
-    export_results_table_button.on_click(export_results_table)
+    export_results_table_browse_button.on_click(export_results_table)
+    export_results_table_read_button.on_click(export_results_table)
 
     results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
