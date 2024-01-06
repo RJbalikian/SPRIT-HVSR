@@ -176,15 +176,27 @@ def create_jupyter_ui():
     acquisition_doy.observe(on_doy_change)
 
     # Time selector (hour and minute) labelled "Start Time".
-    start_time_picker = widgets.TimePicker(description='Start Time:',
+    try:
+        start_time_picker = widgets.TimePicker(description='Start Time:',
                                             placeholder=datetime.time(0,0,0),
                                             value=datetime.time(0,0,0),
                                             layout=widgets.Layout(width='auto'))
+    except Exception as e:
+        start_time_picker = widgets.Text(description='Start Time:',
+                                        placeholder='00:00',
+                                        value='00:00',
+                                        layout=widgets.Layout(width='auto'))
 
     # Time selector (hour and minute) labelled "End Time". Same as Start Time otherwise.
-    end_time_picker = widgets.TimePicker(description='End Time:',
+    try:
+        end_time_picker = widgets.TimePicker(description='End Time:',
                                         placeholder=datetime.time(23,59),
                                         value=datetime.time(23,59),
+                                        layout=widgets.Layout(width='auto'))
+    except Exception as e:
+        end_time_picker = widgets.Text(description='End Time:',
+                                        placeholder='23:59:59.999999',
+                                        value='23:59:59.999999',
                                         layout=widgets.Layout(width='auto'))
 
     tzlist = list(available_timezones())
@@ -256,16 +268,17 @@ def create_jupyter_ui():
             value='MSEED',
             description='Data Formats:', layout=widgets.Layout(width='auto'))
 
-    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]',
-                                          placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0], 
+    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]', style={'description_width': 'initial'},
+                                          placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0],
                                           value=get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
-    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1], 
+    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1],
                                           value=get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
     hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width='auto'))
 
 
     peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
-                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],layout=widgets.Layout(width='auto'))
+                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],
+                                                style={'description_width': 'initial'}, layout=widgets.Layout(width='auto'))
     peak_freq_range_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
                                                 value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
     peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width='auto'))
@@ -1352,7 +1365,8 @@ def create_jupyter_ui():
         preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                   title=hvsr_data['site'])
 
-    #STA/LTA Antitrigger
+    # REMOVE NOISE SUBTAB
+    # STA/LTA Antitrigger
     stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description='STA/LTA Antitrigger')
     sta = widgets.FloatText(description='STA [s]',  style={'description_width': 'initial'}, placeholder=5, value=5,layout=widgets.Layout(height='auto', width='auto'))
     lta = widgets.FloatText(description='LTA [s]',  style={'description_width': 'initial'}, placeholder=30, value=30,layout=widgets.Layout(height='auto', width='auto'))
@@ -1407,14 +1421,12 @@ def create_jupyter_ui():
         remove_noise_call.value='<style>p {word-wrap: break-word}</style> <p>' + rn_text + '</p>'
     update_remove_noise_call()
 
-
     #Update noise windows
-    update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
+    update_noise_windows_button = widgets.Button(description='Update Noise Windows',button_style='info',layout=widgets.Layout(height='auto', width='auto'), disabled=True)
 
     preview_graph_widget = widgets.Output()
     #progress bar (same as above)
     preview_progress_hbox = widgets.HBox(children=[progress_bar, update_noise_windows_button, process_hvsr_button])
-
 
     # Add it all in to the tab
     stalta_hbox = widgets.HBox([stalta_check, sta, lta, stalta_thresh_low, stalta_thresh_hi])
@@ -1447,8 +1459,6 @@ def create_jupyter_ui():
         display(preview_fig)
 
     # SETTINGS TAB
-    ppsd_settings_tab = widgets.GridspecLayout(ui_height-1, ui_width)
-    hvsr_settings_tab = widgets.GridspecLayout(9, ui_width)
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
 
@@ -1477,8 +1487,8 @@ def create_jupyter_ui():
                                     placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     
     period_limit_label = widgets.Label(value='Period Limits:')
-    minPLim = round(1/(hvsr_band_max_box.value),2)
-    maxPLim = round(1/(hvsr_band_min_box.value),2)
+    minPLim = round(1/(hvsr_band_max_box.value), 3)
+    maxPLim = round(1/(hvsr_band_min_box.value), 3)
     period_limits_min = widgets.FloatText(description='Min. Period Limit', style={'description_width': 'initial'},
                                     placeholder=minPLim, value=minPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     period_limits_max = widgets.FloatText(description='Max. Period Limit', style={'description_width': 'initial'},
@@ -1514,32 +1524,21 @@ def create_jupyter_ui():
         generate_ppsd_call.value='<style>p {word-wrap: break-word}</style> <p>' + gppsd_text + '</p>'
     update_generate_ppsd_call()
 
-    # Set up grid for ppsd_settings subtab
-    ppsd_settings_tab[0, 0:5] = ppsd_length_label
-    ppsd_settings_tab[0, 5:8] = ppsd_length
+    ppsd_length_hbox = widgets.HBox([ppsd_length_label, ppsd_length])
+    overlap_pct_hbox = widgets.HBox([overlap_pct_label, overlap_pct])
+    pstep_hbox = widgets.HBox([period_step_label, period_step_octave])
+    skipgaps_hbox = widgets.HBox([skip_on_gaps_label, skip_on_gaps])
+    db_bins_hbox = widgets.HBox([db_step_label, db_bins_min, db_bins_max, db_bins_step])
+    plim_hbox = widgets.HBox([period_limit_label, period_limits_min, period_limits_max, period_smoothing_width])
 
-    ppsd_settings_tab[1, 0:5] = overlap_pct_label
-    ppsd_settings_tab[1, 5:8] = overlap_pct
-
-    ppsd_settings_tab[2, 0:5] = period_step_label
-    ppsd_settings_tab[2, 5:8] = period_step_octave
-
-    ppsd_settings_tab[3, 0:5] = skip_on_gaps_label
-    ppsd_settings_tab[3, 5:8] = skip_on_gaps
-
-    ppsd_settings_tab[4, 0:5] = db_step_label
-    ppsd_settings_tab[4, 5:7] = db_bins_min
-    ppsd_settings_tab[4, 7:10] = db_bins_max
-    ppsd_settings_tab[4, 10:12] = db_bins_step
-
-    ppsd_settings_tab[5, 0:5] = period_limit_label
-    ppsd_settings_tab[5, 5:8] = period_limits_min
-    ppsd_settings_tab[5, 8:11] = period_limits_max
-    ppsd_settings_tab[5, 11:] = period_smoothing_width
-
-    ppsd_settings_tab[6, 0:8] = special_handling_dropdown
-
-    ppsd_settings_tab[7:9, :] = generate_ppsd_call_hbox
+    ppsd_settings_tab = widgets.VBox([ppsd_length_hbox,
+                                      overlap_pct_hbox,
+                                      pstep_hbox,
+                                      skipgaps_hbox,
+                                      db_bins_hbox,
+                                      plim_hbox,
+                                      special_handling_dropdown,
+                                      generate_ppsd_call_hbox])
 
     # OUTLIER SETTINGS SUBTAB
     rmse_pctile_check = widgets.Checkbox(description='Using percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
@@ -1549,7 +1548,7 @@ def create_jupyter_ui():
 
     outlier_threshbox_hbox = widgets.HBox(children=[rmse_thresh, rmse_pctile_check])
     outlier_params_vbox = widgets.VBox(children=[outlier_threshbox_hbox, use_hv_curve_rmse])
-    #outFigInit = go.Figure()
+
     global outlier_fig
     outlier_fig = go.FigureWidget()
     outlier_graph_widget = widgets.Output()
@@ -1854,27 +1853,20 @@ def create_jupyter_ui():
         check_peaks_call.value='<style>p {word-wrap: break-word}</style> <p>' + cp_text + '</p>'
     update_check_peaks_call()
 
-    # Set up grid for ppsd_settings subtab
-    hvsr_settings_tab[0, 1:] = h_combine_meth
-
-    hvsr_settings_tab[1, 1:12] = freq_smoothing
-    hvsr_settings_tab[1, 12:17] = freq_smooth_width
-
-    hvsr_settings_tab[2, 0] = resample_hv_curve_bool
-    hvsr_settings_tab[2, 1:6] = resample_hv_curve
-
-    hvsr_settings_tab[3, 0] = smooth_hv_curve_bool
-    hvsr_settings_tab[3, 1:6] = smooth_hv_curve
-
-    hvsr_settings_tab[4, 1:] = hvsr_band_hbox_hvsrSet
-
-    hvsr_settings_tab[5, 1:] = peak_freq_range_hbox_hvsrSet
-
-    hvsr_settings_tab[6, 1:] = peak_selection_type
-
-    hvsr_settings_tab[7, :] = process_hvsr_call_hbox
-
-    hvsr_settings_tab[8, :] = check_peaks_call_hbox
+    freq_smooth_hbox = widgets.HBox([freq_smoothing, freq_smooth_width])
+    resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
+    smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
+    
+    # Set up vbox for hvsr_settings subtab
+    hvsr_settings_tab = widgets.VBox([h_combine_meth,
+                                    freq_smooth_hbox,
+                                    resample_hbox,
+                                    smooth_hbox,
+                                    hvsr_band_hbox_hvsrSet,
+                                    peak_freq_range_hbox_hvsrSet,
+                                    peak_selection_type,
+                                    process_hvsr_call_hbox,
+                                    check_peaks_call_hbox])
 
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value='HVSR Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
