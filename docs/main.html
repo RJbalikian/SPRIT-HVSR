@@ -2953,7 +2953,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                     placeholder=&#39;&#39;, value=&#39;&#39;,
                                     style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;90%&#39;))
 
-    export_results_table_read_button = widgets.Button(description=&#39;&#39;, style=&#39;success&#39;,
+    export_results_table_read_button = widgets.Button(description=&#39;&#39;, icon=&#39;fa-file-import&#39;,button_style=&#39;success&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
     export_results_table_browse_button = widgets.Button(description=&#39;Export Table&#39;,
                                             layout=widgets.Layout(width=&#39;10%&#39;))
@@ -5013,7 +5013,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-06', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-07', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>

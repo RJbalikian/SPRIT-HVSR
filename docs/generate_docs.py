@@ -12,7 +12,7 @@ import markdown
 #Whether to CONVERT_MD using markdown library (True), or let github do it (False)
 CONVERT_MD=True
 RTD_THEME=False #Not currently working
-RELEASE_VERSION= '0.1.60'
+RELEASE_VERSION= '0.1.61'
 RUN_TESTS=False
 LINT_IT=False
 
