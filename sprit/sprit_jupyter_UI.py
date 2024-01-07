@@ -2056,7 +2056,7 @@ def create_jupyter_ui():
                                     placeholder='', value='',
                                     style={'description_width': 'initial'},layout=widgets.Layout(width='90%'))
 
-    export_results_table_read_button = widgets.Button(description='', style='success',
+    export_results_table_read_button = widgets.Button(description='', icon='fa-file-import',button_style='success',
                                             layout=widgets.Layout(width='10%'))
     export_results_table_browse_button = widgets.Button(description='Export Table',
                                             layout=widgets.Layout(width='10%'))
