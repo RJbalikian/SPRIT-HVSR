@@ -1302,7 +1302,7 @@ def create_jupyter_ui():
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         
         if preview_fig.layout.width is None:
-            if outlier_fig.layout.widgth is None:
+            if outlier_fig.layout.width is None:
                 chartwidth = 800
             else:
                 chartwidth = outlier_fig.layout.width
