@@ -406,9 +406,9 @@ def create_jupyter_ui():
 
     input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
     input_accordion.titles = ["Instrument Metadata", "Acquisition Information", "Location Information", "I/O and Parameters", "See Python API Call"]
-    input_accordion_box.layout = widgets.Layout(width='95%')
-
-    input_accordion.layout.width = '99%'
+    input_accordion_box.layout = widgets.Layout(align_content='space-between', width='99%')
+    
+    input_accordion.layout = widgets.Layout(width='99%')
 
     # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
     # A text box for the site name
@@ -537,8 +537,8 @@ def create_jupyter_ui():
     input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
     input_accordion_box.children = [input_accordion]
-    input_HBox.children = [input_accordion_label_box, input_accordion_box]
-    input_HBox.layout= widgets.Layout(align_content='space-between')
+    #input_HBox.children = [input_accordion_label_box, input_accordion_box]
+    #input_HBox.layout= widgets.Layout(align_content='space-between')
 
     # Create a GridBox with 12 rows and 20 columns
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns='repeat(10, 1)',
@@ -548,7 +548,7 @@ def create_jupyter_ui():
     input_tab.children = [site_hbox,
                             datapath_hbox,
                             metadata_hbox,
-                            input_HBox,
+                            input_accordion_box,
                             progress_hbox]
 
     def get_input_params():
@@ -1301,8 +1301,17 @@ def create_jupyter_ui():
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         
+        if preview_fig.layout.width is None:
+            if outlier_fig.layout.widgth is None:
+                chartwidth = 800
+            else:
+                chartwidth = outlier_fig.layout.width
+
+        else:
+            chartwidth = preview_fig.layout.width
+
         results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
-                                showlegend=False, autosize=True, height = 1.2 * float(preview_fig.layout.width),
+                                showlegend=False, autosize=True, height = 1.2 * float(chartwidth),
                                 title=f"{hvsr_data['site']} Results")
         results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
         results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
