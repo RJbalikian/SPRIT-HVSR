@@ -7,6 +7,7 @@ import os
 import pathlib
 import tkinter as tk
 from tkinter import filedialog
+import webbrowser
 
 from zoneinfo import available_timezones
 
@@ -45,6 +46,8 @@ def create_jupyter_ui():
 
     # INPUT TAB
     # Create a VBox for the accordions
+    input_HBox = widgets.HBox()
+    input_accordion_label_box = widgets.VBox()
     input_accordion_box = widgets.VBox()
     input_accordion = widgets.Accordion()
 
@@ -393,8 +396,17 @@ def create_jupyter_ui():
     inputAPI_grid[1, 1:] = fetch_data_call
 
     # Set it all in place
+    metaLabel = widgets.Label('Instrument', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    instLabel = widgets.Label('Acquisition', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    locLabel = widgets.Label('Location', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    ioparmLabel = widgets.Label('IO/Params', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    apiLabel = widgets.Label('API Call', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    input_accordion_label_box.children = [metaLabel, instLabel, locLabel, ioparmLabel, apiLabel]
+    input_accordion_label_box.layout = widgets.Layout(align_content='space-between', width='5%')
+
     input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
     input_accordion.titles = ["Instrument Metadata", "Acquisition Information", "Location Information", "I/O and Parameters", "See Python API Call"]
+    input_accordion_box.layout = widgets.Layout(width='95%')
 
     input_accordion.layout.width = '99%'
 
@@ -427,6 +439,11 @@ def create_jupyter_ui():
     # Processing Settings
     processing_settings_button = widgets.FileUpload(accept='.proc', description='Processing Settings',
                                             multiple=False,layout=widgets.Layout(width='10%'))
+
+    # Whether to show plots outside of widget
+    show_plot_check =  widgets.Checkbox(description='Print Plots', value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width='10%', justify_content='flex-end'))
+
 
     # Whether to print to terminal
     verbose_check = widgets.Checkbox(description='Verbose', value=False, disabled=False, indent=False,
@@ -508,7 +525,7 @@ def create_jupyter_ui():
     update_fetch_data_call()
 
     site_hbox = widgets.HBox()
-    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, verbose_check]
+    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, show_plot_check, verbose_check]
     datapath_hbox = widgets.HBox()
     datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
     metadata_hbox = widgets.HBox()
@@ -520,6 +537,8 @@ def create_jupyter_ui():
     input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
     input_accordion_box.children = [input_accordion]
+    input_HBox.children = [input_accordion_label_box, input_accordion_box]
+    input_HBox.layout= widgets.Layout(align_content='space-between')
 
     # Create a GridBox with 12 rows and 20 columns
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns='repeat(10, 1)',
@@ -529,7 +548,7 @@ def create_jupyter_ui():
     input_tab.children = [site_hbox,
                             datapath_hbox,
                             metadata_hbox,
-                            input_accordion_box,
+                            input_HBox,
                             progress_hbox]
 
     def get_input_params():
@@ -1152,24 +1171,26 @@ def create_jupyter_ui():
         use_mask = hvsr_data.hvsr_df.Use.values
         use_mask = np.tile(use_mask, (image_data.shape[0],1))
         use_mask = np.where(use_mask is False, np.nan, use_mask)
-        data_used = go.Heatmap(
-            x=specAxisTimes,
-            y=y_data,
-            z=use_mask,
-            showlegend=False,
-            colorscale=[[0, 'rgba(0,0,0,1)'], [1, 'rgba(250,250,250,0)']],
-            showscale=False, name='Used')
-        results_fig.add_trace(data_used, row=subplot_num, col=1)
 
         hmap = go.Heatmap(z=image_data,
                     x=specAxisTimes,
                     y=y_data,
                     colorscale='Turbo',
                     showlegend=False,
-                    opacity=0.7,
+                    #opacity=0.7,
                     hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>H/V Amplitude: %{z:.2f}<extra></extra>',
                     zmin=minZ,zmax=maxZ, showscale=False, name='HV Curve Amp. over Time')
         results_fig.add_trace(hmap, row=subplot_num, col=1)
+
+        data_used = go.Heatmap(
+            x=specAxisTimes,
+            y=y_data,
+            z=use_mask,
+            showlegend=False,
+            colorscale=[[0, 'rgba(0,0,0,0.66)'], [0.25, 'rgba(0,0,0,0.66)'], [1, 'rgba(250,250,250,0)']],
+            showscale=False, name='Used')
+        results_fig.add_trace(data_used, row=subplot_num, col=1)
+
 
         # tp currently is not being added to spec_plot_list
         if 'tp' in spec_plot_list:
@@ -1272,16 +1293,19 @@ def create_jupyter_ui():
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                         side='top',
                         row=1, col=1)
+        
         results_fig.update_xaxes(type='log',overlaying='x',
                         range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                         side='bottom',
                         row=1, col=1)
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
+        
         results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
-                                showlegend=False, autosize=False, height=200*noSubplots, width=900,
-                                title=hvsr_data['site'])
+                                showlegend=False, autosize=True, height = 1.2 * float(preview_fig.layout.width),
+                                title=f"{hvsr_data['site']} Results")
         results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
+        results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
         if comp_plot_row==1:
             results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
         else:
@@ -1291,6 +1315,9 @@ def create_jupyter_ui():
         with results_graph_widget:
             clear_output(wait=True)
             display(results_fig)
+
+        if show_plot_check.value:
+            results_fig.show()
 
         sprit_tabs.selected_index = 4
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
@@ -1363,7 +1390,10 @@ def create_jupyter_ui():
         
         #preview_fig.add_trace(p)
         preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
-                                  title=hvsr_data['site'])
+                                  title=f"{hvsr_data['site']} Data Preview")
+
+        if show_plot_check.value:
+            preview_fig.show()
 
     # REMOVE NOISE SUBTAB
     # STA/LTA Antitrigger
@@ -1758,10 +1788,14 @@ def create_jupyter_ui():
                     outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
                     
                     outlier_fig.update_xaxes(showticklabels=False, row=1, col=1)
+                    outlier_fig.update_yaxes(title={'text':'Z'}, row=1, col=1)
                     outlier_fig.update_xaxes(showticklabels=False, row=2, col=1)
+                    outlier_fig.update_yaxes(title={'text':'E'}, row=2, col=1)
                     outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
-                    outlier_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
-                                  title=hvsr_data['site'])
+                    outlier_fig.update_yaxes(title={'text':'N'}, row=3, col=1)
+
+                    outlier_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=True,
+                                  title=f"{hvsr_data['site']} Outliers")
                     if comp == 'N':
                         minY = np.nanmin(curr_data)
                         maxY = np.nanmax(curr_data)
@@ -1780,6 +1814,9 @@ def create_jupyter_ui():
             clear_output(wait=True)
             display(outlier_fig)
         
+        if show_plot_check.value:
+            outlier_fig.show()
+
         return outlier_fig, hvsr_data
 
     # HVSR SETTINGS SUBTAB
@@ -2150,24 +2187,38 @@ def create_jupyter_ui():
     sprit_tabs.set_title(3, "Log")
     sprit_tabs.set_title(4, "Results")
 
-    sprit_title = widgets.Label(value='SPRIT')
+    sprit_title = widgets.Label(value='SPRIT', layout=widgets.Layout(width='150px'))
     sprit_subtitle = widgets.Label(value='Tools for ambient siesmic noise analysis using HVSR',
-                                   layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-end'))
-    import webbrowser
+                                   layout=widgets.Layout(flex='1', justify_content='flex-start', align_content='flex-end'))
 
     # Function to open a link
-    def open_link(button):
+    def open_dist(button):
+        link = 'https://pypi.org/project/sprit/'
+        webbrowser.open_new_tab(link)
+
+    def open_repo(button):
+        link = 'https://github.com/RJbalikian/SPRIT-HVSR'
+        webbrowser.open_new_tab(link)
+
+    def open_docs(button):
         link = 'https://rjbalikian.github.io/SPRIT-HVSR/main.html'
         webbrowser.open_new_tab(link)
 
-    # Create a button
+
+    sourcebutton = widgets.Button(description="PyPI",
+                                layout=widgets.Layout(width='4%', justify_content='flex-end',align_content='flex-end'))
+    repobutton = widgets.Button(description="Repo",
+                                layout=widgets.Layout(width='4%', justify_content='flex-end',align_content='flex-end'))
     docsbutton = widgets.Button(description="Docs",
-                                layout=widgets.Layout(width='5%', justify_content='flex-end',align_content='flex-end'))
+                                layout=widgets.Layout(width='8%', justify_content='flex-end',align_content='flex-end'))
 
     # Attach the open_link function to the button's on_click event
-    docsbutton.on_click(open_link)
+    sourcebutton.on_click(open_dist)
+    repobutton.on_click(open_repo)
+    docsbutton.on_click(open_docs)
 
-    titlehbox = widgets.HBox([sprit_title, sprit_subtitle,docsbutton])
+    titlehbox = widgets.HBox([sprit_title, sprit_subtitle, repobutton, sourcebutton, docsbutton],
+                            layout = widgets.Layout(align_content='space-between'))
     
     title_style = {
         'font_family': 'Arial, sans-serif',
