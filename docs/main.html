@@ -942,6 +942,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 
     # INPUT TAB
     # Create a VBox for the accordions
+    input_HBox = widgets.HBox()
+    input_accordion_label_box = widgets.VBox()
     input_accordion_box = widgets.VBox()
     input_accordion = widgets.Accordion()
 
@@ -1290,8 +1292,17 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     inputAPI_grid[1, 1:] = fetch_data_call
 
     # Set it all in place
+    metaLabel = widgets.Label(&#39;Instrument&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    instLabel = widgets.Label(&#39;Acquisition&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    locLabel = widgets.Label(&#39;Location&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    ioparmLabel = widgets.Label(&#39;IO/Params&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    apiLabel = widgets.Label(&#39;API Call&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    input_accordion_label_box.children = [metaLabel, instLabel, locLabel, ioparmLabel, apiLabel]
+    input_accordion_label_box.layout = widgets.Layout(align_content=&#39;space-between&#39;, width=&#39;5%&#39;)
+
     input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
     input_accordion.titles = [&#34;Instrument Metadata&#34;, &#34;Acquisition Information&#34;, &#34;Location Information&#34;, &#34;I/O and Parameters&#34;, &#34;See Python API Call&#34;]
+    input_accordion_box.layout = widgets.Layout(width=&#39;95%&#39;)
 
     input_accordion.layout.width = &#39;99%&#39;
 
@@ -1324,6 +1335,11 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     # Processing Settings
     processing_settings_button = widgets.FileUpload(accept=&#39;.proc&#39;, description=&#39;Processing Settings&#39;,
                                             multiple=False,layout=widgets.Layout(width=&#39;10%&#39;))
+
+    # Whether to show plots outside of widget
+    show_plot_check =  widgets.Checkbox(description=&#39;Print Plots&#39;, value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width=&#39;10%&#39;, justify_content=&#39;flex-end&#39;))
+
 
     # Whether to print to terminal
     verbose_check = widgets.Checkbox(description=&#39;Verbose&#39;, value=False, disabled=False, indent=False,
@@ -1405,7 +1421,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     update_fetch_data_call()
 
     site_hbox = widgets.HBox()
-    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, verbose_check]
+    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, show_plot_check, verbose_check]
     datapath_hbox = widgets.HBox()
     datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
     metadata_hbox = widgets.HBox()
@@ -1417,6 +1433,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
     input_accordion_box.children = [input_accordion]
+    input_HBox.children = [input_accordion_label_box, input_accordion_box]
+    input_HBox.layout= widgets.Layout(align_content=&#39;space-between&#39;)
 
     # Create a GridBox with 12 rows and 20 columns
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns=&#39;repeat(10, 1)&#39;,
@@ -1426,7 +1444,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     input_tab.children = [site_hbox,
                             datapath_hbox,
                             metadata_hbox,
-                            input_accordion_box,
+                            input_HBox,
                             progress_hbox]
 
     def get_input_params():
@@ -2049,24 +2067,26 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         use_mask = hvsr_data.hvsr_df.Use.values
         use_mask = np.tile(use_mask, (image_data.shape[0],1))
         use_mask = np.where(use_mask is False, np.nan, use_mask)
-        data_used = go.Heatmap(
-            x=specAxisTimes,
-            y=y_data,
-            z=use_mask,
-            showlegend=False,
-            colorscale=[[0, &#39;rgba(0,0,0,1)&#39;], [1, &#39;rgba(250,250,250,0)&#39;]],
-            showscale=False, name=&#39;Used&#39;)
-        results_fig.add_trace(data_used, row=subplot_num, col=1)
 
         hmap = go.Heatmap(z=image_data,
                     x=specAxisTimes,
                     y=y_data,
                     colorscale=&#39;Turbo&#39;,
                     showlegend=False,
-                    opacity=0.7,
+                    #opacity=0.7,
                     hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;H/V Amplitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
                     zmin=minZ,zmax=maxZ, showscale=False, name=&#39;HV Curve Amp. over Time&#39;)
         results_fig.add_trace(hmap, row=subplot_num, col=1)
+
+        data_used = go.Heatmap(
+            x=specAxisTimes,
+            y=y_data,
+            z=use_mask,
+            showlegend=False,
+            colorscale=[[0, &#39;rgba(0,0,0,0.66)&#39;], [0.25, &#39;rgba(0,0,0,0.66)&#39;], [1, &#39;rgba(250,250,250,0)&#39;]],
+            showscale=False, name=&#39;Used&#39;)
+        results_fig.add_trace(data_used, row=subplot_num, col=1)
+
 
         # tp currently is not being added to spec_plot_list
         if &#39;tp&#39; in spec_plot_list:
@@ -2169,16 +2189,19 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                         range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
                         side=&#39;top&#39;,
                         row=1, col=1)
+        
         results_fig.update_xaxes(type=&#39;log&#39;,overlaying=&#39;x&#39;,
                         range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
                         side=&#39;bottom&#39;,
                         row=1, col=1)
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
+        
         results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
-                                showlegend=False, autosize=False, height=200*noSubplots, width=900,
-                                title=hvsr_data[&#39;site&#39;])
+                                showlegend=False, autosize=True, height = 1.2 * float(preview_fig.layout.width),
+                                title=f&#34;{hvsr_data[&#39;site&#39;]} Results&#34;)
         results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
+        results_fig.update_yaxes(title_text=&#39;H/V Over Time&#39;, row=noSubplots, col=1)
         if comp_plot_row==1:
             results_fig.update_yaxes(title_text=&#34;PPSD Amp\n[m2/s4/Hz][dB]&#34;, secondary_y=True, row=comp_plot_row, col=1)
         else:
@@ -2188,6 +2211,9 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         with results_graph_widget:
             clear_output(wait=True)
             display(results_fig)
+
+        if show_plot_check.value:
+            results_fig.show()
 
         sprit_tabs.selected_index = 4
         log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}&#34;
@@ -2260,7 +2286,10 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         
         #preview_fig.add_trace(p)
         preview_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=False,
-                                  title=hvsr_data[&#39;site&#39;])
+                                  title=f&#34;{hvsr_data[&#39;site&#39;]} Data Preview&#34;)
+
+        if show_plot_check.value:
+            preview_fig.show()
 
     # REMOVE NOISE SUBTAB
     # STA/LTA Antitrigger
@@ -2655,10 +2684,14 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                     outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
                     
                     outlier_fig.update_xaxes(showticklabels=False, row=1, col=1)
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;Z&#39;}, row=1, col=1)
                     outlier_fig.update_xaxes(showticklabels=False, row=2, col=1)
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;E&#39;}, row=2, col=1)
                     outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
-                    outlier_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=False,
-                                  title=hvsr_data[&#39;site&#39;])
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;N&#39;}, row=3, col=1)
+
+                    outlier_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=True,
+                                  title=f&#34;{hvsr_data[&#39;site&#39;]} Outliers&#34;)
                     if comp == &#39;N&#39;:
                         minY = np.nanmin(curr_data)
                         maxY = np.nanmax(curr_data)
@@ -2677,6 +2710,9 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
             clear_output(wait=True)
             display(outlier_fig)
         
+        if show_plot_check.value:
+            outlier_fig.show()
+
         return outlier_fig, hvsr_data
 
     # HVSR SETTINGS SUBTAB
@@ -3047,24 +3083,38 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     sprit_tabs.set_title(3, &#34;Log&#34;)
     sprit_tabs.set_title(4, &#34;Results&#34;)
 
-    sprit_title = widgets.Label(value=&#39;SPRIT&#39;)
+    sprit_title = widgets.Label(value=&#39;SPRIT&#39;, layout=widgets.Layout(width=&#39;150px&#39;))
     sprit_subtitle = widgets.Label(value=&#39;Tools for ambient siesmic noise analysis using HVSR&#39;,
-                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-end&#39;))
-    import webbrowser
+                                   layout=widgets.Layout(flex=&#39;1&#39;, justify_content=&#39;flex-start&#39;, align_content=&#39;flex-end&#39;))
 
     # Function to open a link
-    def open_link(button):
+    def open_dist(button):
+        link = &#39;https://pypi.org/project/sprit/&#39;
+        webbrowser.open_new_tab(link)
+
+    def open_repo(button):
+        link = &#39;https://github.com/RJbalikian/SPRIT-HVSR&#39;
+        webbrowser.open_new_tab(link)
+
+    def open_docs(button):
         link = &#39;https://rjbalikian.github.io/SPRIT-HVSR/main.html&#39;
         webbrowser.open_new_tab(link)
 
-    # Create a button
+
+    sourcebutton = widgets.Button(description=&#34;PyPI&#34;,
+                                layout=widgets.Layout(width=&#39;4%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+    repobutton = widgets.Button(description=&#34;Repo&#34;,
+                                layout=widgets.Layout(width=&#39;4%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
     docsbutton = widgets.Button(description=&#34;Docs&#34;,
-                                layout=widgets.Layout(width=&#39;5%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+                                layout=widgets.Layout(width=&#39;8%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
 
     # Attach the open_link function to the button&#39;s on_click event
-    docsbutton.on_click(open_link)
+    sourcebutton.on_click(open_dist)
+    repobutton.on_click(open_repo)
+    docsbutton.on_click(open_docs)
 
-    titlehbox = widgets.HBox([sprit_title, sprit_subtitle,docsbutton])
+    titlehbox = widgets.HBox([sprit_title, sprit_subtitle, repobutton, sourcebutton, docsbutton],
+                            layout = widgets.Layout(align_content=&#39;space-between&#39;))
     
     title_style = {
         &#39;font_family&#39;: &#39;Arial, sans-serif&#39;,
@@ -5013,7 +5063,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-07', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-08', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
