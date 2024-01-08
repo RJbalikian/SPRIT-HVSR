@@ -435,9 +435,9 @@ def create_jupyter_ui():
 
     input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
     input_accordion.titles = [&#34;Instrument Metadata&#34;, &#34;Acquisition Information&#34;, &#34;Location Information&#34;, &#34;I/O and Parameters&#34;, &#34;See Python API Call&#34;]
-    input_accordion_box.layout = widgets.Layout(width=&#39;95%&#39;)
-
-    input_accordion.layout.width = &#39;99%&#39;
+    input_accordion_box.layout = widgets.Layout(align_content=&#39;space-between&#39;, width=&#39;99%&#39;)
+    
+    input_accordion.layout = widgets.Layout(width=&#39;99%&#39;)
 
     # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
     # A text box for the site name
@@ -566,8 +566,8 @@ def create_jupyter_ui():
     input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
     input_accordion_box.children = [input_accordion]
-    input_HBox.children = [input_accordion_label_box, input_accordion_box]
-    input_HBox.layout= widgets.Layout(align_content=&#39;space-between&#39;)
+    #input_HBox.children = [input_accordion_label_box, input_accordion_box]
+    #input_HBox.layout= widgets.Layout(align_content=&#39;space-between&#39;)
 
     # Create a GridBox with 12 rows and 20 columns
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns=&#39;repeat(10, 1)&#39;,
@@ -577,7 +577,7 @@ def create_jupyter_ui():
     input_tab.children = [site_hbox,
                             datapath_hbox,
                             metadata_hbox,
-                            input_HBox,
+                            input_accordion_box,
                             progress_hbox]
 
     def get_input_params():
@@ -1330,8 +1330,17 @@ def create_jupyter_ui():
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         
+        if preview_fig.layout.width is None:
+            if outlier_fig.layout.widgth is None:
+                chartwidth = 800
+            else:
+                chartwidth = outlier_fig.layout.width
+
+        else:
+            chartwidth = preview_fig.layout.width
+
         results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
-                                showlegend=False, autosize=True, height = 1.2 * float(preview_fig.layout.width),
+                                showlegend=False, autosize=True, height = 1.2 * float(chartwidth),
                                 title=f&#34;{hvsr_data[&#39;site&#39;]} Results&#34;)
         results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
         results_fig.update_yaxes(title_text=&#39;H/V Over Time&#39;, row=noSubplots, col=1)
@@ -2670,9 +2679,9 @@ def create_jupyter_ui():
 
     input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
     input_accordion.titles = [&#34;Instrument Metadata&#34;, &#34;Acquisition Information&#34;, &#34;Location Information&#34;, &#34;I/O and Parameters&#34;, &#34;See Python API Call&#34;]
-    input_accordion_box.layout = widgets.Layout(width=&#39;95%&#39;)
-
-    input_accordion.layout.width = &#39;99%&#39;
+    input_accordion_box.layout = widgets.Layout(align_content=&#39;space-between&#39;, width=&#39;99%&#39;)
+    
+    input_accordion.layout = widgets.Layout(width=&#39;99%&#39;)
 
     # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
     # A text box for the site name
@@ -2801,8 +2810,8 @@ def create_jupyter_ui():
     input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
 
     input_accordion_box.children = [input_accordion]
-    input_HBox.children = [input_accordion_label_box, input_accordion_box]
-    input_HBox.layout= widgets.Layout(align_content=&#39;space-between&#39;)
+    #input_HBox.children = [input_accordion_label_box, input_accordion_box]
+    #input_HBox.layout= widgets.Layout(align_content=&#39;space-between&#39;)
 
     # Create a GridBox with 12 rows and 20 columns
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns=&#39;repeat(10, 1)&#39;,
@@ -2812,7 +2821,7 @@ def create_jupyter_ui():
     input_tab.children = [site_hbox,
                             datapath_hbox,
                             metadata_hbox,
-                            input_HBox,
+                            input_accordion_box,
                             progress_hbox]
 
     def get_input_params():
@@ -3565,8 +3574,17 @@ def create_jupyter_ui():
         if comp_plot_row!=1:
             results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
         
+        if preview_fig.layout.width is None:
+            if outlier_fig.layout.widgth is None:
+                chartwidth = 800
+            else:
+                chartwidth = outlier_fig.layout.width
+
+        else:
+            chartwidth = preview_fig.layout.width
+
         results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
-                                showlegend=False, autosize=True, height = 1.2 * float(preview_fig.layout.width),
+                                showlegend=False, autosize=True, height = 1.2 * float(chartwidth),
                                 title=f&#34;{hvsr_data[&#39;site&#39;]} Results&#34;)
         results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
         results_fig.update_yaxes(title_text=&#39;H/V Over Time&#39;, row=noSubplots, col=1)
