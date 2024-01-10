@@ -29,7 +29,6 @@ except: #For local testing
 
 global hvsr_data
     
-
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 def get_default(func, param):
@@ -871,7 +870,8 @@ def create_jupyter_ui():
         progress_bar.value = 1
         global hvsr_results
         hvsr_results = hvsr_data
-
+        return hvsr_results
+        
     def parse_plot_string(plot_string):
         plot_list = plot_string.split()
 
@@ -1231,6 +1231,7 @@ def create_jupyter_ui():
 
     def update_results_fig(hv_data, plot_string):
         global results_fig
+        global results_subp
         hvsr_data = hv_data
 
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
@@ -1260,16 +1261,16 @@ def create_jupyter_ui():
         results_fig.data = []
         results_fig.update_layout(grid=None)  # Clear the existing grid layout
         if not combinedComp: 
-            subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+            results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                                 row_heights=[2, 1.5, 1])
         else:
-            subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+            results_subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                     specs =[[{'secondary_y': True}],
                                             [{'secondary_y': False}]],
                                             row_heights=[1, 1])
         results_fig.update_layout(grid={'rows': noSubplots})
         #del results_fig
-        results_fig = go.FigureWidget(subp)
+        results_fig = go.FigureWidget(results_subp)
 
         results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
 
@@ -1328,15 +1329,16 @@ def create_jupyter_ui():
         if show_plot_check.value:
             results_fig.show()
 
+
         sprit_tabs.selected_index = 4
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
-
+      
     process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
     #Initialize plot
-    subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
-    preview_fig = go.FigureWidget(subp)
+    preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
+    preview_fig = go.FigureWidget(preview_subp)
 
     def update_preview_fig(hv_data, preview_fig):
         preview_fig.data = []
@@ -1709,9 +1711,9 @@ def create_jupyter_ui():
             if hasattr(hvsr_data, 'hvsr_df') and 'HV_Curves' in hvsr_data.hvsr_df.columns:
                 outlier_fig.data = []
                 outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
-                subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
+                outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
                 outlier_fig.update_layout(grid={'rows': 1})
-                outlier_fig = go.FigureWidget(subp)
+                outlier_fig = go.FigureWidget(outlier_subp)
 
                 x_data = hvsr_data['x_freqs']
                 curve_traces = []
@@ -1732,10 +1734,10 @@ def create_jupyter_ui():
             no_subplots = 3
             outlier_fig.data = []
             outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
-            subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
+            outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
                                                     row_heights=[1, 1, 1])
             outlier_fig.update_layout(grid={'rows': 3})
-            outlier_fig = go.FigureWidget(subp)
+            outlier_fig = go.FigureWidget(outlier_subp)
 
             if hasattr(hvsr_data, 'hvsr_df'):
                 rowDict = {'Z':1, 'E':2, 'N':3}
@@ -2079,8 +2081,9 @@ def create_jupyter_ui():
 
     # RESULTS TAB
     # PLOT SUBTAB
-    subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
-    results_fig = go.FigureWidget(subp)
+    global results_subp
+    results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
+    results_fig = go.FigureWidget(results_subp)
     global results_graph_widget
     results_graph_widget = widgets.Output()   
 
@@ -2212,7 +2215,6 @@ def create_jupyter_ui():
     def open_docs(button):
         link = 'https://rjbalikian.github.io/SPRIT-HVSR/main.html'
         webbrowser.open_new_tab(link)
-
 
     sourcebutton = widgets.Button(description="PyPI",
                                 layout=widgets.Layout(width='4%', justify_content='flex-end',align_content='flex-end'))

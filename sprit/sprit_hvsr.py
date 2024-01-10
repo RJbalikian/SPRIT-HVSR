@@ -528,7 +528,6 @@ def gui(kind='default'):
         "lite" open lite (pending update), by default 'default'
 
     """
-
     defaultList = ['windowed', 'window', 'default', 'd']
     widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
     liteList = ['lite', 'light', 'basic', 'l', 'b']
