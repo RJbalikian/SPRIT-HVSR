@@ -573,7 +573,10 @@ def gui(kind='default'):
         gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
         gui_root.mainloop() #Run the main loop
     elif kind.lower() in widgetList:
-        sprit_jupyter_UI.create_jupyter_ui()
+        try:
+            sprit_jupyter_UI.create_jupyter_ui()
+        except Exception as e:
+            print(e)
     
 
 #FUNCTIONS AND METHODS
