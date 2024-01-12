@@ -559,7 +559,6 @@ def gui(kind=&#39;default&#39;):
         &#34;lite&#34; open lite (pending update), by default &#39;default&#39;
 
     &#34;&#34;&#34;
-
     defaultList = [&#39;windowed&#39;, &#39;window&#39;, &#39;default&#39;, &#39;d&#39;]
     widgetList = [&#39;widget&#39;, &#39;jupyter&#39;, &#39;notebook&#39;, &#39;w&#39;, &#39;nb&#39;]
     liteList = [&#39;lite&#39;, &#39;light&#39;, &#39;basic&#39;, &#39;l&#39;, &#39;b&#39;]
@@ -604,7 +603,10 @@ def gui(kind=&#39;default&#39;):
         gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
         gui_root.mainloop() #Run the main loop
     elif kind.lower() in widgetList:
-        sprit_jupyter_UI.create_jupyter_ui()
+        try:
+            sprit_jupyter_UI.create_jupyter_ui()
+        except Exception as e:
+            print(e)
     
 
 #FUNCTIONS AND METHODS
@@ -9109,7 +9111,6 @@ If a directory is specified, the filename will be
         &#34;lite&#34; open lite (pending update), by default &#39;default&#39;
 
     &#34;&#34;&#34;
-
     defaultList = [&#39;windowed&#39;, &#39;window&#39;, &#39;default&#39;, &#39;d&#39;]
     widgetList = [&#39;widget&#39;, &#39;jupyter&#39;, &#39;notebook&#39;, &#39;w&#39;, &#39;nb&#39;]
     liteList = [&#39;lite&#39;, &#39;light&#39;, &#39;basic&#39;, &#39;l&#39;, &#39;b&#39;]
@@ -9154,7 +9155,10 @@ If a directory is specified, the filename will be
         gui_root.protocol(&#34;WM_DELETE_WINDOW&#34;, on_gui_closing)    
         gui_root.mainloop() #Run the main loop
     elif kind.lower() in widgetList:
-        sprit_jupyter_UI.create_jupyter_ui()</code></pre>
+        try:
+            sprit_jupyter_UI.create_jupyter_ui()
+        except Exception as e:
+            print(e)</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.gui_test"><code class="name flex">
@@ -9248,7 +9252,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-08', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-11', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>

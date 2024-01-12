@@ -402,6 +402,8 @@ class SPRIT_App:
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
 
+                print(self.params.items())
+
                 if self.trim_dir.get()=='':
                     trimDir=None
                 else:
@@ -3090,7 +3092,7 @@ class SPRIT_App:
 def on_closing():
     plt.close('all')
     root.destroy()
-    exit()
+    sys.exit()
 
 def reboot_app():
     """Restarts the current program.

@@ -1,10 +1,10 @@
 package:
   name: sprit
-  version: 0.1.64
+  version: 0.1.65
 
 source:
   git_url: https://github.com/RJbalikian/SPRIT-HVSR
-  git_tag: v0.1.64
+  git_tag: v0.1.65
 
 build:
   number: 0

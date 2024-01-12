@@ -12,7 +12,7 @@ import markdown
 #Whether to CONVERT_MD using markdown library (True), or let github do it (False)
 CONVERT_MD=True
 RTD_THEME=False #Not currently working
-RELEASE_VERSION= '0.1.64'
+RELEASE_VERSION= '0.1.65'
 RUN_TESTS=False
 LINT_IT=False
 
@@ -155,13 +155,14 @@ else:
 setupFPath = repoDir.joinpath('setup.py')
 pyprojectFPath = repoDir.joinpath('pyproject.toml')
 condaFPath = repoDir.joinpath('conda/meta.yaml')
+pyappFPath = repoDir.joinpath('pyapp/pyapp.yaml')
 
-confFilePaths = [setupFPath, pyprojectFPath, condaFPath]
+confFilePaths = [setupFPath, pyprojectFPath, condaFPath, pyappFPath]
 for cFile in confFilePaths:
     with open(cFile.as_posix(), mode='r', encoding='utf-8') as f:
         cFileText = f.read()
 
-
+    print('cfile', cFile)
     #Update which file is being analyzed for creating exe
     VER_TEXT = r'version=".*?"'
     NEW_VER_TEXT = r'version="'+RELEASE_VERSION+'"'
@@ -170,6 +171,7 @@ for cFile in confFilePaths:
     VER_TEXT = r'version:\s+\d+\.\d+\.\d+[^\n]*'
     NEW_VER_TEXT = r'version: '+RELEASE_VERSION
     cFileText = re.sub(VER_TEXT, NEW_VER_TEXT, cFileText, flags=re.DOTALL)
+
 
     VER_TEXT = r'git_tag:\s+v+\d+\.\d+\.\d+[^\n]*'
     NEW_VER_TEXT = r'git_tag: v'+RELEASE_VERSION

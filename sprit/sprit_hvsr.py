@@ -4197,15 +4197,22 @@ def _update_shake_metadata(filepath, params, write_path=''):
             warnings.warn(f'write_path={write_path} is not recognized as a filepath, updated metadata file will not be written')
             write_path=''
     else:
-        #Create temporary file for reading into obspy
-        tpf = tempfile.NamedTemporaryFile(delete=False)
-        stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
-        tpf.write(stringRoot)
+        try:
+            #Create temporary file for reading into obspy
+            tpf = tempfile.NamedTemporaryFile(delete=False)
+            stringRoot = ET.tostring(root, encoding='UTF-8', method='xml')
+            tpf.write(stringRoot)
 
-        inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
-        tpf.close()
+            inv = obspy.read_inventory(tpf.name, format='STATIONXML', level='response')
+            tpf.close()
 
-        os.remove(tpf.name)
+            os.remove(tpf.name)
+        except:
+            write_file = pathlib.Path(__file__).with_name('metadata.xml')
+            tree.write(write_file, xml_declaration=True, method='xml',encoding='UTF-8')
+            inv = obspy.read_inventory(write_file.as_posix(), format='STATIONXML', level='response')
+            os.remove(write_file.as_posix())
+
     params['inv'] = inv
     params['params']['inv'] = inv
     return params
