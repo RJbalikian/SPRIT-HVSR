@@ -8,11 +8,13 @@ from PyInstaller.utils.hooks import collect_dynamic_libs, collect_data_files, ex
     collect_submodules, get_package_paths, collect_all, collect_entry_point
 import os.path
 
+# Options for pyinstaller call
 do_package=True
 package_type='spec'
 onefile=False
 pythonfpath = ''
 
+# Get filepaths
 currentDir = pathlib.Path((__file__)).parent
 docsDir = currentDir.parent.joinpath('docs/')
 repoDir = docsDir.parent
@@ -21,39 +23,34 @@ spritDir = repoDir.joinpath('sprit')
 spritGUIPath = spritDir.joinpath('sprit_gui.py')
 spritPath = spritDir.joinpath('sprit_hvsr.py')
 resourcesDir = spritDir.joinpath('resources')
+
+# Copy gui file so as not to accidentally overwrite it or something
 pyinstallerGUI = currentDir.joinpath('sprit_gui_COPY.py')
 shutil.copy(spritGUIPath, pyinstallerGUI)
 pyinstallerGUI_new = pyinstallerGUI.with_name('sprit_gui_pyinstaller.py')
 
 sys.path.append(str(spritDir))
-#import sprit
+#import sprit #test if sprit imported
 
+# Get the text of the gui file for minor updates (to docstring, e.g.)
 with open(str(pyinstallerGUI), 'r') as f:
     pyinstallerGUI_text = f.read()
-
-#UPDATE TEXT
-#Update gui .py file
-#Change intro text
 introText = "graphical user interface"
 newIntroText = "pyinstaller app"
 pyinstallerGUI_text = pyinstallerGUI_text.replace(introText, newIntroText)
 
-#resourcePathText = r'pkg_resources.resource_filename\(\[.*?\]'
-#newresourcePathText = r"Analysis(['"+pyinstallerGUI_new.name+"']"
-#pyinstallerGUI_text = re.sub(resourcePathText, resourcePathText, pyinstallerGUI_text, flags=re.DOTALL)
-
-#Update .spec file
+# Read in existing specfile
 specPath = currentDir.joinpath('sprit_gui_pyinstaller.spec')
 with open(specPath.as_posix(), 'r',  encoding='utf-8') as f:
     specText = f.read()
 
-#Update which file is being analyzed for creating exe
+#Update which file is being used for creating exe
 analysisArgText = r'Analysis\(\[.*?\]'
 newAnalysisArgText = r"Analysis(['"+pyinstallerGUI_new.name+"']"
 specText = re.sub(analysisArgText, newAnalysisArgText, specText, flags=re.DOTALL)
 
-(_, obspy_root) = get_package_paths('obspy')
-
+# Get all the data
+# I have been adding one package at a time every time I run into an error
 reqdatas, reqbinaries, reqhiddenimports = collect_all('requests')
 decdatas, decbinaries, dechiddenimports = collect_all('decorator')
 sqldatas, sqlbinaries, sqlhiddenimports = collect_all('sqlalchemy')
@@ -66,24 +63,20 @@ urldatas, urlbinaries, urlhiddenimports = collect_all('urllib3')
 idnadatas, idnabinaries, idnahiddenimports = collect_all('idna')
 cndatas, cnbinaries, cnhiddenimports = collect_all('chardet')
 gldatas, glbinaries, glhiddenimports = collect_all('greenlet')
-tedatas, tebinaries, tehiddenimports = collect_all('typing-extensions')
-
-spritdatas, sprithiddenimports = collect_entry_point("sprit")
-obspydatas, obspyhiddenimports = collect_entry_point("obspy")
-tedatas1, tehiddenimports1 = collect_entry_point("typing-extensions")
+tedatas, tebinaries, tehiddenimports = collect_all('typing-extensions')  #not working
+tedatas1, tehiddenimports1 = collect_entry_point("typing-extensions") # does not help
 
 updateddatas = [reqdatas, decdatas, sqldatas, lxmldatas,mpldatas,scipydatas,
-                npdatas,cfpdatas,urldatas,idnadatas,cndatas, gldatas, tedatas,tedatas1,
-                spritdatas, obspydatas]
+                npdatas,cfpdatas,urldatas,idnadatas,cndatas, gldatas, tedatas,tedatas1]
 updatebinaries = [reqbinaries, decbinaries, sqlbinaries, lxmlbinaries, mplbinaries,
                 scipybinaries, npbinaries,cfbinaries,urlbinaries,idnabinaries,cnbinaries,
                 glbinaries, tebinaries]
 updatehidimps = [reqhiddenimports,dechiddenimports,sqlhiddenimports,lxmlhiddenimports,
                mplhiddenimports,scipyhiddenimports,nphiddenimports,cfhiddenimports,
                urlhiddenimports,idnabinaries,cnhiddenimports,glhiddenimports,
-               tehiddenimports,['typing_extensions', 'typing-extensions'],tehiddenimports1,
-               sprithiddenimports, obspyhiddenimports]
+               tehiddenimports,['typing_extensions', 'typing-extensions'],tehiddenimports1]
 
+# Get binaries text for spec file
 binaries = collect_dynamic_libs('obspy')
 
 for d in updatebinaries:
@@ -94,7 +87,9 @@ binText = r'binaries=\[.*?\]'
 newbinText = r"binaries={}".format(binaries)
 specText = re.sub(binText, newbinText, specText, flags=re.DOTALL)
 
+# Get datas text for spec file
 (_, PIL_root) = get_package_paths('PIL')
+(_, obspy_root) = get_package_paths('obspy')
 
 datas = [
     # Dummy path, this needs to exist for obspy.core.util.libnames._load_cdll

@@ -676,7 +676,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
             if not data_noiseRemoved[site_name]['batch']:
                 data_noiseRemoved = data_noiseRemoved[site_name]
     
-    #Generate PPSDs
+    # Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
@@ -732,7 +732,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
             if not data_curvesRemoved[site_name]['batch']:
                 data_curvesRemoved = data_curvesRemoved[site_name]
     
-    #Process HVSR Curves
+    # Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
@@ -763,7 +763,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
             
     #Final post-processing/reporting
 
-    #Check peaks
+    # Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
