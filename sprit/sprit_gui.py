@@ -1032,13 +1032,13 @@ class SPRIT_App:
 
         ttk.Label(hvsrFrame,text="Input CRS").grid(row=6,column=1, sticky='e', padx=5, pady=10)
         self.input_crs = tk.StringVar()
-        self.input_crs.set('EPSG:4236')
+        self.input_crs.set('EPSG:4326')
         self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate='focusout', validatecommand=update_input_params_call)
         self.input_crs_entry.grid(row=6,column=2, sticky='w', padx=0)
 
         ttk.Label(hvsrFrame,text="Output CRS").grid(row=6,column=3, sticky='e', padx=5, pady=10)
         self.output_crs = tk.StringVar()
-        self.output_crs.set('EPSG:4236')
+        self.output_crs.set('EPSG:4326')
         self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate='focusout', validatecommand=update_input_params_call)
         self.output_crs_entry.grid(row=6, column=4, sticky='w', padx=0)
 
