@@ -792,7 +792,9 @@ class SPRIT_App:
             update_input_params_call()
 
         self.data_path = tk.StringVar()
-        self.data_path.trace('w', on_data_path_change)
+        self.data_path.set('sample')
+        self.fpath = self.data_path.get()
+        self.data_path.trace_add('write', on_data_path_change)
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
 
@@ -827,6 +829,7 @@ class SPRIT_App:
         # Metadata Filepath
         ttk.Label(hvsrFrame, text="Metadata Filepath").grid(row=2, column=0, sticky='e', padx=5, pady=(2.5,5))
         self.meta_path = tk.StringVar()
+        self.meta_path.set('')
         self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate='focusout', validatecommand=update_input_params_call)
         self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky='ew', padx=5, pady=(2.5,5))
         
