@@ -707,7 +707,7 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
             if not data_noiseRemoved[site_name][&#39;batch&#39;]:
                 data_noiseRemoved = data_noiseRemoved[site_name]
     
-    #Generate PPSDs
+    # Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
@@ -763,7 +763,7 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
             if not data_curvesRemoved[site_name][&#39;batch&#39;]:
                 data_curvesRemoved = data_curvesRemoved[site_name]
     
-    #Process HVSR Curves
+    # Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
@@ -794,7 +794,7 @@ def run(datapath, source=&#39;file&#39;, verbose=False, **kwargs):
             
     #Final post-processing/reporting
 
-    #Check peaks
+    # Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
@@ -4216,7 +4216,7 @@ def _update_shake_metadata(filepath, params, write_path=&#39;&#39;):
     if write_path != &#39;&#39;:
         try:
             write_path = pathlib.Path(write_path)
-            if write_path.isdir():
+            if write_path.is_dir():
                 fname = params[&#39;network&#39;]+&#39;_&#39;+params[&#39;station&#39;]+&#39;_&#39;+params[&#39;site&#39;]
                 fname = fname + &#39;_response.xml&#39;
                 write_file = write_path.joinpath(fname)
@@ -4228,15 +4228,22 @@ def _update_shake_metadata(filepath, params, write_path=&#39;&#39;):
             warnings.warn(f&#39;write_path={write_path} is not recognized as a filepath, updated metadata file will not be written&#39;)
             write_path=&#39;&#39;
     else:
-        #Create temporary file for reading into obspy
-        tpf = tempfile.NamedTemporaryFile(delete=False)
-        stringRoot = ET.tostring(root, encoding=&#39;UTF-8&#39;, method=&#39;xml&#39;)
-        tpf.write(stringRoot)
+        try:
+            #Create temporary file for reading into obspy
+            tpf = tempfile.NamedTemporaryFile(delete=False)
+            stringRoot = ET.tostring(root, encoding=&#39;UTF-8&#39;, method=&#39;xml&#39;)
+            tpf.write(stringRoot)
 
-        inv = obspy.read_inventory(tpf.name, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
-        tpf.close()
+            inv = obspy.read_inventory(tpf.name, format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
+            tpf.close()
 
-        os.remove(tpf.name)
+            os.remove(tpf.name)
+        except:
+            write_file = pathlib.Path(__file__).with_name(&#39;metadata.xml&#39;)
+            tree.write(write_file, xml_declaration=True, method=&#39;xml&#39;,encoding=&#39;UTF-8&#39;)
+            inv = obspy.read_inventory(write_file.as_posix(), format=&#39;STATIONXML&#39;, level=&#39;response&#39;)
+            os.remove(write_file.as_posix())
+
     params[&#39;inv&#39;] = inv
     params[&#39;params&#39;][&#39;inv&#39;] = inv
     return params
@@ -4596,7 +4603,9 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action=&#39;ignore&#39;, message=&#39;^readMSEEDBuffer()&#39;)
-                    st = obspy.read(str(f), starttime=UTCDateTime(params[&#39;starttime&#39;]), endtime=UTCDateTime(params[&#39;endtime&#39;]), nearest_sample=False)
+                    st = obspy.read(str(f))#, starttime=UTCDateTime(params[&#39;starttime&#39;]), endtime=UTCDateTime(params[&#39;endtime&#39;]), nearest_sample=False)
+                    st = st.split()
+                    st.trim(starttime=UTCDateTime(params[&#39;starttime&#39;]), endtime=UTCDateTime(params[&#39;endtime&#39;]), nearest_sample=False)
                     st.merge()
                     tr = (st[0])
                     #tr= obspy.Trace(tr.data,header=meta)
@@ -5312,7 +5321,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
 
     if isinstance(input, (dict, HVSRData)):
         stream = input[&#39;stream&#39;].copy()
-    elif isinstance(input, (obspy.core.Trace.trace, obspy.core.stream.Stream)):
+    elif isinstance(input, (obspy.core.trace.Trace, obspy.core.stream.Stream)):
         stream = input.copy()
     else:
         pass #Warning?
@@ -9252,7 +9261,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-11', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-19', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -11040,7 +11049,7 @@ For sample data, The following can be specified as the datapath parameter:
             if not data_noiseRemoved[site_name][&#39;batch&#39;]:
                 data_noiseRemoved = data_noiseRemoved[site_name]
     
-    #Generate PPSDs
+    # Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
@@ -11096,7 +11105,7 @@ For sample data, The following can be specified as the datapath parameter:
             if not data_curvesRemoved[site_name][&#39;batch&#39;]:
                 data_curvesRemoved = data_curvesRemoved[site_name]
     
-    #Process HVSR Curves
+    # Process HVSR Curves
     try:
         process_hvsr_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
@@ -11127,7 +11136,7 @@ For sample data, The following can be specified as the datapath parameter:
             
     #Final post-processing/reporting
 
-    #Check peaks
+    # Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()[&#39;kwargs&#39;].items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
     hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 

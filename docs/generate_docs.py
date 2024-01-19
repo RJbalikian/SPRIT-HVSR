@@ -13,8 +13,8 @@ import markdown
 CONVERT_MD=True
 RTD_THEME=False #Not currently working
 RELEASE_VERSION= '0.1.65'
-RUN_TESTS=False
-LINT_IT=False
+RUN_TESTS=True
+LINT_IT=True
 
 #Setup relevant paths
 currentDir = pathlib.Path((__file__)).parent
@@ -155,14 +155,12 @@ else:
 setupFPath = repoDir.joinpath('setup.py')
 pyprojectFPath = repoDir.joinpath('pyproject.toml')
 condaFPath = repoDir.joinpath('conda/meta.yaml')
-pyappFPath = repoDir.joinpath('pyapp/pyapp.yaml')
 
-confFilePaths = [setupFPath, pyprojectFPath, condaFPath, pyappFPath]
+confFilePaths = [setupFPath, pyprojectFPath, condaFPath]
 for cFile in confFilePaths:
     with open(cFile.as_posix(), mode='r', encoding='utf-8') as f:
         cFileText = f.read()
 
-    print('cfile', cFile)
     #Update which file is being analyzed for creating exe
     VER_TEXT = r'version=".*?"'
     NEW_VER_TEXT = r'version="'+RELEASE_VERSION+'"'

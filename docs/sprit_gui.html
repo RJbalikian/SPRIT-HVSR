@@ -163,9 +163,6 @@ def catch_errors(func):
                 logMsg = logMsg + &#34;\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
                     logMsg = logMsg+&#34;\n\t\t{}&#34;.format(addMsg)
-            #print(dir(func))
-            #for i, keys in enumerate(dir(func)):
-            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
 
 
             SPRIT_App.log_errorMsg(spritApp, logMsg)
@@ -414,9 +411,9 @@ class SPRIT_App:
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
-                                    network=self.network.get(), 
-                                    station=self.station.get(), 
-                                    loc=self.location.get(), 
+                                    network=self.network.get(),
+                                    station=self.station.get(),
+                                    loc=self.location.get(),
                                     channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
                                     acq_date = self.starttime.date(),
                                     starttime = self.starttime,
@@ -523,7 +520,8 @@ class SPRIT_App:
             if not self.processingData:
                 update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
-
+            return self.hvsr_data
+        
         def report_results(hvsr_results):
             self.curveTest1ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][:-1])
             self.curveTest1Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1])
@@ -588,8 +586,8 @@ class SPRIT_App:
             #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
             self.processingData = True #Set to true while data processing algorithm is being run
             
-            if self.data_read == False:
-                read_data()
+            if not self.data_read:
+                self.hvsr_data = read_data()
                 update_progress_bars(prog_percent=12)
 
             self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
@@ -612,11 +610,11 @@ class SPRIT_App:
 
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
-                                                remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),             
-                                                ppsd_length=self.ppsd_length.get(), 
-                                                overlap=self.overlap.get(), 
-                                                period_step_octaves=self.perStepOct.get(), 
+                                                remove_outliers=self.remove_outliers.get(),
+                                                outlier_std=self.outlier_std.get(),
+                                                ppsd_length=self.ppsd_length.get(),
+                                                overlap=self.overlap.get(),
+                                                period_step_octaves=self.perStepOct.get(),
                                                 skip_on_gaps=self.skip_on_gaps.get(),
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
@@ -819,7 +817,9 @@ class SPRIT_App:
             update_input_params_call()
 
         self.data_path = tk.StringVar()
-        self.data_path.trace(&#39;w&#39;, on_data_path_change)
+        self.data_path.set(&#39;sample&#39;)
+        self.fpath = self.data_path.get()
+        self.data_path.trace_add(&#39;write&#39;, on_data_path_change)
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
 
@@ -854,6 +854,7 @@ class SPRIT_App:
         # Metadata Filepath
         ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
         self.meta_path = tk.StringVar()
+        self.meta_path.set(&#39;&#39;)
         self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(2.5,5))
         
@@ -870,7 +871,7 @@ class SPRIT_App:
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
         
-        def update_acq_date(event):
+        def update_acq_date():
             aMonth = self.acq_month.get()
             if str(aMonth)[0]==&#39;0&#39;:
                 aMonth = str(aMonth)[-1]
@@ -879,7 +880,7 @@ class SPRIT_App:
             if str(aDay)[0]==&#39;0&#39;:
                 aDay = str(aDay)[-1]
 
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)
             self.day_of_year = self.acq_date.timetuple().tm_yday
             self.doy_label.configure(text=str(self.day_of_year))
             update_input_params_call()
@@ -905,16 +906,13 @@ class SPRIT_App:
         self.acq_day_entry.grid(row=1, column=4, sticky=&#39;ew&#39;, padx=1)
 
         self.acq_date = datetime.date.today()
-        #self.date_entry = DateEntry(hvsrFrame, date_pattern=&#39;y-mm-dd&#39;, textvariable=self.acq_date, validate=&#39;focusout&#39;)#update_input_params_call)
-        #self.date_entry.grid(row=3, column=2, sticky=&#39;w&#39;, padx=5)
-        #self.date_entry.bind(&#34;&lt;&lt;DateEntrySelected&gt;&gt;&#34;, update_acq_date)
         
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
         def get_times():
             #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
 
             sHour = self.start_hour.get()
             if str(sHour)[0] == &#39;0&#39;:
@@ -924,11 +922,11 @@ class SPRIT_App:
             if str(sMin)[0] == &#39;0&#39;:
                 sMin = int(str(sMin)[-1])
 
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month,
-                                          day = self.acq_date.day,
-                                          hour = sHour,
-                                          minute = sMin,
+            self.starttime = datetime.datetime(year = int(self.acq_date.year),
+                                          month = int(self.acq_date.month),
+                                          day = int(self.acq_date.day),
+                                          hour = int(sHour),
+                                          minute = int(sMin),
                                           tzinfo=self.tz)
             
             #Get duration, as originally entered
@@ -951,7 +949,7 @@ class SPRIT_App:
         
         def any_time_change():
             self.data_read = False #New file will not have been read, set to False            
-            self.acq_date = self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
             self.starttime, self.endtime = get_times()
             update_input_params_call()
 
@@ -989,7 +987,7 @@ class SPRIT_App:
         colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
         self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
         self.starttime, self.endtime = get_times()
 
         
@@ -1056,13 +1054,13 @@ class SPRIT_App:
 
         ttk.Label(hvsrFrame,text=&#34;Input CRS&#34;).grid(row=6,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
         self.input_crs = tk.StringVar()
-        self.input_crs.set(&#39;EPSG:4236&#39;)
+        self.input_crs.set(&#39;EPSG:4326&#39;)
         self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.input_crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
         ttk.Label(hvsrFrame,text=&#34;Output CRS&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
         self.output_crs = tk.StringVar()
-        self.output_crs.set(&#39;EPSG:4236&#39;)
+        self.output_crs.set(&#39;EPSG:4326&#39;)
         self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.output_crs_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
@@ -3119,7 +3117,7 @@ class SPRIT_App:
 def on_closing():
     plt.close(&#39;all&#39;)
     root.destroy()
-    exit()
+    sys.exit()
 
 def reboot_app():
     &#34;&#34;&#34;Restarts the current program.
@@ -3257,9 +3255,6 @@ if __name__ == &#34;__main__&#34;:
                 logMsg = logMsg + &#34;\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:&#34;
                 for addMsg in warningMessageList:
                     logMsg = logMsg+&#34;\n\t\t{}&#34;.format(addMsg)
-            #print(dir(func))
-            #for i, keys in enumerate(dir(func)):
-            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
 
 
             SPRIT_App.log_errorMsg(spritApp, logMsg)
@@ -3286,7 +3281,7 @@ if __name__ == &#34;__main__&#34;:
 <pre><code class="python">def on_closing():
     plt.close(&#39;all&#39;)
     root.destroy()
-    exit()</code></pre>
+    sys.exit()</code></pre>
 </details>
 </dd>
 <dt id="sprit.sprit_gui.reboot_app"><code class="name flex">
@@ -3558,9 +3553,9 @@ saving data) must be done before calling this function.</p></div>
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
-                                    network=self.network.get(), 
-                                    station=self.station.get(), 
-                                    loc=self.location.get(), 
+                                    network=self.network.get(),
+                                    station=self.station.get(),
+                                    loc=self.location.get(),
                                     channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
                                     acq_date = self.starttime.date(),
                                     starttime = self.starttime,
@@ -3667,7 +3662,8 @@ saving data) must be done before calling this function.</p></div>
             if not self.processingData:
                 update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
-
+            return self.hvsr_data
+        
         def report_results(hvsr_results):
             self.curveTest1ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][:-1])
             self.curveTest1Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1])
@@ -3732,8 +3728,8 @@ saving data) must be done before calling this function.</p></div>
             #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
             self.processingData = True #Set to true while data processing algorithm is being run
             
-            if self.data_read == False:
-                read_data()
+            if not self.data_read:
+                self.hvsr_data = read_data()
                 update_progress_bars(prog_percent=12)
 
             self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
@@ -3756,11 +3752,11 @@ saving data) must be done before calling this function.</p></div>
 
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
-                                                remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),             
-                                                ppsd_length=self.ppsd_length.get(), 
-                                                overlap=self.overlap.get(), 
-                                                period_step_octaves=self.perStepOct.get(), 
+                                                remove_outliers=self.remove_outliers.get(),
+                                                outlier_std=self.outlier_std.get(),
+                                                ppsd_length=self.ppsd_length.get(),
+                                                overlap=self.overlap.get(),
+                                                period_step_octaves=self.perStepOct.get(),
                                                 skip_on_gaps=self.skip_on_gaps.get(),
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
@@ -3963,7 +3959,9 @@ saving data) must be done before calling this function.</p></div>
             update_input_params_call()
 
         self.data_path = tk.StringVar()
-        self.data_path.trace(&#39;w&#39;, on_data_path_change)
+        self.data_path.set(&#39;sample&#39;)
+        self.fpath = self.data_path.get()
+        self.data_path.trace_add(&#39;write&#39;, on_data_path_change)
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
 
@@ -3998,6 +3996,7 @@ saving data) must be done before calling this function.</p></div>
         # Metadata Filepath
         ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
         self.meta_path = tk.StringVar()
+        self.meta_path.set(&#39;&#39;)
         self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(2.5,5))
         
@@ -4014,7 +4013,7 @@ saving data) must be done before calling this function.</p></div>
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
         
-        def update_acq_date(event):
+        def update_acq_date():
             aMonth = self.acq_month.get()
             if str(aMonth)[0]==&#39;0&#39;:
                 aMonth = str(aMonth)[-1]
@@ -4023,7 +4022,7 @@ saving data) must be done before calling this function.</p></div>
             if str(aDay)[0]==&#39;0&#39;:
                 aDay = str(aDay)[-1]
 
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)
             self.day_of_year = self.acq_date.timetuple().tm_yday
             self.doy_label.configure(text=str(self.day_of_year))
             update_input_params_call()
@@ -4049,16 +4048,13 @@ saving data) must be done before calling this function.</p></div>
         self.acq_day_entry.grid(row=1, column=4, sticky=&#39;ew&#39;, padx=1)
 
         self.acq_date = datetime.date.today()
-        #self.date_entry = DateEntry(hvsrFrame, date_pattern=&#39;y-mm-dd&#39;, textvariable=self.acq_date, validate=&#39;focusout&#39;)#update_input_params_call)
-        #self.date_entry.grid(row=3, column=2, sticky=&#39;w&#39;, padx=5)
-        #self.date_entry.bind(&#34;&lt;&lt;DateEntrySelected&gt;&gt;&#34;, update_acq_date)
         
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
         def get_times():
             #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
 
             sHour = self.start_hour.get()
             if str(sHour)[0] == &#39;0&#39;:
@@ -4068,11 +4064,11 @@ saving data) must be done before calling this function.</p></div>
             if str(sMin)[0] == &#39;0&#39;:
                 sMin = int(str(sMin)[-1])
 
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month,
-                                          day = self.acq_date.day,
-                                          hour = sHour,
-                                          minute = sMin,
+            self.starttime = datetime.datetime(year = int(self.acq_date.year),
+                                          month = int(self.acq_date.month),
+                                          day = int(self.acq_date.day),
+                                          hour = int(sHour),
+                                          minute = int(sMin),
                                           tzinfo=self.tz)
             
             #Get duration, as originally entered
@@ -4095,7 +4091,7 @@ saving data) must be done before calling this function.</p></div>
         
         def any_time_change():
             self.data_read = False #New file will not have been read, set to False            
-            self.acq_date = self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
             self.starttime, self.endtime = get_times()
             update_input_params_call()
 
@@ -4133,7 +4129,7 @@ saving data) must be done before calling this function.</p></div>
         colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
         self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
         self.starttime, self.endtime = get_times()
 
         
@@ -4200,13 +4196,13 @@ saving data) must be done before calling this function.</p></div>
 
         ttk.Label(hvsrFrame,text=&#34;Input CRS&#34;).grid(row=6,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
         self.input_crs = tk.StringVar()
-        self.input_crs.set(&#39;EPSG:4236&#39;)
+        self.input_crs.set(&#39;EPSG:4326&#39;)
         self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.input_crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
         ttk.Label(hvsrFrame,text=&#34;Output CRS&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
         self.output_crs = tk.StringVar()
-        self.output_crs.set(&#39;EPSG:4236&#39;)
+        self.output_crs.set(&#39;EPSG:4326&#39;)
         self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
         self.output_crs_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
@@ -6446,9 +6442,9 @@ saving data) must be done before calling this function.</p></div>
             self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                 metapath = self.meta_path.get(),
                                 site=self.site_name.get(),
-                                network=self.network.get(), 
-                                station=self.station.get(), 
-                                loc=self.location.get(), 
+                                network=self.network.get(),
+                                station=self.station.get(),
+                                loc=self.location.get(),
                                 channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
                                 acq_date = self.starttime.date(),
                                 starttime = self.starttime,
@@ -6555,7 +6551,8 @@ saving data) must be done before calling this function.</p></div>
         if not self.processingData:
             update_progress_bars(prog_percent=100)
             self.tab_control.select(self.preview_data_tab)
-
+        return self.hvsr_data
+    
     def report_results(hvsr_results):
         self.curveTest1ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][:-1])
         self.curveTest1Result.configure(text=hvsr_results[&#39;BestPeak&#39;][&#39;Report&#39;][&#39;Lw&#39;][-1])
@@ -6620,8 +6617,8 @@ saving data) must be done before calling this function.</p></div>
         #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
         self.processingData = True #Set to true while data processing algorithm is being run
         
-        if self.data_read == False:
-            read_data()
+        if not self.data_read:
+            self.hvsr_data = read_data()
             update_progress_bars(prog_percent=12)
 
         self.log_text.insert(&#39;end&#39;, f&#34;\n\nProcessing Data [{datetime.datetime.now()}]\n\n&#34;)
@@ -6644,11 +6641,11 @@ saving data) must be done before calling this function.</p></div>
 
         update_progress_bars(prog_percent=15)
         self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
-                                            remove_outliers=self.remove_outliers.get(), 
-                                            outlier_std=self.outlier_std.get(),             
-                                            ppsd_length=self.ppsd_length.get(), 
-                                            overlap=self.overlap.get(), 
-                                            period_step_octaves=self.perStepOct.get(), 
+                                            remove_outliers=self.remove_outliers.get(),
+                                            outlier_std=self.outlier_std.get(),
+                                            ppsd_length=self.ppsd_length.get(),
+                                            overlap=self.overlap.get(),
+                                            period_step_octaves=self.perStepOct.get(),
                                             skip_on_gaps=self.skip_on_gaps.get(),
                                             db_bins=self.db_bins,
                                             period_limits=self.period_limits,
@@ -6851,7 +6848,9 @@ saving data) must be done before calling this function.</p></div>
         update_input_params_call()
 
     self.data_path = tk.StringVar()
-    self.data_path.trace(&#39;w&#39;, on_data_path_change)
+    self.data_path.set(&#39;sample&#39;)
+    self.fpath = self.data_path.get()
+    self.data_path.trace_add(&#39;write&#39;, on_data_path_change)
     self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate=&#39;focusout&#39;, validatecommand=filepath_update)
     self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(5,2.55))
 
@@ -6886,6 +6885,7 @@ saving data) must be done before calling this function.</p></div>
     # Metadata Filepath
     ttk.Label(hvsrFrame, text=&#34;Metadata Filepath&#34;).grid(row=2, column=0, sticky=&#39;e&#39;, padx=5, pady=(2.5,5))
     self.meta_path = tk.StringVar()
+    self.meta_path.set(&#39;&#39;)
     self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
     self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky=&#39;ew&#39;, padx=5, pady=(2.5,5))
     
@@ -6902,7 +6902,7 @@ saving data) must be done before calling this function.</p></div>
     self.browse_metadata_filepath_button.grid(row=2, column=7, sticky=&#39;ew&#39;, padx=0, pady=(2.5,5))
 
     
-    def update_acq_date(event):
+    def update_acq_date():
         aMonth = self.acq_month.get()
         if str(aMonth)[0]==&#39;0&#39;:
             aMonth = str(aMonth)[-1]
@@ -6911,7 +6911,7 @@ saving data) must be done before calling this function.</p></div>
         if str(aDay)[0]==&#39;0&#39;:
             aDay = str(aDay)[-1]
 
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)
         self.day_of_year = self.acq_date.timetuple().tm_yday
         self.doy_label.configure(text=str(self.day_of_year))
         update_input_params_call()
@@ -6937,16 +6937,13 @@ saving data) must be done before calling this function.</p></div>
     self.acq_day_entry.grid(row=1, column=4, sticky=&#39;ew&#39;, padx=1)
 
     self.acq_date = datetime.date.today()
-    #self.date_entry = DateEntry(hvsrFrame, date_pattern=&#39;y-mm-dd&#39;, textvariable=self.acq_date, validate=&#39;focusout&#39;)#update_input_params_call)
-    #self.date_entry.grid(row=3, column=2, sticky=&#39;w&#39;, padx=5)
-    #self.date_entry.bind(&#34;&lt;&lt;DateEntrySelected&gt;&gt;&#34;, update_acq_date)
     
     sTimeFrame = ttk.Frame(hvsrFrame)
     sTimeFrame.grid(row=3, column=4, sticky=&#39;ew&#39;)
 
     def get_times():
         #Format starttime as datetime object (in timezone as originally entered)
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
 
         sHour = self.start_hour.get()
         if str(sHour)[0] == &#39;0&#39;:
@@ -6956,11 +6953,11 @@ saving data) must be done before calling this function.</p></div>
         if str(sMin)[0] == &#39;0&#39;:
             sMin = int(str(sMin)[-1])
 
-        self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                      month = self.acq_date.month,
-                                      day = self.acq_date.day,
-                                      hour = sHour,
-                                      minute = sMin,
+        self.starttime = datetime.datetime(year = int(self.acq_date.year),
+                                      month = int(self.acq_date.month),
+                                      day = int(self.acq_date.day),
+                                      hour = int(sHour),
+                                      minute = int(sMin),
                                       tzinfo=self.tz)
         
         #Get duration, as originally entered
@@ -6983,7 +6980,7 @@ saving data) must be done before calling this function.</p></div>
     
     def any_time_change():
         self.data_read = False #New file will not have been read, set to False            
-        self.acq_date = self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
         self.starttime, self.endtime = get_times()
         update_input_params_call()
 
@@ -7021,7 +7018,7 @@ saving data) must be done before calling this function.</p></div>
     colonLabel.pack(side=&#34;left&#34;, fill=&#34;x&#34;)
     self.end_time_min_entry.pack(side=&#39;right&#39;, expand=True)
 
-    self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+    self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
     self.starttime, self.endtime = get_times()
 
     
@@ -7088,13 +7085,13 @@ saving data) must be done before calling this function.</p></div>
 
     ttk.Label(hvsrFrame,text=&#34;Input CRS&#34;).grid(row=6,column=1, sticky=&#39;e&#39;, padx=5, pady=10)
     self.input_crs = tk.StringVar()
-    self.input_crs.set(&#39;EPSG:4236&#39;)
+    self.input_crs.set(&#39;EPSG:4326&#39;)
     self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
     self.input_crs_entry.grid(row=6,column=2, sticky=&#39;w&#39;, padx=0)
 
     ttk.Label(hvsrFrame,text=&#34;Output CRS&#34;).grid(row=6,column=3, sticky=&#39;e&#39;, padx=5, pady=10)
     self.output_crs = tk.StringVar()
-    self.output_crs.set(&#39;EPSG:4236&#39;)
+    self.output_crs.set(&#39;EPSG:4326&#39;)
     self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate=&#39;focusout&#39;, validatecommand=update_input_params_call)
     self.output_crs_entry.grid(row=6, column=4, sticky=&#39;w&#39;, padx=0)
 
