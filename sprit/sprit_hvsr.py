@@ -4572,8 +4572,11 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
+                    st = obspy.read(str(f))#, starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
+                    st = st.split()
+                    st.trim(starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
                     st.merge()
+                    print(st)
                     tr = (st[0])
                     #tr= obspy.Trace(tr.data,header=meta)
                     traceList.append(tr)

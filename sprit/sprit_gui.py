@@ -843,7 +843,7 @@ class SPRIT_App:
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
 
         
-        def update_acq_date(event):
+        def update_acq_date():
             aMonth = self.acq_month.get()
             if str(aMonth)[0]=='0':
                 aMonth = str(aMonth)[-1]
@@ -852,7 +852,7 @@ class SPRIT_App:
             if str(aDay)[0]=='0':
                 aDay = str(aDay)[-1]
 
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)
             self.day_of_year = self.acq_date.timetuple().tm_yday
             self.doy_label.configure(text=str(self.day_of_year))
             update_input_params_call()
@@ -878,16 +878,13 @@ class SPRIT_App:
         self.acq_day_entry.grid(row=1, column=4, sticky='ew', padx=1)
 
         self.acq_date = datetime.date.today()
-        #self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', textvariable=self.acq_date, validate='focusout')#update_input_params_call)
-        #self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
-        #self.date_entry.bind("<<DateEntrySelected>>", update_acq_date)
         
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky='ew')
 
         def get_times():
             #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
 
             sHour = self.start_hour.get()
             if str(sHour)[0] == '0':
@@ -897,11 +894,11 @@ class SPRIT_App:
             if str(sMin)[0] == '0':
                 sMin = int(str(sMin)[-1])
 
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month,
-                                          day = self.acq_date.day,
-                                          hour = sHour,
-                                          minute = sMin,
+            self.starttime = datetime.datetime(year = int(self.acq_date.year),
+                                          month = int(self.acq_date.month),
+                                          day = int(self.acq_date.day),
+                                          hour = int(sHour),
+                                          minute = int(sMin),
                                           tzinfo=self.tz)
             
             #Get duration, as originally entered
@@ -924,7 +921,7 @@ class SPRIT_App:
         
         def any_time_change():
             self.data_read = False #New file will not have been read, set to False            
-            self.acq_date = self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
             self.starttime, self.endtime = get_times()
             update_input_params_call()
 
@@ -962,7 +959,7 @@ class SPRIT_App:
         colonLabel.pack(side="left", fill="x")
         self.end_time_min_entry.pack(side='right', expand=True)
 
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
         self.starttime, self.endtime = get_times()
 
         
