@@ -385,9 +385,9 @@ class SPRIT_App:
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
-                                    network=self.network.get(), 
-                                    station=self.station.get(), 
-                                    loc=self.location.get(), 
+                                    network=self.network.get(),
+                                    station=self.station.get(),
+                                    loc=self.location.get(),
                                     channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
                                     acq_date = self.starttime.date(),
                                     starttime = self.starttime,
@@ -401,8 +401,6 @@ class SPRIT_App:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
-
-                print(self.params.items())
 
                 if self.trim_dir.get()=='':
                     trimDir=None
@@ -496,7 +494,8 @@ class SPRIT_App:
             if not self.processingData:
                 update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
-
+            return self.hvsr_data
+        
         def report_results(hvsr_results):
             self.curveTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['Lw'][:-1])
             self.curveTest1Result.configure(text=hvsr_results['BestPeak']['Report']['Lw'][-1])
@@ -561,8 +560,8 @@ class SPRIT_App:
             #messagebox.showinfo("Processing Data", 'Processing Data...')
             self.processingData = True #Set to true while data processing algorithm is being run
             
-            if self.data_read == False:
-                read_data()
+            if not self.data_read:
+                self.hvsr_data = read_data()
                 update_progress_bars(prog_percent=12)
 
             self.log_text.insert('end', f"\n\nProcessing Data [{datetime.datetime.now()}]\n\n")
@@ -585,11 +584,11 @@ class SPRIT_App:
 
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
-                                                remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),             
-                                                ppsd_length=self.ppsd_length.get(), 
-                                                overlap=self.overlap.get(), 
-                                                period_step_octaves=self.perStepOct.get(), 
+                                                remove_outliers=self.remove_outliers.get(),
+                                                outlier_std=self.outlier_std.get(),
+                                                ppsd_length=self.ppsd_length.get(),
+                                                overlap=self.overlap.get(),
+                                                period_step_octaves=self.perStepOct.get(),
                                                 skip_on_gaps=self.skip_on_gaps.get(),
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
