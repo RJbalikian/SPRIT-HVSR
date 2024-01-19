@@ -134,9 +134,6 @@ def catch_errors(func):
                 logMsg = logMsg + "\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:"
                 for addMsg in warningMessageList:
                     logMsg = logMsg+"\n\t\t{}".format(addMsg)
-            #print(dir(func))
-            #for i, keys in enumerate(dir(func)):
-            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
 
 
             SPRIT_App.log_errorMsg(spritApp, logMsg)
@@ -385,9 +382,9 @@ class SPRIT_App:
                 self.params = sprit_hvsr.input_params(datapath=self.fpath,
                                     metapath = self.meta_path.get(),
                                     site=self.site_name.get(),
-                                    network=self.network.get(), 
-                                    station=self.station.get(), 
-                                    loc=self.location.get(), 
+                                    network=self.network.get(),
+                                    station=self.station.get(),
+                                    loc=self.location.get(),
                                     channels=[self.z_channel.get(), self.n_channel.get(), self.e_channel.get()],
                                     acq_date = self.starttime.date(),
                                     starttime = self.starttime,
@@ -401,8 +398,6 @@ class SPRIT_App:
                                     elev_unit= self.elev_unit.get(),
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
-
-                print(self.params.items())
 
                 if self.trim_dir.get()=='':
                     trimDir=None
@@ -496,7 +491,8 @@ class SPRIT_App:
             if not self.processingData:
                 update_progress_bars(prog_percent=100)
                 self.tab_control.select(self.preview_data_tab)
-
+            return self.hvsr_data
+        
         def report_results(hvsr_results):
             self.curveTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['Lw'][:-1])
             self.curveTest1Result.configure(text=hvsr_results['BestPeak']['Report']['Lw'][-1])
@@ -561,8 +557,8 @@ class SPRIT_App:
             #messagebox.showinfo("Processing Data", 'Processing Data...')
             self.processingData = True #Set to true while data processing algorithm is being run
             
-            if self.data_read == False:
-                read_data()
+            if not self.data_read:
+                self.hvsr_data = read_data()
                 update_progress_bars(prog_percent=12)
 
             self.log_text.insert('end', f"\n\nProcessing Data [{datetime.datetime.now()}]\n\n")
@@ -585,11 +581,11 @@ class SPRIT_App:
 
             update_progress_bars(prog_percent=15)
             self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
-                                                remove_outliers=self.remove_outliers.get(), 
-                                                outlier_std=self.outlier_std.get(),             
-                                                ppsd_length=self.ppsd_length.get(), 
-                                                overlap=self.overlap.get(), 
-                                                period_step_octaves=self.perStepOct.get(), 
+                                                remove_outliers=self.remove_outliers.get(),
+                                                outlier_std=self.outlier_std.get(),
+                                                ppsd_length=self.ppsd_length.get(),
+                                                overlap=self.overlap.get(),
+                                                period_step_octaves=self.perStepOct.get(),
                                                 skip_on_gaps=self.skip_on_gaps.get(),
                                                 db_bins=self.db_bins,
                                                 period_limits=self.period_limits,
@@ -846,7 +842,7 @@ class SPRIT_App:
         self.browse_metadata_filepath_button.grid(row=2, column=7, sticky='ew', padx=0, pady=(2.5,5))
 
         
-        def update_acq_date(event):
+        def update_acq_date():
             aMonth = self.acq_month.get()
             if str(aMonth)[0]=='0':
                 aMonth = str(aMonth)[-1]
@@ -855,7 +851,7 @@ class SPRIT_App:
             if str(aDay)[0]=='0':
                 aDay = str(aDay)[-1]
 
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=aMonth, day=aDay)
             self.day_of_year = self.acq_date.timetuple().tm_yday
             self.doy_label.configure(text=str(self.day_of_year))
             update_input_params_call()
@@ -881,16 +877,13 @@ class SPRIT_App:
         self.acq_day_entry.grid(row=1, column=4, sticky='ew', padx=1)
 
         self.acq_date = datetime.date.today()
-        #self.date_entry = DateEntry(hvsrFrame, date_pattern='y-mm-dd', textvariable=self.acq_date, validate='focusout')#update_input_params_call)
-        #self.date_entry.grid(row=3, column=2, sticky='w', padx=5)
-        #self.date_entry.bind("<<DateEntrySelected>>", update_acq_date)
         
         sTimeFrame = ttk.Frame(hvsrFrame)
         sTimeFrame.grid(row=3, column=4, sticky='ew')
 
         def get_times():
             #Format starttime as datetime object (in timezone as originally entered)
-            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
 
             sHour = self.start_hour.get()
             if str(sHour)[0] == '0':
@@ -900,11 +893,11 @@ class SPRIT_App:
             if str(sMin)[0] == '0':
                 sMin = int(str(sMin)[-1])
 
-            self.starttime = datetime.datetime(year = self.acq_date.year, 
-                                          month = self.acq_date.month,
-                                          day = self.acq_date.day,
-                                          hour = sHour,
-                                          minute = sMin,
+            self.starttime = datetime.datetime(year = int(self.acq_date.year),
+                                          month = int(self.acq_date.month),
+                                          day = int(self.acq_date.day),
+                                          hour = int(sHour),
+                                          minute = int(sMin),
                                           tzinfo=self.tz)
             
             #Get duration, as originally entered
@@ -927,7 +920,7 @@ class SPRIT_App:
         
         def any_time_change():
             self.data_read = False #New file will not have been read, set to False            
-            self.acq_date = self.date_entry.get_date()
+            self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
             self.starttime, self.endtime = get_times()
             update_input_params_call()
 
@@ -965,7 +958,7 @@ class SPRIT_App:
         colonLabel.pack(side="left", fill="x")
         self.end_time_min_entry.pack(side='right', expand=True)
 
-        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())#self.date_entry.get_date()
+        self.acq_date = datetime.date(year=self.acq_year.get(), month=self.acq_month.get(), day=self.acq_day.get())
         self.starttime, self.endtime = get_times()
 
         
