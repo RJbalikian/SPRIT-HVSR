@@ -134,9 +134,6 @@ def catch_errors(func):
                 logMsg = logMsg + "\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:"
                 for addMsg in warningMessageList:
                     logMsg = logMsg+"\n\t\t{}".format(addMsg)
-            #print(dir(func))
-            #for i, keys in enumerate(dir(func)):
-            #    print(keys.upper(), func.__getattribute__(dir(func)[i]))
 
 
             SPRIT_App.log_errorMsg(spritApp, logMsg)

@@ -4185,7 +4185,7 @@ def _update_shake_metadata(filepath, params, write_path=''):
     if write_path != '':
         try:
             write_path = pathlib.Path(write_path)
-            if write_path.isdir():
+            if write_path.is_dir():
                 fname = params['network']+'_'+params['station']+'_'+params['site']
                 fname = fname + '_response.xml'
                 write_file = write_path.joinpath(fname)
@@ -5290,7 +5290,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
 
     if isinstance(input, (dict, HVSRData)):
         stream = input['stream'].copy()
-    elif isinstance(input, (obspy.core.Trace.trace, obspy.core.stream.Stream)):
+    elif isinstance(input, (obspy.core.trace.Trace, obspy.core.stream.Stream)):
         stream = input.copy()
     else:
         pass #Warning?
