@@ -10,6 +10,7 @@ import datetime
 import inspect
 import json
 import math
+import operator
 import os
 import pathlib
 import pickle
@@ -514,7 +515,6 @@ def gui_test():
     guiFile = sprit_gui.__file__
     subprocess.call(guiFile, shell=True)
 
-    
 
 #Launch the tkinter gui
 def gui(kind='default'):
@@ -804,6 +804,110 @@ def run(datapath, source='file', verbose=False, **kwargs):
             export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext, verbose=verbose)        
 
     return hvsr_results
+
+def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False):
+    """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData
+        Input HVSR data
+    azimuth_angle : int, default=10
+        If `azimuth_type='multiple'`, this is the angular step (in unit `azimuth_unit`) of each of the azimuthal measurements.
+        If `azimuth_type='single'` this is the angle (in unit `azimuth_unit`) of the single calculated azimuthal measruement. By default 10.
+    azimuth_type : str, default='multiple'
+        What type of azimuthal measurement to make, by default 'multiple'.
+        If 'multiple' (or {'multi', 'mult', 'm'}), will take a measurement at each angular step of azimuth_angle of unit azimuth_unit.
+        If 'single' (or {'sing', 's'}), will take a single azimuthal measurement at angle specified in azimuth_angle.
+    azimuth_unit : str, default='degrees'
+        Angular unit used to specify `azimuth_angle` parameter. By default 'degrees'.
+        If 'degrees' (or {'deg', 'd'}), will use degrees.
+        If 'radians' (or {'rad', 'r'}), will use radians.
+    show_az_plot : bool, default=False
+        Whether to show azimuthal plot, by default False.
+    verbose : bool, default=False
+        Whether to print terminal output, by default False
+
+    Returns
+    -------
+    HVSRData
+        Updated HVSRData object specified in hvsr_data with hvsr_data['stream'] attribute containing additional components (EHR-***),
+        with *** being zero-padded (3 digits) azimuth angle in degrees.
+    """
+          
+    degList = ['degrees', 'deg', 'd']
+    radList = ['radians', 'rad', 'r']
+    if azimuth_unit.lower() in degList:
+        az_angle_rad = np.deg2rad(azimuth_angle)
+        az_angle_deg = azimuth_angle
+    elif azimuth.unit.lower() in radList:
+        az_angle_rad = azimuth_angle
+        az_angle_deg = np.rad2deg(azimuth_angle)
+    else:
+        warnings.warn(f"azimuth_unit={azimuth_unit} not supported. Try 'degrees' or 'radians'. No azimuthal analysis run.")
+        return hvsr_data
+    
+    #Limit to 
+    if az_angle_deg >= 180:
+        if verbose:
+            warnings.warn(f"Minimum azimuth rotation is 1 degree. You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
+        az_angle_deg = 1
+        az_angle_rad = np.pi/180
+    
+    multAzList = ['multiple', 'multi', 'mult', 'm']
+    singleAzList = ['single', 'sing', 's']
+    if azimuth_type.lower() in multAzList:
+        azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
+        azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
+    elif azimuth_type.lower() in singleAzList:
+        azimuth_list = [az_angle_rad]
+        azimuth_list_deg = [az_angle_deg]
+    else:
+        warnings.warn(f"azimuth_type={azimuth_type} not supported. Try 'multiple' or 'single'. No azimuthal analysis run.")
+        return hvsr_data
+
+    eComp = hvsr_data['stream'].select(component='E').merge()
+    nComp = hvsr_data['stream'].select(component='N').merge()
+
+    statsDict = {}
+    for key, value in eComp[0].stats.items():
+        statsDict[key] = value
+    
+    for i, az in enumerate(azimuth_list):
+        az_rad = az
+        az_deg = azimuth_list_deg[i]
+        statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
+        statsDict['azimuth_deg'] = az_rad
+        statsDict['azimuth_rad'] = az_deg
+        
+        hasMask = [False, False]
+        if np.ma.is_masked(nComp[0].data):
+            nData = nComp[0].data.data
+            nMask = nComp[0].data.mask
+            hasMask[0] = True
+        else:
+            nData = nComp[0].data        
+            nMask = [True] * len(nData)
+        
+        if np.ma.is_masked(eComp[0].data):
+            eData = eComp[0].data.data
+            eMask = eComp[0].data.mask
+            hasMask[1] = True
+        else:
+            eData = eComp[0].data
+            eMask = [True] * len(eData)
+
+        if True in hasMask:
+            radial_comp_data = np.ma.array(np.add([nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)]), mask=list(map(operator.and_, nMask, eMask)))
+        else:
+            radial_comp_data = np.add([nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)])
+        #From hvsrpy
+        # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
+        
+        radial_trace = obspy.Trace(data=radial_comp_data, header=statsDict)
+        hvsr_data['stream'].append(radial_trace)
+    
+    return hvsr_data
 
 #Quality checks, stability tests, clarity tests
 #def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
