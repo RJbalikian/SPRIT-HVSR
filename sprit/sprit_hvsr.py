@@ -111,17 +111,37 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, sites_dict):
-      
-        self._batch_dict = sites_dict
+    def __init__(self, batch_dict, azimuth=None):
+        """HVSR Batch initializer
+
+        Parameters
+        ----------
+        batch_dict : dict
+            Dictionary containing Key value pairs with either {sitename:HVSRData object} or {azimuth_angle_degrees:HVSRData object}
+        azimuth : None or numeric, default=None
+            If None, HVSRBatch object will be a batch of sites. If other value, it should be a list of numeric values of the azimuths (in degrees), by default None.
+        """
+        self._batch_dict = batch_dict
         self.batch_dict = self._batch_dict
         self.batch = True
-
-        for sitename, hvsrdata in sites_dict.items():
-            setattr(self, sitename, hvsrdata)
-            self[sitename]['batch']=True
-            
-        self.sites = list(self._batch_dict.keys())
+        self.batch_type = 'sites'
+        if azimuth is not None:
+            self.batch_type = 'azimuths'
+        
+        if self.batch_type=='sites':
+            for sitename, hvsrdata in batch_dict.items():
+                setattr(self, sitename, hvsrdata)
+                self[sitename]['batch']=True  
+            self.sites = list(self._batch_dict.keys())
+            self.azimuths = azimuth # Should be None
+        elif self.batch_tupe =='azimuths':
+            self.azimuths = azimuth
+            self.sites = []
+            for az, hvsrdata in batch_dict.items():
+                azkey = str(az).zfill(3)
+                setattr(self, azkey, hvsrdata)
+                self[azkey]['batch']=True
+                self.sites.append(hvsrdata['site'])
 
     #METHODS
     def __to_json(self, filepath):
@@ -577,7 +597,6 @@ def gui(kind='default'):
         except Exception as e:
             print(e)
     
-
 #FUNCTIONS AND METHODS
 #The run function to rule them all (runs all needed for simply processing HVSR)
 def run(datapath, source='file', verbose=False, **kwargs):
@@ -898,9 +917,9 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             eMask = [True] * len(eData)
 
         if True in hasMask:
-            radial_comp_data = np.ma.array(np.add([nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)]), mask=list(map(operator.and_, nMask, eMask)))
+            radial_comp_data = np.ma.array(np.add(nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
         else:
-            radial_comp_data = np.add([nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)])
+            radial_comp_data = np.add(nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad))
         #From hvsrpy
         # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
         
@@ -1732,7 +1751,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     return params
 
 #Generate PPSDs for each channel
-def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
+def generate_ppsds(hvsr_data, verbose=False, azimuthal_ppsds=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -1840,165 +1859,170 @@ def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
         paz = hvsr_data['paz']
         stream = hvsr_data['stream']
 
-        #Get ppsds of e component
-        eStream = stream.select(component='E')
-        estats = eStream.traces[0].stats
-        ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-        ppsdE.add(eStream)
+        if azimuthal_ppsds:
+            #get azimuthal ppsds (in an HVSRBatch object?)
+            pass
+        else:
+            #Get ppsds of e component
+            eStream = stream.select(component='E')
+            estats = eStream.traces[0].stats
+            ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
+            ppsdE.add(eStream)
 
-        #Get ppsds of n component
-        nStream = stream.select(component='N')
-        nstats = nStream.traces[0].stats
-        ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-        ppsdN.add(nStream)
+            #Get ppsds of n component
+            nStream = stream.select(component='N')
+            nstats = nStream.traces[0].stats
+            ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
+            ppsdN.add(nStream)
 
-        #Get ppsds of z component
-        zStream = stream.select(component='Z')
-        zstats = zStream.traces[0].stats
-        ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-        ppsdZ.add(zStream)
+            #Get ppsds of z component
+            zStream = stream.select(component='Z')
+            zstats = zStream.traces[0].stats
+            ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
+            ppsdZ.add(zStream)
 
-        ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
+            ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
 
-        #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-        hvsr_data['ppsds_obspy'] = ppsds
-        hvsr_data['ppsds'] = {}
-        anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
-        
-        #Get ppsd class members
-        members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-        hvsr_data['ppsds']['Z'] = {}
-        hvsr_data['ppsds']['E'] = {}
-        hvsr_data['ppsds']['N'] = {}
-        
-        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
-        listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
-        timeKeys= ['times_processed','current_times_used','psd_values']
-        timeDiffWarn = True
-        dfList = []
-        time_data = {}
-        time_dict = {}
-        for m in members:
-            hvsr_data['ppsds']['Z'][m] = getattr(hvsr_data['ppsds_obspy']['Z'], m)
-            hvsr_data['ppsds']['E'][m] = getattr(hvsr_data['ppsds_obspy']['E'], m)
-            hvsr_data['ppsds']['N'][m] = getattr(hvsr_data['ppsds_obspy']['N'], m)
-            if m in listList:
-               
-                hvsr_data['ppsds']['Z'][m] = np.array(hvsr_data['ppsds']['Z'][m])
-                hvsr_data['ppsds']['E'][m] = np.array(hvsr_data['ppsds']['E'][m])
-                hvsr_data['ppsds']['N'][m] = np.array(hvsr_data['ppsds']['N'][m])
+            #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+            hvsr_data['ppsds_obspy'] = ppsds
+            hvsr_data['ppsds'] = {}
+            anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
             
-            if str(m)=='times_processed':
-                unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
-                                          hvsr_data['ppsds']['E'][m],
-                                          hvsr_data['ppsds']['N'][m]]))
+            #Get ppsd class members
+            members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+            hvsr_data['ppsds']['Z'] = {}
+            hvsr_data['ppsds']['E'] = {}
+            hvsr_data['ppsds']['N'] = {}
+            
+            #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+            listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
+            timeKeys= ['times_processed','current_times_used','psd_values']
+            timeDiffWarn = True
+            dfList = []
+            time_data = {}
+            time_dict = {}
+            for m in members:
+                hvsr_data['ppsds']['Z'][m] = getattr(hvsr_data['ppsds_obspy']['Z'], m)
+                hvsr_data['ppsds']['E'][m] = getattr(hvsr_data['ppsds_obspy']['E'], m)
+                hvsr_data['ppsds']['N'][m] = getattr(hvsr_data['ppsds_obspy']['N'], m)
+                if m in listList:
                 
-                common_times = []
-                for currTime in unique_times:
-                    if currTime in hvsr_data['ppsds']['Z'][m]:
-                        if currTime in hvsr_data['ppsds']['E'][m]:
-                            if currTime in hvsr_data['ppsds']['N'][m]:
-                                common_times.append(currTime)
-
-                cTimeIndList = []
-                for cTime in common_times:
-                    ZArr = hvsr_data['ppsds']['Z'][m]
-                    EArr = hvsr_data['ppsds']['E'][m]
-                    NArr = hvsr_data['ppsds']['N'][m]
-
-                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
-                                        int(np.where(EArr == cTime)[0][0]),
-                                        int(np.where(NArr == cTime)[0][0])])
+                    hvsr_data['ppsds']['Z'][m] = np.array(hvsr_data['ppsds']['Z'][m])
+                    hvsr_data['ppsds']['E'][m] = np.array(hvsr_data['ppsds']['E'][m])
+                    hvsr_data['ppsds']['N'][m] = np.array(hvsr_data['ppsds']['N'][m])
+                
+                if str(m)=='times_processed':
+                    unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
+                                            hvsr_data['ppsds']['E'][m],
+                                            hvsr_data['ppsds']['N'][m]]))
                     
-            #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
-            if m in timeKeys:
-                if str(m) != 'times_processed':
-                    time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
+                    common_times = []
+                    for currTime in unique_times:
+                        if currTime in hvsr_data['ppsds']['Z'][m]:
+                            if currTime in hvsr_data['ppsds']['E'][m]:
+                                if currTime in hvsr_data['ppsds']['N'][m]:
+                                    common_times.append(currTime)
 
-                #print(m, hvsr_data['ppsds']['Z'][m])
+                    cTimeIndList = []
+                    for cTime in common_times:
+                        ZArr = hvsr_data['ppsds']['Z'][m]
+                        EArr = hvsr_data['ppsds']['E'][m]
+                        NArr = hvsr_data['ppsds']['N'][m]
 
-                tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
+                        cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                            int(np.where(EArr == cTime)[0][0]),
+                                            int(np.where(NArr == cTime)[0][0])])
+                        
+                #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
+                if m in timeKeys:
+                    if str(m) != 'times_processed':
+                        time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
 
-                if not tSteps_same:
-                    shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
+                    #print(m, hvsr_data['ppsds']['Z'][m])
 
-                    maxPctDiff = 0
-                    for comp in hvsr_data['ppsds'].keys():
-                        currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
-                        timeLengthDiff = currCompTimeLength - shortestTimeLength
-                        percentageDiff = timeLengthDiff / currCompTimeLength
-                        if percentageDiff > maxPctDiff:
-                            maxPctDiff = percentageDiff
+                    tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
 
-                    for comp in hvsr_data['ppsds'].keys():
-                        while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
-                            hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
-                    
-                    
-                    if maxPctDiff > 0.05 and timeDiffWarn:
-                        warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
-                    elif verbose  and timeDiffWarn:
-                        print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
-                    timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
+                    if not tSteps_same:
+                        shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
 
-        for i, currTStep in enumerate(cTimeIndList):
-            colList = []
-            currTStepList = []
-            colList.append('TimesProcessed_Obspy')
-            currTStepList.append(common_times[i])
-            for tk in time_data.keys():
-                colList.append(str(tk)+'_Z')
-                colList.append(str(tk)+'_E')
-                colList.append(str(tk)+'_N')
-                currTStepList.append(time_data[tk][0][currTStep[0]])#z
-                currTStepList.append(time_data[tk][1][currTStep[1]])#e
-                currTStepList.append(time_data[tk][2][currTStep[2]])#n
+                        maxPctDiff = 0
+                        for comp in hvsr_data['ppsds'].keys():
+                            currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
+                            timeLengthDiff = currCompTimeLength - shortestTimeLength
+                            percentageDiff = timeLengthDiff / currCompTimeLength
+                            if percentageDiff > maxPctDiff:
+                                maxPctDiff = percentageDiff
 
-            dfList.append(currTStepList)
+                        for comp in hvsr_data['ppsds'].keys():
+                            while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
+                                hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
+                        
+                        
+                        if maxPctDiff > 0.05 and timeDiffWarn:
+                            warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
+                        elif verbose  and timeDiffWarn:
+                            print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
+                        timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
+
+            for i, currTStep in enumerate(cTimeIndList):
+                colList = []
+                currTStepList = []
+                colList.append('TimesProcessed_Obspy')
+                currTStepList.append(common_times[i])
+                for tk in time_data.keys():
+                    colList.append(str(tk)+'_Z')
+                    colList.append(str(tk)+'_E')
+                    colList.append(str(tk)+'_N')
+                    currTStepList.append(time_data[tk][0][currTStep[0]])#z
+                    currTStepList.append(time_data[tk][1][currTStep[1]])#e
+                    currTStepList.append(time_data[tk][2][currTStep[2]])#n
+
+                dfList.append(currTStepList)
+                
+            hvsrDF = pd.DataFrame(dfList, columns=colList)
+            hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
             
-        hvsrDF = pd.DataFrame(dfList, columns=colList)
-        hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
-        
-        #Add other times (for start times)
-        def convert_to_datetime(obspyUTCDateTime):
-            return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+            #Add other times (for start times)
+            def convert_to_datetime(obspyUTCDateTime):
+                return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
 
-        def convert_to_mpl_dates(obspyUTCDateTime):
-            return obspyUTCDateTime.matplotlib_date
+            def convert_to_mpl_dates(obspyUTCDateTime):
+                return obspyUTCDateTime.matplotlib_date
 
-        hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
-        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length'])
-        hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
-        hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
-        
-        hvsrDF['Use'] = True
-        hvsrDF['Use']=hvsrDF['Use'].astype(bool)
-        for gap in hvsr_data['ppsds']['Z']['times_gaps']:
-            hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
-                            (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date))# | \
-        
-        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-        if 'xwindows_out' in hvsr_data.keys():
-            for window in hvsr_data['xwindows_out']:
-                hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
-                        (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1]))
+            hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
+            hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length'])
+            hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
+            hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
+            
+            hvsrDF['Use'] = True
+            hvsrDF['Use']=hvsrDF['Use'].astype(bool)
+            for gap in hvsr_data['ppsds']['Z']['times_gaps']:
+                hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
+                                (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date))# | \
+            
             hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+            if 'xwindows_out' in hvsr_data.keys():
+                for window in hvsr_data['xwindows_out']:
+                    hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
+                            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1]))
+                hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+                
+            hvsrDF.set_index('TimesProcessed', inplace=True)
+            hvsr_data['hvsr_df'] = hvsrDF
+            #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+            hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
+            #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
             
-        hvsrDF.set_index('TimesProcessed', inplace=True)
-        hvsr_data['hvsr_df'] = hvsrDF
-        #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-        hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
-        #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
+            hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
+            
+            hvsr_data = sprit_utils.make_it_classy(hvsr_data)
         
-        hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
-        
-        hvsr_data = sprit_utils.make_it_classy(hvsr_data)
-    
-        if 'processing_parameters' not in hvsr_data.keys():
-            hvsr_data['processing_parameters'] = {}
-        hvsr_data['processing_parameters']['generate_ppsds'] = {}
-        for key, value in orig_args.items():
-            hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+            if 'processing_parameters' not in hvsr_data.keys():
+                hvsr_data['processing_parameters'] = {}
+            hvsr_data['processing_parameters']['generate_ppsds'] = {}
+            for key, value in orig_args.items():
+                hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
