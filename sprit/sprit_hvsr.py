@@ -535,7 +535,6 @@ def gui_test():
     guiFile = sprit_gui.__file__
     subprocess.call(guiFile, shell=True)
 
-
 #Launch the tkinter gui
 def gui(kind='default'):
     """Function to open a graphical user interface (gui)
