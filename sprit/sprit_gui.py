@@ -402,6 +402,8 @@ class SPRIT_App:
                                     instrument = self.instrumentSel.get(),
                                     hvsr_band = [self.hvsrBand_min.get(), self.hvsrBand_max.get()] )
 
+                print(self.params.items())
+
                 if self.trim_dir.get()=='':
                     trimDir=None
                 else:
@@ -790,7 +792,9 @@ class SPRIT_App:
             update_input_params_call()
 
         self.data_path = tk.StringVar()
-        self.data_path.trace('w', on_data_path_change)
+        self.data_path.set('sample')
+        self.fpath = self.data_path.get()
+        self.data_path.trace_add('write', on_data_path_change)
         self.data_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.data_path, validate='focusout', validatecommand=filepath_update)
         self.data_filepath_entry.grid(row=1, column=1, columnspan=6, sticky='ew', padx=5, pady=(5,2.55))
 
@@ -825,6 +829,7 @@ class SPRIT_App:
         # Metadata Filepath
         ttk.Label(hvsrFrame, text="Metadata Filepath").grid(row=2, column=0, sticky='e', padx=5, pady=(2.5,5))
         self.meta_path = tk.StringVar()
+        self.meta_path.set('')
         self.metadata_filepath_entry = ttk.Entry(hvsrFrame, textvariable=self.meta_path, validate='focusout', validatecommand=update_input_params_call)
         self.metadata_filepath_entry.grid(row=2, column=1, columnspan=6, sticky='ew', padx=5, pady=(2.5,5))
         
@@ -1027,13 +1032,13 @@ class SPRIT_App:
 
         ttk.Label(hvsrFrame,text="Input CRS").grid(row=6,column=1, sticky='e', padx=5, pady=10)
         self.input_crs = tk.StringVar()
-        self.input_crs.set('EPSG:4236')
+        self.input_crs.set('EPSG:4326')
         self.input_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.input_crs, validate='focusout', validatecommand=update_input_params_call)
         self.input_crs_entry.grid(row=6,column=2, sticky='w', padx=0)
 
         ttk.Label(hvsrFrame,text="Output CRS").grid(row=6,column=3, sticky='e', padx=5, pady=10)
         self.output_crs = tk.StringVar()
-        self.output_crs.set('EPSG:4236')
+        self.output_crs.set('EPSG:4326')
         self.output_crs_entry = ttk.Entry(hvsrFrame, textvariable=self.output_crs, validate='focusout', validatecommand=update_input_params_call)
         self.output_crs_entry.grid(row=6, column=4, sticky='w', padx=0)
 
@@ -3090,7 +3095,7 @@ class SPRIT_App:
 def on_closing():
     plt.close('all')
     root.destroy()
-    exit()
+    sys.exit()
 
 def reboot_app():
     """Restarts the current program.
