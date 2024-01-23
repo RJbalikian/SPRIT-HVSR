@@ -3,6 +3,7 @@ testnotebook.ipynb
 .venv
 __pycache__
 /sprit/__pycache__
+.pytest_cache
 docs/pyinstaller/SPRIT.exe
 docs/pyinstaller/sprit_gui_pyinstaller/SPRIT.pkg
 docs/pyinstaller/sprit_gui_pyinstaller/SpRIT.pkg
