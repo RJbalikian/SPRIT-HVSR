@@ -4185,7 +4185,7 @@ def _update_shake_metadata(filepath, params, write_path=''):
     if write_path != '':
         try:
             write_path = pathlib.Path(write_path)
-            if write_path.isdir():
+            if write_path.is_dir():
                 fname = params['network']+'_'+params['station']+'_'+params['site']
                 fname = fname + '_response.xml'
                 write_file = write_path.joinpath(fname)
@@ -4572,7 +4572,9 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
             for i, f in enumerate(fileList):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='^readMSEEDBuffer()')
-                    st = obspy.read(str(f), starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
+                    st = obspy.read(str(f))#, starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
+                    st = st.split()
+                    st.trim(starttime=UTCDateTime(params['starttime']), endtime=UTCDateTime(params['endtime']), nearest_sample=False)
                     st.merge()
                     tr = (st[0])
                     #tr= obspy.Trace(tr.data,header=meta)
@@ -5288,7 +5290,7 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
 
     if isinstance(input, (dict, HVSRData)):
         stream = input['stream'].copy()
-    elif isinstance(input, (obspy.core.Trace.trace, obspy.core.stream.Stream)):
+    elif isinstance(input, (obspy.core.trace.Trace, obspy.core.stream.Stream)):
         stream = input.copy()
     else:
         pass #Warning?
