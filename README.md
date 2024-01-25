@@ -32,12 +32,18 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 
 - [Obspy](https://docs.obspy.org/): Python framework for processing seismological data
-- [Matplotlib](https://matplotlib.org/): Comprehensive library for creating static, animated, and interactive visualizations in python
 - [Numpy](https://matplotlib.org/): "The fundamental package for scientific computing with Python"
 - [Scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
 - [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)
-- [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
 - [pyproj](https://pyproj4.github.io/pyproj/stable/): Module for cartographic projections and coordinate transformations, a python interface to [PROJ](https://proj.org/en/9.2/)
+- [Matplotlib](https://matplotlib.org/): Comprehensive library for creating static, animated, and interactive visualizations in python
+- plotly
+
+## Dependencies specifically for GUIs
+- [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
+- ipython
+- ipywidgets
+- nbformat 
 
 # References
 - <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>
