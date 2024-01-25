@@ -34,7 +34,7 @@ Aside from the modules in the python standard library, the following package dep
 - [Obspy](https://docs.obspy.org/): Python framework for processing seismological data
 - [Numpy](https://matplotlib.org/): "The fundamental package for scientific computing with Python"
 - [Scipy](https://scipy.org/): "Fundamental algorithms for scientific computing in Python"
-- [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool" (Used primarily for exporting and managing results)
+- [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"
 - [pyproj](https://pyproj4.github.io/pyproj/stable/): Module for cartographic projections and coordinate transformations, a python interface to [PROJ](https://proj.org/en/9.2/)
 - [Matplotlib](https://matplotlib.org/): Comprehensive library for creating static, animated, and interactive visualizations in python
 - plotly
