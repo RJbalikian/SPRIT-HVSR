@@ -596,8 +596,8 @@ def gui(kind='default'):
         except Exception as e:
             print(e)
     
-#FUNCTIONS AND METHODS
-#The run function to rule them all (runs all needed for simply processing HVSR)
+# FUNCTIONS AND METHODS
+# The run function to rule them all (runs all needed for simply processing HVSR)
 def run(datapath, source='file', verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
@@ -823,6 +823,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
 
     return hvsr_results
 
+# Function to generate azimuthal readings from the horizontal components
 def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
 
@@ -858,7 +859,7 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     if azimuth_unit.lower() in degList:
         az_angle_rad = np.deg2rad(azimuth_angle)
         az_angle_deg = azimuth_angle
-    elif azimuth.unit.lower() in radList:
+    elif azimuth_unit.lower() in radList:
         az_angle_rad = azimuth_angle
         az_angle_deg = np.rad2deg(azimuth_angle)
     else:
@@ -866,12 +867,17 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
         return hvsr_data
     
     #Limit to 
-    if az_angle_deg >= 180:
+    if az_angle_deg <= 1:
         if verbose:
-            warnings.warn(f"Minimum azimuth rotation is 1 degree. You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
+            warnings.warn(f"Minimum azimuth rotation is 1 degree (max. is 180). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
         az_angle_deg = 1
         az_angle_rad = np.pi/180
-    
+    elif az_angle_deg >= 180:
+        if verbose:
+            warnings.warn(f"Maximum azimuth value is azimuth_angle=180 degrees (min. is 1). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=180 degrees ({np.round(np.pi,3)} radians) ")
+        az_angle_deg = 180
+        az_angle_rad = np.pi
+
     multAzList = ['multiple', 'multi', 'mult', 'm']
     singleAzList = ['single', 'sing', 's']
     if azimuth_type.lower() in multAzList:
@@ -915,10 +921,12 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             eData = eComp[0].data
             eMask = [True] * len(eData)
 
+        print(az_angle_rad, az)
+
         if True in hasMask:
-            radial_comp_data = np.ma.array(np.add(nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+            radial_comp_data = np.ma.array(np.add(nData * np.cos(az), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
         else:
-            radial_comp_data = np.add(nData * np.cos(az_angle_rad), eData * np.sin(az_angle_rad))
+            radial_comp_data = np.add(nData * np.cos(az), eData * np.sin(az))
         #From hvsrpy
         # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
         
@@ -1750,7 +1758,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     return params
 
 #Generate PPSDs for each channel
-def generate_ppsds(hvsr_data, verbose=False, azimuthal_ppsds=False, **ppsd_kwargs):
+def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -1760,6 +1768,8 @@ def generate_ppsds(hvsr_data, verbose=False, azimuthal_ppsds=False, **ppsd_kwarg
         ----------
         hvsr_data : dict, HVSRData object, or HVSRBatch object
             Data object containing all the parameters and other data of interest (stream and paz, for example)
+        azimuthal_ppsds : bool, default=False
+            Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
         **ppsd_kwargs : dict
@@ -1814,6 +1824,7 @@ def generate_ppsds(hvsr_data, verbose=False, azimuthal_ppsds=False, **ppsd_kwarg
                 if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
+    azimuthal_ppsds = orig_args['azimuthal_ppsds']
     verbose = orig_args['verbose']
     ppsd_kwargs = orig_args['ppsd_kwargs']
 
