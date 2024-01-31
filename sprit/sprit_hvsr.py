@@ -3668,7 +3668,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -3717,7 +3717,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
     use_hv_curve = orig_args['use_hv_curve']
-    show_plot = orig_args['show_plot']
+    show_outlier_plot = orig_args['show_outlier_plot']
     verbose = orig_args['verbose']
 
     #Print if verbose, which changes depending on if batch data or not
@@ -3762,7 +3762,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         else:
             compNames=['HV Curve']
             colNames = ['HV_Curves']
-        if show_plot:
+        if show_outlier_plot:
             if use_hv_curve:
                 spMosaic = ['HV Curve']
             else:
@@ -3799,7 +3799,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_plot:
+            if show_outlier_plot:
                 # Intialize to only get unique labels
                 rem_label_got = False
                 keep_label_got = False
@@ -3834,7 +3834,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                 ax[compNames[i]].set_ylabel(f"{compNames[i]}")
                 ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
                 ax[compNames[i]].semilogx()             
-        if show_plot:
+        if show_outlier_plot:
             plt.show()
                     
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_df to False for that window

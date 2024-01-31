@@ -1696,7 +1696,7 @@ def create_jupyter_ui():
         roc_kwargs = {'rmse_thresh':rmse_pctile_slider.value,
                         'use_percentile':True,
                         'use_hv_curve':use_hv_curve_rmse.value,
-                        'show_plot':False,
+                        'show_outlier_plot':False,
                         'verbose':verbose_check.value
                       }
         if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
