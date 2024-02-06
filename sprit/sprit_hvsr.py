@@ -7129,26 +7129,57 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
-    """Private function to get frequency standard deviation, from multiple time-step HVSR curves"""
+    """Private function to get frequency standard deviation of peak(s) of interest, from multiple time-step HVSR curves
+    Paramaters
+    ----------
+        
+        x_values : list or np.array
+            Array of x_values of dataset (frequency or period, most often frequency)
+        indexList : list
+            List of index/indices of peak(s) of interest, (index is within the x_values list)
+    
+    Returns
+    -------
+        stdf : list
+            List of standard deviations of the peak 
+    """
     stdf = list()
+    print('xvals', x_values)
+    print('indexList', indexList)
+    print('hvsrPeaks', hvsrPeaks.iloc[0])
+
+    # Go through list containing all peak indices (often, just a single index of the main peak)
     for index in indexList:
         point = list()
+        # Iterate to get index for all rows of pandas series, 
+        #   each row contains a list of peak indices for the H/V curve from that time window
         for j in range(len(hvsrPeaks)):
             p = None
+            
+            # Iterate through each peak in each time window
             for k in range(len(hvsrPeaks.iloc[j])):
                 if p is None:
                     p = hvsrPeaks.iloc[j][k]
                 else:
-                    # Find closest peak in current time to (current) hvsr peak
+                    # Find frequency peak closest in the current time window to the (current) hvsr peak
                     if abs(index - hvsrPeaks.iloc[j][k]) < abs(index - p):
                         p = hvsrPeaks.iloc[j][k]
                         # p = hvsrPeaks[j][k]
                         # print(p=p1, p, p1)
             if p is not None:
+                # It should never be None, this is just a double check
+                # Append the index of interest for that time window
                 point.append(p)
+        # Append the last index
         point.append(index)
         v = list()
+        
+        # Get all the actual frequencies (go through each index and extract the frequency from x_values)
         for pl in range(len(point)):
             v.append(x_values[point[pl]])
+        
+        # stdf is a list in case there are multiple peaks to check. 
+        # Most of the time this is only a 1-item list
+        # Contains std of frequencies of the peaks from each time window H/V curve that are closest to the main H/V peak
         stdf.append(np.std(v))
     return stdf
