@@ -7144,10 +7144,6 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
             List of standard deviations of the peak 
     """
     stdf = list()
-    print('xvals', x_values)
-    print('indexList', indexList)
-    print('hvsrPeaks', hvsrPeaks.iloc[0])
-
     # Go through list containing all peak indices (often, just a single index of the main peak)
     for index in indexList:
         point = list()
