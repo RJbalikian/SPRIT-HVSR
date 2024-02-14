@@ -3679,7 +3679,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     return output
 
 #Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -3728,7 +3728,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
     use_hv_curve = orig_args['use_hv_curve']
-    show_plot = orig_args['show_plot']
+    show_outlier_plot = orig_args['show_outlier_plot']
     verbose = orig_args['verbose']
 
     #Print if verbose, which changes depending on if batch data or not
@@ -3773,7 +3773,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         else:
             compNames=['HV Curve']
             colNames = ['HV_Curves']
-        if show_plot:
+        if show_outlier_plot:
             if use_hv_curve:
                 spMosaic = ['HV Curve']
             else:
@@ -3810,7 +3810,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_plot:
+            if show_outlier_plot:
                 # Intialize to only get unique labels
                 rem_label_got = False
                 keep_label_got = False
@@ -3845,7 +3845,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                 ax[compNames[i]].set_ylabel(f"{compNames[i]}")
                 ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
                 ax[compNames[i]].semilogx()             
-        if show_plot:
+        if show_outlier_plot:
             plt.show()
                     
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_df to False for that window
@@ -7132,26 +7132,57 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
 
 # Get frequency standard deviation
 def __get_stdf(x_values, indexList, hvsrPeaks):
-    """Private function to get frequency standard deviation, from multiple time-step HVSR curves"""
+    """Private function to get frequency standard deviation of peak(s) of interest, from multiple time-step HVSR curves
+    Paramaters
+    ----------
+        
+        x_values : list or np.array
+            Array of x_values of dataset (frequency or period, most often frequency)
+        indexList : list
+            List of index/indices of peak(s) of interest, (index is within the x_values list)
+    
+    Returns
+    -------
+        stdf : list
+            List of standard deviations of the peak 
+    """
     stdf = list()
+    print('xvals', x_values)
+    print('indexList', indexList)
+    print('hvsrPeaks', hvsrPeaks.iloc[0])
+
+    # Go through list containing all peak indices (often, just a single index of the main peak)
     for index in indexList:
         point = list()
+        # Iterate to get index for all rows of pandas series, 
+        #   each row contains a list of peak indices for the H/V curve from that time window
         for j in range(len(hvsrPeaks)):
             p = None
+            
+            # Iterate through each peak in each time window
             for k in range(len(hvsrPeaks.iloc[j])):
                 if p is None:
                     p = hvsrPeaks.iloc[j][k]
                 else:
-                    # Find closest peak in current time to (current) hvsr peak
+                    # Find frequency peak closest in the current time window to the (current) hvsr peak
                     if abs(index - hvsrPeaks.iloc[j][k]) < abs(index - p):
                         p = hvsrPeaks.iloc[j][k]
                         # p = hvsrPeaks[j][k]
                         # print(p=p1, p, p1)
             if p is not None:
+                # It should never be None, this is just a double check
+                # Append the index of interest for that time window
                 point.append(p)
+        # Append the last index
         point.append(index)
         v = list()
+        
+        # Get all the actual frequencies (go through each index and extract the frequency from x_values)
         for pl in range(len(point)):
             v.append(x_values[point[pl]])
+        
+        # stdf is a list in case there are multiple peaks to check. 
+        # Most of the time this is only a 1-item list
+        # Contains std of frequencies of the peaks from each time window H/V curve that are closest to the main H/V peak
         stdf.append(np.std(v))
     return stdf
