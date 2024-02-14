@@ -6949,15 +6949,18 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     max_rank += 1
 
     # First check below
+    # Initialize list
     _found_m = list()
     for _i in range(len(_peak)):
         _dx = 1000000.
+        # Initialize test as not passing for this frequency
         _found_m.append(False)
         _peak[_i]['Report']['P-'] = sprit_utils.x_mark()
+        # Iterate through all time windows
         for _j in range(len(_peakm)):
             if abs(_peakm[_j]['f0'] - _peak[_i]['f0']) < _dx:
                 _index = _j
-                _dx = abs(_peakm[_j]['f0'] - _peak[_i]['f0'])
+                _dx = abs(_peakm[_j]['f0'] - _peak[_i]['f0']) #_dx is difference between peak frequencies for each time window and main peak
             if _peak[_i]['f0'] * 0.95 <= _peakm[_j]['f0'] <= _peak[_i]['f0'] * 1.05:
                 _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.check_mark()}"
                 _found_m[_i] = True
