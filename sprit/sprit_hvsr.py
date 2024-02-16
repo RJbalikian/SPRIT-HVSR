@@ -1485,7 +1485,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
 
             elif inst.lower() in trominoNameList:
-                rawDataIN = __read_tromino_files(dPath, params, verbose=verbose, **kwargs)
+                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
         except:
             raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
     elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
@@ -4765,7 +4765,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
     return rawDataIN
 
 #Read data from Tromino
-def __read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
