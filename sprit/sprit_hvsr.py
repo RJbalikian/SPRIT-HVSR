@@ -1485,7 +1485,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
 
             elif inst.lower() in trominoNameList:
-                rawDataIN = __read_tromino_files(dPath, params, verbose=verbose)
+                rawDataIN = __read_tromino_files(dPath, params, verbose=verbose, **kwargs)
         except:
             raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
     elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
@@ -4765,7 +4765,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
     return rawDataIN
 
 #Read data from Tromino
-def __read_tromino_files(datapath, params, verbose=False):
+def __read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
@@ -4809,7 +4809,10 @@ def __read_tromino_files(datapath, params, verbose=False):
 
     medVal = np.nanmedian(dataArr[50000:100000])
 
-    startByte=24576
+    if 'start_byte' in kwargs.keys():
+        start_byte = kwargs['start_byte']
+
+    startByte = start_byte
     comp1 = dataArr[startByte::3] - medVal
     comp2 = dataArr[startByte+1::3] - medVal
     comp3 = dataArr[startByte+2::3] - medVal
@@ -4820,12 +4823,15 @@ def __read_tromino_files(datapath, params, verbose=False):
     #ax[1].plot(comp2, linewidth=0.1, c='k')
     #ax[2].plot(comp3, linewidth=0.1, c='k')
 
+    if 'sampling_rate' in kwargs.keys():
+        sampling_rate = kwargs['sampling_rate']
+
     sTime = obspy.UTCDateTime(params['acq_date'].year, params['acq_date'].month, params['acq_date'].day,
                               params['starttime'].hour, params['starttime'].minute,
                               params['starttime'].second,params['starttime'].microsecond)
-    eTime = sTime + (((len(comp1))/128)/60)*60
+    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
 
-    traceHeader1 = {'sampling_rate':128,
+    traceHeader1 = {'sampling_rate':sampling_rate,
             'calib' : 1,
             'npts':len(comp1),
             'network':'AM',
