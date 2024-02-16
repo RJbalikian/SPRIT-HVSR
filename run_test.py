@@ -16,4 +16,5 @@ def test_batch():
     except:
         test_passed = False
     
-    assert test_passed 
+    assert test_passed
+    
