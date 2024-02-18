@@ -6197,7 +6197,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                                     bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
                 plotSuff=plotSuff+'ann_'
 
-        if 't' in k:
+        if 't' in k and 'test' not in k:
             plotSuff = plotSuff+'allTWinCurves_'
 
             if k=='tp':
@@ -6214,6 +6214,30 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                            ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
             for t in hvsr_data['ind_hvsr_curves']:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
+
+        if 'test' in k:
+            if k=='tests':
+                #Plot all tests
+                pass
+            elif '1' in k:
+                pass
+            elif '2' in k:
+                pass
+            elif '3' in k:
+                if 'c' in k:
+                    #Plot curve test3
+                    pass
+                else:
+                    #plot peak test3
+                    pass
+            elif '4' in k:
+                pass
+            elif '5' in k:
+                pass
+            elif '6' in k:
+                pass
+                
+            
 
         if 'c' in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
