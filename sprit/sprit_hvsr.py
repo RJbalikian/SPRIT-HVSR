@@ -6165,6 +6165,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.tick_params(axis='y', labelsize=5)
     ax.set_title(hvsr_data['input_params']['site'])
 
+    f0 = hvsr_data['BestPeak']['f0']
+    a0 = hvsr_data['BestPeak']['A0']
+    f0_div4 = f0/4
+    f0_mult4 = f0*4
+    a0_div2 = a0/2
+
     #print("label='comp'" in str(ax.__dict__['_axes']))
     for k in plot_type:   
         if k=='p' and 'all' not in plot_type:
@@ -6184,7 +6190,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                             fontsize='xx-small', horizontalalignment='center', verticalalignment='bottom', 
                             bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
                 plotSuff = plotSuff+'ann_'
-
         elif k=='p'  and 'all' in plot_type:
             plotSuff = plotSuff+'allPeaks_'
 
@@ -6196,6 +6201,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                                     horizontalalignment='center', verticalalignment='bottom', 
                                     bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
                 plotSuff=plotSuff+'ann_'
+
+        if k=='pa':
+            pass
 
         if 't' in k and 'test' not in k:
             plotSuff = plotSuff+'allTWinCurves_'
@@ -6219,10 +6227,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             if k=='tests':
                 #Plot all tests
                 pass
-            elif '1' in k:
-                pass
-            elif '2' in k:
-                pass
+            elif '1' in k or '2' in k:
+                ax.hlines([a0_div2], ax.get_xlim()[0], ax.get_xlim()[1])
+                ax.scatter([f0], [a0])
+                ax.annotate(str(f0), [f0, a0])
+                if 'pa' not in plot_type:
+                    ax.hlines([a0], ax.get_xlim()[0], f0)
             elif '3' in k:
                 if 'c' in k:
                     #Plot curve test3
