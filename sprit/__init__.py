@@ -48,7 +48,8 @@ from sprit.sprit_utils import(
     has_required_channels,
     make_it_classy,
     read_from_RS,
-    time_it
+    time_it,
+    x_mark
 )
 
 from sprit.sprit_gui import(
@@ -98,6 +99,7 @@ __all__ =('sprit_hvsr',
             'make_it_classy',
             'read_from_RS',
             'time_it',
+            'x_mark',
         'sprit_gui',
             'catch_errors',
         'sprit_jupyter_UI',

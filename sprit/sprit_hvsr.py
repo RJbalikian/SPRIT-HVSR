@@ -6174,7 +6174,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     a0_div2 = a0/2
 
     #print("label='comp'" in str(ax.__dict__['_axes']))
-    for k in plot_type:   
+    peakAmpAnn = False
+    peakPoint = False
+    peakLine = False
+    for k in plot_type:
         if k=='p' and 'all' not in plot_type:
             plotSuff=plotSuff+'BestPeak_'
             
@@ -6205,7 +6208,13 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                 plotSuff=plotSuff+'ann_'
 
         if k=='pa':
-            pass
+            ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
+            ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+            peakPoint = True
+            peakLine = True
+            if 'ann' in plot_type:
+                ax.annotate(f"Peak Amp.: {a0:.2f}", [f0+0.1*f0, a0])
+                peakAmpAnn = True                
 
         if 't' in k and 'test' not in k:
             plotSuff = plotSuff+'allTWinCurves_'
@@ -6225,34 +6234,155 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             for t in hvsr_data['ind_hvsr_curves']:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
+        # Only plot test results on HVSR plot
         if 'test' in k and kwargs['p']=='hvsr':
             if k=='tests':
-                #Plot all tests
-                pass
-            elif '1' in k or '2' in k:
-                ax.hlines([a0_div2], ax.get_xlim()[0], ax.get_xlim()[1])
-                ax.scatter([f0], [a0])
-                ax.annotate(f"{f0:.3f}", [f0+0.1*f0, a0])
-                if 'pa' not in plot_type:
-                    ax.hlines([a0], ax.get_xlim()[0], f0)
-            elif '3' in k:
+                # Change k to pass all test plot conditions
+                k='test123456c'
+
+            if '1' in k:
+                # Peak is higher than 2x lowest point in f0/4-f0
+                # Plot the line threshold that the curve needs to cross
+                ax.plot([f0_div4, f0], [a0_div2, a0_div2],  color='tab:blue', marker='|', linestyle='dashed')
+                
+                # Get minimum of curve in desired range
+                indexList=[]
+                fList = []
+                for i, f in enumerate(hvsr_data.x_freqs['Z']):
+                    if f >= f0_div4 and f <= f0:
+                        indexList.append(i)
+                        fList.append(f)
+
+                newCurveList= []
+                newFreqList = []
+                for ind in indexList:
+                    if ind < len(hvsr_data.hvsr_curve):
+                        newFreqList.append(hvsr_data.x_freqs['Z'][ind])
+                        newCurveList.append(hvsr_data.hvsr_curve[ind])
+                curveTestList = list(np.ones_like(newFreqList) * a0_div2)
+
+
+                # Plot line showing where test succeeds or not
+                if hvsr_data['BestPeak']['Report']['A(f-)'][-1] == sprit_utils.x_mark():
+                    lowf2 = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-3])
+                    hif2 = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-2])
+                    ym = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
+                    yp = min(newCurveList)
+                    ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
+                else:
+                    fpass = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
+                    fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[5])
+                    ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
+                    minF = newFreqList[np.argmin(newCurveList)]
+                    minA = min(newCurveList)
+                    ax.plot([minF, minF, minF], [0, minA, a0_div2], marker='.', color='g', linestyle='dotted')
+
+                # Plot the Peak Point if not already
+                if not peakPoint:
+                    ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                    peakPoint=True
+
+                # Annotate the Peak Amplitude if not already
+                if not peakAmpAnn and 'ann' in plot_type:
+                    ax.annotate(f"Peak Amp.: {a0:.2f}", [f0+0.1*f0, a0])
+                    peakAmpAnn=True
+
+                # Add peak line
+                if 'pa' not in plot_type and not peakLine:
+                    ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
+                    peakLine = True  
+            if '2' in k:
+                # Peak is higher than 2x lowest point in f0-f0*4
+
+                # Plot the line threshold that the curve needs to cross
+                ax.plot([f0, f0_mult4], [a0_div2, a0_div2],  color='tab:blue', marker='|', linestyle='dashed')
+
+                
+                # Get minimum of curve in desired range
+                indexList=[]
+                fList = []
+                for i, f in enumerate(hvsr_data.x_freqs['Z']):
+                    if f >= f0 and f <= f0_mult4:
+                        indexList.append(i)
+                        fList.append(f)
+
+                newCurveList= []
+                newFreqList = []
+                for ind in indexList:
+                    if ind < len(hvsr_data.hvsr_curve):
+                        newFreqList.append(hvsr_data.x_freqs['Z'][ind])
+                        newCurveList.append(hvsr_data.hvsr_curve[ind])
+                curveTestList = list(np.ones_like(newFreqList) * a0_div2)
+
+                if hvsr_data['BestPeak']['Report']['A(f+)'][-1] == sprit_utils.x_mark():
+                    lowf2 = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-3])
+                    hif2 = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-2])
+                    ym = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                    yp = min(newCurveList)
+                    ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
+                else:
+                    fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                    fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
+                    ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
+                    minF = newFreqList[np.argmin(newCurveList)]
+                    minA = min(newCurveList)
+                    ax.plot([minF, minF, minF], [0, minA, a0_div2], marker='.', color='g', linestyle='dotted')
+
+                # Plot the Peak Point if not already
+                if not peakPoint:
+                    ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                    peakPoint=True
+                
+                # Annotate the amplitude of peak point if not already
+                if not peakAmpAnn and 'ann' in plot_type:
+                    ax.annotate(f"Peak Amp.: {a0:.2f}", [f0+0.1*f0, a0])
+                    peakAmpAnn=True
+                
+                if 'pa' not in plot_type and not peakLine:
+                    ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
+                    peakLine = True
+            if '3' in k:
                 if 'c' in k:
                     #Plot curve test3
                     lowfc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[0]
                     hifc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[1].replace('Hz', '')
-                    # Finish this 
-                else:
-                    ax.hlines([2], ax.get_xlim()[0], ax.get_xlim()[1])
-            elif '4' in k:
+                    pass # May not even finish this
+                
+                lcolor='r'
+                if f0 > 2:
+                    lcolor='g'
+
+                if 'c' not in k or all(num in k for num in ["1", "2", "3", "4", "5", "6"]):
+                    ax.hlines([2], ax.get_xlim()[0], ax.get_xlim()[1], color='tab:blue', linestyles='dashed')
+                    ax.plot([f0, f0], [2, a0], linestyle='dotted', color=lcolor)
+
+                    if 'pa' not in plot_type:
+                        ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
+                        ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                        peakPoint = True
+                        peakLine = True
+            if '4' in k:
                 lowf4 = float(hvsr_data['BestPeak']['Report']['P-'].split(' ')[0])
                 hif4 = float(hvsr_data['BestPeak']['Report']['P+'].split(' ')[0])
                 m2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrm2)]#, np.max(hvsr_data.hvsrm2))
                 p2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrp2)]#, np.max(hvsr_data.hvsrp2))
 
                 # ax.vlines([f0*0.95, f0*1.05], [0,0], [ax.get_xlim()[1],ax.get_xlim()[1]])
-                ax.fill_betweenx(np.linspace(0, ax.get_xlim()[1]), x1=f0*0.95, x2=f0*1.05)
-                ax.scatter([lowf4, hif4], [np.max(hvsr_data.hvsrm2),  np.max(hvsr_data.hvsrp2)])
-            elif '5' in k:
+                ax.fill_betweenx(np.linspace(0, ax.get_xlim()[1]), x1=f0*0.95, x2=f0*1.05, color='tab:blue', alpha=0.3)
+                
+                mcolor = 'r'
+                pcolor = 'r'
+                if hvsr_data['BestPeak']['Report']['P-'][-1] == sprit_utils.check_mark():
+                    mcolor='g'
+                if hvsr_data['BestPeak']['Report']['P+'][-1] == sprit_utils.check_mark():
+                    pcolor='g'
+
+                ax.scatter([lowf4, hif4], [np.max(hvsr_data.hvsrm2),  np.max(hvsr_data.hvsrp2)], c=[mcolor, pcolor], marker='x')
+                
+                if not peakPoint:
+                    ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                    peakPoint = True
+            if '5' in k:
                 sf = float(hvsr_data['BestPeak']['Report']['Sf'].split(' ')[4].strip('()'))
                 sfp = f0+sf
                 sfm = f0-sf
@@ -6261,11 +6391,18 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                 sfLimp = f0+sfLim
                 sfLimm = f0-sfLim
 
-                ax.scatter([sfLimm, sfLimp], [0, 0], marker='|')
-                ax.scatter([sfm, sfp], [0, 0], marker='|', c='k')
-                ax.plot([sfLimm, sfLimp], [0, 0])
+                if hvsr_data['BestPeak']['Report']['Sf'][-1] == sprit_utils.check_mark():
+                    xColor = 'g'
+                else:
+                    xColor='r'
 
-            elif '6' in k:
+                ax.scatter([sfLimm, sfLimp], [a0, a0], marker='|', c='tab:blue')
+                ax.scatter([sfm, sfp], [a0, a0], marker='x', c=xColor)
+                ax.plot([sfLimm, sfLimp], [a0, a0], color='tab:blue')
+                if not peakPoint:
+                    ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                    peakPoint = True
+            if '6' in k:
                 sa = float(hvsr_data['BestPeak']['Report']['Sa'].split(' ')[4].strip('()'))
                 sap = a0+sa
                 sam = a0-sa
@@ -6274,10 +6411,19 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                 saLimp = a0+saLim
                 saLimm = a0-saLim
 
-                ax.scatter([f0, f0], [saLimm, saLimp], marker='_')
-                ax.scatter([f0, f0],[sam, sap], marker='+', c='k')
-                ax.plot([f0, f0],[saLimm, saLimp])                
-        if 'c' in k: #Spectrogram uses a different function, so c is unique to the component plot flag
+                if hvsr_data['BestPeak']['Report']['Sa'][-1] == sprit_utils.check_mark():
+                    xColor = 'g'
+                else:
+                    xColor='r'
+
+                ax.scatter([f0, f0], [saLimm, saLimp], marker='_', c='tab:blue')
+                ax.scatter([f0, f0],[sam, sap], marker='x', c=xColor)
+                ax.plot([f0, f0],[saLimm, saLimp], color='tab:blue')                
+                if not peakPoint:
+                    ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
+                    peakPoint = True
+        
+        if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
             if 'c' not in plot_type[0]:#This is part of the hvsr axis
@@ -6289,7 +6435,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                 compAxis.set_ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
                 compAxis.set_facecolor([0,0,0,0])
                 legendLoc2 = 'upper left'
-                
             else:
                 ax.set_title('') #Remove title
                 ax.sharex(kwargs['axes']['hvsr'])
@@ -6347,6 +6492,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             ax.text(x=xlim[0], y=yLoc, s=xlabel, 
                 fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
                 bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+    
     bbox = ax.get_window_extent()
     bboxStart = bbox.__str__().find('Bbox(',0,50)+5
     bboxStr = bbox.__str__()[bboxStart:].split(',')[:4]
@@ -6950,7 +7096,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f-'] = sprit_utils.x_mark()
-        _peak[_i]['Report']['A(f-)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['A0']/4:0.2f} Hz-{_peak[_i]['A0']:0.3f} Hz {sprit_utils.x_mark()}"
+        _peak[_i]['Report']['A(f-)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']/4:0.2f} Hz-{_peak[_i]['f0']:0.3f} Hz {sprit_utils.x_mark()}"
         _peak[_i]['PassList']['PeakProminenceBelow'] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
@@ -6968,7 +7114,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
     for _i in range(len(_peak)):
         #Initialize as False
         _peak[_i]['f+'] = sprit_utils.x_mark()
-        _peak[_i]['Report']['A(f+)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['A0']:0.2f} Hz-{_peak[_i]['A0']*4:0.3f} Hz {sprit_utils.x_mark()}"
+        _peak[_i]['Report']['A(f+)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']:0.2f} Hz-{_peak[_i]['f0']*4:0.3f} Hz {sprit_utils.x_mark()}"
         _peak[_i]['PassList']['PeakProminenceAbove'] = False
         for _j in range(len(_x) - 1):
 
