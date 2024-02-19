@@ -15,6 +15,7 @@ except:
 
 from sprit.sprit_hvsr import(
     run,
+    azimuth,
     export_data,
     export_settings,
     import_data,
@@ -27,6 +28,7 @@ from sprit.sprit_hvsr import(
     generate_ppsds,
     process_hvsr,
     plot_hvsr,
+    read_tromino_files,
     remove_noise,
     remove_outlier_curves,
     check_peaks,
@@ -46,7 +48,8 @@ from sprit.sprit_utils import(
     has_required_channels,
     make_it_classy,
     read_from_RS,
-    time_it
+    time_it,
+    x_mark
 )
 
 from sprit.sprit_gui import(
@@ -59,6 +62,7 @@ from sprit.sprit_jupyter_UI import(
 
 __all__ =('sprit_hvsr',
             'run',
+            'azimuth',
             'check_mark',
             'get_char',
             'time_it',
@@ -76,6 +80,7 @@ __all__ =('sprit_hvsr',
             'generate_ppsds',
             'process_hvsr',
             'plot_hvsr',
+            'read_tromino_files',
             'remove_noise',
             'remove_outlier_curves',
             'check_peaks',
@@ -94,6 +99,7 @@ __all__ =('sprit_hvsr',
             'make_it_classy',
             'read_from_RS',
             'time_it',
+            'x_mark',
         'sprit_gui',
             'catch_errors',
         'sprit_jupyter_UI',
