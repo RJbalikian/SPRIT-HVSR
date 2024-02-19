@@ -44,6 +44,7 @@ except:
 
 from sprit.sprit_hvsr import(
     run,
+    azimuth,
     export_data,
     export_settings,
     import_data,
@@ -56,6 +57,7 @@ from sprit.sprit_hvsr import(
     generate_ppsds,
     process_hvsr,
     plot_hvsr,
+    read_tromino_files,
     remove_noise,
     remove_outlier_curves,
     check_peaks,
@@ -75,7 +77,8 @@ from sprit.sprit_utils import(
     has_required_channels,
     make_it_classy,
     read_from_RS,
-    time_it
+    time_it,
+    x_mark
 )
 
 from sprit.sprit_gui import(
@@ -88,6 +91,7 @@ from sprit.sprit_jupyter_UI import(
 
 __all__ =(&#39;sprit_hvsr&#39;,
             &#39;run&#39;,
+            &#39;azimuth&#39;,
             &#39;check_mark&#39;,
             &#39;get_char&#39;,
             &#39;time_it&#39;,
@@ -105,6 +109,7 @@ __all__ =(&#39;sprit_hvsr&#39;,
             &#39;generate_ppsds&#39;,
             &#39;process_hvsr&#39;,
             &#39;plot_hvsr&#39;,
+            &#39;read_tromino_files&#39;,
             &#39;remove_noise&#39;,
             &#39;remove_outlier_curves&#39;,
             &#39;check_peaks&#39;,
@@ -123,6 +128,7 @@ __all__ =(&#39;sprit_hvsr&#39;,
             &#39;make_it_classy&#39;,
             &#39;read_from_RS&#39;,
             &#39;time_it&#39;,
+            &#39;x_mark&#39;,
         &#39;sprit_gui&#39;,
             &#39;catch_errors&#39;,
         &#39;sprit_jupyter_UI&#39;,
@@ -162,6 +168,153 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="sprit.azimuth"><code class="name flex">
+<span>def <span class="ident">azimuth</span></span>(<span>hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>hvsr_data</code></strong> :&ensp;<code><a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a></code></dt>
+<dd>Input HVSR data</dd>
+<dt><strong><code>azimuth_angle</code></strong> :&ensp;<code>int</code>, default=<code>10</code></dt>
+<dd>If <code>azimuth_type='multiple'</code>, this is the angular step (in unit <code>azimuth_unit</code>) of each of the azimuthal measurements.
+If <code>azimuth_type='single'</code> this is the angle (in unit <code>azimuth_unit</code>) of the single calculated azimuthal measruement. By default 10.</dd>
+<dt><strong><code>azimuth_type</code></strong> :&ensp;<code>str</code>, default=<code>'multiple'</code></dt>
+<dd>What type of azimuthal measurement to make, by default 'multiple'.
+If 'multiple' (or {'multi', 'mult', 'm'}), will take a measurement at each angular step of azimuth_angle of unit azimuth_unit.
+If 'single' (or {'sing', 's'}), will take a single azimuthal measurement at angle specified in azimuth_angle.</dd>
+<dt><strong><code>azimuth_unit</code></strong> :&ensp;<code>str</code>, default=<code>'degrees'</code></dt>
+<dd>Angular unit used to specify <code>azimuth_angle</code> parameter. By default 'degrees'.
+If 'degrees' (or {'deg', 'd'}), will use degrees.
+If 'radians' (or {'rad', 'r'}), will use radians.</dd>
+<dt><strong><code>show_az_plot</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to show azimuthal plot, by default False.</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to print terminal output, by default False</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a></code></dt>
+<dd>Updated HVSRData object specified in hvsr_data with hvsr_data['stream'] attribute containing additional components (EHR-***),
+with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def azimuth(hvsr_data, azimuth_angle=10, azimuth_type=&#39;multiple&#39;, azimuth_unit=&#39;degrees&#39;, show_az_plot=False, verbose=False):
+    &#34;&#34;&#34;Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data[&#39;stream&#39;]
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData
+        Input HVSR data
+    azimuth_angle : int, default=10
+        If `azimuth_type=&#39;multiple&#39;`, this is the angular step (in unit `azimuth_unit`) of each of the azimuthal measurements.
+        If `azimuth_type=&#39;single&#39;` this is the angle (in unit `azimuth_unit`) of the single calculated azimuthal measruement. By default 10.
+    azimuth_type : str, default=&#39;multiple&#39;
+        What type of azimuthal measurement to make, by default &#39;multiple&#39;.
+        If &#39;multiple&#39; (or {&#39;multi&#39;, &#39;mult&#39;, &#39;m&#39;}), will take a measurement at each angular step of azimuth_angle of unit azimuth_unit.
+        If &#39;single&#39; (or {&#39;sing&#39;, &#39;s&#39;}), will take a single azimuthal measurement at angle specified in azimuth_angle.
+    azimuth_unit : str, default=&#39;degrees&#39;
+        Angular unit used to specify `azimuth_angle` parameter. By default &#39;degrees&#39;.
+        If &#39;degrees&#39; (or {&#39;deg&#39;, &#39;d&#39;}), will use degrees.
+        If &#39;radians&#39; (or {&#39;rad&#39;, &#39;r&#39;}), will use radians.
+    show_az_plot : bool, default=False
+        Whether to show azimuthal plot, by default False.
+    verbose : bool, default=False
+        Whether to print terminal output, by default False
+
+    Returns
+    -------
+    HVSRData
+        Updated HVSRData object specified in hvsr_data with hvsr_data[&#39;stream&#39;] attribute containing additional components (EHR-***),
+        with *** being zero-padded (3 digits) azimuth angle in degrees.
+    &#34;&#34;&#34;
+          
+    degList = [&#39;degrees&#39;, &#39;deg&#39;, &#39;d&#39;]
+    radList = [&#39;radians&#39;, &#39;rad&#39;, &#39;r&#39;]
+    if azimuth_unit.lower() in degList:
+        az_angle_rad = np.deg2rad(azimuth_angle)
+        az_angle_deg = azimuth_angle
+    elif azimuth_unit.lower() in radList:
+        az_angle_rad = azimuth_angle
+        az_angle_deg = np.rad2deg(azimuth_angle)
+    else:
+        warnings.warn(f&#34;azimuth_unit={azimuth_unit} not supported. Try &#39;degrees&#39; or &#39;radians&#39;. No azimuthal analysis run.&#34;)
+        return hvsr_data
+    
+    #Limit to 
+    if az_angle_deg &lt;= 1:
+        if verbose:
+            warnings.warn(f&#34;Minimum azimuth rotation is 1 degree (max. is 180). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) &#34;)
+        az_angle_deg = 1
+        az_angle_rad = np.pi/180
+    elif az_angle_deg &gt;= 180:
+        if verbose:
+            warnings.warn(f&#34;Maximum azimuth value is azimuth_angle=180 degrees (min. is 1). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=180 degrees ({np.round(np.pi,3)} radians) &#34;)
+        az_angle_deg = 180
+        az_angle_rad = np.pi
+
+    multAzList = [&#39;multiple&#39;, &#39;multi&#39;, &#39;mult&#39;, &#39;m&#39;]
+    singleAzList = [&#39;single&#39;, &#39;sing&#39;, &#39;s&#39;]
+    if azimuth_type.lower() in multAzList:
+        azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
+        azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
+    elif azimuth_type.lower() in singleAzList:
+        azimuth_list = [az_angle_rad]
+        azimuth_list_deg = [az_angle_deg]
+    else:
+        warnings.warn(f&#34;azimuth_type={azimuth_type} not supported. Try &#39;multiple&#39; or &#39;single&#39;. No azimuthal analysis run.&#34;)
+        return hvsr_data
+
+    eComp = hvsr_data[&#39;stream&#39;].select(component=&#39;E&#39;).merge()
+    nComp = hvsr_data[&#39;stream&#39;].select(component=&#39;N&#39;).merge()
+
+    statsDict = {}
+    for key, value in eComp[0].stats.items():
+        statsDict[key] = value
+    
+    for i, az in enumerate(azimuth_list):
+        az_rad = az
+        az_deg = azimuth_list_deg[i]
+        statsDict[&#39;channel&#39;] = f&#34;EHR-{str(round(az_deg,0)).zfill(3)}&#34; #Change channel name
+        statsDict[&#39;azimuth_deg&#39;] = az_rad
+        statsDict[&#39;azimuth_rad&#39;] = az_deg
+        
+        hasMask = [False, False]
+        if np.ma.is_masked(nComp[0].data):
+            nData = nComp[0].data.data
+            nMask = nComp[0].data.mask
+            hasMask[0] = True
+        else:
+            nData = nComp[0].data        
+            nMask = [True] * len(nData)
+        
+        if np.ma.is_masked(eComp[0].data):
+            eData = eComp[0].data.data
+            eMask = eComp[0].data.mask
+            hasMask[1] = True
+        else:
+            eData = eComp[0].data
+            eMask = [True] * len(eData)
+
+        print(az_angle_rad, az)
+
+        if True in hasMask:
+            radial_comp_data = np.ma.array(np.add(nData * np.cos(az), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+        else:
+            radial_comp_data = np.add(nData * np.cos(az), eData * np.sin(az))
+        #From hvsrpy
+        # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
+        
+        radial_trace = obspy.Trace(data=radial_comp_data, header=statsDict)
+        hvsr_data[&#39;stream&#39;].append(radial_trace)
+    
+    return hvsr_data</code></pre>
+</details>
+</dd>
 <dt id="sprit.batch_data_read"><code class="name flex">
 <span>def <span class="ident">batch_data_read</span></span>(<span>input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs)</span>
 </code></dt>
@@ -274,7 +427,7 @@ __author__ = &#39;Riley Balikian&#39;</code></pre>
                     &#39;depth&#39; : 0,
                     &#39;instrument&#39; : &#39;Raspberry Shake&#39;,
                     &#39;metapath&#39; : &#39;&#39;,
-                    &#39;hvsr_band&#39; : [0.4, 40],
+                    &#39;hvsr_band&#39; : [1, 40],
                     &#39;write_path&#39;:&#39;&#39;,
                     &#39;source&#39;:&#39;file&#39;, 
                     &#39;export_format&#39;:&#39;mseed&#39;, 
@@ -589,7 +742,7 @@ This function returns another displayable character if platform is Windows</p></
 </details>
 </dd>
 <dt id="sprit.check_peaks"><code class="name flex">
-<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[1, 20], verbose=False)</span>
+<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[1, 40], peak_selection='max', peak_freq_range=[1, 20], verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
@@ -597,7 +750,7 @@ This function returns another displayable character if platform is Windows</p></
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</dd>
-<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>tuple</code> or <code>list</code>, default=<code>[0.4, 40]</code></dt>
+<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>tuple</code> or <code>list</code>, default=<code>[1, 40]</code></dt>
 <dd>2-item tuple or list with lower and upper limit of frequencies to analyze</dd>
 <dt><strong><code>peak_selection</code></strong> :&ensp;<code>str</code> or <code>numeric</code>, default=<code>'max'</code></dt>
 <dd>How to select the "best" peak used in the analysis. For peak_selection="max" (default value), the highest peak within peak_freq_range is used.
@@ -618,14 +771,14 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection=&#39;max&#39;, peak_freq_range=[1, 20], verbose=False):
+<pre><code class="python">def check_peaks(hvsr_data, hvsr_band=[1, 40], peak_selection=&#39;max&#39;, peak_freq_range=[1, 20], verbose=False):
     &#34;&#34;&#34;Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
         ----------
         hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        hvsr_band : tuple or list, default=[0.4, 40]
+        hvsr_band : tuple or list, default=[1, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
         peak_selection : str or numeric, default=&#39;max&#39;
             How to select the &#34;best&#34; peak used in the analysis. For peak_selection=&#34;max&#34; (default value), the highest peak within peak_freq_range is used.
@@ -692,7 +845,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     else:
         if hvsr_data[&#39;ProcessingStatus&#39;][&#39;OverallStatus&#39;]:
             if not hvsr_band:
-                hvsr_band = [0.4,40]
+                hvsr_band = [1,40]
             
             hvsr_data[&#39;hvsr_band&#39;] = hvsr_band
 
@@ -2590,7 +2743,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         roc_kwargs = {&#39;rmse_thresh&#39;:rmse_pctile_slider.value,
                         &#39;use_percentile&#39;:True,
                         &#39;use_hv_curve&#39;:use_hv_curve_rmse.value,
-                        &#39;show_plot&#39;:False,
+                        &#39;show_outlier_plot&#39;:False,
                         &#39;verbose&#39;:verbose_check.value
                       }
         if &#39;PPSDStatus&#39; in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus[&#39;PPSDStatus&#39;]:
@@ -3518,8 +3671,8 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].as_posix().replace(&#39;{&#39;,&#39;&#39;)
         params[&#39;datapath&#39;] = params[&#39;datapath&#39;].split(&#39;}&#39;)
     
-    sampleListNos = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;]
-    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
+    sampleListNos = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;7&#39;, &#39;8&#39;, &#39;9&#39;, &#39;10&#39;]
+    sampleList = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;7&#39;, &#39;8&#39;, &#39;9&#39;, &#39;10&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
     for s in sampleListNos:
         sampleList.append(f&#39;sample{s}&#39;)
         sampleList.append(f&#39;sample_{s}&#39;)
@@ -3597,7 +3750,7 @@ Otherwise, this should be a string accepted by the type parameter of the obspy.c
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
 
             elif inst.lower() in trominoNameList:
-                rawDataIN = __read_tromino_files(dPath, params, verbose=verbose)
+                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
         except:
             raise RuntimeError(f&#34;Data not fetched for {params[&#39;site&#39;]}. Check input parameters or the data file.&#34;)
     elif source==&#39;stream&#39; or isinstance(params, (obspy.Stream, obspy.Trace)):
@@ -4059,7 +4212,7 @@ If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT
 </details>
 </dd>
 <dt id="sprit.generate_ppsds"><code class="name flex">
-<span>def <span class="ident">generate_ppsds</span></span>(<span>hvsr_data, verbose=False, **ppsd_kwargs)</span>
+<span>def <span class="ident">generate_ppsds</span></span>(<span>hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generates PPSDs for each channel</p>
@@ -4069,6 +4222,8 @@ Info on PPSD creation here: <a href="https://docs.obspy.org/packages/autogen/obs
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict, <a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a> object,</code> or <code><a title="sprit.HVSRBatch" href="#sprit.HVSRBatch">HVSRBatch</a> object</code></dt>
 <dd>Data object containing all the parameters and other data of interest (stream and paz, for example)</dd>
+<dt><strong><code>azimuthal_ppsds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to generate PPSDs for azimuthal data</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to print inputs and results to terminal</dd>
 <dt><strong><code>**ppsd_kwargs</code></strong> :&ensp;<code>dict</code></dt>
@@ -4086,7 +4241,7 @@ If the following keywords are not specified, their defaults are amended in this 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def generate_ppsds(hvsr_data, verbose=False, **ppsd_kwargs):
+<pre><code class="python">def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwargs):
     &#34;&#34;&#34;Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -4096,6 +4251,8 @@ If the following keywords are not specified, their defaults are amended in this 
         ----------
         hvsr_data : dict, HVSRData object, or HVSRBatch object
             Data object containing all the parameters and other data of interest (stream and paz, for example)
+        azimuthal_ppsds : bool, default=False
+            Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
         **ppsd_kwargs : dict
@@ -4123,7 +4280,7 @@ If the following keywords are not specified, their defaults are amended in this 
     if &#39;period_step_octaves&#39; not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults[&#39;period_step_octaves&#39;] = 0.03125
     if &#39;period_limits&#39; not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults[&#39;period_limits&#39;] =  [1/40, 1/0.4]
+        ppsd_kwargs_sprit_defaults[&#39;period_limits&#39;] =  [1/40, 1/1]
 
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
@@ -4150,6 +4307,7 @@ If the following keywords are not specified, their defaults are amended in this 
                 if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
 
+    azimuthal_ppsds = orig_args[&#39;azimuthal_ppsds&#39;]
     verbose = orig_args[&#39;verbose&#39;]
     ppsd_kwargs = orig_args[&#39;ppsd_kwargs&#39;]
 
@@ -4194,165 +4352,170 @@ If the following keywords are not specified, their defaults are amended in this 
         paz = hvsr_data[&#39;paz&#39;]
         stream = hvsr_data[&#39;stream&#39;]
 
-        #Get ppsds of e component
-        eStream = stream.select(component=&#39;E&#39;)
-        estats = eStream.traces[0].stats
-        ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
-        ppsdE.add(eStream)
+        if azimuthal_ppsds:
+            #get azimuthal ppsds (in an HVSRBatch object?)
+            pass
+        else:
+            #Get ppsds of e component
+            eStream = stream.select(component=&#39;E&#39;)
+            estats = eStream.traces[0].stats
+            ppsdE = PPSD(estats, paz[&#39;E&#39;],  **ppsd_kwargs)
+            ppsdE.add(eStream)
 
-        #Get ppsds of n component
-        nStream = stream.select(component=&#39;N&#39;)
-        nstats = nStream.traces[0].stats
-        ppsdN = PPSD(nstats, paz[&#39;N&#39;], **ppsd_kwargs)
-        ppsdN.add(nStream)
+            #Get ppsds of n component
+            nStream = stream.select(component=&#39;N&#39;)
+            nstats = nStream.traces[0].stats
+            ppsdN = PPSD(nstats, paz[&#39;N&#39;], **ppsd_kwargs)
+            ppsdN.add(nStream)
 
-        #Get ppsds of z component
-        zStream = stream.select(component=&#39;Z&#39;)
-        zstats = zStream.traces[0].stats
-        ppsdZ = PPSD(zstats, paz[&#39;Z&#39;], **ppsd_kwargs)
-        ppsdZ.add(zStream)
+            #Get ppsds of z component
+            zStream = stream.select(component=&#39;Z&#39;)
+            zstats = zStream.traces[0].stats
+            ppsdZ = PPSD(zstats, paz[&#39;Z&#39;], **ppsd_kwargs)
+            ppsdZ.add(zStream)
 
-        ppsds = {&#39;Z&#39;:ppsdZ, &#39;N&#39;:ppsdN, &#39;E&#39;:ppsdE}
+            ppsds = {&#39;Z&#39;:ppsdZ, &#39;N&#39;:ppsdN, &#39;E&#39;:ppsdE}
 
-        #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-        hvsr_data[&#39;ppsds_obspy&#39;] = ppsds
-        hvsr_data[&#39;ppsds&#39;] = {}
-        anyKey = list(hvsr_data[&#39;ppsds_obspy&#39;].keys())[0]
-        
-        #Get ppsd class members
-        members = [mems for mems in dir(hvsr_data[&#39;ppsds_obspy&#39;][anyKey]) if not callable(mems) and not mems.startswith(&#34;_&#34;)]
-        hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;] = {}
-        hvsr_data[&#39;ppsds&#39;][&#39;E&#39;] = {}
-        hvsr_data[&#39;ppsds&#39;][&#39;N&#39;] = {}
-        
-        #Get lists/arrays so we can manipulate data later and copy everything over to main &#39;ppsds&#39; subdictionary (convert lists to np.arrays for consistency)
-        listList = [&#39;times_data&#39;, &#39;times_gaps&#39;, &#39;times_processed&#39;,&#39;current_times_used&#39;, &#39;psd_values&#39;] #Things that need to be converted to np.array first, for consistency
-        timeKeys= [&#39;times_processed&#39;,&#39;current_times_used&#39;,&#39;psd_values&#39;]
-        timeDiffWarn = True
-        dfList = []
-        time_data = {}
-        time_dict = {}
-        for m in members:
-            hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;Z&#39;], m)
-            hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;E&#39;], m)
-            hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;N&#39;], m)
-            if m in listList:
-               
-                hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m])
-                hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m])
-                hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m])
+            #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+            hvsr_data[&#39;ppsds_obspy&#39;] = ppsds
+            hvsr_data[&#39;ppsds&#39;] = {}
+            anyKey = list(hvsr_data[&#39;ppsds_obspy&#39;].keys())[0]
             
-            if str(m)==&#39;times_processed&#39;:
-                unique_times = np.unique(np.array([hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m],
-                                          hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m],
-                                          hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]]))
+            #Get ppsd class members
+            members = [mems for mems in dir(hvsr_data[&#39;ppsds_obspy&#39;][anyKey]) if not callable(mems) and not mems.startswith(&#34;_&#34;)]
+            hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;] = {}
+            hvsr_data[&#39;ppsds&#39;][&#39;E&#39;] = {}
+            hvsr_data[&#39;ppsds&#39;][&#39;N&#39;] = {}
+            
+            #Get lists/arrays so we can manipulate data later and copy everything over to main &#39;ppsds&#39; subdictionary (convert lists to np.arrays for consistency)
+            listList = [&#39;times_data&#39;, &#39;times_gaps&#39;, &#39;times_processed&#39;,&#39;current_times_used&#39;, &#39;psd_values&#39;] #Things that need to be converted to np.array first, for consistency
+            timeKeys= [&#39;times_processed&#39;,&#39;current_times_used&#39;,&#39;psd_values&#39;]
+            timeDiffWarn = True
+            dfList = []
+            time_data = {}
+            time_dict = {}
+            for m in members:
+                hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;Z&#39;], m)
+                hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;E&#39;], m)
+                hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m] = getattr(hvsr_data[&#39;ppsds_obspy&#39;][&#39;N&#39;], m)
+                if m in listList:
                 
-                common_times = []
-                for currTime in unique_times:
-                    if currTime in hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m]:
-                        if currTime in hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m]:
-                            if currTime in hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]:
-                                common_times.append(currTime)
-
-                cTimeIndList = []
-                for cTime in common_times:
-                    ZArr = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m]
-                    EArr = hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m]
-                    NArr = hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]
-
-                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
-                                        int(np.where(EArr == cTime)[0][0]),
-                                        int(np.where(NArr == cTime)[0][0])])
+                    hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m])
+                    hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m])
+                    hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m] = np.array(hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m])
+                
+                if str(m)==&#39;times_processed&#39;:
+                    unique_times = np.unique(np.array([hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m],
+                                            hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m],
+                                            hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]]))
                     
-            #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
-            if m in timeKeys:
-                if str(m) != &#39;times_processed&#39;:
-                    time_data[str(m)] = (hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m], hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m], hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m])
+                    common_times = []
+                    for currTime in unique_times:
+                        if currTime in hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m]:
+                            if currTime in hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m]:
+                                if currTime in hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]:
+                                    common_times.append(currTime)
 
-                #print(m, hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m])
+                    cTimeIndList = []
+                    for cTime in common_times:
+                        ZArr = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m]
+                        EArr = hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m]
+                        NArr = hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m]
 
-                tSteps_same = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m].shape[0] == hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m].shape[0] == hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m].shape[0]
+                        cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                            int(np.where(EArr == cTime)[0][0]),
+                                            int(np.where(NArr == cTime)[0][0])])
+                        
+                #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
+                if m in timeKeys:
+                    if str(m) != &#39;times_processed&#39;:
+                        time_data[str(m)] = (hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m], hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m], hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m])
 
-                if not tSteps_same:
-                    shortestTimeLength = min(hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m].shape[0])
+                    #print(m, hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m])
 
-                    maxPctDiff = 0
-                    for comp in hvsr_data[&#39;ppsds&#39;].keys():
-                        currCompTimeLength = hvsr_data[&#39;ppsds&#39;][comp][m].shape[0]
-                        timeLengthDiff = currCompTimeLength - shortestTimeLength
-                        percentageDiff = timeLengthDiff / currCompTimeLength
-                        if percentageDiff &gt; maxPctDiff:
-                            maxPctDiff = percentageDiff
+                    tSteps_same = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m].shape[0] == hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m].shape[0] == hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m].shape[0]
 
-                    for comp in hvsr_data[&#39;ppsds&#39;].keys():
-                        while hvsr_data[&#39;ppsds&#39;][comp][m].shape[0] &gt; shortestTimeLength:
-                            hvsr_data[&#39;ppsds&#39;][comp][m] = hvsr_data[&#39;ppsds&#39;][comp][m][:-1]
-                    
-                    
-                    if maxPctDiff &gt; 0.05 and timeDiffWarn:
-                        warnings.warn(f&#34;\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% &gt; 5%. Last windows will be trimmed.&#34;)
-                    elif verbose  and timeDiffWarn:
-                        print(f&#34;\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.&#34;)
-                    timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
+                    if not tSteps_same:
+                        shortestTimeLength = min(hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][m].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;E&#39;][m].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;N&#39;][m].shape[0])
 
-        for i, currTStep in enumerate(cTimeIndList):
-            colList = []
-            currTStepList = []
-            colList.append(&#39;TimesProcessed_Obspy&#39;)
-            currTStepList.append(common_times[i])
-            for tk in time_data.keys():
-                colList.append(str(tk)+&#39;_Z&#39;)
-                colList.append(str(tk)+&#39;_E&#39;)
-                colList.append(str(tk)+&#39;_N&#39;)
-                currTStepList.append(time_data[tk][0][currTStep[0]])#z
-                currTStepList.append(time_data[tk][1][currTStep[1]])#e
-                currTStepList.append(time_data[tk][2][currTStep[2]])#n
+                        maxPctDiff = 0
+                        for comp in hvsr_data[&#39;ppsds&#39;].keys():
+                            currCompTimeLength = hvsr_data[&#39;ppsds&#39;][comp][m].shape[0]
+                            timeLengthDiff = currCompTimeLength - shortestTimeLength
+                            percentageDiff = timeLengthDiff / currCompTimeLength
+                            if percentageDiff &gt; maxPctDiff:
+                                maxPctDiff = percentageDiff
 
-            dfList.append(currTStepList)
+                        for comp in hvsr_data[&#39;ppsds&#39;].keys():
+                            while hvsr_data[&#39;ppsds&#39;][comp][m].shape[0] &gt; shortestTimeLength:
+                                hvsr_data[&#39;ppsds&#39;][comp][m] = hvsr_data[&#39;ppsds&#39;][comp][m][:-1]
+                        
+                        
+                        if maxPctDiff &gt; 0.05 and timeDiffWarn:
+                            warnings.warn(f&#34;\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% &gt; 5%. Last windows will be trimmed.&#34;)
+                        elif verbose  and timeDiffWarn:
+                            print(f&#34;\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.&#34;)
+                        timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
+
+            for i, currTStep in enumerate(cTimeIndList):
+                colList = []
+                currTStepList = []
+                colList.append(&#39;TimesProcessed_Obspy&#39;)
+                currTStepList.append(common_times[i])
+                for tk in time_data.keys():
+                    colList.append(str(tk)+&#39;_Z&#39;)
+                    colList.append(str(tk)+&#39;_E&#39;)
+                    colList.append(str(tk)+&#39;_N&#39;)
+                    currTStepList.append(time_data[tk][0][currTStep[0]])#z
+                    currTStepList.append(time_data[tk][1][currTStep[1]])#e
+                    currTStepList.append(time_data[tk][2][currTStep[2]])#n
+
+                dfList.append(currTStepList)
+                
+            hvsrDF = pd.DataFrame(dfList, columns=colList)
+            hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;] + ppsd_kwargs[&#39;ppsd_length&#39;]
             
-        hvsrDF = pd.DataFrame(dfList, columns=colList)
-        hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;] + ppsd_kwargs[&#39;ppsd_length&#39;]
-        
-        #Add other times (for start times)
-        def convert_to_datetime(obspyUTCDateTime):
-            return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+            #Add other times (for start times)
+            def convert_to_datetime(obspyUTCDateTime):
+                return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
 
-        def convert_to_mpl_dates(obspyUTCDateTime):
-            return obspyUTCDateTime.matplotlib_date
+            def convert_to_mpl_dates(obspyUTCDateTime):
+                return obspyUTCDateTime.matplotlib_date
 
-        hvsrDF[&#39;TimesProcessed&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_datetime)     
-        hvsrDF[&#39;TimesProcessed_End&#39;] = hvsrDF[&#39;TimesProcessed&#39;] + datetime.timedelta(days=0,seconds=ppsd_kwargs[&#39;ppsd_length&#39;])
-        hvsrDF[&#39;TimesProcessed_MPL&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_mpl_dates)
-        hvsrDF[&#39;TimesProcessed_MPLEnd&#39;] = hvsrDF[&#39;TimesProcessed_MPL&#39;] + (ppsd_kwargs[&#39;ppsd_length&#39;]/86400)
-        
-        hvsrDF[&#39;Use&#39;] = True
-        hvsrDF[&#39;Use&#39;]=hvsrDF[&#39;Use&#39;].astype(bool)
-        for gap in hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
-            hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_MPL&#39;].gt(gap[1].matplotlib_date))| \
-                            (hvsrDF[&#39;TimesProcessed_MPLEnd&#39;].lt(gap[0].matplotlib_date))# | \
-        
-        hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
-        if &#39;xwindows_out&#39; in hvsr_data.keys():
-            for window in hvsr_data[&#39;xwindows_out&#39;]:
-                hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) )| \
-                        (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1]))
+            hvsrDF[&#39;TimesProcessed&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_datetime)     
+            hvsrDF[&#39;TimesProcessed_End&#39;] = hvsrDF[&#39;TimesProcessed&#39;] + datetime.timedelta(days=0,seconds=ppsd_kwargs[&#39;ppsd_length&#39;])
+            hvsrDF[&#39;TimesProcessed_MPL&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_mpl_dates)
+            hvsrDF[&#39;TimesProcessed_MPLEnd&#39;] = hvsrDF[&#39;TimesProcessed_MPL&#39;] + (ppsd_kwargs[&#39;ppsd_length&#39;]/86400)
+            
+            hvsrDF[&#39;Use&#39;] = True
+            hvsrDF[&#39;Use&#39;]=hvsrDF[&#39;Use&#39;].astype(bool)
+            for gap in hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
+                hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_MPL&#39;].gt(gap[1].matplotlib_date))| \
+                                (hvsrDF[&#39;TimesProcessed_MPLEnd&#39;].lt(gap[0].matplotlib_date))# | \
+            
             hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
+            if &#39;xwindows_out&#39; in hvsr_data.keys():
+                for window in hvsr_data[&#39;xwindows_out&#39;]:
+                    hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) )| \
+                            (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1]))
+                hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
+                
+            hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
+            hvsr_data[&#39;hvsr_df&#39;] = hvsrDF
+            #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+            hvsr_data[&#39;tsteps_used&#39;] = [hvsrDF[&#39;Use&#39;].sum(), hvsrDF[&#39;Use&#39;].shape[0]]
+            #hvsr_data[&#39;tsteps_used&#39;] = [hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
             
-        hvsrDF.set_index(&#39;TimesProcessed&#39;, inplace=True)
-        hvsr_data[&#39;hvsr_df&#39;] = hvsrDF
-        #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-        hvsr_data[&#39;tsteps_used&#39;] = [hvsrDF[&#39;Use&#39;].sum(), hvsrDF[&#39;Use&#39;].shape[0]]
-        #hvsr_data[&#39;tsteps_used&#39;] = [hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
+            hvsr_data[&#39;tsteps_used&#39;][0] = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
+            
+            hvsr_data = sprit_utils.make_it_classy(hvsr_data)
         
-        hvsr_data[&#39;tsteps_used&#39;][0] = hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
-        
-        hvsr_data = sprit_utils.make_it_classy(hvsr_data)
-    
-        if &#39;processing_parameters&#39; not in hvsr_data.keys():
-            hvsr_data[&#39;processing_parameters&#39;] = {}
-        hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;] = {}
-        for key, value in orig_args.items():
-            hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;][key] = value
+            if &#39;processing_parameters&#39; not in hvsr_data.keys():
+                hvsr_data[&#39;processing_parameters&#39;] = {}
+            hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;] = {}
+            for key, value in orig_args.items():
+                hvsr_data[&#39;processing_parameters&#39;][&#39;generate_ppsds&#39;][key] = value
+
     hvsr_data[&#39;ProcessingStatus&#39;][&#39;PPSDStatus&#39;] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data</code></pre>
@@ -5074,7 +5237,7 @@ If a directory is specified, the filename will be
 </details>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-01-19', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[0.4, 40], peak_freq_range=[0.4, 40], processing_parameters={}, verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>datapath, site='HVSR Site', network='AM', station='RAC84', loc='00', channels=['EHZ', 'EHN', 'EHE'], acq_date='2024-02-19', starttime='00:00:00.00', endtime='23:59:59.999999', tzone='UTC', xcoord=-88.2290526, ycoord=40.1012122, elevation=755, input_crs='EPSG:4326', output_crs='EPSG:4326', elev_unit='feet', depth=0, instrument='Raspberry Shake', metapath=None, hvsr_band=[1, 40], peak_freq_range=[1, 40], processing_parameters={}, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function for designating input parameters for reading in and processing data</p>
@@ -5120,9 +5283,9 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
 <dd>Instrument from which the data was acquired.</dd>
 <dt><strong><code>metapath</code></strong> :&ensp;<code>str</code> or <code>pathlib.Path object</code>, default=<code>None</code></dt>
 <dd>Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</dd>
-<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>list</code>, default=<code>[0.4, 40]</code></dt>
+<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>list</code>, default=<code>[1, 40]</code></dt>
 <dd>Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.</dd>
-<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>list</code> or <code>tuple</code>, default=<code>[0.4, 40]</code></dt>
+<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>list</code> or <code>tuple</code>, default=<code>[1, 40]</code></dt>
 <dd>Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.</dd>
 <dt>processing_parameters={} : dict or filepath, default={}</dt>
 <dt>If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()).</dt>
@@ -5162,8 +5325,8 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
                 depth = 0,
                 instrument = &#39;Raspberry Shake&#39;,
                 metapath = None,
-                hvsr_band = [0.4, 40],
-                peak_freq_range=[0.4, 40],
+                hvsr_band = [1, 40],
+                peak_freq_range=[1, 40],
                 processing_parameters={},
                 verbose=False
                 ):
@@ -5211,9 +5374,9 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
-    hvsr_band : list, default=[0.4, 40]
+    hvsr_band : list, default=[1, 40]
         Two-element list containing low and high &#34;corner&#34; frequencies (in Hz) for processing. This can specified again later.
-    peak_freq_range : list or tuple, default=[0.4, 40]
+    peak_freq_range : list or tuple, default=[1, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
     processing_parameters={} : dict or filepath, default={}
         If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
@@ -5613,9 +5776,11 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
                 fig, axis = plt.subplots()
                     
             if p == &#39;hvsr&#39;:
+                kwargs[&#39;p&#39;] = &#39;hvsr&#39;
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;, show_legend=show_legend, axes=ax, **kwargs)
             elif p==&#39;comp&#39;:
                 plotComponents[0] = plotComponents[0][:-1]
+                kwargs[&#39;p&#39;]==&#39;comp&#39;
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype=&#39;x_freqs&#39;, show_legend=show_legend, axes=ax, **kwargs)
             elif p==&#39;spec&#39;:
                 plottypeKwargs = {}
@@ -6138,6 +6303,117 @@ Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</d
     return dest</code></pre>
 </details>
 </dd>
+<dt id="sprit.read_tromino_files"><code class="name flex">
+<span>def <span class="ident">read_tromino_files</span></span>(<span>datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>datapath</code></strong> :&ensp;<code>str, pathlib.Path()</code></dt>
+<dd>The input parameter <em>datapath</em> from sprit.input_params()</dd>
+<dt><strong><code>params</code></strong> :&ensp;<code><a title="sprit.HVSRData" href="#sprit.HVSRData">HVSRData</a></code> or <code><a title="sprit.HVSRBatch" href="#sprit.HVSRBatch">HVSRBatch</a></code></dt>
+<dd>The parameters as read in from input_params() and and fetch_data()</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to print results to terminal, by default False</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>obspy.Stream</code></dt>
+<dd>An obspy.Stream object containing the trace data from the Tromino instrument</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+    &#34;&#34;&#34;Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
+
+    Parameters
+    ----------
+    datapath : str, pathlib.Path()
+        The input parameter _datapath_ from sprit.input_params()
+    params : HVSRData or HVSRBatch
+        The parameters as read in from input_params() and and fetch_data()
+    verbose : bool, optional
+        Whether to print results to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        An obspy.Stream object containing the trace data from the Tromino instrument
+    &#34;&#34;&#34;
+    dPath = datapath
+
+    strucSizes = {&#39;c&#39;:1, &#39;b&#39;:1,&#39;B&#39;:1, &#39;?&#39;:1,
+                &#39;h&#39;:2,&#39;H&#39;:2,&#39;e&#39;:2,
+                &#39;i&#39;:4,&#39;I&#39;:4,&#39;l&#39;:4,&#39;L&#39;:4,&#39;f&#39;:4,
+                &#39;q&#39;:8,&#39;Q&#39;:8,&#39;d&#39;:8,
+                &#39;n&#39;:8,&#39;N&#39;:8,&#39;s&#39;:16,&#39;p&#39;:16,&#39;P&#39;:16,&#39;x&#39;:16}
+
+    #H (pretty sure it&#39;s Q) I L or Q all seem to work (probably not Q?)
+    structFormat = &#39;H&#39;
+    structSize = strucSizes[structFormat]
+
+    dataList = []
+    with open(dPath, &#39;rb&#39;) as f:
+        while True:
+            data = f.read(structSize)  # Read 4 bytes
+            if not data:  # End of file
+                break
+            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
+            dataList.append(value)
+     
+    import numpy as np
+    dataArr = np.array(dataList)
+    import matplotlib.pyplot as plt
+
+    medVal = np.nanmedian(dataArr[50000:100000])
+
+    if &#39;start_byte&#39; in kwargs.keys():
+        start_byte = kwargs[&#39;start_byte&#39;]
+
+    startByte = start_byte
+    comp1 = dataArr[startByte::3] - medVal
+    comp2 = dataArr[startByte+1::3] - medVal
+    comp3 = dataArr[startByte+2::3] - medVal
+    headerBytes = dataArr[:startByte]
+
+    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
+    #ax[0].plot(comp1, linewidth=0.1, c=&#39;k&#39;)
+    #ax[1].plot(comp2, linewidth=0.1, c=&#39;k&#39;)
+    #ax[2].plot(comp3, linewidth=0.1, c=&#39;k&#39;)
+
+    if &#39;sampling_rate&#39; in kwargs.keys():
+        sampling_rate = kwargs[&#39;sampling_rate&#39;]
+
+    sTime = obspy.UTCDateTime(params[&#39;acq_date&#39;].year, params[&#39;acq_date&#39;].month, params[&#39;acq_date&#39;].day,
+                              params[&#39;starttime&#39;].hour, params[&#39;starttime&#39;].minute,
+                              params[&#39;starttime&#39;].second,params[&#39;starttime&#39;].microsecond)
+    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
+
+    traceHeader1 = {&#39;sampling_rate&#39;:sampling_rate,
+            &#39;calib&#39; : 1,
+            &#39;npts&#39;:len(comp1),
+            &#39;network&#39;:&#39;AM&#39;,
+            &#39;location&#39;:&#39;00&#39;,
+            &#39;station&#39; : &#39;TRMNO&#39;,
+            &#39;channel&#39;:&#39;BHE&#39;,
+            &#39;starttime&#39;:sTime}
+    
+    traceHeader2=traceHeader1.copy()
+    traceHeader3=traceHeader1.copy()
+    traceHeader2[&#39;channel&#39;] = &#39;BHN&#39;
+    traceHeader3[&#39;channel&#39;] = &#39;BHZ&#39;
+
+    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
+    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
+    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
+
+    st = obspy.Stream([trace1, trace2, trace3])    
+    return st</code></pre>
+</details>
+</dd>
 <dt id="sprit.remove_noise"><code class="name flex">
 <span>def <span class="ident">remove_noise</span></span>(<span>hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.8, sta=2, lta=30, stalta_thresh=[0.5, 5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, verbose=False)</span>
 </code></dt>
@@ -6428,7 +6704,7 @@ If a value is passed that is greater than 1, it will be divided by 100 to obtain
 </details>
 </dd>
 <dt id="sprit.remove_outlier_curves"><code class="name flex">
-<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_plot=False, verbose=False)</span>
+<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
@@ -6462,7 +6738,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_plot=False, verbose=False):
+<pre><code class="python">def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
     &#34;&#34;&#34;Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -6511,7 +6787,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
     use_percentile = orig_args[&#39;use_percentile&#39;]
     rmse_thresh = orig_args[&#39;rmse_thresh&#39;]
     use_hv_curve = orig_args[&#39;use_hv_curve&#39;]
-    show_plot = orig_args[&#39;show_plot&#39;]
+    show_outlier_plot = orig_args[&#39;show_outlier_plot&#39;]
     verbose = orig_args[&#39;verbose&#39;]
 
     #Print if verbose, which changes depending on if batch data or not
@@ -6556,7 +6832,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
         else:
             compNames=[&#39;HV Curve&#39;]
             colNames = [&#39;HV_Curves&#39;]
-        if show_plot:
+        if show_outlier_plot:
             if use_hv_curve:
                 spMosaic = [&#39;HV Curve&#39;]
             else:
@@ -6593,7 +6869,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_plot:
+            if show_outlier_plot:
                 # Intialize to only get unique labels
                 rem_label_got = False
                 keep_label_got = False
@@ -6628,7 +6904,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
                 ax[compNames[i]].set_ylabel(f&#34;{compNames[i]}&#34;)
                 ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
                 ax[compNames[i]].semilogx()             
-        if show_plot:
+        if show_outlier_plot:
             plt.show()
                     
         # Get unique values of bad_rmse indices and set the &#34;Use&#34; column of the hvsr_df to False for that window
@@ -6959,6 +7235,30 @@ For sample data, The following can be specified as the datapath parameter:
     return t</code></pre>
 </details>
 </dd>
+<dt id="sprit.x_mark"><code class="name flex">
+<span>def <span class="ident">x_mark</span></span>(<span>incolor=False, inTerminal=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The default Windows terminal is not able to display the check mark character correctly.
+This function returns another displayable character if platform is Windows</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def x_mark(incolor=False, inTerminal=False):
+    &#34;&#34;&#34;The default Windows terminal is not able to display the check mark character correctly.
+       This function returns another displayable character if platform is Windows&#34;&#34;&#34;
+    
+    if incolor:
+        try:
+            xmark = get_char(u&#39;\u274C&#39;)
+        except:
+            xmark = get_char(u&#39;\u2718&#39;)
+    else:
+        xmark = get_char(u&#39;\u2718&#39;)
+    return xmark</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -6986,17 +7286,37 @@ functions in the sprit.pacakge are designed to perform the bulk of their operati
     
     &#34;&#34;&#34;
     @check_instance
-    def __init__(self, sites_dict):
-      
-        self._batch_dict = sites_dict
+    def __init__(self, batch_dict, azimuth=None):
+        &#34;&#34;&#34;HVSR Batch initializer
+
+        Parameters
+        ----------
+        batch_dict : dict
+            Dictionary containing Key value pairs with either {sitename:HVSRData object} or {azimuth_angle_degrees:HVSRData object}
+        azimuth : None or numeric, default=None
+            If None, HVSRBatch object will be a batch of sites. If other value, it should be a list of numeric values of the azimuths (in degrees), by default None.
+        &#34;&#34;&#34;
+        self._batch_dict = batch_dict
         self.batch_dict = self._batch_dict
         self.batch = True
-
-        for sitename, hvsrdata in sites_dict.items():
-            setattr(self, sitename, hvsrdata)
-            self[sitename][&#39;batch&#39;]=True
-            
-        self.sites = list(self._batch_dict.keys())
+        self.batch_type = &#39;sites&#39;
+        if azimuth is not None:
+            self.batch_type = &#39;azimuths&#39;
+        
+        if self.batch_type==&#39;sites&#39;:
+            for sitename, hvsrdata in batch_dict.items():
+                setattr(self, sitename, hvsrdata)
+                self[sitename][&#39;batch&#39;]=True  
+            self.sites = list(self._batch_dict.keys())
+            self.azimuths = azimuth # Should be None
+        elif self.batch_tupe ==&#39;azimuths&#39;:
+            self.azimuths = azimuth
+            self.sites = []
+            for az, hvsrdata in batch_dict.items():
+                azkey = str(az).zfill(3)
+                setattr(self, azkey, hvsrdata)
+                self[azkey][&#39;batch&#39;]=True
+                self.sites.append(hvsrdata[&#39;site&#39;])
 
     #METHODS
     def __to_json(self, filepath):
@@ -8000,6 +8320,7 @@ If True, it will first try to save each file to the same directory as datapath, 
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="sprit.azimuth" href="#sprit.azimuth">azimuth</a></code></li>
 <li><code><a title="sprit.batch_data_read" href="#sprit.batch_data_read">batch_data_read</a></code></li>
 <li><code><a title="sprit.catch_errors" href="#sprit.catch_errors">catch_errors</a></code></li>
 <li><code><a title="sprit.check_gui_requirements" href="#sprit.check_gui_requirements">check_gui_requirements</a></code></li>
@@ -8026,10 +8347,12 @@ If True, it will first try to save each file to the same directory as datapath, 
 <li><code><a title="sprit.plot_hvsr" href="#sprit.plot_hvsr">plot_hvsr</a></code></li>
 <li><code><a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr</a></code></li>
 <li><code><a title="sprit.read_from_RS" href="#sprit.read_from_RS">read_from_RS</a></code></li>
+<li><code><a title="sprit.read_tromino_files" href="#sprit.read_tromino_files">read_tromino_files</a></code></li>
 <li><code><a title="sprit.remove_noise" href="#sprit.remove_noise">remove_noise</a></code></li>
 <li><code><a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves</a></code></li>
 <li><code><a title="sprit.run" href="#sprit.run">run</a></code></li>
 <li><code><a title="sprit.time_it" href="#sprit.time_it">time_it</a></code></li>
+<li><code><a title="sprit.x_mark" href="#sprit.x_mark">x_mark</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

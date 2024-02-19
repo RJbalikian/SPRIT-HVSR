@@ -12,7 +12,7 @@ import markdown
 #Whether to CONVERT_MD using markdown library (True), or let github do it (False)
 CONVERT_MD=True
 RTD_THEME=False #Not currently working
-RELEASE_VERSION= '0.1.65'
+RELEASE_VERSION= '0.1.66'
 RUN_TESTS=True
 LINT_IT=True
 
@@ -183,6 +183,7 @@ if LINT_IT:
     print('Running linting')
     fileList = [spritGUIPath, spritCLIPath, spritUtilsPath, spritHVSRPath]
     for fileP in fileList:
+        print(fileP)
         print(f'\nLINTING {fileP.as_posix()}')
         ignoreList = ['E501']
         strIgnoreList =  "--ignore="+str(str(ignoreList)[1:-1].replace(' ', '').replace("'",""))
@@ -199,4 +200,3 @@ if RUN_TESTS:
         subprocess.run(["python", "-m", "pytest", repoDir.as_posix()], shell=SHELL_TYPE, check=False)
     except Exception:
         subprocess.run(["pytest", repoDir.as_posix()], shell=SHELL_TYPE, check=False)
-
