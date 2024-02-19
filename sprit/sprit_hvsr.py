@@ -2935,9 +2935,11 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                 fig, axis = plt.subplots()
                     
             if p == 'hvsr':
+                kwargs['p'] = 'hvsr'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='comp':
                 plotComponents[0] = plotComponents[0][:-1]
+                kwargs['p']=='comp'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='spec':
                 plottypeKwargs = {}
@@ -6115,8 +6117,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_data['hvsrp2'])]
-        if ylim[1] > 20:
+        ylim = [0, max(hvsr_data['hvsrp2'])*1.05]
+        if ylim[1] > 25:
             ylim = [0, max(hvsr_data['hvsr_curve']+1)]
 
     else:
@@ -6223,32 +6225,58 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             for t in hvsr_data['ind_hvsr_curves']:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
-        if 'test' in k:
+        if 'test' in k and kwargs['p']=='hvsr':
             if k=='tests':
                 #Plot all tests
                 pass
             elif '1' in k or '2' in k:
                 ax.hlines([a0_div2], ax.get_xlim()[0], ax.get_xlim()[1])
                 ax.scatter([f0], [a0])
-                ax.annotate(str(f0), [f0, a0])
+                ax.annotate(f"{f0:.3f}", [f0+0.1*f0, a0])
                 if 'pa' not in plot_type:
                     ax.hlines([a0], ax.get_xlim()[0], f0)
             elif '3' in k:
                 if 'c' in k:
                     #Plot curve test3
-                    pass
+                    lowfc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[0]
+                    hifc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[1].replace('Hz', '')
+                    # Finish this 
                 else:
-                    #plot peak test3
-                    pass
+                    ax.hlines([2], ax.get_xlim()[0], ax.get_xlim()[1])
             elif '4' in k:
-                pass
-            elif '5' in k:
-                pass
-            elif '6' in k:
-                pass
-                
-            
+                lowf4 = float(hvsr_data['BestPeak']['Report']['P-'].split(' ')[0])
+                hif4 = float(hvsr_data['BestPeak']['Report']['P+'].split(' ')[0])
+                m2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrm2)]#, np.max(hvsr_data.hvsrm2))
+                p2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrp2)]#, np.max(hvsr_data.hvsrp2))
 
+                # ax.vlines([f0*0.95, f0*1.05], [0,0], [ax.get_xlim()[1],ax.get_xlim()[1]])
+                ax.fill_betweenx(np.linspace(0, ax.get_xlim()[1]), x1=f0*0.95, x2=f0*1.05)
+                ax.scatter([lowf4, hif4], [np.max(hvsr_data.hvsrm2),  np.max(hvsr_data.hvsrp2)])
+            elif '5' in k:
+                sf = float(hvsr_data['BestPeak']['Report']['Sf'].split(' ')[4].strip('()'))
+                sfp = f0+sf
+                sfm = f0-sf
+
+                sfLim = float(hvsr_data['BestPeak']['Report']['Sf'].split(' ')[-2])
+                sfLimp = f0+sfLim
+                sfLimm = f0-sfLim
+
+                ax.scatter([sfLimm, sfLimp], [0, 0], marker='|')
+                ax.scatter([sfm, sfp], [0, 0], marker='|', c='k')
+                ax.plot([sfLimm, sfLimp], [0, 0])
+
+            elif '6' in k:
+                sa = float(hvsr_data['BestPeak']['Report']['Sa'].split(' ')[4].strip('()'))
+                sap = a0+sa
+                sam = a0-sa
+
+                saLim = float(hvsr_data['BestPeak']['Report']['Sa'].split(' ')[-2])
+                saLimp = a0+saLim
+                saLimm = a0-saLim
+
+                ax.scatter([f0, f0], [saLimm, saLimp], marker='_')
+                ax.scatter([f0, f0],[sam, sap], marker='+', c='k')
+                ax.plot([f0, f0],[saLimm, saLimp])                
         if 'c' in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
