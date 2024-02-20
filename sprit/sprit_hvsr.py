@@ -6321,8 +6321,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                     yp = min(newCurveList)
                     ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
                 else:
-                    fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
-                    fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
+                    #fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                    #fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
                     ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
                     minF = newFreqList[np.argmin(newCurveList)]
                     minA = min(newCurveList)
