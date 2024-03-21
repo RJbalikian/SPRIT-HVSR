@@ -909,8 +909,8 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     for key, value in eComp[0].stats.items():
         statsDict[key] = value
     
-    for i, az in enumerate(azimuth_list):
-        az_rad = az
+
+    for i, az_rad in enumerate(azimuth_list):
         az_deg = azimuth_list_deg[i]
         statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
         statsDict['azimuth_deg'] = az_rad
@@ -933,12 +933,10 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             eData = eComp[0].data
             eMask = [True] * len(eData)
 
-        print(az_angle_rad, az)
-
         if True in hasMask:
-            radial_comp_data = np.ma.array(np.add(nData * np.cos(az), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+            radial_comp_data = np.ma.array(np.add(nData * np.cos(az_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
         else:
-            radial_comp_data = np.add(nData * np.cos(az), eData * np.sin(az))
+            radial_comp_data = np.add(nData * np.cos(az_rad), eData * np.sin(az_rad))
         #From hvsrpy
         # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
         
@@ -1903,7 +1901,17 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
             ppsdZ.add(zStream)
 
+            has_az = False
             ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
+            ppsds_az = {}
+            for trace in stream:
+                stats = trace.stats
+                ppsd_curr = PPSD(stats, paz['E'], **ppsd_kwargs)
+                if 'EHR' in trace.id:
+                    has_az = True
+                    ppsds_az[trace.id.split('.')[-1]] = ppsd_curr.add(stream.select(id))
+            if has_az:
+                hvsr_data['ppsds_obspy_az'] = ppsds_az
 
             #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
             hvsr_data['ppsds_obspy'] = ppsds
