@@ -1807,7 +1807,12 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     if 'period_step_octaves' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
     if 'period_limits' not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/1]
+        if 'hvsr_band' in hvsr_data.keys():
+            ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
+        elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
+                ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
+        else:
+            ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
 
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
@@ -2580,8 +2585,8 @@ def input_params(datapath,
                 depth = 0,
                 instrument = 'Raspberry Shake',
                 metapath = None,
-                hvsr_band = [1, 40],
-                peak_freq_range=[1, 40],
+                hvsr_band = [0.4, 40],
+                peak_freq_range=[0.4, 40],
                 processing_parameters={},
                 verbose=False
                 ):
