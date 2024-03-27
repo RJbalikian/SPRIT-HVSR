@@ -1403,11 +1403,13 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
+        for key, value in orig_args.items():
+            print('\t  {}={}'.format(key, value))
         print()
 
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
-    date=params['acq_date']
+    date = params['acq_date']
 
     #Cleanup for gui input
     if isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
@@ -1517,6 +1519,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
             return HVSRBatch(obspyFiles)
     elif source=='file' and str(params['datapath']).lower() not in sampleList:
+        # Read the file specified by datapath
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawStreams = []
             for datafile in dPath:
@@ -1531,7 +1534,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             pass
         else:
             rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-        import warnings
+        import warnings # For some reason not being imported at the start
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
@@ -1579,44 +1582,64 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     #Get metadata from the data itself, if not reading raw data
     try:
+        # If the data already exists (not reading in raw from RS, for example), get the parameters from the data
         dataIN = rawDataIN.copy()
         if source!='raw':
             #Use metadata from file for;
             # site
-            if params['site'] == "HVSR Site":
+            site_default = inspect.signature(input_params).parameters['site'].default
+            if params['site'] == site_default and params['site'] != dPath.stem:
                 if isinstance(dPath, (list, tuple)):
                     dPath = dPath[0]
                 params['site'] = dPath.stem
                 params['params']['site'] = dPath.stem
+                if verbose:
+                    print(f"\t\tSite name updated to {params['site']}\n")
             
             # network
-            if str(params['net']) == 'AM':
+            net_default = inspect.signature(input_params).parameters['network'].default
+            if params['net'] == net_default and net_default != dataIN[0].stats.network:
                 params['net'] = dataIN[0].stats.network
                 params['params']['net'] = dataIN[0].stats.network
+                if verbose:
+                    print(f"\t\tNetwork name updated to {params['net']}\n")
 
             # station
-            if str(params['sta']) == 'RAC84':
+            sta_default = inspect.signature(input_params).parameters['station'].default
+            if str(params['sta']) == sta_default and str(params['sta']) != dataIN[0].stats.station:
                 params['sta'] = dataIN[0].stats.station
                 params['params']['sta'] = dataIN[0].stats.station
+                if verbose:
+                    print(f"\t\tStation name updated to {params['sta']}\n")
 
             # loc
-            if str(params['loc']) == '00':
+            loc_default = inspect.signature(input_params).parameters['loc'].default
+            if params['loc'] == loc_default and params['loc'] != dataIN[0].stats.location:
                 params['loc'] = dataIN[0].stats.location
                 params['params']['loc'] = dataIN[0].stats.location
-            
+                if verbose:
+                    print(f"\t\tLocation updated to {params['loc']}\n")
+
             # channels
             channelList = []
-            if str(params['cha']) == ['EHZ', 'EHN', 'EHE']:
+            cha_default = inspect.signature(input_params).parameters['channels'].default
+            if str(params['cha']) == cha_default:
                 for tr in dataIN:
                     if tr.stats.channel not in channelList:
                         channelList.append(tr.stats.channel)
                         channelList.sort(reverse=True) #Just so z is first, just in case
-                params['cha'] = channelList
-                params['params']['cha'] = channelList
-           
+                if set(params['cha']) != set(channelList):
+                    params['cha'] = channelList
+                    params['params']['cha'] = channelList
+                    if verbose:
+                        print(f"\t\tChannels updated to {params['cha']}\n")
+
             # Acquisition date
-            if str(params['acq_date']) == str(datetime.datetime.now().date()):
+            acqdate_default = inspect.signature(input_params).parameters['acq_date'].default
+            if str(params['acq_date']) == acqdate_default and params['acq_date'] != dataIN[0].stats.starttime.date:
                 params['acq_date'] = dataIN[0].stats.starttime.date
+                if verbose:
+                    print(f"\t\tAcquisition Date updated to {params['acq_date']}\n")
 
             # starttime
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
@@ -1624,7 +1647,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
-            if str(params['starttime']) == str(today_Starttime):
+            stime_default = inspect.signature(input_params).parameters['starttime'].default
+            if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
                                         hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
@@ -1636,16 +1660,20 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                  day = params['acq_date'].day,
                                                                 hour=maxStarttime.hour, minute=maxStarttime.minute, 
                                                                 second=maxStarttime.second, microsecond=maxStarttime.microsecond))
-                params['starttime'] = newStarttime
-                params['params']['starttime'] = newStarttime
+                if params['starttime'] != newStarttime:
+                    params['starttime'] = newStarttime
+                    params['params']['starttime'] = newStarttime
+                    if verbose:
+                        print(f"\t\tStarttime updated to {params['starttime']}\n")
 
             # endttime
             today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=23, minute=59, second=59, microsecond=999999))
             tomorrow_Endtime = today_Endtime + (60*60*24)
-            minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
-            if str(params['endtime']) == str(today_Endtime) or str(params['endtime'])==tomorrow_Endtime:
+            minEndtime = datetime.datetime.now(tz=datetime.timezone.utc)#.replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
+            etime_default = inspect.signature(input_params).parameters['endtime'].default
+            if str(params['endtime']) == etime_default or str(params['endtime']) == tomorrow_Endtime:
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day,
                                         hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
@@ -1656,20 +1684,19 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                  day = minEndtime.day,
                                                                 hour=minEndtime.hour, minute=minEndtime.minute, 
                                                                 second=minEndtime.second, microsecond=minEndtime.microsecond, tzinfo=datetime.timezone.utc))
-                params['endtime'] = newEndtime
-                params['params']['endtime'] = newEndtime
+                
+                if params['endtime'] != newEndtime:
+                    params['endtime'] = newEndtime
+                    params['params']['endtime'] = newEndtime
+                    if verbose:
+                        print(f"\t\tEndtime updated to {params['endtime']}\n")
 
-
-            #print(dataIN)
-            #print(params['starttime'])
-            #print(params['endtime'])
             dataIN = dataIN.split()
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
-            #print(dataIN)
-    except:
-        raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
-        
+    except Exception as e:
+        raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
+
     #Trim and save data as specified
     if trim_dir=='None':
         trim_dir=None
@@ -1703,8 +1730,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
             #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
             plt.show()
-        except:
-            print('Error with default plotting method, falling back to internal obspy plotting method')
+        except Exception as e:
+            print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
             dataIN.plot(method='full', linewidth=0.25)
 
     #Sort channels (make sure Z is first, makes things easier later)
@@ -1756,12 +1783,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     for key, value in orig_args.items():
         params['processing_parameters']['fetch_data'][key] = value
 
-    
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
-            print('\t',line)
+            print('\t', line)
     
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
@@ -2701,11 +2727,10 @@ def input_params(datapath,
             date = '{}-{}-{}'.format(acq_date[2], acq_date[0], acq_date[1])
         else: #international format, one we're going to use
             date = '{}-{}-{}'.format(acq_date[0], acq_date[1], acq_date[2])     
-
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
-    
+
     if type(starttime) is str:
         if 'T' in starttime:
             #date=starttime.split('T')[0]
@@ -3943,6 +3968,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         batch_type='table'
     else:
         sample_data = False
+    
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
@@ -6702,7 +6728,6 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     return fig, ax
 
-
 #Plot spectrogram from stream
 def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
@@ -6744,11 +6769,10 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     minEndTime = obspy.UTCDateTime(1e10)
     for comp in ['E', 'N', 'Z']:
         #Get all traces from selected component in comp_st
-        if isinstance(stream[0].data, np.ma.masked_array):
+        if isinstance(stream.select(component=comp).merge()[0].data, np.ma.masked_array):
             stream = stream.split() 
         comp_st = stream.select(component=comp).copy()
         stream.merge()
-        
         if comp in component:
             for tr in comp_st:
                 #Get all traces specified for use in one list
@@ -6770,6 +6794,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.merge()
+
     if len(stream)>1:
         stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
@@ -6790,7 +6815,6 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
         newFig = True
 
-    
     data = stream[0].data
     if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
         data = data.filled(fill_gaps)
