@@ -946,21 +946,21 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     return hvsr_data
 
 #Quality checks, stability tests, clarity tests
-#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[1, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[1, 40], peak_selection='max', peak_freq_range=[1, 20], verbose=False):
+#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
         ----------
         hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        hvsr_band : tuple or list, default=[1, 40]
+        hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
         peak_selection : str or numeric, default='max'
             How to select the "best" peak used in the analysis. For peak_selection="max" (default value), the highest peak within peak_freq_range is used.
             For peak_selection='scored', an algorithm is used to select the peak based in part on which peak passes the most SESAME criteria.
             If a numeric value is used (e.g., int or float), this should be a frequency value to manually select as the peak of interest.
-        peak_freq_range : tuple or list, default=[1, 20];
+        peak_freq_range : tuple or list, default=[0.4, 40];
             The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.
         verbose : bool, default=False
             Whether to print results and inputs to terminal.
@@ -1021,7 +1021,7 @@ def check_peaks(hvsr_data, hvsr_band=[1, 40], peak_selection='max', peak_freq_ra
     else:
         if hvsr_data['ProcessingStatus']['OverallStatus']:
             if not hvsr_band:
-                hvsr_band = [1,40]
+                hvsr_band = [0.4,40]
             
             hvsr_data['hvsr_band'] = hvsr_band
 
@@ -2660,9 +2660,9 @@ def input_params(datapath,
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
-    hvsr_band : list, default=[1, 40]
+    hvsr_band : list, default=[0.4, 40]
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
-    peak_freq_range : list or tuple, default=[1, 40]
+    peak_freq_range : list or tuple, default=[0.4, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
     processing_parameters={} : dict or filepath, default={}
         If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
@@ -4009,7 +4009,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                     'depth' : 0,
                     'instrument' : 'Raspberry Shake',
                     'metapath' : '',
-                    'hvsr_band' : [1, 40],
+                    'hvsr_band' : [0.4, 40],
                     'write_path':'',
                     'source':'file', 
                     'export_format':'mseed', 
@@ -6739,7 +6739,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     stream : obspy.core.stream.Stream object
         Stream for which to plot spectrogram
     params : dict, optional
-        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [1,40], by default None.
+        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [0.4,40], by default None.
     component : str or list, default='Z'
         If string, should be one character long component, by default 'Z.' If list, can contain 'E', 'N', 'Z', and will stack them per stack_type and stream.stack() method in obspy to make spectrogram.
     stack_type : str, default = 'linear'
@@ -6826,7 +6826,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         cmap='turbo'
 
     if params is None:
-        hvsr_band = [1, 40]
+        hvsr_band = [0.4, 40]
     else:
         hvsr_band = params['hvsr_band']
     ymin = hvsr_band[0]
@@ -6969,7 +6969,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
 
 # HELPER functions for checking peaks
 # Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[1, 40], _min_peak_amp=1):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
     """ Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
