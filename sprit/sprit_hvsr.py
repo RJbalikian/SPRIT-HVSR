@@ -123,37 +123,23 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_dict, azimuth=None):
+    def __init__(self, batch_dict):
         """HVSR Batch initializer
 
         Parameters
         ----------
         batch_dict : dict
             Dictionary containing Key value pairs with either {sitename:HVSRData object} or {azimuth_angle_degrees:HVSRData object}
-        azimuth : None or numeric, default=None
-            If None, HVSRBatch object will be a batch of sites. If other value, it should be a list of numeric values of the azimuths (in degrees), by default None.
         """
         self._batch_dict = batch_dict
         self.batch_dict = self._batch_dict
         self.batch = True
-        self.batch_type = 'sites'
-        if azimuth is not None:
-            self.batch_type = 'azimuths'
         
-        if self.batch_type=='sites':
-            for sitename, hvsrdata in batch_dict.items():
-                setattr(self, sitename, hvsrdata)
-                self[sitename]['batch']=True  
-            self.sites = list(self._batch_dict.keys())
-            self.azimuths = azimuth # Should be None
-        elif self.batch_type =='azimuths':
-            self.azimuths = azimuth
-            self.sites = []
-            for az, hvsrdata in batch_dict.items():
-                azkey = str(az).zfill(3)
-                setattr(self, azkey, hvsrdata)
-                self[azkey]['batch']=True
-                self.sites.append(hvsrdata['site'])
+        for sitename, hvsrdata in batch_dict.items():
+            setattr(self, sitename, hvsrdata)
+            self[sitename]['batch']=True  
+        self.sites = list(self._batch_dict.keys())
+
 
     #METHODS
     def __to_json(self, filepath):
@@ -909,7 +895,6 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     for key, value in eComp[0].stats.items():
         statsDict[key] = value
     
-
     for i, az_rad in enumerate(azimuth_list):
         az_deg = azimuth_list_deg[i]
         statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
