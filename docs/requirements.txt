@@ -11,3 +11,4 @@ sphinx
 markdown
 pytest
 flake8
+sprit
