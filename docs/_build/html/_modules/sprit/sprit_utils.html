@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sprit.sprit_utils &mdash; sprit 0.0.22-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=7d709ffc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            sprit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.html">sprit package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sprit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sprit.sprit_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sprit.sprit_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">zoneinfo</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">try</span><span class="p">:</span> <span class="c1"># For distribution</span>
+    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
+<span class="k">except</span><span class="p">:</span> <span class="c1">#For testing</span>
+    <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
+    <span class="k">pass</span>
+
+<span class="n">greek_chars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03C3</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;epsilon&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B5</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;teta&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B8</span><span class="s1">&#39;</span><span class="p">}</span>
+<span class="n">channel_order</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+
+<div class="viewcode-block" id="check_gui_requirements">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_gui_requirements">[docs]</a>
+<span class="k">def</span> <span class="nf">check_gui_requirements</span><span class="p">():</span>
+    <span class="c1">#First, check requirements</span>
+    <span class="c1"># Define a command that tries to open a window</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;python -c </span><span class="se">\&quot;</span><span class="s2">import tkinter; tkinter.Tk()</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Run the command and get the exit code</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    
+    <span class="c1"># Check if tkinter gui could be created</span>
+    <span class="k">if</span> <span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1">#Tkinter </span>
+        <span class="n">oktoproceed</span><span class="o">=</span><span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">oktoproceed</span><span class="o">=</span><span class="kc">False</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GUI window cannot be created.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">oktoproceed</span></div>
+
+
+    <span class="c1">#if sys.platform == &#39;linux&#39;:</span>
+    <span class="c1">#    # Check if qtwayland5 is installed</span>
+    <span class="c1">#    output = subprocess.run([&quot;dpkg&quot;, &quot;-s&quot;, &quot;qtwayland5&quot;], capture_output=True, text=True)</span>
+    <span class="c1">#    if &quot;Status: install ok installed&quot; in output.stdout:</span>
+    <span class="c1">#        print(&quot;qtwayland5 is already installed&quot;)</span>
+    <span class="c1">#    else:</span>
+    <span class="c1">#        print(&quot;qtwayland5 is not installed&quot;)</span>
+    <span class="c1">#        # Install qtwayland5</span>
+    <span class="c1">#        os.system(&quot;sudo apt install qtwayland5&quot;)</span>
+
+<span class="c1">#Get check mark</span>
+<div class="viewcode-block" id="check_mark">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_mark">[docs]</a>
+<span class="k">def</span> <span class="nf">check_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default Windows terminal is not able to display the check mark character correctly.</span>
+<span class="sd">       This function returns another displayable character if platform is Windows&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">incolor</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2705</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2714</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2714</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">==</span><span class="s1">&#39;win32&#39;</span> <span class="ow">and</span> <span class="n">interminal</span><span class="p">:</span>
+        <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u039E</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">check</span></div>
+
+
+<span class="c1">#Converts filepaths to pathlib paths, if not already</span>
+<div class="viewcode-block" id="checkifpath">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.checkifpath">[docs]</a>
+<span class="k">def</span> <span class="nf">checkifpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">sample_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Support function to check if a filepath is a pathlib.Path object and tries to convert if not</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filepath : str or pathlib.Path, or anything</span>
+<span class="sd">        Filepath to check. If not a valid filepath, will not convert and raises error</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filepath : pathlib.Path</span>
+<span class="sd">        pathlib.Path of filepath</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sample_list</span><span class="o">==</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">sample_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;batch&#39;</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;sample_batch&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+            <span class="n">sample_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sample_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sample_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># checks if the variable is any instance of pathlib</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">in</span> <span class="n">sample_list</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Filepath cannot be converted to pathlib path: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;File does not exist: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">filepath</span></div>
+
+
+<span class="c1">#Check to make the number of time-steps are the same for each channel</span>
+<div class="viewcode-block" id="check_tsteps">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_tsteps">[docs]</a>
+<span class="k">def</span> <span class="nf">check_tsteps</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check time steps of PPSDS to make sure they are all the same length&quot;&quot;&quot;</span>
+    <span class="n">ppsds</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">]</span>
+    <span class="n">tSteps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ppsds</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">tSteps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;psd_values&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">tSteps</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">pass</span> <span class="c1">#This means all channels have same number of period_bin_centers</span>
+        <span class="n">minTStep</span><span class="o">=</span><span class="n">tSteps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There is a different number of time-steps used to calculate HVSR curves. </span><span class="se">\n</span><span class="s1"> This may result in computational errors. Trimming longest.&#39;</span><span class="p">)</span>
+        <span class="n">minTStep</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">tSteps</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">minTStep</span></div>
+
+
+<span class="c1">#Check the x-values for each channel, to make sure they are all the same length</span>
+<div class="viewcode-block" id="check_xvalues">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_xvalues">[docs]</a>
+<span class="k">def</span> <span class="nf">check_xvalues</span><span class="p">(</span><span class="n">ppsds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check x_values of PPSDS to make sure they are all the same length&quot;&quot;&quot;</span>
+    <span class="n">xLengths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ppsds</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">xLengths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">xLengths</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">pass</span> <span class="c1">#This means all channels have same number of period_bin_centers</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;X-values (periods or frequencies) do not have the same values. </span><span class="se">\n</span><span class="s1"> This may result in computational errors&#39;</span><span class="p">)</span>
+        <span class="c1">#Do stuff to fix it?</span>
+    <span class="k">return</span> <span class="n">ppsds</span></div>
+
+
+<span class="c1">#Formats time into desired output</span>
+<div class="viewcode-block" id="format_time">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.format_time">[docs]</a>
+<span class="k">def</span> <span class="nf">format_time</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="s1">&#39;UTC&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function to format time, used in other functions</span>
+
+<span class="sd">    Formats input time to datetime objects in utc</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inputDT : str or datetime obj </span>
+<span class="sd">        Input datetime. Can include date and time, just date (time inferred to be 00:00:00.00) or just time (if so, date is set as today)</span>
+<span class="sd">    tzone   : str=&#39;utc&#39; or int {&#39;utc&#39;, &#39;local&#39;} </span>
+<span class="sd">        Timezone of data entry. </span>
+<span class="sd">            If string and not utc, assumed to be timezone of computer running the process.</span>
+<span class="sd">            If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT in the United States is -5)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outputTimeObj : datetime object in UTC</span>
+<span class="sd">        Output datetime.datetime object, now in UTC time.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1">#tzone = &#39;America/Chicago&#39;</span>
+        <span class="c1">#Format string to datetime obj</span>
+        <span class="n">div</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="n">timeDiv</span> <span class="o">=</span> <span class="s1">&#39;T&#39;</span>
+        <span class="k">if</span> <span class="s2">&quot;/&quot;</span> <span class="ow">in</span> <span class="n">inputDT</span><span class="p">:</span>
+            <span class="n">div</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+            <span class="n">hasDate</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">inputDT</span><span class="p">:</span>
+            <span class="n">div</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+            <span class="n">hasDate</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hasDate</span><span class="o">=</span> <span class="kc">False</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span>
+            <span class="n">month</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">month</span>
+            <span class="n">day</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">day</span>
+
+        <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">inputDT</span><span class="p">:</span>
+            <span class="n">hasTime</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="s1">&#39;T&#39;</span> <span class="ow">in</span> <span class="n">inputDT</span><span class="p">:</span>
+                <span class="n">timeDiv</span> <span class="o">=</span> <span class="s1">&#39;T&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">timeDiv</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hasTime</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">if</span> <span class="n">hasDate</span><span class="p">:</span>
+            <span class="c1">#If first number is 4-dig year (assumes yyyy-dd-mm is not possible)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1">#If last number is 4-dig year            </span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+                <span class="c1">#..and first number is day</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">12</span><span class="p">:</span>
+                    <span class="c1">#dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%Y&#39;   </span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1">#...and first number is month (like American style)                             </span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>     
+            
+            <span class="c1">#Another way to catch if first number is (2-digit) year</span>
+            <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">31</span><span class="p">:</span>
+                <span class="c1">#dateStr = &#39;%y&#39;+div+&#39;%m&#39;+div+&#39;%d&#39;</span>
+                <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1">#Assumes anything less than current year is from this century</span>
+                <span class="k">if</span> <span class="n">year</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;20&#39;</span><span class="o">+</span><span class="n">year</span>
+                <span class="k">else</span><span class="p">:</span><span class="c1">#...and anything more than current year is from last century</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;19&#39;</span><span class="o">+</span><span class="n">year</span>
+                <span class="c1">#assumes day will always come last in this instance, as above</span>
+                <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1">#If last digit is (2 digit) year           </span>
+            <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">31</span><span class="p">:</span>
+                <span class="c1">#...and first digit is day</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">12</span><span class="p">:</span>
+                    <span class="c1">#dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%y&#39;       </span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">year</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                        <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;20&#39;</span><span class="o">+</span><span class="n">year</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;19&#39;</span><span class="o">+</span><span class="n">year</span>
+                    <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>                           
+                <span class="k">else</span><span class="p">:</span> <span class="c1">#...and second digit is day</span>
+                    <span class="c1">#dateStr = &#39;%m&#39;+div+&#39;%d&#39;+div+&#39;%y&#39;</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">year</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                        <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;20&#39;</span><span class="o">+</span><span class="n">year</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">year</span> <span class="o">=</span> <span class="s1">&#39;19&#39;</span><span class="o">+</span><span class="n">year</span>
+                    <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>                  
+
+        <span class="n">hour</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">minute</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">sec</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">microS</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="n">hasTime</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hasDate</span><span class="p">:</span>
+                <span class="n">timeStr</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">timeStr</span> <span class="o">=</span> <span class="n">inputDT</span>
+            
+            <span class="k">if</span> <span class="s1">&#39;T&#39;</span> <span class="ow">in</span> <span class="n">timeStr</span><span class="p">:</span>
+                <span class="n">timeStr</span><span class="o">=</span><span class="n">timeStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">timeStr</span><span class="p">:</span>
+                <span class="n">timeStr</span><span class="o">=</span><span class="n">timeStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">timeStrList</span> <span class="o">=</span> <span class="n">timeStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">23</span><span class="p">:</span>
+                <span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="n">microS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">timeStrList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;00&#39;</span><span class="p">)</span>
+
+            <span class="n">hour</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">minute</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">sec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">),</span><span class="n">month</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">month</span><span class="p">),</span> <span class="n">day</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">),</span>
+                                <span class="n">hour</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">hour</span><span class="p">),</span> <span class="n">minute</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">minute</span><span class="p">),</span> <span class="n">second</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">sec</span><span class="p">),</span> <span class="n">microsecond</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">microS</span><span class="p">))</span>
+
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">:</span>
+        <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">inputDT</span>
+
+    <span class="c1">#Add timezone info</span>
+    <span class="n">availableTimezones</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">zoneinfo</span><span class="o">.</span><span class="n">available_timezones</span><span class="p">()))</span>
+    <span class="k">if</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">outputTimeObj</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">#This is already timezone aware</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">tzone</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">-</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">tzone</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tzone</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">availableTimezones</span><span class="p">:</span>
+            <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">zoneinfo</span><span class="o">.</span><span class="n">ZoneInfo</span><span class="p">(</span><span class="n">tzone</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timezone </span><span class="si">{}</span><span class="s2"> is not in official list. </span><span class="se">\n</span><span class="s2">Available timezones:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tzone</span><span class="p">,</span> <span class="n">availableTimezones</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tzone</span><span class="p">,</span> <span class="n">zoneinfo</span><span class="o">.</span><span class="n">ZoneInfo</span><span class="p">):</span>
+        <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timezone must be either str or int&quot;</span><span class="p">)</span>
+    
+    <span class="c1">#Convert to UTC</span>
+    <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>   
+
+    <span class="k">return</span> <span class="n">outputTimeObj</span></div>
+
+
+<span class="c1">#Get character for printing</span>
+<div class="viewcode-block" id="get_char">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.get_char">[docs]</a>
+<span class="k">def</span> <span class="nf">get_char</span><span class="p">(</span><span class="n">in_char</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Outputs character with proper encoding/decoding&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">in_char</span> <span class="ow">in</span> <span class="n">greek_chars</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">out_char</span> <span class="o">=</span> <span class="n">greek_chars</span><span class="p">[</span><span class="n">in_char</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out_char</span> <span class="o">=</span> <span class="n">in_char</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out_char</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span></div>
+
+
+<span class="c1">#Check that input strema has Z, E, N channels</span>
+<div class="viewcode-block" id="has_required_channels">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.has_required_channels">[docs]</a>
+<span class="k">def</span> <span class="nf">has_required_channels</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+    <span class="n">channel_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    
+    <span class="c1"># Extract the channel codes from the traces in the stream</span>
+    <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="n">channel_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">)</span>
+    
+    <span class="c1"># Check if Z, E, and N channels are present</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">}</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">channel_set</span><span class="p">)</span></div>
+
+
+<span class="c1">#Make input data (dict) into sprit_hvsr class</span>
+<div class="viewcode-block" id="make_it_classy">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.make_it_classy">[docs]</a>
+<span class="k">def</span> <span class="nf">make_it_classy</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s1">&#39;input_params&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">kin</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">kin</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">input_data</span><span class="p">[</span><span class="n">kin</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="n">kin</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s1">&#39;params&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">kin</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">kin</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">kin</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">input_data</span><span class="p">[</span><span class="n">kin</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="n">kin</span><span class="p">]</span>                
+        <span class="n">output_class</span> <span class="o">=</span> <span class="n">input_data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output_class</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Made it classy | </span><span class="si">{}</span><span class="s1"> --&gt; </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">input_data</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">output_class</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">output_class</span></div>
+
+
+<span class="c1">#Read data directly from Raspberry Shake</span>
+<div class="viewcode-block" id="read_from_RS">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.read_from_RS">[docs]</a>
+<span class="k">def</span> <span class="nf">read_from_RS</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="s1">&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="s1">&#39;az&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;myshake&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;shakeme&#39;</span><span class="p">,</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;rs.local&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="s1">&#39;2023&#39;</span><span class="p">,</span> <span class="n">sta</span><span class="o">=</span><span class="s1">&#39;RAC84&#39;</span><span class="p">,</span><span class="n">sleep_time</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;scp&#39;</span><span class="p">):</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;SHAKENAME&#39;</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;SHAKENAME&#39;</span><span class="p">,</span> <span class="n">hostname</span><span class="p">)</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;YEAR&#39;</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;STATION&#39;</span><span class="p">,</span> <span class="n">sta</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;src&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This does not work from within a virtual environment!!!!&quot;&quot;&quot;</span>
+        <span class="c1">#import pexpect</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="c1">#from pexpect import popen_spawn</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="kn">import</span> <span class="nn">wexpect</span>
+
+        <span class="n">scp_command</span> <span class="o">=</span> <span class="s1">&#39;scp -r </span><span class="si">{}</span><span class="s1"> &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Command:&#39;</span><span class="p">,</span> <span class="n">scp_command</span><span class="p">)</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">wexpect</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">scp_command</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="n">child</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="s2">&quot;password:&quot;</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+
+        <span class="n">child</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="n">wexpect</span><span class="o">.</span><span class="n">EOF</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Files have been successfully transferred to </span><span class="si">{}</span><span class="s2">!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">method</span><span class="o">==</span><span class="s1">&#39;rsync&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="n">opts</span> <span class="o">+</span> <span class="s1">&#39;v&#39;</span>
+        <span class="k">if</span> <span class="n">save_progress</span><span class="p">:</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="n">opts</span> <span class="o">+</span> <span class="s1">&#39;p&#39;</span>   
+
+        <span class="c1">#import subprocess</span>
+        <span class="c1">#subprocess.run([&quot;rsync&quot;, &quot;-&quot;+opts, src, dest])</span>
+        <span class="c1">#subprocess.run([&quot;rsync&quot;, &quot;-&quot;+opts, src, dest])</span>
+
+        <span class="kn">import</span> <span class="nn">pty</span>
+        <span class="c1">#Test, from https://stackoverflow.com/questions/13041732/ssh-password-through-python-subprocess</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;rsync&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;-&quot;</span><span class="o">+</span><span class="n">opts</span><span class="p">,</span>
+            <span class="n">src</span><span class="p">,</span>
+            <span class="n">dest</span>
+            <span class="c1">#&#39;{0}@{1}&#39;.format(shakename, hostname),</span>
+            <span class="c1">#&#39;-o&#39;, &#39;NumberOfPasswordPrompts=1&#39;,</span>
+            <span class="c1">#&#39;sleep {0}&#39;.format(sleep_time),</span>
+        <span class="p">]</span>
+
+        <span class="c1"># PID = 0 for child, and the PID of the child for the parent    </span>
+        <span class="n">pid</span><span class="p">,</span> <span class="n">child_fd</span> <span class="o">=</span> <span class="n">pty</span><span class="o">.</span><span class="n">fork</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pid</span><span class="p">:</span> <span class="c1"># Child process</span>
+            <span class="c1"># Replace child process with our SSH process</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">execv</span><span class="p">(</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">command</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">child_fd</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="c1"># Write the password</span>
+            <span class="k">if</span> <span class="n">lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;password:&#39;</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">child_fd</span><span class="p">,</span> <span class="n">password</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="s1">&#39;are you sure you want to continue connecting&#39;</span> <span class="ow">in</span> <span class="n">lower</span><span class="p">:</span>
+                <span class="c1"># Adding key to known_hosts</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">child_fd</span><span class="p">,</span> <span class="s1">&#39;yes</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s1">&#39;company privacy warning&#39;</span> <span class="ow">in</span> <span class="n">lower</span><span class="p">:</span>
+                <span class="k">pass</span> <span class="c1"># This is an understood message</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SSH Connection Failed&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Encountered unrecognized message when spawning &quot;</span>
+                    <span class="s2">&quot;the SSH tunnel: &#39;</span><span class="si">{0}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">dest</span></div>
+
+
+<span class="c1">#Time functions, for timing how long a process takes</span>
+<div class="viewcode-block" id="time_it">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.time_it">[docs]</a>
+<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="n">_t</span><span class="p">,</span> <span class="n">proc_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes elapsed time since the last call.&quot;&quot;&quot;</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">_t</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">_t</span>
+    <span class="k">if</span> <span class="n">dt</span> <span class="o">&gt;</span> <span class="mf">0.05</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[ELAPSED TIME] </span><span class="si">{</span><span class="n">dt</span><span class="si">:</span><span class="s1">0.1f</span><span class="si">}</span><span class="s1"> s&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t1</span>
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+<span class="c1">#Get x mark (for negative test results)</span>
+<div class="viewcode-block" id="x_mark">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.x_mark">[docs]</a>
+<span class="k">def</span> <span class="nf">x_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inTerminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default Windows terminal is not able to display the check mark character correctly.</span>
+<span class="sd">       This function returns another displayable character if platform is Windows&quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">incolor</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u274C</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2718</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2718</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">xmark</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Author.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
