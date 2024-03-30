@@ -146,7 +146,7 @@ class HVSRBatch:
                 self[sitename]['batch']=True  
             self.sites = list(self._batch_dict.keys())
             self.azimuths = azimuth # Should be None
-        elif self.batch_tupe =='azimuths':
+        elif self.batch_type =='azimuths':
             self.azimuths = azimuth
             self.sites = []
             for az, hvsrdata in batch_dict.items():
@@ -909,8 +909,8 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     for key, value in eComp[0].stats.items():
         statsDict[key] = value
     
-    for i, az in enumerate(azimuth_list):
-        az_rad = az
+
+    for i, az_rad in enumerate(azimuth_list):
         az_deg = azimuth_list_deg[i]
         statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
         statsDict['azimuth_deg'] = az_rad
@@ -933,12 +933,10 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             eData = eComp[0].data
             eMask = [True] * len(eData)
 
-        print(az_angle_rad, az)
-
         if True in hasMask:
-            radial_comp_data = np.ma.array(np.add(nData * np.cos(az), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+            radial_comp_data = np.ma.array(np.add(nData * np.cos(az_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
         else:
-            radial_comp_data = np.add(nData * np.cos(az), eData * np.sin(az))
+            radial_comp_data = np.add(nData * np.cos(az_rad), eData * np.sin(az_rad))
         #From hvsrpy
         # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
         
@@ -948,21 +946,21 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     return hvsr_data
 
 #Quality checks, stability tests, clarity tests
-#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[1, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[1, 40], peak_selection='max', peak_freq_range=[1, 20], verbose=False):
+#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
         ----------
         hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        hvsr_band : tuple or list, default=[1, 40]
+        hvsr_band : tuple or list, default=[0.4, 40]
             2-item tuple or list with lower and upper limit of frequencies to analyze
         peak_selection : str or numeric, default='max'
             How to select the "best" peak used in the analysis. For peak_selection="max" (default value), the highest peak within peak_freq_range is used.
             For peak_selection='scored', an algorithm is used to select the peak based in part on which peak passes the most SESAME criteria.
             If a numeric value is used (e.g., int or float), this should be a frequency value to manually select as the peak of interest.
-        peak_freq_range : tuple or list, default=[1, 20];
+        peak_freq_range : tuple or list, default=[0.4, 40];
             The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.
         verbose : bool, default=False
             Whether to print results and inputs to terminal.
@@ -1023,7 +1021,7 @@ def check_peaks(hvsr_data, hvsr_band=[1, 40], peak_selection='max', peak_freq_ra
     else:
         if hvsr_data['ProcessingStatus']['OverallStatus']:
             if not hvsr_band:
-                hvsr_band = [1,40]
+                hvsr_band = [0.4,40]
             
             hvsr_data['hvsr_band'] = hvsr_band
 
@@ -1405,11 +1403,13 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
+        for key, value in orig_args.items():
+            print('\t  {}={}'.format(key, value))
         print()
 
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
-    date=params['acq_date']
+    date = params['acq_date']
 
     #Cleanup for gui input
     if isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
@@ -1519,6 +1519,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
             return HVSRBatch(obspyFiles)
     elif source=='file' and str(params['datapath']).lower() not in sampleList:
+        # Read the file specified by datapath
         if isinstance(dPath, list) or isinstance(dPath, tuple):
             rawStreams = []
             for datafile in dPath:
@@ -1533,7 +1534,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             pass
         else:
             rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-        import warnings
+        import warnings # For some reason not being imported at the start
         with warnings.catch_warnings():
             warnings.simplefilter(action='ignore', category=UserWarning)
             rawDataIN.attach_response(inv)
@@ -1581,44 +1582,64 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     #Get metadata from the data itself, if not reading raw data
     try:
+        # If the data already exists (not reading in raw from RS, for example), get the parameters from the data
         dataIN = rawDataIN.copy()
         if source!='raw':
             #Use metadata from file for;
             # site
-            if params['site'] == "HVSR Site":
+            site_default = inspect.signature(input_params).parameters['site'].default
+            if params['site'] == site_default and params['site'] != dPath.stem:
                 if isinstance(dPath, (list, tuple)):
                     dPath = dPath[0]
                 params['site'] = dPath.stem
                 params['params']['site'] = dPath.stem
+                if verbose:
+                    print(f"\t\tSite name updated to {params['site']}\n")
             
             # network
-            if str(params['net']) == 'AM':
+            net_default = inspect.signature(input_params).parameters['network'].default
+            if params['net'] == net_default and net_default != dataIN[0].stats.network:
                 params['net'] = dataIN[0].stats.network
                 params['params']['net'] = dataIN[0].stats.network
+                if verbose:
+                    print(f"\t\tNetwork name updated to {params['net']}\n")
 
             # station
-            if str(params['sta']) == 'RAC84':
+            sta_default = inspect.signature(input_params).parameters['station'].default
+            if str(params['sta']) == sta_default and str(params['sta']) != dataIN[0].stats.station:
                 params['sta'] = dataIN[0].stats.station
                 params['params']['sta'] = dataIN[0].stats.station
+                if verbose:
+                    print(f"\t\tStation name updated to {params['sta']}\n")
 
             # loc
-            if str(params['loc']) == '00':
+            loc_default = inspect.signature(input_params).parameters['loc'].default
+            if params['loc'] == loc_default and params['loc'] != dataIN[0].stats.location:
                 params['loc'] = dataIN[0].stats.location
                 params['params']['loc'] = dataIN[0].stats.location
-            
+                if verbose:
+                    print(f"\t\tLocation updated to {params['loc']}\n")
+
             # channels
             channelList = []
-            if str(params['cha']) == ['EHZ', 'EHN', 'EHE']:
+            cha_default = inspect.signature(input_params).parameters['channels'].default
+            if str(params['cha']) == cha_default:
                 for tr in dataIN:
                     if tr.stats.channel not in channelList:
                         channelList.append(tr.stats.channel)
                         channelList.sort(reverse=True) #Just so z is first, just in case
-                params['cha'] = channelList
-                params['params']['cha'] = channelList
-           
+                if set(params['cha']) != set(channelList):
+                    params['cha'] = channelList
+                    params['params']['cha'] = channelList
+                    if verbose:
+                        print(f"\t\tChannels updated to {params['cha']}\n")
+
             # Acquisition date
-            if str(params['acq_date']) == str(datetime.datetime.now().date()):
+            acqdate_default = inspect.signature(input_params).parameters['acq_date'].default
+            if str(params['acq_date']) == acqdate_default and params['acq_date'] != dataIN[0].stats.starttime.date:
                 params['acq_date'] = dataIN[0].stats.starttime.date
+                if verbose:
+                    print(f"\t\tAcquisition Date updated to {params['acq_date']}\n")
 
             # starttime
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
@@ -1626,7 +1647,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
-            if str(params['starttime']) == str(today_Starttime):
+            stime_default = inspect.signature(input_params).parameters['starttime'].default
+            if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
                                         hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
@@ -1638,16 +1660,20 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                  day = params['acq_date'].day,
                                                                 hour=maxStarttime.hour, minute=maxStarttime.minute, 
                                                                 second=maxStarttime.second, microsecond=maxStarttime.microsecond))
-                params['starttime'] = newStarttime
-                params['params']['starttime'] = newStarttime
+                if params['starttime'] != newStarttime:
+                    params['starttime'] = newStarttime
+                    params['params']['starttime'] = newStarttime
+                    if verbose:
+                        print(f"\t\tStarttime updated to {params['starttime']}\n")
 
             # endttime
             today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=23, minute=59, second=59, microsecond=999999))
             tomorrow_Endtime = today_Endtime + (60*60*24)
-            minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
-            if str(params['endtime']) == str(today_Endtime) or str(params['endtime'])==tomorrow_Endtime:
+            minEndtime = datetime.datetime.now(tz=datetime.timezone.utc)#.replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
+            etime_default = inspect.signature(input_params).parameters['endtime'].default
+            if str(params['endtime']) == etime_default or str(params['endtime']) == tomorrow_Endtime:
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day,
                                         hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
@@ -1658,20 +1684,19 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                                                                  day = minEndtime.day,
                                                                 hour=minEndtime.hour, minute=minEndtime.minute, 
                                                                 second=minEndtime.second, microsecond=minEndtime.microsecond, tzinfo=datetime.timezone.utc))
-                params['endtime'] = newEndtime
-                params['params']['endtime'] = newEndtime
+                
+                if params['endtime'] != newEndtime:
+                    params['endtime'] = newEndtime
+                    params['params']['endtime'] = newEndtime
+                    if verbose:
+                        print(f"\t\tEndtime updated to {params['endtime']}\n")
 
-
-            #print(dataIN)
-            #print(params['starttime'])
-            #print(params['endtime'])
             dataIN = dataIN.split()
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
-            #print(dataIN)
-    except:
-        raise RuntimeError('Data not fetched. Check your input parameters or the data file.')
-        
+    except Exception as e:
+        raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
+
     #Trim and save data as specified
     if trim_dir=='None':
         trim_dir=None
@@ -1705,8 +1730,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
             #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
             plt.show()
-        except:
-            print('Error with default plotting method, falling back to internal obspy plotting method')
+        except Exception as e:
+            print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
             dataIN.plot(method='full', linewidth=0.25)
 
     #Sort channels (make sure Z is first, makes things easier later)
@@ -1758,12 +1783,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     for key, value in orig_args.items():
         params['processing_parameters']['fetch_data'][key] = value
 
-    
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
-            print('\t',line)
+            print('\t', line)
     
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
@@ -1809,7 +1833,12 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     if 'period_step_octaves' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
     if 'period_limits' not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/1]
+        if 'hvsr_band' in hvsr_data.keys():
+            ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
+        elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
+                ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
+        else:
+            ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
 
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
@@ -1903,7 +1932,17 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
             ppsdZ.add(zStream)
 
+            has_az = False
             ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
+            ppsds_az = {}
+            for trace in stream:
+                stats = trace.stats
+                ppsd_curr = PPSD(stats, paz['E'], **ppsd_kwargs)
+                if 'EHR' in trace.id:
+                    has_az = True
+                    ppsds_az[trace.id.split('.')[-1]] = ppsd_curr.add(stream.select(id))
+            if has_az:
+                hvsr_data['ppsds_obspy_az'] = ppsds_az
 
             #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
             hvsr_data['ppsds_obspy'] = ppsds
@@ -2572,8 +2611,8 @@ def input_params(datapath,
                 depth = 0,
                 instrument = 'Raspberry Shake',
                 metapath = None,
-                hvsr_band = [1, 40],
-                peak_freq_range=[1, 40],
+                hvsr_band = [0.4, 40],
+                peak_freq_range=[0.4, 40],
                 processing_parameters={},
                 verbose=False
                 ):
@@ -2621,9 +2660,9 @@ def input_params(datapath,
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
-    hvsr_band : list, default=[1, 40]
+    hvsr_band : list, default=[0.4, 40]
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
-    peak_freq_range : list or tuple, default=[1, 40]
+    peak_freq_range : list or tuple, default=[0.4, 40]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
     processing_parameters={} : dict or filepath, default={}
         If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
@@ -2688,11 +2727,10 @@ def input_params(datapath,
             date = '{}-{}-{}'.format(acq_date[2], acq_date[0], acq_date[1])
         else: #international format, one we're going to use
             date = '{}-{}-{}'.format(acq_date[0], acq_date[1], acq_date[2])     
-
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
-    
+
     if type(starttime) is str:
         if 'T' in starttime:
             #date=starttime.split('T')[0]
@@ -3930,6 +3968,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
         batch_type='table'
     else:
         sample_data = False
+    
     # Dictionary to store the stream objects
     stream_dict = {}
     data_dict = {}
@@ -3970,7 +4009,7 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                     'depth' : 0,
                     'instrument' : 'Raspberry Shake',
                     'metapath' : '',
-                    'hvsr_band' : [1, 40],
+                    'hvsr_band' : [0.4, 40],
                     'write_path':'',
                     'source':'file', 
                     'export_format':'mseed', 
@@ -6319,8 +6358,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                     yp = min(newCurveList)
                     ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
                 else:
-                    fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
-                    fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
+                    #fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                    #fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
                     ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
                     minF = newFreqList[np.argmin(newCurveList)]
                     minA = min(newCurveList)
@@ -6687,7 +6726,6 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
 
     return fig, ax
 
-
 #Plot spectrogram from stream
 def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
@@ -6699,7 +6737,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     stream : obspy.core.stream.Stream object
         Stream for which to plot spectrogram
     params : dict, optional
-        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [1,40], by default None.
+        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [0.4,40], by default None.
     component : str or list, default='Z'
         If string, should be one character long component, by default 'Z.' If list, can contain 'E', 'N', 'Z', and will stack them per stack_type and stream.stack() method in obspy to make spectrogram.
     stack_type : str, default = 'linear'
@@ -6729,11 +6767,10 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     minEndTime = obspy.UTCDateTime(1e10)
     for comp in ['E', 'N', 'Z']:
         #Get all traces from selected component in comp_st
-        if isinstance(stream[0].data, np.ma.masked_array):
+        if isinstance(stream.select(component=comp).merge()[0].data, np.ma.masked_array):
             stream = stream.split() 
         comp_st = stream.select(component=comp).copy()
         stream.merge()
-        
         if comp in component:
             for tr in comp_st:
                 #Get all traces specified for use in one list
@@ -6755,6 +6792,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     #Combine all traces into single, stacked trace/stream
     stream = obspy.Stream(traceList)
     stream.merge()
+
     if len(stream)>1:
         stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
 
@@ -6775,7 +6813,6 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
         newFig = True
 
-    
     data = stream[0].data
     if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
         data = data.filled(fill_gaps)
@@ -6787,7 +6824,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         cmap='turbo'
 
     if params is None:
-        hvsr_band = [1, 40]
+        hvsr_band = [0.4, 40]
     else:
         hvsr_band = params['hvsr_band']
     ymin = hvsr_band[0]
@@ -6930,7 +6967,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
 
 # HELPER functions for checking peaks
 # Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[1, 40], _min_peak_amp=1):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
     """ Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
