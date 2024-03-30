@@ -42,7 +42,7 @@ except: #For testing
     import sprit_gui
     import sprit_jupyter_UI
 
-
+NOWTIME = datetime.datetime.now()
 global spritApp
 
 #Main variables
@@ -1537,13 +1537,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
             params = HVSRBatch(params)
             return params
-
         elif source=='dir':
             params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
             params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
             params = HVSRBatch(params)
             return params
-
         elif source=='file':
             params['datapath'] = str(params['datapath']).lower()
             
@@ -1627,12 +1625,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     print(f"\t\tAcquisition Date updated to {params['acq_date']}\n")
 
             # starttime
+            print(params['starttime'])
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
             stime_default = inspect.signature(input_params).parameters['starttime'].default
+            print(stime_default)
+            str(params['starttime']) == str(stime_default)
             if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
@@ -2584,8 +2585,8 @@ def input_params(datapath,
                 loc='00', 
                 channels=['EHZ', 'EHN', 'EHE'],
                 acq_date=str(datetime.datetime.now().date()),
-                starttime = '00:00:00.00',
-                endtime = '23:59:59.999999',
+                starttime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0),
+                endtime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999),
                 tzone = 'UTC',
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
@@ -2730,7 +2731,8 @@ def input_params(datapath,
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
-    starttime = str(date)+"T"+str(starttime)
+    if not isinstance(starttime, obspy.UTCDateTime):
+        starttime = str(date)+"T"+str(starttime)
     starttime = obspy.UTCDateTime(sprit_utils.format_time(starttime, tzone=tzone))
     
     if type(endtime) is str:
@@ -2743,7 +2745,8 @@ def input_params(datapath,
     elif type(endtime) is datetime.time():
         endtime = str(endtime)
 
-    endtime = str(date)+"T"+str(endtime)
+    if not isinstance(endtime, obspy.UTCDateTime):
+        endtime = str(date)+"T"+str(endtime)
     endtime = obspy.UTCDateTime(sprit_utils.format_time(endtime, tzone=tzone))
 
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
