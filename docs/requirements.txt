@@ -6,4 +6,8 @@ scipy
 pyproj
 PyQt5-sip
 sphinx-rtd-theme
-numpydocs
+numpydoc
+sphinx
+markdown
+pytest
+flake8
