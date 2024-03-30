@@ -146,7 +146,7 @@ class HVSRBatch:
                 self[sitename]['batch']=True  
             self.sites = list(self._batch_dict.keys())
             self.azimuths = azimuth # Should be None
-        elif self.batch_tupe =='azimuths':
+        elif self.batch_type =='azimuths':
             self.azimuths = azimuth
             self.sites = []
             for az, hvsrdata in batch_dict.items():
