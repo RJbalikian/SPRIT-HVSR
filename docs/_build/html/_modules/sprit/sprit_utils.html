@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>sprit.sprit_utils &mdash; sprit 0.0.22-dev documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
   
@@ -81,6 +81,7 @@
 <span class="kn">import</span> <span class="nn">zoneinfo</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">obspy.core.utcdatetime</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
 
 <span class="k">try</span><span class="p">:</span> <span class="c1"># For distribution</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
@@ -236,7 +237,7 @@
 <span class="sd">        Output datetime.datetime object, now in UTC time.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="c1">#tzone = &#39;America/Chicago&#39;</span>
         <span class="c1">#Format string to datetime obj</span>
         <span class="n">div</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
@@ -352,9 +353,10 @@
 
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">),</span><span class="n">month</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">month</span><span class="p">),</span> <span class="n">day</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">),</span>
                                 <span class="n">hour</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">hour</span><span class="p">),</span> <span class="n">minute</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">minute</span><span class="p">),</span> <span class="n">second</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">sec</span><span class="p">),</span> <span class="n">microsecond</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">microS</span><span class="p">))</span>
-
-    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">inputDT</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">)):</span>
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">inputDT</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="n">UTCDateTime</span><span class="p">):</span>
+        <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">datetime</span>
 
     <span class="c1">#Add timezone info</span>
     <span class="n">availableTimezones</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">zoneinfo</span><span class="o">.</span><span class="n">available_timezones</span><span class="p">()))</span>
@@ -374,7 +376,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timezone must be either str or int&quot;</span><span class="p">)</span>
     
     <span class="c1">#Convert to UTC</span>
-    <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>   
+    <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">outputTimeObj</span></div>
 

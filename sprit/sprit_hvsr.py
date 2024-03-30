@@ -42,7 +42,7 @@ except: #For testing
     import sprit_gui
     import sprit_jupyter_UI
 
-
+NOWTIME = datetime.datetime.now()
 global spritApp
 
 #Main variables
@@ -123,37 +123,23 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_dict, azimuth=None):
+    def __init__(self, batch_dict):
         """HVSR Batch initializer
 
         Parameters
         ----------
         batch_dict : dict
             Dictionary containing Key value pairs with either {sitename:HVSRData object} or {azimuth_angle_degrees:HVSRData object}
-        azimuth : None or numeric, default=None
-            If None, HVSRBatch object will be a batch of sites. If other value, it should be a list of numeric values of the azimuths (in degrees), by default None.
         """
         self._batch_dict = batch_dict
         self.batch_dict = self._batch_dict
         self.batch = True
-        self.batch_type = 'sites'
-        if azimuth is not None:
-            self.batch_type = 'azimuths'
         
-        if self.batch_type=='sites':
-            for sitename, hvsrdata in batch_dict.items():
-                setattr(self, sitename, hvsrdata)
-                self[sitename]['batch']=True  
-            self.sites = list(self._batch_dict.keys())
-            self.azimuths = azimuth # Should be None
-        elif self.batch_type =='azimuths':
-            self.azimuths = azimuth
-            self.sites = []
-            for az, hvsrdata in batch_dict.items():
-                azkey = str(az).zfill(3)
-                setattr(self, azkey, hvsrdata)
-                self[azkey]['batch']=True
-                self.sites.append(hvsrdata['site'])
+        for sitename, hvsrdata in batch_dict.items():
+            setattr(self, sitename, hvsrdata)
+            self[sitename]['batch']=True  
+        self.sites = list(self._batch_dict.keys())
+
 
     #METHODS
     def __to_json(self, filepath):
@@ -909,7 +895,6 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     for key, value in eComp[0].stats.items():
         statsDict[key] = value
     
-
     for i, az_rad in enumerate(azimuth_list):
         az_deg = azimuth_list_deg[i]
         statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
@@ -1552,13 +1537,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
             params = HVSRBatch(params)
             return params
-
         elif source=='dir':
             params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
             params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
             params = HVSRBatch(params)
             return params
-
         elif source=='file':
             params['datapath'] = str(params['datapath']).lower()
             
@@ -1642,12 +1625,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     print(f"\t\tAcquisition Date updated to {params['acq_date']}\n")
 
             # starttime
+            print(params['starttime'])
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
             stime_default = inspect.signature(input_params).parameters['starttime'].default
+            print(stime_default)
+            str(params['starttime']) == str(stime_default)
             if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
@@ -2599,8 +2585,8 @@ def input_params(datapath,
                 loc='00', 
                 channels=['EHZ', 'EHN', 'EHE'],
                 acq_date=str(datetime.datetime.now().date()),
-                starttime = '00:00:00.00',
-                endtime = '23:59:59.999999',
+                starttime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0),
+                endtime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999),
                 tzone = 'UTC',
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
@@ -2745,7 +2731,8 @@ def input_params(datapath,
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
-    starttime = str(date)+"T"+str(starttime)
+    if not isinstance(starttime, obspy.UTCDateTime):
+        starttime = str(date)+"T"+str(starttime)
     starttime = obspy.UTCDateTime(sprit_utils.format_time(starttime, tzone=tzone))
     
     if type(endtime) is str:
@@ -2758,7 +2745,8 @@ def input_params(datapath,
     elif type(endtime) is datetime.time():
         endtime = str(endtime)
 
-    endtime = str(date)+"T"+str(endtime)
+    if not isinstance(endtime, obspy.UTCDateTime):
+        endtime = str(date)+"T"+str(endtime)
     endtime = obspy.UTCDateTime(sprit_utils.format_time(endtime, tzone=tzone))
 
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
