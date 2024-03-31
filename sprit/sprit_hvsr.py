@@ -596,7 +596,7 @@ def gui(kind='default'):
     
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(datapath, source='file', verbose=False, **kwargs):
+def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
     The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
@@ -623,6 +623,8 @@ def run(datapath, source='file', verbose=False, **kwargs):
             - If source='batch', datapath should be datapath='sample' or datapath='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
     source : str, optional
         _description_, by default 'file'
+    azimuth : bool, optional
+        Whether to perform azimuthal analysis, by default False.
     verbose : bool, optional
         _description_, by default False
     **kwargs
@@ -668,6 +670,22 @@ def run(datapath, source='file', verbose=False, **kwargs):
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
+    if azimuth:
+        try:
+            azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(azimuth).parameters.keys())}
+            dataIN = azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
+        except Exception as e:
+            #Reformat data so HVSRData and HVSRBatch data both work here
+            if isinstance(dataIN, HVSRData):
+                dataIN = {'place_holder_sitename':dataIN}
+                
+            for site_name in dataIN.keys():
+                dataIN[site_name]['ProcessingStatus']['Azimuth'] = False
+                #If it wasn't originally HVSRBatch, make it HVSRData object again
+                if not dataIN[site_name]['batch']:
+                    dataIN = dataIN[site_name]
+                
+
     # Remove Noise
     try:
         remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
@@ -1439,7 +1457,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             year = date[1]
     elif type(date) is str:
         if '/' in date:
-            dateSplit = date.split('/')            
+            dateSplit = date.split('/')
         elif '-' in date:
             dateSplit = date.split('-')
         else:
@@ -1577,7 +1595,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 params['site'] = dPath.stem
                 params['params']['site'] = dPath.stem
                 if verbose:
-                    print(f"\t\tSite name updated to {params['site']}\n")
+                    print(f"\t\tSite name updated to {params['site']}")
             
             # network
             net_default = inspect.signature(input_params).parameters['network'].default
@@ -1585,7 +1603,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 params['net'] = dataIN[0].stats.network
                 params['params']['net'] = dataIN[0].stats.network
                 if verbose:
-                    print(f"\t\tNetwork name updated to {params['net']}\n")
+                    print(f"\t\tNetwork name updated to {params['net']}")
 
             # station
             sta_default = inspect.signature(input_params).parameters['station'].default
@@ -1593,7 +1611,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 params['sta'] = dataIN[0].stats.station
                 params['params']['sta'] = dataIN[0].stats.station
                 if verbose:
-                    print(f"\t\tStation name updated to {params['sta']}\n")
+                    print(f"\t\tStation name updated to {params['sta']}")
 
             # loc
             loc_default = inspect.signature(input_params).parameters['loc'].default
@@ -1601,7 +1619,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 params['loc'] = dataIN[0].stats.location
                 params['params']['loc'] = dataIN[0].stats.location
                 if verbose:
-                    print(f"\t\tLocation updated to {params['loc']}\n")
+                    print(f"\t\tLocation updated to {params['loc']}")
 
             # channels
             channelList = []
@@ -1615,24 +1633,22 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     params['cha'] = channelList
                     params['params']['cha'] = channelList
                     if verbose:
-                        print(f"\t\tChannels updated to {params['cha']}\n")
+                        print(f"\t\tChannels updated to {params['cha']}")
 
             # Acquisition date
             acqdate_default = inspect.signature(input_params).parameters['acq_date'].default
             if str(params['acq_date']) == acqdate_default and params['acq_date'] != dataIN[0].stats.starttime.date:
                 params['acq_date'] = dataIN[0].stats.starttime.date
                 if verbose:
-                    print(f"\t\tAcquisition Date updated to {params['acq_date']}\n")
+                    print(f"\t\tAcquisition Date updated to {params['acq_date']}")
 
             # starttime
-            print(params['starttime'])
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
                                                                  day = datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
             stime_default = inspect.signature(input_params).parameters['starttime'].default
-            print(stime_default)
             str(params['starttime']) == str(stime_default)
             if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
@@ -1650,7 +1666,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     params['starttime'] = newStarttime
                     params['params']['starttime'] = newStarttime
                     if verbose:
-                        print(f"\t\tStarttime updated to {params['starttime']}\n")
+                        print(f"\t\tStarttime updated to {params['starttime']}")
 
             # endttime
             today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
@@ -1675,7 +1691,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     params['endtime'] = newEndtime
                     params['params']['endtime'] = newEndtime
                     if verbose:
-                        print(f"\t\tEndtime updated to {params['endtime']}\n")
+                        print(f"\t\tEndtime updated to {params['endtime']}")
 
             dataIN = dataIN.split()
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
@@ -1984,8 +2000,6 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 if m in timeKeys:
                     if str(m) != 'times_processed':
                         time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
-
-                    #print(m, hvsr_data['ppsds']['Z'][m])
 
                     tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
 
