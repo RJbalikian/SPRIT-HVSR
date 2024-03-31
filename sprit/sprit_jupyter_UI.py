@@ -341,7 +341,7 @@ def create_jupyter_ui():
                     if func in widget_param_dict.keys():
                         for prm, val in params.items():
                             if prm in widget_param_dict[func].keys():
-                                print(prm, ':', widget_param_dict[func][prm],' |  ', val)
+                                #print(prm, ':', widget_param_dict[func][prm],' |  ', val)
                                 if val is None or val=='None':
                                     val='none'
                                 if prm == 'export_format':

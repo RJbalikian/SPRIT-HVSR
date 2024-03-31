@@ -320,7 +320,6 @@ def make_it_classy(input_data, verbose=False):
                         input_data[kin] = input_data['input_params'][kin]
             if k=='params':
                 for kin in input_data['params'].keys():
-                    print(kin)
                     if kin not in input_data.keys():
                         input_data[kin] = input_data['params'][kin]                
         output_class = input_data
