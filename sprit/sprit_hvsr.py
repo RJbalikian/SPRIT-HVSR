@@ -906,8 +906,22 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
         warnings.warn(f"azimuth_type={azimuth_type} not supported. Try 'multiple' or 'single'. No azimuthal analysis run.")
         return hvsr_data
 
+    zComp = hvsr_data['stream'].select(component='Z').merge()
     eComp = hvsr_data['stream'].select(component='E').merge()
     nComp = hvsr_data['stream'].select(component='N').merge()
+
+    # Reset stats for original data too
+    zComp[0].stats['azimuth_deg'] = 0
+    eComp[0].stats['azimuth_deg'] = 90
+    nComp[0].stats['azimuth_deg'] = 0
+
+    zComp[0].stats['azimuth_rad'] = 0
+    eComp[0].stats['azimuth_rad'] = np.pi/2
+    nComp[0].stats['azimuth_rad'] = 0
+
+    zComp[0].stats['location'] = '000'
+    eComp[0].stats['location'] = '090'
+    nComp[0].stats['location'] = '000'
 
     statsDict = {}
     for key, value in eComp[0].stats.items():
@@ -915,9 +929,10 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     
     for i, az_rad in enumerate(azimuth_list):
         az_deg = azimuth_list_deg[i]
-        statsDict['channel'] = f"EHR-{str(round(az_deg,0)).zfill(3)}" #Change channel name
-        statsDict['azimuth_deg'] = az_rad
-        statsDict['azimuth_rad'] = az_deg
+        statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
+        statsDict['channel'] = f"EHR"#-{str(round(az_deg,0)).zfill(3)}" #Change channel name
+        statsDict['azimuth_deg'] = az_deg
+        statsDict['azimuth_rad'] = az_rad
         
         hasMask = [False, False]
         if np.ma.is_masked(nComp[0].data):
@@ -925,7 +940,7 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             nMask = nComp[0].data.mask
             hasMask[0] = True
         else:
-            nData = nComp[0].data        
+            nData = nComp[0].data
             nMask = [True] * len(nData)
         
         if np.ma.is_masked(eComp[0].data):
@@ -1916,46 +1931,46 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             #get azimuthal ppsds (in an HVSRBatch object?)
             pass
         else:
-            #Get ppsds of e component
+            # Get ppsds of e component
             eStream = stream.select(component='E')
             estats = eStream.traces[0].stats
             ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
             ppsdE.add(eStream)
 
-            #Get ppsds of n component
+            # Get ppsds of n component
             nStream = stream.select(component='N')
             nstats = nStream.traces[0].stats
             ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
             ppsdN.add(nStream)
 
-            #Get ppsds of z component
+            # Get ppsds of z component
             zStream = stream.select(component='Z')
             zstats = zStream.traces[0].stats
             ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
             ppsdZ.add(zStream)
 
+            # Get ppsds of R components (azimuthal data)
             has_az = False
-            ppsds = {'Z':ppsdZ, 'N':ppsdN, 'E':ppsdE}
-            ppsds_az = {}
-            for trace in stream:
-                stats = trace.stats
-                ppsd_curr = PPSD(stats, paz['E'], **ppsd_kwargs)
-                if 'EHR' in trace.id:
+            ppsds = {'Z':ppsdZ, 'E':ppsdE, 'N':ppsdN}
+            rStream = stream.select(component='R')
+            for curr_trace in stream:
+                if 'R' in curr_trace.stats.channel:
+                    curr_stats = curr_trace.stats
+                    ppsd_curr = PPSD(curr_stats, paz['E'], **ppsd_kwargs)        
                     has_az = True
-                    ppsds_az[trace.id.split('.')[-1]] = ppsd_curr.add(stream.select(id))
-            if has_az:
-                hvsr_data['ppsds_obspy_az'] = ppsds_az
-
-            #Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+                    ppsdName = curr_trace.stats.channel +"_"+ curr_trace.stats.location
+                    ppsd_curr.add(rStream)
+                    ppsds[ppsdName[-5:]] = ppsd_curr
+            
+            # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
             hvsr_data['ppsds_obspy'] = ppsds
             hvsr_data['ppsds'] = {}
             anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
             
-            #Get ppsd class members
+            # Get ppsd class members
             members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-            hvsr_data['ppsds']['Z'] = {}
-            hvsr_data['ppsds']['E'] = {}
-            hvsr_data['ppsds']['N'] = {}
+            for k in ppsds.keys():
+                hvsr_data['ppsds'][k] = {}
             
             #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
             listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
@@ -1965,19 +1980,15 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             time_data = {}
             time_dict = {}
             for m in members:
-                hvsr_data['ppsds']['Z'][m] = getattr(hvsr_data['ppsds_obspy']['Z'], m)
-                hvsr_data['ppsds']['E'][m] = getattr(hvsr_data['ppsds_obspy']['E'], m)
-                hvsr_data['ppsds']['N'][m] = getattr(hvsr_data['ppsds_obspy']['N'], m)
-                if m in listList:
-                
-                    hvsr_data['ppsds']['Z'][m] = np.array(hvsr_data['ppsds']['Z'][m])
-                    hvsr_data['ppsds']['E'][m] = np.array(hvsr_data['ppsds']['E'][m])
-                    hvsr_data['ppsds']['N'][m] = np.array(hvsr_data['ppsds']['N'][m])
+                for k in hvsr_data['ppsds'].keys():
+                    hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
+                    if m in listList:
+                        hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
                 
                 if str(m)=='times_processed':
                     unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
-                                            hvsr_data['ppsds']['E'][m],
-                                            hvsr_data['ppsds']['N'][m]]))
+                                                        hvsr_data['ppsds']['E'][m],
+                                                        hvsr_data['ppsds']['N'][m]]))
                     
                     common_times = []
                     for currTime in unique_times:
@@ -1996,7 +2007,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                                             int(np.where(EArr == cTime)[0][0]),
                                             int(np.where(NArr == cTime)[0][0])])
                         
-                #Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
+                # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
                 if m in timeKeys:
                     if str(m) != 'times_processed':
                         time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
@@ -2023,40 +2034,42 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                             warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
                         elif verbose  and timeDiffWarn:
                             print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
-                        timeDiffWarn = False #So we only do this warning once, even though there are multiple arrays that need to be trimmed
+                        timeDiffWarn = False #So we only do this warning once, even though there may be multiple arrays that need to be trimmed
 
             for i, currTStep in enumerate(cTimeIndList):
                 colList = []
                 currTStepList = []
-                colList.append('TimesProcessed_Obspy')
-                currTStepList.append(common_times[i])
+                colList.append('Use')
+                currTStepList.append(np.ones_like(common_times[i]).astype(bool))
                 for tk in time_data.keys():
-                    colList.append(str(tk)+'_Z')
-                    colList.append(str(tk)+'_E')
-                    colList.append(str(tk)+'_N')
-                    currTStepList.append(time_data[tk][0][currTStep[0]])#z
-                    currTStepList.append(time_data[tk][1][currTStep[1]])#e
-                    currTStepList.append(time_data[tk][2][currTStep[2]])#n
+                    if 'current_times_used' not in tk:
+                        for i, k in enumerate(hvsr_data['ppsds'].keys()):
+                            if k.lower() in ['z', 'e', 'n']:
+                                colList.append(str(tk)+'_'+k)
+                                currTStepList.append(time_data[tk][i][currTStep[i]])
 
+                # NEED TO GET AZIMUTHAL PSDS IN HERE!!
                 dfList.append(currTStepList)
-                
-            hvsrDF = pd.DataFrame(dfList, columns=colList)
-            hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
             
-            #Add other times (for start times)
+            hvsrDF = pd.DataFrame(dfList, columns=colList)
+            hvsrDF['TimesProcessed_Obspy'] = common_times[i]
+            hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
+            #    colList.append('TimesProcessed_Obspy')
+            #    currTStepList.append(common_times[i])            
+            # Add other times (for start times)
             def convert_to_datetime(obspyUTCDateTime):
                 return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
 
             def convert_to_mpl_dates(obspyUTCDateTime):
                 return obspyUTCDateTime.matplotlib_date
 
-            hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)     
-            hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0,seconds=ppsd_kwargs['ppsd_length'])
+            hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)
+            hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=ppsd_kwargs['ppsd_length'])
             hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
             hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
             
-            hvsrDF['Use'] = True
-            hvsrDF['Use']=hvsrDF['Use'].astype(bool)
+            #hvsrDF['Use'] = True
+            #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             for gap in hvsr_data['ppsds']['Z']['times_gaps']:
                 hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
                                 (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date))# | \
@@ -2070,7 +2083,9 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 
             hvsrDF.set_index('TimesProcessed', inplace=True)
             hvsr_data['hvsr_df'] = hvsrDF
-            #Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+
+
+            # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
             hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
             #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
             
@@ -3620,6 +3635,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
 
         outStream = inStream
         
+        # Get remove_method into consistent format (list)
         if isinstance(remove_method, str):
             if ',' in remove_method:
                 remove_method = remove_method.split(',')
@@ -3633,12 +3649,12 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
             return output
             
-        #Reorder list so manual is always first
+        # Reorder list so manual is always first, if it is specified
         if len(set(remove_method).intersection(manualList)) > 0:
             manInd = list(set(remove_method).intersection(manualList))[0]
             remove_method.remove(manInd)
             remove_method.insert(0, manInd)
-            
+        
         #Go through each type of removal and remove
         for rem_kind in remove_method:
             if not rem_kind:
@@ -3660,8 +3676,8 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 else:
                     RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
                 outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
             elif rem_kind.lower() in antitrigger:
@@ -4907,11 +4923,12 @@ def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, ve
     st = obspy.Stream([trace1, trace2, trace3])    
     return st
 
-##Helper functions for remove_noise()
-#Helper function for removing gaps
+## Helper functions for remove_noise()
+# Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
-    #combine overlapping windows
+    
+    # combine overlapping windows
     overlapList = []
     for i in range(len(window_gaps_obspy)-2):
         if window_gaps_obspy[i][1] > window_gaps_obspy[i+1][0]:
@@ -4949,14 +4966,14 @@ def __remove_gaps(stream, window_gaps_obspy):
             else:
                 newSt = st.copy()
                 gap = window_gaps_s[i-1]
-                outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
+                outStream = outStream + newSt.trim(starttime=stream[0].stats.starttime - gap, pad=True, fill_value=None)       
         outStream.merge()
     else:
         outStream = stream.copy()
 
     return outStream
 
-#Helper function for getting windows to remove noise using stalta antitrigger method
+# Helper function for getting windows to remove noise using stalta antitrigger method
 def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     """Helper function for getting windows to remove noise using stalta antitrigger method
 
@@ -4986,16 +5003,51 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     sta_samples = sta / sampleRate #Convert to samples
     lta_samples = lta / sampleRate #Convert to samples
     staltaStream = stream.copy()
+    cFunList = []
 
-    for tr in staltaStream:
+    for t, tr in enumerate(staltaStream):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=UserWarning)
-            characteristic_fun = classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples)
+            cFunList.append(classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples))
 
-    if show_plot:
-        obspy.signal.trigger.plot_trigger(tr, characteristic_fun, thresh[1], thresh[0])
-    windows_samples = obspy.signal.trigger.trigger_onset(characteristic_fun, thresh[1], thresh[0])
+    if show_plot is True:
+        obspy.signal.trigger.plot_trigger(tr, cFunList[0], thresh[1], thresh[0])
+    elif type(show_plot) is int:
+        obspy.signal.trigger.plot_trigger(tr, cFunList[show_plot], thresh[1], thresh[0])
+
+    windows_samples = []
+    for t, cf in enumerate(cFunList):
+        windows_samples.extend(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]).tolist())
     
+    def condense_window_samples(win_samples):
+        # Sort the list of lists based on the first element of each internal list
+        sorted_list = sorted(win_samples, key=lambda x: x[0])
+        
+        # Initialize an empty result list
+        result = []
+        
+        # Initialize variables to track the current range
+        start, end = sorted_list[0]
+        
+        # Iterate over the sorted list
+        for i in range(1, len(sorted_list)):
+            current_start, current_end = sorted_list[i]
+            
+            # If the current range overlaps with the previous range
+            if current_start <= end:
+                # Update the end of the current range
+                end = max(end, current_end)
+            else:
+                # Add the previous range to the result and update the current range
+                result.append([start, end])
+                start, end = current_start, current_end
+        
+        # Add the last range to the result
+        result.append([start, end])
+        
+        return result        
+    windows_samples = condense_window_samples(windows_samples)
+
     startT = stream[0].stats.starttime
     endT = stream[0].stats.endtime
     window_UTC = []
@@ -5018,7 +5070,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
-#Remove noise saturation
+# Remove noise saturation
 def __remove_noise_saturate(stream, sat_percent, min_win_size):
     """Function to remove "saturated" data points that exceed a certain percent (sat_percent) of the maximum data value in the stream.  
 
@@ -5087,7 +5139,7 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
     outstream  = __remove_gaps(stream, removeUTC)
     return outstream
 
-#Helper function for removing data using the noise threshold input from remove_noise()
+# Helper function for removing data using the noise threshold input from remove_noise()
 def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
     """Helper function for removing data using the noise threshold input from remove_noise()
 
@@ -5137,7 +5189,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
     #Combine indices from all three traces
     removeInd = np.unique(removeInd)
 
-    #Make sure we're not removing single indices (we only want longer than min_win_size)
+    # Make sure we're not removing single indices (we only want longer than min_win_size)
     removeList = []  # initialize    
     min_win_samples = int(min_win_size / sample_rate)
 
@@ -5174,7 +5226,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
 
     return outstream
 
-#Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
+# Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
 def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
     sampleRate = float(stream[0].stats.delta)
     outStream = stream.copy()
@@ -5214,7 +5266,7 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
-#Plot noise windows
+# Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
                          do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
                          do_pctThresh=False, sat_percent=0.8, min_win_size=1, 
@@ -5289,7 +5341,7 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
         return hvsr_data
     return 
 
-#Helper function for manual window selection 
+# Helper function for manual window selection 
 def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
     """Helper function for manual window selection to draw boxes to show where windows have been selected for removal"""
     #Create an axis dictionary if it does not already exist so all functions are the same
@@ -5369,7 +5421,7 @@ def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lin
     fig.canvas.draw()
     return clickNo, x0
 
-#Helper function for manual window selection to draw boxes to deslect windows for removal
+# Helper function for manual window selection to draw boxes to deslect windows for removal
 def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
     """Helper function for manual window selection to draw boxes to deslect windows for removal"""
 
