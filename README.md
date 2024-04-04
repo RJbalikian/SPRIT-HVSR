@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/593014510.svg)](https://zenodo.org/doi/10.5281/zenodo.10899401)
+
 # SPRĪT 
 SpRĪT (HVSR): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio processing, using any data format readable by the Obspy python package.
 
