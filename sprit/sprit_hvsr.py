@@ -1075,7 +1075,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
             hvsrp = hvsr_data['hvsrp'] #Calculated based on "Use" column
             hvsrm = hvsr_data['hvsrm'] #Calculated based on "Use" column
 
-            hvsrPeaks = hvsr_data['hvsr_df'][hvsr_data['hvsr_df']['Use']]['CurvesPeakIndices']
+            hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices']
             #hvsrPeaks = hvsr_data['ind_hvsr_peak_indices'] #Original calculation
 
             hvsr_log_std = hvsr_data['hvsr_log_std']
@@ -2083,7 +2083,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
         hvsrDF.set_index('TimesProcessed', inplace=True)
-        hvsr_data['hvsr_df'] = hvsrDF
+        hvsr_data['hvsr_windows_df'] = hvsrDF
 
         # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
@@ -2467,7 +2467,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Sf']}")
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Sa']}")
                 report_string_list.append('')
-                report_string_list.append(f"Calculated using {hvsr_results['hvsr_df']['Use'].sum()}/{hvsr_results['hvsr_df']['Use'].count()} time windows".rjust(sepLen-1))
+                report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
                 report_string_list.append(extSiteSeparator)
                 #report_string_list.append(endSiteSeparator)
                 #report_string_list.append(extSiteSeparator)
@@ -3005,7 +3005,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
-        windowsUsedStr = f"{hvsr_data['hvsr_df']['Use'].sum()}/{hvsr_data['hvsr_df'].shape[0]} windows used"
+        windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
         fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small',
                  bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=9))
 
@@ -3271,7 +3271,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         stDevValsM = {}
         psdRaw={}
         currTimesUsed={}
-        hvsrDF = hvsr_data['hvsr_df']
+        hvsrDF = hvsr_data['hvsr_windows_df']
 
         def move_avg(y, box_pts):
             #box = np.ones(box_pts)/box_pts
@@ -3372,7 +3372,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     'ppsds':ppsds,
                     'ppsds_obspy':origPPSD,
                     'tsteps_used': hvsr_data['tsteps_used'].copy(),
-                    'hvsr_df':hvsr_data['hvsr_df']
+                    'hvsr_windows_df':hvsr_data['hvsr_windows_df']
                     }
         
         hvsr_out = HVSRData(hvsr_dataUpdate)
@@ -3397,7 +3397,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             for k in hvsr_out['psd_raw']:
                 colName = f'psd_values_{k}'
 
-                ppsd_data = np.stack(hvsr_out['hvsr_df'][colName])
+                ppsd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
                 ppsd_data = hvsr_out['psd_raw'][k]
 
 
@@ -3427,7 +3427,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 #Just use the original data
                 smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
-                hvsr_out['hvsr_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_df'].index)
+                hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
 
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
@@ -3457,16 +3457,16 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                         hvsr_tSteps_az[k] = [np.float32(v)]
                     else:
                         hvsr_tSteps_az[k].append(np.float32(v))
-        hvsr_out['hvsr_df']['HV_Curves'] = hvsr_tSteps
+        hvsr_out['hvsr_windows_df']['HV_Curves'] = hvsr_tSteps
         
-        # Add azimuth HV Curves to hvsr_df
+        # Add azimuth HV Curves to hvsr_windows_df
         for key, values in hvsr_tSteps_az.items():
-            hvsr_out['hvsr_df']['HV_Curves_'+key] = values
+            hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
         
-        hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
+        hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
 
         #Initialize array based only on the curves we are currently using
-        indHVCurvesArr = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
+        indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
         #indHVCurvesArr = hvsr_out['ind_hvsr_curves']
 
         if outlier_curve_rmse_percentile:
@@ -3474,10 +3474,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 outlier_curve_rmse_percentile = 98
             hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
   
-        for col_name in hvsr_out['hvsr_df'].columns:
+        for col_name in hvsr_out['hvsr_windows_df'].columns:
             if "HV_Curves" in col_name:
                 newName = col_name.replace('HV_Curves', 'ind_hvsr_stdDev')
-                curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_df'][col_name][hvsr_out['hvsr_df']['Use']])
+                curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
                 hvsr_out[newName] = np.nanstd(curr_indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
@@ -3485,7 +3485,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         for tStepHVSR in hvsr_tSteps:
             tStepPeaks.append(__find_peaks(tStepHVSR))
         hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
-        hvsr_out['hvsr_df']['CurvesPeakIndices'] = tStepPeaks
+        hvsr_out['hvsr_windows_df']['CurvesPeakIndices'] = tStepPeaks
 
         tStepPFList = []
         for tPeaks in tStepPeaks:
@@ -3493,7 +3493,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             for pInd in tPeaks:
                 tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
             tStepPFList.append(tStepPFs)
-        hvsr_out['hvsr_df']['CurvesPeakFreqs'] = tStepPFList
+        hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = tStepPFList
 
         #Get peaks of main HV curve
         hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
@@ -3726,8 +3726,8 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output['ProcessingStatus']['RemoveNoiseStatus'] = True
             output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
-            if 'hvsr_df' in output.keys() or ('params' in output.keys() and 'hvsr_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_df' in output['input_params'].keys()):
-                hvsrDF = output['hvsr_df']
+            if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output['input_params'].keys()):
+                hvsrDF = output['hvsr_windows_df']
                 
                 outStream = output['stream'].split()
                 for i, trace in enumerate(outStream):
@@ -3741,9 +3741,9 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                     if trEndTime < trStartTime and comp_end==comp_start:
                         gap = [trEndTime,trStartTime]
 
-                        output['hvsr_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
+                        output['hvsr_windows_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                         (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                        output['hvsr_df']['Use'] = output['hvsr_df']['Use'].astype(bool)
+                        output['hvsr_windows_df']['Use'] = output['hvsr_windows_df']['Use'].astype(bool)
                     
                     trEndTime = trace.stats.endtime
                 
@@ -3873,7 +3873,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             if column in compNames:
                 column = 'psd_values_'+column
             # Retrieve data from dataframe (use all windows, just in case)
-            curr_data = np.stack(hvsr_data['hvsr_df'][column])
+            curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
             
             # Calculate a median curve, and reshape so same size as original
             medCurve = np.nanmedian(curr_data, axis=0)
@@ -3881,7 +3881,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
-            hvsr_data['hvsr_df']['RMSE_'+column] = rmse
+            hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
             if use_percentile is True:
                 rmse_threshold = np.percentile(rmse, rmse_thresh)
                 if verbose:
@@ -3933,17 +3933,17 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         if show_outlier_plot:
             plt.show()
                     
-        # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_df to False for that window
+        # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
         bad_rmse = np.unique(bad_rmse)
         if len(bad_rmse) > 0:
             
-            hvsr_data['hvsr_df']['Use'] = hvsr_data['hvsr_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_df']['RMSE_'+column])
-            #hvsr_data['hvsr_df'].loc[bad_index, "Use"] = False   
+            hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
+            #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
         
         if verbose:
             if len(bad_rmse)>0:
-                print(f"\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_df'].shape[0]}):")
-                for b in hvsr_data['hvsr_df'].index[pd.Series(bad_rmse)]:
+                print(f"\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
+                for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
                     print(f"\t\t{b}")
             else:
                 print('\tNo outlier curves have been removed')
@@ -5957,7 +5957,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
     for k in hvsr_out['psd_raw']:
         colName = f'psd_values_{k}'
 
-        newTPSD = list(np.stack(hvsr_out['hvsr_df'][colName]))
+        newTPSD = list(np.stack(hvsr_out['hvsr_windows_df'][colName]))
         #newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
 
         for t, tPSD in enumerate(hvsr_out['psd_raw'][k]):
@@ -5989,7 +5989,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
                 newTPSD[t][i] = smoothVal
 
         hvsr_out['psd_raw'][k] = newTPSD
-        hvsr_out['hvsr_df'][colName] = pd.Series(list(newTPSD), index=hvsr_out['hvsr_df'].index)
+        hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(newTPSD), index=hvsr_out['hvsr_windows_df'].index)
 
 
     return hvsr_out
@@ -6200,19 +6200,19 @@ def __gethvsrparams(hvsr_out):
 
 
     hvsr=hvsr_out['hvsr_curve']
-    hvsrDF = hvsr_out['hvsr_df']
+    hvsrDF = hvsr_out['hvsr_windows_df']
     if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
         #With arrays, original way of doing it
         hvsr_log_std = np.nanstd(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
 
         #With dataframe, updated way to use DF for all time-step tasks, still testing
-        stackedData = np.stack(hvsr_out['hvsr_df']['HV_Curves'])
+        stackedData = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'])
         logStackedata = np.log10(stackedData).tolist()
         for i, r in enumerate(logStackedata):
             logStackedata[i] = np.array(r)
 
-        hvsr_out['hvsr_df']['HV_Curves_Log10'] = logStackedata
-        hvsr_log_std = np.nanstd(np.stack(hvsr_out['hvsr_df']['HV_Curves_Log10'][hvsrDF['Use']]), axis=0)
+        hvsr_out['hvsr_windows_df']['HV_Curves_Log10'] = logStackedata
+        hvsr_log_std = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['HV_Curves_Log10'][hvsrDF['Use']]), axis=0)
 
         #The componenets are already calculated, don't need to recalculate aren't calculated at the time-step level
         hvsrp = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
@@ -6724,14 +6724,14 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     anyKey = list(ppsds.keys())[0]
     
     # Get data
-    psdArr = np.stack(hvsr_data['hvsr_df']['HV_Curves'].apply(np.flip))
-    useArr = np.array(hvsr_data['hvsr_df']['Use'])
+    psdArr = np.stack(hvsr_data['hvsr_windows_df']['HV_Curves'].apply(np.flip))
+    useArr = np.array(hvsr_data['hvsr_windows_df']['Use'])
     useArr = np.tile(useArr, (psdArr.shape[1], 1)).astype(int)
     useArr = np.clip(useArr, a_min=0.15, a_max=1)
 
     # Get times
-    xmin = hvsr_data['hvsr_df']['TimesProcessed_MPL'].min()
-    xmax = hvsr_data['hvsr_df']['TimesProcessed_MPL'].max()
+    xmin = hvsr_data['hvsr_windows_df']['TimesProcessed_MPL'].min()
+    xmax = hvsr_data['hvsr_windows_df']['TimesProcessed_MPL'].max()
 
     #Format times
     tTicks = mdates.MinuteLocator(byminute=range(0,60,5))
@@ -6744,10 +6744,10 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.tick_params(axis='both', labelsize='x-small')
 
     #Get day label for bottom of chart
-    if hvsr_data['hvsr_df'].index[0].date() != hvsr_data['hvsr_df'].index[-1].date():
-        day = str(hvsr_data['hvsr_df'].index[0].date())+' - '+str(hvsr_data['hvsr_df'].index[-1].date())
+    if hvsr_data['hvsr_windows_df'].index[0].date() != hvsr_data['hvsr_windows_df'].index[-1].date():
+        day = str(hvsr_data['hvsr_windows_df'].index[0].date())+' - '+str(hvsr_data['hvsr_windows_df'].index[-1].date())
     else:
-        day = str(hvsr_data['hvsr_df'].index[0].date())
+        day = str(hvsr_data['hvsr_windows_df'].index[0].date())
 
     #Get extents
     ymin = hvsr_data['input_params']['hvsr_band'][0]
