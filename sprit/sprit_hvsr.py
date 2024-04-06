@@ -3283,8 +3283,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
             input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
 
-            currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
-            used_ppsds = np.stack(currPPSDs)
+            #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
+            #used_ppsds = np.stack(currPPSDs)
             
             #if reasmpling has been selected
             if resample is True or isinstance(resample, (int, float)):
@@ -3353,14 +3353,14 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
         #This gets the main hvsr curve averaged from all time steps
         anyK = list(x_freqs.keys())[0]
-        hvsr_curve, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
+        hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
         origPPSD = hvsr_data['ppsds_obspy'].copy()
-
 
         #Add some other variables to our output dictionary
         hvsr_dataUpdate = {'input_params':hvsr_data,
                     'x_freqs':x_freqs,
                     'hvsr_curve':hvsr_curve,
+                    'hvsr_az':hvsr_az,
                     'x_period':x_periods,
                     'psd_raw':psdRaw,
                     'current_times_used': currTimesUsed,
@@ -3443,16 +3443,27 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
         else:
             hvsr_tSteps = []
+            hvsr_tSteps_az = {}
             for tStep in range(len(hvsr_out['psd_raw'][anyK])):
                 tStepDict = {}
                 for k in hvsr_out['psd_raw']:
                     tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-                hvsr_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+                
+                hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+                
                 hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+                for k, v in hvsr_az_tstep.items():
+                    if tStep == 0:
+                        hvsr_tSteps_az[k] = [np.float32(v)]
+                    else:
+                        hvsr_tSteps_az[k].append(np.float32(v))
         hvsr_out['hvsr_df']['HV_Curves'] = hvsr_tSteps
-
+        
+        # Add azimuth HV Curves to hvsr_df
+        for key, values in hvsr_tSteps_az.items():
+            hvsr_out['hvsr_df']['HV_Curves_'+key] = values
+        
         hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
-        #hvsr_out['ind_hvsr_curves'] = np.array(hvsr_tSteps)
 
         #Initialize array based only on the curves we are currently using
         indHVCurvesArr = np.stack(hvsr_out['hvsr_df']['HV_Curves'][hvsr_out['hvsr_df']['Use']])
@@ -3463,7 +3474,11 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 outlier_curve_rmse_percentile = 98
             hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
   
-        hvsr_out['ind_hvsr_stdDev'] = np.nanstd(indHVCurvesArr, axis=0)
+        for col_name in hvsr_out['hvsr_df'].columns:
+            if "HV_Curves" in col_name:
+                newName = col_name.replace('HV_Curves', 'ind_hvsr_stdDev')
+                curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_df'][col_name][hvsr_out['hvsr_df']['Use']])
+                hvsr_out[newName] = np.nanstd(curr_indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
         tStepPeaks = []
@@ -6001,6 +6016,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
     """
     hvsr_curve = []
     hvsr_tSteps = []
+    hvsr_azimuth = {}
 
     params = hvsr_data
     if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
@@ -6028,13 +6044,26 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
             psd2 = [psd['N'][j], psd['N'][j + 1]]
             f =    [x[j], x[j + 1]]
 
-            hvsr = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
+            hvratio = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
+            hvsr_curve.append(hvratio)
             
-            #hvsr_curve.append(hvsr)
-            hvsr_curve.append(hvsr)
-        hvsr_tSteps= None #Only used for DFA
-
-    return np.array(hvsr_curve), hvsr_tSteps
+            # Do azimuth HVSR Calculations, if applicable
+            hvratio_az = 0
+            for k in psd.keys():
+                if 'R' in k:
+                    psd_az = [psd[k][j], psd[k][j + 1]]
+                    hvratio_az = __get_hvsr(psd0, psd_az, None, f, use_method='az')
+                    if j == 0:
+                        hvsr_azimuth[k] = [hvratio_az]
+                    else:
+                        hvsr_azimuth[k].append(hvratio_az)
+            
+        hvsr_tSteps = None # Only used for DFA
+    
+    if hvsr_azimuth is {}:
+        hvsr_azimuth = None
+    
+    return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
 #Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
@@ -6060,18 +6089,24 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
 
     _pz = __get_power(_dbz, _x)
     _p1 = __get_power(_db1, _x)
-    _p2 = __get_power(_db2, _x)
     
     _hz = math.sqrt(_pz)
     _h1 = math.sqrt(_p1)
-    _h2 = math.sqrt(_p2)
+
+    if _db2 is None:
+        _p2 = 1
+        _h2 = 1
+    else:
+        _p2 = __get_power(_db2, _x)
+        _h2 = math.sqrt(_p2)
 
     _h = {  2: (_h1 + _h2) / 2.0, #Arithmetic mean
             3: math.sqrt(_h1 * _h2), #Geometric mean
             4: math.sqrt(_p1 + _p2), #Vector summation
             5: math.sqrt((_p1 + _p2) / 2.0), #Quadratic mean
-            6: max(_h1, _h2)} #Max horizontal value
-    
+            6: max(_h1, _h2), #Max horizontal value
+         'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
+
     _hvsr = _h[use_method] / _hz
     return _hvsr
 
