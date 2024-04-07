@@ -869,98 +869,157 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
         Updated HVSRData object specified in hvsr_data with hvsr_data['stream'] attribute containing additional components (EHR-***),
         with *** being zero-padded (3 digits) azimuth angle in degrees.
     """
-          
-    degList = ['degrees', 'deg', 'd']
-    radList = ['radians', 'rad', 'r']
-    if azimuth_unit.lower() in degList:
-        az_angle_rad = np.deg2rad(azimuth_angle)
-        az_angle_deg = azimuth_angle
-    elif azimuth_unit.lower() in radList:
-        az_angle_rad = azimuth_angle
-        az_angle_deg = np.rad2deg(azimuth_angle)
-    else:
-        warnings.warn(f"azimuth_unit={azimuth_unit} not supported. Try 'degrees' or 'radians'. No azimuthal analysis run.")
-        return hvsr_data
     
-    #Limit to 
-    if az_angle_deg <= 1:
-        if verbose:
-            warnings.warn(f"Minimum azimuth rotation is 1 degree (max. is 180). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
-        az_angle_deg = 1
-        az_angle_rad = np.pi/180
-    elif az_angle_deg >= 180:
-        if verbose:
-            warnings.warn(f"Maximum azimuth value is azimuth_angle=180 degrees (min. is 1). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=180 degrees ({np.round(np.pi,3)} radians) ")
-        az_angle_deg = 180
-        az_angle_rad = np.pi
-
-    multAzList = ['multiple', 'multi', 'mult', 'm']
-    singleAzList = ['single', 'sing', 's']
-    if azimuth_type.lower() in multAzList:
-        azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
-        azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
-    elif azimuth_type.lower() in singleAzList:
-        azimuth_list = [az_angle_rad]
-        azimuth_list_deg = [az_angle_deg]
-    else:
-        warnings.warn(f"azimuth_type={azimuth_type} not supported. Try 'multiple' or 'single'. No azimuthal analysis run.")
-        return hvsr_data
-
-    zComp = hvsr_data['stream'].select(component='Z').merge()
-    eComp = hvsr_data['stream'].select(component='E').merge()
-    nComp = hvsr_data['stream'].select(component='N').merge()
-
-    # Reset stats for original data too
-    zComp[0].stats['azimuth_deg'] = 0
-    eComp[0].stats['azimuth_deg'] = 90
-    nComp[0].stats['azimuth_deg'] = 0
-
-    zComp[0].stats['azimuth_rad'] = 0
-    eComp[0].stats['azimuth_rad'] = np.pi/2
-    nComp[0].stats['azimuth_rad'] = 0
-
-    zComp[0].stats['location'] = '000'
-    eComp[0].stats['location'] = '090'
-    nComp[0].stats['location'] = '000'
-
-    statsDict = {}
-    for key, value in eComp[0].stats.items():
-        statsDict[key] = value
+    # Get intput paramaters
+    orig_args = locals().copy()
+    start_time = datetime.datetime.now()
     
-    for i, az_rad in enumerate(azimuth_list):
-        az_deg = azimuth_list_deg[i]
-        statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
-        statsDict['channel'] = f"EHR"#-{str(round(az_deg,0)).zfill(3)}" #Change channel name
-        statsDict['azimuth_deg'] = az_deg
-        statsDict['azimuth_rad'] = az_rad
-        
-        hasMask = [False, False]
-        if np.ma.is_masked(nComp[0].data):
-            nData = nComp[0].data.data
-            nMask = nComp[0].data.mask
-            hasMask[0] = True
-        else:
-            nData = nComp[0].data
-            nMask = [True] * len(nData)
-        
-        if np.ma.is_masked(eComp[0].data):
-            eData = eComp[0].data.data
-            eMask = eComp[0].data.mask
-            hasMask[1] = True
-        else:
-            eData = eComp[0].data
-            eMask = [True] * len(eData)
+    # Update with processing parameters specified previously in input_params, if applicable
+    if 'processing_parameters' in hvsr_data.keys():
+        if 'azimuth' in hvsr_data['processing_parameters'].keys():
+            for k, v in hvsr_data['processing_parameters']['azimuth'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(azimuth).args[1:], 
+                                        inspect.getfullargspec(azimuth).defaults))
+                # Manual input to function overrides the imported parameter values
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
+                    orig_args[k] = v
 
-        if True in hasMask:
-            radial_comp_data = np.ma.array(np.add(nData * np.cos(az_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+    azimuth_angle = orig_args['azimuth_angle']
+    azimuth_unit = orig_args['azimuth_unit']
+    show_az_plot = orig_args['show_az_plot']
+    verbose = orig_args['verbose']
+
+    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
+            pass
         else:
-            radial_comp_data = np.add(nData * np.cos(az_rad), eData * np.sin(az_rad))
-        #From hvsrpy
-        # horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
+            print('\nGenerating azimuthal data (azimuth())')
+            print('\tUsing the following parameters:')
+            for key, value in orig_args.items():
+                if key=='hvsr_data':
+                    pass
+                else:
+                    print('\t  {}={}'.format(key, value))
+
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we'll loop through each site
+        hvsr_out = {}
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                   hvsr_out[site_name] = __azimuth_batch(**args) #Call another function, that lets us run this function again
+                except Exception as e:
+                    hvsr_out[site_name]['ProcessingStatus']['Azimuth'] = False
+                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
+                    if verbose:
+                        print(e)
+            else:
+                hvsr_data[site_name]['ProcessingStatus']['Azimuth'] = False
+                hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+                hvsr_out = hvsr_data
+
+        output = HVSRBatch(hvsr_out)
+        return output
+    elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream)):
+
+        degList = ['degrees', 'deg', 'd']
+        radList = ['radians', 'rad', 'r']
+        if azimuth_unit.lower() in degList:
+            az_angle_rad = np.deg2rad(azimuth_angle)
+            az_angle_deg = azimuth_angle
+        elif azimuth_unit.lower() in radList:
+            az_angle_rad = azimuth_angle
+            az_angle_deg = np.rad2deg(azimuth_angle)
+        else:
+            warnings.warn(f"azimuth_unit={azimuth_unit} not supported. Try 'degrees' or 'radians'. No azimuthal analysis run.")
+            return hvsr_data
         
-        radial_trace = obspy.Trace(data=radial_comp_data, header=statsDict)
-        hvsr_data['stream'].append(radial_trace)
+        #Limit to 1-180 and "right" half of compass (will be reflected on other half)
+        if az_angle_deg <= 1:
+            if verbose:
+                warnings.warn(f"Minimum azimuth rotation is 1 degree (max. is 180). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
+            az_angle_deg = 1
+            az_angle_rad = np.pi/180
+        elif az_angle_deg >= 180:
+            if verbose:
+                warnings.warn(f"Maximum azimuth value is azimuth_angle=180 degrees (min. is 1). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=180 degrees ({np.round(np.pi,3)} radians) ")
+            az_angle_deg = 180
+            az_angle_rad = np.pi
+
+        multAzList = ['multiple', 'multi', 'mult', 'm']
+        singleAzList = ['single', 'sing', 's']
+        if azimuth_type.lower() in multAzList:
+            azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
+            azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
+        elif azimuth_type.lower() in singleAzList:
+            azimuth_list = [az_angle_rad]
+            azimuth_list_deg = [az_angle_deg]
+        else:
+            warnings.warn(f"azimuth_type={azimuth_type} not supported. Try 'multiple' or 'single'. No azimuthal analysis run.")
+            return hvsr_data
+
+        if isinstance(hvsr_data, (HVSRData, dict)):
+            zComp = hvsr_data['stream'].select(component='Z').merge()
+            eComp = hvsr_data['stream'].select(component='E').merge()
+            nComp = hvsr_data['stream'].select(component='N').merge()
+        elif isinstance(hvsr_data, obspy.Stream):
+            zComp = hvsr_data.select(component='Z').merge()
+            eComp = hvsr_data.select(component='E').merge()
+            nComp = hvsr_data.select(component='N').merge()          
+
+        # Reset stats for original data too
+        zComp[0].stats['azimuth_deg'] = 0
+        eComp[0].stats['azimuth_deg'] = 90
+        nComp[0].stats['azimuth_deg'] = 0
+
+        zComp[0].stats['azimuth_rad'] = 0
+        eComp[0].stats['azimuth_rad'] = np.pi/2
+        nComp[0].stats['azimuth_rad'] = 0
+
+        zComp[0].stats['location'] = '000'
+        eComp[0].stats['location'] = '090'
+        nComp[0].stats['location'] = '000'
+
+        statsDict = {}
+        for key, value in eComp[0].stats.items():
+            statsDict[key] = value
+        
+        for i, az_rad in enumerate(azimuth_list):
+            az_deg = azimuth_list_deg[i]
+            statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
+            statsDict['channel'] = f"EHR"#-{str(round(az_deg,0)).zfill(3)}" #Change channel name
+            statsDict['azimuth_deg'] = az_deg
+            statsDict['azimuth_rad'] = az_rad
+            
+            hasMask = [False, False]
+            if np.ma.is_masked(nComp[0].data):
+                nData = nComp[0].data.data
+                nMask = nComp[0].data.mask
+                hasMask[0] = True
+            else:
+                nData = nComp[0].data
+                nMask = [True] * len(nData)
+            
+            if np.ma.is_masked(eComp[0].data):
+                eData = eComp[0].data.data
+                eMask = eComp[0].data.mask
+                hasMask[1] = True
+            else:
+                eData = eComp[0].data
+                eMask = [True] * len(eData)
+
+            # From hvsrpy: horizontal = self.ns._amp * math.cos(az_rad) + self.ew._amp*math.sin(az_rad)
+            if True in hasMask:
+                radial_comp_data = np.ma.array(np.add(nData * np.cos(az_rad), eData * np.sin(az_angle_rad)), mask=list(map(operator.and_, nMask, eMask)))
+            else:
+                radial_comp_data = np.add(nData * np.cos(az_rad), eData * np.sin(az_rad))
+
+            radial_trace = obspy.Trace(data=radial_comp_data, header=statsDict)
+            hvsr_data['stream'].append(radial_trace)
     
+    print(hvsr_data.stream)
     return hvsr_data
 
 #Quality checks, stability tests, clarity tests
@@ -3465,13 +3524,14 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         for key, values in hvsr_tSteps_az.items():
             hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
         
+        hvsr_out['ind_hvsr_curves'] = {}
         for col_name in hvsr_out['hvsr_windows_df']:
             if "HV_Curves" in col_name:
                 if col_name == 'HV_Curves':
-                    colSuffix = ''
+                    colID = 'HV'
                 else:
-                    colSuffix = "_"+col_name.split('_')[2]
-                hvsr_out['ind_hvsr_curves'+colSuffix] = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
+                    colID = col_name.split('_')[2]
+                hvsr_out['ind_hvsr_curves'][colID] = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
 
         #Initialize array based only on the curves we are currently using
         indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
@@ -3497,7 +3557,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 if len(col_name.split('_')) > 2:
                     colSuffix = '_'+col_name.split('_')[2]
                 else:
-                    colSuffix = ''
+                    colSuffix = '_HV'
 
                 for tStepHVSR in hvsr_out['hvsr_windows_df'][col_name]:
                     tStepPeaks.append(__find_peaks(tStepHVSR))                
@@ -3527,21 +3587,19 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = tStepPFList
 
         #Get peaks of main HV curve
-        hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+        hvsr_out['hvsr_peak_indices'] = {}
+        hvsr_out['hvsr_peak_indices']['HV'] = __find_peaks(hvsr_out['hvsr_curve'])
         for k in hvsr_az.keys():
-            hvsr_out['hvsr_peak_indices_'+k] = __find_peaks(hvsr_out['hvsr_az'][k])
+            hvsr_out['hvsr_peak_indices'][k] = __find_peaks(hvsr_out['hvsr_az'][k])
         
         #Get frequency values at HV peaks in main curve
-        for k in hvsr_out.keys():
-            if 'hvsr_peak_indices' in k:
-                if len(k.split('_')) > 3:
-                    colSuffix = "_"+k.split('_')[3]
-                else:
-                    colSuffix = ''
-                hvsrPF = []
-                for p in hvsr_out[k]:
-                    hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
-                hvsr_out['hvsr_peak_freqs'+colSuffix] = np.array(hvsrPF)
+        hvsr_out['hvsr_peak_freqs'] = {}
+        for k in hvsr_out['hvsr_peak_indices'].keys():
+            print(k)
+            hvsrPF = []
+            for p in hvsr_out[k]:
+                hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
+            hvsr_out['hvsr_peak_freqs'][k] = np.array(hvsrPF)
 
         #Get other HVSR parameters (i.e., standard deviations, etc.)
         hvsr_out = __gethvsrparams(hvsr_out)
@@ -4270,6 +4328,21 @@ def _get_report_batch(**get_report_kwargs):
         hvsr_results = get_report_kwargs['hvsr_results']
         
     return hvsr_results
+
+#Helper function for batch procesing of azimuth
+def __azimuth_batch(**azimuth_kwargs):
+    try:
+        hvsr_data = azimuth(**azimuth_kwargs)
+
+        if azimuth_kwargs['verbose']:
+            if 'input_params' in hvsr_data.keys():
+                print('\t{} successfully completed azimuth()'.format(hvsr_data['input_params']['site']))
+            elif 'site' in hvsr_data.keys():
+                print('\t{} successfully completed azimuth()'.format(hvsr_data['site']))
+    except Exception as e:
+        warnings.warn(f"Error in azimuth({azimuth_kwargs['input']['site']}, **azimuth_kwargs)", RuntimeWarning)
+
+    return hvsr_data
 
 #Helper function for batch procesing of remove_noise
 def __remove_noise_batch(**remove_noise_kwargs):
@@ -5070,7 +5143,8 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
 
     windows_samples = []
     for t, cf in enumerate(cFunList):
-        windows_samples.extend(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]).tolist())
+        if obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]) != []:
+            windows_samples.extend(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]).tolist())
     
     def condense_window_samples(win_samples):
         # Sort the list of lists based on the first element of each internal list
@@ -6235,7 +6309,7 @@ def __gethvsrparams(hvsr_out):
     hvsr_as = hvsr_out['hvsr_az']
     hvsrDF = hvsr_out['hvsr_windows_df']
 
-    if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
+    if len(hvsr_out['ind_hvsr_curves']).keys() > 0:
         # With arrays, original way of doing it
         hvsr_log_std = {}
         for k in hvsr_out.keys():
