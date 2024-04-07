@@ -3356,6 +3356,9 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
         origPPSD = hvsr_data['ppsds_obspy'].copy()
 
+        #print('hvcurv', np.array(hvsr_curve).shape)
+        #print('hvaz', np.array(hvsr_az).shape)
+
         #Add some other variables to our output dictionary
         hvsr_dataUpdate = {'input_params':hvsr_data,
                     'x_freqs':x_freqs,
@@ -3428,7 +3431,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
                 hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
-
         elif freq_smooth.lower() in freq_smooth_constant:
             hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
         elif freq_smooth.lower() in freq_smooth_proport:
@@ -3463,7 +3465,13 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         for key, values in hvsr_tSteps_az.items():
             hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
         
-        hvsr_out['ind_hvsr_curves'] = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
+        for col_name in hvsr_out['hvsr_windows_df']:
+            if "HV_Curves" in col_name:
+                if col_name == 'HV_Curves':
+                    colSuffix = ''
+                else:
+                    colSuffix = "_"+col_name.split('_')[2]
+                hvsr_out['ind_hvsr_curves'+colSuffix] = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
 
         #Initialize array based only on the curves we are currently using
         indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
@@ -3481,29 +3489,59 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 hvsr_out[newName] = np.nanstd(curr_indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
-        tStepPeaks = []
-        for tStepHVSR in hvsr_tSteps:
-            tStepPeaks.append(__find_peaks(tStepHVSR))
-        hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
-        hvsr_out['hvsr_windows_df']['CurvesPeakIndices'] = tStepPeaks
+        hvsr_out['ind_hvsr_peak_indices'] = {}
+        hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
+        for col_name in hvsr_out['hvsr_windows_df'].columns:
+            if "HV_Curves" in col_name:
+                tStepPeaks = []
+                if len(col_name.split('_')) > 2:
+                    colSuffix = '_'+col_name.split('_')[2]
+                else:
+                    colSuffix = ''
 
-        tStepPFList = []
-        for tPeaks in tStepPeaks:
-            tStepPFs = []
-            for pInd in tPeaks:
-                tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
-            tStepPFList.append(tStepPFs)
-        hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = tStepPFList
+                for tStepHVSR in hvsr_out['hvsr_windows_df'][col_name]:
+                    tStepPeaks.append(__find_peaks(tStepHVSR))                
+                hvsr_out['ind_hvsr_peak_indices']['PeakInds'+colSuffix] = tStepPeaks
+                hvsr_out['hvsr_windows_df']['CurvesPeakIndices'+colSuffix] = tStepPeaks
+
+                tStepPFList = []
+                for tPeaks in tStepPeaks:
+                    tStepPFs = []
+                    for pInd in tPeaks:
+                        tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
+                    tStepPFList.append(tStepPFs)
+                hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'+colSuffix] = tStepPFList
+
+        #for tStepHVSR in hvsr_out['hvsr_windows_df']['HV_Curves']:
+        #    tStepPeaks.append(__find_peaks(tStepHVSR))
+        #hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
+        #hvsr_out['hvsr_windows_df']['CurvesPeakIndices'] = tStepPeaks
+
+        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
+        #tStepPFList = []
+        #for tPeaks in tStepPeaks:
+        #    tStepPFs = []
+        #    for pInd in tPeaks:
+        #        tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
+        #    tStepPFList.append(tStepPFs)
+        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = tStepPFList
 
         #Get peaks of main HV curve
         hvsr_out['hvsr_peak_indices'] = __find_peaks(hvsr_out['hvsr_curve'])
+        for k in hvsr_az.keys():
+            hvsr_out['hvsr_peak_indices_'+k] = __find_peaks(hvsr_out['hvsr_az'][k])
         
         #Get frequency values at HV peaks in main curve
-        hvsrPF=[]
-        for p in hvsr_out['hvsr_peak_indices']:
-            hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
-        hvsr_out['hvsr_peak_freqs'] = np.array(hvsrPF)
-
+        for k in hvsr_out.keys():
+            if 'hvsr_peak_indices' in k:
+                if len(k.split('_')) > 3:
+                    colSuffix = "_"+k.split('_')[3]
+                else:
+                    colSuffix = ''
+                hvsrPF = []
+                for p in hvsr_out[k]:
+                    hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
+                hvsr_out['hvsr_peak_freqs'+colSuffix] = np.array(hvsrPF)
 
         #Get other HVSR parameters (i.e., standard deviations, etc.)
         hvsr_out = __gethvsrparams(hvsr_out)
@@ -6059,10 +6097,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
                         hvsr_azimuth[k].append(hvratio_az)
             
         hvsr_tSteps = None # Only used for DFA
-    
-    if hvsr_azimuth is {}:
-        hvsr_azimuth = None
-    
+       
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
 #Get HVSR
@@ -6191,40 +6226,59 @@ def __gethvsrparams(hvsr_out):
     hvsrp2 = {}
     hvsrm2 = {}
     
-    peak_water_level_p=[]
     hvsrp2=[]
     hvsrm=[]
-    peak_water_level_m=[]
     
     hvsr_log_std = {}
 
-
-    hvsr=hvsr_out['hvsr_curve']
+    hvsr = hvsr_out['hvsr_curve']
+    hvsr_as = hvsr_out['hvsr_az']
     hvsrDF = hvsr_out['hvsr_windows_df']
+
     if hvsr_out['ind_hvsr_curves'].shape[0] > 0:
-        #With arrays, original way of doing it
-        hvsr_log_std = np.nanstd(np.log10(hvsr_out['ind_hvsr_curves']), axis=0)
+        # With arrays, original way of doing it
+        hvsr_log_std = {}
+        for k in hvsr_out.keys():
+            if 'ind_hvsr_curves' in k:
+                hvsr_log_std[k] = np.nanstd(np.log10(hvsr_out[k]), axis=0)
 
         #With dataframe, updated way to use DF for all time-step tasks, still testing
-        stackedData = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'])
-        logStackedata = np.log10(stackedData).tolist()
-        for i, r in enumerate(logStackedata):
-            logStackedata[i] = np.array(r)
+        logStackedata = {}
+        hvsrp = {}
+        hvsrm = {}
+        hvsrp2 = {}
+        hvsrm2 = {}
+        hvsr_log_std = {}
+        for col_name in hvsr_out['hvsr_windows_df'].columns:
+            if "HV_Curves" in col_name:
+                if col_name == 'HV_Curves':
+                    colSuffix = ''
+                    colID = ''
+                else:
+                    colSuffix = '_'+col_name.split('_')[2]
+                    colID = col_name.split('_')[2]
+                stackedData = np.stack(hvsr_out['hvsr_windows_df'][col_name])
 
-        hvsr_out['hvsr_windows_df']['HV_Curves_Log10'] = logStackedata
-        hvsr_log_std = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['HV_Curves_Log10'][hvsrDF['Use']]), axis=0)
+                logStackedata = np.log10(stackedData).tolist()
+                for i, r in enumerate(logStackedata):
+                    logStackedata[i] = np.array(r)
 
-        #The componenets are already calculated, don't need to recalculate aren't calculated at the time-step level
-        hvsrp = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
-        hvsrm = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
-        hvsrp2 = np.multiply(hvsr, np.exp(hvsr_log_std))
-        hvsrm2 = np.divide(hvsr, np.exp(hvsr_log_std))
+                hvsr_out['hvsr_windows_df']['HV_Curves_Log10'+colSuffix] = logStackedata
+                hvsr_log_std[colID] = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['HV_Curves_Log10'+colSuffix][hvsrDF['Use']]), axis=0)
 
+                #The components are already calculated, don't need to recalculate aren't calculated at the time-step level
+                hvsrp[colID] = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
+                hvsrm[colID] = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
+                for k in hvsr_out['hvsr_az'].keys():
+                    hvsrp[colID] = np.add(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev_'+k])
+                    hvsrm[colID] = np.subtract(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev_'+k])
+                hvsrp2[colID] = np.multiply(hvsr, np.exp(hvsr_log_std))
+                hvsrm2[colID] = np.divide(hvsr, np.exp(hvsr_log_std))
 
-    newKeys = ['hvsr_log_std', 'hvsrp','hvsrm', 'hvsrp2','hvsrm2']
-    newVals = [hvsr_log_std,    hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
-    for i, nk in enumerate(newKeys):
-        hvsr_out[nk] = np.array(newVals[i])
+                newKeys = ['hvsr_log_std', 'hvsrp','hvsrm', 'hvsrp2','hvsrm2']
+                newVals = [hvsr_log_std,    hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
+                for i, nk in enumerate(newKeys):
+                    hvsr_out[nk][colID] = np.array(newVals[i][colID])
 
     return hvsr_out
 
