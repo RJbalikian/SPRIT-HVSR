@@ -10,7 +10,7 @@ import zoneinfo
 import numpy as np
 from obspy.core.utcdatetime import UTCDateTime
 
-try: # For distribution
+try:  # For distribution
     from sprit import sprit_hvsr
 except: #For testing
     import sprit_hvsr

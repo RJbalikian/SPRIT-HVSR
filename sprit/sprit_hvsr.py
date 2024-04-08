@@ -1102,8 +1102,9 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         hvsr_data = HVSRBatch(hvsr_data)
     else:
         if hvsr_data['ProcessingStatus']['OverallStatus']:
-            colIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
-            colIDList[0] = 'HV'
+            HVColIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
+            HVColIDList[0] = 'HV'
+   
 
             if not hvsr_band:
                 hvsr_band = [0.4,40]
@@ -1112,115 +1113,117 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
             anyK = list(hvsr_data['x_freqs'].keys())[0]
 
-            x = hvsr_data['x_freqs'][anyK] #Consistent for all curves
-            y = hvsr_data['hvsr_curve'] #Calculated based on "Use" column
-
-            scorelist = ['score', 'scored', 'best', 's']
-            maxlist = ['max', 'highest', 'm']
-            # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
-            try:
-                peak_val = float(peak_selection)
-                index_list = [np.argmin(np.abs(x - peak_val))]        
-            except:
-                # If score method is being used, get index list for __init_peaks()
-                if peak_selection in scorelist:
-                    index_list = hvsr_data['hvsr_peak_indices'] #Calculated based on hvsr_curve
-                elif peak_selection in maxlist:
-                    #Get max index as item in list for __init_peaks()
-                    startInd = np.argmin(np.abs(x - peak_freq_range[0]))
-                    endInd = np.argmin(np.abs(x - peak_freq_range[1]))
-                    if startInd > endInd:
-                        holder = startInd
-                        startInd = endInd
-                        endInd = holder
-                    subArrayMax = np.argmax(y[startInd:endInd])
-
-                    # If max val is in subarray, this will be the same as the max of curve
-                    # Otherwise, it will be the index of the value that is max within peak_freq_range
-                    index_list = [subArrayMax+startInd]
-            
-            hvsrp = hvsr_data['hvsrp'] #Calculated based on "Use" column
-            hvsrm = hvsr_data['hvsrm'] #Calculated based on "Use" column
-            
-            print(hvsr_data['hvsr_windows_df'].columns)
-            
-            for col_name in hvsr_data['hvsr_windows_df'].columns:
-                if 'CurvesPeakIndices'
-                hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices']
-            #hvsrPeaks = hvsr_data['ind_hvsr_peak_indices'] #Original calculation
-
-            hvsr_log_std = hvsr_data['hvsr_log_std']
-            peak_freq_range = hvsr_data['peak_freq_range']
-
-            #Do for hvsr
-            peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
-
-            peak = __check_curve_reliability(hvsr_data, peak)
-            peak = __check_clarity(x, y, peak, do_rank=True)
-
-            #Do for hvsrp
-            # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
-            if not np.isnan(np.sum(hvsrp)):
-                index_p = __find_peaks(hvsrp)
-            else:
-                index_p = list()
-
-            peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
-            peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
-
-            # Do for hvsrm
-            # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
-            if not np.isnan(np.sum(hvsrm)):
-                index_m = __find_peaks(hvsrm)
-            else:
-                index_m = list()
-
-            peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
-            peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
-
-            # Get standard deviation of time peaks
-            stdf = __get_stdf(x, index_list, hvsrPeaks)
-
-            peak = __check_freq_stability(peak, peakm, peakp)
-            peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
-
-            hvsr_data['PeakReport'] = peak
-
-            #Iterate through peaks and 
-            #   Get the BestPeak based on the peak score
-            #   Calculate whether each peak passes enough tests
-            curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
-            peakTests = ['PeakProminenceBelow', 'PeakProminenceAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
-            bestPeakScore = 0
-
-            for p in hvsr_data['PeakReport']:
-                #Get BestPeak
-                if p['Score'] > bestPeakScore:
-                    bestPeakScore = p['Score']
-                    bestPeak = p
-
-                #Calculate if peak passes criteria
-                cTestsPass = 0
-                pTestsPass = 0
-                for testName in p['PassList'].keys():
-                    if testName in curveTests:
-                        if p['PassList'][testName]:
-                            cTestsPass += 1
-                    elif testName in peakTests:
-                        if p['PassList'][testName]:
-                            pTestsPass += 1
-
-                if cTestsPass == 3 and pTestsPass >= 5:
-                    p['PeakPasses'] = True
+            for i, col_id in enumerate(HVColIDList):
+                x = hvsr_data['x_freqs'][anyK]  #Consistent for all curves
+                print(col_id)
+                print(hvsr_data['hvsr_az'].keys())
+                if col_id == 'HV':
+                    y = hvsr_data['hvsr_curve']  #Calculated based on "Use" column            
                 else:
-                    p['PeakPasses'] = False
+                    y = hvsr_data['hvsr_az'][col_id]
                 
-            #Designate BestPeak in output dict
-            if len(hvsr_data['PeakReport']) == 0:
-                bestPeak={}
-                print(f"No Best Peak identified for {hvsr_data['site']}")
+                scorelist = ['score', 'scored', 'best', 's']
+                maxlist = ['max', 'highest', 'm']
+                # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
+                try:
+                    peak_val = float(peak_selection)
+                    index_list = [np.argmin(np.abs(x - peak_val))]        
+                except:
+                    # If score method is being used, get index list for __init_peaks()
+                    if peak_selection in scorelist:
+                        index_list = hvsr_data['hvsr_peak_indices'][col_id] #Calculated based on hvsr_curve
+                    elif peak_selection in maxlist:
+                        #Get max index as item in list for __init_peaks()
+                        startInd = np.argmin(np.abs(x - peak_freq_range[0]))
+                        endInd = np.argmin(np.abs(x - peak_freq_range[1]))
+                        if startInd > endInd:
+                            holder = startInd
+                            startInd = endInd
+                            endInd = holder
+                        subArrayMax = np.argmax(y[startInd:endInd])
 
-            hvsr_data['BestPeak'] = bestPeak
+                        # If max val is in subarray, this will be the same as the max of curve
+                        # Otherwise, it will be the index of the value that is max within peak_freq_range
+                        index_list = [subArrayMax+startInd]
+                
+                hvsrp = hvsr_data['hvsrp']  #Calculated based on "Use" column
+                hvsrm = hvsr_data['hvsrm']  #Calculated based on "Use" column
+                
+                hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
+
+
+                hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
+                peak_freq_range = hvsr_data['peak_freq_range']
+
+                #Do for hvsr
+                peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
+
+                peak = __check_curve_reliability(hvsr_data, peak, col_id)
+                peak = __check_clarity(x, y, peak, do_rank=True)
+
+                #Do for hvsrp
+                # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
+                if not np.isnan(np.sum(hvsrp)):
+                    index_p = __find_peaks(hvsrp)
+                else:
+                    index_p = list()
+
+                peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
+                peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
+
+                # Do for hvsrm
+                # Find  the relative extrema of hvsrm (hvsr - 1 standard deviation)
+                if not np.isnan(np.sum(hvsrm)):
+                    index_m = __find_peaks(hvsrm)
+                else:
+                    index_m = list()
+
+                peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
+                peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
+
+                # Get standard deviation of time peaks
+                stdf = __get_stdf(x, index_list, hvsrPeaks)
+
+                peak = __check_freq_stability(peak, peakm, peakp)
+                peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
+
+                hvsr_data['PeakReport'][col_id] = peak
+
+                #Iterate through peaks and 
+                #   Get the BestPeak based on the peak score
+                #   Calculate whether each peak passes enough tests
+                curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
+                peakTests = ['PeakProminenceBelow', 'PeakProminenceAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
+                bestPeakScore = 0
+
+                for p in hvsr_data['PeakReport'][col_id]:
+                    #Get BestPeak
+                    if p['Score'] > bestPeakScore:
+                        bestPeakScore = p['Score']
+                        bestPeak = p
+
+                    # Calculate if peak passes criteria
+                    cTestsPass = 0
+                    pTestsPass = 0
+                    for testName in p['PassList'].keys():
+                        if testName in curveTests:
+                            if p['PassList'][testName]:
+                                cTestsPass += 1
+                        elif testName in peakTests:
+                            if p['PassList'][testName]:
+                                pTestsPass += 1
+
+                    if cTestsPass == 3 and pTestsPass >= 5:
+                        p['PeakPasses'] = True
+                    else:
+                        p['PeakPasses'] = False
+                        
+                #Designate BestPeak in output dict
+                if len(hvsr_data['PeakReport'][col_id]) == 0:
+                    bestPeak = {}
+                    print(f"No Best Peak identified for {hvsr_data['site']}")
+
+                hvsr_data['BestPeak'][col_id] = bestPeak
         else:
             hvsr_data['BestPeak'] = {}
             print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']}")
@@ -1232,7 +1235,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         hvsr_data['processing_parameters']['check_peaks'] = {}
         for key, value in orig_args.items():
             hvsr_data['processing_parameters']['check_peaks'][key] = value
-
 
     return hvsr_data
 
@@ -2025,9 +2027,9 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 curr_stats = curr_trace.stats
                 ppsd_curr = PPSD(curr_stats, paz['E'], **ppsd_kwargs)        
                 has_az = True
-                ppsdName = curr_trace.stats.channel +"_"+ curr_trace.stats.location
+                ppsdName = curr_trace.stats.location
                 ppsd_curr.add(rStream)
-                ppsds[ppsdName[-5:]] = ppsd_curr
+                ppsds[ppsdName] = ppsd_curr
         
         # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
         hvsr_data['ppsds_obspy'] = ppsds
@@ -2124,7 +2126,6 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         for k in hvsr_data['ppsds'].keys():
             if k.upper() not in ['Z', 'E', 'N']:
                 hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
-
 
         hvsrDF['TimesProcessed_Obspy'] = common_times[i]
         hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
@@ -3343,7 +3344,6 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         psdRaw={}
         currTimesUsed={}
         hvsrDF = hvsr_data['hvsr_windows_df']
-
         def move_avg(y, box_pts):
             #box = np.ones(box_pts)/box_pts
             box = np.hanning(box_pts)
@@ -3566,12 +3566,12 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
         #Get peaks for each time step
         hvsr_out['ind_hvsr_peak_indices'] = {}
-        hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
+        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
         for col_name in hvsr_out['hvsr_windows_df'].columns:
             if "HV_Curves" in col_name:
                 tStepPeaks = []
                 if len(col_name.split('_')) > 2:
-                    colSuffix = '_'.join(col_name.split('_')[2:])
+                    colSuffix = "_"+'_'.join(col_name.split('_')[2:])
                 else:
                     colSuffix = '_HV'
 
@@ -5167,7 +5167,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
 
     windows_samples = []
     for t, cf in enumerate(cFunList):
-        if obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]) != []:
+        if len(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]))>0:
             windows_samples.extend(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]).tolist())
     
     def condense_window_samples(win_samples):
@@ -6186,7 +6186,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
             # Do azimuth HVSR Calculations, if applicable
             hvratio_az = 0
             for k in psd.keys():
-                if 'R' in k:
+                if k.lower() not in ['z', 'e', 'n']:
                     psd_az = [psd[k][j], psd[k][j + 1]]
                     hvratio_az = __get_hvsr(psd0, psd_az, None, f, use_method='az')
                     if j == 0:
@@ -6330,7 +6330,7 @@ def __gethvsrparams(hvsr_out):
     hvsr_log_std = {}
 
     hvsr = hvsr_out['hvsr_curve']
-    hvsr_as = hvsr_out['hvsr_az']
+    hvsr_az = hvsr_out['hvsr_az']
     hvsrDF = hvsr_out['hvsr_windows_df']
 
     if len(hvsr_out['ind_hvsr_curves'].keys()) > 0:
@@ -6349,11 +6349,11 @@ def __gethvsrparams(hvsr_out):
         for col_name in hvsr_out['hvsr_windows_df'].columns:
             if "HV_Curves" in col_name:
                 if col_name == 'HV_Curves':
-                    colSuffix = ''
+                    colSuffix = '_HV'
                     colID = 'HV'
                 else:
-                    colSuffix = '_'+col_name.split('_')[2]
-                    colID = col_name.split('_')[2]
+                    colSuffix = '_'+'_'.join(col_name.split('_')[2:])
+                    colID = colSuffix.split('_')[1]
                 stackedData = np.stack(hvsr_out['hvsr_windows_df'][col_name])
 
                 logStackedata = np.log10(stackedData).tolist()
@@ -7250,7 +7250,7 @@ def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _mi
 
 
 # Check reliability of HVSR of curve
-def __check_curve_reliability(hvsr_data, _peak):
+def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
     """Tests to check for reliable H/V curve
 
     Tests include:
@@ -7304,13 +7304,13 @@ def __check_curve_reliability(hvsr_data, _peak):
             if freq >= halfF0 and freq <doublef0:
                 compVal = 2
                 if peakFreq >= 0.5:
-                    if hvsr_data['hvsr_log_std'][i] >= compVal:
+                    if hvsr_data['hvsr_log_std'][col_id][i] >= compVal:
                         test3=False
                         failCount +=1
 
                 else: #if peak freq is less than 0.5
                     compVal = 3
-                    if hvsr_data['hvsr_log_std'][i] >= compVal:
+                    if hvsr_data['hvsr_log_std'][col_id][i] >= compVal:
                         test3=False
                         failCount +=1
 
