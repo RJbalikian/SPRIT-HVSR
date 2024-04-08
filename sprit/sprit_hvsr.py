@@ -1019,7 +1019,12 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
             radial_trace = obspy.Trace(data=radial_comp_data, header=statsDict)
             hvsr_data['stream'].append(radial_trace)
     
-    print(hvsr_data.stream)
+    # Verbose printing
+    if verbose and not isinstance(hvsr_data, HVSRBatch):
+        dataINStr = hvsr_data.stream.__str__().split('\n')
+        for line in dataINStr:
+            print('\t\t', line)
+    
     return hvsr_data
 
 #Quality checks, stability tests, clarity tests
@@ -1097,6 +1102,9 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         hvsr_data = HVSRBatch(hvsr_data)
     else:
         if hvsr_data['ProcessingStatus']['OverallStatus']:
+            colIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
+            colIDList[0] = 'HV'
+
             if not hvsr_band:
                 hvsr_band = [0.4,40]
             
@@ -1133,8 +1141,12 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
             
             hvsrp = hvsr_data['hvsrp'] #Calculated based on "Use" column
             hvsrm = hvsr_data['hvsrm'] #Calculated based on "Use" column
-
-            hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices']
+            
+            print(hvsr_data['hvsr_windows_df'].columns)
+            
+            for col_name in hvsr_data['hvsr_windows_df'].columns:
+                if 'CurvesPeakIndices'
+                hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices']
             #hvsrPeaks = hvsr_data['ind_hvsr_peak_indices'] #Original calculation
 
             hvsr_log_std = hvsr_data['hvsr_log_std']
@@ -1863,7 +1875,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
-            print('\t', line)
+            print('\t\t', line)
     
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
@@ -3542,11 +3554,15 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 outlier_curve_rmse_percentile = 98
             hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
   
+        hvsr_out['ind_hvsr_stdDev'] = {}
         for col_name in hvsr_out['hvsr_windows_df'].columns:
             if "HV_Curves" in col_name:
-                newName = col_name.replace('HV_Curves', 'ind_hvsr_stdDev')
+                if col_name == 'HV_Curves':
+                    keyID = 'HV'
+                else:
+                    keyID = col_name.split('_')[2]
                 curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
-                hvsr_out[newName] = np.nanstd(curr_indHVCurvesArr, axis=0)
+                hvsr_out['ind_hvsr_stdDev'][keyID] = np.nanstd(curr_indHVCurvesArr, axis=0)
 
         #Get peaks for each time step
         hvsr_out['ind_hvsr_peak_indices'] = {}
@@ -3555,7 +3571,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             if "HV_Curves" in col_name:
                 tStepPeaks = []
                 if len(col_name.split('_')) > 2:
-                    colSuffix = '_'+col_name.split('_')[2]
+                    colSuffix = '_'.join(col_name.split('_')[2:])
                 else:
                     colSuffix = '_HV'
 
@@ -3595,9 +3611,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         #Get frequency values at HV peaks in main curve
         hvsr_out['hvsr_peak_freqs'] = {}
         for k in hvsr_out['hvsr_peak_indices'].keys():
-            print(k)
             hvsrPF = []
-            for p in hvsr_out[k]:
+            for p in hvsr_out['hvsr_peak_indices'][k]:
                 hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
             hvsr_out['hvsr_peak_freqs'][k] = np.array(hvsrPF)
 
@@ -3949,11 +3964,20 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     else:  
         #Create plot if designated        
         if not use_hv_curve:
-            compNames = ['Z', 'E', 'N']
+            for col_name in hvsr_data['hvsr_windows_df'].columns:
+                compNames = []
+                if 'psd_values' in col_name:
+                    compNames.append('_'.join(col_name.split('_')[2:]))
             colNames = compNames
         else:
-            compNames=['HV Curve']
+            for col_name in hvsr_data['hvsr_windows_df'].columns:
+                compNames = []
+                if 'HV_Curves' in col_name:
+                    compNames.append('_'.join(col_name.split('_')[2:]))
+
+            compNames = ['HV Curve']
             colNames = ['HV_Curves']
+        
         if show_outlier_plot:
             if use_hv_curve:
                 spMosaic = ['HV Curve']
@@ -6309,12 +6333,11 @@ def __gethvsrparams(hvsr_out):
     hvsr_as = hvsr_out['hvsr_az']
     hvsrDF = hvsr_out['hvsr_windows_df']
 
-    if len(hvsr_out['ind_hvsr_curves']).keys() > 0:
+    if len(hvsr_out['ind_hvsr_curves'].keys()) > 0:
         # With arrays, original way of doing it
         hvsr_log_std = {}
-        for k in hvsr_out.keys():
-            if 'ind_hvsr_curves' in k:
-                hvsr_log_std[k] = np.nanstd(np.log10(hvsr_out[k]), axis=0)
+        for k in hvsr_out['ind_hvsr_curves'].keys():
+            hvsr_log_std[k] = np.nanstd(np.log10(hvsr_out['ind_hvsr_curves'][k]), axis=0)
 
         #With dataframe, updated way to use DF for all time-step tasks, still testing
         logStackedata = {}
@@ -6327,7 +6350,7 @@ def __gethvsrparams(hvsr_out):
             if "HV_Curves" in col_name:
                 if col_name == 'HV_Curves':
                     colSuffix = ''
-                    colID = ''
+                    colID = 'HV'
                 else:
                     colSuffix = '_'+col_name.split('_')[2]
                     colID = col_name.split('_')[2]
@@ -6341,17 +6364,19 @@ def __gethvsrparams(hvsr_out):
                 hvsr_log_std[colID] = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['HV_Curves_Log10'+colSuffix][hvsrDF['Use']]), axis=0)
 
                 #The components are already calculated, don't need to recalculate aren't calculated at the time-step level
-                hvsrp[colID] = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
-                hvsrm[colID] = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'])
+                hvsrp[colID] = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'][colID])
+                hvsrm[colID] = np.subtract(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'][colID])
                 for k in hvsr_out['hvsr_az'].keys():
-                    hvsrp[colID] = np.add(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev_'+k])
-                    hvsrm[colID] = np.subtract(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev_'+k])
-                hvsrp2[colID] = np.multiply(hvsr, np.exp(hvsr_log_std))
-                hvsrm2[colID] = np.divide(hvsr, np.exp(hvsr_log_std))
+                    hvsrp[colID] = np.add(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev'][colID])
+                    hvsrm[colID] = np.subtract(hvsr_out['hvsr_az'][k], hvsr_out['ind_hvsr_stdDev'][colID])
+                hvsrp2[colID] = np.multiply(hvsr, np.exp(hvsr_log_std[colID]))
+                hvsrm2[colID] = np.divide(hvsr, np.exp(hvsr_log_std[colID]))
 
                 newKeys = ['hvsr_log_std', 'hvsrp','hvsrm', 'hvsrp2','hvsrm2']
                 newVals = [hvsr_log_std,    hvsrp,  hvsrm,   hvsrp2,  hvsrm2]
                 for i, nk in enumerate(newKeys):
+                    if nk not in hvsr_out.keys():
+                        hvsr_out[nk] = {}
                     hvsr_out[nk][colID] = np.array(newVals[i][colID])
 
     return hvsr_out
