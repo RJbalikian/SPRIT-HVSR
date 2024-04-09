@@ -673,7 +673,7 @@ def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
     if azimuth:
         try:
             azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(azimuth).parameters.keys())}
-            dataIN = azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
+            dataIN = calculate_azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
             #Reformat data so HVSRData and HVSRBatch data both work here
             if isinstance(dataIN, HVSRData):
@@ -840,7 +840,7 @@ def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
     return hvsr_results
 
 # Function to generate azimuthal readings from the horizontal components
-def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False):
+def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
 
     Parameters
@@ -876,10 +876,10 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
-        if 'azimuth' in hvsr_data['processing_parameters'].keys():
-            for k, v in hvsr_data['processing_parameters']['azimuth'].items():
-                defaultVDict = dict(zip(inspect.getfullargspec(azimuth).args[1:], 
-                                        inspect.getfullargspec(azimuth).defaults))
+        if 'calculate_azimuth' in hvsr_data['processing_parameters'].keys():
+            for k, v in hvsr_data['processing_parameters']['calculate_azimuth'].items():
+                defaultVDict = dict(zip(inspect.getfullargspec(calculate_azimuth).args[1:], 
+                                        inspect.getfullargspec(calculate_azimuth).defaults))
                 # Manual input to function overrides the imported parameter values
                 if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
@@ -893,7 +893,7 @@ def azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='
         if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
             pass
         else:
-            print('\nGenerating azimuthal data (azimuth())')
+            print('\nGenerating azimuthal data (calculate_azimuth())')
             print('\tUsing the following parameters:')
             for key, value in orig_args.items():
                 if key=='hvsr_data':
@@ -1113,10 +1113,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
             anyK = list(hvsr_data['x_freqs'].keys())[0]
 
+            hvsr_data['PeakReport'] = {}
+            hvsr_data['BestPeak'] = {}
             for i, col_id in enumerate(HVColIDList):
                 x = hvsr_data['x_freqs'][anyK]  #Consistent for all curves
-                print(col_id)
-                print(hvsr_data['hvsr_az'].keys())
                 if col_id == 'HV':
                     y = hvsr_data['hvsr_curve']  #Calculated based on "Use" column            
                 else:
@@ -1146,11 +1146,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                         # Otherwise, it will be the index of the value that is max within peak_freq_range
                         index_list = [subArrayMax+startInd]
                 
-                hvsrp = hvsr_data['hvsrp']  #Calculated based on "Use" column
-                hvsrm = hvsr_data['hvsrm']  #Calculated based on "Use" column
+                hvsrp = hvsr_data['hvsrp'][col_id]  #Calculated based on "Use" column
+                hvsrm = hvsr_data['hvsrm'][col_id]  #Calculated based on "Use" column
                 
                 hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
-
 
                 hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
                 peak_freq_range = hvsr_data['peak_freq_range']
@@ -1225,7 +1224,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
                 hvsr_data['BestPeak'][col_id] = bestPeak
         else:
-            hvsr_data['BestPeak'] = {}
+            hvsr_data['BestPeak'][azimuth] = {}
             print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']}")
             try:
                 hvsr_data.plot()
@@ -2058,7 +2057,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
                                                     hvsr_data['ppsds']['E'][m],
                                                     hvsr_data['ppsds']['N'][m]]))
-                
+
                 common_times = []
                 for currTime in unique_times:
                     if currTime in hvsr_data['ppsds']['Z'][m]:
@@ -2117,7 +2116,6 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                             colList.append(str(tk)+'_'+k)
                             currTStepList.append(time_data[tk][i][currTStep[i]])
 
-            # NEED TO GET AZIMUTHAL PSDS IN HERE!!
             dfList.append(currTStepList)
         
         hvsrDF = pd.DataFrame(dfList, columns=colList)
@@ -2127,7 +2125,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             if k.upper() not in ['Z', 'E', 'N']:
                 hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
 
-        hvsrDF['TimesProcessed_Obspy'] = common_times[i]
+        hvsrDF['TimesProcessed_Obspy'] = common_times
         hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
         #    colList.append('TimesProcessed_Obspy')
         #    currTStepList.append(common_times[i])            
@@ -2266,7 +2264,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
+def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -2282,6 +2280,8 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 - list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
     plot_type : str, default = 'HVSR p ann C+ p ann Spec
         What type of plot to plot, if 'plot' part of report_format input
+    azimuth : str, default = 'HV'
+        Which azimuth to plot, by default "HV" which is the main "azimuth" combining the E and N components
     export_path : None, bool, or filepath, default = None
         If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
@@ -2372,23 +2372,22 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 else:
                     csvExportPath = csvExportPath.parent
                 
-            combined_csvReport.to_csv(csvExportPath, index=False)
-        
+            combined_csvReport.to_csv(csvExportPath, index=False)       
     else:       
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
-            curvTestsPassed = (hvsr_results['BestPeak']['PassList']['WindowLengthFreq.'] +
-                                hvsr_results['BestPeak']['PassList']['SignificantCycles']+
-                                hvsr_results['BestPeak']['PassList']['LowCurveStDevOverTime'])
+            curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
+                                hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
+                                hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime'])
             curvePass = curvTestsPassed > 2
             
             #Peak Pass?
-            peakTestsPassed = ( hvsr_results['BestPeak']['PassList']['PeakProminenceBelow'] +
-                        hvsr_results['BestPeak']['PassList']['PeakProminenceAbove']+
-                        hvsr_results['BestPeak']['PassList']['PeakAmpClarity']+
-                        hvsr_results['BestPeak']['PassList']['FreqStability']+
-                        hvsr_results['BestPeak']['PassList']['PeakStability_FreqStD']+
-                        hvsr_results['BestPeak']['PassList']['PeakStability_AmpStD'])
+            peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceBelow'] +
+                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceAbove']+
+                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
+                        hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
+                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
+                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD'])
             peakPass = peakTestsPassed >= 5
         except Exception as e:
             errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
@@ -2510,11 +2509,11 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                 if 'BestPeak' not in hvsr_results.keys():
                     report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
                 else:
-                    report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak']['f0']))        
+                    report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak'][azimuth]['f0']))        
                     if curvePass and peakPass:
-                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak']['f0'],3)))
+                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
                     else:
-                        report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak']['f0'],3)))            
+                        report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
                     report_string_list.append('')
                     report_string_list.append(internalSeparator)
                     report_string_list.append('')
@@ -2522,22 +2521,22 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     justSize=34
                     #Print individual results
                     report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Lw']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Nc']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['σ_A(f)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Lw']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Nc']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)']}")
 
                     report_string_list.append('')
                     report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['A(f-)']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['A(f+)']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['A0']}")
-                    if hvsr_results['BestPeak']['PassList']['FreqStability']:
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f-)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f+)']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A0']}")
+                    if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
                         res = sprit_utils.check_mark()
                     else:
                         res = sprit_utils.x_mark()
-                    report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak']['Report']['P-'][:5]} and {hvsr_results['BestPeak']['Report']['P+'][:-1]} {res}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Sf']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak']['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak']['Report']['Sa']}")
+                    report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5]} and {hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1]} {res}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
+                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
                 report_string_list.append('')
                 report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
                 report_string_list.append(extSiteSeparator)
@@ -2554,7 +2553,7 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     print(reportStr)
 
                 export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak']['Report']['Print_Report'] = reportStr
+                hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
                 hvsr_results['Print_Report'] = reportStr
 
             elif _report_format=='csv':
@@ -2564,10 +2563,10 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                         'PeakProminenceBelow','PeakProminenceAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
                 d = hvsr_results
                 criteriaList = []
-                for p in hvsr_results['BestPeak']["PassList"]:
-                    criteriaList.append(hvsr_results['BestPeak']["PassList"][p])
-                criteriaList.append(hvsr_results['BestPeak']["PeakPasses"])
-                dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak']['f0'], 3)]]
+                for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
+                    criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
+                criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
+                dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
 
@@ -2602,14 +2601,14 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
                     export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
                 except:
                     print("Error in exporting csv report. CSV not exported")
-                hvsr_results['BestPeak']['Report']['CSV_Report'] = outDF
+                hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
                 hvsr_results['CSV_Report'] = outDF
                         
             elif _report_format=='plot':
                 fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, show=False, return_fig=True)
 
                 export_report(export_obj=fig_ax[0], _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak']['Report']['HV_Plot']=hvsr_results['HV_Plot']=fig_ax
+                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot']=fig_ax
 
                 print('\nPlot of data report:')
                 plt.show()
@@ -2631,7 +2630,6 @@ def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p a
         hvsr_results['processing_parameters']['get_report'] = {}
         for key, value in orig_args.items():
             hvsr_results['processing_parameters']['get_report'][key] = value
-
     return hvsr_results
 
 #Import data
@@ -2916,7 +2914,7 @@ def input_params(datapath,
     return params
 
 #Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -2940,6 +2938,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
         - 'SPEC' - spectrogram style plot of the H/V curve over time
             - 'p' shows a horizontal dotted line at the frequency of the "best" peak
             - 'ann' annotates the frequency value of the "best" peak
+    azimuth : str, default = 'HV'
+        What 'azimuth' to plot, default being standard N E components combined
     use_subplots : bool, default = True
         Whether to output the plots as subplots (True) or as separate plots (False)
     fig : matplotlib.Figure, default = None
@@ -3063,17 +3063,17 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', use_subplots=True
                     
             if p == 'hvsr':
                 kwargs['p'] = 'hvsr'
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='comp':
                 plotComponents[0] = plotComponents[0][:-1]
-                kwargs['p']=='comp'
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                kwargs['p'] == 'comp'
+                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p=='spec':
                 plottypeKwargs = {}
                 for c in plotComponents:
                     plottypeKwargs[c] = True
                 kwargs.update(plottypeKwargs)
-                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, colorbar=False, **kwargs)
+                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
@@ -4356,15 +4356,15 @@ def _get_report_batch(**get_report_kwargs):
 #Helper function for batch procesing of azimuth
 def __azimuth_batch(**azimuth_kwargs):
     try:
-        hvsr_data = azimuth(**azimuth_kwargs)
+        hvsr_data = calculate_azimuth(**azimuth_kwargs)
 
         if azimuth_kwargs['verbose']:
             if 'input_params' in hvsr_data.keys():
-                print('\t{} successfully completed azimuth()'.format(hvsr_data['input_params']['site']))
+                print('\t{} successfully completed calculate_azimuth()'.format(hvsr_data['input_params']['site']))
             elif 'site' in hvsr_data.keys():
-                print('\t{} successfully completed azimuth()'.format(hvsr_data['site']))
+                print('\t{} successfully completed calculate_azimuth()'.format(hvsr_data['site']))
     except Exception as e:
-        warnings.warn(f"Error in azimuth({azimuth_kwargs['input']['site']}, **azimuth_kwargs)", RuntimeWarning)
+        warnings.warn(f"Error in calculate_azimuth({azimuth_kwargs['input']['site']}, **azimuth_kwargs)", RuntimeWarning)
 
     return hvsr_data
 
@@ -6383,7 +6383,7 @@ def __gethvsrparams(hvsr_out):
 
 ##Helper Functions for plotting
 #Plot hvsr curve, private supporting function for plot_hvsr
-def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_dir=None, save_suffix='', show=True, **kwargs):
+def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
     if 'kwargs' in kwargs.keys():
@@ -6398,10 +6398,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_data['hvsrp2'])*1.05]
+        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.05]
         if ylim[1] > 25:
             ylim = [0, max(hvsr_data['hvsr_curve']+1)]
-
     else:
         ylim = kwargs['ylim']
     
@@ -6423,19 +6422,19 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     x = hvsr_data[xtype][anyKey][:-1]
     y = hvsr_data['hvsr_curve']
     
-    plotSuff=''
+    plotSuff = ''
     legendLoc = 'upper right'
     
     plotHVSR = False
     for item in plot_type:
         if item.lower()=='hvsr':
-            plotHVSR=True
+            plotHVSR = True
             ax.plot(x, y, color='k', label='H/V Ratio', zorder=1000)
-            plotSuff='HVSRCurve_'
+            plotSuff = 'HVSRCurve_'
             if '-s' not in plot_type:
-                ax.fill_between(x, hvsr_data['hvsrm2'], hvsr_data['hvsrp2'], color='k', alpha=0.2, label='StDev',zorder=997)
-                ax.plot(x, hvsr_data['hvsrm2'], color='k', alpha=0.25, linewidth=0.5, zorder=998)
-                ax.plot(x, hvsr_data['hvsrp2'], color='k', alpha=0.25, linewidth=0.5, zorder=999)
+                ax.fill_between(x, hvsr_data['hvsrm2'][azimuth], hvsr_data['hvsrp2'][azimuth], color='k', alpha=0.2, label='StDev',zorder=997)
+                ax.plot(x, hvsr_data['hvsrm2'][azimuth], color='k', alpha=0.25, linewidth=0.5, zorder=998)
+                ax.plot(x, hvsr_data['hvsrp2'][azimuth], color='k', alpha=0.25, linewidth=0.5, zorder=999)
             else:
                 plotSuff = plotSuff+'noStdDev_'
             break
@@ -6448,8 +6447,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
     ax.tick_params(axis='y', labelsize=5)
     ax.set_title(hvsr_data['input_params']['site'])
 
-    f0 = hvsr_data['BestPeak']['f0']
-    a0 = hvsr_data['BestPeak']['A0']
+    f0 = hvsr_data['BestPeak'][azimuth]['f0']
+    a0 = hvsr_data['BestPeak'][azimuth]['A0']
     f0_div4 = f0/4
     f0_mult4 = f0*4
     a0_div2 = a0/2
@@ -6463,7 +6462,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             plotSuff=plotSuff+'BestPeak_'
             
             bestPeakScore = 0
-            for i, p in enumerate(hvsr_data['PeakReport']):
+            for i, p in enumerate(hvsr_data['PeakReport'][azimuth]):
                 if p['Score'] > bestPeakScore:
                     bestPeakScore = p['Score']
                     bestPeak = p
@@ -6544,15 +6543,15 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
 
 
                 # Plot line showing where test succeeds or not
-                if hvsr_data['BestPeak']['Report']['A(f-)'][-1] == sprit_utils.x_mark():
-                    lowf2 = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-3])
-                    hif2 = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-2])
-                    ym = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
+                if hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'][-1] == sprit_utils.x_mark():
+                    lowf2 = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-3])
+                    hif2 = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[-2])
+                    ym = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
                     yp = min(newCurveList)
                     ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
                 else:
-                    #fpass = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
-                    #fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[5])
+                    #fpass = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[3])
+                    #fpassAmp = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f-)'].replace('Hz', '').replace('-', '').split()[5])
                     ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
                     minF = newFreqList[np.argmin(newCurveList)]
                     minA = min(newCurveList)
@@ -6595,15 +6594,15 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                         newCurveList.append(hvsr_data.hvsr_curve[ind])
                 curveTestList = list(np.ones_like(newFreqList) * a0_div2)
 
-                if hvsr_data['BestPeak']['Report']['A(f+)'][-1] == sprit_utils.x_mark():
-                    lowf2 = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-3])
-                    hif2 = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-2])
-                    ym = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                if hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'][-1] == sprit_utils.x_mark():
+                    lowf2 = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-3])
+                    hif2 = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[-2])
+                    ym = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
                     yp = min(newCurveList)
                     ax.fill_betweenx(y=[ym, yp], x1=lowf2, x2=hif2, alpha=0.1, color='r')
                 else:
-                    #fpass = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
-                    #fpassAmp = float(hvsr_data['BestPeak']['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
+                    #fpass = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[3])
+                    #fpassAmp = float(hvsr_data['BestPeak'][azimuth]['Report']['A(f+)'].replace('Hz', '').replace('-', '').split()[5])
                     ax.fill_between(newFreqList, y1=newCurveList, y2=curveTestList, where=np.array(newCurveList)<=a0_div2, color='g', alpha=0.2)
                     minF = newFreqList[np.argmin(newCurveList)]
                     minA = min(newCurveList)
@@ -6625,8 +6624,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
             if '3' in k:
                 if 'c' in k:
                     #Plot curve test3
-                    lowfc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[0]
-                    hifc3 = hvsr_data['BestPeak']['Report']['σ_A(f)'].split(' ')[4].split('-')[1].replace('Hz', '')
+                    lowfc3 = hvsr_data['BestPeak'][azimuth]['Report']['σ_A(f)'].split(' ')[4].split('-')[0]
+                    hifc3 = hvsr_data['BestPeak'][azimuth]['Report']['σ_A(f)'].split(' ')[4].split('-')[1].replace('Hz', '')
                     pass # May not even finish this
                 
                 lcolor='r'
@@ -6643,8 +6642,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                         peakPoint = True
                         peakLine = True
             if '4' in k:
-                lowf4 = float(hvsr_data['BestPeak']['Report']['P-'].split(' ')[0])
-                hif4 = float(hvsr_data['BestPeak']['Report']['P+'].split(' ')[0])
+                lowf4 = float(hvsr_data['BestPeak'][azimuth]['Report']['P-'].split(' ')[0])
+                hif4 = float(hvsr_data['BestPeak'][azimuth]['Report']['P+'].split(' ')[0])
                 m2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrm2)]#, np.max(hvsr_data.hvsrm2))
                 p2Max = hvsr_data.x_freqs["Z"][np.argmax(hvsr_data.hvsrp2)]#, np.max(hvsr_data.hvsrp2))
 
@@ -6664,15 +6663,15 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                     ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
                     peakPoint = True
             if '5' in k:
-                sf = float(hvsr_data['BestPeak']['Report']['Sf'].split(' ')[4].strip('()'))
+                sf = float(hvsr_data['BestPeak'][azimuth]['Report']['Sf'].split(' ')[4].strip('()'))
                 sfp = f0+sf
                 sfm = f0-sf
 
-                sfLim = float(hvsr_data['BestPeak']['Report']['Sf'].split(' ')[-2])
+                sfLim = float(hvsr_data['BestPeak'][azimuth]['Report']['Sf'].split(' ')[-2])
                 sfLimp = f0+sfLim
                 sfLimm = f0-sfLim
 
-                if hvsr_data['BestPeak']['Report']['Sf'][-1] == sprit_utils.check_mark():
+                if hvsr_data['BestPeak'][azimuth]['Report']['Sf'][-1] == sprit_utils.check_mark():
                     xColor = 'g'
                 else:
                     xColor='r'
@@ -6684,15 +6683,15 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, save_
                     ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
                     peakPoint = True
             if '6' in k:
-                sa = float(hvsr_data['BestPeak']['Report']['Sa'].split(' ')[4].strip('()'))
+                sa = float(hvsr_data['BestPeak'][azimuth]['Report']['Sa'].split(' ')[4].strip('()'))
                 sap = a0+sa
                 sam = a0-sa
 
-                saLim = float(hvsr_data['BestPeak']['Report']['Sa'].split(' ')[-2])
+                saLim = float(hvsr_data['BestPeak'][azimuth]['Report']['Sa'].split(' ')[-2])
                 saLimp = a0+saLim
                 saLimm = a0-saLim
 
-                if hvsr_data['BestPeak']['Report']['Sa'][-1] == sprit_utils.check_mark():
+                if hvsr_data['BestPeak'][azimuth]['Report']['Sa'][-1] == sprit_utils.check_mark():
                     xColor = 'g'
                 else:
                     xColor='r'
@@ -6815,7 +6814,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     return
 
 #Plot specgtrogram, private supporting function for plot_hvsr
-def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix='',**kwargs):
+def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
     # Get all input parameters
@@ -6913,7 +6912,6 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     freqticks = np.logspace(np.log10(freqticks[0]), np.log10(freqticks[-1]), num=999)
 
     extList = [xmin, xmax, ymin, ymax]
-
     #Set up axes
     ax.set_facecolor([0,0,0]) #Create black background for transparency to look darker
 
@@ -6930,10 +6928,10 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
     ax.tick_params(left=True, right=True, top=True)
 
     if peak_plot:
-        ax.axhline(hvsr_data['BestPeak']['f0'], c='k',  linestyle='dotted', zorder=1000)
+        ax.axhline(hvsr_data['BestPeak'][azimuth]['f0'], c='k',  linestyle='dotted', zorder=1000)
 
     if annotate:
-        if float(hvsr_data['BestPeak']['f0']) < 1:
+        if float(hvsr_data['BestPeak'][azimuth]['f0']) < 1:
             boxYPerc = 0.998
             vertAlign = 'top'
         else:
@@ -6941,7 +6939,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, save_dir=None, save_suffix
             vertAlign = 'bottom'
         xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
         yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(boxYPerc)
-        ann = ax.text(x=xLocation, y=yLocation, fontsize='x-small', s=f"Peak at {hvsr_data['BestPeak']['f0']:0.2f} Hz", ha='right', va=vertAlign, 
+        ann = ax.text(x=xLocation, y=yLocation, fontsize='x-small', s=f"Peak at {hvsr_data['BestPeak'][azimuth]['f0']:0.2f} Hz", ha='right', va=vertAlign, 
                       bbox={'alpha':0.8, 'edgecolor':None, 'linewidth':0, 'fc':'w', 'pad':0.3})
 
 

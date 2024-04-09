@@ -15,7 +15,7 @@ except:
 
 from sprit.sprit_hvsr import(
     run,
-    azimuth,
+    calculate_azimuth,
     export_data,
     export_settings,
     import_data,
@@ -62,7 +62,7 @@ from sprit.sprit_jupyter_UI import(
 
 __all__ =('sprit_hvsr',
             'run',
-            'azimuth',
+            'calculate_azimuth',
             'check_mark',
             'get_char',
             'time_it',
