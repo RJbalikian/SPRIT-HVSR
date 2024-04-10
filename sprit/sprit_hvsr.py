@@ -2633,7 +2633,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             hvsr_results['processing_parameters']['get_report'][key] = value
     return hvsr_results
 
-#Import data
+# Import data
 def import_data(import_filepath, data_format='pickle'):
     """Function to import .hvsr (or other extension) data exported using export_data() function
 
@@ -2655,7 +2655,7 @@ def import_data(import_filepath, data_format='pickle'):
         dataIN = import_filepath
     return dataIN
 
-#Import settings
+# Import settings
 def import_settings(settings_import_path, settings_import_type='instrument', verbose=False):
 
     allList = ['all', ':', 'both', 'any']
@@ -2677,7 +2677,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
                 procFile = settings_import_path.glob('*.proc')
     return settingsDict
 
-#Define input parameters
+# Define input parameters
 def input_params(datapath,
                 site='HVSR Site',
                 network='AM', 
@@ -2914,7 +2914,64 @@ def input_params(datapath,
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
-#Main function for plotting results
+# Plot Azimuth data
+def plot_azimuth(hvsr_data, show_peak=False):
+    """Plot azimuthal data in a radial plot"""
+    
+    fig = plt.figure()
+
+    hvsr_band = hvsr_data.hvsr_band
+    numAzs = len(hvsr_data.hvsr_az.keys())
+    azDataList = []
+    azExtraDataList = []
+    for k in hvsr_data.hvsr_az.keys():
+        currData = hvsr_data.hvsr_az[k]
+        azDataList.append(currData)
+        azExtraDataList.append(currData)
+    
+        freq = np.array(currData).shape[0]
+        az = np.logspace(np.log10(hvsr_band[0]), np.log10(hvsr_band[1]), freq)
+        a = np.linspace(0, np.pi, numAzs)
+        b = np.linspace(np.pi, 2*np.pi, numAzs)
+        r, th = np.meshgrid(az, a)
+        r2, th2 = np.meshgrid(az, b)
+
+    z = np.fliplr(np.array(azDataList))
+    # Set up plot
+    ax = plt.subplot(polar=True)
+    plt.semilogy()
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+    plt.xlim([0, np.pi*2])
+    plt.ylim([hvsr_band[1], hvsr_band[0]])
+
+    # Plot data
+    plt.pcolormesh(th, r, z, cmap = 'jet')
+    plt.pcolormesh(th2, r2, z, cmap = 'jet')
+
+    peakVals = []
+    peakThetas = []
+    for k in hvsr_data.hvsr_az.keys():
+        peakVals.append(hvsr_data.BestPeak[k]['f0'])
+        peakThetas.append(int(k))
+    peakThetas = peakThetas + (180+np.array(peakThetas)).tolist()
+    peakThetas = np.deg2rad(peakThetas).tolist()
+    peakVals = peakVals + peakVals
+    peakVals.append(peakVals[0])
+    peakThetas.append(peakThetas[0])
+    if show_peak:
+        plt.plot(peakThetas, peakVals, 'k', linestyle='dashed')
+    #plt.plot(a, r, ls='none', color = 'k') 
+
+    plt.title(hvsr_data['site'])
+    plt.grid(visible=False)#, which='both', alpha=0.5)
+    plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
+    plt.colorbar()
+    plt.show()
+
+    return fig, ax
+
+# Main function for plotting results
 def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
@@ -6469,7 +6526,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     f0_mult4 = f0*4
     a0_div2 = a0/2
 
-    #print("label='comp'" in str(ax.__dict__['_axes']))
+    # Predefine so only need to set True if True
     peakAmpAnn = False
     peakPoint = False
     peakLine = False
@@ -6767,18 +6824,22 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             #Plot individual components
             y={}
             for key in hvsr_data['psd_values_tavg']:
-                y[key] = hvsr_data['psd_values_tavg'][key][:-1]
-
-                if key == 'Z':
+                if key.upper() == 'Z':
                     pltColor = 'k'
-                elif key =='E':
+                elif key.upper() =='E':
                     pltColor = 'b'
-                elif key == 'N':
+                elif key.upper() == 'N':
                     pltColor = 'r'
+                else:
+                    pltColor = 'g'
 
-                compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
-                if '-s' not in plot_type:
-                    compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
+                if key.lower() in ['z', 'e', 'n'] or key == azimuth:
+                    y[key] = hvsr_data['psd_values_tavg'][key][:-1]
+                    compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
+                    
+                    if '-s' not in plot_type:
+                        compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
+
                 if plot_type[0] != 'c':
                     compAxis.legend(loc=legendLoc2)
             else:
@@ -7221,61 +7282,6 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         return fig, ax
     
     return
-
-# Plot Azimuth data
-def plot_azimuth(hvsr_data):
-    """Plot azimuthal data in a radial plot"""
-    
-    fig = plt.figure()
-
-    hvsr_band = [0.4, 40]
-    numAzs = len(hvsr_data.hvsr_az.keys())
-    azDataList = []
-    azExtraDataList = []
-    for k in hvsr_data.hvsr_az.keys():
-        currData = hvsr_data.hvsr_az[k]
-        azDataList.append(currData)
-        azExtraDataList.append(currData)
-    
-        freq = np.array(currData).shape[0]
-        az = np.logspace(np.log10(hvsr_band[0]), np.log10(hvsr_band[1]), freq)
-        a = np.linspace(0, np.pi, numAzs)
-        b = np.linspace(np.pi, 2*np.pi, numAzs)
-        r, th = np.meshgrid(az, a)
-        r2, th2 = np.meshgrid(az, b)
-
-    z = np.fliplr(np.array(azDataList))
-
-    ax = plt.subplot(polar=True)
-    plt.semilogy()
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)
-
-    plt.xlim([0, np.pi*2])
-    plt.ylim([hvsr_band[1], hvsr_band[0]])
-    plt.pcolormesh(th, r, z, cmap = 'jet')
-    plt.pcolormesh(th2, r2, z, cmap = 'jet')
-
-    peakVals = []
-    peakThetas = []
-    for k in hvsr_data.hvsr_az.keys():
-        peakVals.append(hvsr_data.BestPeak[k]['f0'])
-        peakThetas.append(int(k))
-    peakThetas = peakThetas + (180+np.array(peakThetas)).tolist()
-    peakThetas = np.deg2rad(peakThetas).tolist()
-    peakVals = peakVals + peakVals
-    peakVals.append(peakVals[0])
-    peakThetas.append(peakThetas[0])
-    plt.plot(peakThetas, peakVals, 'k', linestyle='dashed')
-    plt.plot(a, r, ls='none', color = 'k') 
-
-    plt.title(hvsr_data['site'])
-    plt.grid(visible=False)#, which='both', alpha=0.5)
-    plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
-    plt.colorbar()
-    plt.show()
-
-    return fig, ax
 
 # HELPER functions for checking peaks
 # Initialize peaks
