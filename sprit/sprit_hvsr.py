@@ -670,9 +670,10 @@ def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
-    if azimuth:
+    azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
+    if len(azimuth_kwargs.keys()) > 0:
         try:
-            azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(azimuth).parameters.keys())}
+            azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
             dataIN = calculate_azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
             #Reformat data so HVSRData and HVSRBatch data both work here
@@ -2264,7 +2265,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     return params
 
 #Get or print report
-def get_report(hvsr_results, report_format='print', plot_type='HVSR p ann C+ p ann Spec', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -2991,46 +2992,60 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         if close_figs:
             plt.close('all')
 
+        # The possible identifiers in plot_type for the different kind of plots
+        hvsrList = ['hvsr', 'hv', 'h']
         compList = ['c', 'comp', 'component', 'components']
         specgramList = ['spec', 'specgram', 'spectrogram']
-        hvsrList = ['hvsr', 'hv', 'h']
+        azList = ['azimuth', 'az', 'a', 'radial', 'r']
 
         hvsrInd = np.nan
         compInd = np.nan
         specInd = np.nan
+        azInd = np.nan
 
+        plot_type = plot_type.replace(',', '')
         kList = plot_type.split(' ')
         for i, k in enumerate(kList):
             kList[i] = k.lower()
 
-        #Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
-        #HVSR index
+        # Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
+        # HVSR index
         if len(set(hvsrList).intersection(kList)):
             for i, hv in enumerate(hvsrList):
                 if hv in kList:
                     hvsrInd = kList.index(hv)
                     break
-        #Component index
+        # Component index
         #if len(set(compList).intersection(kList)):
         for i, c in enumerate(kList):
             if '+' in c and c[:-1] in compList:
                 compInd = kList.index(c)
                 break
             
-        #Specgram index
+        # Specgram index
         if len(set(specgramList).intersection(kList)):
             for i, sp in enumerate(specgramList):
                 if sp in kList:
                     specInd = kList.index(sp)
                     break        
 
-        indList = [hvsrInd, compInd, specInd]
+        # Azimuth index
+        if len(set(azList).intersection(kList)):
+            for i, sp in enumerate(azList):
+                if sp in kList:
+                    azInd = kList.index(sp)
+                    break        
+
+        
+        # Get indices for all plot type indicators
+        indList = [hvsrInd, compInd, specInd, azInd]
         indListCopy = indList.copy()
-        plotTypeList = ['hvsr', 'comp', 'spec']
+        plotTypeList = ['hvsr', 'comp', 'spec', 'az']
 
         plotTypeOrder = []
         plotIndOrder = []
 
+        # Get lists with first and last indices of each plot
         lastVal = 0
         while lastVal != 99:
             firstInd = np.nanargmin(indListCopy)
@@ -3040,8 +3055,9 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             indListCopy[firstInd] = 99 #just a high number
 
         plotTypeOrder.pop()
-        plotIndOrder[-1]=len(kList)
+        plotIndOrder[-1] = len(kList)
         
+        # Get 
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -7206,7 +7222,44 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     return
 
+# Plot Azimuth data
+def _plot_azimuth(hvsr_data):
+    """Plot azimuthal data in a radial plot"""
+    fig = plt.figure()
 
+    hvsr_band = hvsr_data.hvsr_band
+    numAzs = len(hvsr_data.hvsr_az.keys())
+    azDataList = []
+    azExtraDataList = []
+    for k in hvsr_data.hvsr_az.keys():
+        currData = hvsr_data.hvsr_az[k]
+        azDataList.append(currData)
+        azExtraDataList.append(currData)
+    
+        freq = np.array(currData).shape[0]
+        az = np.logspace(np.log10(hvsr_band[0]), np.log10(hvsr_band[1]), freq)
+        a = np.linspace(0, np.pi, numAzs)
+        b = np.linspace(np.pi, 2*np.pi, numAzs)
+        r, th = np.meshgrid(az, a)
+        r2, th2 = np.meshgrid(az, b)
+
+    z = np.array(azDataList)
+
+    ax = plt.subplot(polar=True)
+    ax.set_theta_zero_location("N") # Put north up
+    ax.set_theta_direction(-1) # Degrees go up in clockwise direction
+    
+    plt.pcolormesh(th, r, z, cmap = 'jet')
+    plt.pcolormesh(th2, r2, z, cmap = 'jet')
+    
+    plt.xlim([0, np.pi*2])
+    plt.ylim([hvsr_band[1], hvsr_band[0]])
+
+    plt.semilogy()
+    plt.grid(visible=False)#, which='both', alpha=0.5)
+    plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
+    #plt.colorbar()
+    plt.show()
 # HELPER functions for checking peaks
 # Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
