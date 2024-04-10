@@ -7223,11 +7223,12 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     return
 
 # Plot Azimuth data
-def _plot_azimuth(hvsr_data):
+def plot_azimuth(hvsr_data):
     """Plot azimuthal data in a radial plot"""
+    
     fig = plt.figure()
 
-    hvsr_band = hvsr_data.hvsr_band
+    hvsr_band = [0.4, 40]
     numAzs = len(hvsr_data.hvsr_az.keys())
     azDataList = []
     azExtraDataList = []
@@ -7243,23 +7244,39 @@ def _plot_azimuth(hvsr_data):
         r, th = np.meshgrid(az, a)
         r2, th2 = np.meshgrid(az, b)
 
-    z = np.array(azDataList)
+    z = np.fliplr(np.array(azDataList))
 
     ax = plt.subplot(polar=True)
-    ax.set_theta_zero_location("N") # Put north up
-    ax.set_theta_direction(-1) # Degrees go up in clockwise direction
-    
-    plt.pcolormesh(th, r, z, cmap = 'jet')
-    plt.pcolormesh(th2, r2, z, cmap = 'jet')
-    
+    plt.semilogy()
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+
     plt.xlim([0, np.pi*2])
     plt.ylim([hvsr_band[1], hvsr_band[0]])
+    plt.pcolormesh(th, r, z, cmap = 'jet')
+    plt.pcolormesh(th2, r2, z, cmap = 'jet')
 
-    plt.semilogy()
+    peakVals = []
+    peakThetas = []
+    for k in hvsr_data.hvsr_az.keys():
+        peakVals.append(hvsr_data.BestPeak[k]['f0'])
+        peakThetas.append(int(k))
+    peakThetas = peakThetas + (180+np.array(peakThetas)).tolist()
+    peakThetas = np.deg2rad(peakThetas).tolist()
+    peakVals = peakVals + peakVals
+    peakVals.append(peakVals[0])
+    peakThetas.append(peakThetas[0])
+    plt.plot(peakThetas, peakVals, 'k', linestyle='dashed')
+    plt.plot(a, r, ls='none', color = 'k') 
+
+    plt.title(hvsr_data['site'])
     plt.grid(visible=False)#, which='both', alpha=0.5)
     plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
-    #plt.colorbar()
+    plt.colorbar()
     plt.show()
+
+    return fig, ax
+
 # HELPER functions for checking peaks
 # Initialize peaks
 def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
