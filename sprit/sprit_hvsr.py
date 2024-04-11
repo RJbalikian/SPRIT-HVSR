@@ -2915,28 +2915,51 @@ def input_params(datapath,
     return params
 
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, show_peak=False):
+def plot_azimuth(hvsr_data, show_peak=False, interpolate=True):
     """Plot azimuthal data in a radial plot"""
     
     fig = plt.figure()
 
     hvsr_band = hvsr_data.hvsr_band
-    numAzs = len(hvsr_data.hvsr_az.keys())
+
     azDataList = []
     azExtraDataList = []
-    for k in hvsr_data.hvsr_az.keys():
+
+    for k in sorted(hvsr_data.hvsr_az.keys()):
         currData = hvsr_data.hvsr_az[k]
         azDataList.append(currData)
         azExtraDataList.append(currData)
     
-        freq = np.array(currData).shape[0]
-        az = np.logspace(np.log10(hvsr_band[0]), np.log10(hvsr_band[1]), freq)
-        a = np.linspace(0, np.pi, numAzs)
-        b = np.linspace(np.pi, 2*np.pi, numAzs)
-        r, th = np.meshgrid(az, a)
-        r2, th2 = np.meshgrid(az, b)
+        
+        freq = hvsr_data.x_freqs['Z'].tolist()[1:]
+    a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float))
+    b = a + np.pi
 
-    z = np.fliplr(np.array(azDataList))
+    z = np.array(azDataList)
+    z2 =np.array(azExtraDataList)
+
+    def interp_along_theta(orig_array, orig_ind):
+        newArrayList = []
+        for a1 in orig_array.T:
+            # Resample the array along the first dimension using numpy.interp
+            newZ = np.interp(
+                np.linspace(1, np.pi, 180),  # New indices
+                orig_ind,  # Original indices
+                a1)
+            newArrayList.append(newZ)
+        return np.array(newArrayList).T
+
+    if interpolate:
+        z = interp_along_theta(z, a)
+        z2 = interp_along_theta(z2, a)
+
+        a =  np.linspace(np.deg2rad(1), np.pi, 180)
+        b = (a + np.pi).tolist()
+        a = a.tolist()
+
+    r, th = np.meshgrid(freq, a)
+    r2, th2 = np.meshgrid(freq, b)
+
     # Set up plot
     ax = plt.subplot(polar=True)
     plt.semilogy()
@@ -2946,27 +2969,50 @@ def plot_azimuth(hvsr_data, show_peak=False):
     plt.ylim([hvsr_band[1], hvsr_band[0]])
 
     # Plot data
-    plt.pcolormesh(th, r, z, cmap = 'jet')
-    plt.pcolormesh(th2, r2, z, cmap = 'jet')
+    pmesh1 = plt.pcolormesh(th, r, z, cmap = 'jet')
+    pmesh2 = plt.pcolormesh(th2, r2, z2, cmap = 'jet')
 
-    peakVals = []
-    peakThetas = []
-    for k in hvsr_data.hvsr_az.keys():
-        peakVals.append(hvsr_data.BestPeak[k]['f0'])
-        peakThetas.append(int(k))
-    peakThetas = peakThetas + (180+np.array(peakThetas)).tolist()
-    peakThetas = np.deg2rad(peakThetas).tolist()
-    peakVals = peakVals + peakVals
-    peakVals.append(peakVals[0])
-    peakThetas.append(peakThetas[0])
     if show_peak:
-        plt.plot(peakThetas, peakVals, 'k', linestyle='dashed')
+        peakVals = []
+        peakThetas = []
+        for k in sorted(hvsr_data.hvsr_az.keys()):
+            peakVals.append(hvsr_data.BestPeak[k]['f0'])
+            peakThetas.append(int(k))
+        peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
+        peakThetas = np.deg2rad(peakThetas).tolist()
+        peakVals = peakVals + peakVals
+        peakVals.append(peakVals[0])
+        peakThetas.append(peakThetas[0]+(np.pi*2))
+        peakThetas.append(peakThetas[1]+(np.pi*2))
+
+        peakThetas = (np.convolve(peakThetas, np.ones(2), 'full')/2).tolist()[1:-1]
+        newThetas = []
+        newVals = []
+        for i, p in enumerate(peakThetas):
+            newThetas.append(p)
+            newThetas.append(p)
+            if i == 0:
+                newVals.append(peakVals[-1])
+                newVals.append(peakVals[-1])
+            else:
+                newVals.append(peakVals[i])
+                newVals.append(peakVals[i])
+
+        newThetas.insert(0, newThetas[-1])
+        newThetas.pop()
+
+        newVals.append(newVals[0])
+        newThetas.append(newThetas[0])
+
+        #peakThetas = newThetas
+        #peakVals = newVals
+        plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k')
     #plt.plot(a, r, ls='none', color = 'k') 
 
     plt.title(hvsr_data['site'])
     plt.grid(visible=False)#, which='both', alpha=0.5)
     plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
-    plt.colorbar()
+    plt.colorbar(pmesh1)
     plt.show()
 
     return fig, ax
