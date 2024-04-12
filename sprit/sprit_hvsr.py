@@ -2915,9 +2915,28 @@ def input_params(datapath,
     return params
 
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, show_peak=False, interpolate=True):
-    """Plot azimuthal data in a radial plot"""
-    
+def plot_azimuth(hvsr_data, show_peak=False, interpolate_azimuths=True, show_grid=False):
+    """Function to plot azimuths when azimuths are calculated
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData or HVSRBatch
+        HVSRData that has gone through at least the sprit.fetch_data() step, and before sprit.generate_ppsds()
+    show_peak : bool, optional
+        Whether to display the peak value at each azimuth calculated on the chart, by default False
+    interpolate_azimuths : bool, optional
+        Whether to interpolate the azimuth data to get a smoother plot. 
+        This is just for visualization, does not change underlying data.
+        It takes a lot of time to process the data, but interpolation for vizualization can happen fairly fast. By default True.
+    show_grid : bool, optional
+        Whether to display the grid on the chart, by default False
+
+    Returns
+    -------
+    matplotlib.Figure, matplotlib.Axis
+        Figure and axis of resulting azimuth plot
+    """
+
     fig = plt.figure()
 
     hvsr_band = hvsr_data.hvsr_band
@@ -2943,13 +2962,13 @@ def plot_azimuth(hvsr_data, show_peak=False, interpolate=True):
         for a1 in orig_array.T:
             # Resample the array along the first dimension using numpy.interp
             newZ = np.interp(
-                np.linspace(1, np.pi, 180),  # New indices
+                np.linspace(np.pi/180, np.pi, 180),  # New indices
                 orig_ind,  # Original indices
                 a1)
             newArrayList.append(newZ)
         return np.array(newArrayList).T
 
-    if interpolate:
+    if interpolate_azimuths:
         z = interp_along_theta(z, a)
         z2 = interp_along_theta(z2, a)
 
@@ -3006,14 +3025,20 @@ def plot_azimuth(hvsr_data, show_peak=False, interpolate=True):
 
         #peakThetas = newThetas
         #peakVals = newVals
-        plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k')
+        if len(peakThetas) >= 20:
+            alphaVal = 0.2
+        else:
+            alphaVal = 0.9 - (19/28) 
+        plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k', alpha=alphaVal)
     #plt.plot(a, r, ls='none', color = 'k') 
 
     plt.title(hvsr_data['site'])
-    plt.grid(visible=False)#, which='both', alpha=0.5)
-    plt.grid(visible=False)#, which='major', c='k', linewidth=1, alpha=1)
+    plt.grid(visible=show_grid, which='both', alpha=0.5)
+    plt.grid(visible=show_grid, which='major', c='k', linewidth=1, alpha=1)
     plt.colorbar(pmesh1)
     plt.show()
+
+    hvsr_data['AzimuthFig'] = fig
 
     return fig, ax
 
