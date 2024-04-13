@@ -841,7 +841,7 @@ def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
     return hvsr_results
 
 # Function to generate azimuthal readings from the horizontal components
-def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False):
+def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
 
     Parameters
@@ -870,7 +870,6 @@ def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azim
         Updated HVSRData object specified in hvsr_data with hvsr_data['stream'] attribute containing additional components (EHR-***),
         with *** being zero-padded (3 digits) azimuth angle in degrees.
     """
-    
     # Get intput paramaters
     orig_args = locals().copy()
     start_time = datetime.datetime.now()
@@ -1026,10 +1025,16 @@ def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azim
         for line in dataINStr:
             print('\t\t', line)
     
+    if show_az_plot:
+        hvsr_data['Azimuth_Fig'] = plot_azimuth(hvsr_data=hvsr_data, **plot_azimuth_kwargs)
+
+    hvsr_data['ProcessingStatus']['CalculateAzimuth'] = True
+    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+
     return hvsr_data
 
-#Quality checks, stability tests, clarity tests
-#def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
+# Quality checks, stability tests, clarity tests
+# def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
 def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
@@ -1238,7 +1243,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
     return hvsr_data
 
-#Function to export data to file
+# Function to export data to file
 def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time. 
     Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
@@ -1280,7 +1285,7 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     return
 
 ###WORKING ON THIS
-#Save default instrument and processing settings to json file(s)
+# Save default instrument and processing settings to json file(s)
 def export_settings(hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
     """Save settings to json file
 
@@ -1426,7 +1431,8 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             print(f"{jsonString}")
             print()
 
-#Reads in traces to obspy stream
+
+# Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
@@ -1883,7 +1889,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     return params
 
-#Generate PPSDs for each channel
+
+# Generate PPSDs for each channel
 def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwargs):
     """Generates PPSDs for each channel
 
@@ -2174,7 +2181,8 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
 
-#Gets the metadata for Raspberry Shake, specifically for 3D v.7
+
+# Gets the metadata for Raspberry Shake, specifically for 3D v.7
 def get_metadata(params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs):
     """Get metadata and calculate or get paz parameter needed for PPSD
 
@@ -2264,7 +2272,8 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
     return params
 
-#Get or print report
+
+# Get or print report
 def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
     """Get a report of the HVSR analysis in a variety of formats.
         
@@ -2633,6 +2642,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             hvsr_results['processing_parameters']['get_report'][key] = value
     return hvsr_results
 
+
 # Import data
 def import_data(import_filepath, data_format='pickle'):
     """Function to import .hvsr (or other extension) data exported using export_data() function
@@ -2655,6 +2665,7 @@ def import_data(import_filepath, data_format='pickle'):
         dataIN = import_filepath
     return dataIN
 
+
 # Import settings
 def import_settings(settings_import_path, settings_import_type='instrument', verbose=False):
 
@@ -2676,6 +2687,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
                 instFile = settings_import_path.glob('*.inst')
                 procFile = settings_import_path.glob('*.proc')
     return settingsDict
+
 
 # Define input parameters
 def input_params(datapath,
@@ -2914,21 +2926,22 @@ def input_params(datapath,
     params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
+
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, show_peak=False, interpolate_azimuths=True, show_grid=False):
+def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False):
     """Function to plot azimuths when azimuths are calculated
 
     Parameters
     ----------
     hvsr_data : HVSRData or HVSRBatch
         HVSRData that has gone through at least the sprit.fetch_data() step, and before sprit.generate_ppsds()
-    show_peak : bool, optional
+    show_azimuth_peaks : bool, optional
         Whether to display the peak value at each azimuth calculated on the chart, by default False
     interpolate_azimuths : bool, optional
         Whether to interpolate the azimuth data to get a smoother plot. 
         This is just for visualization, does not change underlying data.
         It takes a lot of time to process the data, but interpolation for vizualization can happen fairly fast. By default True.
-    show_grid : bool, optional
+    show_azimuth_grid : bool, optional
         Whether to display the grid on the chart, by default False
 
     Returns
@@ -2936,111 +2949,128 @@ def plot_azimuth(hvsr_data, show_peak=False, interpolate_azimuths=True, show_gri
     matplotlib.Figure, matplotlib.Axis
         Figure and axis of resulting azimuth plot
     """
+    orig_args = locals().copy() #Get the initial arguments
 
-    fig = plt.figure()
+    if isinstance(hvsr_data, HVSRBatch):
+        #If running batch, we'll loop through each site
+        for site_name in hvsr_data.keys():
+            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
+            individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            args['hvsr_data'] = individual_params #reset the params parameter we originally read in to an individual site params
+            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+                try:
+                    hvsr_data['Azimuth_Fig'] = _plot_azimuth_batch(**args) #Call another function, that lets us run this function again
+                except:
+                    print(f"ERROR: {site_name} will not have azimuths plotted.")
+    elif isinstance(hvsr_data, HVSRData):
+        if fig is None:
+            fig = plt.figure()
 
-    hvsr_band = hvsr_data.hvsr_band
+        hvsr_band = hvsr_data.hvsr_band
 
-    azDataList = []
-    azExtraDataList = []
+        azDataList = []
+        azExtraDataList = []
 
-    for k in sorted(hvsr_data.hvsr_az.keys()):
-        currData = hvsr_data.hvsr_az[k]
-        azDataList.append(currData)
-        azExtraDataList.append(currData)
-    
-        
-        freq = hvsr_data.x_freqs['Z'].tolist()[1:]
-    a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float))
-    b = a + np.pi
-
-    z = np.array(azDataList)
-    z2 =np.array(azExtraDataList)
-
-    def interp_along_theta(orig_array, orig_ind):
-        newArrayList = []
-        for a1 in orig_array.T:
-            # Resample the array along the first dimension using numpy.interp
-            newZ = np.interp(
-                np.linspace(np.pi/180, np.pi, 180),  # New indices
-                orig_ind,  # Original indices
-                a1)
-            newArrayList.append(newZ)
-        return np.array(newArrayList).T
-
-    if interpolate_azimuths:
-        z = interp_along_theta(z, a)
-        z2 = interp_along_theta(z2, a)
-
-        a =  np.linspace(np.deg2rad(1), np.pi, 180)
-        b = (a + np.pi).tolist()
-        a = a.tolist()
-
-    r, th = np.meshgrid(freq, a)
-    r2, th2 = np.meshgrid(freq, b)
-
-    # Set up plot
-    ax = plt.subplot(polar=True)
-    plt.semilogy()
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)
-    plt.xlim([0, np.pi*2])
-    plt.ylim([hvsr_band[1], hvsr_band[0]])
-
-    # Plot data
-    pmesh1 = plt.pcolormesh(th, r, z, cmap = 'jet')
-    pmesh2 = plt.pcolormesh(th2, r2, z2, cmap = 'jet')
-
-    if show_peak:
-        peakVals = []
-        peakThetas = []
         for k in sorted(hvsr_data.hvsr_az.keys()):
-            peakVals.append(hvsr_data.BestPeak[k]['f0'])
-            peakThetas.append(int(k))
-        peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
-        peakThetas = np.deg2rad(peakThetas).tolist()
-        peakVals = peakVals + peakVals
-        peakVals.append(peakVals[0])
-        peakThetas.append(peakThetas[0]+(np.pi*2))
-        peakThetas.append(peakThetas[1]+(np.pi*2))
+            currData = hvsr_data.hvsr_az[k]
+            azDataList.append(currData)
+            azExtraDataList.append(currData)
+        
+            
+            freq = hvsr_data.x_freqs['Z'].tolist()[1:]
+        a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float))
+        b = a + np.pi
 
-        peakThetas = (np.convolve(peakThetas, np.ones(2), 'full')/2).tolist()[1:-1]
-        newThetas = []
-        newVals = []
-        for i, p in enumerate(peakThetas):
-            newThetas.append(p)
-            newThetas.append(p)
-            if i == 0:
-                newVals.append(peakVals[-1])
-                newVals.append(peakVals[-1])
+        z = np.array(azDataList)
+        z2 =np.array(azExtraDataList)
+
+        def interp_along_theta(orig_array, orig_ind):
+            newArrayList = []
+            for a1 in orig_array.T:
+                # Resample the array along the first dimension using numpy.interp
+                newZ = np.interp(
+                    np.linspace(np.pi/180, np.pi, 180),  # New indices
+                    orig_ind,  # Original indices
+                    a1)
+                newArrayList.append(newZ)
+            return np.array(newArrayList).T
+
+        if interpolate_azimuths:
+            z = interp_along_theta(z, a)
+            z2 = interp_along_theta(z2, a)
+
+            a =  np.linspace(np.deg2rad(1), np.pi, 180)
+            b = (a + np.pi).tolist()
+            a = a.tolist()
+
+        r, th = np.meshgrid(freq, a)
+        r2, th2 = np.meshgrid(freq, b)
+
+        # Set up plot
+        if ax is None:
+            ax = plt.subplot(polar=True)
+        plt.semilogy()
+        ax.set_theta_zero_location("N")
+        ax.set_theta_direction(-1)
+        plt.xlim([0, np.pi*2])
+        plt.ylim([hvsr_band[1], hvsr_band[0]])
+
+        # Plot data
+        pmesh1 = plt.pcolormesh(th, r, z, cmap = 'jet')
+        pmesh2 = plt.pcolormesh(th2, r2, z2, cmap = 'jet')
+
+        if show_azimuth_peaks:
+            peakVals = []
+            peakThetas = []
+            for k in sorted(hvsr_data.hvsr_az.keys()):
+                peakVals.append(hvsr_data.BestPeak[k]['f0'])
+                peakThetas.append(int(k))
+            peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
+            peakThetas = np.deg2rad(peakThetas).tolist()
+            peakVals = peakVals + peakVals
+            peakVals.append(peakVals[0])
+            peakThetas.append(peakThetas[0]+(np.pi*2))
+            peakThetas.append(peakThetas[1]+(np.pi*2))
+
+            peakThetas = (np.convolve(peakThetas, np.ones(2), 'full')/2).tolist()[1:-1]
+            newThetas = []
+            newVals = []
+            for i, p in enumerate(peakThetas):
+                newThetas.append(p)
+                newThetas.append(p)
+                if i == 0:
+                    newVals.append(peakVals[-1])
+                    newVals.append(peakVals[-1])
+                else:
+                    newVals.append(peakVals[i])
+                    newVals.append(peakVals[i])
+
+            newThetas.insert(0, newThetas[-1])
+            newThetas.pop()
+
+            newVals.append(newVals[0])
+            newThetas.append(newThetas[0])
+
+            #peakThetas = newThetas
+            #peakVals = newVals
+            if len(peakThetas) >= 20:
+                alphaVal = 0.2
             else:
-                newVals.append(peakVals[i])
-                newVals.append(peakVals[i])
+                alphaVal = 0.9 - (19/28) 
+            plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k', alpha=alphaVal)
+        #plt.plot(a, r, ls='none', color = 'k') 
 
-        newThetas.insert(0, newThetas[-1])
-        newThetas.pop()
+        plt.title(hvsr_data['site'])
+        plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
+        plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
+        plt.colorbar(pmesh1)
+        plt.show()
 
-        newVals.append(newVals[0])
-        newThetas.append(newThetas[0])
-
-        #peakThetas = newThetas
-        #peakVals = newVals
-        if len(peakThetas) >= 20:
-            alphaVal = 0.2
-        else:
-            alphaVal = 0.9 - (19/28) 
-        plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k', alpha=alphaVal)
-    #plt.plot(a, r, ls='none', color = 'k') 
-
-    plt.title(hvsr_data['site'])
-    plt.grid(visible=show_grid, which='both', alpha=0.5)
-    plt.grid(visible=show_grid, which='major', c='k', linewidth=1, alpha=1)
-    plt.colorbar(pmesh1)
-    plt.show()
-
-    hvsr_data['AzimuthFig'] = fig
-
+        hvsr_data['AzimuthFig'] = fig
+    else:
+        warnings.warn(f'hvsr_data must be of type HVSRData or HVSRBatch, not {type(hvsr_data)}')
     return fig, ax
+
 
 # Main function for plotting results
 def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
@@ -3208,16 +3238,19 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             if p == 'hvsr':
                 kwargs['p'] = 'hvsr'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p=='comp':
+            elif p == 'comp':
                 plotComponents[0] = plotComponents[0][:-1]
                 kwargs['p'] == 'comp'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p=='spec':
+            elif p == 'spec':
                 plottypeKwargs = {}
                 for c in plotComponents:
                     plottypeKwargs[c] = True
                 kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
+            elif p == 'az':
+                kwargs['p'] = 'az'
+                plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
@@ -4542,6 +4575,7 @@ def __remove_outlier_curves(**remove_outlier_curves_kwargs):
 
     return hvsr_data
 
+
 #Batch function for plot_hvsr()
 def _hvsr_plot_batch(**hvsr_plot_kwargs):
     try:
@@ -4551,6 +4585,25 @@ def _hvsr_plot_batch(**hvsr_plot_kwargs):
         hvsr_data = hvsr_plot_kwargs['hvsr_data']
         
     return hvsr_data
+
+
+# Support function for batch of plot_azimuth()
+def _plot_azimuth_batch(**plot_azimuth_kwargs):
+    try:
+        hvsr_data['Azimuth_Fig'] = plot_azimuth(**plot_azimuth_kwargs)
+        if plot_azimuth_kwargs['verbose']:
+            print('\t{} successfully completed plot_azimuth()'.format(hvsr_data['input_params']['site']))
+    except:
+        errMsg = f"Error in plot_azimuth({plot_azimuth_kwargs['params']['site']}, **plot_azimuth_kwargs)"
+        if plot_azimuth_kwargs['verbose']:
+            print('\t'+errMsg)
+        else:
+            warnings.warn(errMsg, RuntimeWarning)
+        hvsr_data = plot_azimuth_kwargs['params']
+        
+    return hvsr_data
+
+
 
 #Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
