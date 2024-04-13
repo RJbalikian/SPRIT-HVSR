@@ -3009,6 +3009,12 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         # Set up plot
         if ax is None:
             ax = plt.subplot(polar=True)
+            plt.title(hvsr_data['site'])
+
+        else:
+            plt.sca(ax)
+
+        print(type(ax), dir(ax))
         plt.semilogy()
         ax.set_theta_zero_location("N")
         ax.set_theta_direction(-1)
@@ -3060,7 +3066,6 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k', alpha=alphaVal)
         #plt.plot(a, r, ls='none', color = 'k') 
 
-        plt.title(hvsr_data['site'])
         plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
         plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
         plt.colorbar(pmesh1)
@@ -3221,11 +3226,14 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             pEndInd = plotIndOrder[i+1]
             plotComponents = kList[pStartInd:pEndInd]
 
-            if use_subplots and i==0 and fig is None and ax is None:
+            if use_subplots and i == 0 and fig is None and ax is None:
                 mosaicPlots = []
                 for pto in plotTypeOrder:
                     mosaicPlots.append([pto])
-                fig, ax = plt.subplot_mosaic(mosaicPlots, gridspec_kw={'hspace':0.3})
+                perSubPDict = {}
+                if 'az' in plotTypeOrder:
+                    perSubPDict['az'] = {'projection':'polar'}
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, gridspec_kw={'hspace':0.3})
                 axis = ax[p]
             elif use_subplots:
                 with warnings.catch_warnings():
@@ -3249,8 +3257,10 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
             elif p == 'az':
-                kwargs['p'] = 'az'
-                plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
+                #kwargs['p'] = 'az'
+                if 'p' in kwargs.keys():
+                    del kwargs['p']
+                hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
