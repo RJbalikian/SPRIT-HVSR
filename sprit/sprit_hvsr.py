@@ -2928,7 +2928,7 @@ def input_params(datapath,
 
 
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False):
+def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False, **plot_azimuth_kwargs):
     """Function to plot azimuths when azimuths are calculated
 
     Parameters
@@ -3014,7 +3014,6 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         else:
             plt.sca(ax)
 
-        print(type(ax), dir(ax))
         plt.semilogy()
         ax.set_theta_zero_location("N")
         ax.set_theta_direction(-1)
@@ -3066,9 +3065,10 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             plt.scatter(peakThetas, peakVals, marker='h', facecolors='none', edgecolors='k', alpha=alphaVal)
         #plt.plot(a, r, ls='none', color = 'k') 
 
-        plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
-        plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
-        plt.colorbar(pmesh1)
+        if show_azimuth_grid:
+            plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
+            plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
+        #plt.colorbar(pmesh1)
         plt.show()
 
         hvsr_data['AzimuthFig'] = fig
@@ -3208,14 +3208,14 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         plotTypeOrder = []
         plotIndOrder = []
 
-        # Get lists with first and last indices of each plot
+        # Get lists with first and last indices of the specifiers for each plot
         lastVal = 0
         while lastVal != 99:
             firstInd = np.nanargmin(indListCopy)
             plotTypeOrder.append(plotTypeList[firstInd])
             plotIndOrder.append(indList[firstInd])
             lastVal = indListCopy[firstInd]
-            indListCopy[firstInd] = 99 #just a high number
+            indListCopy[firstInd] = 99  #just a high number
 
         plotTypeOrder.pop()
         plotIndOrder[-1] = len(kList)
@@ -3229,11 +3229,22 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             if use_subplots and i == 0 and fig is None and ax is None:
                 mosaicPlots = []
                 for pto in plotTypeOrder:
-                    mosaicPlots.append([pto])
+                    if pto == 'az':
+                        for i, subp in enumerate(mosaicPlots):
+                            if subp[0].lower() == 'hvsr' and len([item for item in my_list if item != "hvsr"]) > 0:
+                                mosaicPlots[i].append(subp[0])
+                                mosaicPlots[i].append(subp[0])
+                            else:
+                                mosaicPlots[i].append(subp[0])
+                                mosaicPlots[i].append(subp[0])
+                                mosaicPlots[i].append(pto)
+                                mosaicPlots[i].append(pto)
+                    else:
+                        mosaicPlots.append([pto])
                 perSubPDict = {}
                 if 'az' in plotTypeOrder:
                     perSubPDict['az'] = {'projection':'polar'}
-                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, gridspec_kw={'hspace':0.3})
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
                 axis = ax[p]
             elif use_subplots:
                 with warnings.catch_warnings():
@@ -3257,9 +3268,6 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
             elif p == 'az':
-                #kwargs['p'] = 'az'
-                if 'p' in kwargs.keys():
-                    del kwargs['p']
                 hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
@@ -6652,7 +6660,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']', fontsize='small',)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=5)
-    ax.set_title(hvsr_data['input_params']['site'])
+    plt.suptitle(hvsr_data['input_params']['site'])
 
     f0 = hvsr_data['BestPeak'][azimuth]['f0']
     a0 = hvsr_data['BestPeak'][azimuth]['A0']
