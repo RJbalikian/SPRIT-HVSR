@@ -3235,11 +3235,9 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                                 mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(subp[0])
-                                mosaicPlots[i].append(subp[0])
                             else:
                                 mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(subp[0])
-                                mosaicPlots[i].append(pto)
                                 mosaicPlots[i].append(pto)
                     else:
                         mosaicPlots.append([pto])
