@@ -3234,9 +3234,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                             if (subp[0].lower() == 'hvsr' or subp[0].lower() == 'comp') and len([item for item in plotTypeOrder if item != "hvsr"]) > 0:
                                 mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(subp[0])
-                                mosaicPlots[i].append(subp[0])
                             else:
-                                mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(subp[0])
                                 mosaicPlots[i].append(pto)
                     else:
