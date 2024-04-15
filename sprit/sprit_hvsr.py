@@ -596,7 +596,7 @@ def gui(kind='default'):
     
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
+def run(datapath, source='file', verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
     The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
@@ -841,7 +841,7 @@ def run(datapath, source='file', azimuth=False, verbose=False, **kwargs):
     return hvsr_results
 
 # Function to generate azimuthal readings from the horizontal components
-def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
+def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
 
     Parameters
@@ -1035,7 +1035,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=10, azimuth_type='multiple', azim
 
 # Quality checks, stability tests, clarity tests
 # def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], verbose=False):
+def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], azimuth='HV', verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
@@ -1133,8 +1133,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
                 try:
                     peak_val = float(peak_selection)
-                    index_list = [np.argmin(np.abs(x - peak_val))]        
-                except:
+                    index_list = [np.argmin(np.abs(x - peak_val))]
+                except Exception as e:
                     # If score method is being used, get index list for __init_peaks()
                     if peak_selection in scorelist:
                         index_list = hvsr_data['hvsr_peak_indices'][col_id] #Calculated based on hvsr_curve
@@ -1154,7 +1154,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 
                 hvsrp = hvsr_data['hvsrp'][col_id]  #Calculated based on "Use" column
                 hvsrm = hvsr_data['hvsrm'][col_id]  #Calculated based on "Use" column
-                
+
                 hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
 
                 hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
@@ -1240,7 +1240,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         hvsr_data['processing_parameters']['check_peaks'] = {}
         for key, value in orig_args.items():
             hvsr_data['processing_parameters']['check_peaks'][key] = value
-
     return hvsr_data
 
 # Function to export data to file
@@ -2977,7 +2976,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             azExtraDataList.append(currData)
         
             
-            freq = hvsr_data.x_freqs['Z'].tolist()[1:]
+        freq = hvsr_data.x_freqs['Z'].tolist()[1:]
         a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float))
         b = a + np.pi
 
@@ -4157,20 +4156,19 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     else:  
         #Create plot if designated        
         if not use_hv_curve:
+            compNames = []
             for col_name in hvsr_data['hvsr_windows_df'].columns:
-                compNames = []
                 if 'psd_values' in col_name:
                     compNames.append('_'.join(col_name.split('_')[2:]))
             colNames = compNames
+            col_prefix = 'psd_values_'
         else:
+            compNames = []
             for col_name in hvsr_data['hvsr_windows_df'].columns:
-                compNames = []
-                if 'HV_Curves' in col_name:
-                    compNames.append('_'.join(col_name.split('_')[2:]))
-
-            compNames = ['HV Curve']
-            colNames = ['HV_Curves']
-        
+                if col_name.startswith('HV_Curves') and "Log10" not in col_name:
+                    compNames.append(col_name)
+            colNames = compNames
+            col_prefix = 'HV_Curves'
         if show_outlier_plot:
             if use_hv_curve:
                 spMosaic = ['HV Curve']
@@ -4184,7 +4182,11 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         bad_rmse=[]
         for i, column in enumerate(colNames):
             if column in compNames:
-                column = 'psd_values_'+column
+                if use_hv_curve == False:
+                    column = col_prefix+column
+                else:
+                    column = column
+                
             # Retrieve data from dataframe (use all windows, just in case)
             curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
             
@@ -4196,11 +4198,11 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
             hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
             if use_percentile is True:
-                rmse_threshold = np.percentile(rmse, rmse_thresh)
+                rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], rmse_thresh)
                 if verbose:
                     print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
-                else:
-                    rmse_threshold = rmse_thresh
+            else:
+                rmse_threshold = rmse_thresh
             
             # Retrieve index of those RMSE values that lie outside the threshold
             for j, curve in enumerate(curr_data):
@@ -4208,7 +4210,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_outlier_plot:
+            if show_outlier_plot and use_hv_curve == False:
                 # Intialize to only get unique labels
                 rem_label_got = False
                 keep_label_got = False
@@ -4618,7 +4620,6 @@ def _plot_azimuth_batch(**plot_azimuth_kwargs):
         hvsr_data = plot_azimuth_kwargs['params']
         
     return hvsr_data
-
 
 
 #Helper function for batch version of process_hvsr()
@@ -6865,12 +6866,14 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 
                 mcolor = 'r'
                 pcolor = 'r'
-                if hvsr_data['BestPeak']['Report']['P-'][-1] == sprit_utils.check_mark():
+                if hvsr_data['BestPeak'][azimuth]['Report']['P-'][-1] == sprit_utils.check_mark():
                     mcolor='g'
-                if hvsr_data['BestPeak']['Report']['P+'][-1] == sprit_utils.check_mark():
+                if hvsr_data['BestPeak'][azimuth]['Report']['P+'][-1] == sprit_utils.check_mark():
                     pcolor='g'
 
-                ax.scatter([lowf4, hif4], [np.max(hvsr_data.hvsrm2),  np.max(hvsr_data.hvsrp2)], c=[mcolor, pcolor], marker='x')
+                print(lowf4, hif4)
+
+                ax.scatter([lowf4, hif4], [np.max(hvsr_data.hvsrm2[azimuth]),  np.max(hvsr_data.hvsrp2[azimuth])], c=[mcolor, pcolor], marker='x')
                 
                 if not peakPoint:
                     ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
