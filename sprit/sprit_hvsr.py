@@ -33,11 +33,11 @@ import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
 
-try: #For distribution
+try:  # For distribution
     from sprit import sprit_utils
     from sprit import sprit_gui
     from sprit import sprit_jupyter_UI
-except: #For testing
+except Exception:  # For testing
     import sprit_utils
     import sprit_gui
     import sprit_jupyter_UI
@@ -45,7 +45,7 @@ except: #For testing
 NOWTIME = datetime.datetime.now()
 global spritApp
 
-#Main variables
+# Main variables
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 separator_character = '='
@@ -55,7 +55,7 @@ t0 = datetime.datetime.now().time()
 max_rank = 0
 plotRows = 4
 
-#Get the main resources directory path, and the other paths as well
+# Get the main resources directory path, and the other paths as well
 resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
 sample_data_dir = resource_dir.joinpath('sample_data')
 settings_dir = resource_dir.joinpath('settings')
@@ -95,12 +95,13 @@ sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     
                     'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
 
-#plt.rcParams['figure.figsize'] = (8,5.25)
-#plt.rcParams['figure.dpi'] = 500
+# plt.rcParams['figure.figsize'] = (8,5.25)
+# plt.rcParams['figure.dpi'] = 500
 
-#CLASSES
+# CLASSES
 
-#Check if the data is already the right class
+
+# Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
 def check_instance(init):
     def wrapper(self, *args, **kwargs):
@@ -112,6 +113,7 @@ def check_instance(init):
             # Call the original __init__ method
             init(self, *args, **kwargs)
     return wrapper
+
 
 # Class for batch data
 class HVSRBatch:
@@ -282,20 +284,16 @@ class HVSRBatch:
     def __getitem__(self, key):
         return getattr(self, key)
 
+
 # Class for each HVSR site
 class HVSRData:
-    """HVSRData is the basic data class of the sprit package. It contains all the processed data, input parameters, and reports.
+    """HVSRData is the basic data class of the sprit package. 
+    It contains all the processed data, input parameters, and reports.
     
     These attributes and objects can be accessed using square brackets or the dot accessor. For example, to access the site name, HVSRData['site'] and HVSRData.site will both return the site name.
     
     Some of the methods that work on the HVSRData object (e.g., .plot() and .get_report()) are essentially wrappers for some of the main sprit package functions (sprit.plot_hvsr() and sprit.get_report(), respectively)
     """
-    #Old way of using this
-    #def __new__(cls, params):
-    #    if isinstance(params, (cls, HVSRBatch)):
-    #        return params
-    #    return super().__new__(cls)
-
     @check_instance    
     def __init__(self, params):
         self.params = params
@@ -345,7 +343,7 @@ class HVSRData:
         """
         export_data(hvsr_data=self, export_path=export_path, ext=ext)
 
-    #METHODS (many reflect dictionary methods)
+    # METHODS (many reflect dictionary methods)
     def keys(self):
         """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
 
@@ -527,11 +525,13 @@ class HVSRData:
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
         self._ppsds=value
 
+
 def gui_test():
     import subprocess
     print(sprit_gui.__file__)
     guiFile = sprit_gui.__file__
     subprocess.call(guiFile, shell=True)
+
 
 # Launch the tkinter gui
 def gui(kind='default'):
@@ -593,6 +593,7 @@ def gui(kind='default'):
             sprit_jupyter_UI.create_jupyter_ui()
         except Exception as e:
             print(e)
+
     
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
