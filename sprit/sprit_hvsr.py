@@ -113,7 +113,7 @@ def check_instance(init):
             init(self, *args, **kwargs)
     return wrapper
 
-#Class for batch data
+# Class for batch data
 class HVSRBatch:
     """HVSRBatch is the data container used for batch processing. It contains several HVSRData objects (one for each site). These can be accessed using their site name, either square brackets (HVSRBatchVariable["SiteName"]) or the dot (HVSRBatchVariable.SiteName) accessor.
     
@@ -282,7 +282,7 @@ class HVSRBatch:
     def __getitem__(self, key):
         return getattr(self, key)
 
-#Class for each HVSR site
+# Class for each HVSR site
 class HVSRData:
     """HVSRData is the basic data class of the sprit package. It contains all the processed data, input parameters, and reports.
     
@@ -533,7 +533,7 @@ def gui_test():
     guiFile = sprit_gui.__file__
     subprocess.call(guiFile, shell=True)
 
-#Launch the tkinter gui
+# Launch the tkinter gui
 def gui(kind='default'):
     """Function to open a graphical user interface (gui)
 
@@ -596,7 +596,7 @@ def gui(kind='default'):
     
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(datapath, source='file', verbose=False, **kwargs):
+def run(datapath, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
     The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
@@ -650,7 +650,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
     if 'peak_freq_range' not in kwargs.keys():
         kwargs['peak_freq_range'] = inspect.signature(input_params).parameters['peak_freq_range'].default
 
-    #Get the input parameters
+    # Get the input parameters
     input_params_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(input_params).parameters.keys())}  
     try:
         params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
@@ -662,7 +662,7 @@ def run(datapath, source='file', verbose=False, **kwargs):
         params.update(input_params_kwargs)
         params = sprit_utils.make_it_classy(params)
 
-    #Fetch Data
+    # Fetch Data
     try:
         fetch_data_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
         dataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
@@ -670,10 +670,10 @@ def run(datapath, source='file', verbose=False, **kwargs):
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
+    # Calculate azimuths
     azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-    if len(azimuth_kwargs.keys()) > 0:
+    if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
         try:
-            azimuth_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
             dataIN = calculate_azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
             #Reformat data so HVSRData and HVSRBatch data both work here
@@ -682,14 +682,14 @@ def run(datapath, source='file', verbose=False, **kwargs):
                 
             for site_name in dataIN.keys():
                 dataIN[site_name]['ProcessingStatus']['Azimuth'] = False
-                #If it wasn't originally HVSRBatch, make it HVSRData object again
+                # If it wasn't originally HVSRBatch, make it HVSRData object again
                 if not dataIN[site_name]['batch']:
                     dataIN = dataIN[site_name]
                 
 
     # Remove Noise
+    remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
     try:
-        remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
     except:
         data_noiseRemoved = dataIN
@@ -792,11 +792,11 @@ def run(datapath, source='file', verbose=False, **kwargs):
             hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
             hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
             
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not hvsr_results[site_name]['batch']:
                 hvsr_results = hvsr_results[site_name]            
             
-    #Final post-processing/reporting
+    # Final post-processing/reporting
 
     # Check peaks
     check_peaks_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -807,22 +807,28 @@ def run(datapath, source='file', verbose=False, **kwargs):
 
     if verbose:
         if 'report_format' in get_report_kwargs.keys():
-            #if report_format is 'print', we would have already printed it in previous step
-            if get_report_kwargs['report_format']=='print' or 'print' in get_report_kwargs['report_format'] or isinstance(hvsr_results, HVSRBatch):
-                #We do not need to print another report if already printed to terminal
+            if type(get_report_kwargs['report_format']) is str:
+                report_format = get_report_kwargs['report_format'].lower()
+            elif isinstance(report_format, (tuple, list)):
+                for i, rf in enumerate(get_report_kwargs['report_format']):
+                    get_report_kwargs['report_format'][i] = rf.lower()
+                    
+            # if report_format is 'print', we would have already printed it in previous step
+            if get_report_kwargs['report_format'] == 'print' or 'print' in get_report_kwargs['report_format'] or isinstance(hvsr_results, HVSRBatch):
+                # We do not need to print another report if already printed to terminal
                 pass
             else:
-                #We will just change the report_format kwarg to print, since we already got the originally intended report format above, 
+                # We will just change the report_format kwarg to print, since we already got the originally intended report format above, 
                 #   now need to print for verbose output
-                get_report_kwargs['report_format']='print'
+                get_report_kwargs['report_format'] = 'print'
                 get_report(hvsr_results=hvsr_results, **get_report_kwargs)
                 
-            if get_report_kwargs['report_format']=='plot' or 'plot' in get_report_kwargs['report_format']:
-                #We do not need to plot another report if already plotted
+            if get_report_kwargs['report_format'] == 'plot' or 'plot' in get_report_kwargs['report_format']:
+                # We do not need to plot another report if already plotted
                 pass
             else:
-                #hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
-                #hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
+                # hvplot_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in plot_hvsr.__code__.co_varnames}
+                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
                 pass
         else:
             pass
@@ -1122,9 +1128,9 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
             hvsr_data['PeakReport'] = {}
             hvsr_data['BestPeak'] = {}
             for i, col_id in enumerate(HVColIDList):
-                x = hvsr_data['x_freqs'][anyK]  #Consistent for all curves
+                x = hvsr_data['x_freqs'][anyK]  # Consistent for all curves
                 if col_id == 'HV':
-                    y = hvsr_data['hvsr_curve']  #Calculated based on "Use" column            
+                    y = hvsr_data['hvsr_curve']  # Calculated based on "Use" column            
                 else:
                     y = hvsr_data['hvsr_az'][col_id]
                 
@@ -1152,21 +1158,21 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                         # Otherwise, it will be the index of the value that is max within peak_freq_range
                         index_list = [subArrayMax+startInd]
                 
-                hvsrp = hvsr_data['hvsrp'][col_id]  #Calculated based on "Use" column
-                hvsrm = hvsr_data['hvsrm'][col_id]  #Calculated based on "Use" column
-
+                hvsrp = hvsr_data['hvsrp'][col_id]  # Calculated based on "Use" column
+                hvsrm = hvsr_data['hvsrm'][col_id]  # Calculated based on "Use" column
+                
                 hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
 
                 hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
                 peak_freq_range = hvsr_data['peak_freq_range']
 
-                #Do for hvsr
+                # Do for hvsr
                 peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
 
                 peak = __check_curve_reliability(hvsr_data, peak, col_id)
                 peak = __check_clarity(x, y, peak, do_rank=True)
 
-                #Do for hvsrp
+                # Do for hvsrp
                 # Find  the relative extrema of hvsrp (hvsr + 1 standard deviation)
                 if not np.isnan(np.sum(hvsrp)):
                     index_p = __find_peaks(hvsrp)
@@ -1230,7 +1236,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
                 hvsr_data['BestPeak'][col_id] = bestPeak
         else:
-            hvsr_data['BestPeak'][azimuth] = {}
+            for i, col_id in enumerate(HVColIDList):
+                hvsr_data['BestPeak'][col_id] = {}
             print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']}")
             try:
                 hvsr_data.plot()
@@ -1241,6 +1248,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         for key, value in orig_args.items():
             hvsr_data['processing_parameters']['check_peaks'][key] = value
     return hvsr_data
+
 
 # Function to export data to file
 def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
@@ -1283,7 +1291,8 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     return
 
-###WORKING ON THIS
+
+# **WORKING ON THIS**
 # Save default instrument and processing settings to json file(s)
 def export_settings(hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
     """Save settings to json file
