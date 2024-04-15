@@ -1986,7 +1986,6 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                     pass
                 else:
                     print('\t  {}={}'.format(key, value))
-            print()
 
     #Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
@@ -2134,9 +2133,8 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                             currTStepList.append(time_data[tk][i][currTStep[i]])
 
             dfList.append(currTStepList)
-        
         hvsrDF = pd.DataFrame(dfList, columns=colList)
-
+        hvsrDF['Use'].astype(bool)
         # Add azimuthal ppsds values
         for k in hvsr_data['ppsds'].keys():
             if k.upper() not in ['Z', 'E', 'N']:
@@ -2161,12 +2159,12 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         # Take care of existing time gaps, in case not taken care of previously
         for gap in hvsr_data['ppsds']['Z']['times_gaps']:
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
-                            (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date))# | \
+                            (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
         
         if 'xwindows_out' in hvsr_data.keys():
             for window in hvsr_data['xwindows_out']:
                 hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
-                        (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1]))
+                        (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
             hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
         hvsrDF.set_index('TimesProcessed', inplace=True)
@@ -3607,11 +3605,13 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 psdRaw[k] = np.array(input_ppsds)
 
             hvsrDF['psd_values_'+k] = list(psdRaw[k])
+            use = hvsrDF['Use'].astype(bool)
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
             psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
             x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
-            stDev[k] = np.std(psdRaw[k], axis=0)
+            stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+            print(stDev[k])
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
