@@ -594,7 +594,7 @@ def gui(kind='default'):
         except Exception as e:
             print(e)
 
-    
+   
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
 def run(datapath, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
@@ -847,6 +847,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
 
     return hvsr_results
 
+
 # Function to generate azimuthal readings from the horizontal components
 def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
@@ -1039,6 +1040,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return hvsr_data
+
 
 # Quality checks, stability tests, clarity tests
 # def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
@@ -3288,7 +3290,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             return fig, ax
     return
 
-#Plot Obspy Trace in axis using matplotlib
+
+# Plot Obspy Trace in axis using matplotlib
 def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True):
     """Function to plot a stream of data with Z, E, N components using matplotlib. Similar to obspy.Stream.Plot(), but will be formatted differently and eventually more customizable.
     This is also used in various functions throughout the package.
@@ -3424,7 +3427,8 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         return fig, axes
     return                 
 
-#Main function for processing HVSR Curve
+
+# Main function for processing HVSR Curve
 def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, verbose=False):
     """Process the input data and get HVSR data
     
@@ -3608,10 +3612,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             use = hvsrDF['Use'].astype(bool)
 
             #Get average psd value across time for each channel (used to calc main H/V curve)
-            psdValsTAvg[k] = np.nanmean(np.array(psdRaw[k]), axis=0)
+            psdValsTAvg[k] = np.nanmedian(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
             x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
             stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
-            print(stDev[k])
+
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
@@ -3836,7 +3840,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
     return hvsr_out
 
-#Function to remove noise windows from data
+
+# Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
@@ -4073,10 +4078,10 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output['xwindows_out'] = []
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
-    
     return output
 
-#Remove outlier ppsds
+
+# Remove outlier ppsds
 def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
@@ -4287,7 +4292,8 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     
     return hvsr_out
 
-#Read data as batch
+
+# Read data as batch
 def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
     """Function to read data in data as a batch of multiple data files. This is best used through sprit.fetch_data(*args, source='batch', **other_kwargs).
 
@@ -4504,12 +4510,14 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
 
     return hvsr_metaDict
 
-#Just for testing
+
+# Just for testing
 def test_function():
     print('is this working?')
 
-#BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data
-#Helper function for batch processing of check_peaks
+
+# BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data
+# Helper function for batch processing of check_peaks
 def _check_peaks_batch(**check_peaks_kwargs):
     try:
         hvsr_data = check_peaks(**check_peaks_kwargs)
@@ -4521,7 +4529,8 @@ def _check_peaks_batch(**check_peaks_kwargs):
         
     return hvsr_data
 
-#Support function for running batch
+
+# Support function for running batch
 def _generate_ppsds_batch(**generate_ppsds_kwargs):
     try:
         params = generate_ppsds(**generate_ppsds_kwargs)
@@ -4534,7 +4543,8 @@ def _generate_ppsds_batch(**generate_ppsds_kwargs):
         
     return params
 
-#Helper function for batch processing of get_report
+
+# Helper function for batch processing of get_report
 def _get_report_batch(**get_report_kwargs):
 
     try:
@@ -4558,7 +4568,8 @@ def _get_report_batch(**get_report_kwargs):
         
     return hvsr_results
 
-#Helper function for batch procesing of azimuth
+
+# Helper function for batch procesing of azimuth
 def __azimuth_batch(**azimuth_kwargs):
     try:
         hvsr_data = calculate_azimuth(**azimuth_kwargs)
@@ -4573,7 +4584,8 @@ def __azimuth_batch(**azimuth_kwargs):
 
     return hvsr_data
 
-#Helper function for batch procesing of remove_noise
+
+# Helper function for batch procesing of remove_noise
 def __remove_noise_batch(**remove_noise_kwargs):
     try:
         hvsr_data = remove_noise(**remove_noise_kwargs)
@@ -4587,6 +4599,7 @@ def __remove_noise_batch(**remove_noise_kwargs):
         warnings.warn(f"Error in remove_noise({remove_noise_kwargs['input']['site']}, **remove_noise_kwargs)", RuntimeWarning)
 
     return hvsr_data
+
 
 # Helper function batch processing of remove_outlier_curves
 def __remove_outlier_curves(**remove_outlier_curves_kwargs):
@@ -4604,7 +4617,7 @@ def __remove_outlier_curves(**remove_outlier_curves_kwargs):
     return hvsr_data
 
 
-#Batch function for plot_hvsr()
+# Batch function for plot_hvsr()
 def _hvsr_plot_batch(**hvsr_plot_kwargs):
     try:
         hvsr_data = plot_hvsr(**hvsr_plot_kwargs)
@@ -4632,7 +4645,7 @@ def _plot_azimuth_batch(**plot_azimuth_kwargs):
     return hvsr_data
 
 
-#Helper function for batch version of process_hvsr()
+# Helper function for batch version of process_hvsr()
 def _process_hvsr_batch(**process_hvsr_kwargs):
     try:
         hvsr_data = process_hvsr(**process_hvsr_kwargs)
@@ -4648,7 +4661,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
         
     return hvsr_data
 
-#Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
+# Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
 def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
     """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
 
@@ -4691,8 +4704,9 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
         print(f"\t\t{func_name} completed in  {str(elapsed)[:-3]}")
     return hvsr_data
 
-#HELPER functions for fetch_data() and get_metadata()
-#Read in metadata .inv file, specifically for RaspShake
+
+# HELPER functions for fetch_data() and get_metadata()
+# Read in metadata .inv file, specifically for RaspShake
 def _update_shake_metadata(filepath, params, write_path=''):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
@@ -4800,7 +4814,8 @@ def _update_shake_metadata(filepath, params, write_path=''):
     params['params']['inv'] = inv
     return params
 
-#Support function for get_metadata()
+
+# Support function for get_metadata()
 def _read_RS_Metadata(params, source=None):
     """Function to read the metadata from Raspberry Shake using the StationXML file provided by the company.
     Intended to be used within the get_metadata() function.
@@ -4903,7 +4918,8 @@ def _read_RS_Metadata(params, source=None):
 
     return params
 
-#Helper function to sort channels
+
+# Helper function to sort channels
 def _sort_channels(input, source, verbose):
     if source!='batch':
         input = {'SITENAME': {'stream':input}} #Make same structure as batch
@@ -4939,7 +4955,8 @@ def _sort_channels(input, source, verbose):
         output = input[site]['stream']
     return output
 
-#Trim data 
+
+# Trim data 
 def _trim_data(input, stream=None, export_dir=None, export_format=None, source=None, **kwargs):
     """Function to trim data to start and end time
 
@@ -5058,7 +5075,8 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
 
     return st_trimmed
 
-#Helper function to detrend data
+
+# Helper function to detrend data
 def __detrend_data(input, detrend, detrend_order, verbose, source):
     """Helper function to detrend data, specifically formatted for the HVSRData and HVSRBatch objects"""
     if source!='batch':
@@ -5105,7 +5123,8 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         output = input[key]['stream']
     return output
 
-#Read data from raspberry shake
+
+# Read data from raspberry shake
 def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=False):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     from obspy.core import UTCDateTime
@@ -5209,7 +5228,8 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
 
     return rawDataIN
 
-#Read data from Tromino
+
+# Read data from Tromino
 def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
@@ -5297,7 +5317,8 @@ def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, ve
     st = obspy.Stream([trace1, trace2, trace3])    
     return st
 
-## Helper functions for remove_noise()
+
+# Helper functions for remove_noise()
 # Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
     """Helper function for removing gaps"""
@@ -5346,6 +5367,7 @@ def __remove_gaps(stream, window_gaps_obspy):
         outStream = stream.copy()
 
     return outStream
+
 
 # Helper function for getting windows to remove noise using stalta antitrigger method
 def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
@@ -5445,6 +5467,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
     outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
+
 # Remove noise saturation
 def __remove_noise_saturate(stream, sat_percent, min_win_size):
     """Function to remove "saturated" data points that exceed a certain percent (sat_percent) of the maximum data value in the stream.  
@@ -5513,6 +5536,7 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
     
     outstream  = __remove_gaps(stream, removeUTC)
     return outstream
+
 
 # Helper function for removing data using the noise threshold input from remove_noise()
 def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
@@ -5601,6 +5625,7 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
 
     return outstream
 
+
 # Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
 def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
     sampleRate = float(stream[0].stats.delta)
@@ -5640,6 +5665,7 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
         outStream = __remove_gaps(stream, window_UTC)
     return outStream
+
 
 # Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
@@ -5715,6 +5741,7 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
         hvsr_data['Windows_Plot'] = (fig, ax)
         return hvsr_data
     return 
+
 
 # Helper function for manual window selection 
 def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax):
@@ -5796,6 +5823,7 @@ def __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lin
     fig.canvas.draw()
     return clickNo, x0
 
+
 # Helper function for manual window selection to draw boxes to deslect windows for removal
 def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineArtist, fig, ax):
     """Helper function for manual window selection to draw boxes to deslect windows for removal"""
@@ -5815,7 +5843,8 @@ def __remove_on_right(event, xWindows, pathList, windowDrawn, winArtist,  lineAr
                 xWindows.pop(i)
     fig.canvas.draw() 
 
-#Helper function for updating the canvas and drawing/deleted the boxes
+
+# Helper function for updating the canvas and drawing/deleted the boxes
 def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fig, ax):
     """Helper function for updating the canvas and drawing/deleted the boxes"""
     for i, pa in enumerate(pathlist):
@@ -5831,7 +5860,8 @@ def __draw_windows(event, pathlist, ax_key, windowDrawn, winArtist, xWindows, fi
     if event.button is MouseButton.RIGHT:
         fig.canvas.draw()
 
-#Helper function for getting click event information
+
+# Helper function for getting click event information
 def __on_click(event):
     """Helper function for getting click event information"""
     global clickNo
@@ -5842,7 +5872,8 @@ def __on_click(event):
     if event.button is MouseButton.LEFT:            
         clickNo, x0 = __draw_boxes(event, clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax)    
 
-#Function to select windows using original stream specgram/plots
+
+# Function to select windows using original stream specgram/plots
 def _select_windows(input):
     """Function to manually select windows for exclusion from data.
 
@@ -5902,13 +5933,15 @@ def _select_windows(input):
     hvsr_data['ax_noise'] = ax
     return hvsr_data
 
-#Support function to help select_windows run properly
+
+# Support function to help select_windows run properly
 def _on_fig_close(event):
     global fig_closed
     fig_closed = True
     return
 
-#Shows windows with None on input plot
+
+# Shows windows with None on input plot
 def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib',show_plot=False):
     """This function is for getting Nones from masked arrays and plotting them as windows"""
     if fig is None and ax is None:
@@ -6080,7 +6113,8 @@ def _get_removed_windows(input, fig=None, ax=None, lineArtist =[], winArtist = [
         plt.show()
     return fig, ax, lineArtist, winArtist
 
-#Helper function for removing windows from data, leaving gaps
+
+# Helper function for removing windows from data, leaving gaps
 def __remove_windows(stream, window_list, warmup_time):
     """Helper function that actually does the work in obspy to remove the windows calculated in the remove_noise function
 s
@@ -6199,8 +6233,9 @@ s
     outStream.merge()
     return outStream
 
-##Helper functions for process_hvsr()
-#Get diffuse field assumption data
+
+# Helper functions for process_hvsr()
+# Get diffuse field assumption data
 def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
     """Function for performing Diffuse Field Assumption (DFA) analysis
     
@@ -6298,7 +6333,8 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
 
     return params
 
-#Helper function for smoothing across frequencies
+
+# Helper function for smoothing across frequencies
 def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
     """Helper function to smooth frequency if 'constant' or 'proportional' is passed to freq_smooth parameter of process_hvsr() function"""
     if kind_freq_smooth == 'constant':
@@ -6354,7 +6390,8 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
 
     return hvsr_out
 
-#Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
+
+# Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
 def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
@@ -6422,7 +6459,8 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
        
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
-#Get HVSR
+
+# Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     """
     _dbz : list
@@ -6467,7 +6505,8 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
     _hvsr = _h[use_method] / _hz
     return _hvsr
 
-#For converting dB scaled data to power units
+
+# For converting dB scaled data to power units
 def __get_power(_db, _x):
     """Calculate HVSR
 
@@ -6517,7 +6556,8 @@ def __get_power(_db, _x):
     _p = np.multiply(np.mean(__remove_db(_db)), _dx)
     return _p
 
-#Remove decibel scaling
+
+# Remove decibel scaling
 def __remove_db(_db_value):
     """convert dB power to power"""
     _values = list()
@@ -6528,7 +6568,8 @@ def __remove_db(_db_value):
        _values[1]=10e-300
     return _values
 
-#Find peaks in the hvsr ccruve
+
+# Find peaks in the hvsr ccruve
 def __find_peaks(_y):
     """Finds all possible peaks on hvsr curves
     Parameters
@@ -6541,7 +6582,8 @@ def __find_peaks(_y):
 
     return _index_list[0]
 
-#Get additional HVSR params for later calcualtions
+
+# Get additional HVSR params for later calcualtions
 def __gethvsrparams(hvsr_out):
     """Private function to get HVSR parameters for later calculations (things like standard deviation, etc)"""
 
@@ -6605,8 +6647,9 @@ def __gethvsrparams(hvsr_out):
 
     return hvsr_out
 
-##Helper Functions for plotting
-#Plot hvsr curve, private supporting function for plot_hvsr
+
+# Helper Functions for plotting
+# Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
@@ -6735,7 +6778,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                             ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05, label='Individual H/V Peaks')
                         else:
                            ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
-            for t in hvsr_data['ind_hvsr_curves']:
+            for t in hvsr_data['ind_hvsr_curves'][azimuth]:
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
         # Only plot test results on HVSR plot
@@ -6949,15 +6992,21 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 
             minY = []
             maxY = []
-            for key in hvsr_data['psd_values_tavg']:
-                minY.append(min(hvsr_data['ppsd_std_vals_m'][key]))
-                maxY.append(max(hvsr_data['ppsd_std_vals_p'][key]))
+            keyList = ['Z', 'E', 'N']
+            for az in hvsr_data.hvsr_az.keys():
+                keyList.append(az)
+            keyList.sort()
+            hvsrDF = hvsr_data.hvsr_windows_df
+            for key in keyList:
+                minY.append(hvsr_data['psd_values_tavg'][key].min())
+                maxY.append(hvsr_data['psd_values_tavg'][key].max())
+                #maxY.append(np.stack(hvsr_data.hvsr_windows_df['Use']['psd_values_'+key]))
             minY = min(minY)
-            maxY = max(maxY)
+            maxY = min(maxY)
             if maxY > 20:
                 maxY=20
             rng = maxY-minY
-            pad = rng * 0.05
+            pad = rng * 0.1
             ylim = [minY-pad, maxY+pad]
         
             compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
@@ -6989,7 +7038,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 if key.lower() in ['z', 'e', 'n'] or key == azimuth:
                     y[key] = hvsr_data['psd_values_tavg'][key][:-1]
                     compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
-                    
                     if '-s' not in plot_type:
                         compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
@@ -7025,7 +7073,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     
     return fig, ax
 
-#Private function to help for when to show and format and save plots
+
+# Private function to help for when to show and format and save plots
 def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show):
     """Private function to support plot_hvsr, for plotting and showing plots"""
     #plt.gca()
@@ -7043,7 +7092,8 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
         #plt.ion()
     return
 
-#Plot specgtrogram, private supporting function for plot_hvsr
+
+# Plot specgtrogram, private supporting function for plot_hvsr
 def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='',**kwargs):
     """Private function for plotting average spectrogram of all three channels from ppsds
     """
@@ -7198,7 +7248,8 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
 
     return fig, ax
 
-#Plot spectrogram from stream
+
+# Plot spectrogram from stream
 def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
     """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
 
@@ -7435,6 +7486,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         return fig, ax
     
     return
+
 
 # HELPER functions for checking peaks
 # Initialize peaks
