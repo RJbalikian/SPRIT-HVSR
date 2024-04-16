@@ -804,6 +804,37 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+    # Add 'az' as a default plot if the following conditions
+    # first check if report_format is specified, if not, add default value
+    if 'report_format' not in get_report_kwargs.keys():
+        get_report_kwargs['report_format'] = inspect.signature(get_report).parameters['report_format'].default
+    
+    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths    
+    if 'plot' in get_report_kwargs['report_format']:
+        usingDefault = True
+        if 'plot_type' not in get_report_kwargs.keys():
+            get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
+            
+        else:
+            usingDefault = False
+
+        # Check if az is already specified as plot output
+        azList = ['azimuth', 'az', 'a', 'radial', 'r']
+        wantsAz = False
+        for azStr in azList:
+            if azStr in get_report_kwargs['plot_type']:
+                wantsAz = True
+                break
+        
+        # Check if data has azimuth data
+        hasAz = False
+        for tr in hvsr_results.stream:
+            if tr.stats.component == 'R':
+                hasAz = True
+                break
+           
+        if not wantsAz:
+
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
