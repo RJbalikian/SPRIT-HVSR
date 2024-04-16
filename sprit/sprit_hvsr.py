@@ -7002,13 +7002,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 maxY.append(hvsr_data['psd_values_tavg'][key].max())
                 #maxY.append(np.stack(hvsr_data.hvsr_windows_df['Use']['psd_values_'+key]))
             minY = min(minY)
-            maxY = min(maxY)
+            maxY = max(maxY)
             if maxY > 20:
                 maxY=20
             rng = maxY-minY
-            pad = rng * 0.1
+            pad = abs(rng * 0.15)
             ylim = [minY-pad, maxY+pad]
-        
             compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
