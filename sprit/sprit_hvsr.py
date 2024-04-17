@@ -689,29 +689,32 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 
 
     # Remove Noise
-    remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-    try:
-        data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
-    except:
+    if noise_removal:
+        remove_noise_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+        try:
+            data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
+        except:
+            data_noiseRemoved = dataIN
+            
+            #Reformat data so HVSRData and HVSRBatch data both work here
+            if isinstance(data_noiseRemoved, HVSRData):
+                data_noiseRemoved = {'place_holder_sitename':data_noiseRemoved}
+                dataIN = {'place_holder_sitename':dataIN}
+                
+            for site_name in data_noiseRemoved.keys():
+                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
+                #Since noise removal is not required for data processing, check others first
+                if dataIN[site_name]['ProcessingStatus']['OverallStatus']:
+                    data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
+                else:
+                    data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+
+                #If it wasn't originally HVSRBatch, make it HVSRData object again
+                if not data_noiseRemoved[site_name]['batch']:
+                    data_noiseRemoved = data_noiseRemoved[site_name]
+    else:
         data_noiseRemoved = dataIN
         
-        #Reformat data so HVSRData and HVSRBatch data both work here
-        if isinstance(data_noiseRemoved, HVSRData):
-            data_noiseRemoved = {'place_holder_sitename':data_noiseRemoved}
-            dataIN = {'place_holder_sitename':dataIN}
-            
-        for site_name in data_noiseRemoved.keys():
-            data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
-            #Since noise removal is not required for data processing, check others first
-            if dataIN[site_name]['ProcessingStatus']['OverallStatus']:
-                data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
-            else:
-                data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
-
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not data_noiseRemoved[site_name]['batch']:
-                data_noiseRemoved = data_noiseRemoved[site_name]
-    
     # Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in locals()['kwargs'].items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
