@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>sprit.sprit_utils &mdash; sprit 0.0.22-dev documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
   
@@ -13,7 +13,7 @@
   <![endif]-->
   
         <script src="../../_static/documentation_options.js?v=7d709ffc"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -83,7 +83,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">obspy.core.utcdatetime</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
 
-<span class="k">try</span><span class="p">:</span> <span class="c1"># For distribution</span>
+<span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
 <span class="k">except</span><span class="p">:</span> <span class="c1">#For testing</span>
     <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
@@ -91,6 +91,25 @@
 
 <span class="n">greek_chars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03C3</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;epsilon&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B5</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;teta&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B8</span><span class="s1">&#39;</span><span class="p">}</span>
 <span class="n">channel_order</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+
+<div class="viewcode-block" id="assert_check">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.assert_check">[docs]</a>
+<span class="k">def</span> <span class="nf">assert_check</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">cond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">var_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s1">&#39;Output not valid&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">var_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">var_type</span><span class="p">),</span> <span class="n">error_message</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output valid: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> is instance of </span><span class="si">{</span><span class="n">var_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">cond</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">cond</span><span class="p">,</span> <span class="n">error_message</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Output valid:&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; and &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;test condition is met.&quot;</span><span class="p">)</span></div>
+
+        
 
 <div class="viewcode-block" id="check_gui_requirements">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_gui_requirements">[docs]</a>
@@ -419,7 +438,6 @@
                         <span class="n">input_data</span><span class="p">[</span><span class="n">kin</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="n">kin</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s1">&#39;params&#39;</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">kin</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="n">kin</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">kin</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="n">input_data</span><span class="p">[</span><span class="n">kin</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="n">kin</span><span class="p">]</span>                
         <span class="n">output_class</span> <span class="o">=</span> <span class="n">input_data</span>
