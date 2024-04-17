@@ -3069,10 +3069,14 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         azList = ['azimuth', 'az', 'a', 'radial', 'r']
         azOpts = []
         if 'plot_type' in plot_azimuth_kwargs.keys():
-            ptList = plot_azimuth_kwargs['plot_type'].split(' ')
+            if type(plot_azimuth_kwargs['plot_type']) is str:
+                ptList = plot_azimuth_kwargs['plot_type'].split(' ')
+            elif isinstance(plot_azimuth_kwargs['plot_type'], (list, tuple)):
+                ptList = list(plot_azimuth_kwargs['plot_type'])
+
             for az in azList:
                 if az in ptList:
-                    azOpts = ptList[ptList.index(az)+1:]
+                    azOpts = [item.lower() for item in ptList[ptList.index(az)+1:]]
 
         if 'p' in azOpts:
             show_azimuth_peaks = True
@@ -3322,6 +3326,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 kwargs.update(plottypeKwargs)
                 _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
             elif p == 'az':
+                kwargs['plot_type'] = plotComponents
                 hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
