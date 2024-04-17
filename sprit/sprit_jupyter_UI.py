@@ -341,7 +341,7 @@ def create_jupyter_ui():
                     if func in widget_param_dict.keys():
                         for prm, val in params.items():
                             if prm in widget_param_dict[func].keys():
-                                print(prm, ':', widget_param_dict[func][prm],' |  ', val)
+                                #print(prm, ':', widget_param_dict[func][prm],' |  ', val)
                                 if val is None or val=='None':
                                     val='none'
                                 if prm == 'export_format':
@@ -835,7 +835,7 @@ def create_jupyter_ui():
                             'psd_values_N']
             dataList = []
             for col in colnames:
-                dataArr = np.stack(hvsr_data.hvsr_df[col])
+                dataArr = np.stack(hvsr_data.hvsr_windows_df[col])
                 medCurveArr = np.nanmedian(dataArr, axis=0)
                 rmse = np.sqrt(((np.subtract(dataArr, medCurveArr)**2).sum(axis=1))/dataArr.shape[1])
                 if rmse.min() < minRMSE:
@@ -935,7 +935,7 @@ def create_jupyter_ui():
     def parse_hv_plot_list(hv_data, hvsr_plot_list):
         hvsr_data = hv_data
         x_data = hvsr_data.x_freqs['Z']
-        hvsrDF = hvsr_data.hvsr_df
+        hvsrDF = hvsr_data.hvsr_windows_df
 
         if 'tp' in hvsr_plot_list:
             allpeaks = []
@@ -1029,7 +1029,7 @@ def create_jupyter_ui():
         hvsr_data = hv_data
         # Initial setup
         x_data = hvsr_data.x_freqs['Z']
-        hvsrDF = hvsr_data.hvsr_df
+        hvsrDF = hvsr_data.hvsr_windows_df
         same_plot = ((comp_plot_list != []) and ('+' not in comp_plot_list[0]))
 
         if same_plot:
@@ -1160,7 +1160,7 @@ def create_jupyter_ui():
     def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num):
         hvsr_data = hv_data
         # Initial setup
-        hvsrDF = hvsr_data.hvsr_df
+        hvsrDF = hvsr_data.hvsr_windows_df
         specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
         y_data = hvsr_data.x_freqs['Z'][1:]
         image_data = np.stack(hvsrDF['HV_Curves']).T
@@ -1168,7 +1168,7 @@ def create_jupyter_ui():
         maxZ = np.percentile(image_data, 100)
         minZ = np.percentile(image_data, 0)
 
-        use_mask = hvsr_data.hvsr_df.Use.values
+        use_mask = hvsr_data.hvsr_windows_df.Use.values
         use_mask = np.tile(use_mask, (image_data.shape[0],1))
         use_mask = np.where(use_mask is False, np.nan, use_mask)
 
@@ -1237,7 +1237,7 @@ def create_jupyter_ui():
         if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
             hvsr_data=hvsr_data[0]
 
-        hvsrDF = hvsr_data.hvsr_df
+        hvsrDF = hvsr_data.hvsr_windows_df
 
         plot_list = parse_plot_string(plot_string)
 
@@ -1605,11 +1605,11 @@ def create_jupyter_ui():
     
     def on_update_rmse_thresh_slider(change):
         if use_hv_curve_rmse.value:
-            rmse = calc_rmse(np.stack(hvsr_data.hvsr_df['HV_Curves']))
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
         else:
-            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_Z']))
-            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_E']))
-            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_N']))
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_E']))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_N']))
 
             rmse = np.stack([rmsez, rmsee, rmsen]).flatten()
 
@@ -1621,11 +1621,11 @@ def create_jupyter_ui():
 
     def on_update_rmse_pctile_slider(change):
         if use_hv_curve_rmse.value:
-            rmse = calc_rmse(np.stack(hvsr_data.hvsr_df['HV_Curves']))
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
         else:
-            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_Z']))
-            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_E']))
-            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_df['psd_values_N']))
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_E']))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_N']))
 
             rmse = np.stack([rmsez, rmsee, rmsen])
 
@@ -1708,7 +1708,7 @@ def create_jupyter_ui():
 
         if roc_kwargs['use_hv_curve']:
             no_subplots = 1
-            if hasattr(hvsr_data, 'hvsr_df') and 'HV_Curves' in hvsr_data.hvsr_df.columns:
+            if hasattr(hvsr_data, 'hvsr_windows_df') and 'HV_Curves' in hvsr_data.hvsr_windows_df.columns:
                 outlier_fig.data = []
                 outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
                 outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
@@ -1717,17 +1717,17 @@ def create_jupyter_ui():
 
                 x_data = hvsr_data['x_freqs']
                 curve_traces = []
-                for hv in hvsr_data.hvsr_df['HV_Curves'].iterrows():
+                for hv in hvsr_data.hvsr_windows_df['HV_Curves'].iterrows():
                     curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
                 outlier_fig.add_traces(curve_traces)
                 
                 # Calculate a median curve, and reshape so same size as original
-                medCurve = np.nanmedian(np.stack(hvsr_data.hvsr_df['HV_Curves']), axis=0)
+                medCurve = np.nanmedian(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']), axis=0)
                 outlier_fig.add_trace(go.Scatter(x=x_data, y=medCurve, line=dict(color='rgba(0,0,0,1)', width=1.5),showlegend=False))
                 
-                minY = np.nanmin(np.stack(hvsr_data.hvsr_df['HV_Curves']))
-                maxY = np.nanmax(np.stack(hvsr_data.hvsr_df['HV_Curves']))
-                totalWindows = hvsr_data.hvsr_df.shape[0]
+                minY = np.nanmin(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
+                maxY = np.nanmax(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
+                totalWindows = hvsr_data.hvsr_windows_df.shape[0]
                 #medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
 
         else:
@@ -1739,7 +1739,7 @@ def create_jupyter_ui():
             outlier_fig.update_layout(grid={'rows': 3})
             outlier_fig = go.FigureWidget(outlier_subp)
 
-            if hasattr(hvsr_data, 'hvsr_df'):
+            if hasattr(hvsr_data, 'hvsr_windows_df'):
                 rowDict = {'Z':1, 'E':2, 'N':3}
                 showTLabelsDict={'Z':False, 'E':False, 'N':True}
                 def comp_rgba(comp, a):
@@ -1764,7 +1764,7 @@ def create_jupyter_ui():
                         x_data = [1/p for p in hvsr_data['ppsds'][comp]['period_xedges'][1:]]                    
                     column = 'psd_values_'+comp
                     # Retrieve data from dataframe (use all windows, just in case)
-                    curr_data = np.stack(hvsr_data['hvsr_df'][column])
+                    curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
                     
                     # Calculate a median curve, and reshape so same size as original
                     medCurve = np.nanmedian(curr_data, axis=0)
@@ -1777,24 +1777,24 @@ def create_jupyter_ui():
                     rmse_threshold = np.percentile(rmse, roc_kwargs['rmse_thresh'])
                     
                     # Retrieve index of those RMSE values that lie outside the threshold
-                    timeIndex = hvsr_data['hvsr_df'].index
+                    timeIndex = hvsr_data['hvsr_windows_df'].index
                     for j, curve in enumerate(curr_data):
                         if rmse[j] > rmse_threshold:
                             badTrace = go.Scatter(x=x_data, y=curve,
                                                 line=dict(color=comp_rgba(comp, 1), width=1.5, dash='dash'),
                                                 #marker=dict(color=comp_rgba(comp, 1), size=3),
-                                                name=str(hvsr_data.hvsr_df.index[j]), showlegend=False)
+                                                name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
                             outlier_fig.add_trace(badTrace, row=rowDict[comp], col=1)
                             if j not in indRemoved:
                                 indRemoved.append(j)
                             noRemoved += 1
                         else:
                             goodTrace = go.Scatter(x=x_data, y=curve,
-                                                  line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_df.index[j]), showlegend=False)
+                                                  line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
                             outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
 
                     timeIndRemoved = pd.DatetimeIndex([timeIndex[ind] for ind in indRemoved])
-                    hvsr_data['hvsr_df'].loc[timeIndRemoved, 'Use'] = False
+                    hvsr_data['hvsr_windows_df'].loc[timeIndRemoved, 'Use'] = False
 
                     outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
                     

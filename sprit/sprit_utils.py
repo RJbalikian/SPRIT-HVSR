@@ -10,7 +10,7 @@ import zoneinfo
 import numpy as np
 from obspy.core.utcdatetime import UTCDateTime
 
-try: # For distribution
+try:  # For distribution
     from sprit import sprit_hvsr
 except: #For testing
     import sprit_hvsr
@@ -18,6 +18,22 @@ except: #For testing
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
+
+def assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
+    if var_type is not None:
+        assert isinstance(var, var_type), error_message
+        if verbose:
+            print(f"Output valid: {var} is instance of {var_type}", end='')
+        
+    if cond is not None:
+        assert cond, error_message
+        if verbose:
+            if var_type is None:
+                print('Output valid:', end=' ')
+            else:
+                print(' and ', end='')
+            print(f"test condition is met.")
+        
 
 def check_gui_requirements():
     #First, check requirements
@@ -320,7 +336,6 @@ def make_it_classy(input_data, verbose=False):
                         input_data[kin] = input_data['input_params'][kin]
             if k=='params':
                 for kin in input_data['params'].keys():
-                    print(kin)
                     if kin not in input_data.keys():
                         input_data[kin] = input_data['params'][kin]                
         output_class = input_data
