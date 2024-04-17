@@ -809,39 +809,41 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     if 'report_format' not in get_report_kwargs.keys():
         get_report_kwargs['report_format'] = inspect.signature(get_report).parameters['report_format'].default
     
-    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths    
+    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
     if 'plot' in get_report_kwargs['report_format']:
         usingDefault = True
         if 'plot_type' not in get_report_kwargs.keys():
             get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
-            
         else:
             usingDefault = False
 
         # Check if az is already specified as plot output
         azList = ['azimuth', 'az', 'a', 'radial', 'r']
-        wantsAz = False
-        for azStr in azList:
-            if azStr in get_report_kwargs['plot_type']:
-                wantsAz = True
-                break
+        az_requested = False
         
+        get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
+        for azStr in azList:
+            if azStr.lower() in get_report_kwargs['plot_type']:
+                az_requested = True
+                break
+        get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
+
         # Check if data has azimuth data
         hasAz = False
         for tr in hvsr_results.stream:
             if tr.stats.component == 'R':
                 hasAz = True
                 break
-           
-        if not wantsAz:
-
+        
+        if not az_requested and hasAz:
+            get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if 'report_format' in get_report_kwargs.keys():
             if type(get_report_kwargs['report_format']) is str:
                 report_format = get_report_kwargs['report_format'].lower()
-            elif isinstance(report_format, (tuple, list)):
+            elif isinstance(get_report_kwargs['report_format'], (tuple, list)):
                 for i, rf in enumerate(get_report_kwargs['report_format']):
                     get_report_kwargs['report_format'][i] = rf.lower()
                     
@@ -3063,6 +3065,20 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         # Plot data
         pmesh1 = plt.pcolormesh(th, r, z, cmap = 'jet')
         pmesh2 = plt.pcolormesh(th2, r2, z2, cmap = 'jet')
+
+        azList = ['azimuth', 'az', 'a', 'radial', 'r']
+        azOpts = []
+        if 'plot_type' in plot_azimuth_kwargs.keys():
+            ptList = plot_azimuth_kwargs['plot_type'].split(' ')
+            for az in azList:
+                if az in ptList:
+                    azOpts = ptList[ptList.index(az)+1:]
+
+        if 'p' in azOpts:
+            show_azimuth_peaks = True
+
+        if 'g' in azOpts:
+            show_azimuth_grid = True
 
         if show_azimuth_peaks:
             peakVals = []
