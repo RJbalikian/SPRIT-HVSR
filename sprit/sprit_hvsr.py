@@ -2219,7 +2219,6 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         hvsr_data['processing_parameters']['generate_ppsds'] = {}
         for key, value in orig_args.items():
             hvsr_data['processing_parameters']['generate_ppsds'][key] = value
-
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
