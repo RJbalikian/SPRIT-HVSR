@@ -3227,7 +3227,6 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         specInd = np.nan
         azInd = np.nan
 
-        print(plot_type)
         plot_type = plot_type.replace(',', '')
         kList = plot_type.split(' ')
         for i, k in enumerate(kList):
