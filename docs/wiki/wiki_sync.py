@@ -15,7 +15,7 @@ def onerror(func, path, exc_info):
         assert False
 
 if download_wiki:
-    dir_path = currentDir.joinpath('SPRIT-HVSR.wiki')
+    dir_path = currentDir.joinpath('SPRIT-HVSR_Wiki')
 
     if dir_path.exists():
         try:
