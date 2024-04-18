@@ -20,7 +20,7 @@ Sprit may be installed from the [pypi repository](https://pypi.org/project/sprit
 
 `pip install sprit`
 
-The sprit package is in active development. Add the `--upgrade` argument (`pip install --upgrade`) to ensure you have the latest version.
+The sprit package is in active development. Add the `--upgrade` argument (`pip install sprit --upgrade`) to ensure you have the latest version. If there are prerelease versions newer than the latest stable version that you would like to try out, use the `--pre` flag, i.e., `pip install sprit --pre`.
 
 This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see [this page](https://docs.python.org/3/library/venv.html). For the creation of anaconda environments, see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.
 
