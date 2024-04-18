@@ -745,7 +745,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 ppsd_data = ppsd_data[site_name]
     
     # Remove noisy windows from hvsr_windows_df (already calcualted in Remove Noise step
-    ppsd_data = __remove_windows_from_df(ppsd_data)
+    ppsd_data = __remove_windows_from_df(ppsd_data, verbose=False)
 
     # Remove Outlier Curves
     try:
@@ -4106,7 +4106,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output['ProcessingStatus']['RemoveNoiseStatus'] = True
             output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
-            output = __remove_windows_from_df(output)
+            output = __remove_windows_from_df(output, verbose=verbose)
 
             #if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output['input_params'].keys()):
             #    hvsrDF = output['hvsr_windows_df']
@@ -6302,10 +6302,10 @@ s
 
 
 # Remove noisy windows from df
-def __remove_windows_from_df(hvsr_data):
+def __remove_windows_from_df(hvsr_data, verbose=False):
     if 'hvsr_windows_df' in hvsr_data.keys() or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys()):
         hvsrDF = hvsr_data['hvsr_windows_df']
-        
+        use_before = hvsrDF["Use"].copy().astype(bool)
         outStream = hvsr_data['stream_edited'].split()
         for i, trace in enumerate(outStream):
             if i == 0:
@@ -6317,17 +6317,32 @@ def __remove_windows_from_df(hvsr_data):
             
             if trEndTime < trStartTime and comp_end == comp_start:
                 gap = [trEndTime,trStartTime]
-                print(gap)
+
                 hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
                                 (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
                 hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
             hvsr_data['hvsr_windows_df'] = hvsrDF  # May not be needed, just in case, though
             trEndTime = trace.stats.endtime
-    
+
+        use_after = hvsrDF["Use"].astype(bool)
+        removed = ~use_before.eq(use_after)
+
+        if verbose:
+            if removed[removed].shape[0]>0:
+                print(f"\t\tThe windows starting at the following times have been removed from further analysis ({removed[removed].shape[0]}/{hvsrDF.shape[0]})")
+                for t in removed[removed].index.to_pydatetime():
+                    print(f'\t\t{t} ')
+            else:
+                print(f"\t\tNo windows removed using remove_noise()")
+
         outStream.merge()
         hvsr_data['stream_edited'] = outStream
-        return hvsr_data
+    else:
+        if verbose:
+            print(f"\t\tNo windows removed using remove_noise()")
+
+    return hvsr_data
 
 # Helper functions for process_hvsr()
 # Get diffuse field assumption data
