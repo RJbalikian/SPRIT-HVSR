@@ -1152,11 +1152,9 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 
         hvsr_data = HVSRBatch(hvsr_data)
     else:
+        HVColIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
+        HVColIDList[0] = 'HV'
         if hvsr_data['ProcessingStatus']['OverallStatus']:
-            HVColIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
-            HVColIDList[0] = 'HV'
-   
-
             if not hvsr_band:
                 hvsr_band = [0.4,40]
             
@@ -3229,6 +3227,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         specInd = np.nan
         azInd = np.nan
 
+        print(plot_type)
         plot_type = plot_type.replace(',', '')
         kList = plot_type.split(' ')
         for i, k in enumerate(kList):
@@ -3314,13 +3313,13 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 axis = ax[p]
             else:
                 fig, axis = plt.subplots()
-                    
+
             if p == 'hvsr':
-                kwargs['p'] = 'hvsr'
+                kwargs['subplot'] = 'hvsr'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p == 'comp':
                 plotComponents[0] = plotComponents[0][:-1]
-                kwargs['p'] == 'comp'
+                kwargs['subplot'] == 'comp'
                 _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p == 'spec':
                 plottypeKwargs = {}
@@ -3674,7 +3673,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
             stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
-            currTimesUsed[k] = np.array(hvsrDF['TimesProcessed_Obspy'][hvsrDF['Use']].values)
+            currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
             #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
         
         #Get string of method type
@@ -3804,7 +3803,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     colID = 'HV'
                 else:
                     colID = col_name.split('_')[2]
-                hvsr_out['ind_hvsr_curves'][colID] = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
+                hvsr_out['ind_hvsr_curves'][colID] = np.stack(hvsr_out['hvsr_windows_df'][hvsr_out['hvsr_windows_df']['Use']][col_name])
 
         #Initialize array based only on the curves we are currently using
         indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
@@ -4174,7 +4173,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
-        if 'remove_outlier_curves' in hvsr_data['processing_parameters'].keys():
+        if 'remove_outlier_curves' in hvsr_data['processing_parameters'].keys() and 'remove_noise' in hvsr_data['processing_parameters'].keys():
             for k, v in hvsr_data['processing_parameters']['remove_noise'].items():
                 defaultVDict = dict(zip(inspect.getfullargspec(remove_outlier_curves).args[1:], 
                                         inspect.getfullargspec(remove_outlier_curves).defaults))
@@ -6837,7 +6836,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 ax.plot(x, t, color='k', alpha=0.15, linewidth=0.8, linestyle=':')
 
         # Only plot test results on HVSR plot
-        if 'test' in k and kwargs['p']=='hvsr':
+        if 'test' in k and kwargs['subplot']=='hvsr':
             if k=='tests':
                 # Change k to pass all test plot conditions
                 k='test123456c'
@@ -7257,7 +7256,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
         linList.append(np.interp(new_indices, freqticks, row))
     linear_arr = np.stack(linList)
 
-    # Create chart 
+    # Create chart
+    if 'subplot' in kwargs.keys():
+        del kwargs['subplot']
     im = ax.imshow(linear_arr.T, origin='lower', extent=extList, aspect='auto', alpha=useArr, **kwargs)
     ax.tick_params(left=True, right=True, top=True)
 
