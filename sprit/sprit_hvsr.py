@@ -6344,6 +6344,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
     return hvsr_data
 
+
 # Helper functions for process_hvsr()
 # Get diffuse field assumption data
 def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
