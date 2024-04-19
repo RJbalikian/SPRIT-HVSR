@@ -3908,7 +3908,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
 
 # Function to remove noise windows from data
-def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[0.5,5], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, verbose=False):
+def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[1, 10], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -4033,7 +4033,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output = inStream.copy()
 
         outStream = inStream
-        
+
         # Get remove_method into consistent format (list)
         if isinstance(remove_method, str):
             if ',' in remove_method:
@@ -5441,7 +5441,7 @@ def __remove_gaps(stream, window_gaps_obspy):
 
 
 # Helper function for getting windows to remove noise using stalta antitrigger method
-def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
+def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False):
     """Helper function for getting windows to remove noise using stalta antitrigger method
 
     Parameters
@@ -5477,23 +5477,23 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_plot=False):
             warnings.filterwarnings('ignore', category=UserWarning)
             cFunList.append(classic_sta_lta(tr, nsta=sta_samples, nlta=lta_samples))
 
-    if show_plot is True:
+    if show_stalta_plot is True:
         obspy.signal.trigger.plot_trigger(tr, cFunList[0], thresh[1], thresh[0])
-    elif type(show_plot) is int:
-        obspy.signal.trigger.plot_trigger(tr, cFunList[show_plot], thresh[1], thresh[0])
+    elif type(show_stalta_plot) is int:
+        obspy.signal.trigger.plot_trigger(tr, cFunList[show_stalta_plot], thresh[1], thresh[0])
 
     windows_samples = []
     for t, cf in enumerate(cFunList):
-        if len(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]))>0:
+        if len(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0])) > 0:
             windows_samples.extend(obspy.signal.trigger.trigger_onset(cf, thresh[1], thresh[0]).tolist())
-    
     def condense_window_samples(win_samples):
         # Sort the list of lists based on the first element of each internal list
         sorted_list = sorted(win_samples, key=lambda x: x[0])
         
         # Initialize an empty result list
         result = []
-        
+        if len(win_samples) == 0:
+            return result
         # Initialize variables to track the current range
         start, end = sorted_list[0]
         
@@ -6336,9 +6336,8 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
         trEndTime = trace.stats.endtime
     
     gaps = list(zip(gaps0, gaps1))
-
-    cond = ('hvsr_windows_df' in hvsr_data.keys()) or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
-    if cond:
+    hvsr_windows_df_exists = ('hvsr_windows_df' in hvsr_data.keys()) or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
+    if hvsr_windows_df_exists:
         hvsrDF = hvsr_data['hvsr_windows_df']
         use_before = hvsrDF["Use"].copy().astype(bool)
         outStream = hvsr_data['stream_edited'].split()
@@ -6371,7 +6370,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
         if verbose:
             if removed[removed].shape[0]>0:
-                print(f"\t\tThe windows starting at the following times have been removed from further analysis ({removed[removed].shape[0]}/{hvsrDF.shape[0]})")
+                print(f"\n\t\t\tThe windows starting at the following times have been removed from further analysis ({removed[removed].shape[0]}/{hvsrDF.shape[0]})")
                 for t in removed[removed].index.to_pydatetime():
                     print(f'\t\t{t} ')
             else:
@@ -6379,7 +6378,11 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
         outStream.merge()
         hvsr_data['stream_edited'] = outStream
-
+    else:
+        if verbose:
+            print("\n\t\t\tThe dataframe at hvsr_data['hvsr_windows_df'] has not been created yet (this is created by generate_ppsds())")
+            print('\t\t\tNoisy windows have been set aside for removal, ', end='')
+            print('but will not be removed from analysis until after hvsr_windows_df has been created')
     hvsr_data['x_gaps_obspyDT'] = gaps
 
     return hvsr_data
