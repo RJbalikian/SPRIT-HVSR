@@ -690,7 +690,8 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 
 
     # Remove Noise
-    if noise_removal:
+    remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+    if noise_removal or remove_noise_kwargs != {}:
         remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         try:
             data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
@@ -745,7 +746,8 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 ppsd_data = ppsd_data[site_name]
     
     # Remove noisy windows from hvsr_windows_df (already calcualted in Remove Noise step
-    ppsd_data = __remove_windows_from_df(ppsd_data, verbose=False)
+    if noise_removal or remove_noise_kwargs != {}:
+        ppsd_data = __remove_windows_from_df(ppsd_data, verbose=False)
 
     # Remove Outlier Curves
     try:
@@ -2174,6 +2176,8 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
 
             dfList.append(currTStepList)
         hvsrDF = pd.DataFrame(dfList, columns=colList)
+        if verbose:
+            print(f"\t\thvsr_windows_df created with columns{','.join(hvsrDF.columns)}")
         hvsrDF['Use'].astype(bool)
         # Add azimuthal ppsds values
         for k in hvsr_data['ppsds'].keys():
@@ -2201,8 +2205,11 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
                             (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
         
-        if 'xwindows_out' in hvsr_data.keys():
-            for window in hvsr_data['xwindows_out']:
+        if 'x_windows_out' in hvsr_data.keys():
+            if verbose:
+                print("\t\tCompleting noise removal ")
+            for window in hvsr_data['x_windows_out']:
+                print(window)
                 hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
                         (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
             hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
@@ -3720,10 +3727,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out = HVSRData(hvsr_dataUpdate)
 
         #This is if manual editing was used (should probably be updated at some point to just use masks)
-        if 'xwindows_out' in hvsr_data.keys():
-            hvsr_out['xwindows_out'] = hvsr_data['xwindows_out']
+        if 'x_windows_out' in hvsr_data.keys():
+            hvsr_out['x_windows_out'] = hvsr_data['x_windows_out']
         else:
-            hvsr_out['xwindows_out'] = []
+            hvsr_out['x_windows_out'] = []
 
 
         freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
@@ -4056,11 +4063,11 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 break
             elif rem_kind.lower() in manualList:
                 if isinstance(output, (HVSRData, dict)):
-                    if 'xwindows_out' in output.keys():
+                    if 'x_windows_out' in output.keys():
                         pass
                     else:
                         output = _select_windows(output)
-                    window_list = output['xwindows_out']
+                    window_list = output['x_windows_out']
                 if isinstance(outStream, obspy.core.stream.Stream):
                     if window_list is not None:
                         output['stream'] = __remove_windows(inStream, window_list, warmup_time)
@@ -4138,8 +4145,8 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
             return hvsr_data
         output = sprit_utils.make_it_classy(output)
-        if 'xwindows_out' not in output.keys():
-            output['xwindows_out'] = []
+        if 'x_windows_out' not in output.keys():
+            output['x_windows_out'] = []
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
     return output
@@ -5995,7 +6002,7 @@ def _select_windows(input):
         fig.canvas.mpl_connect('close_event', _on_fig_close)#(clickNo, xWindows, pathList, windowDrawn, winArtist, lineArtist, x0, fig, ax))
         plt.pause(1)
 
-    hvsr_data['xwindows_out'] = xWindows
+    hvsr_data['x_windows_out'] = xWindows
     hvsr_data['fig_noise'] = fig
     hvsr_data['ax_noise'] = ax
     return hvsr_data
@@ -6303,24 +6310,52 @@ s
 
 # Remove noisy windows from df
 def __remove_windows_from_df(hvsr_data, verbose=False):
+
+    gaps0 = []
+    gaps1 = []
+    outStream = hvsr_data['stream_edited'].split()
+    for i, trace in enumerate(outStream):
+        if i == 0:
+            trEndTime = trace.stats.endtime
+            comp_end = trace.stats.component
+            continue # Wait until the second trace
+
+        trStartTime = trace.stats.starttime
+        comp_start = trace.stats.component
+        firstDiff = True
+        secondDiff = True
+
+        if trEndTime in gaps0:
+            firstDiff = False
+        if trStartTime in gaps1:
+            secondDiff = False
+        
+        if firstDiff and secondDiff:
+            gaps0.append(trEndTime)
+            gaps1.append(trStartTime)
+
+        trEndTime = trace.stats.endtime
+    
+    gaps = list(zip(gaps0, gaps1))
+
     if 'hvsr_windows_df' in hvsr_data.keys() or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys()):
         hvsrDF = hvsr_data['hvsr_windows_df']
         use_before = hvsrDF["Use"].copy().astype(bool)
         outStream = hvsr_data['stream_edited'].split()
-        for i, trace in enumerate(outStream):
-            if i == 0:
-                trEndTime = trace.stats.endtime
-                comp_end = trace.stats.component
-                continue
-            trStartTime = trace.stats.starttime
-            comp_start = trace.stats.component
+        #for i, trace in enumerate(outStream):
+            #if i == 0:
+            #    trEndTime = trace.stats.endtime
+            #    comp_end = trace.stats.component
+            #    continue
+            #trStartTime = trace.stats.starttime
+            #comp_start = trace.stats.component
             
-            if trEndTime < trStartTime and comp_end == comp_start:
-                gap = [trEndTime,trStartTime]
+            #if trEndTime < trStartTime and comp_end == comp_start:
+        for gap in gaps:
 
-                hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
-                                (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-                hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+            hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) ) | \
+                            (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+            hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
             hvsr_data['hvsr_windows_df'] = hvsrDF  # May not be needed, just in case, though
             trEndTime = trace.stats.endtime
@@ -6339,8 +6374,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
         outStream.merge()
         hvsr_data['stream_edited'] = outStream
     else:
-        if verbose:
-            print(f"\t\tNo windows removed using remove_noise()")
+        hvsr_data['x_windows_out'] = gaps
 
     return hvsr_data
 
