@@ -2173,7 +2173,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             dfList.append(currTStepList)
         hvsrDF = pd.DataFrame(dfList, columns=colList)
         if verbose:
-            print(f"\t\thvsr_windows_df created with columns{','.join(hvsrDF.columns)}")
+            print(f"\t\thvsr_windows_df created with columns: {', '.join(hvsrDF.columns)}")
         hvsrDF['Use'].astype(bool)
         # Add azimuthal ppsds values
         for k in hvsr_data['ppsds'].keys():
@@ -2200,18 +2200,19 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         for gap in hvsr_data['ppsds']['Z']['times_gaps']:
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
                             (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
+        hvsrDF.set_index('TimesProcessed', inplace=True)
+        hvsr_data['hvsr_windows_df'] = hvsrDF
         
         if 'x_windows_out' in hvsr_data.keys():
             if verbose:
-                print("\t\tCompleting noise removal ")
-            for window in hvsr_data['x_windows_out']:
-                print(window)
-                hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
-                        (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
-            hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+                print("\t\tRemoving Noisy windows from hvsr_windows_df.")
+            hvsr_data = __remove_windows_from_df(hvsr_data, verbose=verbose)
+            #for window in hvsr_data['x_windows_out']:
+            #    print(window)
+            #    hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
+            #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
+            #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
-        hvsrDF.set_index('TimesProcessed', inplace=True)
-        hvsr_data['hvsr_windows_df'] = hvsrDF
 
         # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
         hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
@@ -6306,7 +6307,7 @@ s
 
 # Remove noisy windows from df
 def __remove_windows_from_df(hvsr_data, verbose=False):
-
+    # Get gaps from masked regions of traces
     gaps0 = []
     gaps1 = []
     outStream = hvsr_data['stream_edited'].split()
@@ -6321,11 +6322,13 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
         firstDiff = True
         secondDiff = True
 
+        # Check if both are different from any existing gap times
         if trEndTime in gaps0:
             firstDiff = False
         if trStartTime in gaps1:
             secondDiff = False
         
+        # If the first element and second element are both new, add to gap list
         if firstDiff and secondDiff:
             gaps0.append(trEndTime)
             gaps1.append(trStartTime)
@@ -6334,7 +6337,8 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
     
     gaps = list(zip(gaps0, gaps1))
 
-    if 'hvsr_windows_df' in hvsr_data.keys() or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys()):
+    cond = ('hvsr_windows_df' in hvsr_data.keys()) or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
+    if cond:
         hvsrDF = hvsr_data['hvsr_windows_df']
         use_before = hvsrDF["Use"].copy().astype(bool)
         outStream = hvsr_data['stream_edited'].split()
@@ -6347,17 +6351,20 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
             #comp_start = trace.stats.component
             
             #if trEndTime < trStartTime and comp_end == comp_start:
+        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
         for gap in gaps:
-            #cond1 = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) ) | \
-            #                (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))
-            hvsrDF.between_time(gap[0], gap[1])['Use'] = False
-            #cond2 = cond1
-            #print('cond1', cond1)
-            #hvsrDF['Use'] = cond1 | cond2
-            hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+            # All windows whose starts occur within the gap are set to False
+            gappedIndices = hvsrDF.between_time(gap[0].datetime.time(), gap[1].datetime.time()).index#.loc[:, 'Use']
+            hvsrDF.loc[gappedIndices,'Use'] = False
+
+            # The previous window is also set to false, since the start of the gap lies within that window
+            prevInd = hvsrDF.index.get_indexer([gap[0]], method='ffill')
+            prevDTInd = hvsrDF.index[prevInd]
+            hvsrDF.loc[prevDTInd, 'Use'] = False
+
+        hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
-            hvsr_data['hvsr_windows_df'] = hvsrDF  # May not be needed, just in case, though
-            trEndTime = trace.stats.endtime
+        hvsr_data['hvsr_windows_df'] = hvsrDF  # May not be needed, just in case, though
 
         use_after = hvsrDF["Use"].astype(bool)
         removed = ~use_before.eq(use_after)
