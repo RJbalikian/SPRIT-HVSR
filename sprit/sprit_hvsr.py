@@ -745,10 +745,6 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             if not ppsd_data[site_name]['batch']:
                 ppsd_data = ppsd_data[site_name]
     
-    # Remove noisy windows from hvsr_windows_df (already calcualted in Remove Noise step
-    if noise_removal or remove_noise_kwargs != {}:
-        ppsd_data = __remove_windows_from_df(ppsd_data, verbose=False)
-
     # Remove Outlier Curves
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
@@ -6352,9 +6348,12 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
             
             #if trEndTime < trStartTime and comp_end == comp_start:
         for gap in gaps:
-
-            hvsrDF['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) ) | \
-                            (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+            #cond1 = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) ) | \
+            #                (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))
+            hvsrDF.between_time(gap[0], gap[1])['Use'] = False
+            #cond2 = cond1
+            #print('cond1', cond1)
+            #hvsrDF['Use'] = cond1 | cond2
             hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
             
             hvsr_data['hvsr_windows_df'] = hvsrDF  # May not be needed, just in case, though
@@ -6373,8 +6372,8 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
         outStream.merge()
         hvsr_data['stream_edited'] = outStream
-    else:
-        hvsr_data['x_windows_out'] = gaps
+
+    hvsr_data['x_gaps_obspyDT'] = gaps
 
     return hvsr_data
 
