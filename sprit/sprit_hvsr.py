@@ -100,7 +100,6 @@ sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.20
 
 # CLASSES
 
-
 # Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
 def check_instance(init):
@@ -4712,6 +4711,7 @@ def _process_hvsr_batch(**process_hvsr_kwargs):
         hvsr_data = process_hvsr_kwargs['params']
         
     return hvsr_data
+
 
 # Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
 def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
