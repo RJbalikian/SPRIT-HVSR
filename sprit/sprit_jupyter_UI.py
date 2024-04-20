@@ -932,24 +932,29 @@ def create_jupyter_ui():
 
         return plot_list_list
 
-    def parse_hv_plot_list(hv_data, hvsr_plot_list):
+    def parse_hv_plot_list(hv_data, hvsr_plot_list, azimuth='HV'):
         hvsr_data = hv_data
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_windows_df
+        if azimuth == 'HV':
+            HVCol = 'HV_Curves'
+        else:
+            HVCol = 'HV_Curves_'+azimuth
 
         if 'tp' in hvsr_plot_list:
             allpeaks = []
-            for row in hvsrDF[hvsrDF['Use']]['CurvesPeakFreqs'].values:
+            for row in hvsrDF[hvsrDF['Use']]['CurvesPeakFreqs_'+azimuth].values:
                 for peak in row:
                     allpeaks.append(peak)
             allInd = []
-            for row, peakList in enumerate(hvsrDF[hvsrDF['Use']]['CurvesPeakIndices'].values):
+            for row, peakList in enumerate(hvsrDF[hvsrDF['Use']]['CurvesPeakIndices_'+azimuth].values):
                 for ind in peakList:
                     allInd.append((row, ind))
             x_vals = []
             y_vals = []
-            y_max = np.nanmax(hvsr_data.hvsrp)
-            hvCurveInd = list(hvsrDF.columns).index('HV_Curves')
+            y_max = np.nanmax(hvsr_data.hvsrp[azimuth])
+            hvCurveInd = list(hvsrDF.columns).index(HVCol)
+
             for i, tp in enumerate(allpeaks):
                 x_vals.extend([tp, tp, None]) # add two x values and a None
                 y_vals.extend([0, hvsrDF.iloc[allInd[i][0], hvCurveInd][allInd[i][1]], None]) # add the first and last y values and a None            
@@ -961,7 +966,7 @@ def create_jupyter_ui():
                                             row=1, col=1)
 
         if 't' in hvsr_plot_list:
-            alltimecurves = np.stack(hvsrDF[hvsrDF['Use']]['HV_Curves'])
+            alltimecurves = np.stack(hvsrDF[hvsrDF['Use']][HVCol])
             for i, row in enumerate(alltimecurves):
                 if i==0:
                     showLeg = True
@@ -970,13 +975,13 @@ def create_jupyter_ui():
                 results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode='lines',
                                             line=dict(width=0.5, dash="solid", 
                                             color="rgba(100, 110, 100, 0.8)"), 
-                                            showlegend=showLeg, 
+                                            showlegend=showLeg,
                                             name='Ind. time win. curve', 
                                             hoverinfo='none'),
                                             row=1, col=1)
 
         if 'all' in hvsr_plot_list:
-            for i, p in enumerate(hvsr_data['hvsr_peak_freqs']):
+            for i, p in enumerate(hvsr_data['hvsr_peak_freqs'][azimuth]):
                 if i==0:
                     showLeg = True
                 else:
@@ -984,7 +989,7 @@ def create_jupyter_ui():
 
                 results_fig.add_trace(go.Scatter(
                     x=[p, p, None], # set x to None
-                    y=[0, np.nanmax(np.stack(hvsrDF['HV_Curves'])),None], # set y to None
+                    y=[0, np.nanmax(np.stack(hvsrDF[HVCol])),None], # set y to None
                     mode="lines", # set mode to lines
                     line=dict(width=1, dash="dot", color="gray"), # set line properties
                     name="All checked peaks", # set legend name
@@ -993,13 +998,13 @@ def create_jupyter_ui():
 
         if '-s' not in hvsr_plot_list:
             # Show standard deviation
-            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2,
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2[azimuth],
                                     line={'color':'black', 'width':0.1},marker=None, 
                                     showlegend=False, name='Log. St.Dev. Upper',
                                     hoverinfo='none'),
                                     row=1, col=1)
             
-            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrm2,
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrm2[azimuth],
                                     line={'color':'black', 'width':0.1},marker=None,
                                     fill='tonexty', fillcolor="rgba(128, 128, 128, 0.6)",
                                     name='Log. St.Dev.', hoverinfo='none'),
@@ -1007,7 +1012,7 @@ def create_jupyter_ui():
                 
         if 'p' in hvsr_plot_list:
             results_fig.add_trace(go.Scatter(
-                x=[hvsr_data['BestPeak']['f0'], hvsr_data['BestPeak']['f0'], None], # set x to None
+                x=[hvsr_data['BestPeak'][azimuth]['f0'], hvsr_data['BestPeak'][azimuth]['f0'], None], # set x to None
                 y=[0,np.nanmax(np.stack(hvsrDF['HV_Curves'])),None], # set y to None
                 mode="lines", # set mode to lines
                 line=dict(width=1, dash="dash", color="black"), # set line properties
@@ -1016,15 +1021,15 @@ def create_jupyter_ui():
 
         if 'ann' in hvsr_plot_list:
             # Annotate best peak
-            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']),
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak'][azimuth]['f0']),
                                     y=0, yanchor='bottom', xanchor='center',
-                                    text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                                    text=f"{hvsr_data['BestPeak'][azimuth]['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False,
                                     row=1, col=1)
         return results_fig
 
-    def parse_comp_plot_list(hv_data, comp_plot_list):
+    def parse_comp_plot_list(hv_data, comp_plot_list, azimuth='HV'):
         
         hvsr_data = hv_data
         # Initial setup
@@ -1043,18 +1048,25 @@ def create_jupyter_ui():
 
         alpha = 0.4 * transparency_modifier
         components = ['Z', 'E', 'N']
+
         compColor_semi_light = {'Z':f'rgba(128,128,128,{alpha})',
                     'E':f'rgba(0,0,128,{alpha})',
                     'N':f'rgba(128,0,0,{alpha})'}
 
         alpha = 0.7 * transparency_modifier
-        compColor_semi = {'Z':f'rgba(128,128,128,{alpha})', 
+        compColor_semi = {'Z':f'rgba(128,128,128,{alpha})',
                         'E':f'rgba(100,100,128,{alpha})', 
                         'N':f'rgba(128,100,100,{alpha})'}
 
         compColor = {'Z':f'rgba(128,128,128,{alpha})', 
                     'E':f'rgba(100,100,250,{alpha})', 
                     'N':f'rgba(250,100,100,{alpha})'}
+
+        for az in hvsr_data.hvsr_az.keys():
+            components.append(az)
+            compColor_semi_light[az] = f'rgba(0,128,0,{alpha})'
+            compColor_semi[az] = f'rgba(100,128,100,{alpha})'
+            compColor[az] = f'rgba(100,250,100,{alpha})'
 
         # Whether to plot in new subplot or not
         if  comp_plot_list != [] and '+' in comp_plot_list[0]:
@@ -1114,7 +1126,7 @@ def create_jupyter_ui():
                     maxVal = np.nanmax(currPPSDCurve)
 
             results_fig.add_trace(go.Scatter(
-                x=[hvsr_data['BestPeak']['f0'], hvsr_data['BestPeak']['f0'], None], # set x to None
+                x=[hvsr_data['BestPeak'][azimuth]['f0'], hvsr_data['BestPeak'][azimuth]['f0'], None], # set x to None
                 y=[minVal,maxVal,None], # set y to None
                 mode="lines", # set mode to lines
                 line=dict(width=1, dash="dash", color="black"), # set line properties
@@ -1130,9 +1142,9 @@ def create_jupyter_ui():
                 currPPSDCurve = hvsr_data['psd_values_tavg'][comp]
                 if np.nanmin(currPPSDCurve) < minVal:
                     minVal = np.nanmin(currPPSDCurve)
-            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak']['f0']),
+            results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak'][azimuth]['f0']),
                             y=minVal,
-                            text=f"{hvsr_data['BestPeak']['f0']:.3f} Hz",
+                            text=f"{hvsr_data['BestPeak'][azimuth]['f0']:.3f} Hz",
                             bgcolor='rgba(255, 255, 255, 0.7)',
                             showarrow=False,
                             yref=yaxis_to_use,
@@ -1157,13 +1169,18 @@ def create_jupyter_ui():
                             row=compRow, col=1)
         return results_fig
 
-    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num):
+    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, azimuth='HV'):
         hvsr_data = hv_data
+        if azimuth == 'HV':
+            HVCol = 'HV_Curves'
+        else:
+            HVCol = 'HV_Curves_'+azimuth
+
         # Initial setup
         hvsrDF = hvsr_data.hvsr_windows_df
         specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
         y_data = hvsr_data.x_freqs['Z'][1:]
-        image_data = np.stack(hvsrDF['HV_Curves']).T
+        image_data = np.stack(hvsrDF[HVCol]).T
 
         maxZ = np.percentile(image_data, 100)
         minZ = np.percentile(image_data, 0)
@@ -1195,7 +1212,7 @@ def create_jupyter_ui():
         # tp currently is not being added to spec_plot_list
         if 'tp' in spec_plot_list:
             yvals = []
-            for row in hvsrDF['HV_Curves'].values:
+            for row in hvsrDF[HVCol].values:
                 maxInd = np.argmax(row)
                 yvals.append(y_data[maxInd])
             tp_trace = go.Scatter(x=specAxisTimes, y=yvals, mode='markers',
@@ -1203,12 +1220,12 @@ def create_jupyter_ui():
             results_fig.add_trace(tp_trace, row=subplot_num, col='all')
 
         if 'p' in spec_plot_list:
-            results_fig.add_hline(y=hvsr_data['BestPeak']['f0'], line_width=1, line_dash='dash', line_color='black', row=subplot_num, col='all')
+            results_fig.add_hline(y=hvsr_data['BestPeak'][azimuth]['f0'], line_width=1, line_dash='dash', line_color='black', row=subplot_num, col='all')
 
         if 'ann' in spec_plot_list:
             results_fig.add_annotation(x=specAxisTimes[-1],
                                     y=hvsr_data['hvsr_band'][1],
-                                    text=f"Peak: {hvsr_data['BestPeak']['f0']:.3f} Hz",
+                                    text=f"Peak: {hvsr_data['BestPeak'][azimuth]['f0']:.3f} Hz",
                                     bgcolor='rgba(255, 255, 255, 0.7)',
                                     showarrow=False, xanchor='right', yanchor='top',
                                     row=subplot_num, col='all')
@@ -1221,7 +1238,7 @@ def create_jupyter_ui():
                         row=subplot_num, col=1)
 
         results_fig.add_annotation(
-            text=f"{hvsrDF['Use'].sum()}/{hvsrDF.shape[0]} windows used",
+            text=f"{hvsrDF['Use'].astype(bool).sum()}/{hvsrDF.shape[0]} windows used",
             x=max(specAxisTimes),
             y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
             xanchor="right", yanchor="bottom",bgcolor='rgba(256,256,256,0.7)',
