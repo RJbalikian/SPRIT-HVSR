@@ -2598,7 +2598,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
                     report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
                 report_string_list.append('')
-                report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
+                report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
                 report_string_list.append(extSiteSeparator)
                 #report_string_list.append(endSiteSeparator)
                 #report_string_list.append(extSiteSeparator)
@@ -3345,7 +3345,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             else:
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
-        windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
+        windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
         fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small',
                  bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=9))
 
@@ -3908,7 +3908,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
 
 # Function to remove noise windows from data
-def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[1, 10], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
+def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[8, 16], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -4075,12 +4075,12 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 else:
                     RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot)
                 outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
                 outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
             elif rem_kind.lower() in antitrigger:
-                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh)
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot)
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
             elif rem_kind.lower() in noiseThresh:
@@ -4342,9 +4342,9 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         
         if verbose:
             if len(bad_rmse)>0:
-                print(f"\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
+                print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
                 for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
-                    print(f"\t\t{b}")
+                    print(f"\t\t  {b}")
             else:
                 print('\tNo outlier curves have been removed')
                     
@@ -5453,7 +5453,9 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False):
     lta : int
         Number of seconds to use as long term window, reads from remove_noise() function.
     thresh : list
-        Two-item list or tuple with the thresholds for the stalta antitrigger. Reads from remove_noise() function. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
+        Two-item list or tuple with the thresholds for the stalta antitrigger. 
+        Reads from remove_noise() function. The first value (index [0]) is the lower threshold (below which trigger is deactivated), 
+        the second value (index [1] is the upper threshold (above which trigger is activated)), by default [8, 8]
     show_plot : bool
         If True, will plot the trigger and stalta values. Reads from remove_noise() function, by default False.
 
@@ -6370,9 +6372,9 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
         if verbose:
             if removed[removed].shape[0]>0:
-                print(f"\n\t\t\tThe windows starting at the following times have been removed from further analysis ({removed[removed].shape[0]}/{hvsrDF.shape[0]})")
+                print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({removed[removed].shape[0]}/{hvsrDF.shape[0]})")
                 for t in removed[removed].index.to_pydatetime():
-                    print(f'\t\t{t} ')
+                    print(f'\t\t  {t} ')
             else:
                 print(f"\t\tNo windows removed using remove_noise()")
 
