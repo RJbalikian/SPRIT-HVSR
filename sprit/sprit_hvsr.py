@@ -1159,7 +1159,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
             if not hvsr_band:
                 hvsr_band = [0.4, 40]
             
-            print('hvsr_band again', hvsr_band)
             hvsr_data['hvsr_band'] = hvsr_band
 
             anyK = list(hvsr_data['x_freqs'].keys())[0]
@@ -3840,7 +3839,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         hvsr_out['ind_hvsr_peak_indices'] = {}
         #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
         for col_name in hvsr_out['hvsr_windows_df'].columns:
-            if "HV_Curves" in col_name:
+            if col_name.startswith("HV_Curves"):
                 tStepPeaks = []
                 if len(col_name.split('_')) > 2:
                     colSuffix = "_"+'_'.join(col_name.split('_')[2:])
@@ -6769,7 +6768,7 @@ def __gethvsrparams(hvsr_out):
         hvsrm2 = {}
         hvsr_log_std = {}
         for col_name in hvsr_out['hvsr_windows_df'].columns:
-            if "HV_Curves" in col_name:
+            if col_name.startswith("HV_Curves"):
                 if col_name == 'HV_Curves':
                     colSuffix = '_HV'
                     colID = 'HV'
@@ -6782,8 +6781,8 @@ def __gethvsrparams(hvsr_out):
                 for i, r in enumerate(logStackedata):
                     logStackedata[i] = np.array(r)
 
-                hvsr_out['hvsr_windows_df']['HV_Curves_Log10'+colSuffix] = logStackedata
-                hvsr_log_std[colID] = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['HV_Curves_Log10'+colSuffix][hvsrDF['Use']]), axis=0)
+                hvsr_out['hvsr_windows_df']['Log10_HV_Curves'+colSuffix] = logStackedata
+                hvsr_log_std[colID] = np.nanstd(np.stack(hvsr_out['hvsr_windows_df']['Log10_HV_Curves'+colSuffix][hvsrDF['Use']]), axis=0)
 
                 #The components are already calculated, don't need to recalculate aren't calculated at the time-step level
                 hvsrp[colID] = np.add(hvsr_out['hvsr_curve'], hvsr_out['ind_hvsr_stdDev'][colID])
