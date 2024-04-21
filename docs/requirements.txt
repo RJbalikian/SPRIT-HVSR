@@ -11,4 +11,3 @@ sphinx
 markdown
 pytest
 flake8
-"../.."
