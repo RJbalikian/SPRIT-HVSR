@@ -36,6 +36,7 @@ except: #For local testing
 
 global spritApp
 global current_theme_name
+global SPRIT_App
 
 resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
 settings_dir = resource_dir.joinpath('settings')
@@ -43,109 +44,6 @@ gui_theme_file = settings_dir.joinpath('gui_theme.json')
 with open(gui_theme_file, 'r') as f:
     curr_gui_dict = json.load(f)
 current_theme_name = curr_gui_dict['theme_name']
-
-#Decorator that catches errors and warnings (to be modified later for gui)
-def catch_errors(func):
-    #Define a local function to get a list of warnings that we'll use in the output
-    def get_warning_msg_list(w):
-        messageList = []
-        #Collect warnings that happened before we got to the error
-        if w:
-            hasWarnings = True
-            for wi in w:
-                warning_category = type(wi.message).__name__.title().replace('warning','Warning')
-                #if w.line is None:
-                #    w.line = linecache.getline(wi.filename, wi.lineno)
-                warning_lineNo = wi.lineno
-                warning_message = str(wi.message)
-                # append the warning category and message to messageList so we get all warnings
-                messageList.append(f'{warning_category} ({warning_lineNo}): {warning_message}')
-        return messageList
-    
-    # use functools.wraps to preserve the original function's metadata
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        result = None
-        # use the global keyword to access the error_message and error_category variables
-        global error_message
-        global error_category
-
-        messageList = []
-        hasWarnings = False
-        # use a try-except block to catch any exceptions
-        #result = func(*args, **kwargs)
-        try:
-            # use a context manager to catch any warnings
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
-                # call the original function with the given arguments
-                result = func(*args, **kwargs)
-                
-                #Get message list, [] if no messages, doesn't run at all if Error/exception in func
-                messageList = get_warning_msg_list(w)
-                if messageList == []:
-                    return result
-                else:
-                    warningMessage = "WARNING:"
-                    for msg in messageList:
-                        warningMessage = "\n {}".format(msg)
-
-                    messagebox.showwarning(title='WARNINGS', message=warningMessage)
-                    
-        except Exception as e:
-            messageList = get_warning_msg_list(w)
-            errorObj = sys.exc_info()[2]
-
-            mainErrText = sys.exc_info()[1]
-
-            mainErrTb = traceback.extract_tb(sys.exc_info()[2])[-1]
-            mainErrFilePath = pathlib.Path(mainErrTb[0])
-            
-            mainErrFileName = mainErrFilePath.stem
-            mainErrLineNo = mainErrTb[1]
-            mainErrFunc = mainErrTb[2]
-            mainErrCodeLine = mainErrTb[3]
-
-            errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = f"{e} ({errLineNo1})"
-            
-            #Get message list, [] if no messages, doesn't run at all if Error/exception in func
-            warningMessageList = get_warning_msg_list(w)
-
-            #Build error messages
-            tbTuple0 = sys.exc_info()[0]
-            tbTuple1 = sys.exc_info()[1]
-            tbTuple2 = traceback.extract_tb(sys.exc_info()[2])
-            
-            logMsg = f"**ERROR**\n{tbTuple0.__name__}: {tbTuple1}"
-            dialogErrMsg = logMsg.split(':')[1]
-            for tb in tbTuple2:
-                logMsg = logMsg + '\n\t'
-                logMsg = logMsg + f"{pathlib.Path(tb[0]).stem}.{tb[2]}(): {tb[3]} (Line {tb[1]})"
-                dialogErrMsg = dialogErrMsg + f"\n{pathlib.Path(tb[0]).stem}.{tb[2]}(), Line {tb[1]}"
-            logMsg = logMsg + '\n\n'
-
-            #fullErrorMessage = f'ERROR {mainErrFileName}.{mainErrFunc} ({mainErrLineNo}): {mainErrText} \n\n {mainErrFileName} Line {mainErrLineNo}: {mainErrCodeLine}.'
-            if messageList == []:
-                pass
-            else:
-                dialogErrMsg = dialogErrMsg+"\n\n  Additional Warnings along the way. See Log for more information."
-                logMsg = logMsg + "\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:"
-                for addMsg in warningMessageList:
-                    logMsg = logMsg+"\n\t\t{}".format(addMsg)
-
-
-            SPRIT_App.log_errorMsg(spritApp, logMsg)
-
-            messagebox.showerror(title=f'ERROR ({error_category})',
-                                    message=dialogErrMsg)
-            update_progress_bars(100)
-
-        # return the result of the function or the error/warning messages and categories
-        return result
-    # return the wrapper function
-    return wrapper
 
 class SPRIT_App:
     global spritApp
@@ -493,51 +391,51 @@ class SPRIT_App:
                 self.tab_control.select(self.preview_data_tab)
             return self.hvsr_data
         
-        def report_results(hvsr_results):
-            self.curveTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['Lw'][:-1])
-            self.curveTest1Result.configure(text=hvsr_results['BestPeak']['Report']['Lw'][-1])
+        def report_results(hvsr_results, azimuth='HV'):
+            self.curveTest1ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Lw'][:-1])
+            self.curveTest1Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1])
 
-            self.curveTest2ResultText.configure(text=hvsr_results['BestPeak']['Report']['Nc'][:-1])
-            self.curveTest2Result.configure(text=hvsr_results['BestPeak']['Report']['Nc'][-1])
+            self.curveTest2ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Nc'][:-1])
+            self.curveTest2Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1])
 
-            self.curveTest3ResultText.configure(text=hvsr_results['BestPeak']['Report']['σ_A(f)'][:-1])
-            self.curveTest3Result.configure(text=hvsr_results['BestPeak']['Report']['σ_A(f)'][-1])
+            self.curveTest3ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][:-1])
+            self.curveTest3Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1])
 
-            curvePass = (hvsr_results['BestPeak']['PassList']['WindowLengthFreq.'] +
-                                hvsr_results['BestPeak']['PassList']['SignificantCycles']+
-                                hvsr_results['BestPeak']['PassList']['LowCurveStDevOverTime']) > 2
+            curvePass = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
+                                hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
+                                hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime']) > 2
             if curvePass:
                 self.totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
                 self.totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
 
-            self.peakTest1ResultText.configure(text=hvsr_results['BestPeak']['Report']['A(f-)'][:-1])
-            self.peakTest1Result.configure(text=hvsr_results['BestPeak']['Report']['A(f-)'][-1])
+            self.peakTest1ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][:-1])
+            self.peakTest1Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1])
             
-            self.peakTest2ResultText.configure(text=hvsr_results['BestPeak']['Report']['A(f+)'][:-1])
-            self.peakTest2Result.configure(text=hvsr_results['BestPeak']['Report']['A(f+)'][-1])
+            self.peakTest2ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][:-1])
+            self.peakTest2Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1])
             
-            self.peakTest3ResultText.configure(text=hvsr_results['BestPeak']['Report']['A0'][:-1])
-            self.peakTest3Result.configure(text=hvsr_results['BestPeak']['Report']['A0'][-1])
+            self.peakTest3ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A0'][:-1])
+            self.peakTest3Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1])
 
-            self.peakTest4ResultText.configure(text=hvsr_results['BestPeak']['Report']['P-'][:5] + ' and ' +hvsr_results['BestPeak']['Report']['P+'][:-1])
-            if hvsr_results['BestPeak']['PassList']['FreqStability']:
+            self.peakTest4ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5] + ' and ' +hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1])
+            if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
                 self.peakTest4Result.configure(text=sprit_utils.check_mark())
             else:
                 self.peakTest4Result.configure(text=sprit_utils.x_mark())
 
-            self.peakTest5ResultText.configure(text=hvsr_results['BestPeak']['Report']['Sf'][:-1])
-            self.peakTest5Result.configure(text=hvsr_results['BestPeak']['Report']['Sf'][-1])
+            self.peakTest5ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sf'][:-1])
+            self.peakTest5Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1])
             
-            self.peakTest6ResultText.configure(text=hvsr_results['BestPeak']['Report']['Sa'][:-1])
-            self.peakTest6Result.configure(text=hvsr_results['BestPeak']['Report']['Sa'][-1])
+            self.peakTest6ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sa'][:-1])
+            self.peakTest6Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1])
 
-            peakPass = (hvsr_results['BestPeak']['PassList']['PeakProminenceBelow'] +
-                    hvsr_results['BestPeak']['PassList']['PeakProminenceAbove']+
-                    hvsr_results['BestPeak']['PassList']['PeakAmpClarity']+
-                    hvsr_results['BestPeak']['PassList']['FreqStability']+
-                    hvsr_results['BestPeak']['PassList']['PeakStability_FreqStD']+
-                    hvsr_results['BestPeak']['PassList']['PeakStability_AmpStD']) >= 5
+            peakPass = (hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceBelow'] +
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceAbove']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD']) >= 5
             if peakPass:
                 self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
@@ -598,7 +496,7 @@ class SPRIT_App:
                                             rmse_thresh=98,
                                             use_percentile=True,
                                             use_hv_curve = False,
-                                            show_plot = False)
+                                            show_outlier_plot = False)
             update_progress_bars(prog_percent=60)
 
             self.log_text.insert('end', f"{self.procHVSR_call['text']}\n\n")
@@ -3084,6 +2982,113 @@ class SPRIT_App:
 
         # Pack tab control
         self.tab_control.pack(expand=True, fill="both")
+
+
+#Decorator that catches errors and warnings (to be modified later for gui)
+def catch_errors(func):
+    global spritApp
+
+    #Define a local function to get a list of warnings that we'll use in the output
+    def get_warning_msg_list(w):
+        messageList = []
+        #Collect warnings that happened before we got to the error
+        if w:
+            hasWarnings = True
+            for wi in w:
+                warning_category = type(wi.message).__name__.title().replace('warning','Warning')
+                #if w.line is None:
+                #    w.line = linecache.getline(wi.filename, wi.lineno)
+                warning_lineNo = wi.lineno
+                warning_message = str(wi.message)
+                # append the warning category and message to messageList so we get all warnings
+                messageList.append(f'{warning_category} ({warning_lineNo}): {warning_message}')
+        return messageList
+    
+    # use functools.wraps to preserve the original function's metadata
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = None
+        # use the global keyword to access the error_message and error_category variables
+        global error_message
+        global error_category
+        global spritApp
+
+        messageList = []
+        hasWarnings = False
+        # use a try-except block to catch any exceptions
+        #result = func(*args, **kwargs)
+        try:
+            # use a context manager to catch any warnings
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                # call the original function with the given arguments
+                result = func(*args, **kwargs)
+                
+                #Get message list, [] if no messages, doesn't run at all if Error/exception in func
+                messageList = get_warning_msg_list(w)
+                if messageList == []:
+                    return result
+                else:
+                    warningMessage = "WARNING:"
+                    for msg in messageList:
+                        warningMessage = "\n {}".format(msg)
+
+                    messagebox.showwarning(title='WARNINGS', message=warningMessage)
+                    
+        except Exception as e:
+            messageList = get_warning_msg_list(w)
+            errorObj = sys.exc_info()[2]
+
+            mainErrText = sys.exc_info()[1]
+
+            mainErrTb = traceback.extract_tb(sys.exc_info()[2])[-1]
+            mainErrFilePath = pathlib.Path(mainErrTb[0])
+            
+            mainErrFileName = mainErrFilePath.stem
+            mainErrLineNo = mainErrTb[1]
+            mainErrFunc = mainErrTb[2]
+            mainErrCodeLine = mainErrTb[3]
+
+            errLineNo1 = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace('error', 'Error')
+            error_message = f"{e} ({errLineNo1})"
+            
+            #Get message list, [] if no messages, doesn't run at all if Error/exception in func
+            warningMessageList = get_warning_msg_list(w)
+
+            #Build error messages
+            tbTuple0 = sys.exc_info()[0]
+            tbTuple1 = sys.exc_info()[1]
+            tbTuple2 = traceback.extract_tb(sys.exc_info()[2])
+            
+            logMsg = f"**ERROR**\n{tbTuple0.__name__}: {tbTuple1}"
+            dialogErrMsg = logMsg.split(':')[1]
+            for tb in tbTuple2:
+                logMsg = logMsg + '\n\t'
+                logMsg = logMsg + f"{pathlib.Path(tb[0]).stem}.{tb[2]}(): {tb[3]} (Line {tb[1]})"
+                dialogErrMsg = dialogErrMsg + f"\n{pathlib.Path(tb[0]).stem}.{tb[2]}(), Line {tb[1]}"
+            logMsg = logMsg + '\n\n'
+
+            #fullErrorMessage = f'ERROR {mainErrFileName}.{mainErrFunc} ({mainErrLineNo}): {mainErrText} \n\n {mainErrFileName} Line {mainErrLineNo}: {mainErrCodeLine}.'
+            if messageList == []:
+                pass
+            else:
+                dialogErrMsg = dialogErrMsg+"\n\n  Additional Warnings along the way. See Log for more information."
+                logMsg = logMsg + "\n\n\t  *WARNING(S)*\n\tAdditional Warnings along the way:"
+                for addMsg in warningMessageList:
+                    logMsg = logMsg+"\n\t\t{}".format(addMsg)
+
+
+            SPRIT_App.log_errorMsg(spritApp, logMsg)
+
+            messagebox.showerror(title=f'ERROR ({error_category})',
+                                    message=dialogErrMsg)
+            update_progress_bars(100)
+
+        # return the result of the function or the error/warning messages and categories
+        return result
+    # return the wrapper function
+    return wrapper
 
 def on_closing():
     plt.close('all')

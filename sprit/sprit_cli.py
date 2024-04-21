@@ -41,6 +41,7 @@ def main():
                      sprit.remove_noise,
                      sprit.generate_ppsds,
                      sprit.process_hvsr,
+                     sprit.remove_outlier_curves,
                      sprit.check_peaks,
                      sprit.get_report,
                      sprit.plot_hvsr]

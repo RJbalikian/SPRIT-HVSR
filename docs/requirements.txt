@@ -5,3 +5,10 @@ obspy
 scipy
 pyproj
 PyQt5-sip
+sphinx-rtd-theme
+numpydoc
+sphinx
+markdown
+pytest
+flake8
+sprit==0.1.78.dev0

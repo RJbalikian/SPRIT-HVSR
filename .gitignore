@@ -1,6 +1,7 @@
 testnotebook.ipynb
 .env
 .venv
+*cache*
 __pycache__
 /sprit/__pycache__
 .pytest_cache
@@ -10,3 +11,4 @@ docs/pyinstaller/sprit_gui_pyinstaller/SpRIT.pkg
 docs/pyinstaller/dist/SpRIT.exe
 *.exe
 *.pkg
+*sprit.egg-info/*

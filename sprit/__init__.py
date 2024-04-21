@@ -15,7 +15,7 @@ except:
 
 from sprit.sprit_hvsr import(
     run,
-    azimuth,
+    calculate_azimuth,
     export_data,
     export_settings,
     import_data,
@@ -27,6 +27,7 @@ from sprit.sprit_hvsr import(
     batch_data_read,
     generate_ppsds,
     process_hvsr,
+    plot_azimuth,
     plot_hvsr,
     read_tromino_files,
     remove_noise,
@@ -38,6 +39,7 @@ from sprit.sprit_hvsr import(
 )
 
 from sprit.sprit_utils import(
+    assert_check,
     check_gui_requirements,
     checkifpath,
     check_mark,
@@ -62,7 +64,7 @@ from sprit.sprit_jupyter_UI import(
 
 __all__ =('sprit_hvsr',
             'run',
-            'azimuth',
+            'calculate_azimuth',
             'check_mark',
             'get_char',
             'time_it',
@@ -79,6 +81,7 @@ __all__ =('sprit_hvsr',
             'batch_data_read',
             'generate_ppsds',
             'process_hvsr',
+            'plot_azimuth',
             'plot_hvsr',
             'read_tromino_files',
             'remove_noise',
@@ -88,6 +91,7 @@ __all__ =('sprit_hvsr',
             'HVSRData',
             'HVSRBatch',
         'sprit_utils',
+            'assert_check',
             'check_gui_requirements',
             'checkifpath',
             'check_mark',

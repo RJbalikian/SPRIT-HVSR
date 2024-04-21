@@ -8,8 +8,9 @@ import warnings
 import zoneinfo
 
 import numpy as np
+from obspy.core.utcdatetime import UTCDateTime
 
-try: # For distribution
+try:  # For distribution
     from sprit import sprit_hvsr
 except: #For testing
     import sprit_hvsr
@@ -17,6 +18,22 @@ except: #For testing
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
+
+def assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
+    if var_type is not None:
+        assert isinstance(var, var_type), error_message
+        if verbose:
+            print(f"Output valid: {var} is instance of {var_type}", end='')
+        
+    if cond is not None:
+        assert cond, error_message
+        if verbose:
+            if var_type is None:
+                print('Output valid:', end=' ')
+            else:
+                print(' and ', end='')
+            print(f"test condition is met.")
+        
 
 def check_gui_requirements():
     #First, check requirements
@@ -146,7 +163,7 @@ def format_time(inputDT, tzone='UTC'):
         Output datetime.datetime object, now in UTC time.
 
     """
-    if type(inputDT) is str:
+    if isinstance(inputDT, str):
         #tzone = 'America/Chicago'
         #Format string to datetime obj
         div = '-'
@@ -262,9 +279,10 @@ def format_time(inputDT, tzone='UTC'):
 
         outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
                                 hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
-
-    elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
+    elif isinstance(inputDT, (datetime.datetime, datetime.time)):
         outputTimeObj = inputDT
+    elif isinstance(inputDT, UTCDateTime):
+        outputTimeObj = inputDT.datetime
 
     #Add timezone info
     availableTimezones = list(map(str.lower, zoneinfo.available_timezones()))
@@ -284,7 +302,7 @@ def format_time(inputDT, tzone='UTC'):
         raise ValueError("Timezone must be either str or int")
     
     #Convert to UTC
-    outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)   
+    outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)
 
     return outputTimeObj
 
@@ -318,7 +336,6 @@ def make_it_classy(input_data, verbose=False):
                         input_data[kin] = input_data['input_params'][kin]
             if k=='params':
                 for kin in input_data['params'].keys():
-                    print(kin)
                     if kin not in input_data.keys():
                         input_data[kin] = input_data['params'][kin]                
         output_class = input_data
