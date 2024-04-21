@@ -24,6 +24,6 @@ if download_wiki:
         except OSError as e:
             print(f"Error: {e.strerror}")    
     download_path = currentDir.as_posix()
-    download_cmd=f"git -C {download_path} clone git@github.com:RJbalikian/SPRIT-HVSR_wiki.git"
+    download_cmd=f"git -C {download_path} clone git@github.com:RJbalikian/SPRIT-HVSR.wiki.git"
     SHELL_TYPE=True
     subprocess.run(download_cmd, shell=SHELL_TYPE, check=False)
