@@ -704,7 +704,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 dataIN = {'place_holder_sitename':dataIN}
                 
             for site_name in data_noiseRemoved.keys():
-                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
+                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
                 #Since noise removal is not required for data processing, check others first
                 if dataIN[site_name]['ProcessingStatus']['OverallStatus']:
                     data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
@@ -715,9 +715,19 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 if not data_noiseRemoved[site_name]['batch']:
                     data_noiseRemoved = data_noiseRemoved[site_name]
     else:
-        data_noiseRemoved = dataIN
-        data_noiseRemoved['stream_edited'] = data_noiseRemoved['stream']
-        
+        if isinstance(dataIN, HVSRData):
+            dataIN = {'place_holder_sitename':dataIN}
+            
+        for site_name in dataIN.keys(): #This should work more or less the same for batch and regular data now
+            data_noiseRemoved = dataIN
+            data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
+            
+            data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
+    
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not data_noiseRemoved[site_name]['batch']:
+                data_noiseRemoved = data_noiseRemoved[site_name]
+    
     # Generate PPSDs
     try:
         generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
@@ -833,13 +843,28 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 break
         get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
 
-        # Check if data has azimuth data
-        hasAz = False
-        for tr in hvsr_results.stream:
-            if tr.stats.component == 'R':
-                hasAz = True
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results_interim = {'place_holder_sitename':hvsr_results}
+        else:
+            hvsr_results_interim = hvsr_results
+
+        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+            # Check if data has azimuth data
+            hasAz = False
+            for tr in hvsr_results_interim[site_name]['stream']:
+                if tr.stats.component == 'R':
+                    hasAz = True
+                    break
+            
+            # Assuming all sites in batch have az if one does
+            if hasAz:
                 break
-        
+
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
+            #if not hvsr_results_interim[site_name]['batch']:
+            #    hvsr_results_interim = hvsr_results_interim[site_name]            
+            
+
         if not az_requested and hasAz:
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
