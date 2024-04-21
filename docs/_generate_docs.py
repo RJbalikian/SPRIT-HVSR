@@ -10,7 +10,7 @@ import sys
 import markdown
 
 
-RELEASE_VERSION = "0.1.75-dev"
+RELEASE_VERSION = "0.1.76-dev"
 
 VERBOSE = True
 
@@ -81,7 +81,7 @@ for cFile in confFilePaths:
         cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
 
         # intended for conf.py
-        VERTEXT = r"release\s+=+\s+'+\d+\.\d+\.\d+'+[^\n]*"
+        VERTEXT = r"release = '.*?'"
         NEWVERTEXT = r"release = '"+RELEASE_VERSION+"'"
         cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
 
