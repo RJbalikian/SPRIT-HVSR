@@ -10,7 +10,7 @@ import sys
 import markdown
 
 
-RELEASE_VERSION = "0.1.76-dev"
+RELEASE_VERSION = "0.1.77-dev"
 
 VERBOSE = True
 
@@ -45,6 +45,7 @@ pyprojectFPath = repoDir.joinpath('pyproject.toml')
 confFPath = docsDir.joinpath('conf.py')
 condaFPath = repoDir.joinpath('conda/meta.yaml')
 initFPath = spritDir.joinpath('__init__.py')
+requirePath = docsDir.joinpath('requirements.txt')
 
 # Set the package name, SUB_DIRectory, and output directory
 OUTPUT_DIR = docsDir
@@ -58,7 +59,7 @@ os.environ['PYTHONPATH'] = '..' + os.pathsep + os.environ.get('PYTHONPATH', '')
 
 if VERBOSE:
     print('Updating version/release numbers')
-confFilePaths = [setupFPath, pyprojectFPath, condaFPath, confFPath, initFPath]
+confFilePaths = [setupFPath, pyprojectFPath, condaFPath, confFPath, initFPath, requirePath]
 for cFile in confFilePaths:
     if cFile.exists():
         with open(cFile.as_posix(), mode='r', encoding='utf-8') as f:
@@ -90,6 +91,14 @@ for cFile in confFilePaths:
         NEWVERTEXT = r'__version__ = "'+RELEASE_VERSION+'"'
         cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
 
+        # intended for requirements.txt
+        VERTEXT = r"sprit==.*?"
+        if 'dev' in RELEASE_VERSION:
+            relVer = RELEASE_VERSION.replace('-', '.')+'0'
+        else:
+            relVer = RELEASE_VERSION        
+        NEWVERTEXT = r'sprit=='+relVer
+        cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
 
         with open(cFile.as_posix(), mode='w', encoding='utf-8') as f:
             f.write(cFileText)
