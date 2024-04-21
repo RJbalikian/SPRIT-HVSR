@@ -92,7 +92,7 @@ for cFile in confFilePaths:
         cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
 
         # intended for requirements.txt
-        VERTEXT = r"sprit==.*?"
+        VERTEXT = r"sprit==.*?[^\n]*"
         if 'dev' in RELEASE_VERSION:
             relVer = RELEASE_VERSION.replace('-', '.')+'0'
         else:

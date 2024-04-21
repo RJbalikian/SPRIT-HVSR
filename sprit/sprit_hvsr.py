@@ -3044,6 +3044,13 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
                 newArrayList.append(newZ)
             return np.array(newArrayList).T
 
+        if 'plot_type' in plot_azimuth_kwargs.keys():
+            if 'i' in plot_azimuth_kwargs['plot_type']:
+                interpolate_azimuths = True
+            if '-i' in plot_azimuth_kwargs['plot_type']:
+                interpolate_azimuths = False
+
+
         if interpolate_azimuths:
             z = interp_along_theta(z, a)
             z2 = interp_along_theta(z2, a)
@@ -3175,6 +3182,12 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             - 'ann' annotates the frequency value of the "best" peak
             - 'all' shows all the peaks identified in check_peaks()
             - 'tp' shows all the peaks of the H/V curve at all time windows
+        - 'AZ' - circular plot of calculated azimuthal HV curves, similar in style to SPEC plot.
+            - 'p' shows a point at each calculated (not interpolated) azimuth peak
+            - 'g' shows grid lines at various angles
+            - 'i' interpolates so that there is an interpolated azimuth at each degree interval (1 degree step)
+                This is the default, so usually 'i' is not needed.
+            - '-i' prohibits interpolation (only shows the calculated azimuths, as determined by azimuth_angle (default = 30))
     azimuth : str, default = 'HV'
         What 'azimuth' to plot, default being standard N E components combined
     use_subplots : bool, default = True
