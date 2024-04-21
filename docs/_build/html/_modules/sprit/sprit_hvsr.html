@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 0.1.77-dev documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 0.1.78-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=3035379e"></script>
+        <script src="../../_static/documentation_options.js?v=29b362bb"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -842,7 +842,7 @@
                 <span class="n">dataIN</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;place_holder_sitename&#39;</span><span class="p">:</span><span class="n">dataIN</span><span class="p">}</span>
                 
             <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">data_noiseRemoved</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;RemoveNoiseStatus&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;RemoveNoiseStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="c1">#Since noise removal is not required for data processing, check others first</span>
                 <span class="k">if</span> <span class="n">dataIN</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]:</span>
                     <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>        
@@ -853,9 +853,19 @@
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
                     <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">dataIN</span>
-        <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="s1">&#39;stream_edited&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
-        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataIN</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+            <span class="n">dataIN</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;place_holder_sitename&#39;</span><span class="p">:</span><span class="n">dataIN</span><span class="p">}</span>
+            
+        <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span> <span class="c1">#This should work more or less the same for batch and regular data now</span>
+            <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">dataIN</span>
+            <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;stream_edited&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
+            
+            <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;RemoveNoiseStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    
+            <span class="c1">#If it wasn&#39;t originally HVSRBatch, make it HVSRData object again</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
+                <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">data_noiseRemoved</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span>
+    
     <span class="c1"># Generate PPSDs</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">generate_ppsds_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">generate_ppsds</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
@@ -971,13 +981,28 @@
                 <span class="k">break</span>
         <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">])</span>
 
-        <span class="c1"># Check if data has azimuth data</span>
-        <span class="n">hasAz</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">stream</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">component</span> <span class="o">==</span> <span class="s1">&#39;R&#39;</span><span class="p">:</span>
-                <span class="n">hasAz</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+            <span class="n">hvsr_results_interim</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;place_holder_sitename&#39;</span><span class="p">:</span><span class="n">hvsr_results</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hvsr_results_interim</span> <span class="o">=</span> <span class="n">hvsr_results</span>
+
+        <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span> <span class="c1">#This should work more or less the same for batch and regular data now</span>
+            <span class="c1"># Check if data has azimuth data</span>
+            <span class="n">hasAz</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">hvsr_results_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">component</span> <span class="o">==</span> <span class="s1">&#39;R&#39;</span><span class="p">:</span>
+                    <span class="n">hasAz</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            
+            <span class="c1"># Assuming all sites in batch have az if one does</span>
+            <span class="k">if</span> <span class="n">hasAz</span><span class="p">:</span>
                 <span class="k">break</span>
-        
+
+            <span class="c1"># If it wasn&#39;t originally HVSRBatch, make it HVSRData object again</span>
+            <span class="c1">#if not hvsr_results_interim[site_name][&#39;batch&#39;]:</span>
+            <span class="c1">#    hvsr_results_interim = hvsr_results_interim[site_name]            </span>
+            
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">az_requested</span> <span class="ow">and</span> <span class="n">hasAz</span><span class="p">:</span>
             <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; az&#39;</span>
     <span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">get_report_kwargs</span><span class="p">)</span>
@@ -3218,6 +3243,13 @@
                 <span class="n">newArrayList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newZ</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">newArrayList</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
+        <span class="k">if</span> <span class="s1">&#39;plot_type&#39;</span> <span class="ow">in</span> <span class="n">plot_azimuth_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;i&#39;</span> <span class="ow">in</span> <span class="n">plot_azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]:</span>
+                <span class="n">interpolate_azimuths</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="s1">&#39;-i&#39;</span> <span class="ow">in</span> <span class="n">plot_azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]:</span>
+                <span class="n">interpolate_azimuths</span> <span class="o">=</span> <span class="kc">False</span>
+
+
         <span class="k">if</span> <span class="n">interpolate_azimuths</span><span class="p">:</span>
             <span class="n">z</span> <span class="o">=</span> <span class="n">interp_along_theta</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
             <span class="n">z2</span> <span class="o">=</span> <span class="n">interp_along_theta</span><span class="p">(</span><span class="n">z2</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
@@ -3352,6 +3384,12 @@
 <span class="sd">            - &#39;ann&#39; annotates the frequency value of the &quot;best&quot; peak</span>
 <span class="sd">            - &#39;all&#39; shows all the peaks identified in check_peaks()</span>
 <span class="sd">            - &#39;tp&#39; shows all the peaks of the H/V curve at all time windows</span>
+<span class="sd">        - &#39;AZ&#39; - circular plot of calculated azimuthal HV curves, similar in style to SPEC plot.</span>
+<span class="sd">            - &#39;p&#39; shows a point at each calculated (not interpolated) azimuth peak</span>
+<span class="sd">            - &#39;g&#39; shows grid lines at various angles</span>
+<span class="sd">            - &#39;i&#39; interpolates so that there is an interpolated azimuth at each degree interval (1 degree step)</span>
+<span class="sd">                This is the default, so usually &#39;i&#39; is not needed.</span>
+<span class="sd">            - &#39;-i&#39; prohibits interpolation (only shows the calculated azimuths, as determined by azimuth_angle (default = 30))</span>
 <span class="sd">    azimuth : str, default = &#39;HV&#39;</span>
 <span class="sd">        What &#39;azimuth&#39; to plot, default being standard N E components combined</span>
 <span class="sd">    use_subplots : bool, default = True</span>

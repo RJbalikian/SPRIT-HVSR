@@ -848,7 +848,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
         else:
             hvsr_results_interim = hvsr_results
 
-        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+        for site_name in hvsr_results_interim.keys(): #This should work more or less the same for batch and regular data now
             # Check if data has azimuth data
             hasAz = False
             for tr in hvsr_results_interim[site_name]['stream']:
