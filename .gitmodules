@@ -1,3 +1,5 @@
 [submodule "./docs/wiki/"]
   url = git@github.com:RJbalikian/SPRIT-HVSR.wiki.git
   branch = master
+[submodule "docs/wiki/SPRIT-HVSR.wiki"]
+	url = https://github.com/RJbalikian/SPRIT-HVSR/wiki
