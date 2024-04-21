@@ -1,4 +1,4 @@
 [submodule "SPRIT-HVSR.wiki"]
-    path = ./docs/wiki/SPRIT-HVSR.wiki
+    path = ./docs/wiki/
     url = "git@github.com:RJbalikian/SPRIT-HVSR.wiki.git"
-    branch = main
+    branch = master
