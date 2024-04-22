@@ -2530,7 +2530,9 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                     else:
                         outFile = inFile.with_name(fname)
                 else:
-                    if pathlib.Path(_export_path).is_dir():
+                    if not _export_path:
+                        pass
+                    elif pathlib.Path(_export_path).is_dir():
                         outFile = pathlib.Path(_export_path).joinpath(fname)
                     else:
                         outFile=pathlib.Path(_export_path)
@@ -2691,10 +2693,11 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                             print(colStr.ljust(maxColWidth), end='  ')
                         print()
 
-                try:
-                    export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
-                except:
-                    print("Error in exporting csv report. CSV not exported")
+                if not not _export_path: # if _export_path is anything but False or None, etc.
+                    try:
+                        export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
+                    except:
+                        print("Error in exporting csv report. CSV not exported")
                 hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
                 hvsr_results['CSV_Report'] = outDF
                         
