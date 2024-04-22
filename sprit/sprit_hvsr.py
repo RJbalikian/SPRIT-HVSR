@@ -3795,7 +3795,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         if not freq_smooth:
             if verbose:
                 warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
-        elif freq_smooth is True or freq_smooth.lower() in freq_smooth_ko:
+        elif freq_smooth is True or (freq_smooth.lower() in freq_smooth_ko and (not not f_smooth_width and not not freq_smooth)):
             from obspy.signal import konnoohmachismoothing
             for k in hvsr_out['psd_raw']:
                 colName = f'psd_values_{k}'
@@ -3824,6 +3824,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
                 with warnings.catch_warnings():
                     #warnings.simplefilter('ignore', category=UserWarning)
+                    padded_ppsd_data = padded_ppsd_data.astype(padded_freqs.dtype) # Make them the same datatype
+                    padded_ppsd_data = np.round(padded_ppsd_data, 12) # Prevent overflows
+                    padded_freqs = np.round(padded_freqs, 9)
+
                     smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, 
                                                      bandwidth=f_smooth_width, normalize=True)
                 
