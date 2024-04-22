@@ -2007,7 +2007,17 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
         else:
             ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
-
+    else:
+        if verbose:
+            print(f"\t\tUpdating hvsr_band to band specified by period_limits={ppsd_kwargs['period_limits']}")
+        
+        if 'hvsr_band' in hvsr_data.keys():
+            hvsr_data['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
+        
+        if 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
+            hvsr_data['input_params']['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
+            
+        
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
     def get_default_args(func):
@@ -3663,17 +3673,20 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
             #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
             #used_ppsds = np.stack(currPPSDs)
+
+            xValMin = 1/hvsr_data['hvsr_band'][1]
+            xValMax = 1/hvsr_data['hvsr_band'][0]
             
             #if reasmpling has been selected
-            if resample is True or isinstance(resample, (int, float)):
+            if resample is True or type(resample) is int or type(resample) is float:
                 if resample is True:
                     resample = 1000 #Default smooth value
 
                 #xValMin = min(ppsds[k]['period_bin_centers'])
                 #xValMax = max(ppsds[k]['period_bin_centers'])
-                xValMin = 1/hvsr_data['hvsr_band'][1]
-                xValMax = 1/hvsr_data['hvsr_band'][0]
+
                 #Resample period bin values
+                #print('resample, prelogspace', x_periods[k].shape)
                 x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
                 if smooth or isinstance(smooth, (int, float)):
                     if smooth:
@@ -3706,11 +3719,15 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             else:
                 #If no resampling desired
                 #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
-                x_periods[k] = np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]],3)
+                x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
+                # Clean up edge freq. values
+                x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=x_periods[k].shape[0])
+
+                #print('clean',  x_periods[k].shape,  x_periods[k])
                 x_periods[k][0] = hvsr_data['hvsr_band'][1]
                 x_periods[k][-1] = hvsr_data['hvsr_band'][0]
                 psdRaw[k] = np.array(input_ppsds)
-
+            
             hvsrDF['psd_values_'+k] = list(psdRaw[k])
             use = hvsrDF['Use'].astype(bool)
 
@@ -3803,11 +3820,11 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 
                 #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', category=UserWarning)
-                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, 
-                                                    padded_freqs, bandwidth=f_smooth_width, normalize=True)
+                    #warnings.simplefilter('ignore', category=UserWarning)
+                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, 
+                                                     bandwidth=f_smooth_width, normalize=True)
                 
-                #Just use the original data
+                # Only use the original, non-padded data
                 smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
                 hvsr_out['psd_raw'][k] = smoothed_ppsd_data
                 hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
@@ -4183,6 +4200,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
             output['x_windows_out'] = []
     else:
         RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
+
     return output
 
 
@@ -7423,7 +7441,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     yminind = np.argmin(np.abs(ymin-freqticks))
     ymaxind = np.argmin(np.abs(ymax-freqticks))
     freqticks = freqticks[yminind:ymaxind]
-    freqticks = np.logspace(np.log10(freqticks[0]), np.log10(freqticks[-1]), num=999)
+    freqticks = np.logspace(np.log10(freqticks[0]), np.log10(freqticks[-1]), num=psdArr.shape[1])
 
     extList = [xmin, xmax, ymin, ymax]
     #Set up axes
