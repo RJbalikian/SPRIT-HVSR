@@ -3396,8 +3396,9 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
         windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
-        fig.text(x=0.98, y=0.02, s=windowsUsedStr, ha='right', va='bottom', fontsize='x-small',
-                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=9))
+        fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
+                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
+        fig.get_layout_engine().set(h_pad=0.075, hspace=-5)
 
         if show:
             fig.canvas.draw()
@@ -3677,20 +3678,20 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
             #used_ppsds = np.stack(currPPSDs)
 
-            xValMin = 1/hvsr_data['hvsr_band'][1]
-            xValMax = 1/hvsr_data['hvsr_band'][0]
+            xValMin_per = np.round(1/hvsr_data['hvsr_band'][1], 4)
+            xValMax_per = np.round(1/hvsr_data['hvsr_band'][0], 4)
             
             #if reasmpling has been selected
             if resample is True or type(resample) is int or type(resample) is float:
                 if resample is True:
                     resample = 1000 #Default smooth value
 
-                #xValMin = min(ppsds[k]['period_bin_centers'])
-                #xValMax = max(ppsds[k]['period_bin_centers'])
+                #xValMin_per = min(ppsds[k]['period_bin_centers'])
+                #xValMax_per = max(ppsds[k]['period_bin_centers'])
 
                 #Resample period bin values
                 #print('resample, prelogspace', x_periods[k].shape)
-                x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=resample)
+                x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
                 if smooth or isinstance(smooth, (int, float)):
                     if smooth:
                         smooth = 51 #Default smoothing window
@@ -3723,12 +3724,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 #If no resampling desired
                 #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
                 x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
-                # Clean up edge freq. values
-                x_periods[k] = np.logspace(np.log10(xValMin), np.log10(xValMax), num=x_periods[k].shape[0])
 
-                #print('clean',  x_periods[k].shape,  x_periods[k])
-                x_periods[k][0] = hvsr_data['hvsr_band'][1]
-                x_periods[k][-1] = hvsr_data['hvsr_band'][0]
+                # Clean up edge freq. values
+                x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
+                x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
                 psdRaw[k] = np.array(input_ppsds)
             
             hvsrDF['psd_values_'+k] = list(psdRaw[k])
