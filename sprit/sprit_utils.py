@@ -465,9 +465,9 @@ def _run_docstring():
         for i, param in enumerate(parameters):
             followingLines += f"\n    {param}"#.ljust(25)
             if isinstance(defaults[i], str) and defaults[i]!='<positional, no default>':
-                followingLines += f": any, default = '{defaults[i]}'\n\tSee API documentation at link above or at `sprit.{func.__name__}.__doc__` for specifics."
+                followingLines += f": any, default = '{defaults[i]}'\n\tSee API documentation at link above or at `help(sprit.{func.__name__})` for specifics."
             else:
-                followingLines += f": any, default = {defaults[i]}\n\tSee API documentation at link above or at `sprit.{func.__name__}.__doc__` for specifics."
+                followingLines += f": any, default = {defaults[i]}\n\tSee API documentation at link above or at `help({func.__name__})` for specifics."
 
         #funcDefaults.append(['<positional, no default>' if d is inspect._empty else d for d in defaults])
         #funcParams.append(list(zip(*parameters.items()))[0])
