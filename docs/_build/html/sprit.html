@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 1.0.0 documentation</title>
+  <title>sprit package &mdash; sprit 1.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=8d563738"></script>
+        <script src="_static/documentation_options.js?v=292eb321"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -217,7 +217,9 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.HVSRBatch.export_settings">
 <span class="sig-name descname"><span class="pre">export_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">site_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_settings_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_settings_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.export_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch.export_settings" title="Link to this definition">¶</a></dt>
-<dd><p>Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.</p>
+<dd><p>Method to export settings from HVSRData object in HVSRBatch object.</p>
+<p>Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. 
+See sprit.export_settings() for more details.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
@@ -234,6 +236,12 @@
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.export_settings" title="sprit.export_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_settings</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -248,6 +256,12 @@
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -281,7 +295,9 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.HVSRBatch.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch.plot" title="Link to this definition">¶</a></dt>
-<dd><p>Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the ‘Plot_Report’ attribute of each HVSRData object</p>
+<dd><p>Method to plot data, based on the sprit.plot_hvsr() function.</p>
+<p>All the same kwargs and default values apply as plot_hvsr().
+For return_fig, returns it to the ‘Plot_Report’ attribute of each HVSRData object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
@@ -290,12 +306,24 @@
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.plot_hvsr" title="sprit.plot_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_hvsr</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.HVSRBatch.report">
 <span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch.report" title="Link to this definition">¶</a></dt>
 <dd><p>Wrapper of get_report()</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -445,6 +473,12 @@ If True, it will first try to save each file to the same directory as datapath, 
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -500,6 +534,13 @@ If True, it will first try to save each file to the same directory as datapath, 
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.plot_hvsr" title="sprit.plot_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_hvsr</span></code></a></dt><dd></dd>
+<dt><a class="reference internal" href="#sprit.plot_azimuth" title="sprit.plot_azimuth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_azimuth</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 <dl class="py property">
@@ -526,6 +567,12 @@ If True, it will first try to save each file to the same directory as datapath, 
 <dt class="sig sig-object py" id="sprit.HVSRData.report">
 <span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData.report" title="Link to this definition">¶</a></dt>
 <dd><p>Wrapper of get_report()</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -987,7 +1034,7 @@ If a directory is specified, the filename will be  “&lt;site_name&gt;_&lt;acq_
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.input_params">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2024-04-21'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">4,</span> <span class="pre">21,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">4,</span> <span class="pre">21,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2024-04-23'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">4,</span> <span class="pre">23,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">4,</span> <span class="pre">23,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1392,18 +1439,6 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
 <span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth_calculation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curves_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.run" title="Link to this definition">¶</a></dt>
 <dd><p>The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())</p>
 <p>The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.</p>
-<blockquote>
-<div><p>The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
-- input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
-- fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
-- remove_noise(): by default, the kind of noise removal is remove_method=’auto’. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
-- generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
-- remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
-- process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
-- check_peaks(): this is the main function that will find and ‘score’ peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
-- get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
-- export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
-</div></blockquote>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
@@ -1426,6 +1461,214 @@ For sample data, The following can be specified as the datapath parameter:</p>
 </dd>
 <dt><strong>**kwargs</strong></dt><dd><p>Keyword arguments for the functions listed above. The keyword arguments are unique, so they will get parsed out and passed into the appropriate function.</p>
 </dd>
+<dt><strong>input_params</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Function for designating input parameters for reading in and processing data
+See API documentation: [input_params()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.input_params">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.input_params</a>)</p>
+</dd>
+<dt><strong>datapath: any, default = ‘&lt;no default&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>site: any, default = ‘HVSR Site’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>network: any, default = ‘AM’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>station: any, default = ‘RAC84’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>loc: any, default = ‘00’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>channels: any, default = [‘EHZ’, ‘EHN’, ‘EHE’]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>acq_date: any, default = ‘2024-04-23’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>starttime: any, default = 2024-04-23T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>endtime: any, default = 2024-04-23T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>tzone: any, default = ‘UTC’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>xcoord: any, default = -88.2290526</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>ycoord: any, default = 40.1012122</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>elevation: any, default = 755</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>input_crs: any, default = ‘EPSG:4326’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>output_crs: any, default = ‘EPSG:4326’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>elev_unit: any, default = ‘feet’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>depth: any, default = 0</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>instrument: any, default = ‘Raspberry Shake’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>metapath: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>hvsr_band: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>peak_freq_range: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>processing_parameters: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+</dd>
+<dt><strong>fetch_data</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Fetch ambient seismic data from a source to read into obspy stream
+See API documentation: [fetch_data()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.fetch_data">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.fetch_data</a>)</p>
+</dd>
+<dt><strong>params: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>source: any, default = ‘file’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>trim_dir: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>export_format: any, default = ‘mseed’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>detrend: any, default = ‘spline’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>detrend_order: any, default = 2</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>update_metadata: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>plot_input_stream: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>kwargs: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>calculate_azimuth</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal
+See API documentation: [calculate_azimuth()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.calculate_azimuth">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.calculate_azimuth</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuth_angle: any, default = 30</strong></dt><dd><p>See API documentation at link above or at <cite>help(calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuth_type: any, default = ‘multiple’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuth_unit: any, default = ‘degrees’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>show_az_plot: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>plot_azimuth_kwargs: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(calculate_azimuth)</cite> for specifics.</p>
+</dd>
+<dt><strong>remove_noise</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Function to remove noisy windows from data, using various methods.
+See API documentation: [remove_noise()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.remove_noise">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.remove_noise</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>remove_method: any, default = ‘auto’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>sat_percent: any, default = 0.995</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>noise_percent: any, default = 0.8</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>sta: any, default = 2</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>lta: any, default = 30</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>stalta_thresh: any, default = [8, 16]</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>warmup_time: any, default = 0</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>cooldown_time: any, default = 0</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>min_win_size: any, default = 1</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>remove_raw_noise: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>show_stalta_plot: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_noise)</cite> for specifics.</p>
+</dd>
+<dt><strong>generate_ppsds</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Generates PPSDs for each channel
+See API documentation: [generate_ppsds()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.generate_ppsds">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.generate_ppsds</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.generate_ppsds)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuthal_ppsds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_ppsds)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_ppsds)</cite> for specifics.</p>
+</dd>
+<dt><strong>ppsd_kwargs: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_ppsds)</cite> for specifics.</p>
+</dd>
+<dt><strong>process_hvsr</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Process the input data and get HVSR data
+See API documentation: [process_hvsr()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.process_hvsr">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.process_hvsr</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>method: any, default = 3</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>smooth: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>freq_smooth: any, default = ‘konno ohmachi’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>f_smooth_width: any, default = 40</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>resample: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>outlier_curve_rmse_percentile: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>remove_outlier_curves</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each 
+See API documentation: [remove_outlier_curves()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.remove_outlier_curves">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.remove_outlier_curves</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>rmse_thresh: any, default = 98</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>use_percentile: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>use_hv_curve: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>show_outlier_plot: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>check_peaks</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks
+See API documentation: [check_peaks()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.check_peaks">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.check_peaks</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>hvsr_band: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>peak_selection: any, default = ‘max’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>peak_freq_range: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuth: any, default = ‘HV’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+</dd>
+<dt><strong>get_report</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Get a report of the HVSR analysis in a variety of formats.
+See API documentation: [get_report()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.get_report">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.get_report</a>)</p>
+</dd>
+<dt><strong>hvsr_results: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>report_format: any, default = [‘print’, ‘csv’, ‘plot’]</strong></dt><dd><p>See API documentation at link above or at <cite>help(get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>plot_type: any, default = ‘HVSR p ann C+ p ann Spec’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>azimuth: any, default = ‘HV’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>export_path: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>csv_overwrite_opt: any, default = ‘append’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>no_output: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(get_report)</cite> for specifics.</p>
+</dd>
+<dt><strong>export_data</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Export data into pickle format that can be read back in using import_data() so data does not need to
+See API documentation: [export_data()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_data">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_data</a>)</p>
+</dd>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>export_path: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>ext: any, default = ‘hvsr’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_data)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_data)</cite> for specifics.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1445,6 +1688,17 @@ For sample data, The following can be specified as the datapath parameter:</p>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
+- input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
+- fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
+- remove_noise(): by default, the kind of noise removal is remove_method=’auto’. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
+- generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+- remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
+- process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
+- check_peaks(): this is the main function that will find and ‘score’ peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
+- get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+- export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
 </dd></dl>
 
 <dl class="py function">
