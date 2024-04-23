@@ -204,12 +204,19 @@ class HVSRBatch:
 
     #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
-        """Method to plot data, based on the sprit.plot_hvsr() function. All the same kwargs and default values apply as plot_hvsr(). For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData object
+        """Method to plot data, based on the sprit.plot_hvsr() function. 
+        
+        All the same kwargs and default values apply as plot_hvsr().
+        For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData object
 
         Returns
         -------
         _type_
             _description_
+
+        See Also
+        --------
+        plot_hvsr
         """
         for sitename in self:
             if 'return_fig' in kwargs.keys() and kwargs['return_fig']:
@@ -226,6 +233,10 @@ class HVSRBatch:
         -------
         Variable
             May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+
+        See Also
+        --------
+        get_report
         """
         if 'report_format' in kwargs.keys():
             if 'csv' == kwargs['report_format']:
@@ -248,11 +259,19 @@ class HVSRBatch:
         return
 
     def report(self, **kwargs):
-        """Wrapper of get_report()"""
+        """Wrapper of get_report()
+        
+        See Also
+        --------
+        get_report
+        """
         return self.get_report(**kwargs)
 
     def export_settings(self, site_name=None, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
-        """Method to export settings from HVSRData object in HVSRBatch object. Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. See sprit.export_settings() for more details.
+        """Method to export settings from HVSRData object in HVSRBatch object. 
+        
+        Simply calls sprit.export_settings() from specified HVSRData object in the HVSRBatch object. 
+        See sprit.export_settings() for more details.
 
         Parameters
         ----------
@@ -266,6 +285,11 @@ class HVSRBatch:
             Whether to include the location information in the instrument settings, if that settings type is selected, by default False
         verbose : bool, optional
             Whether to print output (filepath and settings) to terminal, by default True
+        
+        
+        See Also
+        --------
+        export_settings
         """
         #If no site name selected, use first site
         if site_name is None:
@@ -387,6 +411,11 @@ class HVSRData:
         Returns
         -------
         matplotlib.Figure, matplotlib.Axis (if return_fig=True)
+
+        See Also
+        --------
+        plot_hvsr
+        plot_azimuth
         """
         if 'close_figs' not in kwargs.keys():
             kwargs['close_figs']=True
@@ -401,12 +430,21 @@ class HVSRData:
         -------
         Variable
             May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+
+        See Also
+        --------
+        get_report
         """
         report_return = get_report(self, **kwargs)
         return report_return
 
     def report(self, **kwargs):
-        """Wrapper of get_report()"""
+        """Wrapper of get_report()
+        
+        See Also
+        --------
+        get_report
+        """
         report_return = get_report(self, **kwargs)
         return report_return
 
@@ -601,16 +639,18 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     
     The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
     
-        The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
-        - input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
-        - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
-        - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
-        - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
-        - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
-        - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
-        - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
-        - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
-        - export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
+    Notes
+    -----
+    The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
+    - input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
+    - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
+    - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
+    - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+    - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
+    - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
+    - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
+    - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+    - export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
 
     Parameters
     ----------

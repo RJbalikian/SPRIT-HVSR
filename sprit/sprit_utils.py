@@ -421,6 +421,13 @@ def read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION
     return dest
 
 def _run_docstring():
+    """This function updates the docstring the sprit.run() function, for documentation or help(sprit.run()) purposes
+
+    Returns
+    -------
+    str
+        Updated Docstring with more specifics about functions and their parameters
+    """
     nl = '\n\t'
     dsIntro = sprit_hvsr.run.__doc__.split('Parameters')[0]
     dsParameters = ('Parameters'+sprit_hvsr.run.__doc__.split('Parameters')[1].split('Returns')[0])
