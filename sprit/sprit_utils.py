@@ -1,5 +1,6 @@
 import datetime
 import functools
+import inspect
 import os
 import pathlib
 import subprocess
@@ -418,6 +419,58 @@ def read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION
                     "the SSH tunnel: '{0}'".format(output))
 
     return dest
+
+def _run_docstring():
+    nl = '\n\t'
+    dsIntro = sprit_hvsr.run.__doc__.split('Parameters')[0]
+    dsParameters = ('Parameters'+sprit_hvsr.run.__doc__.split('Parameters')[1].split('Returns')[0])
+    dsReturns = ('    Returns'+sprit_hvsr.run.__doc__.split('Returns')[1])
+    
+    functionList = [sprit_hvsr.input_params, sprit_hvsr.fetch_data, sprit_hvsr.calculate_azimuth,
+                    sprit_hvsr.remove_noise, sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr, 
+                    sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks, 
+                    sprit_hvsr.get_report, sprit_hvsr.export_data]
+
+    funcStrList = []
+    funcParams = []
+    funcDefaults = []
+    prevOutputList = ['params', 'hvsr_data', 'hvsr_results']
+    requiredList = []
+    for func in functionList:
+        parameters = inspect.signature(func).parameters
+        defaults = [param.default for param in list(zip(*parameters.items()))[1]]
+        parameters = list(zip(*parameters.items()))[0]
+
+        for i, d in enumerate(defaults):
+            if 'kwargs' in parameters[i]:
+                defaults[i] = {}
+            elif d is inspect._empty:
+                if any(o in parameters[i] for o in prevOutputList):
+                    defaults[i] = '<output of previous function>'
+                else:
+                    defaults[i] = '<no default>'
+
+        funcDS = func.__doc__.split('\n')[0][:100]
+        baseURL = r"https://sprit.readthedocs.io/en/latest/sprit.html#sprit."
+        funcURL = baseURL+func.__name__
+        firstLine = f"\n    {func.__name__} : function name (not an actual parameter) \n\t{funcDS}\n\tSee API documentation: [{func.__name__}()]({funcURL})"
+        followingLines = ''
+        for i, param in enumerate(parameters):
+            followingLines += f"\n    {param}"#.ljust(25)
+            if isinstance(defaults[i], str) and defaults[i]!='<positional, no default>':
+                followingLines += f": any, default = '{defaults[i]}'\n\tSee API documentation at link above or at `sprit.{func.__name__}.__doc__` for specifics."
+            else:
+                followingLines += f": any, default = {defaults[i]}\n\tSee API documentation at link above or at `sprit.{func.__name__}.__doc__` for specifics."
+
+        #funcDefaults.append(['<positional, no default>' if d is inspect._empty else d for d in defaults])
+        #funcParams.append(list(zip(*parameters.items()))[0])
+
+        funcString = firstLine + followingLines
+        funcStrList.append(funcString)
+
+    run_docstring = dsIntro + dsParameters + f"{nl.join(funcStrList)}\n\n" + dsReturns
+    return run_docstring
+
 
 #Time functions, for timing how long a process takes
 def time_it(_t, proc_name='', verbose=True):

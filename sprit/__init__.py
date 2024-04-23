@@ -110,4 +110,5 @@ __all__ =('sprit_hvsr',
             'create_jupyter_ui'
             )
 
+run.__doc__ = sprit_utils._run_docstring()
 __author__ = 'Riley Balikian'
