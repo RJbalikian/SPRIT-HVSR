@@ -1311,7 +1311,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 bestPeakScore = 0
 
                 for p in hvsr_data['PeakReport'][col_id]:
-                    #Get BestPeak
+                    # Get BestPeak
                     if p['Score'] > bestPeakScore:
                         bestPeakScore = p['Score']
                         bestPeak = p
@@ -1332,16 +1332,16 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                     else:
                         p['PeakPasses'] = False
                         
-                #Designate BestPeak in output dict
+                # Designate BestPeak in output dict
                 if len(hvsr_data['PeakReport'][col_id]) == 0:
                     bestPeak = {}
-                    print(f"No Best Peak identified for {hvsr_data['site']}")
+                    print(f"No Best Peak identified for {hvsr_data['site']} (azimuth {col_id})")
 
                 hvsr_data['BestPeak'][col_id] = bestPeak
         else:
             for i, col_id in enumerate(HVColIDList):
                 hvsr_data['BestPeak'][col_id] = {}
-            print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']}")
+            print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']} (azimuth {col_id})")
             try:
                 hvsr_data.plot()
             except:
@@ -3938,6 +3938,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
         #Get peaks for each time step
         hvsr_out['ind_hvsr_peak_indices'] = {}
+        tStepPFDict = {}
         #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
         for col_name in hvsr_out['hvsr_windows_df'].columns:
             if col_name.startswith("HV_Curves"):
@@ -3949,8 +3950,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
                 for tStepHVSR in hvsr_out['hvsr_windows_df'][col_name]:
                     tStepPeaks.append(__find_peaks(tStepHVSR))                
-                hvsr_out['ind_hvsr_peak_indices']['PeakInds'+colSuffix] = tStepPeaks
-                hvsr_out['hvsr_windows_df']['CurvesPeakIndices'+colSuffix] = tStepPeaks
+                hvsr_out['ind_hvsr_peak_indices']['CurvesPeakIndices'+colSuffix] = tStepPeaks
 
                 tStepPFList = []
                 for tPeaks in tStepPeaks:
@@ -3958,22 +3958,12 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     for pInd in tPeaks:
                         tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
                     tStepPFList.append(tStepPFs)
-                hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'+colSuffix] = tStepPFList
-
-        #for tStepHVSR in hvsr_out['hvsr_windows_df']['HV_Curves']:
-        #    tStepPeaks.append(__find_peaks(tStepHVSR))
-        #hvsr_out['ind_hvsr_peak_indices'] = tStepPeaks
-        #hvsr_out['hvsr_windows_df']['CurvesPeakIndices'] = tStepPeaks
-
-        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
-        #tStepPFList = []
-        #for tPeaks in tStepPeaks:
-        #    tStepPFs = []
-        #    for pInd in tPeaks:
-        #        tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
-        #    tStepPFList.append(tStepPFs)
-        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = tStepPFList
-
+                tStepPFDict['CurvesPeakFreqs'+colSuffix] = tStepPFList
+        
+        indHVPeakIndsDF = pd.DataFrame(hvsr_out['ind_hvsr_peak_indices'], index=hvsr_out['hvsr_windows_df'].index)
+        tStepPFDictDF = pd.DataFrame(tStepPFDict, index=hvsr_out['hvsr_windows_df'].index)
+        hvsr_out['hvsr_windows_df'] = pd.concat([hvsr_out['hvsr_windows_df'], indHVPeakIndsDF, tStepPFDictDF], axis=1)
+  
         #Get peaks of main HV curve
         hvsr_out['hvsr_peak_indices'] = {}
         hvsr_out['hvsr_peak_indices']['HV'] = __find_peaks(hvsr_out['hvsr_curve'])
