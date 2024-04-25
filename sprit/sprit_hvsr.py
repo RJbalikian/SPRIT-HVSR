@@ -1619,11 +1619,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     inv = params['inv']
     date = params['acq_date']
 
-    #Cleanup for gui input
+    # Cleanup for gui input
     if isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
         pass
     elif '}' in str(params['datapath']):
-        params['datapath'] = params['datapath'].as_posix().replace('{','')
+        params['datapath'] = params['datapath'].as_posix().replace('{', '')
         params['datapath'] = params['datapath'].split('}')
     
     sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
@@ -1644,7 +1644,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     inst = params['instrument']
 
-    #Need to put dates and times in right formats first
+    # Need to put dates and times in right formats first
     if type(date) is datetime.datetime:
         doy = date.timetuple().tm_yday
         year = date.year
@@ -1682,7 +1682,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     elif type(date) is int:
         doy = date
         year = datetime.datetime.today().year
-    else: #FOR NOW, need to update
+    else:  #FOR NOW, need to update
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
@@ -1699,92 +1699,105 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             obspyReadKwargs[argName] = kwargs[argName]
 
     #Select how reading will be done
-    if source=='raw':
-        try:
+    if isinstance(params['datapath'], obspy.Stream):
+        rawDataIN = params['datapath'].copy()
+        tr = params['datapath'][0]
+        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
+                                       str(tr.stats.starttime)[11:19], 
+                                       str(tr.stats.endtime)[11:19]])
+    elif isinstance(params['datapath'], obspy.Trace):
+        rawDataIN = obspy.Stream(params['datapath'])
+        tr = params['datapath']
+        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
+                                       str(tr.stats.starttime)[11:19], 
+                                       str(tr.stats.endtime)[11:19]])
+    else:
+        if source=='raw':
+            try:
+                if inst.lower() in raspShakeInstNameList:
+                    rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+
+                elif inst.lower() in trominoNameList:
+                    rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
+            except:
+                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
+        elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
+            rawDataIN = params['datapath'].copy()
+        elif source=='dir':
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-
-            elif inst.lower() in trominoNameList:
-                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
-        except:
-            raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
-    elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
-        rawDataIN = params['datapath'].copy()
-    elif source=='dir':
-        if inst.lower() in raspShakeInstNameList:
-            rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-        else:
-            obspyFiles = {}
-            for obForm in obspyFormats:
-                temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
-                for f in temp_file_glob:
-                    currParams = params
-                    currParams['datapath'] = f
-
-                    curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
-                    curr_data.merge()
-                    obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
-            return HVSRBatch(obspyFiles)
-    elif source=='file' and str(params['datapath']).lower() not in sampleList:
-        # Read the file specified by datapath
-        if isinstance(dPath, list) or isinstance(dPath, tuple):
-            rawStreams = []
-            for datafile in dPath:
-                rawStream = obspy.read(datafile, **obspyReadKwargs)
-                rawStreams.append(rawStream) #These are actually streams, not traces
-            for i, stream in enumerate(rawStreams):
-                if i == 0:
-                    rawDataIN = obspy.Stream(stream) #Just in case
-                else:
-                    rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-        elif str(dPath)[:6].lower()=='sample':
-            pass
-        else:
-            rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-        import warnings # For some reason not being imported at the start
-        with warnings.catch_warnings():
-            warnings.simplefilter(action='ignore', category=UserWarning)
-            rawDataIN.attach_response(inv)
-    elif source=='batch' and str(params['datapath']).lower() not in sampleList:
-        if verbose:
-            print('\nFetching data (fetch_data())')
-        batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
-        params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
-        params = HVSRBatch(params)
-        return params
-    elif str(params['datapath']).lower() in sampleList or f"sample{params['datapath'].lower()}" in sampleList:
-        sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
-        if source=='batch':
-            params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
-            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
-            params = HVSRBatch(params)
-            return params
-        elif source=='dir':
-            params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
-            params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
-            params = HVSRBatch(params)
-            return params
-        elif source=='file':
-            params['datapath'] = str(params['datapath']).lower()
-            
-            if params['datapath'].lower() in sampleFileKeyMap.keys():
-                params['datapath'] = sampleFileKeyMap[params['datapath'].lower()]
             else:
-                params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+                obspyFiles = {}
+                for obForm in obspyFormats:
+                    temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
+                    for f in temp_file_glob:
+                        currParams = params
+                        currParams['datapath'] = f
 
-            dPath = params['datapath']
-            rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-            import warnings
+                        curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
+                                    trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                        curr_data.merge()
+                        obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
+                return HVSRBatch(obspyFiles)
+        elif source=='file' and str(params['datapath']).lower() not in sampleList:
+            # Read the file specified by datapath
+            if isinstance(dPath, list) or isinstance(dPath, tuple):
+                rawStreams = []
+                for datafile in dPath:
+                    rawStream = obspy.read(datafile, **obspyReadKwargs)
+                    rawStreams.append(rawStream) #These are actually streams, not traces
+                for i, stream in enumerate(rawStreams):
+                    if i == 0:
+                        rawDataIN = obspy.Stream(stream) #Just in case
+                    else:
+                        rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
+            elif str(dPath)[:6].lower()=='sample':
+                pass
+            else:
+                rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+            import warnings # For some reason not being imported at the start
             with warnings.catch_warnings():
                 warnings.simplefilter(action='ignore', category=UserWarning)
                 rawDataIN.attach_response(inv)
-    else:
-        try:
-            rawDataIN = obspy.read(dPath)
-            rawDataIN.attach_response(inv)
-        except:
-            RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
+        elif source=='batch' and str(params['datapath']).lower() not in sampleList:
+            if verbose:
+                print('\nFetching data (fetch_data())')
+            batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
+            params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
+            params = HVSRBatch(params)
+            return params
+        elif str(params['datapath']).lower() in sampleList or f"sample{params['datapath'].lower()}" in sampleList:
+            sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+            if source=='batch':
+                params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+                params = HVSRBatch(params)
+                return params
+            elif source=='dir':
+                params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+                params = HVSRBatch(params)
+                return params
+            elif source=='file':
+                params['datapath'] = str(params['datapath']).lower()
+                
+                if params['datapath'].lower() in sampleFileKeyMap.keys():
+                    params['datapath'] = sampleFileKeyMap[params['datapath'].lower()]
+                else:
+                    params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+
+                dPath = params['datapath']
+                rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter(action='ignore', category=UserWarning)
+                    rawDataIN.attach_response(inv)
+        else:
+            try:
+                rawDataIN = obspy.read(dPath)
+                rawDataIN.attach_response(inv)
+            except:
+                RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
 
     #Get metadata from the data itself, if not reading raw data
     try:
