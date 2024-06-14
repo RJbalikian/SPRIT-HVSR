@@ -27,7 +27,6 @@ the predictor and the frequency is the dependent variable so the response variab
 Two approaches- either use the power law  y=ax^b 
 or find the least squares solution using the matrix-vector multiplication. 
 
-Attempt 2: GeoPandas: 
-
 """
+
 
