@@ -2,12 +2,15 @@
 
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
+
+# Default variable values
 SITE_NAME="HVSRSite"
 DURATION=20
 CHECK_INT=30
 VERBOSE=""
 SYS_IS_RS=false
-STATION="REDA9"
+CURR_YEAR=$(date +'%Y')
+STATION=$(ls "~/../../opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="~/../../opt/hvsr"
 
 # Get options
@@ -34,7 +37,7 @@ mindecdur=$(printf %.1s "$mindecdur")
 # Now get the duration in seconds
 S_DURATION=$(($((mindur * 60))+$((mindecdur*6))))
 
-# Now you use the variables in your script
+# Print out progress
 echo "Acquiring data for $SITE_NAME"
 echo "Acquisition will last for $DURATION minutes ($S_DURATION seconds)"
 
@@ -51,6 +54,7 @@ END_TIMESTAMP=$(date -d "$date $S_DURATION seconds" +'%s')
 
 UTC_DIFF=$(date +%:::z)
 
+# Print out the times of everything
 echo "  $(date)"
 echo "  Start time is $(date -d "$START_TIME" +'%H:%M') (UTC $UTC_DIFF)"
 echo "  End time is   $(date -d "$END_TIME" +'%H:%M') (UTC $UTC_DIFF)"
@@ -59,30 +63,37 @@ echo "  ----------------------------------------------------------------------"
 # Initialize current timestamp, which will be updated every check_int interval
 CURRENT_TIMESTAMP=$(date +%s)
 
-# Loop through every CHECK_INT seconds, print progress and keep it going 
+# Loop through every CHECK_INT seconds, print progress and keep it going until we reach desired time
 while [[ $CURRENT_TIMESTAMP < $END_TIMESTAMP ]]; do
+    # Get the timestamp for the current time
     CURRENT_TIMESTAMP=$(date +%s)
+
+    # Calculate time remaining
     MIN_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP)/60))
     SEC_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP) - ($MIN_REMAINING*60)))
     TOT_SEC_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP)))
     printf "    %02d:%02d Remaining   |  CURRENT TIME: $(date +%T)  |  END TIME: $(date -d "$END_TIME" '+%T')\n" $MIN_REMAINING $SEC_REMAINING
 
+    # Only for the last interval, where the check int is less than the total time remaining
     if [ $CHECK_INT -lt $TOT_SEC_REMAINING ]; then
         sleep $CHECK_INT
     else
+        # Only sleep the amount of time left
         sleep $TOT_SEC_REMAINING
     fi
+    # Get the timestamp for the current time again (to check against END_TIMESTAMP)
     CURRENT_TIMESTAMP=$(date +%s)
 done
 
+# Final printouts
 echo "  ----------------------------------------------------------------------"
 echo ""
 echo "ACQUISITION COMPLETED"
 
-# Data Clean up
+# DATA CLEAN UP
 echo "Cleaning up data now"
 
-# Use slinktool to move and combine data
+# Use slinktool to trim, combine, and export data
 # First, create the directory to hold the data if it does not already exist
 if [ ! -d $HVSR_DIR ]; then
     mkdir "$HVSR_DIR"
