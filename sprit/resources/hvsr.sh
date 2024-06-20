@@ -1,10 +1,10 @@
 #!/bin/bash
+
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
 SITE_NAME="HVSRSite"
 DURATION=20
-CHECK_INT=5
-VERBOSE=""
+CHECK_INT=30
 VERBOSE=""
 SYS_IS_RS=false
 STATION="REDA9"
@@ -12,12 +12,11 @@ HVSR_DIR="~/../../opt/hvsr"
 
 # Get options
 while getopts 'n:d:v:c:' opt; do
-while getopts 'n:d:v:c:' opt; do
     case "$opt" in
         n) SITE_NAME="$OPTARG";;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
-        v) VERBOSE="-v"
+        v) VERBOSE="-v";;
         ?|h)
             echo "Usage: $(basename "$0") [-n site_name] [-d DURATION in minutes]"
             exit 1
@@ -28,17 +27,22 @@ done
 # Shift the parsed options
 shift "$((OPTIND - 1))"
 
+# If the minutes entered for duration were decimal, extract each part
 read mindur mindecdur <<< $(echo $DURATION | awk -F. '{print $1, $2}')
+mindecdur=$(printf %.1s "$mindecdur")
 
+# Now get the duration in seconds
 S_DURATION=$(($((mindur * 60))+$((mindecdur*6))))
 
 # Now you use the variables in your script
 echo "Acquiring data for $SITE_NAME"
 echo "Acquisition will last for $DURATION minutes ($S_DURATION seconds)"
 
+# Set the start time as current time
 START_TIME=$(date +'%Y-%m-%d %T')
 START_TIMESTAMP=$(date +%s)
 
+# End time add duration to start time
 END_TIME=$(date -d "$date $S_DURATION seconds" +'%Y-%m-%d %T')
 END_HOUR=$(date -d "$date $S_DURATION seconds" +'%H')
 END_MIN=$(date -d "$date $S_DURATION seconds" +'%M')
@@ -52,8 +56,10 @@ echo "  Start time is $(date -d "$START_TIME" +'%H:%M') (UTC $UTC_DIFF)"
 echo "  End time is   $(date -d "$END_TIME" +'%H:%M') (UTC $UTC_DIFF)"
 echo "  ----------------------------------------------------------------------"
 
+# Initialize current timestamp, which will be updated every check_int interval
 CURRENT_TIMESTAMP=$(date +%s)
 
+# Loop through every CHECK_INT seconds, print progress and keep it going 
 while [[ $CURRENT_TIMESTAMP < $END_TIMESTAMP ]]; do
     CURRENT_TIMESTAMP=$(date +%s)
     MIN_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP)/60))
@@ -76,11 +82,13 @@ echo "ACQUISITION COMPLETED"
 # Data Clean up
 echo "Cleaning up data now"
 
-#Use slinktool to move and combine data
+# Use slinktool to move and combine data
+# First, create the directory to hold the data if it does not already exist
 if [ ! -d $HVSR_DIR ]; then
     mkdir "$HVSR_DIR"
 fi
 
+# Format the times to create a time window (-tw option)
 sYEAR=$(date -d "$START_TIME" '+%Y')
 sMON=$(date -d "$START_TIME" '+%m')
 sDAY=$(date -d "$START_TIME" '+%d')
@@ -99,12 +107,15 @@ eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 
 fpath="$HVSR_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
 echo "Exporting site data to  $fpath"
+
+# slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
 slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
 
 #RASPBERY SHAKE SYSTEM CHECK HERE
+
+# If this is being run on a raspberry shake, poweroff instrument
 if $SYS_IS_RS; then
     echo "POWERING DOWN"
-    sudo poweroff
     sudo poweroff
 else
     echo "Program Completed. If this was a Raspberry Shake, your system would shut down now."
