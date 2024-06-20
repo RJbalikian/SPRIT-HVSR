@@ -17,7 +17,8 @@ import json
 import os
 import pathlib
 import pkg_resources
-#import GeoPandas    #need conda environment
+import scipy.optimize as sco
+#from pyproj import GeoPandas    #need conda environment
 
 """
 Attempt 1: Regression equations: 
@@ -49,7 +50,8 @@ def cal_bedrockdepth(a, b, x):
         return a*(x**b)
 
 
-def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius = None, tags = None):    #May need **kwargs later
+def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None):    
+    #May need **kwargs later
     
     #need try-catch blocks while reading in files and checking membership
     bedrock_depths = []
@@ -67,6 +69,10 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
                     "Fairchild", "Del Monaco", "Tun", "Thabet-A", "Thabet-B",
                     "Thabet-C", "Thabet-D"]
     
+    bedrock_types = ["shale", "sand", "gravel", "limetone", "dolomite", "till", 
+                     "sedimentary", "igneous", "metamorphic"]
+    
+
     basepath = "/path/to"
     file_name = "example.csv"
 
@@ -75,7 +81,7 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
     if type in type_list and model in model_list and datapath in sampleFileName.values():
             
             #eliminate outlier points
-            #pick only relevant points according to tags 
+            #pick only relevant points according to bedrock_type
             
             data = pd.read_csv(datapath, sep = ",")                            #need to define usecols after making the spreadsheet
             #convert columns to arrays
@@ -168,6 +174,13 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
                     
                         for each in data:                              #change
                             bedrock_depths[each] = cal_bedrockdepth(116.62, 1.169, each)
+
+                    # else:
+
+                    #     sco.least_squares() 
+
+
+
 
 
 
