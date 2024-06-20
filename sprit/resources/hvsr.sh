@@ -4,14 +4,18 @@
 SITE_NAME="HVSR Site"
 DURATION=20
 CHECK_INT=5
-
+VERBOSE=""
 SYS_IS_RS=false
+STATION="REDA9"
+HVSR_DIR="~/../../opt/hvsr"
 
 # Get options
-while getopts 'n:d:' opt; do
+while getopts 'n:d:v:c:' opt; do
     case "$opt" in
         n) SITE_NAME="$OPTARG";;
         d) DURATION="$OPTARG";;
+        c) CHECK_INT="$OPTARG";;
+        v) VERBOSE="-v"
         ?|h)
             echo "Usage: $(basename "$0") [-n site_name] [-d DURATION in minutes]"
             exit 1
@@ -31,7 +35,7 @@ echo $S_DURATION
 echo "Acquiring data for $SITE_NAME"
 echo "Acquisition will last for $DURATION minutes ($S_DURATION seconds)"
 
-START_TIME=$(date +%H:%M:%S)
+START_TIME=$(date)
 START_TIMESTAMP=$(date +%s)
 
 END_TIME=$(date -d "$date $S_DURATION seconds" +'%H:%M:%S')
@@ -43,7 +47,7 @@ END_TIMESTAMP=$(date -d "$date $S_DURATION seconds" +'%s')
 UTC_DIFF=$(date +%:::z)
 
 echo "  $(date)"
-echo "  Start time is $START_TIME (UTC $UTC_DIFF)"
+echo "  Start time is $(date -d $START_TIME +%H:%M) (UTC $UTC_DIFF)"
 echo "  End time is   $END_TIME (UTC $UTC_DIFF)"
 echo "  ----------------------------------------------------------------------"
 
@@ -71,12 +75,19 @@ echo "ACQUISITION COMPLETED"
 # Data Clean up
 echo "Cleaning up data now"
 echo "<Perform clean up tasks here>"
-  #Use slinktool to copy and move data?
+
+#Use slinktool to move and combine data
+if [ ! -d $HVSR_DIR ]; then
+    mkdir $HVSR_DIR
+fi
+
+
+slinktool -S "AM_$STATION:EH?" -tw -o $HVSR_DIR/$SITE_NAME_$(date -d "$dateVar" +%H:%M).mseed $VERBOSE :18000
 
 #RASPBERY SHAKE SYSTEM CHECK HERE
-
 if $SYS_IS_RS; then
     echo "POWERING DOWN"
+    sudo poweroff
 else
     echo "Program Completed. If this was a Raspberry Shake, your system would shut down now."
 fi
