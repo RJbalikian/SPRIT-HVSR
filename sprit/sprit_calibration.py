@@ -35,7 +35,14 @@ Use GeoPandas to eliminate outliers
 calibrate - does calibration
 view_results - produces Pandas dataframe of results
 view_plot - produces calibration curve
+
+
+Things to add:
+- #checkinstance - HVSRData/HVSR Batch
+- #need try-catch blocks while reading in files and checking membership
+- 
 """
+
 
 resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
 sample_data_dir = resource_dir.joinpath("sample_data")
@@ -50,13 +57,22 @@ def cal_bedrockdepth(a, b, x):
         return a*(x**b)
 
 
-def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None):    
-    #May need **kwargs later
-    
-    #need try-catch blocks while reading in files and checking membership
-    bedrock_depths = []
+def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
 
-    type_list = ["power", "Vs", "matrix"]
+    a = 0
+    b = 0
+    
+    rows_no = kwargs["nrows"]
+
+    bedrock_depths = None
+
+    data = None
+
+    calib_data = None
+
+    types = ["Power", "Vs", "Matrix"]
+
+    type_list = list(map(lambda x : x.casefold(), types))
     
     power_list = ["Power", "power", "pw", "POWER"]
 
@@ -64,126 +80,136 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
 
     matrix_list = ["matrix", "Matrix", "MATRIX"]
 
-    model_list = ["ISGS", "Ibs-von-A", "Ibs-von-B" "Delgado-A", "Delgado-B", 
+    models = ["ISGS", "IbsvonA", "IbsvonB" "DelgadoA", "DelgadoB", 
                     "Parolai", "Hinzen", "Birgoren", "Ozalaybey", "Harutoonian",
-                    "Fairchild", "Del Monaco", "Tun", "Thabet-A", "Thabet-B",
-                    "Thabet-C", "Thabet-D"]
+                    "Fairchild", "DelMonaco", "Tun", "ThabetA", "ThabetB",
+                    "ThabetC", "ThabetD"]
+    
+    model_list = list(map(lambda x : x.casefold(), models))
     
     bedrock_types = ["shale", "sand", "gravel", "limetone", "dolomite", "till", 
                      "sedimentary", "igneous", "metamorphic"]
     
+    model_parameters = {"ISGS" : (1,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
+                        "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
+                        "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
+                        "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
+    
 
+    freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
+
+    bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
     basepath = "/path/to"
     file_name = "example.csv"
 
     datapath = os.path.join(basepath, file_name)
 
-    if type in type_list and model in model_list and datapath in sampleFileName.values():
+    if type.casefold() in type_list and datapath in sampleFileName.values():
             
-            #eliminate outlier points
+            #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
             #pick only relevant points according to bedrock_type
+
             
-            data = pd.read_csv(datapath, sep = ",")                            #need to define usecols after making the spreadsheet
-            #convert columns to arrays
+            if type.casefold() in power_list:
 
-            #user could also say model = all, in that case compare all
+                data = pd.read_csv(datapath, sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
+                               names = ["Resonance Frequency", "Depth to Bedrock"], dtype = float,
+                               skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error")                            
             
-            if type.lower() in power_list():
-                    
-                    if model.lower() == "isgs":    
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(1, 1, each)  #change depending on import of data
 
-                    elif model.lower() == "ibs-von-a":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(96, 1.388, each) 
+                calib_data = np.array((data["Resonance Frequency"].values, data["Resonance Frequency"].values))
 
-                    elif model.lower() == "ibs-von-b":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(146, 1.375, each) 
+                calib_data = calib_data.T
 
-                    elif model.lower() == "delgado-a":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(55.11, 1.256, each) 
-
-                    elif model.lower() == "delgado-b":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(55.64, 1.268, each) 
-
-                    elif model.lower() == "parolai":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(108, 1.551, each) 
-
-                    elif model.lower() == "hinzen":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(137, 1.19, each) 
-
-                    elif model.lower() == "birgoren":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(150.99, 1.153, each) 
-                    
-                    elif model.lower() == "ozalaybey":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(141, 1.270, each) 
-
-                    elif model.lower() == "harutoonian":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(73, 1.170, each) 
-
-                    elif model.lower() == "fairchild":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(90.53, 1, each)
-
-                    elif model.lower() == "del monaco":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(53.461, 1.01, each)  
-
-                    elif model.lower() == "tun":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(136, 1.357, each) 
-                    
-                    elif model.lower() == "thabet-a":
-                        
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(117.13, 1.197, each) 
-
-                    elif model.lower() == "thabet-b":
-                    
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(105.14, 0.899, each)
-
-                    elif model.lower() == "thabet-c":
+                bedrock_depths = np.zeros(calib_data.shape[0])
                 
-                        for each in data:                             #change
-                            bedrock_depths[each] = cal_bedrockdepth(132.67, 1.084, each)
+                while model.casefold() in model_list: 
 
-                    elif model.lower() == "thabet-d":
+                    for k, v in model_parameters.items():
+                                
+                        if model.casefold() == k.casefold():
+                                    
+                            (a, b) = model_parameters[k]
+
+                        else:
+                            break
+                
+
                     
-                        for each in data:                              #change
-                            bedrock_depths[each] = cal_bedrockdepth(116.62, 1.169, each)
 
-                    # else:
-
-                    #     sco.least_squares() 
+                    #Now plot using curve_fit
 
 
 
 
+                if model.casefold() == "all":
+                    dummy = 3
+                
+                     
+                    #do something
 
 
+
+
+
+
+
+
+                else: 
+                     #model = None: derive model using least_squares
+                    dummy = 3
+                    #do something
+        
+
+
+
+
+
+
+                         
+
+                           
+                           
+                        
+                  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def show_data():
+#      #To display the data considered for calibration to the user
 
 
 
