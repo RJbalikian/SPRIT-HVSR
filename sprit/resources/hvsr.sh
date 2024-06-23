@@ -9,11 +9,13 @@ DURATION=20
 CHECK_INT=30
 VERBOSE=""
 
-PDOWN_TIME=30
 SYS_IS_RS=false
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "~/../../opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="~/../../opt/hvsr"
+
+# Time to wait for powerdown after end of acquisition. Not currently used
+# PDOWN_TIME=30
 
 # Get options
 while getopts 'n:d:v:c:' opt; do
