@@ -7,9 +7,9 @@
 SITE_NAME="HVSRSite"
 DURATION=20
 CHECK_INT=30
+VERBOSE=""
 
 PDOWN_TIME=30
-VERBOSE=""
 SYS_IS_RS=false
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "~/../../opt/data/archive/$CURR_YEAR/AM")
@@ -23,7 +23,7 @@ while getopts 'n:d:v:c:' opt; do
         c) CHECK_INT="$OPTARG";;
         v) VERBOSE="-v";;
         ?|h)
-            echo "Usage: $(basename "$0") [-n site_name] [-d DURATION in minutes]"
+            echo "Usage: $(basename "$0") [-n site_name] [-d DURATION of HVSR acquisition in minutes] [-c interval at which to check/print status] [-v verbose]"
             exit 1
             ;;
     esac
