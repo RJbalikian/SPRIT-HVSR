@@ -7,6 +7,8 @@
 SITE_NAME="HVSRSite"
 DURATION=20
 CHECK_INT=30
+
+PDOWN_TIME=30
 VERBOSE=""
 SYS_IS_RS=false
 CURR_YEAR=$(date +'%Y')
@@ -126,7 +128,18 @@ slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
 
 # If this is being run on a raspberry shake, poweroff instrument
 if $SYS_IS_RS; then
-    echo "POWERING DOWN"
+    # Flash led in heartbeat mode
+    modprobe ledtrig_heartbeat
+    echo heartbeat >/sys/class/leds/led0/trigger
+
+    # Do a powering down countdown
+    #printf "Powering down in $PDOWN_TIME seconds"
+    #while [[ $PDOWN_TIME > $0 ]]; do
+    #    sleep 1
+    #    PDOWN_TIME=$(($PDOWN_TIME - 1))
+    #    echo -ne "Powering down in $PDOWN_TIME seconds \033[0K\r"
+    #done
+    echo "Powering down"
     sudo poweroff
 else
     echo "Program Completed. If this was a Raspberry Shake, your system would shut down now."
