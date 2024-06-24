@@ -4,6 +4,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 
 """
 import math
+import sprit_hvsr
 import numpy as np
 import numpy.linalg as nla
 import scipy
@@ -17,7 +18,8 @@ import json
 import os
 import pathlib
 import pkg_resources
-import scipy.optimize as sco
+from scipy.optimize import curve_fit
+from scipy.optimize import least_squares
 #from pyproj import GeoPandas    #need conda environment
 
 """
@@ -43,7 +45,6 @@ Things to add:
 - 
 """
 
-
 resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
 sample_data_dir = resource_dir.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
@@ -52,12 +53,27 @@ sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-
 @staticmethod
 def cal_bedrockdepth(a, b, x):
         
-        assert a > 0 and b > 0
+        assert a > 0 and b > 0   #warning for negative values, don't stop processing
+        #Disable wag6rnings if repeatedly usign the same model
+        #Showwarnings = false
     
         return a*(x**b)
 
 
-def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
+def calibrate(hvsr_results,calib_filepath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
+
+
+    #if isinstance(hvsr_results, sprit_hvsr.HVSRData):
+         
+              
+
+
+
+              
+
+         
+
+         
 
     a = 0
     b = 0
@@ -87,7 +103,7 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
     
     model_list = list(map(lambda x : x.casefold(), models))
     
-    bedrock_types = ["shale", "sand", "gravel", "limetone", "dolomite", "till", 
+    bedrock_types = ["shale", "limetone", "dolomite", 
                      "sedimentary", "igneous", "metamorphic"]
     
     model_parameters = {"ISGS" : (1,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
@@ -102,9 +118,9 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
     basepath = "/path/to"
     file_name = "example.csv"
 
-    datapath = os.path.join(basepath, file_name)
+    calib_filepath = os.path.join(basepath, file_name)
 
-    if type.casefold() in type_list and datapath in sampleFileName.values():
+    if type.casefold() in type_list and calib_filepath in sampleFileName.values():
             
             #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
             #pick only relevant points according to bedrock_type
@@ -112,7 +128,7 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
             
             if type.casefold() in power_list:
 
-                data = pd.read_csv(datapath, sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
+                data = pd.read_csv(calib_filepath, sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
                                names = ["Resonance Frequency", "Depth to Bedrock"], dtype = float,
                                skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error")                            
             
@@ -134,7 +150,7 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
                         else:
                             break
                 
-
+                
                     
 
                     #Now plot using curve_fit
@@ -156,7 +172,7 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
 
 
                 else: 
-                     #model = None: derive model using least_squares
+                    #model = None: derive model using least_squares
                     dummy = 3
                     #do something
         
@@ -164,6 +180,9 @@ def calibrate(HVSRData,datapath, type = "power", model = "ISGS", outlier_radius 
 
 
 
+
+#Add calibration equation to get_report csv
+#Add parameter to sprit.run
 
 
                          
