@@ -60,11 +60,12 @@ S_DURATION=$(($((mindur * 60))+$((mindecdur*6))))
 echo "Acquiring data for $SITE_NAME"
 echo "Acquisition will last for $DURATION minutes ($S_DURATION seconds)"
 echo "Acquisition Date: $(date) (Day of Year: $(date +%j))"
+echo ""
 
-while [[ $STARTUP_TIME > $0 ]]; do
+while [[ $STARTUP_TIME > 0 ]]; do
+    echo -ne "Beginning acquisition in $STARTUP_TIME seconds \033[0K\r"
     sleep 1
     STARTUP_TIME=$(($STARTUP_TIME - 1))
-    echo -ne "Beginning acquisition in $STARTUP_TIME seconds \033[0K\r"
 done
 
 # Set the start time as current time
@@ -141,7 +142,7 @@ eMIN=$(date -d "$END_TIME" '+%M')
 eSEC=$(date -d "$END_TIME" '+%S')
 eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 
-fpath="$HVSR_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
+fpath="$HVSR_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
 echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
