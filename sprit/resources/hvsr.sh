@@ -3,6 +3,18 @@
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
 
+# HANDLE SIGNAL DISCONNECT
+# First, set up script to continue running even if there is a signal disconnect (SSH is disconnected)
+# Function to handle disconnection
+handle_disconnection() {
+    echo "    Disconnected from SSH at $(date +'%T'). Continuing script execution..."
+    trap ' ' HUP  # Ignore SIGHUP (hangup signal)
+}
+
+# Set up trap to handle SIGHUP (hangup signal)
+trap handle_disconnection HUP
+
+# NOW, ESTABLISH DEFAULT PARAMETERS
 # Default variable values
 SITE_NAME="HVSRSite"
 DURATION=20
@@ -14,9 +26,11 @@ CURR_YEAR=$(date +'%Y')
 STATION=$(ls "~/../../opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="~/../../opt/hvsr"
 
-# Time to wait for powerdown after end of acquisition. Not currently used
+# Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
+STARTUP_TIME=15
 # PDOWN_TIME=30
 
+# READ IN OPTIONS
 # Get options
 while getopts 'n:d:v:c:' opt; do
     case "$opt" in
@@ -41,9 +55,17 @@ mindecdur=$(printf %.1s "$mindecdur")
 # Now get the duration in seconds
 S_DURATION=$(($((mindur * 60))+$((mindecdur*6))))
 
+# START HVSR PROCESS
 # Print out progress
 echo "Acquiring data for $SITE_NAME"
 echo "Acquisition will last for $DURATION minutes ($S_DURATION seconds)"
+echo "Acquisition Date: $(date) (Day of Year: $(date +%j))"
+
+while [[ $STARTUP_TIME > $0 ]]; do
+    sleep 1
+    STARTUP_TIME=$(($STARTUP_TIME - 1))
+    echo -ne "Beginning acquisition in $STARTUP_TIME seconds \033[0K\r"
+done
 
 # Set the start time as current time
 START_TIME=$(date +'%Y-%m-%d %T')
@@ -59,8 +81,7 @@ END_TIMESTAMP=$(date -d "$date $S_DURATION seconds" +'%s')
 UTC_DIFF=$(date +%:::z)
 
 # Print out the times of everything
-echo "  $(date)"
-echo "  Start time is $(date -d "$START_TIME" +'%H:%M') (UTC $UTC_DIFF)"
+echo -ne "  Acquisition start time is $(date -d "$START_TIME" +'%H:%M') (UTC $UTC_DIFF)"
 echo "  End time is   $(date -d "$END_TIME" +'%H:%M') (UTC $UTC_DIFF)"
 echo "  ----------------------------------------------------------------------"
 
