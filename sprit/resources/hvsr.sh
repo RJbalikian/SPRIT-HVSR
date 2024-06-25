@@ -23,8 +23,8 @@ VERBOSE=""
 
 SYS_IS_RS=false
 CURR_YEAR=$(date +'%Y')
-STATION=$(ls "~/../../opt/data/archive/$CURR_YEAR/AM")
-HVSR_DIR="~/../../opt/hvsr"
+STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
+HVSR_DIR="/opt/hvsr"
 
 # Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
 STARTUP_TIME=15
