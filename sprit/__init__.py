@@ -9,7 +9,6 @@ try:
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
     import sprit.sprit_calibration as sprit_calibration
 except Exception as e:
-    print(e)
     import sprit_utils
     import sprit_gui
     import sprit_hvsr

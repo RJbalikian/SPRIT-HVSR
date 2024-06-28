@@ -129,7 +129,7 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
     bedrock_types = ["shale", "limetone", "dolomite", 
                      "sedimentary", "igneous", "metamorphic"]
     
-    model_parameters = {"ISGS" : (1,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
+    model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
                         "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
                         "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                         "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
@@ -138,25 +138,22 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
     freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
 
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
-    basepath = "/path/to"
-    file_name = "example.csv"
-
-    calib_filepath = os.path.join(basepath, file_name)
 
     if type.casefold() in type_list and calib_filepath in sampleFileName.values():
             
             #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
             #pick only relevant points according to bedrock_type
-
-            
+            """
+            sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
+                               names = ["Resonance Frequency", "Depth to Bedrock"], dtype = float,
+                               skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
+            """
             if type.casefold() in power_list:
 
-                data = pd.read_csv(calib_filepath, sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
-                               names = ["Resonance Frequency", "Depth to Bedrock"], dtype = float,
-                               skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error")                            
+                data = pd.read_csv(calib_filepath)                            
             
 
-                calib_data = np.array((data["Resonance Frequency"].values, data["Depth to Bedrock"].values))
+                calib_data = np.array((data["PeakFrequency"].values, data["Depth to Bedrock"].values))
 
                 calib_data = calib_data.T
 
@@ -183,7 +180,6 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
                     
 
                     #Now plot using curve_fit
-
 
 
 
