@@ -7,11 +7,14 @@ try:
     import sprit.sprit_gui as sprit_gui
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
-except:
+    import sprit.sprit_calibration as sprit_calibration
+except Exception as e:
+    print(e)
     import sprit_utils
     import sprit_gui
     import sprit_hvsr
     import sprit_jupyter_UI
+    import sprit_calibration
 
 from sprit.sprit_hvsr import(
     run,
@@ -62,6 +65,12 @@ from sprit.sprit_jupyter_UI import(
     create_jupyter_ui
     )
 
+from sprit.sprit_calibration import(
+    cal_bedrockdepth,
+    calibrate
+)
+
+
 __all__ =('sprit_hvsr',
             'run',
             'calculate_azimuth',
@@ -107,8 +116,12 @@ __all__ =('sprit_hvsr',
         'sprit_gui',
             'catch_errors',
         'sprit_jupyter_UI',
-            'create_jupyter_ui'
+            'create_jupyter_ui',
+        'sprit_calibration',
+            'cal_bedrockdepth',
+            'calibrate',
             )
+
 
 run.__doc__ = sprit_utils._run_docstring()
 __author__ = 'Riley Balikian'

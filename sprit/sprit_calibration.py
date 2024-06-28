@@ -4,7 +4,6 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 
 """
 import math
-import sprit_hvsr
 import numpy as np
 import numpy.linalg as nla
 import scipy
@@ -23,6 +22,12 @@ from warnings import warn
 from scipy.optimize import curve_fit
 from scipy.optimize import least_squares
 #from pyproj import GeoPandas    #need conda environment
+
+try:  # For distribution
+    from sprit import sprit_hvsr
+except Exception:  # For testing
+    import sprit_hvsr
+
 
 """
 Attempt 1: Regression equations: 
@@ -92,8 +97,6 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
     # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
 
     #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
-
-
 
     a = 0
     b = 0
