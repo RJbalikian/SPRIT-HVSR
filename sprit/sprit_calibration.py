@@ -86,12 +86,12 @@ def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
         
 
 
-def calibrate(hvsr_results,calib_filepath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
+def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
 
     #@checkinstance
-    if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
+    # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
 
-        raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
+    #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
 
 
 
