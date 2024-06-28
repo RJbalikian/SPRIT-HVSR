@@ -18,6 +18,8 @@ import json
 import os
 import pathlib
 import pkg_resources
+import warnings
+from warnings import warn
 from scipy.optimize import curve_fit
 from scipy.optimize import least_squares
 #from pyproj import GeoPandas    #need conda environment
@@ -50,30 +52,48 @@ sample_data_dir = resource_dir.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
 
 
-@staticmethod
-def cal_bedrockdepth(a, b, x):
-        
-        assert a > 0 and b > 0   #warning for negative values, don't stop processing
-        #Disable wag6rnings if repeatedly usign the same model
-        #Showwarnings = false
+def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
+
+    while not updatevalues:
     
+        if a > 0 and b > 0 and x > 0:
+             
+             return a*(x**b)
+        
+        else:
+
+            if not disable_warnings:
+
+                warn("Read negative frequency value", category = FutureWarning)
+            
+            return a*(x**b)    
+                
+             
+    else:
+
+        if not disable_warnings:
+
+            warn("Read negative frequency value, changed to positive")
+
+        
+        x = -x
         return a*(x**b)
+             
+
+        #Disable warnings if repeatedly using the same model
+        #Use f-strings to show the function if this function is called on its own
+    
+        
 
 
 def calibrate(hvsr_results,calib_filepath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
 
+    #@checkinstance
+    if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
 
-    #if isinstance(hvsr_results, sprit_hvsr.HVSRData):
-         
-              
+        raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
 
 
-
-              
-
-         
-
-         
 
     a = 0
     b = 0
@@ -133,7 +153,7 @@ def calibrate(hvsr_results,calib_filepath, type = "power", model = "ISGS", outli
                                skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error")                            
             
 
-                calib_data = np.array((data["Resonance Frequency"].values, data["Resonance Frequency"].values))
+                calib_data = np.array((data["Resonance Frequency"].values, data["Depth to Bedrock"].values))
 
                 calib_data = calib_data.T
 
@@ -150,7 +170,13 @@ def calibrate(hvsr_results,calib_filepath, type = "power", model = "ISGS", outli
                         else:
                             break
                 
-                
+                for each in bedrock_depths:
+
+                    bedrock_depths[each] = cal_bedrockdepth(a, b, calib_data[each, 0])
+
+                calib_data[:, 1] = bedrock_depths
+
+                return calib_data
                     
 
                     #Now plot using curve_fit
