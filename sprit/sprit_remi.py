@@ -97,16 +97,45 @@ class SpritApp(App):
 
         hCombineMethodDropDown = gui.DropDown([dfaDDItem, arithMeanDDItem, geoMeanDDItem,
                                                vecSumDDItem, quadMeanDDItem, maxHValDDItem], width='80%')
-        methodHBox = gui.HBox([gui.Label('Method to Combine Horizontal Components', margin=5, width='20%'), hCombineMethodDropDown],
+        methodHBox = gui.HBox([gui.Label('Method to Combine Horizontal Components', width='20%'), hCombineMethodDropDown],
                                 margin='5px', width="100%")
 
         # Smooth
         smoothCheckBox = gui.CheckBox(checked=True, width='1%')
-        smoothHBox = gui.HBox([gui.Label('Smooth', width='20%'), smoothCheckBox],
+        smoothWidthLabel = gui.Label('Width', width='10%', style={'text-align':'right'})
+        smoothWidthInput = gui.TextInput(width="5%")
+        smoothWidthInput.set_value('50')
+        smoothHBox = gui.HBox([gui.Label('Smooth', width='20%'), smoothCheckBox, smoothWidthLabel,smoothWidthInput],
                                 margin='5px', width="100%",style={'justify-content':'flex-start', 'align-items':'flex-start'})
 
+        # Freq Smooth
+        freqSmoothCheckBox = gui.CheckBox(checked=True, width='1%')
+
+        koDDItem = gui.DropDownItem('Konno Ohmachi')
+        constantDDItem = gui.DropDownItem('Constant')
+        proportDDItem = gui.DropDownItem('Proportional')
+        noneDDItem = gui.DropDownItem('None')
+        freqSmoothDropdown = gui.DropDown([koDDItem, constantDDItem, 
+                                           proportDDItem, noneDDItem], width='65%')
+        freqSmoothWidthLabel = gui.Label('Width', width='10%', style={'text-align':'right'})
+        freqSmoothWidthInput = gui.TextInput(width="5%")
+        freqSmoothWidthInput.set_value('40')
+        
+        freqSmoothHbox = gui.HBox([gui.Label('Frequency Smoothing Method', width='20%'), freqSmoothCheckBox, freqSmoothDropdown,freqSmoothWidthLabel, freqSmoothWidthInput],
+                                margin='5px', width="100%")
+        # Resample
+        resampleCheckBox = gui.CheckBox(checked=True, width='1%')
+        resampleWidthLabel = gui.Label('Width', width='10%', style={'text-align':'right'})
+        resampleWidthInput = gui.TextInput(width="5%")
+        resampleWidthInput.set_value('500')
+        resampleHBox = gui.HBox([gui.Label('Resample', width='20%'), resampleCheckBox, resampleWidthLabel,resampleWidthInput],
+                                margin='5px', width="100%",style={'justify-content':'flex-start', 'align-items':'flex-start'})
+
+        
         processHVSRDialog_vbox.append(methodHBox, 0)
         processHVSRDialog_vbox.append(smoothHBox, 1)
+        processHVSRDialog_vbox.append(freqSmoothHbox, 2)
+        processHVSRDialog_vbox.append(resampleHBox, 3)
         self.process_hvsr_dialog.get_child('central_container').append(processHVSRDialog_vbox)
         #sprit_hvsr.get_report()
         #sprit_hvsr.process_hvsr()
