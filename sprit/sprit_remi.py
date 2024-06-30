@@ -1,51 +1,28 @@
-import remi.gui as gui
 from remi import start, App
-
-class SpRIT_REMI(App):
+import remi.gui as gui
+class MyApp(App):
     def __init__(self, *args):
-        super(SpRIT_REMI, self).__init__(*args)
+        super(MyApp, self).__init__(*args)
 
     def main(self):
-        # Create a TabBox with two tabs
-        spacer50Pct = gui.Label("", width="50%")
-
-
-        tab_box = gui.TabBox(width='90%', height="90%")
+        wid = gui.VBox(width=320, height=320, margin='0px auto')
         
-        # First tab
-        inputVBox = gui.VBox(width='100%', height='100%')
-        
-        dateTimeHBox = gui.HBox()
-        sTimeLabel = gui.Label("Start time:",width='50%', style={'text-align': 'right'})
-        sTime = gui.Input(input_type='time', width="100%")
-        eTimeLabel = gui.Label("End time: ", width="50%", style={'text-align': 'right'})
-        eTime = gui.Input(input_type='time', default_value="23:59:59", width="100%")
-        acqDateLabel = gui.Label("Acquisition Date: ", width="50%", style={'text-align': 'right'})
-        acq_date_Button = gui.Date("Acq. Date", width="100%")
-        #button1 = gui.Button('Input Tab', width='100%', height='100%')
 
-        dateTimeHBox.append(acqDateLabel, "AcqDateLabel")
-        dateTimeHBox.append(acq_date_Button, "Acquisition Date")
-        dateTimeHBox.append(spacer50Pct, "spacer0")
-        dateTimeHBox.append(sTimeLabel, "Start time Label")
-        dateTimeHBox.append(sTime, "Start time")
-        dateTimeHBox.append(spacer50Pct, "spacer1")
-        dateTimeHBox.append(eTimeLabel, "End time Label")
-        dateTimeHBox.append(eTime, "End time")
+        # add the following 3 lines to your app and the on_window_close method to make the console close automatically
+        tag = gui.Tag(_type='script')
+        tag.add_child("javascript", """window.onunload=function(e){remi.sendCallback('%s','%s');return "close?";};""" % (
+            str(id(self)), "on_window_close"))
+        wid.add_child("onunloadevent", tag)
 
-        inputVBox.append(dateTimeHBox, "DatetimeHbox")
-        tab_box.append(inputVBox, 'Input')
-        
-        # Second tab
-        button2 = gui.Button('Results Tab', width='100%', height='100%')
-        tab_box.add_tab(button2, 'Results', None)
-        
-        return tab_box
+        # returning the root widget
 
-    def on_close_websocket(self):
-        # Clean up any resources or perform necessary actions
-        # before closing the WebSocket connection
-        print("WebSocket connection closed. Goodbye!")
+        return wid
+
+
+    def on_window_close(self):
+        # here you can handle the unload
+        print("app closing")
+        self.close()
 
 if __name__ == "__main__":
-    start(SpRIT_REMI, title="SpRIT HVSR", standalone=False)
+    start(MyApp, debug=True, address='0.0.0.0', port=0)
