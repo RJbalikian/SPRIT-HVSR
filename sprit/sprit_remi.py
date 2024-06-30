@@ -35,7 +35,7 @@ class SpritApp(App):
 
         # Settings menu
         #settingsMenu.onclick.do(self.menu_view_clicked)
-        settingsFetchMenu = gui.MenuItem('Fetch data settings', width=200, height=25)
+        settingsFetchMenu = gui.MenuItem('Input data settings', width=200, height=25)
         settingsNoiseMenu = gui.MenuItem('Remove noise settings', width=200, height=25)
         settingsAzimuthMenu = gui.MenuItem('Azimuth settings', width=200, height=25)
         settingsPPSDMenu = gui.MenuItem('PPSD settings', width=200, height=25)
@@ -81,10 +81,53 @@ class SpritApp(App):
         spritApp.append(menubar)
         spritApp.append(self.infoLabel)
 
-        # Create dialogs
+        # CREATE DIALOGS
+        # Input data dialog
+        #sprit_hvsr.input_params()
+         sprit_hvsr.fetch_data()
+        self.input_data_dialog = gui.GenericDialog(title='Input data settings',
+                                                   message='Set Parameters for the sprit.input_params() and sprit.fetch_data() functions',
+                                                   width='75%')
+        inputDataDialog_vbox = gui.VBox(width='90%', height='100%', margin='5%', padding='5px')
+        iPLabel = gui.Label('Input Parameters (parameters for sprit.input_params())')
+
+        #site
+        #network
+        #station
+        #loc
+        #channels
+        #acq_date
+        #starttime
+        #endtime
+        #tzone
+        #xcoord
+        #ycoord
+        #elevation
+        #elev_unit
+        #input_crs
+        #output_crs
+        #depth
+        #instrument
+        #metapath
+        #hvsr_band
+        #peak_freq_range
+        #source
+        #trim_dir
+        #export_format
+        #detrend
+        #detrend order
+    
+        
+        
+        inputDataDialog_vbox.append(iPLabel)
+        self.input_data_dialog.get_child('central_container').append(inputDataDialog_vbox)
+
+        # Process hvsr dialog
         self.process_hvsr_dialog = gui.GenericDialog(title='HVSR settings',
                                                    message='Set Parameters for the sprit.process_hvsr() function',
                                                    width='75%')
+
+
         processHVSRDialog_vbox = gui.VBox(width='90%', height='100%', margin='5%', padding='5px')
 
         # Method
@@ -130,16 +173,13 @@ class SpritApp(App):
         resampleWidthInput.set_value('500')
         resampleHBox = gui.HBox([gui.Label('Resample', width='20%'), resampleCheckBox, resampleWidthLabel,resampleWidthInput],
                                 margin='5px', width="100%",style={'justify-content':'flex-start', 'align-items':'flex-start'})
-
         
+        # Add everything to the dialog
         processHVSRDialog_vbox.append(methodHBox, 0)
         processHVSRDialog_vbox.append(smoothHBox, 1)
         processHVSRDialog_vbox.append(freqSmoothHbox, 2)
         processHVSRDialog_vbox.append(resampleHBox, 3)
         self.process_hvsr_dialog.get_child('central_container').append(processHVSRDialog_vbox)
-        #sprit_hvsr.get_report()
-        #sprit_hvsr.process_hvsr()
-
 
         # CLOSING SCRIPTS
         tag = gui.Tag(_type='script')
@@ -200,7 +240,7 @@ class SpritApp(App):
 
     
     def settings_menu_do(self, widget):
-        settingsDict = {'Fetch data settings':self.open_fetch_data_dialog,
+        settingsDict = {'Input data settings':self.open_fetch_data_dialog,
                         'Remove noise settings':self.open_remove_noise_dialog,
                         'Azimuth settings':self.open_azimuth_dialog,
                         'PPSD settings':self.open_ppsd_dialog,
