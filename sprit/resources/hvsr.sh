@@ -158,8 +158,8 @@ slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
 # If this is being run on a raspberry shake, poweroff instrument
 if $SYS_IS_RS; then
     # Flash led in heartbeat mode
-    modprobe ledtrig_heartbeat
-    echo heartbeat >/sys/class/leds/led0/trigger
+    #modprobe ledtrig_heartbeat
+    #echo heartbeat >/sys/class/leds/led0/trigger
 
     # Do a powering down countdown
     #printf "Powering down in $PDOWN_TIME seconds"
