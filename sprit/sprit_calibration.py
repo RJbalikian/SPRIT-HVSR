@@ -59,7 +59,7 @@ sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-
 
 def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
 
-    while not updatevalues:
+    if not updatevalues:
     
         if a > 0 and b > 0 and x > 0:
              
