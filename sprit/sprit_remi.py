@@ -8,15 +8,28 @@ class SpritApp(App):
     def __init__(self, *args):
         super(SpritApp, self).__init__(*args)
 
+        self.source='file'
+    
     input_params_kwargs = {}
     get_report_kwargs = {}
+
+
 
     def main(self):
         # Define App containers
         spritApp = gui.VBox(width='100%', height='100%', margin='0px auto', style={'vertical-align':'top'})
         
+        appTopBar = gui.VBox(height="20%", width="100%", margin='5px auto')
+        appTabs = gui.TabBox(width="80%", height="80%")
+        appSideBar = gui.VBox(width="20%", height="100%")
+        appHbox = gui.HBox([appSideBar, appTabs], width="100%", margin='5px auto')
+        appVbox = gui.VBox([appTopBar, appHbox], height='98%', width='100%', margin='5px auto')
+
+        fillerLabel = gui.Label()
+        fivePctSpace=gui.Label(width="5%")
+
         # Main menu items
-        menu = gui.Menu(width='100%', height='25px', style={'vertical-align':'top'})
+        menu = gui.Menu(width='100%', height='2%', style={'vertical-align':'top'})
         spritMenu = gui.MenuItem('SpRIT', width=100, height=25, style={'vertical-align':'top'})
         settingsMenu = gui.MenuItem('Settings', width=100, height=25, style={'vertical-align':'top'})
         aboutMenu = gui.MenuItem('About', width=100, height=25, style={'vertical-align':'top'})
@@ -25,13 +38,17 @@ class SpritApp(App):
         spritReadMenu = gui.MenuItem('Read Data', width=100, height=25)
         spritThemeMenu = gui.MenuItem('Theme', width=100, height=25)
         spritThemeMenu.onclick.do(self.menu_open_clicked)
-        spritReadFile = gui.MenuItem('Read file', width=100, height=25)
-        spritReadFile.onclick.do(self.read_file)
-        spritReadFolder = gui.MenuItem('Read folder', width=100, height=25)
-        spritReadFolder.onclick.do(self.read_folder)
-        
+        spritReadFile = gui.MenuItem('Read data from file', width=200, height=25)
+        spritReadFile.onclick.do(self.read_data)
+        spritReadRaw = gui.MenuItem('Read data in raw format', width=200, height=25)
+        spritReadRaw.onclick.do(self.read_data)
+        spritReadDir = gui.MenuItem('Read data from a directory', width=200, height=25)
+        spritReadDir.onclick.do(self.read_data)
+        spritReadBatch = gui.MenuItem('Read batch data', width=200, height=25)
+        spritReadBatch.onclick.do(self.read_data)
+
         spritMenu.append([spritReadMenu, spritThemeMenu])
-        spritReadMenu.append([spritReadFile, spritReadFolder])
+        spritReadMenu.append([spritReadFile, spritReadRaw, spritReadDir, spritReadBatch])
 
         # Settings menu
         #settingsMenu.onclick.do(self.menu_view_clicked)
@@ -75,31 +92,50 @@ class SpritApp(App):
         menu.append([spritMenu, settingsMenu, aboutMenu])
         menubar = gui.MenuBar(width='100%', height='20px', style={'vertical-align':'top'})
         menubar.append(menu)
-        
-        self.infoLabel = gui.Label('INFORMATION', height='100%', margin='1%')
 
         spritApp.append(menubar)
-        spritApp.append(self.infoLabel)
+        spritApp.append(appVbox)
 
         # CREATE DIALOGS
         # Input data dialog
         #sprit_hvsr.input_params()
-         sprit_hvsr.fetch_data()
+        #sprit_hvsr.fetch_data()
         self.input_data_dialog = gui.GenericDialog(title='Input data settings',
                                                    message='Set Parameters for the sprit.input_params() and sprit.fetch_data() functions',
                                                    width='75%')
         inputDataDialog_vbox = gui.VBox(width='90%', height='100%', margin='5%', padding='5px')
         iPLabel = gui.Label('Input Parameters (parameters for sprit.input_params())')
 
-        #site
+        # Datapath
+        datapathLabel = gui.Label("Datapath", width="10%")
+        datapathInput = gui.Input(hint='Path to the folder or file', width="80%")
+        datapathSelect = gui.Button('Browse', width="10%")
+
+        fileDDitem = gui.DropDownItem('File')
+        rawDDitem = gui.DropDownItem('Raw')
+        dirDDitem = gui.DropDownItem('Directory')
+        batchDDitem = gui.DropDownItem('Batch')
+        sourceDropDown = gui.DropDown([fileDDitem, rawDDitem, dirDDitem, batchDDitem], width="10%")
+
+        sourceLabel = gui.Label('Source', width='5%')
+        datapathHbox = gui.HBox([datapathLabel, datapathInput, datapathSelect, gui.Label(width="30%"), sourceLabel, sourceDropDown], width='100%', margin="5px")
+
+        # Site
+        siteLabel = gui.Label('Site')
+        siteInput = gui.TextInput(hint='Site name for current data', margin='10px')
+        siteInput.set_value('HVSRSite')
+        siteHbox = gui.HBox([siteLabel, siteInput])
+
         #network
         #station
         #loc
         #channels
+
         #acq_date
         #starttime
         #endtime
         #tzone
+
         #xcoord
         #ycoord
         #elevation
@@ -107,10 +143,13 @@ class SpritApp(App):
         #input_crs
         #output_crs
         #depth
+
         #instrument
         #metapath
+
         #hvsr_band
         #peak_freq_range
+
         #source
         #trim_dir
         #export_format
@@ -181,6 +220,12 @@ class SpritApp(App):
         processHVSRDialog_vbox.append(resampleHBox, 3)
         self.process_hvsr_dialog.get_child('central_container').append(processHVSRDialog_vbox)
 
+        # TABS
+        appTopBar.append(datapathHbox, 0)
+        appTopBar.append(siteHbox, 1)
+        appTabs.append(fillerLabel)
+        appSideBar.append(fillerLabel)
+
         # CLOSING SCRIPTS
         tag = gui.Tag(_type='script')
         tag.add_child("javascript", """window.onunload=function(e){remi.sendCallback('%s','%s');return "close?";};""" % (
@@ -198,11 +243,12 @@ class SpritApp(App):
     def menu_view_clicked(self, widget):
         pass#self.lbl.set_text('Menu clicked: View')
     
-    def read_file(self, widget):
-        pass#self.lbl.set_text('Menu clicked: Save')
-
-    def read_folder(self, widget):
-        pass#self.lbl.set_text('Menu clicked: Save As')
+    def read_data(self, widget):
+        readDict = {'Read data from file':'file',
+                    'Read data in raw format':'raw',
+                    'Read data from a directory':'dir',
+                    'Read batch data':'batch'}
+        self.source=readDict[widget.get_text()]
 
     def open_fetch_data_dialog(self):
         print('dialog opening')
