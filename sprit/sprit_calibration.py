@@ -91,7 +91,8 @@ def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
         
 
 
-def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None, **kwargs):    
+def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
+              bed_depth_col = "DepthToBedrock", **kwargs):    
 
     #@checkinstance
     # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
@@ -101,7 +102,11 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
     a = 0
     b = 0
     
-    rows_no = kwargs["nrows"]
+    rows_no = None
+
+    if "nrows" in kwargs.keys():
+        rows_no = kwargs["nrows"]
+
 
     bedrock_depths = None
 
@@ -109,9 +114,9 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
 
     calib_data = None
 
-    types = ["Power", "Vs", "Matrix"]
+    calib_types = ["Power", "Vs", "Matrix"]
 
-    type_list = list(map(lambda x : x.casefold(), types))
+    calib_type_list = list(map(lambda x : x.casefold(), calib_types))
     
     power_list = ["Power", "power", "pw", "POWER"]
 
@@ -139,68 +144,65 @@ def calibrate(calib_filepath, type = "power", model = "ISGS", outlier_radius = N
 
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
 
-    if type.casefold() in type_list and calib_filepath in sampleFileName.values():
-            
-            #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
-            #pick only relevant points according to bedrock_type
-            """
-            sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
-                               names = ["Resonance Frequency", "Depth to Bedrock"], dtype = float,
-                               skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
-            """
-            if type.casefold() in power_list:
-
-                data = pd.read_csv(calib_filepath)                            
-            
-
-                calib_data = np.array((data["PeakFrequency"].values, data["Depth to Bedrock"].values))
-
-                calib_data = calib_data.T
-
-                bedrock_depths = np.zeros(calib_data.shape[0])
-                
-                while model.casefold() in model_list: 
-
-                    for k, v in model_parameters.items():
-                                
-                        if model.casefold() == k.casefold():
-                                    
-                            (a, b) = model_parameters[k]
-
-                        else:
-                            break
-                
-                for each in bedrock_depths:
-
-                    bedrock_depths[each] = cal_bedrockdepth(a, b, calib_data[each, 0])
-
-                calib_data[:, 1] = bedrock_depths
-
-                return calib_data
-                    
-
-                    #Now plot using curve_fit
-
-
-
-                if model.casefold() == "all":
-                    dummy = 3
-                
-                     
-                    #do something
-
-
-
-
-
-
-
-
-                else: 
-                    #model = None: derive model using least_squares
-                    dummy = 3
-                    #do something
+    if calib_type.casefold() in calib_type_list:
         
+        #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
+        #pick only relevant points according to bedrock_type
+        """
+        sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
+                            names = ["PeakFrequency", "DepthToBedrock"], dtype = float,
+                            skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
+        """
+        if calib_type.casefold() in power_list:
+
+            data = pd.read_csv(calib_filepath)                            
+        
+            pf_values= data["PeakFrequency"].values
+
+            calib_data = np.array((pf_values, np.ones(len(pf_values))))
+
+            calib_data = calib_data.T
+
+            bedrock_depths = np.zeros(calib_data.shape[0])
+            
+            if model.casefold() in model_list: 
+                                
+                (a, b) = model_parameters[model.casefold()]
+
+            else:
+                raise ValueError("Model not found")
+            
+            for each,value in enumerate(bedrock_depths):
+
+                bedrock_depths[each] = cal_bedrockdepth(a, b, calib_data[each, 0])
+
+            calib_data[:, 1] = bedrock_depths
+
+            return calib_data
+                
+
+                #Now plot using curve_fit
+
+
+
+            if model.casefold() == "all":
+                dummy = 3
+            
+                    
+                #do something
+
+
+
+
+
+
+
+
+            else: 
+                #model = None: derive model using least_squares
+                dummy = 3
+                #do something
+    
 
 
 
