@@ -144,7 +144,7 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
 
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
 
-    if calib_type.casefold() in calib_type_list:
+    if calib_type.casefold() in calib_type_list: 
         
         #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
         #pick only relevant points according to bedrock_type
