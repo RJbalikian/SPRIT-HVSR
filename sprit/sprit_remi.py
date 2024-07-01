@@ -115,7 +115,7 @@ class SpritApp(App):
         rawDDitem = gui.DropDownItem('Raw')
         dirDDitem = gui.DropDownItem('Directory')
         batchDDitem = gui.DropDownItem('Batch')
-        sourceDropDown = gui.DropDown([fileDDitem, rawDDitem, dirDDitem, batchDDitem], width="10%")
+        sourceDropDown = gui.DropDown([fileDDitem, rawDDitem, dirDDitem, batchDDitem], width="10%", margin='25px')
 
         sourceLabel = gui.Label('Source', width='5%')
         datapathHbox = gui.HBox([datapathLabel, datapathInput, datapathSelect, gui.Label(width="30%"), sourceLabel, sourceDropDown], width='100%', margin="5px")
@@ -124,7 +124,7 @@ class SpritApp(App):
         siteLabel = gui.Label('Site')
         siteInput = gui.TextInput(hint='Site name for current data', margin='10px')
         siteInput.set_value('HVSRSite')
-        siteHbox = gui.HBox([siteLabel, siteInput])
+        siteHbox = gui.HBox([siteLabel, siteInput], width='50%', margin='5px')
 
         #network
         #station

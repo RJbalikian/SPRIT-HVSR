@@ -571,7 +571,7 @@ def gui_test():
 
 
 # Launch the tkinter gui
-def gui(kind='default'):
+def gui(kind='browser'):
     """Function to open a graphical user interface (gui)
 
     Parameters
@@ -582,11 +582,17 @@ def gui(kind='default'):
         "lite" open lite (pending update), by default 'default'
 
     """
-    defaultList = ['windowed', 'window', 'default', 'd']
+    browserList = ['browser', 'remi', 'default', 'd']
+    windowList = ['windowed', 'window', 'qt', 'tkinter', 'tk']
     widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
     liteList = ['lite', 'light', 'basic', 'l', 'b']
 
-    if kind.lower() in defaultList:
+    if kind.lower() in browserList:
+        import subprocess
+        parentPath = pathlib.Path(__file__).parent
+        cmd = ['python3', parentPath.joinpath("sprit_remi.py").as_posix()]
+        subprocess.run(cmd)
+    elif kind.lower() in windowList:
         import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
