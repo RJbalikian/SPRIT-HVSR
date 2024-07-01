@@ -24,7 +24,8 @@ VERBOSE=""
 SYS_IS_RS=false
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
-HVSR_DIR="/opt/hvsr"
+HVSR_DIR="/hvsr"
+HVSRDATA_DIR="/hvsr/data"
 
 # Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
 STARTUP_TIME=15
@@ -125,6 +126,10 @@ if [ ! -d $HVSR_DIR ]; then
     mkdir "$HVSR_DIR"
 fi
 
+if [ ! -d $HVSRDATA_DIR ]; then
+    mkdir "$HVSRDATA_DIR"
+fi
+
 # Format the times to create a time window (-tw option)
 sYEAR=$(date -d "$START_TIME" '+%Y')
 sMON=$(date -d "$START_TIME" '+%m')
@@ -142,7 +147,7 @@ eMIN=$(date -d "$END_TIME" '+%M')
 eSEC=$(date -d "$END_TIME" '+%S')
 eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 
-fpath="$HVSR_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
+fpath="$HVSRDATA_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
 echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
