@@ -153,7 +153,7 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
                             names = ["PeakFrequency", "DepthToBedrock"], dtype = float,
                             skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
         """
-        if calib_type.casefold() in power_list:
+        if calib_type.casefold() in power_list and calib_filepath in sampleFileName.values():
 
             data = pd.read_csv(calib_filepath)                            
         
