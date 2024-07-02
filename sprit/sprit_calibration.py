@@ -168,7 +168,7 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
             
             if model.casefold() in model_list: 
                                 
-                (a, b) = model_parameters[model.casefold()]
+                (a, b) = model_parameters[model]
 
             else:
                 raise ValueError("Model not found")
