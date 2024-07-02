@@ -166,12 +166,14 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
 
             #bedrock_depths = np.zeros(calib_data.shape[0])
             
-            if model.casefold() in model_list: 
-                                
-                (a, b) = model_parameters[model]
+            for k,v in model_parameters.items():
 
-            else:
-                raise ValueError("Model not found")
+                if model.casefold() in model_list and model.casefold() == k.casefold():
+                                    
+                    (a, b) = model_parameters[model]
+
+                else:
+                    raise ValueError("Model not found")
             
             for each in range(calib_data.shape[0]):
 
