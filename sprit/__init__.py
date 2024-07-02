@@ -7,11 +7,13 @@ try:
     import sprit.sprit_gui as sprit_gui
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
+    import sprit.sprit_plot as sprit_plot
 except:
     import sprit_utils
     import sprit_gui
     import sprit_hvsr
     import sprit_jupyter_UI
+    import sprit_plot
 
 from sprit.sprit_hvsr import(
     run,
@@ -62,6 +64,13 @@ from sprit.sprit_jupyter_UI import(
     create_jupyter_ui
     )
 
+from sprit.sprit_plot import(
+    plot_preview,
+    plot_results,
+    plot_outlier_curves,
+    parse_plot_string
+    )
+
 __all__ =('sprit_hvsr',
             'run',
             'calculate_azimuth',
@@ -107,7 +116,12 @@ __all__ =('sprit_hvsr',
         'sprit_gui',
             'catch_errors',
         'sprit_jupyter_UI',
-            'create_jupyter_ui'
+            'create_jupyter_ui',
+        'sprit_plot',
+            'plot_preview',
+            'plot_results',
+            'plot_outlier_curves',
+            'parse_plot_string'
             )
 
 run.__doc__ = sprit_utils._run_docstring()

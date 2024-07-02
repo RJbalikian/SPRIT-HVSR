@@ -692,7 +692,7 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
 
     return results_fig
 
-def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=None, results_graph_widget=None, show_results_plot=True):
+def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=None, results_graph_widget=None, return_fig=False, show_results_plot=True):
     if  results_fig is None:
         results_fig = go.FigureWidget()
 
@@ -704,8 +704,6 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
     hvsrDF = hvsr_data.hvsr_windows_df
 
     plot_list = parse_plot_string(plot_string)
-
-    print(plot_list)
 
     combinedComp=False
     noSubplots = 3 - plot_list.count([])
@@ -759,7 +757,6 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     specList=[]
     rHeights=[1]
-    print(hv_plot_row, comp_plot_row)
     if hv_plot_row==1:
         if comp_plot_row==1:
             specList.append([{'secondary_y': True}])
@@ -778,7 +775,6 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
     # Failsafes
     while len(specList)<noSubplots:
         specList.append([{}])
-        print(noSubplots, specList)
 
     while len(rHeights)<noSubplots:
         rHeights.append(1)
@@ -845,9 +841,11 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     if show_results_plot:
         results_fig.show()
+    
+    if return_fig:
+        return results_fig
 
-
-def plot_preview(hv_data, preview_fig=None, spectrogram_component='Z', show_preview_plot=True):
+def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='Z', show_preview_plot=True, return_fig=False):
     if preview_fig is None:
         preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
         preview_fig = go.FigureWidget(preview_subp)
@@ -858,9 +856,23 @@ def plot_preview(hv_data, preview_fig=None, spectrogram_component='Z', show_prev
     if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
         hvsr_data=hvsr_data[0]
 
-    stream_z = hvsr_data['stream'].select(component='Z').merge()
-    stream_e = hvsr_data['stream'].select(component='E').merge()
-    stream_n = hvsr_data['stream'].select(component='N').merge()
+    if stream is not None:
+        # This is only used for fetch_data, which ['stream'] has not yet been defined
+        hvsr_data['stream'] = stream
+
+    if isinstance(hvsr_data, (sprit_hvsr.HVSRData, dict)):
+        stream_z = hvsr_data['stream'].select(component='Z').merge()
+        stream_e = hvsr_data['stream'].select(component='E').merge()
+        stream_n = hvsr_data['stream'].select(component='N').merge()
+        hvsrBand = hvsr_data['hvsr_band']
+        siteName = hvsr_data['site']
+    else:
+        # This is in case data is an obspy stream
+        stream_z = hvsr_data.select(component='Z').merge()
+        stream_e = hvsr_data.select(component='E').merge()
+        stream_n = hvsr_data.select(component='N').merge()
+        hvsrBand = [0.4, 40]
+        siteName = 'HVSRSite'
 
     # Get iso_times and datetime.datetime
     utcdt = stream_z[0].times(type='utcdatetime')
@@ -899,7 +911,7 @@ def plot_preview(hv_data, preview_fig=None, spectrogram_component='Z', show_prev
                 hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
                 zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram')
     preview_fig.add_trace(hmap, row=1, col=1)
-    preview_fig.update_yaxes(type='log', range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])], row=1, col=1)
+    preview_fig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[1])], row=1, col=1)
     preview_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
 
     # Add raw traces
@@ -916,10 +928,13 @@ def plot_preview(hv_data, preview_fig=None, spectrogram_component='Z', show_prev
     
     #preview_fig.add_trace(p)
     preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
-                                title=f"{hvsr_data['site']} Data Preview")
+                                title=f"{siteName} Data Preview")
 
     if show_preview_plot:
         preview_fig.show()
+
+    if return_fig:
+        return preview_fig
 
 def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _use_hv_curve=False, _verbose=False):
     global outlier_fig
