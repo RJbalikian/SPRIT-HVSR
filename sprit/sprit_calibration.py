@@ -100,6 +100,7 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
 
     #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
 
+        
     a = 0
     b = 0
     
@@ -168,12 +169,14 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
             
             for k,v in model_parameters.items():
 
-                if model.casefold() in model_list and model.casefold() == k.casefold():
+                if model.casefold() in model_list:
+
+                    if model.casefold() == k.casefold():
                                     
-                    (a, b) = model_parameters[model]
+                         (a, b) = model_parameters[k]
 
                 else:
-                    raise ValueError("Model not found")
+                    raise AttributeError("Model not found")
             
             for each in range(calib_data.shape[0]):
 
