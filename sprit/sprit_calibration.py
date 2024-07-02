@@ -172,9 +172,9 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
             else:
                 raise ValueError("Model not found")
             
-            for each in range(calib_data.shape[0]):
+            # for each in range(calib_data.shape[0]):
 
-                calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
+            #     calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
 
            # calib_data[:, 1] = bedrock_depths
 
