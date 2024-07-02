@@ -59,31 +59,32 @@ sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-
 
 def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
 
-    if not updatevalues:
+    # if not updatevalues:
     
-        if a > 0 and b > 0 and x > 0:
+    #     if a > 0 and b > 0 and x > 0:
              
-             return a*(x**b)
+    #          return a*(x**b)
         
-        else:
+    #     else:
 
-            if not disable_warnings:
+    #         if not disable_warnings:
 
-                warn("Read negative frequency value", category = FutureWarning)
+    #             warn("Read negative frequency value", category = FutureWarning)
             
-            return a*(x**b)    
+    #         return a*(x**b)    
                 
              
-    else:
+    # else:
 
-        if not disable_warnings:
+    #     if not disable_warnings:
 
-            warn("Read negative frequency value, changed to positive")
+    #         warn("Read negative frequency value, changed to positive")
 
         
-        x = -x
-        return a*(x**b)
-             
+    #     x = -x
+    #     return a*(x**b)
+    
+    return a*(x**b)
 
         #Disable warnings if repeatedly using the same model
         #Use f-strings to show the function if this function is called on its own
@@ -153,7 +154,7 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
                             names = ["PeakFrequency", "DepthToBedrock"], dtype = float,
                             skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
         """
-        if calib_type.casefold() in power_list and calib_filepath in sampleFileName.values():
+        if calib_type.casefold() in power_list:
 
             data = pd.read_csv(calib_filepath)                            
         
@@ -172,9 +173,9 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
             else:
                 raise ValueError("Model not found")
             
-            # for each in range(calib_data.shape[0]):
+            for each in range(calib_data.shape[0]):
 
-            #     calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
+                calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
 
            # calib_data[:, 1] = bedrock_depths
 
