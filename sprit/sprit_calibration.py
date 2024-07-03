@@ -49,17 +49,141 @@ view_plot - produces calibration curve
 Things to add:
 - #checkinstance - HVSRData/HVSR Batch
 - #need try-catch blocks while reading in files and checking membership
-- 
+- # eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
+- #pick only relevant points according to bedrock_type (lithology)
+- #Add calibration equation to get_report csv
+- #Add parameter to sprit.run
 """
 
 resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
 sample_data_dir = resource_dir.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
 
+models = ["ISGS", "IbsvonA", "IbsvonB" "DelgadoA", "DelgadoB", 
+                    "Parolai", "Hinzen", "Birgoren", "Ozalaybey", "Harutoonian",
+                    "Fairchild", "DelMonaco", "Tun", "ThabetA", "ThabetB",
+                    "ThabetC", "ThabetD"]
+    
+model_list = list(map(lambda x : x.casefold(), models))
 
-def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
+model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
+                    "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
+                    "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
+                    "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
 
-    # if not updatevalues:
+def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
+                    model = "ISGS", 
+                    unit = "m",
+                    freq_col = "PeakFrequency", 
+                    calculate_elevation = False, 
+                    elevation_col = "Elevation", 
+                    depth_col = "BedrockDepth", 
+                    verbose = False,    #if verbose is True, display warnings otherwise not
+                    update_negative_values = False, 
+                    **kwargs):
+    
+    a, b = 0
+
+    if isinstance(model,{tuple, list, dict}):  
+        (a,b) = model  
+        if b >= a:                     #b should always be less than a
+            if verbose:
+                warn("Second parameter greater than the first, inverting values")
+            (b,a) = model
+        elif a == 0 or b == 0:         
+            raise ValueError("Parameters cannot be zero, check model inputs")
+
+            
+
+    #Now check if model is a string, a&b values could be passed as parsable string too
+
+
+            # pf_values= data["PeakFrequency"].values
+
+            # calib_data = np.array((pf_values, np.ones(len(pf_values))))
+
+            # calib_data = calib_data.T
+            
+            # for k,v in model_parameters.items():
+
+            #     if model.casefold() in model_list:
+
+            #         if model.casefold() == k.casefold():
+                                    
+            #              (a, b) = model_parameters[k]
+
+            #     else:
+            #         raise AttributeError("Model not found")
+            
+            # for each in range(calib_data.shape[0]):
+
+            #     calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
+
+            # data["Depth to Bedrock (m)"] = calib_data[:, 1]
+
+            # return data
+            #     #give csv/df output with bedrock depth added
+
+
+
+
+        elif model.casefold() == "all":
+            #Statistical analysis
+            
+            sorry = True
+        
+
+    #Reading in path object
+    if type(freq_input) is os.PathLike:
+
+        data = pd.read_csv(freq_input,
+                            skipinitialspace= True,
+                            index_col=False,
+                            on_bad_lines= "error")
+
+
+
+
+
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #Reading in HVSRData object
+
+    #@checkinstance
+    # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
+
+    #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
+    #hvsrData.CSV_Report
+
+
+
+
+
+
+
+
+
+
+    
+    # if not update_values:
     
     #     if a > 0 and b > 0 and x > 0:
              
@@ -84,118 +208,53 @@ def cal_bedrockdepth(a, b, x, updatevalues = False, disable_warnings = False):
     #     x = -x
     #     return a*(x**b)
     
-    return a*(x**b)
+    # return a*(x**b)
 
-        #Disable warnings if repeatedly using the same model
-        #Use f-strings to show the function if this function is called on its own
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
+#               bed_depth_col = "Bedrock_Depth", **kwargs):    
+
+#     calib_data = None
+
+#     calib_types = ["Power", "Vs", "Matrix"]
+
+#     calib_type_list = list(map(lambda x : x.casefold(), calib_types))
     
+#     power_list = ["Power", "power", "pw", "POWER"]
+
+#     Vs_list = ["vs", "VS", "v_s", "V_s", "V_S"]
+
+#     matrix_list = ["matrix", "Matrix", "MATRIX"]
+
+    
+#     bedrock_types = ["shale", "limetone", "dolomite", 
+#                      "sedimentary", "igneous", "metamorphic"]
+    
+   
+    
+
+    # freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
+
+    # bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
+
+    # if calib_type.casefold() in calib_type_list: 
         
-
-
-def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
-              bed_depth_col = "DepthToBedrock", **kwargs):    
-
-    #@checkinstance
-    # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
-
-    #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
-
-        
-    a = 0
-    b = 0
-    
-    rows_no = None
-
-    if "nrows" in kwargs.keys():
-        rows_no = kwargs["nrows"]
-
-
-    bedrock_depths = None
-
-    data = None
-
-    calib_data = None
-
-    calib_types = ["Power", "Vs", "Matrix"]
-
-    calib_type_list = list(map(lambda x : x.casefold(), calib_types))
-    
-    power_list = ["Power", "power", "pw", "POWER"]
-
-    Vs_list = ["vs", "VS", "v_s", "V_s", "V_S"]
-
-    matrix_list = ["matrix", "Matrix", "MATRIX"]
-
-    models = ["ISGS", "IbsvonA", "IbsvonB" "DelgadoA", "DelgadoB", 
-                    "Parolai", "Hinzen", "Birgoren", "Ozalaybey", "Harutoonian",
-                    "Fairchild", "DelMonaco", "Tun", "ThabetA", "ThabetB",
-                    "ThabetC", "ThabetD"]
-    
-    model_list = list(map(lambda x : x.casefold(), models))
-    
-    bedrock_types = ["shale", "limetone", "dolomite", 
-                     "sedimentary", "igneous", "metamorphic"]
-    
-    model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
-                        "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
-                        "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
-                        "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
-    
-
-    freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
-
-    bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
-
-    if calib_type.casefold() in calib_type_list: 
-        
-        #eliminate outlier points - will have to read in latitude and longitude from spreadsheet and then compare against that of well to find distance in meters 
-        #pick only relevant points according to bedrock_type
-        """
-        sep = ",", usecols = [lambda x: x in freq_columns_names, lambda y: y in bedrock_depth_names], 
-                            names = ["PeakFrequency", "DepthToBedrock"], dtype = float,
-                            skipinitialspace= True,index_col=False, nrows = rows_no, skip_blank_lines= True, on_bad_lines= "error"
-        """
-        if calib_type.casefold() in power_list:
-
-            data = pd.read_csv(calib_filepath)                            
-        
-            pf_values= data["PeakFrequency"].values
-
-            calib_data = np.array((pf_values, np.ones(len(pf_values))))
-
-            calib_data = calib_data.T
-
-            #bedrock_depths = np.zeros(calib_data.shape[0])
-            
-            for k,v in model_parameters.items():
-
-                if model.casefold() in model_list:
-
-                    if model.casefold() == k.casefold():
-                                    
-                         (a, b) = model_parameters[k]
-
-                else:
-                    raise AttributeError("Model not found")
-            
-            for each in range(calib_data.shape[0]):
-
-                calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
-
-           # calib_data[:, 1] = bedrock_depths
-
-            return calib_data
-                
-
-                #Now plot using curve_fit
-
-
-
-            if model.casefold() == "all":
-                dummy = 3
-            
-                    
-                #do something
+       
+    #     if calib_type.casefold() in power_list:
 
 
 
@@ -204,18 +263,14 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
 
 
 
-            else: 
-                #model = None: derive model using least_squares
-                dummy = 3
-                #do something
+
     
 
 
 
 
 
-#Add calibration equation to get_report csv
-#Add parameter to sprit.run
+
 
 
                          
@@ -260,8 +315,6 @@ def calibrate(calib_filepath, calib_type = "power", model = "ISGS", outlier_radi
 
 
 
-# def show_data():
-#      #To display the data considered for calibration to the user
 
 
 
