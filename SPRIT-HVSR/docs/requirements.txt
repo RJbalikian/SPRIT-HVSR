@@ -1,0 +1,14 @@
+matplotlib
+numpy
+pandas
+obspy
+scipy
+pyproj
+PyQt5-sip
+sphinx-rtd-theme
+numpydoc
+sphinx
+markdown
+pytest
+flake8
+sprit==1.0.2

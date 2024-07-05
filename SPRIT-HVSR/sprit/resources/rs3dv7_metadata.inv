@@ -1,0 +1,995 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>SeisComP</Source>
+  <Sender>RaspberryShake</Sender>
+  <Module/>
+  <ModuleURI/>
+  <Created>2022-10-21T16:12:33.879781Z</Created>
+  <Network code="AM" startDate="2016-01-01T00:00:00.000000Z" restrictedStatus="open">
+    <Description>RASPBERRY SHAKE NETWORK</Description>
+    <Station code="REA4F" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">44.82882883</Latitude>
+      <Longitude unit="DEGREES">-92.24068772</Longitude>
+      <Elevation>326.0</Elevation>
+      <Site>
+        <Name>Raspberry Shake Citizen Science Station</Name>
+      </Site>
+      <CreationDate>2022-03-18T12:47:02.625000Z</CreationDate>
+      <Channel code="EHE" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="EHN" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="EHZ" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+    <Station code="REA4F" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">44.82882883</Latitude>
+      <Longitude unit="DEGREES">-92.24068772</Longitude>
+      <Elevation>326.0</Elevation>
+      <Site>
+        <Name>Raspberry Shake Citizen Science Station</Name>
+      </Site>
+      <CreationDate>2022-04-14T00:47:00.906000Z</CreationDate>
+      <Channel code="EHE" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="EHN" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="EHZ" startDate="2022-04-14T00:47:00.906000Z" restrictedStatus="open" locationCode="00">
+        <Latitude unit="DEGREES">44.82882883</Latitude>
+        <Longitude unit="DEGREES">-92.24068772</Longitude>
+        <Elevation>326.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor-3D-RS-V7-VEL">
+          <Type>Raspberry Shake</Type>
+          <Description>Velocity</Description>
+          <Manufacturer>Raspberry Shake</Manufacturer>
+        </Sensor>
+        <DataLogger resourceId="Datalogger-SHAKE-100hz"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>360000000.0</Value>
+            <Frequency>5.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="RP-3D-RS-V5-VEL" resourceId="ResponsePAZ-3D-RS-V5-VEL">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>673.959</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="4">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="5">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="6">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-1.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-3.03</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-666.67</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>360000000.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR name="RF-DL100.stage_2" resourceId="ResponseFIR-DL100">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-0.000151873</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000602538</NumeratorCoefficient>
+              <NumeratorCoefficient>-9.55046e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.000672574</NumeratorCoefficient>
+              <NumeratorCoefficient>-8.57924e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00101667</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000443862</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00137953</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0010729</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00164772</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0020288</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00165744</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00330916</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00120522</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00482924</NumeratorCoefficient>
+              <NumeratorCoefficient>-7.07612e-05</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00640028</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00194821</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0077177</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0049948</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00836173</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00911258</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00780703</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0142144</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.00542901</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0200678</NumeratorCoefficient>
+              <NumeratorCoefficient>0.000475993</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0263035</NumeratorCoefficient>
+              <NumeratorCoefficient>0.00807014</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0324465</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0219791</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0379693</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0455535</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0423585</NumeratorCoefficient>
+              <NumeratorCoefficient>-0.0946718</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0451835</NumeratorCoefficient>
+              <NumeratorCoefficient>0.314401</NumeratorCoefficient>
+              <NumeratorCoefficient>0.453841</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

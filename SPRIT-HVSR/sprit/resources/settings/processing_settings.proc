@@ -1,0 +1,69 @@
+{
+  "fetch_data": 
+		{
+		"source": "file",
+		"trim_dir": null,
+		"export_format": "mseed",
+		"detrend": "spline",
+		"detrend_order": 2,
+		"update_metadata": true,
+		"plot_input_stream": false,
+		"verbose": false,
+		"kwargs":
+			{}
+		},
+
+  "remove_noise": 
+		{
+		"remove_method": "auto",
+		"sat_percent": 0.995,
+		"noise_percent": 0.8,
+		"sta": 2,
+		"lta": 30,
+		"stalta_thresh": [  0.5,   5 ],
+		"warmup_time": 0,
+		"cooldown_time": 0,
+		"min_win_size": 1,
+		"remove_raw_noise": false,
+		"verbose": false
+		},
+
+  "generate_ppsds": 
+		{
+		"remove_outliers": true,
+		"outlier_std": 3,
+		"verbose": false,
+		"ppsd_kwargs":
+			{   "skip_on_gaps": true,   "db_bins": [    -200,     -50,     1.0   ],   "ppsd_length": 30.0,   "overlap": 0.5,   "special_handling": null,   "period_smoothing_width_octaves": 1.0,   "period_step_octaves": 0.03125,   "period_limits": [    0.025,     2.5   ] }
+		},
+
+  "process_hvsr": 
+		{
+		"method": 3,
+		"smooth": true,
+		"freq_smooth": "konno ohmachi",
+		"f_smooth_width": 40,
+		"resample": true,
+		"outlier_curve_std": 1.75,
+		"verbose": false
+		},
+
+  "check_peaks": 
+		{
+		"hvsr_band": [  0.4,   40 ],
+		"peak_selection": "max",
+		"peak_freq_range": [  0.4,   40 ],
+		"verbose": false
+		},
+
+  "get_report": 
+		{
+		"report_format": "print",
+		"plot_type": "HVSR p ann C+ p ann Spec",
+		"export_path": null,
+		"return_results": false,
+		"csv_overwrite_opt": "append",
+		"no_output": false,
+		"verbose": false
+		}
+}
