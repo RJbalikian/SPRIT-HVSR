@@ -83,7 +83,9 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     **kwargs):
     
     a, b = 0
+    params = None
 
+    #Checking how model is inputted
     if isinstance(model,{tuple, list, dict}):  
         (a,b) = model  
         if b >= a:                     #b should always be less than a
@@ -105,7 +107,20 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
         elif a == 0 or b == 0:         
             raise ValueError("Parameters cannot be zero, check model inputs")
         
-    #elif model
+    elif model.casefold() in model_list:
+
+        params = model.casefold()
+
+    #Checking freq_input
+
+    if isinstance(freq_input, os.PathLike):
+        data = pd.read_csv(freq_input)
+
+        #do something
+    
+
+
+
 
 
 
@@ -139,10 +154,10 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
 
-        elif model.casefold() == "all":
-            #Statistical analysis
-            
-            sorry = True
+    elif model.casefold() == "all":
+        #Statistical analysis
+        
+        sorry = True
         
 
     #Reading in path object
