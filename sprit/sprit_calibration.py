@@ -82,11 +82,12 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     update_negative_values = False, 
                     **kwargs):
     
-    a, b = 0
+    a = 0
+    b = 0
     params = None
 
     #Checking how model is inputted
-    if isinstance(model,{tuple, list, dict}):  
+    if isinstance(model,(tuple, list, dict)):  
         (a,b) = model  
         if b >= a:                     #b should always be less than a
             if verbose:
@@ -94,6 +95,19 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             (b,a) = model
         elif a == 0 or b == 0:         
             raise ValueError("Parameters cannot be zero, check model inputs")
+
+    elif model.casefold() in model_list:
+        
+        for k,v in model_parameters.items():
+
+            if model.casefold() == k.casefold():
+                print("I'm here 1")  
+                (a, b) = model_parameters[k]
+                break
+                
+            
+            else:
+                raise ValueError("Model not found")
 
     
     elif isinstance(model, str):   #parameters a and b could be passed in as a parsable string
@@ -106,49 +120,35 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             (b,a) = params
         elif a == 0 or b == 0:         
             raise ValueError("Parameters cannot be zero, check model inputs")
-        
-    elif model.casefold() in model_list:
-
-        params = model.casefold()
-
-    #Checking freq_input
-
-    if isinstance(freq_input, os.PathLike):
-        data = pd.read_csv(freq_input)
-
-        #do something
     
+    else:
+        raise ValueError("Model not found: check inputs")
 
+    #Checking freq_input is a filepath
 
+    if isinstance(freq_input, os.PathLike):             #This is not working
+        print("I'm here 2")
+        data = pd.read_csv(freq_input,
+                            skipinitialspace= True,
+                            index_col=False,
+                            on_bad_lines= "error")
 
+        pf_values= data["PeakFrequency"].values
 
+        calib_data = np.array((pf_values, np.ones(len(pf_values))))
 
+        calib_data = calib_data.T
 
-
-            # pf_values= data["PeakFrequency"].values
-
-            # calib_data = np.array((pf_values, np.ones(len(pf_values))))
-
-            # calib_data = calib_data.T
+    
             
-            # for k,v in model_parameters.items():
+        for each in range(calib_data.shape[0]):
 
-            #     if model.casefold() in model_list:
+            calib_data[each, 1] = a*(calib_data[each, 0]**b)
+            print("I'm here 3")
 
-            #         if model.casefold() == k.casefold():
-                                    
-            #              (a, b) = model_parameters[k]
+        data["Depth to Bedrock (m)"] = calib_data[:, 1]
 
-            #     else:
-            #         raise AttributeError("Model not found")
-            
-            # for each in range(calib_data.shape[0]):
-
-            #     calib_data[each, 1] = cal_bedrockdepth(a, b, calib_data[each, 0])
-
-            # data["Depth to Bedrock (m)"] = calib_data[:, 1]
-
-            # return data
+        return data
             #     #give csv/df output with bedrock depth added
 
 
@@ -156,18 +156,14 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
     elif model.casefold() == "all":
         #Statistical analysis
-        
+        print("I'm here 4")
         sorry = True
         
 
     #Reading in path object
-    if type(freq_input) is os.PathLike:
 
-        data = pd.read_csv(freq_input,
-                            skipinitialspace= True,
-                            index_col=False,
-                            on_bad_lines= "error")
-
+    else:
+        print("I'm here because nothing worked")
 
 
 
