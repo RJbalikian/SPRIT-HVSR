@@ -93,9 +93,21 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
         elif a == 0 or b == 0:         
             raise ValueError("Parameters cannot be zero, check model inputs")
 
-            
+    
+    elif isinstance(model, str):   #parameters a and b could be passed in as a parsable string
+        params = model.split(",")
+        list(map(float, params))
+        (a,b) = params
+        if b >= a:                     #b should always be less than a
+            if verbose:
+                warn("Second parameter greater than the first, inverting values")
+            (b,a) = params
+        elif a == 0 or b == 0:         
+            raise ValueError("Parameters cannot be zero, check model inputs")
+        
+    #elif model
 
-    #Now check if model is a string, a&b values could be passed as parsable string too
+
 
 
             # pf_values= data["PeakFrequency"].values
