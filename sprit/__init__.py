@@ -65,7 +65,7 @@ from sprit.sprit_jupyter_UI import(
     )
 
 from sprit.sprit_calibration import(
-    cal_bedrockdepth,
+    calculate_depth,
     calibrate
 )
 
@@ -117,7 +117,7 @@ __all__ =('sprit_hvsr',
         'sprit_jupyter_UI',
             'create_jupyter_ui',
         'sprit_calibration',
-            'cal_bedrockdepth',
+            'calculate_depth',
             'calibrate',
             )
 

@@ -237,31 +237,31 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
 
-# def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
-#               bed_depth_col = "Bedrock_Depth", **kwargs):    
+def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
+              bed_depth_col = "Bedrock_Depth", **kwargs):    
 
-#     calib_data = None
+    calib_data = None
 
-#     calib_types = ["Power", "Vs", "Matrix"]
+    calib_types = ["Power", "Vs", "Matrix"]
 
-#     calib_type_list = list(map(lambda x : x.casefold(), calib_types))
+    calib_type_list = list(map(lambda x : x.casefold(), calib_types))
     
-#     power_list = ["Power", "power", "pw", "POWER"]
+    power_list = ["Power", "power", "pw", "POWER"]
 
-#     Vs_list = ["vs", "VS", "v_s", "V_s", "V_S"]
+    Vs_list = ["vs", "VS", "v_s", "V_s", "V_S"]
 
-#     matrix_list = ["matrix", "Matrix", "MATRIX"]
+    matrix_list = ["matrix", "Matrix", "MATRIX"]
 
     
-#     bedrock_types = ["shale", "limetone", "dolomite", 
-#                      "sedimentary", "igneous", "metamorphic"]
+    bedrock_types = ["shale", "limetone", "dolomite", 
+                     "sedimentary", "igneous", "metamorphic"]
     
    
     
 
-    # freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
+    freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
 
-    # bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
+    bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
 
     # if calib_type.casefold() in calib_type_list: 
         
