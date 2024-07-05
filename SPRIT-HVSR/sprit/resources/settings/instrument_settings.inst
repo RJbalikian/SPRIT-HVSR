@@ -1,0 +1,10 @@
+{
+  "instrument": "Raspberry Shake",
+  "net": "AM",
+  "sta": "RAC84",
+  "loc": "00",
+  "cha": ["EHZ", "EHN", "EHE"],
+  "depth": 0,
+  "metapath": "c:/Users/balikian/LocalData/CodesScripts/Github/SPRIT-HVSR/sprit/resources/rs3dv5plus_metadata.inv",
+  "hvsr_band": [0.4, 40]
+}
