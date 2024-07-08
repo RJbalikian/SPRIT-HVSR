@@ -1,4 +1,5 @@
 #!/bin/bash
+# v1.0
 
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
@@ -26,6 +27,7 @@ CURR_YEAR=$(date +'%Y')
 STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="/hvsr"
 HVSRDATA_DIR="/hvsr/data"
+EXPORT_DISK="/dev/sda1"
 
 # Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
 STARTUP_TIME=15
@@ -33,13 +35,51 @@ STARTUP_TIME=15
 
 # READ IN OPTIONS
 # Get options
-while getopts 'n:d:v:c:' opt; do
+while getopts 'n:d:c:s:ve' opt; do
     case "$opt" in
-        n) SITE_NAME="$OPTARG";;
+        n) SITE_NAME="$OPTARG"
+            echo $SITE_NAME
+            ;;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
         v) VERBOSE="-v";;
+        e) 
+            # Not sure how this works, but it does
+            # Check next positional parameter
+            eval nextopt=\${$OPTIND}
+            # existing or starting with dash?
+            if [[ -n $nextopt && $nextopt != -* ]] ; then
+                OPTIND=$((OPTIND + 1))
+                level=$nextopt
+            else
+                level=1
+            fi
+
+            #echo "OPT: $opt: $OPTARG"
+            if [[ -n "$nextopt" ]]; then
+                EXPORT_DISK="$nextopt"
+                echo "$EXPORT_DISK specified as export disk"
+            else
+                # Handle the case when the argument is missing
+                echo "No export disk specified, using $EXPORT_DISK" >&2
+            fi
+
+            datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
+            EXPORT_DIR="${EXPORT_DISK%/}/$datestring/"
+            if [ ! -d $EXPORT_DIR ]; then
+                if [ -d $EXPORT_DISK ]; then
+                    mkdir "$EXPORT_DIR"
+                else
+                    echo "Disk does not exist. Data export not completed."
+                    exit 1
+                fi
+            fi
+
+            echo "Copying data from $HVSRDATA_DIR to $EXPORT_DIR"
+            sudo cp -r "$HVSRDATA_DIR/*" "$EXPORT_DIR"
+            exit 0
+            ;;
         ?|h)
             echo "Usage: $(basename "$0") [-n site_name] [-d DURATION of HVSR acquisition in minutes] [-c interval at which to check/print status] [-v verbose]"
             exit 1
