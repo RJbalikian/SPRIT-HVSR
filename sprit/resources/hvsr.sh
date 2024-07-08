@@ -1,9 +1,14 @@
 #!/bin/bash
-# v1.0
 
+#VERSIONING
+# v1.0
+# updated 2024-07-08
+
+#DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
 
+#CODE
 # HANDLE SIGNAL DISCONNECT
 # First, set up script to continue running even if there is a signal disconnect (SSH is disconnected)
 # Function to handle disconnection
