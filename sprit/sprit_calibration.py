@@ -64,7 +64,9 @@ models = ["ISGS", "IbsvonA", "IbsvonB" "DelgadoA", "DelgadoB",
                     "Parolai", "Hinzen", "Birgoren", "Ozalaybey", "Harutoonian",
                     "Fairchild", "DelMonaco", "Tun", "ThabetA", "ThabetB",
                     "ThabetC", "ThabetD"]
-    
+
+swave = ["shear", "swave", "shearwave", "rayleigh","rayleighwave", "vs"]
+
 model_list = list(map(lambda x : x.casefold(), models))
 
 model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
@@ -83,49 +85,55 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     verbose = False,    #if verbose is True, display warnings otherwise not
                     update_negative_values = False,
                     export_path = None,
+                    Vs = 563.0, 
                     **kwargs):
     
     a = 0
     b = 0
     params = None
 
-    #Checking how model is inputted
-    if isinstance(model,(tuple, list, dict)):  
-        (a,b) = model  
-        if b >= a:                     #b should always be less than a
-            if verbose:
-                warn("Second parameter greater than the first, inverting values")
-            (b,a) = model
-        elif a == 0 or b == 0:         
-            raise ValueError("Parameters cannot be zero, check model inputs")
+    #Fetching model parameters
+    try:
+        if isinstance(model,(tuple, list, dict)):  
+            (a,b) = model  
+            if b >= a:                     #b should always be less than a
+                if verbose:
+                    warn("Second parameter greater than the first, inverting values")
+                (b,a) = model
+            elif a == 0 or b == 0:         
+                raise ValueError("Parameters cannot be zero, check model inputs")
 
-    elif model.casefold() in model_list:
+        elif model.casefold() in model_list:
+            
+            for k,v in model_parameters.items():
+
+                if model.casefold() == k.casefold():   
+                    (a, b) = model_parameters[k]
+                    break
+
+        elif model.casefold() in swave:
+            params = model.casefold()
+
+        elif model.casefold() == "all":
+            params = model.casefold()
+
+        elif isinstance(model, str):   #parameters a and b could be passed in as a parsable string
+            params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
+            (a,b) = params
+            if a == 0 or b == 0:         
+                raise ValueError("Parameters cannot be zero, check model inputs")
+            elif b >= a:                     #b should always be less than a
+                if verbose:
+                    warn("Second parameter greater than the first, inverting values")
+                (b,a) = params
         
-        for k,v in model_parameters.items():
-
-            if model.casefold() == k.casefold():   
-                (a, b) = model_parameters[k]
-                break
-
-    
-    elif isinstance(model, str):   #parameters a and b could be passed in as a parsable string
-        params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
-        (a,b) = params
-        if a == 0 or b == 0:         
-            raise ValueError("Parameters cannot be zero, check model inputs")
-        elif b >= a:                     #b should always be less than a
-            if verbose:
-                warn("Second parameter greater than the first, inverting values")
-            (b,a) = params
         
-    
-    else:
+    except Exception:
         if (a,b) == (0, 0):
 
             raise ValueError( "Model not found: check inputs")
 
-    #Checking freq_input is a filepath
-
+    #Checking if freq_input is a filepath
     try:
         if os.path.exists(freq_input):
             data = pd.read_csv(freq_input,
@@ -141,8 +149,13 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
                 
             for each in range(calib_data.shape[0]):
-
-                calib_data[each, 1] = a*(calib_data[each, 0]**b)
+                
+                if params in swave:
+                    calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+                elif params == "all":
+                    print("do something")
+                else:
+                    calib_data[each, 1] = a*(calib_data[each, 0]**b)
                 
             if unit.casefold() in {"ft", "feet"}:
                 data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
@@ -176,60 +189,62 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             print("freq_input not a filepath, checking other types")
         
     
-    #Reading in HVSRData object
-    if isinstance(freq_input, sprit_hvsr.HVSRData):
-        try:
-            data = freq_input.CSV_Report
-        except Exception:
-            data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
-        
-        pf_values= data["PeakFrequency"].values
-
-        calib_data = np.array((pf_values, np.ones(len(pf_values))))
-
-        calib_data = calib_data.T
-
+    #Checking if freq_input is HVSRData object
+    try:
+        if isinstance(freq_input, sprit_hvsr.HVSRData):
+            try:
+                data = freq_input.CSV_Report
+            except Exception:
+                warn("Passed HVSRData Object has no attribute CSV_Report")
+                data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
             
-        for each in range(calib_data.shape[0]):
+            pf_values= data["PeakFrequency"].values
 
-            calib_data[each, 1] = a*(calib_data[each, 0]**b)
-        
-        if unit.casefold() in {"ft", "feet"}:
-            data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
+            calib_data = np.array((pf_values, np.ones(len(pf_values))))
 
-        else:
-            data["Depth to Bedrock (m)"] = calib_data[:, 1]
-        
+            calib_data = calib_data.T
 
-        if export_path is not None and os.path.exists(export_path):
-            if export_path == freq_input:
-                data.to_csv(freq_input)
-                if verbose:
-                    print("Saving data in the original file")
+                
+            for each in range(calib_data.shape[0]):
+
+                if params in swave:
+                    calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+                elif params == "all":
+                    print("do something")
+                else:
+                    calib_data[each, 1] = a*(calib_data[each, 0]**b)
+            
+            if unit.casefold() in {"ft", "feet"}:
+                data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
 
             else:
-                if "/" in export_path:
-                    temp = os.path.join(export_path+ "/"+ site + ".csv")
-                    data.to_csv(temp)
-                
-                else:
-                    temp = os.path.join(export_path+"\\"+ site + ".csv")
-                    data.to_csv(temp)
-
-                if verbose:
-                    print("Saving data to the path specified")
+                data["Depth to Bedrock (m)"] = calib_data[:, 1]
             
 
-        return data
+            if export_path is not None and os.path.exists(export_path):
+                if export_path == freq_input:
+                    data.to_csv(freq_input)
+                    if verbose:
+                        print("Saving data in the original file")
 
+                else:
+                    if "/" in export_path:
+                        temp = os.path.join(export_path+ "/"+ site + ".csv")
+                        data.to_csv(temp)
+                    
+                    else:
+                        temp = os.path.join(export_path+"\\"+ site + ".csv")
+                        data.to_csv(temp)
 
+                    if verbose:
+                        print("Saving data to the path specified")
+                
 
-    if model.casefold() == "all":
-        #Statistical analysis
-        sorry = True
+            return data
+    except Exception: 
+        if verbose:
+            print("freq_input not an HVSRData object, checking other types")
 
-
-    print("I'm here because nothing worked")
 
 
 
@@ -247,20 +262,6 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
 
-
-
-
-
-
-
-
-    
-
-    #@checkinstance
-    # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
-
-    #     raise TypeError("Object passed not an HVSR data object -- see sprit documentation for details")
-    #hvsrData.CSV_Report
 
 
 
