@@ -13,7 +13,6 @@ try:
     import sprit  # When distributed
 except:
     import sprit_hvsr as sprit #When testing
-    pass
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -43,8 +42,8 @@ def main():
                      sprit.process_hvsr,
                      sprit.remove_outlier_curves,
                      sprit.check_peaks,
-                     sprit.get_report,
-                     sprit.plot_hvsr]
+                     sprit.get_report]#,
+                     #sprit.plot_hvsr]
 
     #Get default parameters from main functions
     parameters = []
