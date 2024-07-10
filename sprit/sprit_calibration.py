@@ -158,9 +158,9 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     calib_data[each, 1] = a*(calib_data[each, 0]**b)
                 
             if unit.casefold() in {"ft", "feet"}:
-                data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
+                data["BedrockDepth_ft"] = calib_data[:, 1]*3.281
             else:    
-                data["Depth to Bedrock (m)"] = calib_data[:, 1]
+                data["BedrockDepth_m"] = calib_data[:, 1]
             
             
 
@@ -215,10 +215,10 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     calib_data[each, 1] = a*(calib_data[each, 0]**b)
             
             if unit.casefold() in {"ft", "feet"}:
-                data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
+                data["BedrockDepth_ft"] = calib_data[:, 1]*3.281
 
             else:
-                data["Depth to Bedrock (m)"] = calib_data[:, 1]
+                data["BedrockDepth_m"] = calib_data[:, 1]
             
 
             if export_path is not None and os.path.exists(export_path):
