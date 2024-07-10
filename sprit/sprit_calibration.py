@@ -126,12 +126,63 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
     #Checking freq_input is a filepath
 
-    if os.path.exists(freq_input):
-        data = pd.read_csv(freq_input,
-                            skipinitialspace= True,
-                            index_col=False,
-                            on_bad_lines= "error")
+    try:
+        if os.path.exists(freq_input):
+            data = pd.read_csv(freq_input,
+                                skipinitialspace= True,
+                                index_col=False,
+                                on_bad_lines= "error")
 
+            pf_values= data["PeakFrequency"].values
+
+            calib_data = np.array((pf_values, np.ones(len(pf_values))))
+
+            calib_data = calib_data.T
+
+                
+            for each in range(calib_data.shape[0]):
+
+                calib_data[each, 1] = a*(calib_data[each, 0]**b)
+                
+            if unit.casefold() in {"ft", "feet"}:
+                data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
+            else:    
+                data["Depth to Bedrock (m)"] = calib_data[:, 1]
+            
+            
+
+            if export_path is not None and os.path.exists(export_path):
+                if export_path == freq_input:
+                    data.to_csv(freq_input)
+                    if verbose:
+                        print("Saving data in the original file")
+
+                else:
+                    if "/" in export_path:
+                        temp = os.path.join(export_path+ "/"+ site + ".csv")
+                        data.to_csv(temp)
+                    
+                    else:
+                        temp = os.path.join(export_path+"\\"+ site + ".csv")
+                        data.to_csv(temp)
+
+                    if verbose:
+                        print("Saving data to the path specified")
+                
+
+            return data
+    except Exception:
+        if verbose:
+            print("freq_input not a filepath, checking other types")
+        
+    
+    #Reading in HVSRData object
+    if isinstance(freq_input, sprit_hvsr.HVSRData):
+        try:
+            data = freq_input.CSV_Report
+        except Exception:
+            data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
+        
         pf_values= data["PeakFrequency"].values
 
         calib_data = np.array((pf_values, np.ones(len(pf_values))))
@@ -142,12 +193,13 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
         for each in range(calib_data.shape[0]):
 
             calib_data[each, 1] = a*(calib_data[each, 0]**b)
-            
-
-        data["Depth to Bedrock (m)"] = calib_data[:, 1]
         
         if unit.casefold() in {"ft", "feet"}:
             data["Depth to Bedrock (ft)"] = calib_data[:, 1]*3.281
+
+        else:
+            data["Depth to Bedrock (m)"] = calib_data[:, 1]
+        
 
         if export_path is not None and os.path.exists(export_path):
             if export_path == freq_input:
@@ -169,8 +221,6 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             
 
         return data
-           
-
 
 
 
@@ -204,7 +254,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
 
-    #Reading in HVSRData object
+    
 
     #@checkinstance
     # if not isinstance(hvsr_results, sprit_hvsr.HVSRData): 
