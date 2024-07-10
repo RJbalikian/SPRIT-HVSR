@@ -32,11 +32,12 @@ STARTUP_TIME=15
 
 # READ IN OPTIONS
 # Get options
-while getopts 'n:d:v:c:' opt; do
+while getopts 'n:d:v:c:s:' opt; do
     case "$opt" in
         n) SITE_NAME="$OPTARG";;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
+        s) STARTUP_TIME="$OPTARG";;
         v) VERBOSE="-v";;
         ?|h)
             echo "Usage: $(basename "$0") [-n site_name] [-d DURATION of HVSR acquisition in minutes] [-c interval at which to check/print status] [-v verbose]"
