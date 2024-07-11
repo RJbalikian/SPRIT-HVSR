@@ -3,32 +3,18 @@ This module will be used for calibration of the ambient HVSR data acquired near 
 to derive a relation between the resonant frequency and the depth to bedrock beneath the subsurface.
 
 """
-import math
 import numpy as np
-import numpy.linalg as nla
-import scipy
-import scipy.linalg as sla
-import obspy
 import pandas as pd
-import matplotlib
-import matplotlib.pyplot as plt
-import csv
-import json
 import os
 import re
 import pathlib
 import pkg_resources
-import warnings
 from warnings import warn
-from scipy.optimize import curve_fit
-from scipy.optimize import least_squares
 #from pyproj import GeoPandas    #need conda environment
-
 try:  # For distribution
     from sprit import sprit_hvsr
 except Exception:  # For testing
     import sprit_hvsr
-
 
 """
 Attempt 1: Regression equations: 
@@ -73,6 +59,17 @@ model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1
                     "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
+def round_depth(num, ndigits = 3):
+    """
+    Rounds a float to the specified number of decimal places.
+    num: the value to round
+    ndigits: the number of digits to round to
+    """
+    if ndigits == 0:
+        return int(num + 0.5)
+    else:
+        digit_value = 10 ** ndigits
+        return int(num * digit_value + 0.5) / digit_value
 
 def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
                     model = "ISGS",
@@ -83,9 +80,9 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     elevation_col = "Elevation", 
                     depth_col = "BedrockDepth", 
                     verbose = False,    #if verbose is True, display warnings otherwise not
-                    update_negative_values = False,
                     export_path = None,
-                    Vs = 563.0, 
+                    Vs = 563.0,
+                    decimal_places = 3, 
                     **kwargs):
     
     a = 0
@@ -103,31 +100,32 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             elif a == 0 or b == 0:         
                 raise ValueError("Parameters cannot be zero, check model inputs")
 
-        elif model.casefold() in model_list:
-            
-            for k,v in model_parameters.items():
+        elif isinstance(model, str): 
 
-                if model.casefold() == k.casefold():   
-                    (a, b) = model_parameters[k]
-                    break
+            if model.casefold() in model_list:
+                
+                for k,v in model_parameters.items():
 
-        elif model.casefold() in swave:
-            params = model.casefold()
+                    if model.casefold() == k.casefold():   
+                        (a, b) = model_parameters[k]
+                        break
 
-        elif model.casefold() == "all":
-            params = model.casefold()
+            elif model.casefold() in swave:
+                params = model.casefold()
 
-        elif isinstance(model, str):   #parameters a and b could be passed in as a parsable string
-            params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
-            (a,b) = params
-            if a == 0 or b == 0:         
-                raise ValueError("Parameters cannot be zero, check model inputs")
-            elif b >= a:                     #b should always be less than a
-                if verbose:
-                    warn("Second parameter greater than the first, inverting values")
-                (b,a) = params
-        
-        
+            elif model.casefold() == "all":
+                params = model.casefold()
+
+            else:   #parameters a and b could be passed in as a parsable string
+                params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
+                (a,b) = params
+                if a == 0 or b == 0:         
+                    raise ValueError("Parameters cannot be zero, check model inputs")
+                elif b >= a:                     #b should always be less than a
+                    if verbose:
+                        warn("Second parameter greater than the first, inverting values")
+                    (b,a) = params
+                
     except Exception:
         if (a,b) == (0, 0):
 
@@ -141,7 +139,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                                 index_col=False,
                                 on_bad_lines= "error")
 
-            pf_values= data["PeakFrequency"].values
+            pf_values= data[freq_col].values
 
             calib_data = np.array((pf_values, np.ones(len(pf_values))))
 
@@ -149,19 +147,18 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
                 
             for each in range(calib_data.shape[0]):
-                
+    
                 if params in swave:
                     calib_data[each, 1] = Vs/(4*calib_data[each, 0])
                 elif params == "all":
                     print("do something")
                 else:
-                    calib_data[each, 1] = a*(calib_data[each, 0]**b)
+                    calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
                 
             if unit.casefold() in {"ft", "feet"}:
-                data["BedrockDepth_ft"] = calib_data[:, 1]*3.281
+                data[depth_col +"_ft"] = round_depth(calib_data[:, 1]*3.281, decimal_places)
             else:    
-                data["BedrockDepth_m"] = calib_data[:, 1]
-            
+                data[depth_col + "_m"] = round_depth(calib_data[:, 1], decimal_places)
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -198,7 +195,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                 warn("Passed HVSRData Object has no attribute CSV_Report")
                 data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
             
-            pf_values= data["PeakFrequency"].values
+            pf_values= data[freq_col].values
 
             calib_data = np.array((pf_values, np.ones(len(pf_values))))
 
@@ -212,13 +209,13 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                 elif params == "all":
                     print("do something")
                 else:
-                    calib_data[each, 1] = a*(calib_data[each, 0]**b)
+                    calib_data[each, 1] = a*(calib_data[each, 0]**-b)
             
             if unit.casefold() in {"ft", "feet"}:
-                data["BedrockDepth_ft"] = calib_data[:, 1]*3.281
+                data[depth_col +"_ft"] = round_depth(calib_data[:, 1]*3.281, decimal_places)
 
             else:
-                data["BedrockDepth_m"] = calib_data[:, 1]
+                data[depth_col +"_m"] = round_depth(calib_data[:, 1], decimal_places)
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -239,8 +236,9 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     if verbose:
                         print("Saving data to the path specified")
                 
-
-            return data
+            freq_input.CSV_Report = data
+            return freq_input.CSV_Report
+        
     except Exception: 
         if verbose:
             print("freq_input not an HVSRData object, checking other types")
