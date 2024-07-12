@@ -9,6 +9,7 @@ import os
 import re
 import pathlib
 import pkg_resources
+import matplotlib.pyplot as plt
 from warnings import warn
 #from pyproj import GeoPandas    #need conda environment
 try:  # For distribution
@@ -46,19 +47,27 @@ resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources
 sample_data_dir = resource_dir.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
 
-models = ["ISGS", "IbsvonA", "IbsvonB" "DelgadoA", "DelgadoB", 
+models = ["ISGS_All", "ISGS_North", "ISGS_Central", "ISGS_Southeast", "ISGS_Southwest", 
+                    "ISGS_North_Central", "ISGS_SW_SE", "Minnesota_All", 
+                    "Minnesota_Twin_Cities", "Minnesota_South_Central", 
+                    "Minnesota_River_Valleys", "Rhine_Graben",
+                    "Ibsvon_A", "Ibsvon_B","Delgado_A", "Delgado_B", 
                     "Parolai", "Hinzen", "Birgoren", "Ozalaybey", "Harutoonian",
-                    "Fairchild", "DelMonaco", "Tun", "ThabetA", "ThabetB",
-                    "ThabetC", "ThabetD"]
+                    "Fairchild", "DelMonaco", "Tun", "Thabet_A", "Thabet_B",
+                    "Thabet_C", "Thabet_D"]
 
 swave = ["shear", "swave", "shearwave", "rayleigh","rayleighwave", "vs"]
 
 model_list = list(map(lambda x : x.casefold(), models))
 
-model_parameters = {"ISGS" : (2,1), "IbsvonA" : (96, 1.388), "IbsvonB" : (146, 1.375), "DelgadoA" : (55.11, 1.256), 
-                    "DelgadoB" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
+model_parameters = {"ISGS_All" : (141.81,1.582), "ISGS_North" : (142.95,1.312), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (67.973,1.166), 
+                    "ISGS_Southwest": (61.238,1.003), "ISGS_North_Central" : (117.44, 1.095), "ISGS_SW_SE" : (62.62, 1.039),
+                    "Minnesota_All" : (121, 1.323), "Minnesota_Twin_Cities" : (129, 1.295), "Minnesota_South_Central" : (135, 1.248),
+                    "Minnesota_River_Valleys" : (83, 1.232), "Rhine_Graben" : (96, 1.388), 
+                    "Ibsvon_A" : (96, 1.388), "Ibsvon_B" : (146, 1.375), "Delgado_A" : (55.11, 1.256), 
+                    "Delgado_B" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
-                    "Tun" : (136, 1.357), "ThabetA": (117.13, 1.197), "ThabetB":(105.14, 0.899), "ThabetC":(132.67, 1.084), "ThabetD":(116.62, 1.169)}
+                    "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
 def round_depth(num, ndigits = 3):
     """
     Rounds a float to the specified number of decimal places.
@@ -72,7 +81,7 @@ def round_depth(num, ndigits = 3):
         return int(num * digit_value + 0.5) / digit_value
 
 def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
-                    model = "ISGS",
+                    model = "ISGS_All",
                     site = "HVSRSite", 
                     unit = "m",
                     freq_col = "PeakFrequency", 
@@ -147,18 +156,23 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
                 
             for each in range(calib_data.shape[0]):
-    
-                if params in swave:
-                    calib_data[each, 1] = Vs/(4*calib_data[each, 0])
-                elif params == "all":
-                    print("do something")
-                else:
-                    calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
+                try:
+                    if params in swave:
+                        calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+                    elif params == "all":
+                        print("do something")
+                    else:
+                        calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
+                except Exception:
+                    raise ValueError("Error in calculating depth, check file for empty values or missing columns")
+
                 
             if unit.casefold() in {"ft", "feet"}:
-                data[depth_col +"_ft"] = round_depth(calib_data[:, 1]*3.281, decimal_places)
-            else:    
-                data[depth_col + "_m"] = round_depth(calib_data[:, 1], decimal_places)
+                depth_col = depth_col + "_ft"
+                data[depth_col] = round_depth(calib_data[:, 1]*3.281, decimal_places)
+            else:
+                depth_col = depth_col + "_m"   
+                data[depth_col] = round_depth(calib_data[:, 1], decimal_places)
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -178,8 +192,8 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
                     if verbose:
                         print("Saving data to the path specified")
-                
-
+                        
+            plt.plot(data[freq_col], data[depth_col])
             return data
     except Exception:
         if verbose:
@@ -204,17 +218,22 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                 
             for each in range(calib_data.shape[0]):
 
-                if params in swave:
-                    calib_data[each, 1] = Vs/(4*calib_data[each, 0])
-                elif params == "all":
-                    print("do something")
-                else:
-                    calib_data[each, 1] = a*(calib_data[each, 0]**-b)
+                try:
+                    if params in swave:
+                        calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+                    elif params == "all":
+                        print("do something")
+                    else:
+                        calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
+                except Exception:
+                    raise ValueError("Error in calculating depth, check HVSRData object for empty values or missing columns")
             
             if unit.casefold() in {"ft", "feet"}:
-                data[depth_col +"_ft"] = round_depth(calib_data[:, 1]*3.281, decimal_places)
+                depth_col = depth_col + "_ft"
+                data[depth_col] = round_depth(calib_data[:, 1]*3.281, decimal_places)
 
             else:
+                depth_col = depth_col + "_m"
                 data[depth_col +"_m"] = round_depth(calib_data[:, 1], decimal_places)
             
 
@@ -243,6 +262,38 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
         if verbose:
             print("freq_input not an HVSRData object, checking other types")
 
+    try:
+        if isinstance(freq_input, float):
+            print("Did i get here?")
+            data = sprit_hvsr.HVSRData(params = {"PeakFrequency":freq_input})
+            return data.CSV_Report
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    except:
+        print("Sorry, I failed here")
 
 
 
@@ -271,32 +322,10 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
     
-    # if not update_values:
-    
-    #     if a > 0 and b > 0 and x > 0:
-             
-    #          return a*(x**b)
-        
-    #     else:
 
-    #         if not disable_warnings:
 
-    #             warn("Read negative frequency value", category = FutureWarning)
-            
-    #         return a*(x**b)    
-                
-             
-    # else:
 
-    #     if not disable_warnings:
 
-    #         warn("Read negative frequency value, changed to positive")
-
-        
-    #     x = -x
-    #     return a*(x**b)
-    
-    # return a*(x**b)
 
 
 
