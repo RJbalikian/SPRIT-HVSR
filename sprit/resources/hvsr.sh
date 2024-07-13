@@ -1,5 +1,6 @@
-#!/bin/bash
 
+#!/bin/bash
+set -e
 #VERSIONING
 # v1.0
 # updated 2024-07-08
@@ -49,7 +50,7 @@ while getopts 'n:d:c:s:ve' opt; do
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
         v) VERBOSE="-v";;
-        e) 
+        e)
             # Not sure how this works, but it does
             # Check next positional parameter
             eval nextopt=\${$OPTIND}
@@ -64,25 +65,69 @@ while getopts 'n:d:c:s:ve' opt; do
             #echo "OPT: $opt: $OPTARG"
             if [[ -n "$nextopt" ]]; then
                 EXPORT_DISK="$nextopt"
-                echo "$EXPORT_DISK specified as export disk"
+
+                if ! [[ $EXPORT_DISK =~ ^[0-9]{1,3}$ ]]; then
+                    echo "$EXPORT_DISK specified as export disk"
+		else
+                    EXPORT_DATE=$(printf "%03d" "$EXPORT_DISK")
+                    USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
+                    while read dev;do
+                        LASTDISK=$dev;
+                    done <<< $USBDISKS
+                    echo $LASTDISK
+
+                    EXPORT_DISK=$LASTDISK
+                    echo "Exporting files on USB disk detected at $EXPORT_DISK from day $EXPORT_DATE"
+                fi
+
             else
                 # Handle the case when the argument is missing
-                echo "No export disk specified, using $EXPORT_DISK" >&2
-            fi
+                USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
 
-            datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
-            EXPORT_DIR="${EXPORT_DISK%/}/$datestring/"
-            if [ ! -d $EXPORT_DIR ]; then
-                if [ -d $EXPORT_DISK ]; then
-                    mkdir "$EXPORT_DIR"
-                else
-                    echo "Disk does not exist. Data export not completed."
+                while read dev;do
+                    LASTDISK=$dev;
+                done <<< $USBDISKS
+		echo $LASTDISK
+
+		EXPORT_DISK=$LASTDISK
+
+                if [[ -z "$EXPORT_DISK" ]]; then
+                    echo "No USB disks detected. Data not exported"
                     exit 1
+                else
+                    echo "No export disk specified, using USB disk detected at $EXPORT_DISK"
                 fi
             fi
 
-            echo "Copying data from $HVSRDATA_DIR to $EXPORT_DIR"
-            sudo cp -r "$HVSRDATA_DIR/*" "$EXPORT_DIR"
+            if [[ "$USBDISKS" == *"$EXPORT_DISK"* ]]; then
+                echo "Your specified disk is a USB disk"
+            else
+                echo "Your specified disk is not a USB disk. Cannot export data"
+                exit 1
+            fi
+
+            # Mount and change disk/directory name
+	    MOUNTED_DIR="/mnt/usbdrive/"
+            if [ ! -d $MOUNTED_DIR ]; then
+                sudo mkdir $MOUNTED_DIR
+            fi
+
+            datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
+            EXPORT_DIR="${MOUNTED_DIR%/}/$datestring/"
+
+            if [ ! -d $EXPORT_DIR ]; then
+                sudo mkdir "$EXPORT_DIR"
+            fi
+
+
+            if [ -z $EXPORT_DATE ]; then
+                echo "Copying data from $HVSRDATA_DIR to $EXPORT_DIR"
+                sudo cp -r "$HVSRDATA_DIR/"* "$EXPORT_DIR"
+	    else
+                echo "Copying data from day $EXPORT_DATE from $HVSRDATA_DIR to $EXPORT_DIR" 
+                find "$HVSRDATA_DIR" -type f -name "*_$EXPORT_DATE_*" -exec cp {} "$EXPORT_DIR" \;
+            fi
+            echo "Data successfully copied to $datestring folder on USB device $EXPORT_DISK"
             exit 0
             ;;
         ?|h)
