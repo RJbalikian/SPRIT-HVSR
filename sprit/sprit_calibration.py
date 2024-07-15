@@ -68,17 +68,6 @@ model_parameters = {"ISGS_All" : (141.81,1.582), "ISGS_North" : (142.95,1.312), 
                     "Delgado_B" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
-def round_depth(num, ndigits = 3):
-    """
-    Rounds a float to the specified number of decimal places.
-    num: the value to round
-    ndigits: the number of digits to round to
-    """
-    if ndigits == 0:
-        return int(num + 0.5)
-    else:
-        digit_value = 10 ** ndigits
-        return int(num * digit_value + 0.5) / digit_value
 
 def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
                     model = "ISGS_All",
@@ -91,9 +80,9 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     verbose = False,    #if verbose is True, display warnings otherwise not
                     export_path = None,
                     Vs = 563.0,
-                    decimal_places = 3, 
+                    decimal_places = 3,
+                    group_by = "County", 
                     **kwargs):
-    
     a = 0
     b = 0
     params = None
@@ -147,13 +136,10 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                                 skipinitialspace= True,
                                 index_col=False,
                                 on_bad_lines= "error")
-
+            
             pf_values= data[freq_col].values
-
             calib_data = np.array((pf_values, np.ones(len(pf_values))))
-
             calib_data = calib_data.T
-
                 
             for each in range(calib_data.shape[0]):
                 try:
@@ -162,17 +148,17 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     elif params == "all":
                         print("do something")
                     else:
-                        calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
+                        calib_data[each, 1] = a*(calib_data[each, 0]**-b)
                 except Exception:
                     raise ValueError("Error in calculating depth, check file for empty values or missing columns")
 
                 
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
-                data[depth_col] = round_depth(calib_data[:, 1]*3.281, decimal_places)
+                data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
             else:
                 depth_col = depth_col + "_m"   
-                data[depth_col] = round_depth(calib_data[:, 1], decimal_places)
+                data[depth_col] = np.around(calib_data[:, 1], decimals=decimal_places)
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -193,9 +179,14 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     if verbose:
                         print("Saving data to the path specified")
                         
-            plt.plot(data[freq_col], data[depth_col])
+            plt.scatter(data[freq_col], data[depth_col])
+            if unit.casefold() in {"ft", "feet"}:
+                plt.ylabel("Bedrock Depth (ft)")
+            else:
+                plt.ylabel("Bedrock Depth (m)")
             return data
-    except Exception:
+    except Exception as e:
+        print(e)
         if verbose:
             print("freq_input not a filepath, checking other types")
         
@@ -206,7 +197,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             try:
                 data = freq_input.CSV_Report
             except Exception:
-                warn("Passed HVSRData Object has no attribute CSV_Report")
+                warn("Passed HVSRData Object has no attribute CSV_Report, generating one")
                 data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
             
             pf_values= data[freq_col].values
@@ -230,11 +221,11 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
-                data[depth_col] = round_depth(calib_data[:, 1]*3.281, decimal_places)
+                data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
 
             else:
                 depth_col = depth_col + "_m"
-                data[depth_col +"_m"] = round_depth(calib_data[:, 1], decimal_places)
+                data[depth_col] = np.around(calib_data[:, 1], decimals=decimal_places)
             
 
             if export_path is not None and os.path.exists(export_path):
