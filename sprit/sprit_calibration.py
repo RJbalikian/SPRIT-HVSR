@@ -224,7 +224,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     elif params == "all":
                         print("do something")
                     else:
-                        calib_data[each, 1] = a*(calib_data[each, 0]**-b), decimal_places
+                        calib_data[each, 1] = a*(calib_data[each, 0]**-b)
                 except Exception:
                     raise ValueError("Error in calculating depth, check HVSRData object for empty values or missing columns")
             
