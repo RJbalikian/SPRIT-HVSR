@@ -863,7 +863,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     # first check if report_format is specified, if not, add default value
     if 'report_format' not in get_report_kwargs.keys():
         get_report_kwargs['report_format'] = inspect.signature(get_report).parameters['report_format'].default
-    
+
     # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
     if 'plot' in get_report_kwargs['report_format']:
         usingDefault = True
@@ -907,7 +907,8 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
 
         if not az_requested and hasAz:
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
-    get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+
+    hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if 'report_format' in get_report_kwargs.keys():
@@ -925,15 +926,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 # We will just change the report_format kwarg to print, since we already got the originally intended report format above, 
                 #   now need to print for verbose output
                 get_report_kwargs['report_format'] = 'print'
-                get_report(hvsr_results=hvsr_results, **get_report_kwargs)
-                
-            if get_report_kwargs['report_format'] == 'plot' or 'plot' in get_report_kwargs['report_format']:
-                # We do not need to plot another report if already plotted
-                pass
-            else:
-                # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
-                pass
+                hvsr_results = get_report(hvsr_results=hvsr_results, **get_report_kwargs)
         else:
             pass
     
@@ -2520,7 +2513,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                     csvExportPath = csvExportPath.parent
                 
             combined_csvReport.to_csv(csvExportPath, index=False)       
-    else:       
+    else:
         #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
         try:
             curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
@@ -2706,7 +2699,6 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 hvsr_results['Print_Report'] = reportStr
 
             elif _report_format=='csv':
-                import pandas as pd
                 pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
                         'WindowLengthFreq.','SignificantCycles','LowCurveStDevOverTime',
                         'PeakProminenceBelow','PeakProminenceAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
@@ -2780,6 +2772,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
         hvsr_results['processing_parameters']['get_report'] = {}
         for key, value in orig_args.items():
             hvsr_results['processing_parameters']['get_report'][key] = value
+    
     return hvsr_results
 
 
