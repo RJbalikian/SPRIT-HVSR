@@ -1,5 +1,5 @@
 # main.py
-from nicegui import ui
+from nicegui import ui, Client, app
 
 # Function to handle menu item clicks
 def handle_menu_item(menu, item):
@@ -29,11 +29,17 @@ def initialize_ui():
     # Create a button to browse for files
     def browse_files():
         # Implement your file browsing logic here
+        ui.dialog()
         ui.notify('Button clicked: Browse for files')
 
     ui.button('Browse', on_click=browse_files)
 
+    ui.upload(on_upload=lambda e: ui.notify(f'Uploaded {e.name}'))
+
+    ui.run()
+
 # Run the NiceGUI app
 if __name__ in {"__main__", "__mp_main__"}:
     initialize_ui()
+
     ui.run()
