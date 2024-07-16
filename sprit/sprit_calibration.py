@@ -74,14 +74,14 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     site = "HVSRSite", 
                     unit = "m",
                     freq_col = "PeakFrequency", 
-                    calculate_elevation = False, 
-                    elevation_col = "Elevation", 
+                    calculate_elevation = True, 
+                    elevation_col = "BedrockElevation", 
                     depth_col = "BedrockDepth", 
                     verbose = False,    #if verbose is True, display warnings otherwise not
                     export_path = None,
                     Vs = 563.0,
                     decimal_places = 3,
-                    group_by = "County", 
+                    #group_by = "County", -> make a kwarg
                     **kwargs):
     a = 0
     b = 0
@@ -155,10 +155,20 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                 
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
-                data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
             else:
-                depth_col = depth_col + "_m"   
-                data[depth_col] = np.around(calib_data[:, 1], decimals=decimal_places)
+                depth_col = depth_col + "_m"
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -221,11 +231,20 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
-                data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
-
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
             else:
                 depth_col = depth_col + "_m"
-                data[depth_col] = np.around(calib_data[:, 1], decimals=decimal_places)
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
             
 
             if export_path is not None and os.path.exists(export_path):
@@ -253,11 +272,74 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
         if verbose:
             print("freq_input not an HVSRData object, checking other types")
 
+    #Checking if freq_input is a singular floating point value
     try:
         if isinstance(freq_input, float):
-            print("Did i get here?")
-            data = sprit_hvsr.HVSRData(params = {"PeakFrequency":freq_input})
-            return data.CSV_Report
+            if freq_input <=0:
+                raise ValueError("Peak Frequency cannot be zero or negative")
+            
+            data = pd.DataFrame(columns = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation',
+       freq_col, 'WindowLengthFreq.', 'SignificantCycles',
+       'LowCurveStDevOverTime', 'PeakProminenceBelow', 'PeakProminenceAbove',
+       'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD',
+       'PeakStability_AmpStD', 'PeakPasses'])
+            data.loc[0] = {freq_col: freq_input, 'Site Name': site}
+
+            pf_values= data[freq_col].values
+
+            calib_data = np.array((pf_values, np.ones(len(pf_values))))
+
+            calib_data = calib_data.T
+                
+            for each in range(calib_data.shape[0]):
+
+                try:
+                    if params in swave:
+                        calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+           
+                    elif params == "all":
+                        print("do something")
+                    else:
+                        calib_data[each, 1] = a*(calib_data[each, 0]**-b)
+            
+                except Exception:
+                    raise ValueError("Error in calculating depth, check peak frequency value")
+  
+            if unit.casefold() in {"ft", "feet"}:
+                depth_col = depth_col + "_ft"
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
+            else:
+                depth_col = depth_col + "_m"
+                try:
+                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                except Exception:
+                    if verbose:
+                        warn("Failed to round depth values")
+                    data[depth_col] = calib_data[:, 1]
+
+            if export_path is not None and os.path.exists(export_path):
+     
+                if "/" in export_path:
+                    temp = os.path.join(export_path+ "/"+ site + ".csv")
+                    data.to_csv(temp)
+                
+                else:
+                    temp = os.path.join(export_path+"\\"+ site + ".csv")
+                    data.to_csv(temp)
+
+                if verbose:
+                    print("Saving data to the path specified")
+            return data
+        
+    except Exception as e:
+        print(e) 
+        if verbose:
+            print("freq_input not a floating point value, checking other types")
 
 
 
@@ -281,10 +363,6 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
 
 
-
-
-    except:
-        print("Sorry, I failed here")
 
 
 
