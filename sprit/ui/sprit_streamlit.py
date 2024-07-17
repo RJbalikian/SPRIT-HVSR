@@ -32,6 +32,7 @@ def open_settings_dialog(function):
     pass
 
 
+@st.experimental_dialog("Dialog")
 def input_params_dialog():
     pass
 
