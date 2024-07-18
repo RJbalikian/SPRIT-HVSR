@@ -70,13 +70,15 @@ def main():
         st.text_input('Instrument', value='Raspberry Shake', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)')
         st.text_input('Metadata Filepath', help='Filepath to instrument response file')
 
+
     @st.experimental_dialog("Update Parameters to Fetch Data", width='large')
     def open_fd_dialog():
         #source: str = 'file',
         st.text_input('Trim Directory', help='Directory for saving trimmed data')
         st.selectbox('Data format', options=OBSPYFORMATS, index=11)
-        st.selectbox('Detrend method', options=['None', 'Simple', 'linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=-1, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()')
+        st.selectbox('Detrend method', options=['None', 'Simple', 'linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()')
         st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()")
+
 
     @st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
     def open_ppsd_dialog():
@@ -98,32 +100,33 @@ def main():
 
     @st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
     def open_outliernoise_dialog():
-        # rmse_thresh=98, 
-        # use_percentile=True, 
-        # use_hv_curve=False,
-        
-        # remove_method='auto', 
-        # sat_percent=0.995, 
-        # noise_percent=0.8, 
-        # sta=2, 
-        # lta=30, 
-        # stalta_thresh=[8, 16], 
-        # warmup_time=0, 
-        # cooldown_time=0, 
-        # min_win_size=1, 
-        # remove_raw_noise=False
-        pass
+        st.number_input("Outlier Threshold", value=98)
+        st.radio('Threshold type', options=['Threshold', 'Value'])
+        st.radio('Threshold curve', options=['HV Curve', 'Component Curves'])
+
+        st.multiselect("Noise Removal Method", options=['Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'])
+        st.number_input('Saturation Percent', value=0.995, min_value=0.0, max_value=1.0, step=0.01, format="%.3f")
+        st.number_input('Noise Percent',value=0.8, min_value=0.0, max_value=1.0, step=0.1, format="%.2f")
+        st.number_input('Short Term Average (STA)', value=2.0, step=1.0, format="%.1f")
+        st.number_input('Long Term Average (LTA)', value=30.0, step=1.0, format="%.1f")
+        st.select_slider('STA/LTA Thresholds', value=[8, 16], options=np.arange(0, 101))
+        st.number_input('Warmup Time (seconds)', value=0, step=1)
+        st.number_input('Cooldown Time (seconds)', value=0, step=1)
+        st.number_input('Minimum Window Size (samples)', value=1, step=1)
+        st.toggle("Remove Raw Noise", value=False, help='Whether to use the raw input data to remove noise.')
+
 
     @st.experimental_dialog("Update Parameters to Process HVSR", width='large')
     def open_processHVSR_dialog():
-        #peak_selection='max' (or scored)
-        #method=3, 
-        #smooth=True, 
-        #freq_smooth='konno ohmachi', 
-        #f_smooth_width=40, 
-        #resample=True, 
-        #outlier_curve_rmse_percentile=False
-        pass
+        st.selectbox('Peak Selection Method', options=['Max', 'Scored'])
+        st.selectbox("Method to combine hoizontal components", options=['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value', 'Azimuth'], index=2)
+        rList = np.arange(1001).tolist()
+        rList[0] = None
+        st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2)
+        st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40)
+        st.select_slider("Resample", options=rList, value=1000)
+        st.select_slider('Outlier Curve Removal', options=rList[:100])
+
 
     @st.experimental_dialog("Update Plot Settings", width='large')
     def plot_settings_dialog():
@@ -159,6 +162,17 @@ def main():
             'process_hvsr':open_processHVSR_dialog,
         }
         settingsDialogDict[funName]()
+
+    st.markdown(
+        """
+        <style>
+            section[data-testid="stSidebar"] {
+                width: 50vw !important; 
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     top_container = st.sidebar.container()
 
@@ -204,17 +218,24 @@ def main():
     # Sidebar content
     st.sidebar.title("SpRIT HVSR")
     st.sidebar.text('No file selected')
-    st.sidebar.text_input("Datapath", placeholder='Enter filepath to your data here (or leave blank or use number 1-10 to run with sample datasets)')
-    st.sidebar.button(label="Browse")
+    st.sidebar.file_uploader('Datapath', accept_multiple_files=True)
     st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'] )
-    st.sidebar.button('Read Data')
-    st.sidebar.button('Run', type='primary')
+
+    bottom_container = st.sidebar.container()
+
+    # Create top menu
+    with bottom_container:
+        resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
+        resetCol.button('Reset', disabled=True, use_container_width=True)
+        readCol.button('Read', use_container_width=True)
+        runCol.button('Run', type='primary', use_container_width=True)
 
     # Main area
     header=st.header('SpRIT HVSR', divider='rainbow')
     dataInfo=st.markdown('No data has been read in yet')
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
+
 
 if __name__ == "__main__":
     main()
