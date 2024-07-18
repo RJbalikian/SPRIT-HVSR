@@ -275,8 +275,8 @@ def main():
     # Sidebar content
     st.sidebar.title("SpRIT HVSR")
     st.sidebar.text('No file selected')
-    st.sidebar.file_uploader('Datapath', accept_multiple_files=True)
-    st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'] )
+    st.sidebar.file_uploader('Datapath', accept_multiple_files=True, key='datapath')
+    st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], key='source')
 
     bottom_container = st.sidebar.container()
 
