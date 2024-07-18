@@ -32,6 +32,29 @@ st.set_page_config('SpRIT HVSR',
 OBSPYFORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 bandVals=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
 
+# SETUP KWARGS
+ip_kwargs = {}
+fd_kwargs = {}
+rn_kwargs = {}
+gpppsd_kwargs = {}
+phvsr_kwargs = {}
+roc_kwargs = {}
+cp_kwargs = {}
+gr_kwargs = {}
+
+# Get default values
+sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs],
+            [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gpppsd_kwargs], 
+            [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
+            [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
+
+for sig in sigList:
+    funSig = inspect.signature(sig[0])
+    for arg in funSig.parameters.keys():
+        if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
+            sig[1][arg] = funSig.parameters[arg].default
+
+
 def main():
     # Define functions
     @st.experimental_dialog("Update Input Parameters", width='large')
@@ -152,6 +175,7 @@ def main():
             funName = function.__name__
         else:
             funName = function
+        print(function.__name__)
         settingsDialogDict={
             'input_params':open_ip_dialog,
             'fetch_data':open_fd_dialog,
@@ -235,7 +259,6 @@ def main():
     dataInfo=st.markdown('No data has been read in yet')
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
-
 
 if __name__ == "__main__":
     main()
