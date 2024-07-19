@@ -6,7 +6,7 @@ import numpy as np
 import streamlit as st
 import sprit
 from obspy import UTCDateTime
-
+from obspy.signal.spectral_estimation import PPSD
 
 icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
 icon=":material/ssid_chart:"
@@ -38,7 +38,7 @@ bandVals=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,6
 ip_kwargs = {}
 fd_kwargs = {}
 rn_kwargs = {}
-gpppsd_kwargs = {}
+gppsd_kwargs = {}
 phvsr_kwargs = {}
 roc_kwargs = {}
 cp_kwargs = {}
@@ -47,7 +47,7 @@ run_kwargs = {}
 
 # Get default values
 sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs],
-            [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gpppsd_kwargs], 
+            [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
             [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
             [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
 
@@ -61,7 +61,12 @@ for fun, kwargs in sigList:
                     run_kwargs[arg] = funSig.parameters[arg].default
                     st.session_state[arg] = funSig.parameters[arg].default
 
-listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method']
+gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = st.session_state['ppsd_length'] = 30
+gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = st.session_state['skip_on_gaps'] = True
+gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = st.session_state['period_step_octaves'] = 0.03125
+gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = st.session_state['period_limits'] = [1/st.session_state.hvsr_band[1], 1/st.session_state.hvsr_band[0]]
+
+listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
 for arg in st.session_state.keys():
     if arg in listItems:
         arg = [arg]
@@ -136,22 +141,21 @@ def main():
 
     @st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
     def open_ppsd_dialog():
-        st.toggle('Skip on gaps', value=False, 
-                  help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
+        st.toggle('Skip on gaps', help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
                   key='skip_on_gaps')
         st.number_input("Minimum Decibel Value", value=-200, step=1, key='max_deb')
         st.number_input("Maximum Decibel Value", value=-50, step=1, key='min_deb')
         st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
         st.session_state.db_bins = (st.session_state.max_deb, st.session_state.min_deb, st.session_state.deb_step)
 
-        st.number_input('PPSD Length (seconds)', value=30, step=1, key='ppsd_length')
-        st.number_input('PPSD Window overlap (%, 0-1)', value=0.5, step=0.01, min_value=0.0, max_value=1.0, key='overlap')
-        st.number_input('Period Smoothing Width (octaves)', value=1.0, step=0.1, key='period_smoothing_width_octaves')
-        st.number_input('Period Step (octaves)', value=0.125, step=0.005, format="%.3f", key='period_step_octaves')
+        st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
+        st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
+        st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
+        st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
         periodVals=[round(1/x,3) for x in bandVals]
         periodVals.sort()
 
-        st.select_slider('Period Limits (s)', options=periodVals, value=[round(1/40, 3), round(1/0.4, 3)], key='period_limits')
+        st.select_slider('Period Limits (s)', options=periodVals, key='period_limits')
         st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
 
 
@@ -159,7 +163,7 @@ def main():
     def open_outliernoise_dialog():
         st.number_input("Outlier Threshold", value=98, key='rmse_thresh')
         st.radio('Threshold type', options=['Percentile', 'Value'], key='threshRadio')
-        st.session_state.use_percentile = (st.session_state.threshRadio=='Percentile')
+        st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
         st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
         st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
 
@@ -169,7 +173,8 @@ def main():
         st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
         st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
         st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
-        st.select_slider('STA/LTA Thresholds', options=np.arange(0, 101), key='stalta_thresh')
+        staltaVals = np.arange(0, 51).tolist()
+        st.select_slider('STA/LTA Thresholds', value=st.session_state.stalta_thresh, options=staltaVals, key='stalta_thresh')
         st.number_input('Warmup Time (seconds)', step=1, key='warmup')
         st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
         st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
