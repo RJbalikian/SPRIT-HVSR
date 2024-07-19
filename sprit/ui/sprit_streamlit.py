@@ -5,6 +5,7 @@ import zoneinfo
 import numpy as np
 import streamlit as st
 import sprit
+from obspy import UTCDateTime
 
 
 icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
@@ -60,6 +61,29 @@ for fun, kwargs in sigList:
                     run_kwargs[arg] = funSig.parameters[arg].default
                     st.session_state[arg] = funSig.parameters[arg].default
 
+listItems = ['source', 'tzone', 'elev_unit']
+for arg in st.session_state.keys():
+    if arg in listItems:
+        arg = [arg]
+
+strItems = ['channels', 'xcoord', 'ycoord', 'elevation']
+for arg in st.session_state.keys():
+    if arg in strItems:
+        if isinstance(st.session_state[arg], (list, tuple)):
+            newArg = '['
+            for item in st.session_state[arg]:
+                newArg = newArg+item+', '
+            newArg = newArg[:-2]+']'
+            st.session_state[arg] = newArg
+        else:
+            st.session_state[arg] = str(st.session_state[arg])
+
+
+
+st.session_state.acq_date = datetime.datetime.strptime(st.session_state.acq_date, "%Y-%m-%d")
+st.session_state.starttime = st.session_state.starttime.datetime
+st.session_state.endtime = st.session_state.endtime.datetime
+
 def main():
     # Define functions
     @st.experimental_dialog("Update Input Parameters", width='large')
@@ -70,9 +94,10 @@ def main():
         st.text_input("Location", placeholder='00', key='loc')
         st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
 
+        print(st.session_state.acq_date, type(st.session_state.acq_date))
         st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
-        st.time_input('Start time', value=datetime.time(0,0,0), step=60, key='starttime')
-        st.time_input('End time', value=datetime.time(23, 59, 59), step=60, key='endtime')
+        st.time_input('Start time', step=60, key='starttime')
+        st.time_input('End time', step=60, key='endtime')
 
         tZoneList=list(zoneinfo.available_timezones())
         tZoneList.sort()
@@ -83,19 +108,19 @@ def main():
         tZoneList.insert(0, "UTC")
         st.selectbox('Timezone', options=tZoneList, key='tzone')
 
-        st.select_slider('HVSR Band',  options=bandVals, value=[0.4, 40], key='hvsr_band')
-        st.select_slider('Peak Frequency Range',  options=bandVals, value=[0.4, 40], key='peak_freq_range')
+        st.select_slider('HVSR Band',  options=bandVals, key='hvsr_band')
+        st.select_slider('Peak Frequency Range',  options=bandVals, key='peak_freq_range')
 
-        st.text_input('X Coordinate', value='0', help='i.e., Longitude or Easting', key='xcoord')
-        st.text_input('Y Coordinate', value='0', help='i.e., Latitude or Northing', key='ycoord')
-        st.text_input('Z Coordinate', value='0', help='i.e., Elevation', key='elevation')
-        st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit', key='elev_unit')
-        st.text_input('Depth', value='0', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
+        st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
+        st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
+        st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
+        st.session_state.elev_unit = st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit')
+        st.number_input('Depth', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
 
-        st.text_input('CRS of Input Coordinates', value='EPSG:4326', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
-        st.text_input('CRS for Export', value='EPSG:4326', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
+        st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
+        st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
 
-        st.text_input('Instrument', value='Raspberry Shake', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
+        st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
         st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
 
 
@@ -276,7 +301,7 @@ def main():
     st.sidebar.title("SpRIT HVSR")
     st.sidebar.text('No file selected')
     st.sidebar.file_uploader('Datapath', accept_multiple_files=True, key='datapath')
-    st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], key='source')
+    st.session_state.source=st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], index=0)
 
     bottom_container = st.sidebar.container()
 
@@ -292,6 +317,8 @@ def main():
     dataInfo=st.markdown('No data has been read in yet')
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
+
+    print(st.session_state)
 
 if __name__ == "__main__":
     main()
