@@ -2054,7 +2054,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         **ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
             If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:
-                - ppsd_length defaults to 60 (seconds) here instead of 3600
+                - ppsd_length defaults to 30 (seconds) here instead of 3600
                 - skip_on_gaps defaults to True instead of False
                 - period_step_octaves defaults to 0.03125 instead of 0.125
 
