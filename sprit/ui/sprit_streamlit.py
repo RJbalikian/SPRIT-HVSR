@@ -52,7 +52,7 @@ sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs],
             [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
 
 for fun, kwargs in sigList:
-    if len(kwargs.keys())==0:
+    if len(st.session_state.keys())==0:
         for sig in sigList:
             funSig = inspect.signature(sig[0])
             for arg in funSig.parameters.keys():
@@ -61,7 +61,7 @@ for fun, kwargs in sigList:
                     run_kwargs[arg] = funSig.parameters[arg].default
                     st.session_state[arg] = funSig.parameters[arg].default
 
-listItems = ['source', 'tzone', 'elev_unit']
+listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method']
 for arg in st.session_state.keys():
     if arg in listItems:
         arg = [arg]
@@ -78,11 +78,13 @@ for arg in st.session_state.keys():
         else:
             st.session_state[arg] = str(st.session_state[arg])
 
-
-
-st.session_state.acq_date = datetime.datetime.strptime(st.session_state.acq_date, "%Y-%m-%d")
-st.session_state.starttime = st.session_state.starttime.datetime
-st.session_state.endtime = st.session_state.endtime.datetime
+dtimeItems=['acq_date', 'starttime', 'endtime']
+for arg in st.session_state.keys():
+    if arg in dtimeItems:
+        if isinstance(st.session_state[arg], str):
+            st.session_state[arg] = datetime.datetime.strptime(st.session_state[arg], "%Y-%m-%d")
+        elif isinstance(st.session_state[arg], UTCDateTime):
+            st.session_state[arg] = st.session_state[arg].datetime
 
 def main():
     # Define functions
@@ -94,7 +96,6 @@ def main():
         st.text_input("Location", placeholder='00', key='loc')
         st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
 
-        print(st.session_state.acq_date, type(st.session_state.acq_date))
         st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
         st.time_input('Start time', step=60, key='starttime')
         st.time_input('End time', step=60, key='endtime')
@@ -162,17 +163,17 @@ def main():
         st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
         st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
 
-        st.multiselect("Noise Removal Method", 
+        st.multiselect("Noise Removal Method",
                        options=['Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'], key='remove_method')
-        st.number_input('Saturation Percent', value=0.995, min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
-        st.number_input('Noise Percent',value=0.8, min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
-        st.number_input('Short Term Average (STA)', value=2.0, step=1.0, format="%.1f", key='sta')
-        st.number_input('Long Term Average (LTA)', value=30.0, step=1.0, format="%.1f", key='lta')
-        st.select_slider('STA/LTA Thresholds', value=[8, 16], options=np.arange(0, 101), key='stalta_thresh')
-        st.number_input('Warmup Time (seconds)', value=0, step=1, key='warmup')
-        st.number_input('Cooldown Time (seconds)', value=0, step=1, key='cooldown')
-        st.number_input('Minimum Window Size (samples)', value=1, step=1, key='min_win_size')
-        st.toggle("Remove Raw Noise", value=False, help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
+        st.number_input('Saturation Percent', min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
+        st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
+        st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
+        st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
+        st.select_slider('STA/LTA Thresholds', options=np.arange(0, 101), key='stalta_thresh')
+        st.number_input('Warmup Time (seconds)', step=1, key='warmup')
+        st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
+        st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
+        st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
 
 
     @st.experimental_dialog("Update Parameters to Process HVSR", width='large')
@@ -317,8 +318,6 @@ def main():
     dataInfo=st.markdown('No data has been read in yet')
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
-
-    print(st.session_state)
 
 if __name__ == "__main__":
     main()
