@@ -109,8 +109,8 @@ def main():
         tZoneList.insert(0, "UTC")
         st.selectbox('Timezone', options=tZoneList, key='tzone')
 
-        st.select_slider('HVSR Band',  options=bandVals, key='hvsr_band')
-        st.select_slider('Peak Frequency Range',  options=bandVals, key='peak_freq_range')
+        st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
+        st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
 
         st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
         st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
@@ -192,7 +192,6 @@ def main():
 
     @st.experimental_dialog("Update Plot Settings", width='large')
     def plot_settings_dialog():
-        sprit.get_report
         st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
         st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
         st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], key='plotPlotStr')
@@ -234,7 +233,6 @@ def main():
             funName = function.__name__
         else:
             funName = function
-        print(function.__name__)
         settingsDialogDict={
             'input_params':open_ip_dialog,
             'fetch_data':open_fd_dialog,
