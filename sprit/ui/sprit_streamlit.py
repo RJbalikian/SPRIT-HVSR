@@ -194,43 +194,68 @@ def main():
         st.select_slider("Resample", options=rList, value=1000, key='resample')
         st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
 
-
-    @st.experimental_dialog("Update Plot Settings", width='large')
-    def plot_settings_dialog():
-        st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
-        st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
-        st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], key='plotPlotStr')
+    def update_plot_string():
+        plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
+                        'Time windows':' t', "Peaks of Time Windows": ' tp',
+                        'Test 1: Peak > 2x trough below':'1', 
+                        "Test 2: Peak > 2x trough above":'2',
+                        "Test 3: Peak > 2":'3', 
+                        "Test 4":'4', "Test 5":'5', "Test 6":'6',
+                        }
         
-        st.header("HVSR Chart", divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows", 'Standard Deviation',
-                                                 'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
-                                                 default=["Peak Frequency", "Annotation", "Standard Deviation"], key='hvsrPlotStr')
-
-        st.header("Component Chart", divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', "Standard Deviation", 'Time windows'],
-                                                 default=["Peak Frequency", "Annotation", "Standard Deviation"], key='compPlotStr')
-        
-        st.header('Spectrogram Chart', divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], str='specPlotStr')
-
         plotString = ''
         for plot in st.session_state.plotPlotStr:
             if plot=='HVSR':
                 plotString=plotString+'HVSR'
                 for pc in st.session_state.hvsrPlotStr:
-                    plotString = plotString + pc
+                    if 'test' in pc.lower():
+                        if 'test' not in plotString.lower():
+                            plotString = plotString + ' Test'
+                        test_end_index = plotString.rfind("Test") + len("Test")
+                        nextSpaceIndex = plotString[test_end_index:].rfind(" ")
+                        if nextSpaceIndex == -1:
+                            nextSpaceIndex=len(plotString)
+                        noString = plotString[test_end_index:nextSpaceIndex]
+                        noString = noString + plotStringDict[pc]
+
+                        # Order test numbers correctly
+                        testNos = ''.join(sorted(noString))
+                        plotString = plotString[:test_end_index] + testNos                             
+   
+                    else:
+                        plotString = plotString + plotStringDict[pc]
             if plot=='Components':
                 plotString=plotString+' C+'
                 for pc in st.session_state.compPlotStr:
-                    plotString = plotString + pc
+                    plotString = plotString + plotStringDict[pc]
             if plot=='Spectrogram':
                 plotString=plotString+' SPEC'
                 for pc in st.session_state.specPlotStr:
-                    plotString = plotString + pc
+                    plotString = plotString + plotStringDict[pc]
             if plot=='Azimuth':
-                plotString=plotString+' AZ'
-
+                plotString=plotString+' AZ'    
         st.session_state.plot_type = plotString
+
+
+    @st.experimental_dialog("Update Plot Settings", width='large')
+    def plot_settings_dialog():
+        st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
+        st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
+        st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
+                                        on_change=update_plot_string, key='plotPlotStr')
+        
+        st.header("HVSR Chart", divider='rainbow')
+        st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows",
+                                                 'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
+                                                 on_change=update_plot_string,
+                                                 default=["Peak Frequency", "Annotation"], key='hvsrPlotStr')
+
+        st.header("Component Chart", divider='rainbow')
+        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', 'Time windows'], on_change=update_plot_string,
+                                                 default=["Peak Frequency", "Annotation"], key='compPlotStr')
+        
+        st.header('Spectrogram Chart', divider='rainbow')
+        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
 
 
     def open_settings_dialogs(function):
