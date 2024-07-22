@@ -9,6 +9,8 @@ from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 
 def main():
+    print("\nRerun with params\n", list(st.session_state.items()))
+
     icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
     icon=":material/ssid_chart:"
     aboutStr = """
@@ -69,81 +71,125 @@ def main():
     gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = [1/run_kwargs['hvsr_band'][1], 1/run_kwargs['hvsr_band'][0]]
 
     @st.cache_data
-    def setup_session_state():
+    def setup_session_state(variable):
+        print('Setting up', variable)
         for key, value in run_kwargs.items():
             #THIS IS PROBABLY THE ISSUE WITH CARRYING SESSION STATE OVER?
             st.session_state[key] = value
 
-        listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
-        for arg in st.session_state.keys():
-            if arg in listItems:
-                arg = [arg]
+        #listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
+        ## Convert items to lists
+        #for arg, value in st.session_state.items():
+        #    if arg in listItems:
+        #        valList = [value]
+        #        st.session_state[arg] = valList
+        #        run_kwargs[arg] = st.session_state[arg]
 
-        strItems = ['channels', 'xcoord', 'ycoord', 'elevation']
-        for arg in st.session_state.keys():
+        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'method']
+        # Convert lists and numbers to strings
+        for arg, value in st.session_state.items():
             if arg in strItems:
-                if isinstance(st.session_state[arg], (list, tuple)):
-                    newArg = '['
-                    for item in st.session_state[arg]:
-                        newArg = newArg+item+', '
-                    newArg = newArg[:-2]+']'
-                    st.session_state[arg] = newArg
+                if isinstance(value, (list, tuple)):
+                    newVal = '['
+                    for item in value:
+                        newVal = newVal+item+', '
+                    newVal = newVal[:-2]+']'
+                    st.session_state[arg] = newVal
+                    run_kwargs[arg] = st.session_state[arg]
                 else:
-                    st.session_state[arg] = str(st.session_state[arg])
+                    st.session_state[arg] = str(value)
+                    run_kwargs[arg] = st.session_state[arg]
 
         dtimeItems=['acq_date', 'starttime', 'endtime']
-        for arg in st.session_state.keys():
+        # Convert everything to python datetime objects
+        for arg , value in st.session_state.items():
             if arg in dtimeItems:
-                if isinstance(st.session_state[arg], str):
-                    st.session_state[arg] = datetime.datetime.strptime(st.session_state[arg], "%Y-%m-%d")
+                if isinstance(value, str):
+                    st.session_state[arg] = datetime.datetime.strptime(value, "%Y-%m-%d")
+                    run_kwargs[arg] = st.session_state[arg]
                 elif isinstance(st.session_state[arg], UTCDateTime):
-                    st.session_state[arg] = st.session_state[arg].datetime
+                    st.session_state[arg] = value.datetime
+                    run_kwargs[arg] = st.session_state[arg]
+                else:
+                    st.session_state[arg] = value
+                    run_kwargs[arg] = st.session_state[arg]
+        
+        # Case matching
+        st.session_state.export_format = run_kwargs['export_format'] = st.session_state.export_format.upper()
+        st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
+        st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
+        st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
+        st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
 
-    setup_session_state()
-    
+        # Default adjustments
+        methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
+        st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
+
+
+        st.session_state.default_params = run_kwargs
+    setup_session_state(st.session_state.to_dict())
+
+
+    def check_if_default():
+        if len(st.session_state.keys()) > 0:
+            print('Just checking', list(st.session_state.items()))
+    check_if_default()
+
+    def text_change():
+        #Just a function to run so something is done when text changes
+        sprit.check_mark()
+
     @st.experimental_dialog("Update Input Parameters", width='large')
     def open_ip_dialog():
-        st.text_input("Site Name", placeholder='HVSR Site', key='site')
-        st.text_input("Network", placeholder='AM', key='network')
-        st.text_input("Station", placeholder='RAC84', key='station')
-        st.text_input("Location", placeholder='00', key='loc')
-        st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
+        st.text_input("Site Name", placeholder='HVSR Site', on_change=text_change, key='site')
 
-        st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
-        st.time_input('Start time', step=60, key='starttime')
-        st.time_input('End time', step=60, key='endtime')
+        with st.expander('Primary Input Parameters', expanded=True):
 
-        tZoneList=list(zoneinfo.available_timezones())
-        tZoneList.sort()
-        tZoneList.insert(0, "localtime")
-        tZoneList.insert(0, "US/Pacific")
-        tZoneList.insert(0, "US/Eastern")
-        tZoneList.insert(0, "US/Central")
-        tZoneList.insert(0, "UTC")
-        st.selectbox('Timezone', options=tZoneList, key='tzone')
+            st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
+            st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
 
-        st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
-        st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
+            st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
+            st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
 
-        st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
-        st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
-        st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
-        st.session_state.elev_unit = st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit')
-        st.number_input('Depth', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
+        with st.expander('Acquisition Date/Time'):
+            st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
+            st.time_input('Start time', step=60, key='starttime')
+            st.time_input('End time', step=60, key='endtime')
 
-        st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
-        st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
+            tZoneList=list(zoneinfo.available_timezones())
+            tZoneList.sort()
+            tZoneList.insert(0, "localtime")
+            tZoneList.insert(0, "US/Pacific")
+            tZoneList.insert(0, "US/Eastern")
+            tZoneList.insert(0, "US/Central")
+            tZoneList.insert(0, "UTC")
+            st.selectbox('Timezone', options=tZoneList, key='tzone')
 
-        st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
-        st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
+
+        with st.expander('Instrument settings'):
+            st.text_input("Network", placeholder='AM', key='network')
+            st.text_input("Station", placeholder='RAC84', key='station')
+            st.text_input("Location", placeholder='00', key='loc')
+            st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
+
+        with st.expander('Location settings'):
+            st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
+            st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
+            st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
+            st.session_state.elev_unit = st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit')
+            st.number_input('Depth', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
+
+            st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
+            st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
 
 
     @st.experimental_dialog("Update Parameters to Fetch Data", width='large')
     def open_fd_dialog():
+        print('fd dialog', )
         #source: str = 'file',
         st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
         st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
-        st.selectbox('Detrend method', options=['None', 'Simple', 'linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
+        st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
         st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
 
 
