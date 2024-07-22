@@ -8,91 +8,99 @@ import sprit
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 
-icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
-icon=":material/ssid_chart:"
-aboutStr = """
-# About SpRIT
-## v1.0.2
+def main():
+    icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
+    icon=":material/ssid_chart:"
+    aboutStr = """
+    # About SpRIT
+    ## v1.0.2
 
-SpRIT is developed by Riley Balikian at the Illinois State Geological Survey.
+    SpRIT is developed by Riley Balikian at the Illinois State Geological Survey.
 
-Please visit the following links for any questions:
-* [API Documentation](https://sprit.readthedocs.io/en/latest/)
-* [Wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki) 
-* [Pypi Repository](https://pypi.org/project/sprit/)
+    Please visit the following links for any questions:
+    * [API Documentation](https://sprit.readthedocs.io/en/latest/)
+    * [Wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki) 
+    * [Pypi Repository](https://pypi.org/project/sprit/)
 
-"""
+    """
 
-st.set_page_config('SpRIT HVSR',
-                   page_icon=icon,
-                   layout='wide',
-                   menu_items={'Get help': 'https://github.com/RJbalikian/SPRIT-HVSR/wiki',
-                                'Report a bug': "https://github.com/RJbalikian/SPRIT-HVSR/issues",
-                                'About': aboutStr})
+    st.set_page_config('SpRIT HVSR',
+                    page_icon=icon,
+                    layout='wide',
+                    menu_items={'Get help': 'https://github.com/RJbalikian/SPRIT-HVSR/wiki',
+                                    'Report a bug': "https://github.com/RJbalikian/SPRIT-HVSR/issues",
+                                    'About': aboutStr})
 
-OBSPYFORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
-bandVals=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
+    OBSPYFORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+    bandVals=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
 
-# SETUP KWARGS
+    # SETUP KWARGS
 
-ip_kwargs = {}
-fd_kwargs = {}
-rn_kwargs = {}
-gppsd_kwargs = {}
-phvsr_kwargs = {}
-roc_kwargs = {}
-cp_kwargs = {}
-gr_kwargs = {}
-run_kwargs = {}
+    ip_kwargs = {}
+    fd_kwargs = {}
+    ca_kwargs = {}
+    rn_kwargs = {}
+    gppsd_kwargs = {}
+    phvsr_kwargs = {}
+    roc_kwargs = {}
+    cp_kwargs = {}
+    gr_kwargs = {}
+    run_kwargs = {}
 
-# Get default values
-sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs],
-            [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
-            [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
-            [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
+    # Get default values
+    sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
+                [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
+                [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
+                [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
+    
 
-for fun, kwargs in sigList:
-    if len(st.session_state.keys())==0:
+    for fun, kwargs in sigList:
+        # If this is the initial setup
         for sig in sigList:
             funSig = inspect.signature(sig[0])
             for arg in funSig.parameters.keys():
                 if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
                     sig[1][arg] = funSig.parameters[arg].default
                     run_kwargs[arg] = funSig.parameters[arg].default
-                    st.session_state[arg] = funSig.parameters[arg].default
 
-gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = st.session_state['ppsd_length'] = 30
-gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = st.session_state['skip_on_gaps'] = True
-gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = st.session_state['period_step_octaves'] = 0.03125
-gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = st.session_state['period_limits'] = [1/st.session_state.hvsr_band[1], 1/st.session_state.hvsr_band[0]]
+    gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = 30
+    gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = True
+    gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = 0.03125
+    gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = [1/run_kwargs['hvsr_band'][1], 1/run_kwargs['hvsr_band'][0]]
 
-listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
-for arg in st.session_state.keys():
-    if arg in listItems:
-        arg = [arg]
+    @st.cache_data
+    def setup_session_state():
+        for key, value in run_kwargs.items():
+            #THIS IS PROBABLY THE ISSUE WITH CARRYING SESSION STATE OVER?
+            st.session_state[key] = value
 
-strItems = ['channels', 'xcoord', 'ycoord', 'elevation']
-for arg in st.session_state.keys():
-    if arg in strItems:
-        if isinstance(st.session_state[arg], (list, tuple)):
-            newArg = '['
-            for item in st.session_state[arg]:
-                newArg = newArg+item+', '
-            newArg = newArg[:-2]+']'
-            st.session_state[arg] = newArg
-        else:
-            st.session_state[arg] = str(st.session_state[arg])
+        listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
+        for arg in st.session_state.keys():
+            if arg in listItems:
+                arg = [arg]
 
-dtimeItems=['acq_date', 'starttime', 'endtime']
-for arg in st.session_state.keys():
-    if arg in dtimeItems:
-        if isinstance(st.session_state[arg], str):
-            st.session_state[arg] = datetime.datetime.strptime(st.session_state[arg], "%Y-%m-%d")
-        elif isinstance(st.session_state[arg], UTCDateTime):
-            st.session_state[arg] = st.session_state[arg].datetime
+        strItems = ['channels', 'xcoord', 'ycoord', 'elevation']
+        for arg in st.session_state.keys():
+            if arg in strItems:
+                if isinstance(st.session_state[arg], (list, tuple)):
+                    newArg = '['
+                    for item in st.session_state[arg]:
+                        newArg = newArg+item+', '
+                    newArg = newArg[:-2]+']'
+                    st.session_state[arg] = newArg
+                else:
+                    st.session_state[arg] = str(st.session_state[arg])
 
-def main():
-    # Define functions
+        dtimeItems=['acq_date', 'starttime', 'endtime']
+        for arg in st.session_state.keys():
+            if arg in dtimeItems:
+                if isinstance(st.session_state[arg], str):
+                    st.session_state[arg] = datetime.datetime.strptime(st.session_state[arg], "%Y-%m-%d")
+                elif isinstance(st.session_state[arg], UTCDateTime):
+                    st.session_state[arg] = st.session_state[arg].datetime
+
+    setup_session_state()
+    
     @st.experimental_dialog("Update Input Parameters", width='large')
     def open_ip_dialog():
         st.text_input("Site Name", placeholder='HVSR Site', key='site')
@@ -193,6 +201,7 @@ def main():
         st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
         st.select_slider("Resample", options=rList, value=1000, key='resample')
         st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
+
 
     def update_plot_string():
         plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
@@ -330,7 +339,11 @@ def main():
     st.sidebar.title("SpRIT HVSR")
     st.sidebar.text('No file selected')
     st.sidebar.file_uploader('Datapath', accept_multiple_files=True, key='datapath')
-    st.session_state.source=st.sidebar.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], index=0)
+    sbExpander = st.sidebar.expander('Expand to specify more file parameters')
+    
+    with sbExpander:
+        st.session_state.source = sbExpander.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], index=0)
+        st.text_input("Site Name", placeholder='HVSR Site', key='site_sidebar')
 
     bottom_container = st.sidebar.container()
 
