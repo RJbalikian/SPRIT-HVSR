@@ -138,8 +138,6 @@ def main():
     def text_change():
         #Just a function to run so something is done when text changes
         print('TEXTCHange')
-        st.rerun()
-        return
 
     @st.experimental_dialog("Update Input Parameters", width='large')
     def open_ip_dialog():
@@ -183,7 +181,6 @@ def main():
 
             st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
             st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
-
 
     @st.experimental_dialog("Update Parameters to Fetch Data", width='large')
     def open_fd_dialog():
@@ -394,7 +391,10 @@ def main():
 
                 if st.button("Plot Settings", key='plotset'):
                     open_settings_dialogs("plot_settings")
-
+            
+            setList = [st.session_state.ipset, st.session_state.fdset,
+                       st.session_state.rmnocset,st.session_state.gpset,
+                       st.session_state.phvsrset,st.session_state.plotset]
 
         with aboutMenu:
             with st.popover(":information_source:", use_container_width=True):
@@ -425,6 +425,7 @@ def main():
     dataInfo=st.markdown('No data has been read in yet')
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
+
 
 if __name__ == "__main__":
     main()
