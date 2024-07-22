@@ -137,7 +137,9 @@ def main():
 
     def text_change():
         #Just a function to run so something is done when text changes
-        sprit.check_mark()
+        print('TEXTCHange')
+        st.rerun()
+        return
 
     @st.experimental_dialog("Update Input Parameters", width='large')
     def open_ip_dialog():
@@ -312,7 +314,6 @@ def main():
         st.header('Spectrogram Chart', divider='rainbow')
         st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
 
-
     def open_settings_dialogs(function):
         if hasattr(function, '__name__'):
             funName = function.__name__
@@ -327,7 +328,26 @@ def main():
             'remove_outlier_curves':open_outliernoise_dialog,
             'process_hvsr':open_processHVSR_dialog,
         }
-        settingsDialogDict[funName]()
+        #settingsDialogDict[funName]()
+
+        if st.session_state.ipset:
+            print('IP')
+            open_ip_dialog()
+        if st.session_state.fdset:
+            print('FD')
+            open_fd_dialog()
+        if st.session_state.gpset:
+            print('GP')
+            open_ppsd_dialog()
+        if st.session_state.phvsrset:
+            print("PHVSR")
+            open_processHVSR_dialog()
+        if st.session_state.plotset:
+            print('PLOTSET')
+            plot_settings_dialog()
+        if st.session_state.rmnocset:
+            print('RMNOC')
+            open_outliernoise_dialog()
 
     st.markdown(
         """
@@ -363,7 +383,7 @@ def main():
                 if st.button("Fetch Data Settings", key='fdset'):
                     open_settings_dialogs(sprit.fetch_data)
 
-                if st.button("Remove Noise and Oulier Curve Settings", key='rmnoc'):
+                if st.button("Remove Noise and Oulier Curve Settings", key='rmnocset'):
                     open_settings_dialogs(sprit.remove_noise)
 
                 if st.button('Generate PPSD Settings', key='gpset'):
