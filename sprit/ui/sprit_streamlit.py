@@ -139,11 +139,15 @@ def main():
         #Just a function to run so something is done when text changes
         print('TEXTCHange')
 
-    @st.experimental_dialog("Update Input Parameters", width='large')
-    def open_ip_dialog():
-        st.text_input("Site Name", placeholder='HVSR Site', on_change=text_change, key='site')
 
-        with st.expander('Primary Input Parameters', expanded=True):
+    with st.sidebar:
+        ipSetTab, fdSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs(['Input', 'Data', "Noise", 'PPSDs', 'H/V', 'Plot'])
+    #@st.experimental_dialog("Update Input Parameters", width='large')
+    #def open_ip_dialog():
+        with ipSetTab:
+            st.text_input("Site Name", placeholder='HVSR Site', on_change=text_change, key='site')
+
+            #with st.expander('Primary Input Parameters', expanded=True):
 
             st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
             st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
@@ -151,7 +155,7 @@ def main():
             st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
             st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
 
-        with st.expander('Acquisition Date/Time'):
+            #with st.expander('Acquisition Date/Time'):
             st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
             st.time_input('Start time', step=60, key='starttime')
             st.time_input('End time', step=60, key='endtime')
@@ -166,13 +170,13 @@ def main():
             st.selectbox('Timezone', options=tZoneList, key='tzone')
 
 
-        with st.expander('Instrument settings'):
+            #with st.expander('Instrument settings'):
             st.text_input("Network", placeholder='AM', key='network')
             st.text_input("Station", placeholder='RAC84', key='station')
             st.text_input("Location", placeholder='00', key='loc')
             st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
 
-        with st.expander('Location settings'):
+            #with st.expander('Location settings'):
             st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
             st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
             st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
@@ -182,247 +186,150 @@ def main():
             st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
             st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
 
-    @st.experimental_dialog("Update Parameters to Fetch Data", width='large')
-    def open_fd_dialog():
-        print('fd dialog', )
-        #source: str = 'file',
-        st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
-        st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
-        st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
-        st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
+        #@st.experimental_dialog("Update Parameters to Fetch Data", width='large')
+        #def open_fd_dialog():
+        with fdSetTab:
+            print('fd dialog', )
+            #source: str = 'file',
+            st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
+            st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
+            st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
+            st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
 
 
-    @st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
-    def open_ppsd_dialog():
-        st.toggle('Skip on gaps', help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
-                  key='skip_on_gaps')
-        st.number_input("Minimum Decibel Value", value=-200, step=1, key='max_deb')
-        st.number_input("Maximum Decibel Value", value=-50, step=1, key='min_deb')
-        st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
-        st.session_state.db_bins = (st.session_state.max_deb, st.session_state.min_deb, st.session_state.deb_step)
+        #@st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
+        #def open_ppsd_dialog():
+        with gpSetTab:
+            st.toggle('Skip on gaps', help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
+                    key='skip_on_gaps')
+            st.number_input("Minimum Decibel Value", value=-200, step=1, key='max_deb')
+            st.number_input("Maximum Decibel Value", value=-50, step=1, key='min_deb')
+            st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
+            st.session_state.db_bins = (st.session_state.max_deb, st.session_state.min_deb, st.session_state.deb_step)
 
-        st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
-        st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
-        st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
-        st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
-        periodVals=[round(1/x,3) for x in bandVals]
-        periodVals.sort()
+            st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
+            st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
+            st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
+            st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
+            periodVals=[round(1/x,3) for x in bandVals]
+            periodVals.sort()
 
-        st.select_slider('Period Limits (s)', options=periodVals, key='period_limits')
-        st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
-
-
-    @st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
-    def open_outliernoise_dialog():
-        st.number_input("Outlier Threshold", value=98, key='rmse_thresh')
-        st.radio('Threshold type', options=['Percentile', 'Value'], key='threshRadio')
-        st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
-        st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
-        st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
-
-        st.multiselect("Noise Removal Method",
-                       options=['Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'], key='remove_method')
-        st.number_input('Saturation Percent', min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
-        st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
-        st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
-        st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
-        staltaVals = np.arange(0, 51).tolist()
-        st.select_slider('STA/LTA Thresholds', value=st.session_state.stalta_thresh, options=staltaVals, key='stalta_thresh')
-        st.number_input('Warmup Time (seconds)', step=1, key='warmup')
-        st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
-        st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
-        st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
+            st.select_slider('Period Limits (s)', options=periodVals, key='period_limits')
+            st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
 
 
-    @st.experimental_dialog("Update Parameters to Process HVSR", width='large')
-    def open_processHVSR_dialog():
-        st.selectbox('Peak Selection Method', options=['Max', 'Scored'], key='peak_selection')
-        st.selectbox("Method to combine hoizontal components", 
-                     options=['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value', 'Azimuth'], 
-                     index=2, key='method')
-        rList = np.arange(1001).tolist()
-        rList[0] = False
-        st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2, key='freq_smooth')
-        st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
-        st.select_slider("Resample", options=rList, value=1000, key='resample')
-        st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
+        #@st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
+        #def open_outliernoise_dialog():
+        with rmnocSetTab:
+            st.number_input("Outlier Threshold", value=98, key='rmse_thresh')
+            st.radio('Threshold type', options=['Percentile', 'Value'], key='threshRadio')
+            st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
+            st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
+            st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
+
+            st.multiselect("Noise Removal Method",
+                        options=['Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'], key='remove_method')
+            st.number_input('Saturation Percent', min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
+            st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
+            st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
+            st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
+            staltaVals = np.arange(0, 51).tolist()
+            st.select_slider('STA/LTA Thresholds', value=st.session_state.stalta_thresh, options=staltaVals, key='stalta_thresh')
+            st.number_input('Warmup Time (seconds)', step=1, key='warmup')
+            st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
+            st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
+            st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
 
 
-    def update_plot_string():
-        plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
-                        'Time windows':' t', "Peaks of Time Windows": ' tp',
-                        'Test 1: Peak > 2x trough below':'1', 
-                        "Test 2: Peak > 2x trough above":'2',
-                        "Test 3: Peak > 2":'3', 
-                        "Test 4":'4', "Test 5":'5', "Test 6":'6',
-                        }
-        
-        plotString = ''
-        for plot in st.session_state.plotPlotStr:
-            if plot=='HVSR':
-                plotString=plotString+'HVSR'
-                for pc in st.session_state.hvsrPlotStr:
-                    if 'test' in pc.lower():
-                        if 'test' not in plotString.lower():
-                            plotString = plotString + ' Test'
-                        test_end_index = plotString.rfind("Test") + len("Test")
-                        nextSpaceIndex = plotString[test_end_index:].rfind(" ")
-                        if nextSpaceIndex == -1:
-                            nextSpaceIndex=len(plotString)
-                        noString = plotString[test_end_index:nextSpaceIndex]
-                        noString = noString + plotStringDict[pc]
-
-                        # Order test numbers correctly
-                        testNos = ''.join(sorted(noString))
-                        plotString = plotString[:test_end_index] + testNos                             
-   
-                    else:
-                        plotString = plotString + plotStringDict[pc]
-            if plot=='Components':
-                plotString=plotString+' C+'
-                for pc in st.session_state.compPlotStr:
-                    plotString = plotString + plotStringDict[pc]
-            if plot=='Spectrogram':
-                plotString=plotString+' SPEC'
-                for pc in st.session_state.specPlotStr:
-                    plotString = plotString + plotStringDict[pc]
-            if plot=='Azimuth':
-                plotString=plotString+' AZ'    
-        st.session_state.plot_type = plotString
+        #@st.experimental_dialog("Update Parameters to Process HVSR", width='large')
+        #def open_processHVSR_dialog():
+        with phvsrSetTab:
+            st.selectbox('Peak Selection Method', options=['Max', 'Scored'], key='peak_selection')
+            st.selectbox("Method to combine hoizontal components", 
+                        options=['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value', 'Azimuth'], 
+                        index=2, key='method')
+            rList = np.arange(1001).tolist()
+            rList[0] = False
+            st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2, key='freq_smooth')
+            st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
+            st.select_slider("Resample", options=rList, value=1000, key='resample')
+            st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
 
 
-    @st.experimental_dialog("Update Plot Settings", width='large')
-    def plot_settings_dialog():
-        st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
-        st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
-        st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
-                                        on_change=update_plot_string, key='plotPlotStr')
-        
-        st.header("HVSR Chart", divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows",
-                                                 'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
-                                                 on_change=update_plot_string,
-                                                 default=["Peak Frequency", "Annotation"], key='hvsrPlotStr')
-
-        st.header("Component Chart", divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', 'Time windows'], on_change=update_plot_string,
-                                                 default=["Peak Frequency", "Annotation"], key='compPlotStr')
-        
-        st.header('Spectrogram Chart', divider='rainbow')
-        st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
-
-    def open_settings_dialogs(function):
-        if hasattr(function, '__name__'):
-            funName = function.__name__
-        else:
-            funName = function
-        settingsDialogDict={
-            'input_params':open_ip_dialog,
-            'fetch_data':open_fd_dialog,
-            'generate_ppsds':open_ppsd_dialog,
-            'plot_settings':plot_settings_dialog,
-            'remove_noise':open_outliernoise_dialog,
-            'remove_outlier_curves':open_outliernoise_dialog,
-            'process_hvsr':open_processHVSR_dialog,
-        }
-        #settingsDialogDict[funName]()
-
-        if st.session_state.ipset:
-            print('IP')
-            open_ip_dialog()
-        if st.session_state.fdset:
-            print('FD')
-            open_fd_dialog()
-        if st.session_state.gpset:
-            print('GP')
-            open_ppsd_dialog()
-        if st.session_state.phvsrset:
-            print("PHVSR")
-            open_processHVSR_dialog()
-        if st.session_state.plotset:
-            print('PLOTSET')
-            plot_settings_dialog()
-        if st.session_state.rmnocset:
-            print('RMNOC')
-            open_outliernoise_dialog()
-
-    st.markdown(
-        """
-        <style>
-            section[data-testid="stSidebar"] {
-                width: 50vw !important; 
-            }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    top_container = st.sidebar.container()
-
-    # Create top menu
-    with top_container:
-        spritMenu, setMenu, aboutMenu = st.columns([0.3, 0.45, 0.15])
-        with spritMenu:
-            with st.popover("SpRIT", use_container_width=True):
-                st.write("Read data [not yet supported]")
-                st.write("Import instrument settings [not yet supported]")
-                st.write("Import processing settings [not yet supported]")
-                st.write("Import processing settings [not yet supported]")
-                st.write("Export .csv data [not yet supported]")
-                st.write("Export .hvsr data [not yet supported]")
-                st.write("Export .hvsr data [not yet supported]")
-
-        with setMenu:
-            with st.popover("Settings :gear:", use_container_width=True):
-                if st.button("Input Parameters", key='ipset'):
-                    open_settings_dialogs(sprit.input_params)
-
-                if st.button("Fetch Data Settings", key='fdset'):
-                    open_settings_dialogs(sprit.fetch_data)
-
-                if st.button("Remove Noise and Oulier Curve Settings", key='rmnocset'):
-                    open_settings_dialogs(sprit.remove_noise)
-
-                if st.button('Generate PPSD Settings', key='gpset'):
-                    open_settings_dialogs(sprit.generate_ppsds)
-
-                if st.button('Process HVSR Settings', key='phvsrset'):
-                    open_settings_dialogs(sprit.process_hvsr)
-
-                if st.button("Plot Settings", key='plotset'):
-                    open_settings_dialogs("plot_settings")
+        def update_plot_string():
+            plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
+                            'Time windows':' t', "Peaks of Time Windows": ' tp',
+                            'Test 1: Peak > 2x trough below':'1', 
+                            "Test 2: Peak > 2x trough above":'2',
+                            "Test 3: Peak > 2":'3', 
+                            "Test 4":'4', "Test 5":'5', "Test 6":'6',
+                            }
             
-            setList = [st.session_state.ipset, st.session_state.fdset,
-                       st.session_state.rmnocset,st.session_state.gpset,
-                       st.session_state.phvsrset,st.session_state.plotset]
+            plotString = ''
+            for plot in st.session_state.plotPlotStr:
+                if plot=='HVSR':
+                    plotString=plotString+'HVSR'
+                    for pc in st.session_state.hvsrPlotStr:
+                        if 'test' in pc.lower():
+                            if 'test' not in plotString.lower():
+                                plotString = plotString + ' Test'
+                            test_end_index = plotString.rfind("Test") + len("Test")
+                            nextSpaceIndex = plotString[test_end_index:].rfind(" ")
+                            if nextSpaceIndex == -1:
+                                nextSpaceIndex=len(plotString)
+                            noString = plotString[test_end_index:nextSpaceIndex]
+                            noString = noString + plotStringDict[pc]
 
-        with aboutMenu:
-            with st.popover(":information_source:", use_container_width=True):
-                st.markdown(aboutStr)
-
-
-    # Sidebar content
-    st.sidebar.title("SpRIT HVSR")
-    st.sidebar.text('No file selected')
-    st.sidebar.file_uploader('Datapath', accept_multiple_files=True, key='datapath')
-    sbExpander = st.sidebar.expander('Expand to specify more file parameters')
+                            # Order test numbers correctly
+                            testNos = ''.join(sorted(noString))
+                            plotString = plotString[:test_end_index] + testNos                             
     
-    with sbExpander:
-        st.session_state.source = sbExpander.selectbox(label='Source', options=['File', 'Raw', 'Directory', 'Batch'], index=0)
-        st.text_input("Site Name", placeholder='HVSR Site', key='site_sidebar')
+                        else:
+                            plotString = plotString + plotStringDict[pc]
+                if plot=='Components':
+                    plotString=plotString+' C+'
+                    for pc in st.session_state.compPlotStr:
+                        plotString = plotString + plotStringDict[pc]
+                if plot=='Spectrogram':
+                    plotString=plotString+' SPEC'
+                    for pc in st.session_state.specPlotStr:
+                        plotString = plotString + plotStringDict[pc]
+                if plot=='Azimuth':
+                    plotString=plotString+' AZ'    
+            st.session_state.plot_type = plotString
 
-    bottom_container = st.sidebar.container()
 
-    # Create top menu
-    with bottom_container:
-        resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
-        resetCol.button('Reset', disabled=True, use_container_width=True)
-        readCol.button('Read', use_container_width=True)
-        runCol.button('Run', type='primary', use_container_width=True)
+        #@st.experimental_dialog("Update Plot Settings", width='large')
+        #def plot_settings_dialog():
+        with plotSetTab:
+            st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
+            st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
+            st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
+                                            on_change=update_plot_string, key='plotPlotStr')
+            
+            st.header("HVSR Chart", divider='rainbow')
+            st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows",
+                                                    'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
+                                                    on_change=update_plot_string,
+                                                    default=["Peak Frequency", "Annotation"], key='hvsrPlotStr')
 
-    # Main area
-    header=st.header('SpRIT HVSR', divider='rainbow')
-    dataInfo=st.markdown('No data has been read in yet')
+            st.header("Component Chart", divider='rainbow')
+            st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', 'Time windows'], on_change=update_plot_string,
+                                                    default=["Peak Frequency", "Annotation"], key='compPlotStr')
+            
+            st.header('Spectrogram Chart', divider='rainbow')
+            st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
+
+
+        bottom_container = st.container()
+
+        # Create top menu
+        with bottom_container:
+            resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
+            resetCol.button('Reset', disabled=True, use_container_width=True)
+            readCol.button('Read', use_container_width=True)
+            runCol.button('Run', type='primary', use_container_width=True)
+
     inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
     plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
 
