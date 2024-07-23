@@ -671,8 +671,14 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             - If source='batch', datapath should be datapath='sample' or datapath='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
     source : str, optional
         _description_, by default 'file'
-    azimuth : bool, optional
+    azimuth_calculation : bool, optional
         Whether to perform azimuthal analysis, by default False.
+    noise_removal : bool, default=False
+        Whether to remove noise (before processing PPSDs)
+    outlier_curves_removal : bool, default=False
+        Whether to remove outlier curves from HVSR time windows
+    show_plot : bool, default=True
+        Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
     verbose : bool, optional
         _description_, by default False
     **kwargs
@@ -876,7 +882,6 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     if 'plot' in get_report_kwargs['report_format']:
         plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
         get_report_kwargs.update(plot_hvsr_kwargs)
-        print(get_report_kwargs.items())
         usingDefault = True
         if 'plot_type' not in get_report_kwargs.keys():
             get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
@@ -943,7 +948,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 pass
             else:
                 # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
+                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
                 pass
         else:
             pass
@@ -958,7 +963,9 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             else:
                 ext = 'hvsr'
             export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext, verbose=verbose)        
-
+    if 'show_plot' in kwargs:
+        if not kwargs['show_plot']:
+            plt.close()
     return hvsr_results
 
 
@@ -1555,7 +1562,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', verbose=False, **kwargs):
+def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -1965,17 +1972,29 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 specComp = kwargs['spectrogram_component']
             else:
                 specComp = 'Z'
-            params['InputPlot'] = sprit_plot.plot_preview(hv_data=params, stream=dataIN, spectrogram_component=specComp, return_fig=True)
+            params['InputPlot'] = sprit_plot.plot_preview(hv_data=params, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
         elif plot_engine.lower() in ['obspy', 'ospby', 'osbpy', 'opsby', 'opspy', 'o']:
-            params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True)
+            params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
         else:
             try:
                 params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+                
                 #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
-                plt.show()
+                if show_plot:
+                    plt.show()
+                else:
+                    plt.close()                    
             except Exception as e:
                 print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
-                params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True)
+                params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+                if show_plot:
+                    plt.show()
+                else:
+                    plt.close()
     else:
         params['InputPlot'] = None
 
@@ -2436,7 +2455,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', show_plot=True, azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -2484,6 +2503,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
     report_format = orig_args['report_format']
     plot_type = orig_args['plot_type']
     plot_engine = orig_args['plot_engine']
+    show_plot = orig_args['show_plot']
+    azimuth = orig_args['azimuth']
     export_path = orig_args['export_path']
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
     no_output = orig_args['no_output']
@@ -2788,21 +2809,23 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 if 'plot_engine' in plot_hvsr_kwargs.keys():
                     plot_hvsr_kwargs.pop('plot_type')
 
-                fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show=False, return_fig=True)
+                fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
 
                 if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
-                    expFigAx = fig_ax[0]
+                    expFigAx = fig
                 else:
-                    expFigAx = fig_ax
+                    expFigAx = fig
 
                 export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig_ax
+                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
-                if 'show' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show'] is False:
-                    pass
-                else:
+                if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
                     print('\nPlot of data report:')
-                    fig_ax.show()
+                    fig.show()
+                else:
+                    if verbose:
+                        print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
+
 
                 
             return hvsr_results
@@ -3110,7 +3133,7 @@ def input_params(datapath,
 
 
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False, **plot_azimuth_kwargs):
+def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False, show_plot=True, **plot_azimuth_kwargs):
     """Function to plot azimuths when azimuths are calculated
 
     Parameters
@@ -3276,7 +3299,8 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
             plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
         #plt.colorbar(pmesh1)
-        plt.show()
+        if show_plot:
+            plt.show()
 
         hvsr_data['AzimuthFig'] = fig
     else:
@@ -3285,7 +3309,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -3339,7 +3363,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         Suffix to add to end of figure filename(s), if save_dir is used
     show_legend : bool, default=False
         Whether to show legend in plot
-    show : bool
+    show_plot : bool
         Whether to show plot
     close_figs : bool, default=False
         Whether to close figures before plotting
@@ -3370,7 +3394,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         plotlyList = ['plotly', 'plty', 'p']
 
         if plot_engine.lower() in plotlyList:
-            plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show)
+            plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show_plot)
             if return_fig:
                 return plotlyFigure
         else: #plot_engine.lower() in mplList or any other value not in plotly list
@@ -3505,11 +3529,11 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                     bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
             fig.get_layout_engine().set(h_pad=0.075, hspace=-5)
 
-            if show:
+            if show_plot:
                 fig.canvas.draw()
                 
             if return_fig:
-                return fig, ax
+                return fig
     return
 
 
@@ -3646,7 +3670,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         plt.show()
 
     if return_fig:
-        return fig, axes
+        return fig
     return                 
 
 
@@ -6962,7 +6986,7 @@ def __gethvsrparams(hvsr_out):
 
 # Helper Functions for plotting
 # Plot hvsr curve, private supporting function for plot_hvsr
-def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show=True, **kwargs):
+def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
     if 'kwargs' in kwargs.keys():
@@ -7406,13 +7430,13 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                         fig=fig, ax=ax,
                         plot_suffix=plotSuff, 
                         user_suffix=save_suffix, 
-                        show=show)
+                        show_plot=show_plot)
     
     return fig, ax
 
 
 # Private function to help for when to show and format and save plots
-def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show):
+def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show_plot):
     """Private function to support plot_hvsr, for plotting and showing plots"""
     #plt.gca()
     #plt.gcf()
@@ -7423,7 +7447,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     if save_dir is not None:
         outFile = save_dir+'/'+filename+'_'+plot_suffix+str(datetime.datetime.today().date())+'_'+user_suffix+'.png'
         fig.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
-    if show:
+    if show_plot:
         fig.canvas.draw()#.show()
         #fig.tight_layout()
         #plt.ion()
@@ -7795,7 +7819,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     #cbar = plt.colorbar(mappable=im)
     #cbar.set_label('Power Spectral Density [dB]')
-    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show=False)
+    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show_plot=False)
     
     ax['spec'].xaxis_date()
     ax['signalz'].xaxis_date()
@@ -7846,13 +7870,12 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         #fig.tight_layout()
         plt.rcParams['figure.figsize'] = ogFigsize
         
-    fig.canvas.draw()
-
     if show_plot:
+        fig.canvas.draw()
         plt.show()
     
     if return_fig:
-        return fig, ax
+        return fig
     
     return
 

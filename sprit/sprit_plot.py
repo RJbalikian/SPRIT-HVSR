@@ -845,7 +845,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
     if return_fig:
         return results_fig
 
-def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='Z', show_preview_plot=True, return_fig=False):
+def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
     if preview_fig is None:
         preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
         preview_fig = go.FigureWidget(preview_subp)
@@ -930,7 +930,7 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
     preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                 title=f"{siteName} Data Preview")
 
-    if show_preview_plot:
+    if show_plot:
         preview_fig.show()
 
     if return_fig:
