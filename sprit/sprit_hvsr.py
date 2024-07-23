@@ -874,6 +874,9 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     
     # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
     if 'plot' in get_report_kwargs['report_format']:
+        plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+        get_report_kwargs.update(plot_hvsr_kwargs)
+        print(get_report_kwargs.items())
         usingDefault = True
         if 'plot_type' not in get_report_kwargs.keys():
             get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
@@ -2433,7 +2436,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -2485,6 +2488,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
     no_output = orig_args['no_output']
     verbose = orig_args['verbose']
+    kwargs = orig_args['kwargs']
     
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
@@ -2778,6 +2782,12 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 hvsr_results['CSV_Report'] = outDF
                         
             elif _report_format=='plot':
+                plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+                if 'plot_type' in plot_hvsr_kwargs.keys():
+                    plot_hvsr_kwargs.pop('plot_type')
+                if 'plot_engine' in plot_hvsr_kwargs.keys():
+                    plot_hvsr_kwargs.pop('plot_type')
+
                 fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show=False, return_fig=True)
 
                 if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
@@ -2788,8 +2798,12 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
                 hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig_ax
 
-                print('\nPlot of data report:')
-                fig_ax.show()
+                if 'show' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show'] is False:
+                    pass
+                else:
+                    print('\nPlot of data report:')
+                    fig_ax.show()
+
                 
             return hvsr_results
 
