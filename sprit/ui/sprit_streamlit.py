@@ -1,5 +1,7 @@
 import datetime
 import inspect
+import pathlib
+import tempfile
 import zoneinfo
 
 import numpy as np
@@ -128,14 +130,23 @@ def setup_session_state(variable):
     # Default adjustments
     methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
     st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
-
+    st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
 
     st.session_state.default_params = run_kwargs
-    print('Done with setup, session state length: ', len(st.session_state.keys()))
-    setup_session_state(st.session_state.to_dict())
 
-def on_read_data():
-    pass
+
+    print('Done with setup, session state length: ', len(st.session_state.keys()))
+setup_session_state(st.session_state.to_dict())
+
+def on_read_data(dorun=False):
+    print('READ BUTTON', st.session_state.datapath, dorun)
+    if st.session_state.datapath and dorun:
+        srun = {}
+        for key, value in run_kwargs.items():
+            if value != st.session_state.default_params[key]:
+                srun[key] = value
+        print('SPRIT RUN', srun)
+        sprit.run(datapath=st.session_state.datapath, **srun)
 
 def check_if_default():
     if len(st.session_state.keys()) > 0:
@@ -147,14 +158,23 @@ def text_change():
     print('TEXTCHange')
 
 def on_file_upload():
-    print('file uploaded')
+    file = st.session_state.datapath_uploader
+    temp_dir = tempfile.mkdtemp()
+    path = pathlib.Path(temp_dir).joinpath(file.name)
+    with open(path, "wb") as f:
+            f.write(file.getvalue())
+    print(file.name)
+    st.session_state.datapath = path.as_posix()
 
 # DEFINE SIDEBAR
 print('About to start setting up sidebar, session state length: ', len(st.session_state.keys()))
 with st.sidebar:
     print('Start setting up sidebar, session state length: ', len(st.session_state.keys()))
     st.header('SpRIT HVSR', divider='rainbow')
-    st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath', on_change=on_file_upload)
+    datapathInput = st.text_input("Datapath", key='datapath', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
+    #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
+    with st.expander("Click to access data uploader"):
+        st.file_uploader("Upload data file(s)", type=OBSPYFORMATS, accept_multiple_files=False, key='datapath_uploader', on_change=on_file_upload)
 
     bottom_container = st.container()
 
@@ -162,7 +182,7 @@ with st.sidebar:
     with bottom_container:
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
         resetCol.button('Reset', disabled=True, use_container_width=True)
-        readCol.button('Read', use_container_width=True, on_click=on_read_data)
+        readCol.button('Read', use_container_width=True, on_click=on_read_data(True))
         runCol.button('Run', type='primary', use_container_width=True)
     print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
 
