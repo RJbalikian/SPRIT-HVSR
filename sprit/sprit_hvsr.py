@@ -2766,7 +2766,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
-
+                outDF.index.name = 'ID'
+                
                 if verbose:
                     print('\nCSV Report:\n')
                     maxColWidth = 13
@@ -4330,7 +4331,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -4379,7 +4380,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
     use_hv_curve = orig_args['use_hv_curve']
-    show_outlier_plot = orig_args['show_outlier_plot']
+    show_plot = orig_args['show_plot']
     verbose = orig_args['verbose']
 
     #Print if verbose, which changes depending on if batch data or not
@@ -4434,14 +4435,15 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     compNames.append(col_name)
             colNames = compNames
             col_prefix = 'HV_Curves'
-        if show_outlier_plot:
+
+        if plot_engine.lower() == 'matplotlib':
             if use_hv_curve:
                 spMosaic = ['HV Curve']
             else:
                 spMosaic = [['Z'],
                             ['E'],
                             ['N']]
-            fig, ax=plt.subplot_mosaic(spMosaic, sharex=True)
+            fig, ax = plt.subplot_mosaic(spMosaic, sharex=True)
 
         #Loop through each component, and determine which curves are outliers
         bad_rmse=[]
@@ -4475,44 +4477,54 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_outlier_plot and use_hv_curve == False:
-                # Intialize to only get unique labels
-                rem_label_got = False
-                keep_label_got = False
-                
-                # Iterate through each curve to determine if it's rmse is outside threshold, for plot
-                for j, curve in enumerate(curr_data):
-                    label=None
-                    if rmse[j] > rmse_threshold:
-                        linestyle = 'dashed'
-                        linecolor='darkred'
-                        alpha = 1
-                        linewidth = 1
-                        if not rem_label_got:
-                            label='Removed Curve'
-                            rem_label_got=True
-                    else:
-                        linestyle='solid'
-                        linecolor = 'rosybrown'
-                        alpha = 0.25
-                        linewidth=0.5
-                        if not keep_label_got:
-                            keep_label_got=True
-                            label='Retained Curve'
-
-                    # Plot each individual curve
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                
-                # Plot the median curve
-                ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
-                
-                # Format axis
-                ax[compNames[i]].set_ylabel(f"{compNames[i]}")
-                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
-                ax[compNames[i]].semilogx()             
-        if show_outlier_plot:
-            plt.show()
+            if use_hv_curve == False:
+                if plot_engine.lower() == 'matplotlib':
+                    # Intialize to only get unique labels
+                    rem_label_got = False
+                    keep_label_got = False
                     
+                    # Iterate through each curve to determine if it's rmse is outside threshold, for plot
+                    for j, curve in enumerate(curr_data):
+                        label=None
+                        if rmse[j] > rmse_threshold:
+                            linestyle = 'dashed'
+                            linecolor='darkred'
+                            alpha = 1
+                            linewidth = 1
+                            if not rem_label_got:
+                                label='Removed Curve'
+                                rem_label_got=True
+                        else:
+                            linestyle='solid'
+                            linecolor = 'rosybrown'
+                            alpha = 0.25
+                            linewidth=0.5
+                            if not keep_label_got:
+                                keep_label_got=True
+                                label='Retained Curve'
+
+                        # Plot each individual curve
+                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    
+                    # Plot the median curve
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+                    
+                    # Format axis
+                    ax[compNames[i]].set_ylabel(f"{compNames[i]}")
+                    ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
+                    ax[compNames[i]].semilogx()             
+       
+        if plot_engine.lower() == 'matplotlib':
+            hvsr_data['OutlierPlot'] = fig
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
+        elif plot_engine.lower() == 'plotly':
+            hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, from_roc=True, show_plot=show_plot, verbose=verbose)
+        else:
+            pass
+
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
         bad_rmse = np.unique(bad_rmse)
         if len(bad_rmse) > 0:

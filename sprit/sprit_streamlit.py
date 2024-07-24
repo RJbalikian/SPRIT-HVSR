@@ -1,14 +1,23 @@
 import datetime
 import inspect
 import pathlib
+import sys
 import tempfile
 import zoneinfo
 
 import numpy as np
 import streamlit as st
-import sprit
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
+
+#sys.path.append('..')
+#sys.path.append('../..')
+
+try:
+    from sprit import sprit_hvsr
+except:
+    import sprit_hvsr
+
 
 print('Start of file, session state length: ', len(st.session_state.keys()))
 
@@ -55,10 +64,10 @@ run_kwargs = {}
 
 print('Start getting default values, session state length: ', len(st.session_state.keys()))
 # Get default values
-sigList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
-            [sprit.remove_noise, rn_kwargs], [sprit.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
-            [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
-            [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
+sigList = [[sprit_hvsr.input_params, ip_kwargs], [sprit_hvsr.fetch_data, fd_kwargs], [sprit_hvsr.calculate_azimuth, ca_kwargs],
+            [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
+            [sprit_hvsr.process_hvsr, phvsr_kwargs], [sprit_hvsr.remove_outlier_curves, roc_kwargs],
+            [sprit_hvsr.check_peaks, cp_kwargs], [sprit_hvsr.get_report, gr_kwargs]]
 
 
 print('Start sig loop, session state length: ', len(st.session_state.keys()))
@@ -138,15 +147,36 @@ def setup_session_state(variable):
     print('Done with setup, session state length: ', len(st.session_state.keys()))
 setup_session_state(st.session_state.to_dict())
 
+mainContainer = st.container()
+inputTab, outlierTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Results'])
+plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
+
 def on_read_data(dorun=False):
     print('READ BUTTON', st.session_state.datapath, dorun)
-    if st.session_state.datapath and dorun:
-        srun = {}
-        for key, value in run_kwargs.items():
-            if value != st.session_state.default_params[key]:
-                srun[key] = value
-        print('SPRIT RUN', srun)
-        sprit.run(datapath=st.session_state.datapath, **srun)
+    dpath_cond = (('prev_datapath' in st.session_state.keys()) and (st.session_state['datapath']!=st.session_state['prev_datapath']))
+    if st.session_state.datapath!='':
+        if dorun and dpath_cond:
+            srun = {}
+            for key, value in run_kwargs.items():
+                if value != st.session_state.default_params[key]:
+                    srun[key] = value
+            # Get plots all right
+            srun['plot_engine'] = 'plotly'
+            srun['plot_input_stream'] = True
+            srun['show_plot'] = False
+            srun['verbose'] = True
+            print('SPRIT RUN', srun)
+            st.toast('Data is processing', icon="⌛")
+            with mainContainer:
+                with st.spinner("Data is processing"):
+                        st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+            st.balloons()
+        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+        plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+        csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
+        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+    st.session_state.prev_datapath=st.session_state.datapath
 
 def check_if_default():
     if len(st.session_state.keys()) > 0:
@@ -357,7 +387,7 @@ with st.sidebar:
         with plotSetTab:
             print('Setting up plot tab, session state length: ', len(st.session_state.keys()))
 
-            st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine')
+            st.selectbox("Plot Engine (currently only plotly supported)", options=['Matplotlib', "Plotly"], key='plot_engine', disabled=True)
             st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
             st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
                                             on_change=update_plot_string, key='plotPlotStr')
@@ -376,11 +406,7 @@ with st.sidebar:
             st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
 
 print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
-
-inputTab, noiseTab, outlierTab, resultsTab = st.tabs(['Input', 'Noise', 'Outliers', 'Results'])
-plotReportTab, strReportTab = resultsTab.tabs(['Plot', 'Report'])
 print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
-
 
 #if __name__ == "__main__":
 #    main()

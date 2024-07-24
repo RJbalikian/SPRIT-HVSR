@@ -848,7 +848,8 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
     if preview_fig is None:
         preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
-        preview_fig = go.FigureWidget(preview_subp)
+        #preview_fig = go.FigureWidget(preview_subp)
+        preview_fig = go.Figure(preview_subp)
 
     preview_fig.data = []
     
@@ -934,25 +935,28 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
         preview_fig.show()
 
     if return_fig:
+        print('previewfig', type(preview_fig))
         return preview_fig
 
-def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _use_hv_curve=False, _verbose=False):
-    global outlier_fig
-    global hvsr_data
+def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
     hv_data = hvsr_data
+    #outlier_fig = go.FigureWidget()
+    outlier_fig = go.Figure()
 
-    roc_kwargs = {'rmse_thresh':rmse_pctile_slider.value,
+    roc_kwargs = {'rmse_thresh':rmse_thresh,
                     'use_percentile':True,
-                    'use_hv_curve':use_hv_curve_rmse.value,
+                    'use_hv_curve':use_hv_curve,
                     'show_outlier_plot':False,
-                    'verbose':verbose_check.value
+                    'plot_engine':'None',
+                    'verbose':verbose
                     }
     if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
-        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n'{roc_kwargs}"    
-        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n'{roc_kwargs}"    
+        #hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        pass
     else:
-        log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.ProcessingStatus['PPSDStatus']=False\n'{roc_kwargs}"
-        return outlier_fig, hvsr_data
+        #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.ProcessingStatus['PPSDStatus']=False\n'{roc_kwargs}"
+        return outlier_fig
 
     if roc_kwargs['use_hv_curve']:
         no_subplots = 1
@@ -961,7 +965,8 @@ def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _us
             outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
             outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
             outlier_fig.update_layout(grid={'rows': 1})
-            outlier_fig = go.FigureWidget(outlier_subp)
+            #outlier_fig = go.FigureWidget(outlier_subp)
+            outlier_fig = go.Figure(outlier_subp)
 
             x_data = hvsr_data['x_freqs']
             curve_traces = []
@@ -985,7 +990,8 @@ def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _us
         outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
                                                 row_heights=[1, 1, 1])
         outlier_fig.update_layout(grid={'rows': 3})
-        outlier_fig = go.FigureWidget(outlier_subp)
+        #outlier_fig = go.FigureWidget(outlier_subp)
+        outlier_fig = go.Figure(outlier_subp)
 
         if hasattr(hvsr_data, 'hvsr_windows_df'):
             rowDict = {'Z':1, 'E':2, 'N':3}
@@ -1041,8 +1047,8 @@ def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _us
                                                 line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
                         outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
 
-                timeIndRemoved = pd.DatetimeIndex([timeIndex[ind] for ind in indRemoved])
-                hvsr_data['hvsr_windows_df'].loc[timeIndRemoved, 'Use'] = False
+                #timeIndRemoved = pd.DatetimeIndex([timeIndex[ind] for ind in indRemoved])
+                #hvsr_data['hvsr_windows_df'].loc[timeIndRemoved, 'Use'] = False
 
                 outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
                 
@@ -1069,12 +1075,13 @@ def plot_outlier_curves(input=None, _rmse_thresh=0.98, _use_percentile=True, _us
 
 
     outlier_fig.update_xaxes(type='log')
-    with outlier_graph_widget:
-        clear_output(wait=True)
-        display(outlier_fig)
+    #with outlier_graph_widget:
+    #    clear_output(wait=True)
+    #    display(outlier_fig)
     
-    if show_plot_check.value:
+    hvsr_data['OutlierPlot'] = outlier_fig # not currently using
+    if show_plot:
         outlier_fig.show()
 
-    return outlier_fig, hvsr_data
+    return outlier_fig
 
