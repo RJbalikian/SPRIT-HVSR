@@ -24,7 +24,8 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
-"API Documentation" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
+"ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/index.html"
+"Github Pages API Docs" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
 "Tutorials & Wiki" = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
 
 [project.scripts]
