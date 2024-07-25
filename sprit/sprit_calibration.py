@@ -69,6 +69,9 @@ model_parameters = {"ISGS_All" : (141.81,1.582), "ISGS_North" : (142.95,1.312), 
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
 
+def power_law(f, a, b):
+    return a*(f**-b)
+
 def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
                     model = "ISGS_All",
                     site = "HVSRSite", 
@@ -190,6 +193,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                         print("Saving data to the path specified")
                         
             plt.scatter(data[freq_col], data[depth_col])
+            plt.xlabel("Peak Frequency (Hz)")
             if unit.casefold() in {"ft", "feet"}:
                 plt.ylabel("Bedrock Depth (ft)")
             else:
