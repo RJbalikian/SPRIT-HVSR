@@ -221,7 +221,7 @@ with st.sidebar:
     with bottom_container:
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
         resetCol.button('Reset', disabled=True, use_container_width=True)
-        readCol.button('Read', use_container_width=True, on_click=on_read_data(True))
+        readCol.button('Read', use_container_width=True, on_click=on_read_data, args=((True, )))
         runCol.button('Run', type='primary', use_container_width=True)
     print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
 

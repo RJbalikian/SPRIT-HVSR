@@ -2960,7 +2960,7 @@ def input_params(datapath,
         Surface elevation of data point. Not currently used (except in csv output), but will likely be used in the future.
     depth : float, default=0
         Depth of seismometer. Not currently used, but will likely be used in the future.
-    instrument : str or list {'Raspberry Shake')
+    instrument : str {'Raspberry Shake', "Tromino"}
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
