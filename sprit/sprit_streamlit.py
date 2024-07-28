@@ -148,7 +148,7 @@ def setup_session_state(variable):
 setup_session_state(st.session_state.to_dict())
 
 mainContainer = st.container()
-inputTab, outlierTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Results'])
+inputTab, outlierTab, resultsTab, logTab = mainContainer.tabs(['Data', 'Outliers', 'Results', "Log"])
 plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
 
 def on_read_data(dorun=False):
@@ -168,8 +168,17 @@ def on_read_data(dorun=False):
             print('SPRIT RUN', srun)
             st.toast('Data is processing', icon="⌛")
             with mainContainer:
-                with st.spinner("Data is processing"):
-                        st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+                spinnerText = 'Data is processing with default parameters.'
+                excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+                nonDefaultParams = False
+                for key, value in srun.items():
+                    if key not in excludedKeys:
+                        nonDefaultParams = True
+                        spinnerText = spinnerText + f"\n\t{key} = {value}"
+                if nonDefaultParams:
+                    spinnerText = spinnerText.replace('default', 'the following non-default')
+                with st.spinner(spinnerText):
+                    st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
             st.balloons()
         inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
         outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
