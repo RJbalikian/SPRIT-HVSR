@@ -140,9 +140,41 @@ def setup_session_state(variable):
     methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
     st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
     st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
+    
+    if not "default_params" in st.session_state.keys():
+        mainContainerInitText = """
+        # SpRIT HVSR 
+        SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
+        
+        ## Links
+        * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
+        * API Documentation may be accessed [here (hosted by ReadtheDocs)](https://sprit.readthedocs.io/en/latest/) and [here (hosted by Github Pages)](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
+        * PyPI repository may be accessed [here](https://pypi.org/project/sprit/)
+        * The Wiki and Tutorials may be accessed [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
 
+        ## MIT License
+        It is licensed under the MIT License:
+        > Permission is hereby granted, free of charge, to any person obtaining a copy 
+        > of this software and associated documentation files (the "Software"), to deal
+        > in the Software without restriction, including without limitation the rights
+        > to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        > copies of the Software, and to permit persons to whom the Software is
+        > furnished to do so, subject to the following conditions:
+        > 
+        > The above copyright notice and this permission notice shall be included in all
+        > copies or substantial portions of the Software.
+        > 
+        > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        > SOFTWARE.
+        """
+        st.markdown(mainContainerInitText, unsafe_allow_html=True)
     st.session_state.default_params = run_kwargs
-    st.header('SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois')
+
 
     print('Done with setup, session state length: ', len(st.session_state.keys()))
 setup_session_state(st.session_state.to_dict())
