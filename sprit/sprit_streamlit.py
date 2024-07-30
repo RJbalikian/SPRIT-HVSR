@@ -142,50 +142,10 @@ def setup_session_state(variable):
     st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
 
     st.session_state.default_params = run_kwargs
-
+    st.header('SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois')
 
     print('Done with setup, session state length: ', len(st.session_state.keys()))
 setup_session_state(st.session_state.to_dict())
-
-mainContainer = st.container()
-inputTab, outlierTab, resultsTab, logTab = mainContainer.tabs(['Data', 'Outliers', 'Results', "Log"])
-plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
-
-def on_read_data(dorun=False):
-    print('READ BUTTON', st.session_state.datapath, dorun)
-    dpath_cond = (('prev_datapath' in st.session_state.keys()) and (st.session_state['datapath']!=st.session_state['prev_datapath']))
-    if st.session_state.datapath!='':
-        if dorun and dpath_cond:
-            srun = {}
-            for key, value in run_kwargs.items():
-                if value != st.session_state.default_params[key]:
-                    srun[key] = value
-            # Get plots all right
-            srun['plot_engine'] = 'plotly'
-            srun['plot_input_stream'] = True
-            srun['show_plot'] = False
-            srun['verbose'] = True
-            print('SPRIT RUN', srun)
-            st.toast('Data is processing', icon="⌛")
-            with mainContainer:
-                spinnerText = 'Data is processing with default parameters.'
-                excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
-                nonDefaultParams = False
-                for key, value in srun.items():
-                    if key not in excludedKeys:
-                        nonDefaultParams = True
-                        spinnerText = spinnerText + f"\n\t{key} = {value}"
-                if nonDefaultParams:
-                    spinnerText = spinnerText.replace('default', 'the following non-default')
-                with st.spinner(spinnerText):
-                    st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
-            st.balloons()
-        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-        plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-        csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
-        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
-    st.session_state.prev_datapath=st.session_state.datapath
 
 def check_if_default():
     if len(st.session_state.keys()) > 0:
@@ -219,10 +179,53 @@ with st.sidebar:
 
     # Create top menu
     with bottom_container:
+        def on_run_data():
+            mainContainer = st.container()
+            inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
+            plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
+
+            dorun=True
+            print('RUN BUTTON', st.session_state.datapath, dorun)
+            dpath_cond = (('prev_datapath' in st.session_state.keys()))# and (st.session_state['datapath']!=st.session_state['prev_datapath']))
+            if st.session_state.datapath!='':
+                if dorun and dpath_cond:
+                    srun = {}
+                    for key, value in run_kwargs.items():
+                        if value != st.session_state.default_params[key]:
+                            srun[key] = value
+                    # Get plots all right
+                    srun['plot_engine'] = 'plotly'
+                    srun['plot_input_stream'] = True
+                    srun['show_plot'] = False
+                    srun['verbose'] = True
+                    print('SPRIT RUN', srun)
+                    st.toast('Data is processing', icon="⌛")
+                    with mainContainer:
+                        spinnerText = 'Data is processing with default parameters.'
+                        excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+                        nonDefaultParams = False
+                        for key, value in srun.items():
+                            if key not in excludedKeys:
+                                nonDefaultParams = True
+                                spinnerText = spinnerText + f"\n\t{key} = {value}"
+                        if nonDefaultParams:
+                            spinnerText = spinnerText.replace('default', 'the following non-default')
+                        with st.spinner(spinnerText):
+                            st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+                    st.balloons()
+                    
+                    inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+                    outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+                    plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                    csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
+                    strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+
+            st.session_state.prev_datapath=st.session_state.datapath
+
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
         resetCol.button('Reset', disabled=True, use_container_width=True)
-        readCol.button('Read', use_container_width=True, on_click=on_read_data, args=((True, )))
-        runCol.button('Run', type='primary', use_container_width=True)
+        readCol.button('Read', use_container_width=True, args=((True, )))
+        runCol.button('Run', type='primary', use_container_width=True, on_click=on_run_data)
     print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
 
 
