@@ -217,11 +217,7 @@ with st.sidebar:
             inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
             plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
 
-            #dorun=True
-            #print('RUN BUTTON', st.session_state.datapath, dorun)
-            #dpath_cond = (('prev_datapath' in st.session_state.keys()))# and (st.session_state['datapath']!=st.session_state['prev_datapath']))
             if st.session_state.datapath!='':
-                #if dorun and dpath_cond:
                 srun = {}
                 for key, value in run_kwargs.items():
                     if value != st.session_state.default_params[key]:
