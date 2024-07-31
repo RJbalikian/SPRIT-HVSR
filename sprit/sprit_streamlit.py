@@ -189,6 +189,7 @@ def setup_session_state():
         st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
         st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
         st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
+        st.session_state.source = run_kwargs['source'] = st.session_state.source.title()
         print_param(param2print)
 
 
@@ -354,6 +355,7 @@ with st.sidebar:
         with fdSetTab:
             print('Setting up fd tab, session state length: ', len(st.session_state.keys()))
             #source: str = 'file',
+            st.selectbox('Source', options=['File', 'Raw', 'Directory', "Batch"], index=0, key='source')
             st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
             st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
             st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')

@@ -1619,7 +1619,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     orig_args[k] = v
 
     #Update local variables, in case of previously-specified parameters
-    source=orig_args['source']
+    source=orig_args['source'].lower()
     trim_dir=orig_args['trim_dir']
     export_format=orig_args['export_format']
     detrend=orig_args['detrend']
