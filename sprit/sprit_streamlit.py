@@ -20,9 +20,11 @@ except:
 
 
 print('Start of file, session state length: ', len(st.session_state.keys()))
-def print_param(key='site'):
+param2print = 'period_limits'
+def print_param(key=param2print, show_type=True):
     if key in st.session_state.keys():
-        print(key, st.session_state[key])
+        print(key, st.session_state[key], 'type:', type(st.session_state[key]))
+print_param(param2print)
 
 icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
 icon=":material/ssid_chart:"
@@ -66,7 +68,8 @@ gr_kwargs = {}
 run_kwargs = {}
 
 print('Start getting default values, session state length: ', len(st.session_state.keys()))
-print_param(key='site')
+print_param(param2print)
+
 # Get default values
 sigList = [[sprit_hvsr.input_params, ip_kwargs], [sprit_hvsr.fetch_data, fd_kwargs], [sprit_hvsr.calculate_azimuth, ca_kwargs],
             [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
@@ -110,7 +113,8 @@ def setup_session_state():
         """
         st.markdown(mainContainerInitText, unsafe_allow_html=True)
         print('Start sig loop, session state length: ', len(st.session_state.keys()))
-        print_param(key='site')
+        print_param(param2print)
+
         for fun, kwargs in sigList:
             # If this is the initial setup
             for sig in sigList:
@@ -125,11 +129,14 @@ def setup_session_state():
         gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = 0.03125
         gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = [1/run_kwargs['hvsr_band'][1], 1/run_kwargs['hvsr_band'][0]]
         print('Done getting kwargs: ', len(st.session_state.keys()))
-        print_param(key='site')
+        print_param(param2print)
 
         print('Setting up session state: ', len(st.session_state.keys()))
         #st.session_state["updated_kwargs"] = {}
         for key, value in run_kwargs.items():
+            print('resetting')
+            print_param(param2print)
+
         #    if key in st.session_state.keys() and (st.session_state[key] != value):
         #    #THIS IS PROBABLY THE ISSUE WITH CARRYING SESSION STATE OVER?
             st.session_state[key] = value
@@ -142,7 +149,6 @@ def setup_session_state():
         #        st.session_state[arg] = valList
         #        run_kwargs[arg] = st.session_state[arg]
 
-        print_param(key='site')
         strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'method']
         # Convert lists and numbers to strings
         for arg, value in st.session_state.items():
@@ -159,7 +165,8 @@ def setup_session_state():
                     st.session_state[arg] = str(value)
                     run_kwargs[arg] = str(value)
 
-        print_param(key='site')
+        print_param(param2print)
+
         dtimeItems=['acq_date', 'starttime', 'endtime']
         # Convert everything to python datetime objects
         for arg , value in st.session_state.items():
@@ -174,20 +181,23 @@ def setup_session_state():
                     st.session_state[arg] = value
                     run_kwargs[arg] = value
         
-        print_param(key='site')
+        print_param(param2print)
+
         # Case matching
         st.session_state.export_format = run_kwargs['export_format'] = st.session_state.export_format.upper()
         st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
         st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
         st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
         st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
-        print_param(key='site')
+        print_param(param2print)
+
 
         # Default adjustments
         methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
         st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
         st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
-        print_param(key='site')
+        print_param(param2print)
+
         
         st.session_state.default_params = run_kwargs
         st.session_state.run_kws = list(run_kwargs.keys())
@@ -197,13 +207,15 @@ def setup_session_state():
 
 
         print('Done with setup, session state length: ', len(st.session_state.keys()))
-        print_param(key='site')
+        print_param(param2print)
+
 setup_session_state()
 
 def check_if_default():
     if len(st.session_state.keys()) > 0:
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
-        print_param(key='site')
+        print_param(param2print)
+
 check_if_default()
 
 def text_change():
@@ -221,10 +233,12 @@ def on_file_upload():
 
 # DEFINE SIDEBAR
 print('About to start setting up sidebar, session state length: ', len(st.session_state.keys()))
-print_param(key='site')
+print_param(param2print)
+
 with st.sidebar:
     print('Start setting up sidebar, session state length: ', len(st.session_state.keys()))
-    print_param(key='site')
+    print_param(param2print)
+
     st.header('SpRIT HVSR', divider='rainbow')
     datapathInput = st.text_input("Datapath", key='datapath', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
     #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
@@ -279,13 +293,15 @@ with st.sidebar:
         readCol.button('Read', use_container_width=True, args=((True, )))
         runCol.button('Run', type='primary', use_container_width=True, on_click=on_run_data)
     print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
-    print_param(key='site')
+    print_param(param2print)
+
 
 
     st.header('Settings', divider='gray')
     with st.expander('Expand to modify settings'):
         print('Setting up sidebar expander, session state length: ', len(st.session_state.keys()))
-        print_param(key='site')
+        print_param(param2print)
+
         ipSetTab, fdSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs(['Input', 'Data', "Noise", 'PPSDs', 'H/V', 'Plot'])
         #@st.experimental_dialog("Update Input Parameters", width='large')
         #def open_ip_dialog():
@@ -331,6 +347,7 @@ with st.sidebar:
 
             st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
             st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
+            print_param(param2print)
 
         #@st.experimental_dialog("Update Parameters to Fetch Data", width='large')
         #def open_fd_dialog():
@@ -341,7 +358,7 @@ with st.sidebar:
             st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
             st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
             st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
-
+            print_param(param2print)
 
         #@st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
         #def open_ppsd_dialog():
@@ -361,9 +378,9 @@ with st.sidebar:
             periodVals=[round(1/x,3) for x in bandVals]
             periodVals.sort()
 
-            st.select_slider('Period Limits (s)', options=periodVals, key='period_limits')
+            st.select_slider('Period Limits (s)', options=periodVals, value=st.session_state.period_limits, key='period_limits')
             st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
-
+            print_param(param2print)
 
         #@st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
         #def open_outliernoise_dialog():
@@ -387,7 +404,7 @@ with st.sidebar:
             st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
             st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
             st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
-
+            print_param(param2print)
 
         #@st.experimental_dialog("Update Parameters to Process HVSR", width='large')
         #def open_processHVSR_dialog():
@@ -403,7 +420,7 @@ with st.sidebar:
             st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
             st.select_slider("Resample", options=rList, value=1000, key='resample')
             st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
-
+            print_param(param2print)
 
         def update_plot_string():
             plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
@@ -470,9 +487,10 @@ with st.sidebar:
             
             st.header('Spectrogram Chart', divider='rainbow')
             st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
+            print_param(param2print)
 
 print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
 print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
-
+print_param(param2print)
 #if __name__ == "__main__":
 #    main()

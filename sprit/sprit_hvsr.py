@@ -3874,10 +3874,15 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
             #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
         
-        #Get string of method type
+        # Get string of method type
+        # First check if input is a string number
+        if type(method) is str and method.isdigit():
+                method = int(method)
+
         if type(method) is int:
             methodInt = method
             method = methodList[method]
+        
         hvsr_data['method'] = method
 
         #This gets the main hvsr curve averaged from all time steps
