@@ -20,6 +20,9 @@ except:
 
 
 print('Start of file, session state length: ', len(st.session_state.keys()))
+def print_param(key='site'):
+    if key in st.session_state.keys():
+        print(key, st.session_state[key])
 
 icon=r"C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico"
 icon=":material/ssid_chart:"
@@ -63,6 +66,7 @@ gr_kwargs = {}
 run_kwargs = {}
 
 print('Start getting default values, session state length: ', len(st.session_state.keys()))
+print_param(key='site')
 # Get default values
 sigList = [[sprit_hvsr.input_params, ip_kwargs], [sprit_hvsr.fetch_data, fd_kwargs], [sprit_hvsr.calculate_azimuth, ca_kwargs],
             [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
@@ -70,88 +74,19 @@ sigList = [[sprit_hvsr.input_params, ip_kwargs], [sprit_hvsr.fetch_data, fd_kwar
             [sprit_hvsr.check_peaks, cp_kwargs], [sprit_hvsr.get_report, gr_kwargs]]
 
 
-print('Start sig loop, session state length: ', len(st.session_state.keys()))
-for fun, kwargs in sigList:
-    # If this is the initial setup
-    for sig in sigList:
-        funSig = inspect.signature(sig[0])
-        for arg in funSig.parameters.keys():
-            if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
-                sig[1][arg] = funSig.parameters[arg].default
-                run_kwargs[arg] = funSig.parameters[arg].default
-
-gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = 30
-gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = True
-gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = 0.03125
-gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = [1/run_kwargs['hvsr_band'][1], 1/run_kwargs['hvsr_band'][0]]
-print('Done getting kwargs: ', len(st.session_state.keys()))
-
-def setup_session_state(variable):
-    print('Setting up session state: ', len(st.session_state.keys()))
-    for key, value in run_kwargs.items():
-        #THIS IS PROBABLY THE ISSUE WITH CARRYING SESSION STATE OVER?
-        st.session_state[key] = value
-
-    #listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
-    ## Convert items to lists
-    #for arg, value in st.session_state.items():
-    #    if arg in listItems:
-    #        valList = [value]
-    #        st.session_state[arg] = valList
-    #        run_kwargs[arg] = st.session_state[arg]
-
-    strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'method']
-    # Convert lists and numbers to strings
-    for arg, value in st.session_state.items():
-        if arg in strItems:
-            if isinstance(value, (list, tuple)):
-                newVal = '['
-                for item in value:
-                    newVal = newVal+item+', '
-                newVal = newVal[:-2]+']'
-                st.session_state[arg] = newVal
-                run_kwargs[arg] = st.session_state[arg]
-            else:
-                st.session_state[arg] = str(value)
-                run_kwargs[arg] = st.session_state[arg]
-
-    dtimeItems=['acq_date', 'starttime', 'endtime']
-    # Convert everything to python datetime objects
-    for arg , value in st.session_state.items():
-        if arg in dtimeItems:
-            if isinstance(value, str):
-                st.session_state[arg] = datetime.datetime.strptime(value, "%Y-%m-%d")
-                run_kwargs[arg] = st.session_state[arg]
-            elif isinstance(st.session_state[arg], UTCDateTime):
-                st.session_state[arg] = value.datetime
-                run_kwargs[arg] = st.session_state[arg]
-            else:
-                st.session_state[arg] = value
-                run_kwargs[arg] = st.session_state[arg]
-    
-    # Case matching
-    st.session_state.export_format = run_kwargs['export_format'] = st.session_state.export_format.upper()
-    st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
-    st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
-    st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
-    st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
-
-    # Default adjustments
-    methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
-    st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
-    st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
-    
-    # "Splash screen" (only shows at initial startup)
+def setup_session_state():
     if "default_params" not in st.session_state.keys():
+        # "Splash screen" (only shows at initial startup)
         mainContainerInitText = """
-        # SpRIT HVSR 
+        # SpRIT HVSR
+        ## About
         SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
         
         ## Links
-        * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
         * API Documentation may be accessed [here (hosted by ReadtheDocs)](https://sprit.readthedocs.io/en/latest/) and [here (hosted by Github Pages)](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
-        * PyPI repository may be accessed [here](https://pypi.org/project/sprit/)
         * The Wiki and Tutorials may be accessed [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
+        * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
+        * PyPI repository may be accessed [here](https://pypi.org/project/sprit/)
 
         ## MIT License
         It is licensed under the MIT License:
@@ -174,15 +109,101 @@ def setup_session_state(variable):
         > SOFTWARE.
         """
         st.markdown(mainContainerInitText, unsafe_allow_html=True)
-    st.session_state.default_params = run_kwargs
+        print('Start sig loop, session state length: ', len(st.session_state.keys()))
+        print_param(key='site')
+        for fun, kwargs in sigList:
+            # If this is the initial setup
+            for sig in sigList:
+                funSig = inspect.signature(sig[0])
+                for arg in funSig.parameters.keys():
+                    if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
+                        sig[1][arg] = funSig.parameters[arg].default
+                        run_kwargs[arg] = funSig.parameters[arg].default
+
+        gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = 30
+        gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = True
+        gppsd_kwargs['period_step_octaves'] = run_kwargs['period_step_octaves'] = 0.03125
+        gppsd_kwargs['period_limits'] = run_kwargs['period_limits'] = [1/run_kwargs['hvsr_band'][1], 1/run_kwargs['hvsr_band'][0]]
+        print('Done getting kwargs: ', len(st.session_state.keys()))
+        print_param(key='site')
+
+        print('Setting up session state: ', len(st.session_state.keys()))
+        #st.session_state["updated_kwargs"] = {}
+        for key, value in run_kwargs.items():
+        #    if key in st.session_state.keys() and (st.session_state[key] != value):
+        #    #THIS IS PROBABLY THE ISSUE WITH CARRYING SESSION STATE OVER?
+            st.session_state[key] = value
+
+        #listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
+        ## Convert items to lists
+        #for arg, value in st.session_state.items():
+        #    if arg in listItems:
+        #        valList = [value]
+        #        st.session_state[arg] = valList
+        #        run_kwargs[arg] = st.session_state[arg]
+
+        print_param(key='site')
+        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'method']
+        # Convert lists and numbers to strings
+        for arg, value in st.session_state.items():
+            if arg in strItems:
+                if isinstance(value, (list, tuple)):
+                    newVal = '['
+                    for item in value:
+                        newVal = newVal+item+', '
+                    newVal = newVal[:-2]+']'
+
+                    st.session_state[arg] = newVal
+                    run_kwargs[arg] = newVal
+                else:
+                    st.session_state[arg] = str(value)
+                    run_kwargs[arg] = str(value)
+
+        print_param(key='site')
+        dtimeItems=['acq_date', 'starttime', 'endtime']
+        # Convert everything to python datetime objects
+        for arg , value in st.session_state.items():
+            if arg in dtimeItems:
+                if isinstance(value, str):
+                    st.session_state[arg] = datetime.datetime.strptime(value, "%Y-%m-%d")
+                    run_kwargs[arg] = datetime.datetime.strptime(value, "%Y-%m-%d")
+                elif isinstance(st.session_state[arg], UTCDateTime):
+                    st.session_state[arg] = value.datetime
+                    run_kwargs[arg] = value.datetime
+                else:
+                    st.session_state[arg] = value
+                    run_kwargs[arg] = value
+        
+        print_param(key='site')
+        # Case matching
+        st.session_state.export_format = run_kwargs['export_format'] = st.session_state.export_format.upper()
+        st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
+        st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
+        st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
+        st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
+        print_param(key='site')
+
+        # Default adjustments
+        methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
+        st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
+        st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
+        print_param(key='site')
+        
+        st.session_state.default_params = run_kwargs
+        st.session_state.run_kws = list(run_kwargs.keys())
+        
+        for key, value in st.session_state.items():
+            print("session st: ", st.session_state[key], type( st.session_state[key]), '| rkwargs:', value, type(value))
 
 
-    print('Done with setup, session state length: ', len(st.session_state.keys()))
-setup_session_state(st.session_state.to_dict())
+        print('Done with setup, session state length: ', len(st.session_state.keys()))
+        print_param(key='site')
+setup_session_state()
 
 def check_if_default():
     if len(st.session_state.keys()) > 0:
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
+        print_param(key='site')
 check_if_default()
 
 def text_change():
@@ -200,8 +221,10 @@ def on_file_upload():
 
 # DEFINE SIDEBAR
 print('About to start setting up sidebar, session state length: ', len(st.session_state.keys()))
+print_param(key='site')
 with st.sidebar:
     print('Start setting up sidebar, session state length: ', len(st.session_state.keys()))
+    print_param(key='site')
     st.header('SpRIT HVSR', divider='rainbow')
     datapathInput = st.text_input("Datapath", key='datapath', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
     #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
@@ -219,8 +242,8 @@ with st.sidebar:
 
             if st.session_state.datapath!='':
                 srun = {}
-                for key, value in run_kwargs.items():
-                    if value != st.session_state.default_params[key]:
+                for key, value in st.session_state.items():
+                    if key in st.session_state.run_kws and value != st.session_state.default_params[key]:
                         srun[key] = value
                 # Get plots all right
                 srun['plot_engine'] = 'plotly'
@@ -236,7 +259,7 @@ with st.sidebar:
                     for key, value in srun.items():
                         if key not in excludedKeys:
                             nonDefaultParams = True
-                            spinnerText = spinnerText + f"\n\t{key} = {value}"
+                            spinnerText = spinnerText + f"  \n\t{key} = {value};   "
                     if nonDefaultParams:
                         spinnerText = spinnerText.replace('default', 'the following non-default')
                     with st.spinner(spinnerText):
@@ -256,11 +279,13 @@ with st.sidebar:
         readCol.button('Read', use_container_width=True, args=((True, )))
         runCol.button('Run', type='primary', use_container_width=True, on_click=on_run_data)
     print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
+    print_param(key='site')
 
 
     st.header('Settings', divider='gray')
     with st.expander('Expand to modify settings'):
         print('Setting up sidebar expander, session state length: ', len(st.session_state.keys()))
+        print_param(key='site')
         ipSetTab, fdSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs(['Input', 'Data', "Noise", 'PPSDs', 'H/V', 'Plot'])
         #@st.experimental_dialog("Update Input Parameters", width='large')
         #def open_ip_dialog():
