@@ -141,7 +141,8 @@ def setup_session_state(variable):
     st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
     st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
     
-    if not "default_params" in st.session_state.keys():
+    # "Splash screen" (only shows at initial startup)
+    if "default_params" not in st.session_state.keys():
         mainContainerInitText = """
         # SpRIT HVSR 
         SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
@@ -216,41 +217,41 @@ with st.sidebar:
             inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
             plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
 
-            dorun=True
-            print('RUN BUTTON', st.session_state.datapath, dorun)
-            dpath_cond = (('prev_datapath' in st.session_state.keys()))# and (st.session_state['datapath']!=st.session_state['prev_datapath']))
+            #dorun=True
+            #print('RUN BUTTON', st.session_state.datapath, dorun)
+            #dpath_cond = (('prev_datapath' in st.session_state.keys()))# and (st.session_state['datapath']!=st.session_state['prev_datapath']))
             if st.session_state.datapath!='':
-                if dorun and dpath_cond:
-                    srun = {}
-                    for key, value in run_kwargs.items():
-                        if value != st.session_state.default_params[key]:
-                            srun[key] = value
-                    # Get plots all right
-                    srun['plot_engine'] = 'plotly'
-                    srun['plot_input_stream'] = True
-                    srun['show_plot'] = False
-                    srun['verbose'] = True
-                    print('SPRIT RUN', srun)
-                    st.toast('Data is processing', icon="⌛")
-                    with mainContainer:
-                        spinnerText = 'Data is processing with default parameters.'
-                        excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
-                        nonDefaultParams = False
-                        for key, value in srun.items():
-                            if key not in excludedKeys:
-                                nonDefaultParams = True
-                                spinnerText = spinnerText + f"\n\t{key} = {value}"
-                        if nonDefaultParams:
-                            spinnerText = spinnerText.replace('default', 'the following non-default')
-                        with st.spinner(spinnerText):
-                            st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
-                    st.balloons()
-                    
-                    inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-                    outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-                    plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-                    csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
-                    strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+                #if dorun and dpath_cond:
+                srun = {}
+                for key, value in run_kwargs.items():
+                    if value != st.session_state.default_params[key]:
+                        srun[key] = value
+                # Get plots all right
+                srun['plot_engine'] = 'plotly'
+                srun['plot_input_stream'] = True
+                srun['show_plot'] = False
+                srun['verbose'] = True
+                print('SPRIT RUN', srun)
+                st.toast('Data is processing', icon="⌛")
+                with mainContainer:
+                    spinnerText = 'Data is processing with default parameters.'
+                    excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+                    nonDefaultParams = False
+                    for key, value in srun.items():
+                        if key not in excludedKeys:
+                            nonDefaultParams = True
+                            spinnerText = spinnerText + f"\n\t{key} = {value}"
+                    if nonDefaultParams:
+                        spinnerText = spinnerText.replace('default', 'the following non-default')
+                    with st.spinner(spinnerText):
+                        st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+                st.balloons()
+                
+                inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+                outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+                plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
+                strReportTab.text(st.session_state.hvsr_data['Print_Report'])
 
             st.session_state.prev_datapath=st.session_state.datapath
 
