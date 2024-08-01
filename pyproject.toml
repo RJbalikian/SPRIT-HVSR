@@ -23,6 +23,7 @@ classifiers = [
 #readme = {file = ["README.md"]}
 
 [tool.poetry]
+name='SpRIT Streamlit'
 version = "1.0.2"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 authors = ["Riley Balikian <your_email@example.com>"]
