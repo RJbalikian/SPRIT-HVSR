@@ -1,8 +1,14 @@
 #!/bin/bash
+set -e
+#VERSIONING
+# v1.0
+# updated 2024-07-08
 
+#DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
 
+#CODE
 # HANDLE SIGNAL DISCONNECT
 # First, set up script to continue running even if there is a signal disconnect (SSH is disconnected)
 # Function to handle disconnection
@@ -21,10 +27,12 @@ DURATION=20
 CHECK_INT=30
 VERBOSE=""
 
-SYS_IS_RS=false
+RUN_AS_TEST=false
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
-HVSR_DIR="/opt/hvsr"
+HVSR_DIR="/hvsr"
+HVSRDATA_DIR="/hvsr/data"
+EXPORT_DISK="/dev/sda1"
 
 # Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
 STARTUP_TIME=15
@@ -32,13 +40,96 @@ STARTUP_TIME=15
 
 # READ IN OPTIONS
 # Get options
-while getopts 'n:d:v:c:s:' opt; do
+while getopts 'n:t:d:c:s:ve' opt; do
     case "$opt" in
-        n) SITE_NAME="$OPTARG";;
+        n) SITE_NAME="$OPTARG"
+            echo $SITE_NAME
+            ;;
+        t) RUN_AS_TEST=true;;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
         v) VERBOSE="-v";;
+        e)
+            # Not sure how this works, but it does
+            # Check next positional parameter
+            eval nextopt=\${$OPTIND}
+            # existing or starting with dash?
+            if [[ -n $nextopt && $nextopt != -* ]] ; then
+                OPTIND=$((OPTIND + 1))
+                level=$nextopt
+            else
+                level=1
+            fi
+
+            #echo "OPT: $opt: $OPTARG"
+            if [[ -n "$nextopt" ]]; then
+                EXPORT_DISK="$nextopt"
+
+                if ! [[ $EXPORT_DISK =~ ^[0-9]{1,3}$ ]]; then
+                    echo "$EXPORT_DISK specified as export disk"
+		        else
+                    EXPORT_DATE=$(printf "%03d" "$EXPORT_DISK")
+                    USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
+                    while read dev;do
+                        LASTDISK=$dev;
+                    done <<< $USBDISKS
+                    echo $LASTDISK
+
+                    EXPORT_DISK=$LASTDISK
+                    echo "Exporting files on USB disk detected at $EXPORT_DISK from day $EXPORT_DATE"
+                fi
+
+            else
+                # Handle the case when the argument is missing
+                USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
+
+                while read dev;do
+                    LASTDISK=$dev;
+                done <<< $USBDISKS
+		echo $LASTDISK
+
+		EXPORT_DISK=$LASTDISK
+
+                if [[ -z "$EXPORT_DISK" ]]; then
+                    echo "No USB disks detected. Data not exported"
+                    exit 1
+                else
+                    echo "No export disk specified, using USB disk detected at $EXPORT_DISK"
+                fi
+            fi
+
+            if [[ "$USBDISKS" == *"$EXPORT_DISK"* ]]; then
+                echo "Your specified disk is a USB disk"
+            else
+                echo "Your specified disk is not a USB disk. Cannot export data"
+                exit 1
+            fi
+
+            # Mount and change disk/directory name
+	    MOUNTED_DIR="/mnt/usbdrive/"
+            if [ ! -d $MOUNTED_DIR ]; then
+                sudo mkdir $MOUNTED_DIR
+            fi
+
+            datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
+            EXPORT_DIR="${MOUNTED_DIR%/}/$datestring/"
+
+            if [ ! -d $EXPORT_DIR ]; then
+                sudo mkdir "$EXPORT_DIR"
+            fi
+
+
+            if [ -z $EXPORT_DATE ]; then
+                echo "Copying data from $HVSRDATA_DIR to $EXPORT_DIR"
+                sudo cp -r "$HVSRDATA_DIR/"* "$EXPORT_DIR"
+	    else
+                echo "Copying data from day $EXPORT_DATE from $HVSRDATA_DIR to $EXPORT_DIR" 
+                find "$HVSRDATA_DIR" -type f -name "*_$EXPORT_DATE_*" -exec cp {} "$EXPORT_DIR" \;
+            fi
+            echo "Data successfully copied to $datestring folder on USB device $EXPORT_DISK"
+            exit 0
+            ;;
         ?|h)
             echo "Usage: $(basename "$0") [-n site_name] [-d DURATION of HVSR acquisition in minutes] [-c interval at which to check/print status] [-v verbose]"
             exit 1
@@ -126,6 +217,10 @@ if [ ! -d $HVSR_DIR ]; then
     mkdir "$HVSR_DIR"
 fi
 
+if [ ! -d $HVSRDATA_DIR ]; then
+    mkdir "$HVSRDATA_DIR"
+fi
+
 # Format the times to create a time window (-tw option)
 sYEAR=$(date -d "$START_TIME" '+%Y')
 sMON=$(date -d "$START_TIME" '+%m')
@@ -143,7 +238,7 @@ eMIN=$(date -d "$END_TIME" '+%M')
 eSEC=$(date -d "$END_TIME" '+%S')
 eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 
-fpath="$HVSR_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
+fpath="$HVSRDATA_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
 echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
@@ -152,20 +247,10 @@ slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
 #RASPBERY SHAKE SYSTEM CHECK HERE
 
 # If this is being run on a raspberry shake, poweroff instrument
-if $SYS_IS_RS; then
-    # Flash led in heartbeat mode
-    modprobe ledtrig_heartbeat
-    echo heartbeat >/sys/class/leds/led0/trigger
-
-    # Do a powering down countdown
-    #printf "Powering down in $PDOWN_TIME seconds"
-    #while [[ $PDOWN_TIME > $0 ]]; do
-    #    sleep 1
-    #    PDOWN_TIME=$(($PDOWN_TIME - 1))
-    #    echo -ne "Powering down in $PDOWN_TIME seconds \033[0K\r"
-    #done
+if ! $RUN_AS_TEST; then
+    # Shutdown instrument
     echo "Powering down"
     sudo poweroff
 else
-    echo "Program Completed. If this was a Raspberry Shake, your system would shut down now."
+    echo "Program Completed. If this was a not a test, your Raspbery Pi system would shut down now."
 fi
