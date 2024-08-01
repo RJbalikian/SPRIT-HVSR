@@ -35,12 +35,14 @@ import scipy
 
 try:  # For distribution
     from sprit import sprit_utils
-    from sprit import sprit_gui
+    from sprit import sprit_tkinter_ui
     from sprit import sprit_jupyter_UI
+    from sprit import sprit_plot
 except Exception:  # For testing
     import sprit_utils
-    import sprit_gui
+    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit_jupyter_UI
+    import sprit_plot
 
 NOWTIME = datetime.datetime.now()
 global spritApp
@@ -565,13 +567,13 @@ class HVSRData:
 
 def gui_test():
     import subprocess
-    print(sprit_gui.__file__)
-    guiFile = sprit_gui.__file__
+    print(sprit_tkinter_ui.__file__)
+    guiFile = sprit_tkinter_ui.__file__
     subprocess.call(guiFile, shell=True)
 
 
 # Launch the tkinter gui
-def gui(kind='default'):
+def gui(kind='browser'):
     """Function to open a graphical user interface (gui)
 
     Parameters
@@ -582,17 +584,24 @@ def gui(kind='default'):
         "lite" open lite (pending update), by default 'default'
 
     """
-    defaultList = ['windowed', 'window', 'default', 'd']
+    browserList = ['browser', 'remi', 'default', 'd']
+    windowList = ['windowed', 'window', 'qt', 'tkinter', 'tk']
     widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
     liteList = ['lite', 'light', 'basic', 'l', 'b']
 
-    if kind.lower() in defaultList:
+    if kind.lower() in browserList:
+        import subprocess
+        import pkg_resources
+        streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit.py")
+        cmd = ['streamlit', 'run', streamlitPath.as_posix()]
+        subprocess.run(cmd)
+    elif kind.lower() in windowList:
         import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
-            from sprit.sprit_gui import SPRIT_App
+            from sprit.sprit_tkinter_ui import SPRIT_App
         except:
-            from sprit_gui import SPRIT_App
+            from sprit.sprit_tkinter_ui import SPRIT_App
         
         try:
             import tkinter as tk
@@ -612,7 +621,7 @@ def gui(kind='default'):
         gui_root = tk.Tk()
         try:
             try:
-                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
                 gui_root.iconbitmap(icon_path)
             except:
                 icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
@@ -621,10 +630,10 @@ def gui(kind='default'):
             print("ICON NOT LOADED, still opening GUI")
 
         gui_root.resizable(True, True)
-        spritApp = SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+        spritApp = SPRIT_App(master=gui_root)  # Open the app with a tk.Tk root
 
         gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
-        gui_root.mainloop() #Run the main loop
+        gui_root.mainloop()  # Run the main loop
     elif kind.lower() in widgetList:
         try:
             sprit_jupyter_UI.create_jupyter_ui()
@@ -663,8 +672,14 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             - If source='batch', datapath should be datapath='sample' or datapath='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
     source : str, optional
         _description_, by default 'file'
-    azimuth : bool, optional
+    azimuth_calculation : bool, optional
         Whether to perform azimuthal analysis, by default False.
+    noise_removal : bool, default=False
+        Whether to remove noise (before processing PPSDs)
+    outlier_curves_removal : bool, default=False
+        Whether to remove outlier curves from HVSR time windows
+    show_plot : bool, default=True
+        Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
     verbose : bool, optional
         _description_, by default False
     **kwargs
@@ -866,6 +881,8 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     
     # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
     if 'plot' in get_report_kwargs['report_format']:
+        plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+        get_report_kwargs.update(plot_hvsr_kwargs)
         usingDefault = True
         if 'plot_type' not in get_report_kwargs.keys():
             get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
@@ -932,7 +949,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
                 pass
             else:
                 # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)
+                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
                 pass
         else:
             pass
@@ -947,7 +964,9 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             else:
                 ext = 'hvsr'
             export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext, verbose=verbose)        
-
+    if 'show_plot' in kwargs:
+        if not kwargs['show_plot']:
+            plt.close()
     return hvsr_results
 
 
@@ -1544,7 +1563,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, verbose=False, **kwargs):
+def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -1573,6 +1592,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
     plot_input_stream : bool, default=False
         Whether to plot the raw input stream. This plot includes a spectrogram (Z component) and the raw (with decimation for speed) plots of each component signal.
+    plot_engine : str, default='matplotlib'
+        Which plotting library/engine to use for plotting the Input stream. Options are 'matplotlib', 'plotly', or 'obspy' (not case sensitive).
     verbose : bool, default=False
         Whether to print outputs and inputs to the terminal
     **kwargs
@@ -1599,13 +1620,14 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     orig_args[k] = v
 
     #Update local variables, in case of previously-specified parameters
-    source=orig_args['source']
+    source=orig_args['source'].lower()
     trim_dir=orig_args['trim_dir']
     export_format=orig_args['export_format']
     detrend=orig_args['detrend']
     detrend_order=orig_args['detrend_order']
     update_metadata=orig_args['update_metadata']
     plot_input_stream=orig_args['plot_input_stream']
+    plot_engine=orig_args['plot_engine']
     verbose=orig_args['verbose']
     kwargs=orig_args['kwargs']
 
@@ -1688,11 +1710,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         year = date.year
         warnings.warn("Did not recognize date, using year {} and day {}".format(year, doy))
 
-    #Select which instrument we are reading from (requires different processes for each instrument)
+    # Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
-    #Get any kwargs that are included in obspy.read
+    # Get any kwargs that are included in obspy.read
     obspyReadKwargs = {}
     for argName in inspect.getfullargspec(obspy.read)[0]:
         if argName in kwargs.keys():
@@ -1741,24 +1763,27 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 return HVSRBatch(obspyFiles)
         elif source=='file' and str(params['datapath']).lower() not in sampleList:
             # Read the file specified by datapath
-            if isinstance(dPath, list) or isinstance(dPath, tuple):
-                rawStreams = []
-                for datafile in dPath:
-                    rawStream = obspy.read(datafile, **obspyReadKwargs)
-                    rawStreams.append(rawStream) #These are actually streams, not traces
-                for i, stream in enumerate(rawStreams):
-                    if i == 0:
-                        rawDataIN = obspy.Stream(stream) #Just in case
-                    else:
-                        rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-            elif str(dPath)[:6].lower()=='sample':
-                pass
+            if inst.lower() in trominoNameList:
+                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             else:
-                rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-            import warnings # For some reason not being imported at the start
-            with warnings.catch_warnings():
-                warnings.simplefilter(action='ignore', category=UserWarning)
-                rawDataIN.attach_response(inv)
+                if isinstance(dPath, list) or isinstance(dPath, tuple):
+                    rawStreams = []
+                    for datafile in dPath:
+                        rawStream = obspy.read(datafile, **obspyReadKwargs)
+                        rawStreams.append(rawStream) #These are actually streams, not traces
+                    for i, stream in enumerate(rawStreams):
+                        if i == 0:
+                            rawDataIN = obspy.Stream(stream) #Just in case
+                        else:
+                            rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
+                elif str(dPath)[:6].lower()=='sample':
+                    pass
+                else:
+                    rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+                import warnings # For some reason not being imported at the start
+                with warnings.catch_warnings():
+                    warnings.simplefilter(action='ignore', category=UserWarning)
+                    rawDataIN.attach_response(inv)
         elif source=='batch' and str(params['datapath']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -1946,21 +1971,44 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     #Plot the input stream?
     if plot_input_stream:
-        try:
-            params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
-            #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
-            plt.show()
-        except Exception as e:
-            print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
-            dataIN.plot(method='full', linewidth=0.25)
+        if plot_engine.lower() in ['plotly', 'plty', 'p']:
+            if 'spectrogram_component' in kwargs.keys():
+                specComp = kwargs['spectrogram_component']
+            else:
+                specComp = 'Z'
+            params['InputPlot'] = sprit_plot.plot_preview(hv_data=params, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
+        elif plot_engine.lower() in ['obspy', 'ospby', 'osbpy', 'opsby', 'opspy', 'o']:
+            params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
+        else:
+            try:
+                params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+                
+                #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+                if show_plot:
+                    plt.show()
+                else:
+                    plt.close()                    
+            except Exception as e:
+                print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
+                params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+                if show_plot:
+                    plt.show()
+                else:
+                    plt.close()
+    else:
+        params['InputPlot'] = None
 
-    #Sort channels (make sure Z is first, makes things easier later)
+    # Sort channels (make sure Z is first, makes things easier later)
     if isinstance(params, HVSRBatch):
         pass
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
 
-    #Clean up the ends of the data unless explicitly specified to do otherwise (this is a kwarg, not a parameter)
+    # Clean up the ends of the data unless explicitly specified to do otherwise (this is a kwarg, not a parameter)
     if 'clean_ends' not in kwargs.keys():
         clean_ends=True 
     else:
@@ -2032,7 +2080,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         **ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
             If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:
-                - ppsd_length defaults to 60 (seconds) here instead of 3600
+                - ppsd_length defaults to 30 (seconds) here instead of 3600
                 - skip_on_gaps defaults to True instead of False
                 - period_step_octaves defaults to 0.03125 instead of 0.125
 
@@ -2131,7 +2179,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
             
             try:
-                sprit_gui.update_progress_bars(prog_percent=5)
+                sprit_tkinter_ui.update_progress_bars(prog_percent=5)
             except Exception as e:
                 pass
                 #print(e)
@@ -2411,7 +2459,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False):    
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', show_plot=True, azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -2458,10 +2506,14 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
 
     report_format = orig_args['report_format']
     plot_type = orig_args['plot_type']
+    plot_engine = orig_args['plot_engine']
+    show_plot = orig_args['show_plot']
+    azimuth = orig_args['azimuth']
     export_path = orig_args['export_path']
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
     no_output = orig_args['no_output']
     verbose = orig_args['verbose']
+    kwargs = orig_args['kwargs']
     
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
@@ -2617,7 +2669,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 plt.savefig(outFile)
             return 
 
-        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _export_path=None, _no_output=False, verbose=False):
+        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', _export_path=None, _no_output=False, verbose=False):
             if _report_format=='print':
                 #Print results
 
@@ -2718,7 +2770,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
                 dfList[0].extend(criteriaList)
                 outDF = pd.DataFrame(dfList, columns=pdCols)
-
+                outDF.index.name = 'ID'
+                
                 if verbose:
                     print('\nCSV Report:\n')
                     maxColWidth = 13
@@ -2755,13 +2808,30 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 hvsr_results['CSV_Report'] = outDF
                         
             elif _report_format=='plot':
-                fig_ax = plot_hvsr(hvsr_results, plot_type=_plot_type, show=False, return_fig=True)
+                plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+                if 'plot_type' in plot_hvsr_kwargs.keys():
+                    plot_hvsr_kwargs.pop('plot_type')
+                if 'plot_engine' in plot_hvsr_kwargs.keys():
+                    plot_hvsr_kwargs.pop('plot_type')
 
-                export_report(export_obj=fig_ax[0], _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot']=fig_ax
+                fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
 
-                print('\nPlot of data report:')
-                plt.show()
+                if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
+                    expFigAx = fig
+                else:
+                    expFigAx = fig
+
+                export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
+                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
+
+                if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
+                    print('\nPlot of data report:')
+                    fig.show()
+                else:
+                    if verbose:
+                        print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
+
+
                 
             return hvsr_results
 
@@ -2775,7 +2845,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 exp_path = export_path[i]
             else:
                 exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, _export_path=exp_path, _no_output=no_output, verbose=verbose)
 
         hvsr_results['processing_parameters']['get_report'] = {}
         for key, value in orig_args.items():
@@ -2894,7 +2964,7 @@ def input_params(datapath,
         Surface elevation of data point. Not currently used (except in csv output), but will likely be used in the future.
     depth : float, default=0
         Depth of seismometer. Not currently used, but will likely be used in the future.
-    instrument : str or list {'Raspberry Shake')
+    instrument : str {'Raspberry Shake', "Tromino"}
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
@@ -3068,7 +3138,7 @@ def input_params(datapath,
 
 
 # Plot Azimuth data
-def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False, **plot_azimuth_kwargs):
+def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpolate_azimuths=True, show_azimuth_grid=False, show_plot=True, **plot_azimuth_kwargs):
     """Function to plot azimuths when azimuths are calculated
 
     Parameters
@@ -3234,7 +3304,8 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             plt.grid(visible=show_azimuth_grid, which='both', alpha=0.5)
             plt.grid(visible=show_azimuth_grid, which='major', c='k', linewidth=1, alpha=1)
         #plt.colorbar(pmesh1)
-        plt.show()
+        if show_plot:
+            plt.show()
 
         hvsr_data['AzimuthFig'] = fig
     else:
@@ -3243,7 +3314,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  save_dir=None, save_suffix='', show_legend=False, show=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -3289,13 +3360,15 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
         If not None, matplotlib axis on which plot is plotted
     return_fig : bool
         Whether to return figure and axis objects
+    plot_engine : str, default='Matplotlib'
+        Which engine to use for plotting. Both "matplotlib" and "plotly" are acceptable. For shorthand, 'mpl', 'm' also work for matplotlib; 'plty' or 'p' also work for plotly. Not case sensitive.
     save_dir : str or None
         Directory in which to save figures
     save_suffix : str
         Suffix to add to end of figure filename(s), if save_dir is used
     show_legend : bool, default=False
         Whether to show legend in plot
-    show : bool
+    show_plot : bool
         Whether to show plot
     close_figs : bool, default=False
         Whether to close figures before plotting
@@ -3322,142 +3395,150 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 except:
                     print(f"{site_name} not able to be plotted.")
     else:
-        if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
-            #Clear everything
-            for key in ax:
-                ax[key].clear()
-            for t in fig.texts:
-                del t
-            fig.clear()
-        if close_figs:
-            plt.close('all')
+        mplList = ['matplotlib', 'mpl', 'm']
+        plotlyList = ['plotly', 'plty', 'p']
 
-        # The possible identifiers in plot_type for the different kind of plots
-        hvsrList = ['hvsr', 'hv', 'h']
-        compList = ['c', 'comp', 'component', 'components']
-        specgramList = ['spec', 'specgram', 'spectrogram']
-        azList = ['azimuth', 'az', 'a', 'radial', 'r']
+        if plot_engine.lower() in plotlyList:
+            plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show_plot)
+            if return_fig:
+                return plotlyFigure
+        else: #plot_engine.lower() in mplList or any other value not in plotly list
+            if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+                #Clear everything
+                for key in ax:
+                    ax[key].clear()
+                for t in fig.texts:
+                    del t
+                fig.clear()
+            if close_figs:
+                plt.close('all')
 
-        hvsrInd = np.nan
-        compInd = np.nan
-        specInd = np.nan
-        azInd = np.nan
+            # The possible identifiers in plot_type for the different kind of plots
+            hvsrList = ['hvsr', 'hv', 'h']
+            compList = ['c', 'comp', 'component', 'components']
+            specgramList = ['spec', 'specgram', 'spectrogram']
+            azList = ['azimuth', 'az', 'a', 'radial', 'r']
 
-        plot_type = plot_type.replace(',', '')
-        kList = plot_type.split(' ')
-        for i, k in enumerate(kList):
-            kList[i] = k.lower()
+            hvsrInd = np.nan
+            compInd = np.nan
+            specInd = np.nan
+            azInd = np.nan
 
-        # Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
-        # HVSR index
-        if len(set(hvsrList).intersection(kList)):
-            for i, hv in enumerate(hvsrList):
-                if hv in kList:
-                    hvsrInd = kList.index(hv)
+            plot_type = plot_type.replace(',', '')
+            kList = plot_type.split(' ')
+            for i, k in enumerate(kList):
+                kList[i] = k.lower()
+
+            # Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
+            # HVSR index
+            if len(set(hvsrList).intersection(kList)):
+                for i, hv in enumerate(hvsrList):
+                    if hv in kList:
+                        hvsrInd = kList.index(hv)
+                        break
+            # Component index
+            #if len(set(compList).intersection(kList)):
+            for i, c in enumerate(kList):
+                if '+' in c and c[:-1] in compList:
+                    compInd = kList.index(c)
                     break
-        # Component index
-        #if len(set(compList).intersection(kList)):
-        for i, c in enumerate(kList):
-            if '+' in c and c[:-1] in compList:
-                compInd = kList.index(c)
-                break
+                
+            # Specgram index
+            if len(set(specgramList).intersection(kList)):
+                for i, sp in enumerate(specgramList):
+                    if sp in kList:
+                        specInd = kList.index(sp)
+                        break        
+
+            # Azimuth index
+            if len(set(azList).intersection(kList)):
+                for i, sp in enumerate(azList):
+                    if sp in kList:
+                        azInd = kList.index(sp)
+                        break        
+
             
-        # Specgram index
-        if len(set(specgramList).intersection(kList)):
-            for i, sp in enumerate(specgramList):
-                if sp in kList:
-                    specInd = kList.index(sp)
-                    break        
+            # Get indices for all plot type indicators
+            indList = [hvsrInd, compInd, specInd, azInd]
+            indListCopy = indList.copy()
+            plotTypeList = ['hvsr', 'comp', 'spec', 'az']
 
-        # Azimuth index
-        if len(set(azList).intersection(kList)):
-            for i, sp in enumerate(azList):
-                if sp in kList:
-                    azInd = kList.index(sp)
-                    break        
+            plotTypeOrder = []
+            plotIndOrder = []
 
-        
-        # Get indices for all plot type indicators
-        indList = [hvsrInd, compInd, specInd, azInd]
-        indListCopy = indList.copy()
-        plotTypeList = ['hvsr', 'comp', 'spec', 'az']
+            # Get lists with first and last indices of the specifiers for each plot
+            lastVal = 0
+            while lastVal != 99:
+                firstInd = np.nanargmin(indListCopy)
+                plotTypeOrder.append(plotTypeList[firstInd])
+                plotIndOrder.append(indList[firstInd])
+                lastVal = indListCopy[firstInd]
+                indListCopy[firstInd] = 99  #just a high number
 
-        plotTypeOrder = []
-        plotIndOrder = []
-
-        # Get lists with first and last indices of the specifiers for each plot
-        lastVal = 0
-        while lastVal != 99:
-            firstInd = np.nanargmin(indListCopy)
-            plotTypeOrder.append(plotTypeList[firstInd])
-            plotIndOrder.append(indList[firstInd])
-            lastVal = indListCopy[firstInd]
-            indListCopy[firstInd] = 99  #just a high number
-
-        plotTypeOrder.pop()
-        plotIndOrder[-1] = len(kList)
-        
-        # Get 
-        for i, p in enumerate(plotTypeOrder):
-            pStartInd = plotIndOrder[i]
-            pEndInd = plotIndOrder[i+1]
-            plotComponents = kList[pStartInd:pEndInd]
-
-            if use_subplots and i == 0 and fig is None and ax is None:
-                mosaicPlots = []
-                for pto in plotTypeOrder:
-                    if pto == 'az':
-                        for i, subp in enumerate(mosaicPlots):
-                            if (subp[0].lower() == 'hvsr' or subp[0].lower() == 'comp') and len([item for item in plotTypeOrder if item != "hvsr"]) > 0:
-                                mosaicPlots[i].append(subp[0])
-                                mosaicPlots[i].append(subp[0])
-                            else:
-                                mosaicPlots[i].append(subp[0])
-                                mosaicPlots[i].append(pto)
-                    else:
-                        mosaicPlots.append([pto])
-                perSubPDict = {}
-                if 'az' in plotTypeOrder:
-                    perSubPDict['az'] = {'projection':'polar'}
-                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
-                axis = ax[p]
-            elif use_subplots:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
-                    ax[p].clear()
-                axis = ax[p]
-            else:
-                fig, axis = plt.subplots()
-
-            if p == 'hvsr':
-                kwargs['subplot'] = p
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p == 'comp':
-                plotComponents[0] = plotComponents[0][:-1]
-                kwargs['subplot'] = p
-                _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-            elif p == 'spec':
-                plottypeKwargs = {}
-                for c in plotComponents:
-                    plottypeKwargs[c] = True
-                kwargs.update(plottypeKwargs)
-                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
-            elif p == 'az':
-                kwargs['plot_type'] = plotComponents
-                hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
-            else:
-                warnings.warn('Plot type {p} not recognized', UserWarning)   
-
-        windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
-        fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
-                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
-        fig.get_layout_engine().set(h_pad=0.075, hspace=-5)
-
-        if show:
-            fig.canvas.draw()
+            plotTypeOrder.pop()
+            plotIndOrder[-1] = len(kList)
             
-        if return_fig:
-            return fig, ax
+            # Get 
+            for i, p in enumerate(plotTypeOrder):
+                pStartInd = plotIndOrder[i]
+                pEndInd = plotIndOrder[i+1]
+                plotComponents = kList[pStartInd:pEndInd]
+
+                if use_subplots and i == 0 and fig is None and ax is None:
+                    mosaicPlots = []
+                    for pto in plotTypeOrder:
+                        if pto == 'az':
+                            for i, subp in enumerate(mosaicPlots):
+                                if (subp[0].lower() == 'hvsr' or subp[0].lower() == 'comp') and len([item for item in plotTypeOrder if item != "hvsr"]) > 0:
+                                    mosaicPlots[i].append(subp[0])
+                                    mosaicPlots[i].append(subp[0])
+                                else:
+                                    mosaicPlots[i].append(subp[0])
+                                    mosaicPlots[i].append(pto)
+                        else:
+                            mosaicPlots.append([pto])
+                    perSubPDict = {}
+                    if 'az' in plotTypeOrder:
+                        perSubPDict['az'] = {'projection':'polar'}
+                    fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
+                    axis = ax[p]
+                elif use_subplots:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
+                        ax[p].clear()
+                    axis = ax[p]
+                else:
+                    fig, axis = plt.subplots()
+
+                if p == 'hvsr':
+                    kwargs['subplot'] = p
+                    _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                elif p == 'comp':
+                    plotComponents[0] = plotComponents[0][:-1]
+                    kwargs['subplot'] = p
+                    _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                elif p == 'spec':
+                    plottypeKwargs = {}
+                    for c in plotComponents:
+                        plottypeKwargs[c] = True
+                    kwargs.update(plottypeKwargs)
+                    _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
+                elif p == 'az':
+                    kwargs['plot_type'] = plotComponents
+                    hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
+                else:
+                    warnings.warn('Plot type {p} not recognized', UserWarning)   
+
+            windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
+            fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
+                    bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
+            fig.get_layout_engine().set(h_pad=0.075, hspace=-5)
+
+            if show_plot:
+                fig.canvas.draw()
+                
+            if return_fig:
+                return fig
     return
 
 
@@ -3594,7 +3675,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         plt.show()
 
     if return_fig:
-        return fig, axes
+        return fig
     return                 
 
 
@@ -3797,10 +3878,15 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
             #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
         
-        #Get string of method type
+        # Get string of method type
+        # First check if input is a string number
+        if type(method) is str and method.isdigit():
+                method = int(method)
+
         if type(method) is int:
             methodInt = method
             method = methodList[method]
+        
         hvsr_data['method'] = method
 
         #This gets the main hvsr curve averaged from all time steps
@@ -4254,7 +4340,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, show_outlier_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -4303,7 +4389,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
     use_hv_curve = orig_args['use_hv_curve']
-    show_outlier_plot = orig_args['show_outlier_plot']
+    show_plot = orig_args['show_plot']
     verbose = orig_args['verbose']
 
     #Print if verbose, which changes depending on if batch data or not
@@ -4358,14 +4444,15 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     compNames.append(col_name)
             colNames = compNames
             col_prefix = 'HV_Curves'
-        if show_outlier_plot:
+
+        if plot_engine.lower() == 'matplotlib':
             if use_hv_curve:
                 spMosaic = ['HV Curve']
             else:
                 spMosaic = [['Z'],
                             ['E'],
                             ['N']]
-            fig, ax=plt.subplot_mosaic(spMosaic, sharex=True)
+            fig, ax = plt.subplot_mosaic(spMosaic, sharex=True)
 
         #Loop through each component, and determine which curves are outliers
         bad_rmse=[]
@@ -4399,44 +4486,54 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                     bad_rmse.append(j)
 
             # Show plot of removed/retained data
-            if show_outlier_plot and use_hv_curve == False:
-                # Intialize to only get unique labels
-                rem_label_got = False
-                keep_label_got = False
-                
-                # Iterate through each curve to determine if it's rmse is outside threshold, for plot
-                for j, curve in enumerate(curr_data):
-                    label=None
-                    if rmse[j] > rmse_threshold:
-                        linestyle = 'dashed'
-                        linecolor='darkred'
-                        alpha = 1
-                        linewidth = 1
-                        if not rem_label_got:
-                            label='Removed Curve'
-                            rem_label_got=True
-                    else:
-                        linestyle='solid'
-                        linecolor = 'rosybrown'
-                        alpha = 0.25
-                        linewidth=0.5
-                        if not keep_label_got:
-                            keep_label_got=True
-                            label='Retained Curve'
-
-                    # Plot each individual curve
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                
-                # Plot the median curve
-                ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
-                
-                # Format axis
-                ax[compNames[i]].set_ylabel(f"{compNames[i]}")
-                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
-                ax[compNames[i]].semilogx()             
-        if show_outlier_plot:
-            plt.show()
+            if use_hv_curve == False:
+                if plot_engine.lower() == 'matplotlib':
+                    # Intialize to only get unique labels
+                    rem_label_got = False
+                    keep_label_got = False
                     
+                    # Iterate through each curve to determine if it's rmse is outside threshold, for plot
+                    for j, curve in enumerate(curr_data):
+                        label=None
+                        if rmse[j] > rmse_threshold:
+                            linestyle = 'dashed'
+                            linecolor='darkred'
+                            alpha = 1
+                            linewidth = 1
+                            if not rem_label_got:
+                                label='Removed Curve'
+                                rem_label_got=True
+                        else:
+                            linestyle='solid'
+                            linecolor = 'rosybrown'
+                            alpha = 0.25
+                            linewidth=0.5
+                            if not keep_label_got:
+                                keep_label_got=True
+                                label='Retained Curve'
+
+                        # Plot each individual curve
+                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    
+                    # Plot the median curve
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+                    
+                    # Format axis
+                    ax[compNames[i]].set_ylabel(f"{compNames[i]}")
+                    ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
+                    ax[compNames[i]].semilogx()             
+       
+        if plot_engine.lower() == 'matplotlib':
+            hvsr_data['OutlierPlot'] = fig
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
+        elif plot_engine.lower() == 'plotly':
+            hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, from_roc=True, show_plot=show_plot, verbose=verbose)
+        else:
+            pass
+
         # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
         bad_rmse = np.unique(bad_rmse)
         if len(bad_rmse) > 0:
@@ -6910,7 +7007,7 @@ def __gethvsrparams(hvsr_out):
 
 # Helper Functions for plotting
 # Plot hvsr curve, private supporting function for plot_hvsr
-def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show=True, **kwargs):
+def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
     if 'kwargs' in kwargs.keys():
@@ -7354,13 +7451,13 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                         fig=fig, ax=ax,
                         plot_suffix=plotSuff, 
                         user_suffix=save_suffix, 
-                        show=show)
+                        show_plot=show_plot)
     
     return fig, ax
 
 
 # Private function to help for when to show and format and save plots
-def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show):
+def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, show_plot):
     """Private function to support plot_hvsr, for plotting and showing plots"""
     #plt.gca()
     #plt.gcf()
@@ -7371,7 +7468,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
     if save_dir is not None:
         outFile = save_dir+'/'+filename+'_'+plot_suffix+str(datetime.datetime.today().date())+'_'+user_suffix+'.png'
         fig.savefig(outFile, bbox_inches='tight', pad_inches=0.2)
-    if show:
+    if show_plot:
         fig.canvas.draw()#.show()
         #fig.tight_layout()
         #plt.ion()
@@ -7743,7 +7840,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     
     #cbar = plt.colorbar(mappable=im)
     #cbar.set_label('Power Spectral Density [dB]')
-    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show=False)
+    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show_plot=False)
     
     ax['spec'].xaxis_date()
     ax['signalz'].xaxis_date()
@@ -7794,13 +7891,12 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         #fig.tight_layout()
         plt.rcParams['figure.figsize'] = ogFigsize
         
-    fig.canvas.draw()
-
     if show_plot:
+        fig.canvas.draw()
         plt.show()
     
     if return_fig:
-        return fig, ax
+        return fig
     
     return
 

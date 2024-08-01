@@ -200,7 +200,7 @@ class SPRIT_App:
         self.instrument_menu = tk.Menu(self.settings_menu, tearoff=0)
         self.instrument_var = tk.StringVar(value="Raspberry Shake")
         self.instrument_menu.add_radiobutton(label="Raspberry Shake", variable=self.instrument_var, value="Raspberry Shake")
-        self.instrument_menu.add_radiobutton(label="Nodes", variable=self.instrument_var, value="Nodes")
+        self.instrument_menu.add_radiobutton(label="Tromino", variable=self.instrument_var, value="Tromino")
         self.instrument_menu.add_radiobutton(label="Other", variable=self.instrument_var, value="Other")
         self.settings_menu.add_cascade(label="Instrument", menu=self.instrument_menu)
         self.settings_menu.add_command(label="Processing Settings", command=lambda: self.tab_control.select(self.settings_tab))
@@ -377,11 +377,11 @@ class SPRIT_App:
                 update_progress_bars(prog_percent=10)
                 update_input_labels(self.hvsr_data)
 
-                #Plot data in data preview tab
-                self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                # Plot data in data preview tab
+                self.fig_pre = sprit_hvsr.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
-                #Plot data in noise preview tab
-                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                # Plot data in noise preview tab
+                self.fig_noise = sprit_hvsr._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows(self.hvsr_data)
 
@@ -632,7 +632,7 @@ class SPRIT_App:
 
         #Instrument select
         ttk.Label(hvsrFrame, text="Instrument").grid(row=0, column=6, sticky='e', padx=5)
-        inst_options = ["Raspberry Shake", "Nodes", "Other"]
+        inst_options = ["Raspberry Shake", "Tromino", "Other"]
 
         
         def on_option_select(self, inst):
@@ -1522,7 +1522,7 @@ class SPRIT_App:
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
-                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise = sprit_hvsr._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
             self.noise_canvas.draw()

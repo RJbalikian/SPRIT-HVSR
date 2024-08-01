@@ -11,7 +11,7 @@ version="1.0.2"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
-dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyproj", 'ipython', 'ipywidgets', 'plotly', 'nbformat', 'PyQt5-sip']
+dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyproj", 'ipython', 'ipywidgets', 'plotly', 'nbformat', 'PyQt5-sip', 'streamlit==1.34']
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Science/Research",
@@ -22,9 +22,34 @@ classifiers = [
 #[tool.setuptools.dynamic]
 #readme = {file = ["README.md"]}
 
+[tool.poetry]
+name='SpRIT Streamlit'
+version = "1.0.2"
+description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
+authors = ["Riley Balikian <your_email@example.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+obspy = "*"
+scipy = "*"
+matplotlib = "*"
+pandas = "*"
+numpy = "*"
+pyproj = "*"
+ipython = "*"
+ipywidgets = "*"
+plotly = "*"
+nbformat = "*"
+PyQt5-sip = "*"
+streamlit = "1.34"
+sprit = "*"
+
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
-"API Documentation" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
+"ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/index.html"
+"Github Pages API Docs" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
 "Tutorials & Wiki" = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
 
 [project.scripts]

@@ -1,0 +1,8 @@
+try:
+    import ui.sprit_streamlit as sprit_streamlit
+except:
+    import sprit_streamlit
+
+from ui import sprit_streamlit
+
+from sprit import ui

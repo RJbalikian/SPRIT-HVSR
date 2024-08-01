@@ -1,8 +1,8 @@
-testnotebook.ipynb
+*testnotebook.ipynb
 .env
 .venv
 *cache*
-__pycache__
+*/__pycache__
 /sprit/__pycache__
 .pytest_cache
 docs/pyinstaller/SPRIT.exe

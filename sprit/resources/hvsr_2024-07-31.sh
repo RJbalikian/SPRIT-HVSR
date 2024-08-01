@@ -1,8 +1,9 @@
+
 #!/bin/bash
 set -e
 #VERSIONING
-# v1.1
-# updated 2024-08-01
+# v1.0
+# updated 2024-07-08
 
 #DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
@@ -27,7 +28,7 @@ DURATION=20
 CHECK_INT=30
 VERBOSE=""
 
-RUN_AS_TEST=false
+SYS_IS_RS=true
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="/hvsr"
@@ -40,12 +41,11 @@ STARTUP_TIME=15
 
 # READ IN OPTIONS
 # Get options
-while getopts 'n:t:d:c:s:ve' opt; do
+while getopts 'n:d:c:s:ve' opt; do
     case "$opt" in
         n) SITE_NAME="$OPTARG"
             echo $SITE_NAME
             ;;
-        t) RUN_AS_TEST=true;;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
@@ -68,7 +68,7 @@ while getopts 'n:t:d:c:s:ve' opt; do
 
                 if ! [[ $EXPORT_DISK =~ ^[0-9]{1,3}$ ]]; then
                     echo "$EXPORT_DISK specified as export disk"
-		        else
+		else
                     EXPORT_DATE=$(printf "%03d" "$EXPORT_DISK")
                     USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
                     while read dev;do
@@ -112,8 +112,6 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 sudo mkdir $MOUNTED_DIR
             fi
 
-	    sudo mount $EXPORT_DISK $MOUNTED_DIR
-
             datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
             EXPORT_DIR="${MOUNTED_DIR%/}/$datestring/"
 
@@ -130,8 +128,6 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 find "$HVSRDATA_DIR" -type f -name "*_$EXPORT_DATE_*" -exec cp {} "$EXPORT_DIR" \;
             fi
             echo "Data successfully copied to $datestring folder on USB device $EXPORT_DISK"
-	    sudo umount $EXPORT_DISK
-	    echo "$EXPORT_DISK successfully unmounted, you may now remove drive"
             exit 0
             ;;
         ?|h)
@@ -251,10 +247,20 @@ slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
 #RASPBERY SHAKE SYSTEM CHECK HERE
 
 # If this is being run on a raspberry shake, poweroff instrument
-if ! $RUN_AS_TEST; then
-    # Shutdown instrument
+if $SYS_IS_RS; then
+    # Flash led in heartbeat mode
+    #modprobe ledtrig_heartbeat
+    #echo heartbeat >/sys/class/leds/led0/trigger
+
+    # Do a powering down countdown
+    #printf "Powering down in $PDOWN_TIME seconds"
+    #while [[ $PDOWN_TIME > $0 ]]; do
+    #    sleep 1
+    #    PDOWN_TIME=$(($PDOWN_TIME - 1))
+    #    echo -ne "Powering down in $PDOWN_TIME seconds \033[0K\r"
+    #done
     echo "Powering down"
     sudo poweroff
 else
-    echo "Program Completed. If this was a not a test, your Raspbery Pi system would shut down now."
+    echo "Program Completed. If this was a Raspberry Shake, your system would shut down now."
 fi
