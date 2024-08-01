@@ -273,7 +273,6 @@ def on_run_data():
     st.session_state.prev_datapath=st.session_state.datapath
     
 def write_to_info_tab(info_tab):
-    
     with info_tab:
         st.markdown("# Processing Parameters Used")
         for fun, kwargDict in sigList:
