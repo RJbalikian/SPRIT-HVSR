@@ -112,6 +112,8 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 sudo mkdir $MOUNTED_DIR
             fi
 
+	    sudo mount $EXPORT_DISK $MOUNTED_DIR
+
             datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
             EXPORT_DIR="${MOUNTED_DIR%/}/$datestring/"
 
@@ -128,6 +130,8 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 find "$HVSRDATA_DIR" -type f -name "*_$EXPORT_DATE_*" -exec cp {} "$EXPORT_DIR" \;
             fi
             echo "Data successfully copied to $datestring folder on USB device $EXPORT_DISK"
+	    sudo umount $EXPORT_DISK
+	    echo "$EXPORT_DISK successfully unmounted, you may now remove drive"
             exit 0
             ;;
         ?|h)
