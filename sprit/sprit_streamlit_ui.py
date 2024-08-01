@@ -251,11 +251,26 @@ def on_run_data():
         with mainContainer:
             spinnerText = 'Data is processing with default parameters.'
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+            NOWTIME = datetime.datetime.now()
+            secondaryDefaults = {'acq_date':datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
+                                 'hvsr_band':(0.4, 40), 'use_hv_curve':True,
+                                 'starttime':datetime.time(0,0,0),
+                                 'endtime':datetime.time(23,59,0),
+                                 'peak_freq_range':(0.4, 40),
+                                 'stalta_thresh':(8, 16),
+                                 'period_limits':(0.025, 2.5),
+                                 'remove_method':['Auto'],
+                                 'elev_unit':'m',
+                                 'plot_type':'HVSR p ann C+ p ann Spec p'
+                                 }
             nonDefaultParams = False
             for key, value in srun.items():
                 if key not in excludedKeys:
-                    nonDefaultParams = True
-                    spinnerText = spinnerText + f"  \n\t{key} = {value};   "
+                    if key in secondaryDefaults and secondaryDefaults[key] == value:
+                        pass
+                    else:
+                        nonDefaultParams = True
+                        spinnerText = spinnerText + f"\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})"
             if nonDefaultParams:
                 spinnerText = spinnerText.replace('default', 'the following non-default')
             with st.spinner(spinnerText):

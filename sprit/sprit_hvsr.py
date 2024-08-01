@@ -40,7 +40,7 @@ try:  # For distribution
     from sprit import sprit_plot
 except Exception:  # For testing
     import sprit_utils
-    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
+    import sprit_tkinter_ui
     import sprit_jupyter_UI
     import sprit_plot
 
