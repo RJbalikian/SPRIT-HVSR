@@ -35,12 +35,12 @@ import scipy
 
 try:  # For distribution
     from sprit import sprit_utils
-    from sprit import sprit_gui
+    from sprit import sprit_tkinter_ui
     from sprit import sprit_jupyter_UI
     from sprit import sprit_plot
 except Exception:  # For testing
     import sprit_utils
-    import sprit_gui
+    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit_jupyter_UI
     import sprit_plot
 
@@ -567,8 +567,8 @@ class HVSRData:
 
 def gui_test():
     import subprocess
-    print(sprit_gui.__file__)
-    guiFile = sprit_gui.__file__
+    print(sprit_tkinter_ui.__file__)
+    guiFile = sprit_tkinter_ui.__file__
     subprocess.call(guiFile, shell=True)
 
 
@@ -599,9 +599,9 @@ def gui(kind='browser'):
         import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
-            from sprit.sprit_gui import SPRIT_App
+            from sprit.sprit_tkinter_ui import SPRIT_App
         except:
-            from sprit_gui import SPRIT_App
+            from sprit.sprit_tkinter_ui import SPRIT_App
         
         try:
             import tkinter as tk
@@ -621,7 +621,7 @@ def gui(kind='browser'):
         gui_root = tk.Tk()
         try:
             try:
-                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
                 gui_root.iconbitmap(icon_path)
             except:
                 icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
@@ -630,10 +630,10 @@ def gui(kind='browser'):
             print("ICON NOT LOADED, still opening GUI")
 
         gui_root.resizable(True, True)
-        spritApp = SPRIT_App(master=gui_root) #Open the app with a tk.Tk root
+        spritApp = SPRIT_App(master=gui_root)  # Open the app with a tk.Tk root
 
         gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
-        gui_root.mainloop() #Run the main loop
+        gui_root.mainloop()  # Run the main loop
     elif kind.lower() in widgetList:
         try:
             sprit_jupyter_UI.create_jupyter_ui()
@@ -2176,7 +2176,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
             
             try:
-                sprit_gui.update_progress_bars(prog_percent=5)
+                sprit_tkinter_ui.update_progress_bars(prog_percent=5)
             except Exception as e:
                 pass
                 #print(e)

@@ -4,13 +4,13 @@ This module analysis ambient seismic data using the Horizontal to Vertical Spect
 """
 try:
     import sprit.sprit_utils as sprit_utils
-    import sprit.sprit_gui as sprit_gui
+    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
     import sprit.sprit_plot as sprit_plot
 except:
     import sprit_utils
-    import sprit_gui
+    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit_hvsr
     import sprit_jupyter_UI
     import sprit_plot
@@ -56,7 +56,7 @@ from sprit.sprit_utils import(
     x_mark
 )
 
-from sprit.sprit_gui import(
+from sprit.sprit_tkinter_ui import(
     catch_errors
 )
 
@@ -113,7 +113,7 @@ __all__ =('sprit_hvsr',
             'read_from_RS',
             'time_it',
             'x_mark',
-        'sprit_gui',
+        'sprit_tkinter_ui',
             'catch_errors',
         'sprit_jupyter_UI',
             'create_jupyter_ui',
