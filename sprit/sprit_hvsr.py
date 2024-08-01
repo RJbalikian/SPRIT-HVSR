@@ -591,8 +591,9 @@ def gui(kind='browser'):
 
     if kind.lower() in browserList:
         import subprocess
-        parentPath = pathlib.Path(__file__).parent
-        cmd = ['python3', parentPath.joinpath("sprit_remi.py").as_posix()]
+        import pkg_resources
+        streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit.py")
+        cmd = ['streamlit', 'run', streamlitPath.as_posix()]
         subprocess.run(cmd)
     elif kind.lower() in windowList:
         import pkg_resources
