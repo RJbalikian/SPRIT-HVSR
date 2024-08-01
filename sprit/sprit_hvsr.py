@@ -1710,11 +1710,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         year = date.year
         warnings.warn("Did not recognize date, using year {} and day {}".format(year, doy))
 
-    #Select which instrument we are reading from (requires different processes for each instrument)
+    # Select which instrument we are reading from (requires different processes for each instrument)
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
-    #Get any kwargs that are included in obspy.read
+    # Get any kwargs that are included in obspy.read
     obspyReadKwargs = {}
     for argName in inspect.getfullargspec(obspy.read)[0]:
         if argName in kwargs.keys():
@@ -1763,24 +1763,27 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 return HVSRBatch(obspyFiles)
         elif source=='file' and str(params['datapath']).lower() not in sampleList:
             # Read the file specified by datapath
-            if isinstance(dPath, list) or isinstance(dPath, tuple):
-                rawStreams = []
-                for datafile in dPath:
-                    rawStream = obspy.read(datafile, **obspyReadKwargs)
-                    rawStreams.append(rawStream) #These are actually streams, not traces
-                for i, stream in enumerate(rawStreams):
-                    if i == 0:
-                        rawDataIN = obspy.Stream(stream) #Just in case
-                    else:
-                        rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-            elif str(dPath)[:6].lower()=='sample':
-                pass
+            if inst.lower() in trominoNameList:
+                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             else:
-                rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-            import warnings # For some reason not being imported at the start
-            with warnings.catch_warnings():
-                warnings.simplefilter(action='ignore', category=UserWarning)
-                rawDataIN.attach_response(inv)
+                if isinstance(dPath, list) or isinstance(dPath, tuple):
+                    rawStreams = []
+                    for datafile in dPath:
+                        rawStream = obspy.read(datafile, **obspyReadKwargs)
+                        rawStreams.append(rawStream) #These are actually streams, not traces
+                    for i, stream in enumerate(rawStreams):
+                        if i == 0:
+                            rawDataIN = obspy.Stream(stream) #Just in case
+                        else:
+                            rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
+                elif str(dPath)[:6].lower()=='sample':
+                    pass
+                else:
+                    rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+                import warnings # For some reason not being imported at the start
+                with warnings.catch_warnings():
+                    warnings.simplefilter(action='ignore', category=UserWarning)
+                    rawDataIN.attach_response(inv)
         elif source=='batch' and str(params['datapath']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
