@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 #VERSIONING
-# v1.0
-# updated 2024-07-08
+# v1.1
+# updated 2024-08-01
 
 #DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
