@@ -62,7 +62,7 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 level=1
             fi
 
-            #echo "OPT: $opt: $OPTARG"
+            # Get specified export disk, or use last (alphabetic) detected one
             if [[ -n "$nextopt" ]]; then
                 EXPORT_DISK="$nextopt"
 
@@ -84,15 +84,17 @@ while getopts 'n:t:d:c:s:ve' opt; do
                 # Handle the case when the argument is missing
                 USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
 
+                # Detect USB drives
                 while read dev;do
                     LASTDISK=$dev;
                 done <<< $USBDISKS
-		echo $LASTDISK
+		        echo $LASTDISK
 
-		EXPORT_DISK=$LASTDISK
+		        EXPORT_DISK=$LASTDISK
 
                 if [[ -z "$EXPORT_DISK" ]]; then
                     echo "No USB disks detected. Data not exported"
+                    # If not specified and not detected, exit and do not export
                     exit 1
                 else
                     echo "No export disk specified, using USB disk detected at $EXPORT_DISK"
@@ -102,36 +104,43 @@ while getopts 'n:t:d:c:s:ve' opt; do
             if [[ "$USBDISKS" == *"$EXPORT_DISK"* ]]; then
                 echo "Your specified disk is a USB disk"
             else
+                # Check if Export disk is an output of the USBDISKS disk identifier
                 echo "Your specified disk is not a USB disk. Cannot export data"
                 exit 1
             fi
 
             # Mount and change disk/directory name
-	    MOUNTED_DIR="/mnt/usbdrive/"
+	        # We will mount to "usbdrive" folder temporarily
+            MOUNTED_DIR="/mnt/usbdrive/"
+            # Make that directory if it doesn't exist
             if [ ! -d $MOUNTED_DIR ]; then
                 sudo mkdir $MOUNTED_DIR
             fi
+            # And mount the disk to that location
+	        sudo mount $EXPORT_DISK $MOUNTED_DIR
 
-	    sudo mount $EXPORT_DISK $MOUNTED_DIR
-
+            # Create folder to hold all exported data
             datestring=$(date +'%j_%Y-%m-%d_%H-%M-%S')
-            EXPORT_DIR="${MOUNTED_DIR%/}/$datestring/"
+            EXPORT_DIR="${MOUNTED_DIR%/}/EXPORT_&STATION_$datestring/"
 
+            # Create export directory on usb drive
             if [ ! -d $EXPORT_DIR ]; then
                 sudo mkdir "$EXPORT_DIR"
             fi
 
-
+            # Copy data to USB drive
             if [ -z $EXPORT_DATE ]; then
                 echo "Copying data from $HVSRDATA_DIR to $EXPORT_DIR"
                 sudo cp -r "$HVSRDATA_DIR/"* "$EXPORT_DIR"
-	    else
+	        else
                 echo "Copying data from day $EXPORT_DATE from $HVSRDATA_DIR to $EXPORT_DIR" 
                 find "$HVSRDATA_DIR" -type f -name "*_$EXPORT_DATE_*" -exec cp {} "$EXPORT_DIR" \;
             fi
+
+            # Clean up everything and confirm copy
             echo "Data successfully copied to $datestring folder on USB device $EXPORT_DISK"
-	    sudo umount $EXPORT_DISK
-	    echo "$EXPORT_DISK successfully unmounted, you may now remove drive"
+	        sudo umount $EXPORT_DISK
+	        echo "$EXPORT_DISK successfully unmounted, you may now remove drive"
             exit 0
             ;;
         ?|h)
@@ -242,7 +251,7 @@ eMIN=$(date -d "$END_TIME" '+%M')
 eSEC=$(date -d "$END_TIME" '+%S')
 eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 
-fpath="$HVSRDATA_DIR/"$SITE_NAME"_$(date -d "$START_TIME" '+%Y-%m-%d_%j_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
+fpath="$HVSRDATA_DIR/"$SITE_NAME"_"$STATION"_$(date -d "$START_TIME" '+%j_%Y-%m-%d_%H%M')-$(date -d "$END_TIME" '+%H%M').mseed"
 echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
