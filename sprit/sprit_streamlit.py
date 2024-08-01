@@ -115,14 +115,12 @@ def setup_session_state():
         print('Start sig loop, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
 
-        for fun, kwargs in sigList:
-            # If this is the initial setup
-            for sig in sigList:
-                funSig = inspect.signature(sig[0])
-                for arg in funSig.parameters.keys():
-                    if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
-                        sig[1][arg] = funSig.parameters[arg].default
-                        run_kwargs[arg] = funSig.parameters[arg].default
+        for sig in sigList:
+            funSig = inspect.signature(sig[0])
+            for arg in funSig.parameters.keys():
+                if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
+                    sig[1][arg] = funSig.parameters[arg].default
+                    run_kwargs[arg] = funSig.parameters[arg].default
 
         gppsd_kwargs['ppsd_length'] = run_kwargs['ppsd_length'] = 30
         gppsd_kwargs['skip_on_gaps'] = run_kwargs['skip_on_gaps'] = True
@@ -232,6 +230,64 @@ def on_file_upload():
     print(file.name)
     st.session_state.datapath = path.as_posix()
 
+
+def on_run_data():
+    mainContainer = st.container()
+    inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
+    plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
+
+    if st.session_state.datapath!='':
+        srun = {}
+        for key, value in st.session_state.items():
+            if key in st.session_state.run_kws and value != st.session_state.default_params[key]:
+                srun[key] = value
+        # Get plots all right
+        srun['plot_engine'] = 'plotly'
+        srun['plot_input_stream'] = True
+        srun['show_plot'] = False
+        srun['verbose'] = True
+        print('SPRIT RUN', srun)
+        st.toast('Data is processing', icon="⌛")
+        with mainContainer:
+            spinnerText = 'Data is processing with default parameters.'
+            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+            nonDefaultParams = False
+            for key, value in srun.items():
+                if key not in excludedKeys:
+                    nonDefaultParams = True
+                    spinnerText = spinnerText + f"  \n\t{key} = {value};   "
+            if nonDefaultParams:
+                spinnerText = spinnerText.replace('default', 'the following non-default')
+            with st.spinner(spinnerText):
+                st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+        
+        write_to_info_tab(infoTab)
+        st.balloons()
+        
+        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+        plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+        csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
+        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+
+    st.session_state.prev_datapath=st.session_state.datapath
+    
+def write_to_info_tab(info_tab):
+    
+    with info_tab:
+        st.markdown("# Processing Parameters Used")
+        for fun, kwargDict in sigList:
+            funSig = inspect.signature(fun)
+            #excludeKeys = ['params', 'hvsr_data', 'hvsr_results']
+            funMD = ""
+            for arg in funSig.parameters.keys():
+                if arg in st.session_state.keys():
+                    funMD = funMD + f"""\n    * {arg} = {st.session_state[arg]}"""
+
+            with st.expander(f"{fun.__name__}"):
+                st.write(funMD, unsafe_allow_html=True)
+
+
 # DEFINE SIDEBAR
 print('About to start setting up sidebar, session state length: ', len(st.session_state.keys()))
 print_param(param2print)
@@ -250,44 +306,6 @@ with st.sidebar:
 
     # Create top menu
     with bottom_container:
-        def on_run_data():
-            mainContainer = st.container()
-            inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
-            plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
-
-            if st.session_state.datapath!='':
-                srun = {}
-                for key, value in st.session_state.items():
-                    if key in st.session_state.run_kws and value != st.session_state.default_params[key]:
-                        srun[key] = value
-                # Get plots all right
-                srun['plot_engine'] = 'plotly'
-                srun['plot_input_stream'] = True
-                srun['show_plot'] = False
-                srun['verbose'] = True
-                print('SPRIT RUN', srun)
-                st.toast('Data is processing', icon="⌛")
-                with mainContainer:
-                    spinnerText = 'Data is processing with default parameters.'
-                    excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
-                    nonDefaultParams = False
-                    for key, value in srun.items():
-                        if key not in excludedKeys:
-                            nonDefaultParams = True
-                            spinnerText = spinnerText + f"  \n\t{key} = {value};   "
-                    if nonDefaultParams:
-                        spinnerText = spinnerText.replace('default', 'the following non-default')
-                    with st.spinner(spinnerText):
-                        st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
-                st.balloons()
-                
-                inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-                outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-                plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-                csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
-                strReportTab.text(st.session_state.hvsr_data['Print_Report'])
-
-            st.session_state.prev_datapath=st.session_state.datapath
 
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
         resetCol.button('Reset', disabled=True, use_container_width=True)
