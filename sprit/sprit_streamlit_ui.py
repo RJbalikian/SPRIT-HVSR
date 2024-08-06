@@ -13,10 +13,16 @@ from obspy.signal.spectral_estimation import PPSD
 #sys.path.append('..')
 #sys.path.append('../..')
 
+
+
 try:
     from sprit import sprit_hvsr
-except:
-    import sprit_hvsr
+except Exception:
+    try:
+        import sprit_hvsr
+    except Exception:
+        import sprit
+
 
 
 print('Start of file, session state length: ', len(st.session_state.keys()))

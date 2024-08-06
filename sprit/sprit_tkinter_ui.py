@@ -103,7 +103,7 @@ class SPRIT_App:
             if isinstance(notebook, ttk.Notebook):
                 for tab_id in notebook.tabs():
                     tab_frame = notebook.nametowidget(tab_id)
-                    #print(type(tab_frame))
+
                     for frame in tab_frame.winfo_children():
                         if isinstance(frame, ttk.LabelFrame):
                             for widget in frame.winfo_children():
@@ -371,7 +371,6 @@ class SPRIT_App:
                                             detrend=self.detrend.get(), 
                                             detrend_order=self.detrend_order.get())
                 except:
-                    #print(dir(sys.exc_info()))
                     traceback.print_exc()
 
                 update_progress_bars(prog_percent=10)
@@ -496,7 +495,7 @@ class SPRIT_App:
                                             rmse_thresh=98,
                                             use_percentile=True,
                                             use_hv_curve = False,
-                                            show_outlier_plot = False)
+                                            show_plot = False)
             update_progress_bars(prog_percent=60)
 
             self.log_text.insert('end', f"{self.procHVSR_call['text']}\n\n")
@@ -1549,7 +1548,6 @@ class SPRIT_App:
                     #Set initial input
                     #input = hv_data#['input_stream']
 
-                    #print(input[0].stats.starttime)
                     if self.do_stalta.get():
                         hv_data = sprit_hvsr.remove_noise(hvsr_data=hv_data, remove_method='stalta', sta=self.sta.get(), lta=self.lta.get(), stalta_thresh=[self.stalta_thresh_low.get(), self.stalta_thresh_hi.get()])
 
@@ -2019,7 +2017,7 @@ class SPRIT_App:
         maxPerLimEntry.grid(row=5, column=4, sticky='w', padx=(5, 10))
 
         if minPerLim.get() == 'None' or maxPerLim.get() == 'None':
-            self.period_limits=None
+            self.period_limits = None
         else:
             self.period_limits = [float(minPerLim.get()), float(maxPerLim.get())]
 
@@ -2732,7 +2730,7 @@ class SPRIT_App:
         def update_site_dropdown():
             self.site_dropdown['values'] = self.site_options
 
-        
+
         #lambda value=string: self.om_variable.set(value)
         # Create the plot_hvsr Call LabelFrame
         self.results_chartFrame = ttk.LabelFrame(self.results_tab, text="Data Plots")
@@ -2904,7 +2902,6 @@ class SPRIT_App:
             if not self.save_ind_subplots.get():
                 self.fig_results.savefig(self.results_fig_dir.get())
             else:
-                print('working on individual subplots')
                 for key in self.ax_results.keys():
                     extent = self.ax_results[key].get_tightbbox(self.fig_results.canvas.renderer).transformed(self.fig_results.dpi_scale_trans.inverted())
                     self.fig_results.savefig(pathlib.Path(self.results_fig_dir.get()).parent.as_posix()+'/Subplot'+key+'.png',  bbox_inches=extent)

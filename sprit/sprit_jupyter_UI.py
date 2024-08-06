@@ -1710,10 +1710,12 @@ def create_jupyter_ui():
         global hvsr_data
         hv_data = hvsr_data
 
+
         roc_kwargs = {'rmse_thresh':rmse_pctile_slider.value,
                         'use_percentile':True,
                         'use_hv_curve':use_hv_curve_rmse.value,
-                        'show_outlier_plot':False,
+                        'plot_engine':'plotly',
+                        'show_plot':False,
                         'verbose':verbose_check.value
                       }
         if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:

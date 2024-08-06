@@ -32,6 +32,7 @@ from obspy.signal import PPSD
 import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
+import streamlit.web
 
 try:  # For distribution
     from sprit import sprit_utils
@@ -592,9 +593,58 @@ def gui(kind='browser'):
     if kind.lower() in browserList:
         import subprocess
         import pkg_resources
-        streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit.py")
+        streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit_ui.py")
         cmd = ['streamlit', 'run', streamlitPath.as_posix()]
-        subprocess.run(cmd)
+        #subprocess.run(cmd)
+        import sys
+
+        from streamlit.web import cli as stcli
+        import streamlit
+        import sys
+
+        import subprocess
+        import tempfile
+
+        temp_dir = tempfile.TemporaryDirectory()
+        def run_streamlit_app(path_dir):
+            temp_dir = tempfile.TemporaryDirectory()
+            # create a temporary directory
+            fpathList = ['sprit_hvsr.py', 'sprit_tkinter_ui.py', 'sprit_jupyter_ui.py', 'sprit_utils.py', 'sprit_plot.py', '__init__.py', 'sprit_streamlit_ui.py']
+            currDir = os.path.dirname(os.path.abspath(__file__))
+            for fpath in fpathList:
+                temp_file_path = os.path.join(temp_dir.name, fpath)
+                with open(pathlib.Path(currDir).joinpath(fpath), 'r') as cf:
+                    scriptText = cf.read()
+                # write the streamlit app code to a Python script in the temporary directory
+                with open(temp_file_path, 'w') as f:
+                    f.write(scriptText)
+            
+            # execute the streamlit app
+            try:
+                # execute the streamlit app
+                subprocess.run(
+                    ['streamlit', "run", temp_file_path],
+                    stderr=subprocess.DEVNULL
+                    )
+                
+            except KeyboardInterrupt:
+                pass
+            # clean up the temporary directory when done
+            temp_dir.cleanup()
+        
+        #with open(streamlitPath.parent.as_posix(), 'r') as file:
+        #    appText = file.read()
+
+        #installed_packages = pkg_resources.working_set
+        #for package in installed_packages:
+        #    print(f"{package.key}=={package.version}")     
+
+        run_streamlit_app(pathlib.Path(__name__).parent)
+
+        #streamlit.web.bootstrap.run(streamlitPath.as_posix(), '', [], [])
+        #process = subprocess.Popen(["streamlit", "run", os.path.join(
+        #            'application', 'main', 'services', 'streamlit_app.py')])
+                
     elif kind.lower() in windowList:
         import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
@@ -2113,7 +2163,10 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             print(f"\t\tUpdating hvsr_band to band specified by period_limits={ppsd_kwargs['period_limits']}")
         
         if 'hvsr_band' in hvsr_data.keys():
-            hvsr_data['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
+            if ppsd_kwargs['period_limits'] is None:
+                ppsd_kwargs['period_limits'] = np.round([1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]], 3).tolist()
+            else:
+                hvsr_data['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
         
         if 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
             hvsr_data['input_params']['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
@@ -2500,6 +2553,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             for k, v in hvsr_results['processing_parameters']['get_report'].items():
                 defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
                                         inspect.getfullargspec(get_report).defaults))
+                defaultVDict['kwargs'] = {}
                 # Manual input to function overrides the imported parameter values
                 if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     orig_args[k] = v
@@ -2812,7 +2866,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 if 'plot_type' in plot_hvsr_kwargs.keys():
                     plot_hvsr_kwargs.pop('plot_type')
                 if 'plot_engine' in plot_hvsr_kwargs.keys():
-                    plot_hvsr_kwargs.pop('plot_type')
+                    plot_hvsr_kwargs.pop('plot_engine')
 
                 fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
 
@@ -2826,7 +2880,13 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
 
                 if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
                     print('\nPlot of data report:')
-                    fig.show()
+                    
+                    if not verbose:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            fig.show()
+                    else:
+                        fig.show()
                 else:
                     if verbose:
                         print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
@@ -3505,18 +3565,19 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                 elif use_subplots:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
-                        ax[p].clear()
-                    axis = ax[p]
+                        if hasattr(ax, '__len__'):#print(dir(ax), ax, len(ax))
+                            ax[p].clear()
+                            axis = ax[p]
                 else:
                     fig, axis = plt.subplots()
 
                 if p == 'hvsr':
                     kwargs['subplot'] = p
-                    _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                    fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
                 elif p == 'comp':
                     plotComponents[0] = plotComponents[0][:-1]
                     kwargs['subplot'] = p
-                    _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+                    fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
                 elif p == 'spec':
                     plottypeKwargs = {}
                     for c in plotComponents:
@@ -3532,8 +3593,10 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
             windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
             fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
                     bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
-            fig.get_layout_engine().set(h_pad=0.075, hspace=-5)
-
+            
+            matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
+            if use_subplots:
+                fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
             if show_plot:
                 fig.canvas.draw()
                 
@@ -4447,7 +4510,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
 
         if plot_engine.lower() == 'matplotlib':
             if use_hv_curve:
-                spMosaic = ['HV Curve']
+                spMosaic = [['HV Curve']]
             else:
                 spMosaic = [['Z'],
                             ['E'],
@@ -4513,10 +4576,17 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                                 label='Retained Curve'
 
                         # Plot each individual curve
-                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                        if 'x_freqs' in hvsr_data.keys():
+                            ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                        else:
+                            ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                     
                     # Plot the median curve
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+
+                    if 'x_freqs' in hvsr_data.keys():
+                        ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
+                    else:
+                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
                     
                     # Format axis
                     ax[compNames[i]].set_ylabel(f"{compNames[i]}")
