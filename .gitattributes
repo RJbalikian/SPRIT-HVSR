@@ -7,3 +7,5 @@
 *.pyx    text diff=python
 *.pyz    text diff=python
 *.pyi    text diff=python
+
+*.ipynb  text eol=lf
