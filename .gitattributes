@@ -8,4 +8,4 @@
 *.pyz    text diff=python
 *.pyi    text diff=python
 
-*.ipynb  text eol=lf
+*.ipynb linguist-language=python
