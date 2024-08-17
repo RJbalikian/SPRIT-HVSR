@@ -10,11 +10,6 @@ import streamlit as st
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 
-#sys.path.append('..')
-#sys.path.append('../..')
-
-
-
 try:
     from sprit import sprit_hvsr
 except Exception:
@@ -26,9 +21,11 @@ except Exception:
 
 
 print('Start of file, session state length: ', len(st.session_state.keys()))
-param2print = 'period_limits'
+param2print = None# 'period_limits'
 def print_param(key=param2print, show_type=True):
-    if key in st.session_state.keys():
+    if key is None:
+        pass
+    elif key in st.session_state.keys():
         print(key, st.session_state[key], 'type:', type(st.session_state[key]))
 print_param(param2print)
 

@@ -32,7 +32,6 @@ from obspy.signal import PPSD
 import pandas as pd
 from pyproj import CRS, Transformer
 import scipy
-import streamlit.web
 
 try:  # For distribution
     from sprit import sprit_utils
