@@ -56,4 +56,4 @@ sprit = "*"
 sprit = "sprit.sprit_cli:main"
 
 [project.gui-scripts]
-sprit-gui = "sprit.sprit_gui:main"
+sprit-gui = "sprit.sprit_tkinter_ui:main"
