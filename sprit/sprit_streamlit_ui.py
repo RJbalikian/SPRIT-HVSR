@@ -18,7 +18,7 @@ except Exception:
     except Exception:
         import sprit
 
-verbose=False
+verbose = False
 
 if verbose:
     print('Start of file, session state length: ', len(st.session_state.keys()))
@@ -421,6 +421,7 @@ with st.sidebar:
             if verbose:
                 print_param(param2print)
 
+        
         #@st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
         #def open_ppsd_dialog():
         with gpSetTab:
@@ -431,7 +432,7 @@ with st.sidebar:
             st.number_input("Minimum Decibel Value", value=-200, step=1, key='min_deb')
             st.number_input("Maximum Decibel Value", value=-50, step=1, key='max_deb')
             st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
-            st.session_state.db_bins = (st.session_state.max_deb, st.session_state.min_deb, st.session_state.deb_step)
+            st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
 
             st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
             st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
