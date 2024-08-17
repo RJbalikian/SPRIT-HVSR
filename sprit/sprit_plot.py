@@ -935,7 +935,6 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
         preview_fig.show()
 
     if return_fig:
-        print('previewfig', type(preview_fig))
         return preview_fig
 
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):

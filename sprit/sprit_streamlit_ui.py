@@ -138,7 +138,7 @@ def setup_session_state():
             print('Done getting kwargs: ', len(st.session_state.keys()))
             print_param(param2print)
 
-        print('Setting up session state: ', len(st.session_state.keys()))
+            print('Setting up session state: ', len(st.session_state.keys()))
         #st.session_state["updated_kwargs"] = {}
         for key, value in run_kwargs.items():
             if verbose:
@@ -229,8 +229,8 @@ def check_if_default():
     if len(st.session_state.keys()) > 0:
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
-
-check_if_default()
+if verbose:
+    check_if_default()
 
 def text_change(verbose=verbose):
     #Just a function to run so something is done when text changes
@@ -262,7 +262,7 @@ def on_run_data():
         srun['plot_engine'] = 'plotly'
         srun['plot_input_stream'] = True
         srun['show_plot'] = False
-        srun['verbose'] = True
+        srun['verbose'] = False #True
         if verbose:
             print('SPRIT RUN', srun)
         st.toast('Data is processing', icon="⌛")
