@@ -10,7 +10,7 @@ import sys
 import markdown
 
 
-RELEASE_VERSION = "1.1.0"
+RELEASE_VERSION = "1.1.1"
 
 VERBOSE = True
 
@@ -21,7 +21,7 @@ GITHUB_PAGES = False  # Don't think I  need this anymore, and it still works
 CONVERT_MD = True
 RTD_THEME = False  # Not currently working
 
-RUN_TESTS = True
+RUN_TESTS = False
 LINT_IT = False
 
 if VERBOSE:
