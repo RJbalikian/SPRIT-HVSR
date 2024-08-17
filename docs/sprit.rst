@@ -12,8 +12,11 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   sprit.ptyhonfile
    sprit.sprit_cli
-   sprit.sprit_gui
    sprit.sprit_hvsr
    sprit.sprit_jupyter_UI
+   sprit.sprit_plot
+   sprit.sprit_streamlit_ui
+   sprit.sprit_tkinter_ui
    sprit.sprit_utils

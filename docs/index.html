@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to the documentation for SpRIT! &mdash; sprit 1.0.2 documentation</title>
+  <title>Welcome to the documentation for SpRIT! &mdash; sprit 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="documentation_options.js?v=1ed6394b"></script>
+        <script src="documentation_options.js?v=fc837d61"></script>
         <script src="doctools.js?v=9a2dae69"></script>
         <script src="sphinx_highlight.js?v=dc90522c"></script>
     <script src="theme.js"></script>
@@ -130,8 +130,12 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.import_settings"><code class="docutils literal notranslate"><span class="pre">import_settings()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.input_params"><code class="docutils literal notranslate"><span class="pre">input_params()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.make_it_classy"><code class="docutils literal notranslate"><span class="pre">make_it_classy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_azimuth"><code class="docutils literal notranslate"><span class="pre">plot_azimuth()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_hvsr"><code class="docutils literal notranslate"><span class="pre">plot_hvsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_results"><code class="docutils literal notranslate"><span class="pre">plot_results()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.process_hvsr"><code class="docutils literal notranslate"><span class="pre">process_hvsr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.read_from_RS"><code class="docutils literal notranslate"><span class="pre">read_from_RS()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.read_tromino_files"><code class="docutils literal notranslate"><span class="pre">read_tromino_files()</span></code></a></li>
@@ -141,16 +145,10 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.x_mark"><code class="docutils literal notranslate"><span class="pre">x_mark()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sprit.ptyhonfile.html">sprit.ptyhonfile module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="sprit.sprit_cli.html#sprit.sprit_cli.get_param_docstring"><code class="docutils literal notranslate"><span class="pre">get_param_docstring()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sprit.sprit_cli.html#sprit.sprit_cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_gui.html">sprit.sprit_gui module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_gui.html#sprit.sprit_gui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_gui.html#sprit.sprit_gui.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_gui.html#sprit.sprit_gui.on_closing"><code class="docutils literal notranslate"><span class="pre">on_closing()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_gui.html#sprit.sprit_gui.reboot_app"><code class="docutils literal notranslate"><span class="pre">reboot_app()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a><ul>
@@ -185,6 +183,32 @@
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="sprit.sprit_jupyter_UI.html#sprit.sprit_jupyter_UI.create_jupyter_ui"><code class="docutils literal notranslate"><span class="pre">create_jupyter_ui()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sprit.sprit_jupyter_UI.html#sprit.sprit_jupyter_UI.get_default"><code class="docutils literal notranslate"><span class="pre">get_default()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_plot.html">sprit.sprit_plot module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_check_peaks_kwargs"><code class="docutils literal notranslate"><span class="pre">get_check_peaks_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_generate_ppsd_kwargs"><code class="docutils literal notranslate"><span class="pre">get_generate_ppsd_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_get_report_kwargs"><code class="docutils literal notranslate"><span class="pre">get_get_report_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_process_hvsr_kwargs"><code class="docutils literal notranslate"><span class="pre">get_process_hvsr_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_remove_noise_kwargs"><code class="docutils literal notranslate"><span class="pre">get_remove_noise_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.get_remove_outlier_curve_kwargs"><code class="docutils literal notranslate"><span class="pre">get_remove_outlier_curve_kwargs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_comp_plot_list"><code class="docutils literal notranslate"><span class="pre">parse_comp_plot_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_hv_plot_list"><code class="docutils literal notranslate"><span class="pre">parse_hv_plot_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_spec_plot_list"><code class="docutils literal notranslate"><span class="pre">parse_spec_plot_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_results"><code class="docutils literal notranslate"><span class="pre">plot_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.process_data"><code class="docutils literal notranslate"><span class="pre">process_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.read_data"><code class="docutils literal notranslate"><span class="pre">read_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.on_closing"><code class="docutils literal notranslate"><span class="pre">on_closing()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.reboot_app"><code class="docutils literal notranslate"><span class="pre">reboot_app()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a><ul>

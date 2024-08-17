@@ -3594,8 +3594,8 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use
                     bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
             
             matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
-            if use_subplots:
-                fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
+            #if use_subplots:
+            #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
             if show_plot:
                 fig.canvas.draw()
                 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_jupyter_UI &mdash; sprit 1.0.2 documentation</title>
+  <title>sprit.sprit_jupyter_UI &mdash; sprit 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=1ed6394b"></script>
+        <script src="../../_static/documentation_options.js?v=fc837d61"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1788,10 +1788,12 @@
         <span class="k">global</span> <span class="n">hvsr_data</span>
         <span class="n">hv_data</span> <span class="o">=</span> <span class="n">hvsr_data</span>
 
+
         <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">:</span><span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
                         <span class="s1">&#39;use_percentile&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
                         <span class="s1">&#39;use_hv_curve&#39;</span><span class="p">:</span><span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                        <span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="s1">&#39;plot_engine&#39;</span><span class="p">:</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;show_plot&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
                         <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span>
                       <span class="p">}</span>
         <span class="k">if</span> <span class="s1">&#39;PPSDStatus&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">ProcessingStatus</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">ProcessingStatus</span><span class="p">[</span><span class="s1">&#39;PPSDStatus&#39;</span><span class="p">]:</span>

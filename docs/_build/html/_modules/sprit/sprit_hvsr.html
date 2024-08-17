@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 1.0.2 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=1ed6394b"></script>
+        <script src="../../_static/documentation_options.js?v=fc837d61"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -108,12 +108,14 @@
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_utils</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_gui</span>
+    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_tkinter_ui</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_jupyter_UI</span>
+    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_plot</span>
 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># For testing</span>
     <span class="kn">import</span> <span class="nn">sprit_utils</span>
-    <span class="kn">import</span> <span class="nn">sprit_gui</span>
+    <span class="kn">import</span> <span class="nn">sprit_tkinter_ui</span>
     <span class="kn">import</span> <span class="nn">sprit_jupyter_UI</span>
+    <span class="kn">import</span> <span class="nn">sprit_plot</span>
 
 <span class="n">NOWTIME</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 <span class="k">global</span> <span class="n">spritApp</span>
@@ -697,8 +699,8 @@
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.gui_test">[docs]</a>
 <span class="k">def</span> <span class="nf">gui_test</span><span class="p">():</span>
     <span class="kn">import</span> <span class="nn">subprocess</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">sprit_gui</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
-    <span class="n">guiFile</span> <span class="o">=</span> <span class="n">sprit_gui</span><span class="o">.</span><span class="vm">__file__</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sprit_tkinter_ui</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
+    <span class="n">guiFile</span> <span class="o">=</span> <span class="n">sprit_tkinter_ui</span><span class="o">.</span><span class="vm">__file__</span>
     <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">guiFile</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
@@ -706,7 +708,7 @@
 <span class="c1"># Launch the tkinter gui</span>
 <div class="viewcode-block" id="gui">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.gui">[docs]</a>
-<span class="k">def</span> <span class="nf">gui</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">gui</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;browser&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to open a graphical user interface (gui)</span>
 
 <span class="sd">    Parameters</span>
@@ -717,17 +719,73 @@
 <span class="sd">        &quot;lite&quot; open lite (pending update), by default &#39;default&#39;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">defaultList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;windowed&#39;</span><span class="p">,</span> <span class="s1">&#39;window&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">]</span>
+    <span class="n">browserList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;browser&#39;</span><span class="p">,</span> <span class="s1">&#39;remi&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">]</span>
+    <span class="n">windowList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;windowed&#39;</span><span class="p">,</span> <span class="s1">&#39;window&#39;</span><span class="p">,</span> <span class="s1">&#39;qt&#39;</span><span class="p">,</span> <span class="s1">&#39;tkinter&#39;</span><span class="p">,</span> <span class="s1">&#39;tk&#39;</span><span class="p">]</span>
     <span class="n">widgetList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;widget&#39;</span><span class="p">,</span> <span class="s1">&#39;jupyter&#39;</span><span class="p">,</span> <span class="s1">&#39;notebook&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;nb&#39;</span><span class="p">]</span>
     <span class="n">liteList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;lite&#39;</span><span class="p">,</span> <span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="s1">&#39;basic&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">defaultList</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">browserList</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="kn">import</span> <span class="nn">pkg_resources</span>
+        <span class="n">streamlitPath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;sprit_streamlit_ui.py&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;streamlit&#39;</span><span class="p">,</span> <span class="s1">&#39;run&#39;</span><span class="p">,</span> <span class="n">streamlitPath</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()]</span>
+        <span class="c1">#subprocess.run(cmd)</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+
+        <span class="kn">from</span> <span class="nn">streamlit.web</span> <span class="kn">import</span> <span class="n">cli</span> <span class="k">as</span> <span class="n">stcli</span>
+        <span class="kn">import</span> <span class="nn">streamlit</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="kn">import</span> <span class="nn">tempfile</span>
+
+        <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+        <span class="k">def</span> <span class="nf">run_streamlit_app</span><span class="p">(</span><span class="n">path_dir</span><span class="p">):</span>
+            <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+            <span class="c1"># create a temporary directory</span>
+            <span class="n">fpathList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sprit_hvsr.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_tkinter_ui.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_jupyter_ui.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_utils.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_plot.py&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_streamlit_ui.py&#39;</span><span class="p">]</span>
+            <span class="n">currDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">fpath</span> <span class="ow">in</span> <span class="n">fpathList</span><span class="p">:</span>
+                <span class="n">temp_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">currDir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fpath</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+                    <span class="n">scriptText</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="c1"># write the streamlit app code to a Python script in the temporary directory</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">temp_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">scriptText</span><span class="p">)</span>
+            
+            <span class="c1"># execute the streamlit app</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># execute the streamlit app</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                    <span class="p">[</span><span class="s1">&#39;streamlit&#39;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="n">temp_file_path</span><span class="p">],</span>
+                    <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span>
+                    <span class="p">)</span>
+                
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="c1"># clean up the temporary directory when done</span>
+            <span class="n">temp_dir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
+        
+        <span class="c1">#with open(streamlitPath.parent.as_posix(), &#39;r&#39;) as file:</span>
+        <span class="c1">#    appText = file.read()</span>
+
+        <span class="c1">#installed_packages = pkg_resources.working_set</span>
+        <span class="c1">#for package in installed_packages:</span>
+        <span class="c1">#    print(f&quot;{package.key}=={package.version}&quot;)     </span>
+
+        <span class="n">run_streamlit_app</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="c1">#streamlit.web.bootstrap.run(streamlitPath.as_posix(), &#39;&#39;, [], [])</span>
+        <span class="c1">#process = subprocess.Popen([&quot;streamlit&quot;, &quot;run&quot;, os.path.join(</span>
+        <span class="c1">#            &#39;application&#39;, &#39;main&#39;, &#39;services&#39;, &#39;streamlit_app.py&#39;)])</span>
+                
+    <span class="k">elif</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">windowList</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">pkg_resources</span>
         <span class="c1">#guiPath = pathlib.Path(os.path.realpath(__file__))</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">sprit.sprit_gui</span> <span class="kn">import</span> <span class="n">SPRIT_App</span>
+            <span class="kn">from</span> <span class="nn">sprit.sprit_tkinter_ui</span> <span class="kn">import</span> <span class="n">SPRIT_App</span>
         <span class="k">except</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">sprit_gui</span> <span class="kn">import</span> <span class="n">SPRIT_App</span>
+            <span class="kn">from</span> <span class="nn">sprit.sprit_tkinter_ui</span> <span class="kn">import</span> <span class="n">SPRIT_App</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span>
@@ -747,7 +805,7 @@
         <span class="n">gui_root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">icon_path</span> <span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/icon/sprit_icon_alpha.ico&#39;</span><span class="p">))</span> 
+                <span class="n">icon_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/icon/sprit_icon_alpha.ico&#39;</span><span class="p">))</span> 
                 <span class="n">gui_root</span><span class="o">.</span><span class="n">iconbitmap</span><span class="p">(</span><span class="n">icon_path</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="n">icon_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/icon/sprit_icon.png&#39;</span><span class="p">))</span>
@@ -756,10 +814,10 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ICON NOT LOADED, still opening GUI&quot;</span><span class="p">)</span>
 
         <span class="n">gui_root</span><span class="o">.</span><span class="n">resizable</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="n">spritApp</span> <span class="o">=</span> <span class="n">SPRIT_App</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">gui_root</span><span class="p">)</span> <span class="c1">#Open the app with a tk.Tk root</span>
+        <span class="n">spritApp</span> <span class="o">=</span> <span class="n">SPRIT_App</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">gui_root</span><span class="p">)</span>  <span class="c1"># Open the app with a tk.Tk root</span>
 
         <span class="n">gui_root</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="s2">&quot;WM_DELETE_WINDOW&quot;</span><span class="p">,</span> <span class="n">on_gui_closing</span><span class="p">)</span>    
-        <span class="n">gui_root</span><span class="o">.</span><span class="n">mainloop</span><span class="p">()</span> <span class="c1">#Run the main loop</span>
+        <span class="n">gui_root</span><span class="o">.</span><span class="n">mainloop</span><span class="p">()</span>  <span class="c1"># Run the main loop</span>
     <span class="k">elif</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">widgetList</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sprit_jupyter_UI</span><span class="o">.</span><span class="n">create_jupyter_ui</span><span class="p">()</span>
@@ -801,8 +859,14 @@
 <span class="sd">            - If source=&#39;batch&#39;, datapath should be datapath=&#39;sample&#39; or datapath=&#39;batch&#39;. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.</span>
 <span class="sd">    source : str, optional</span>
 <span class="sd">        _description_, by default &#39;file&#39;</span>
-<span class="sd">    azimuth : bool, optional</span>
+<span class="sd">    azimuth_calculation : bool, optional</span>
 <span class="sd">        Whether to perform azimuthal analysis, by default False.</span>
+<span class="sd">    noise_removal : bool, default=False</span>
+<span class="sd">        Whether to remove noise (before processing PPSDs)</span>
+<span class="sd">    outlier_curves_removal : bool, default=False</span>
+<span class="sd">        Whether to remove outlier curves from HVSR time windows</span>
+<span class="sd">    show_plot : bool, default=True</span>
+<span class="sd">        Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</span>
 <span class="sd">    verbose : bool, optional</span>
 <span class="sd">        _description_, by default False</span>
 <span class="sd">    **kwargs</span>
@@ -1004,6 +1068,8 @@
     
     <span class="c1"># Now, check if plot is specified, then if plot_type is specified, then add &#39;az&#39; if stream has azimuths</span>
     <span class="k">if</span> <span class="s1">&#39;plot&#39;</span> <span class="ow">in</span> <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;report_format&#39;</span><span class="p">]:</span>
+        <span class="n">plot_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">plot_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+        <span class="n">get_report_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">plot_hvsr_kwargs</span><span class="p">)</span>
         <span class="n">usingDefault</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="s1">&#39;plot_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">get_report_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">get_report</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
@@ -1070,7 +1136,7 @@
                 <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}</span>
-                <span class="c1"># hvsr_results[&#39;HV_Plot&#39;] = plot_hvsr(hvsr_results, return_fig=True, show=False, close_figs=True)</span>
+                <span class="c1"># hvsr_results[&#39;HV_Plot&#39;] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)</span>
                 <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -1085,7 +1151,9 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;hvsr&#39;</span>
             <span class="n">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">export_path</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;export_path&#39;</span><span class="p">],</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>        
-
+    <span class="k">if</span> <span class="s1">&#39;show_plot&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">hvsr_results</span></div>
 
 
@@ -1697,7 +1765,7 @@
 <span class="c1"># Reads in traces to obspy stream</span>
 <div class="viewcode-block" id="fetch_data">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.fetch_data">[docs]</a>
-<span class="k">def</span> <span class="nf">fetch_data</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="n">trim_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">export_format</span><span class="o">=</span><span class="s1">&#39;mseed&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;spline&#39;</span><span class="p">,</span> <span class="n">detrend_order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">update_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_input_stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">fetch_data</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="n">trim_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">export_format</span><span class="o">=</span><span class="s1">&#39;mseed&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;spline&#39;</span><span class="p">,</span> <span class="n">detrend_order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">update_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_input_stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetch ambient seismic data from a source to read into obspy stream</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
@@ -1726,6 +1794,8 @@
 <span class="sd">        Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.</span>
 <span class="sd">    plot_input_stream : bool, default=False</span>
 <span class="sd">        Whether to plot the raw input stream. This plot includes a spectrogram (Z component) and the raw (with decimation for speed) plots of each component signal.</span>
+<span class="sd">    plot_engine : str, default=&#39;matplotlib&#39;</span>
+<span class="sd">        Which plotting library/engine to use for plotting the Input stream. Options are &#39;matplotlib&#39;, &#39;plotly&#39;, or &#39;obspy&#39; (not case sensitive).</span>
 <span class="sd">    verbose : bool, default=False</span>
 <span class="sd">        Whether to print outputs and inputs to the terminal</span>
 <span class="sd">    **kwargs</span>
@@ -1752,13 +1822,14 @@
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
     <span class="c1">#Update local variables, in case of previously-specified parameters</span>
-    <span class="n">source</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
+    <span class="n">source</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">trim_dir</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;trim_dir&#39;</span><span class="p">]</span>
     <span class="n">export_format</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;export_format&#39;</span><span class="p">]</span>
     <span class="n">detrend</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;detrend&#39;</span><span class="p">]</span>
     <span class="n">detrend_order</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;detrend_order&#39;</span><span class="p">]</span>
     <span class="n">update_metadata</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;update_metadata&#39;</span><span class="p">]</span>
     <span class="n">plot_input_stream</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;plot_input_stream&#39;</span><span class="p">]</span>
+    <span class="n">plot_engine</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span>
     <span class="n">verbose</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
     <span class="n">kwargs</span><span class="o">=</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span>
 
@@ -1841,11 +1912,11 @@
         <span class="n">year</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Did not recognize date, using year </span><span class="si">{}</span><span class="s2"> and day </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">doy</span><span class="p">))</span>
 
-    <span class="c1">#Select which instrument we are reading from (requires different processes for each instrument)</span>
+    <span class="c1"># Select which instrument we are reading from (requires different processes for each instrument)</span>
     <span class="n">raspShakeInstNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;raspberry shake&#39;</span><span class="p">,</span> <span class="s1">&#39;shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspberry&#39;</span><span class="p">,</span> <span class="s1">&#39;rs&#39;</span><span class="p">,</span> <span class="s1">&#39;rs3d&#39;</span><span class="p">,</span> <span class="s1">&#39;rasp. shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspshake&#39;</span><span class="p">]</span>
     <span class="n">trominoNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tromino&#39;</span><span class="p">,</span> <span class="s1">&#39;trom&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g+&#39;</span><span class="p">,</span> <span class="s1">&#39;tr&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">]</span>
 
-    <span class="c1">#Get any kwargs that are included in obspy.read</span>
+    <span class="c1"># Get any kwargs that are included in obspy.read</span>
     <span class="n">obspyReadKwargs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">argName</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">argName</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1894,24 +1965,27 @@
                 <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">obspyFiles</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;file&#39;</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;datapath&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sampleList</span><span class="p">:</span>
             <span class="c1"># Read the file specified by datapath</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                <span class="n">rawStreams</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">datafile</span> <span class="ow">in</span> <span class="n">dPath</span><span class="p">:</span>
-                    <span class="n">rawStream</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="o">**</span><span class="n">obspyReadKwargs</span><span class="p">)</span>
-                    <span class="n">rawStreams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rawStream</span><span class="p">)</span> <span class="c1">#These are actually streams, not traces</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">stream</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rawStreams</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span> <span class="c1">#Just in case</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">rawDataIN</span> <span class="o">+</span> <span class="n">stream</span> <span class="c1">#This adds a stream/trace to the current stream object</span>
-            <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">dPath</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;sample&#39;</span><span class="p">:</span>
-                <span class="k">pass</span>
+            <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span><span class="p">:</span>
+                <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="o">**</span><span class="n">obspyReadKwargs</span><span class="p">)</span><span class="c1">#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)</span>
-            <span class="kn">import</span> <span class="nn">warnings</span> <span class="c1"># For some reason not being imported at the start</span>
-            <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
-                <span class="n">rawDataIN</span><span class="o">.</span><span class="n">attach_response</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="n">rawStreams</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">datafile</span> <span class="ow">in</span> <span class="n">dPath</span><span class="p">:</span>
+                        <span class="n">rawStream</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="o">**</span><span class="n">obspyReadKwargs</span><span class="p">)</span>
+                        <span class="n">rawStreams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rawStream</span><span class="p">)</span> <span class="c1">#These are actually streams, not traces</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">stream</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rawStreams</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span> <span class="c1">#Just in case</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">rawDataIN</span> <span class="o">+</span> <span class="n">stream</span> <span class="c1">#This adds a stream/trace to the current stream object</span>
+                <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">dPath</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;sample&#39;</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="o">**</span><span class="n">obspyReadKwargs</span><span class="p">)</span><span class="c1">#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)</span>
+                <span class="kn">import</span> <span class="nn">warnings</span> <span class="c1"># For some reason not being imported at the start</span>
+                <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
+                    <span class="n">rawDataIN</span><span class="o">.</span><span class="n">attach_response</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;batch&#39;</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;datapath&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sampleList</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Fetching data (fetch_data())&#39;</span><span class="p">)</span>
@@ -2099,21 +2173,44 @@
 
     <span class="c1">#Plot the input stream?</span>
     <span class="k">if</span> <span class="n">plot_input_stream</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">dataIN</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylimstd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="c1">#_get_removed_windows(input=dataIN, fig=params[&#39;InputPlot&#39;][0], ax=params[&#39;InputPlot&#39;][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format=&#39;matplotlib&#39;, keep_line_artists=True, time_type=&#39;matplotlib&#39;, show_plot=True)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error with default plotting method: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1"> Falling back to internal obspy plotting method&#39;</span><span class="p">)</span>
-            <span class="n">dataIN</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;spectrogram_component&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">specComp</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;spectrogram_component&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">specComp</span> <span class="o">=</span> <span class="s1">&#39;Z&#39;</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_preview</span><span class="p">(</span><span class="n">hv_data</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">dataIN</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="n">specComp</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_plot</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;obspy&#39;</span><span class="p">,</span> <span class="s1">&#39;ospby&#39;</span><span class="p">,</span> <span class="s1">&#39;osbpy&#39;</span><span class="p">,</span> <span class="s1">&#39;opsby&#39;</span><span class="p">,</span> <span class="s1">&#39;opspy&#39;</span><span class="p">,</span> <span class="s1">&#39;o&#39;</span><span class="p">]:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">handle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">dataIN</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylimstd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                
+                <span class="c1">#_get_removed_windows(input=dataIN, fig=params[&#39;InputPlot&#39;][0], ax=params[&#39;InputPlot&#39;][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format=&#39;matplotlib&#39;, keep_line_artists=True, time_type=&#39;matplotlib&#39;, show_plot=True)</span>
+                <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>                    
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error with default plotting method: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1"> Falling back to internal obspy plotting method&#39;</span><span class="p">)</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">handle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="c1">#Sort channels (make sure Z is first, makes things easier later)</span>
+    <span class="c1"># Sort channels (make sure Z is first, makes things easier later)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
         <span class="k">pass</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">dataIN</span> <span class="o">=</span> <span class="n">_sort_channels</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">dataIN</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
 
-    <span class="c1">#Clean up the ends of the data unless explicitly specified to do otherwise (this is a kwarg, not a parameter)</span>
+    <span class="c1"># Clean up the ends of the data unless explicitly specified to do otherwise (this is a kwarg, not a parameter)</span>
     <span class="k">if</span> <span class="s1">&#39;clean_ends&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">clean_ends</span><span class="o">=</span><span class="kc">True</span> 
     <span class="k">else</span><span class="p">:</span>
@@ -2188,7 +2285,7 @@
 <span class="sd">        **ppsd_kwargs : dict</span>
 <span class="sd">            Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.</span>
 <span class="sd">            If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:</span>
-<span class="sd">                - ppsd_length defaults to 60 (seconds) here instead of 3600</span>
+<span class="sd">                - ppsd_length defaults to 30 (seconds) here instead of 3600</span>
 <span class="sd">                - skip_on_gaps defaults to True instead of False</span>
 <span class="sd">                - period_step_octaves defaults to 0.03125 instead of 0.125</span>
 
@@ -2221,7 +2318,10 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">Updating hvsr_band to band specified by period_limits=</span><span class="si">{</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="s1">&#39;hvsr_band&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         
         <span class="k">if</span> <span class="s1">&#39;input_params&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;hvsr_band&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -2287,7 +2387,7 @@
                 <span class="n">hvsr_data</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>                
             
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">sprit_gui</span><span class="o">.</span><span class="n">update_progress_bars</span><span class="p">(</span><span class="n">prog_percent</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                <span class="n">sprit_tkinter_ui</span><span class="o">.</span><span class="n">update_progress_bars</span><span class="p">(</span><span class="n">prog_percent</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">pass</span>
                 <span class="c1">#print(e)</span>
@@ -2573,7 +2673,7 @@
 <span class="c1"># Get or print report</span>
 <div class="viewcode-block" id="get_report">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.get_report">[docs]</a>
-<span class="k">def</span> <span class="nf">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">report_format</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">],</span> <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p ann Spec&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">csv_overwrite_opt</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">no_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>    
+<span class="k">def</span> <span class="nf">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">report_format</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">],</span> <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p ann Spec&#39;</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">csv_overwrite_opt</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">no_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>    
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a report of the HVSR analysis in a variety of formats.</span>
 <span class="sd">        </span>
 <span class="sd">    Parameters</span>
@@ -2614,16 +2714,21 @@
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;get_report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">defaultVDict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">get_report</span><span class="p">)</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> 
                                         <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">get_report</span><span class="p">)</span><span class="o">.</span><span class="n">defaults</span><span class="p">))</span>
+                <span class="n">defaultVDict</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="c1"># Manual input to function overrides the imported parameter values</span>
                 <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">HVSRData</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">)))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">and</span> <span class="p">(</span><span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">==</span><span class="n">defaultVDict</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
     <span class="n">report_format</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;report_format&#39;</span><span class="p">]</span>
     <span class="n">plot_type</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span>
+    <span class="n">plot_engine</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span>
+    <span class="n">show_plot</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]</span>
+    <span class="n">azimuth</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">]</span>
     <span class="n">export_path</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;export_path&#39;</span><span class="p">]</span>
     <span class="n">csv_overwrite_opt</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;csv_overwrite_opt&#39;</span><span class="p">]</span>
     <span class="n">no_output</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;no_output&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span>
     
     <span class="k">if</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;batch&#39;</span><span class="p">]):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">)</span> <span class="ow">and</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
@@ -2779,7 +2884,7 @@
                 <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outFile</span><span class="p">)</span>
             <span class="k">return</span> 
 
-        <span class="k">def</span> <span class="nf">report_output</span><span class="p">(</span><span class="n">_report_format</span><span class="p">,</span> <span class="n">_plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p ann Spec&#39;</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_no_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">report_output</span><span class="p">(</span><span class="n">_report_format</span><span class="p">,</span> <span class="n">_plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p ann Spec&#39;</span><span class="p">,</span> <span class="n">_plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_no_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">_report_format</span><span class="o">==</span><span class="s1">&#39;print&#39;</span><span class="p">:</span>
                 <span class="c1">#Print results</span>
 
@@ -2880,7 +2985,8 @@
                 <span class="n">dfList</span> <span class="o">=</span> <span class="p">[[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;site&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;acq_date&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;longitude&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;latitude&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;elevation&#39;</span><span class="p">],</span> <span class="nb">round</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;f0&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)]]</span>
                 <span class="n">dfList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">criteriaList</span><span class="p">)</span>
                 <span class="n">outDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dfList</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">pdCols</span><span class="p">)</span>
-
+                <span class="n">outDF</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ID&#39;</span>
+                
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">CSV Report:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
                     <span class="n">maxColWidth</span> <span class="o">=</span> <span class="mi">13</span>
@@ -2917,13 +3023,36 @@
                 <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;CSV_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outDF</span>
                         
             <span class="k">elif</span> <span class="n">_report_format</span><span class="o">==</span><span class="s1">&#39;plot&#39;</span><span class="p">:</span>
-                <span class="n">fig_ax</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">_plot_type</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">plot_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">plot_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+                <span class="k">if</span> <span class="s1">&#39;plot_type&#39;</span> <span class="ow">in</span> <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;plot_type&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;plot_engine&#39;</span> <span class="ow">in</span> <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">)</span>
 
-                <span class="n">export_report</span><span class="p">(</span><span class="n">export_obj</span><span class="o">=</span><span class="n">fig_ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">_export_path</span><span class="p">,</span> <span class="n">_rep_form</span><span class="o">=</span><span class="n">_report_format</span><span class="p">)</span>
-                <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">fig_ax</span>
+                <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">_plot_type</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="n">_plot_engine</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Plot of data report:&#39;</span><span class="p">)</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">_plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]:</span>
+                    <span class="n">expFigAx</span> <span class="o">=</span> <span class="n">fig</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">expFigAx</span> <span class="o">=</span> <span class="n">fig</span>
+
+                <span class="n">export_report</span><span class="p">(</span><span class="n">export_obj</span><span class="o">=</span><span class="n">expFigAx</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">_export_path</span><span class="p">,</span> <span class="n">_rep_form</span><span class="o">=</span><span class="n">_report_format</span><span class="p">)</span>
+                <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+
+                <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span><span class="c1">#&#39;show_plot&#39; in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs[&#39;show_plot&#39;] is False:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Plot of data report:&#39;</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+                            <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">Plot of data report created and saved in [&#39;HV_Plot&#39;] attribute&quot;</span><span class="p">)</span>
+
+
                 
             <span class="k">return</span> <span class="n">hvsr_results</span>
 
@@ -2937,7 +3066,7 @@
                 <span class="n">exp_path</span> <span class="o">=</span> <span class="n">export_path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">exp_path</span> <span class="o">=</span> <span class="n">export_path</span>
-            <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">report_output</span><span class="p">(</span><span class="n">_report_format</span><span class="o">=</span><span class="n">rep_form</span><span class="p">,</span> <span class="n">_plot_type</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">exp_path</span><span class="p">,</span> <span class="n">_no_output</span><span class="o">=</span><span class="n">no_output</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+            <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">report_output</span><span class="p">(</span><span class="n">_report_format</span><span class="o">=</span><span class="n">rep_form</span><span class="p">,</span> <span class="n">_plot_type</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">_plot_engine</span><span class="o">=</span><span class="n">plot_engine</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">exp_path</span><span class="p">,</span> <span class="n">_no_output</span><span class="o">=</span><span class="n">no_output</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
 
         <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;get_report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -3065,7 +3194,7 @@
 <span class="sd">        Surface elevation of data point. Not currently used (except in csv output), but will likely be used in the future.</span>
 <span class="sd">    depth : float, default=0</span>
 <span class="sd">        Depth of seismometer. Not currently used, but will likely be used in the future.</span>
-<span class="sd">    instrument : str or list {&#39;Raspberry Shake&#39;)</span>
+<span class="sd">    instrument : str {&#39;Raspberry Shake&#39;, &quot;Tromino&quot;}</span>
 <span class="sd">        Instrument from which the data was acquired. </span>
 <span class="sd">    metapath : str or pathlib.Path object, default=None</span>
 <span class="sd">        Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</span>
@@ -3242,7 +3371,7 @@
 <span class="c1"># Plot Azimuth data</span>
 <div class="viewcode-block" id="plot_azimuth">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.plot_azimuth">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_azimuth_peaks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interpolate_azimuths</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_azimuth_grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">plot_azimuth_kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plot_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_azimuth_peaks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interpolate_azimuths</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_azimuth_grid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">plot_azimuth_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot azimuths when azimuths are calculated</span>
 
 <span class="sd">    Parameters</span>
@@ -3408,7 +3537,8 @@
             <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="n">show_azimuth_grid</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="n">show_azimuth_grid</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1">#plt.colorbar(pmesh1)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
         <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;AzimuthFig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
     <span class="k">else</span><span class="p">:</span>
@@ -3420,7 +3550,7 @@
 <span class="c1"># Main function for plotting results</span>
 <div class="viewcode-block" id="plot_hvsr">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.plot_hvsr">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR ann p C+ ann p SPEC&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">use_subplots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_figs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clear_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;HVSR ann p C+ ann p SPEC&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">use_subplots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close_figs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clear_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot HVSR data</span>
 
 <span class="sd">    Parameters</span>
@@ -3466,13 +3596,15 @@
 <span class="sd">        If not None, matplotlib axis on which plot is plotted</span>
 <span class="sd">    return_fig : bool</span>
 <span class="sd">        Whether to return figure and axis objects</span>
+<span class="sd">    plot_engine : str, default=&#39;Matplotlib&#39;</span>
+<span class="sd">        Which engine to use for plotting. Both &quot;matplotlib&quot; and &quot;plotly&quot; are acceptable. For shorthand, &#39;mpl&#39;, &#39;m&#39; also work for matplotlib; &#39;plty&#39; or &#39;p&#39; also work for plotly. Not case sensitive.</span>
 <span class="sd">    save_dir : str or None</span>
 <span class="sd">        Directory in which to save figures</span>
 <span class="sd">    save_suffix : str</span>
 <span class="sd">        Suffix to add to end of figure filename(s), if save_dir is used</span>
 <span class="sd">    show_legend : bool, default=False</span>
 <span class="sd">        Whether to show legend in plot</span>
-<span class="sd">    show : bool</span>
+<span class="sd">    show_plot : bool</span>
 <span class="sd">        Whether to show plot</span>
 <span class="sd">    close_figs : bool, default=False</span>
 <span class="sd">        Whether to close figures before plotting</span>
@@ -3499,142 +3631,153 @@
                 <span class="k">except</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2"> not able to be plotted.&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">clear_fig</span> <span class="ow">and</span> <span class="n">fig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#Intended use for tkinter</span>
-            <span class="c1">#Clear everything</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">:</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">texts</span><span class="p">:</span>
-                <span class="k">del</span> <span class="n">t</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">close_figs</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="n">mplList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="s1">&#39;mpl&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        <span class="n">plotlyList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
 
-        <span class="c1"># The possible identifiers in plot_type for the different kind of plots</span>
-        <span class="n">hvsrList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;hv&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">]</span>
-        <span class="n">compList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;comp&#39;</span><span class="p">,</span> <span class="s1">&#39;component&#39;</span><span class="p">,</span> <span class="s1">&#39;components&#39;</span><span class="p">]</span>
-        <span class="n">specgramList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="s1">&#39;specgram&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrogram&#39;</span><span class="p">]</span>
-        <span class="n">azList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span> <span class="s1">&#39;az&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">plotlyList</span><span class="p">:</span>
+            <span class="n">plotlyFigure</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="n">return_fig</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="n">show_plot</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">plotlyFigure</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#plot_engine.lower() in mplList or any other value not in plotly list</span>
+            <span class="k">if</span> <span class="n">clear_fig</span> <span class="ow">and</span> <span class="n">fig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#Intended use for tkinter</span>
+                <span class="c1">#Clear everything</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">texts</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">t</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">close_figs</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
 
-        <span class="n">hvsrInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="n">compInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="n">specInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="n">azInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="c1"># The possible identifiers in plot_type for the different kind of plots</span>
+            <span class="n">hvsrList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;hv&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">]</span>
+            <span class="n">compList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;comp&#39;</span><span class="p">,</span> <span class="s1">&#39;component&#39;</span><span class="p">,</span> <span class="s1">&#39;components&#39;</span><span class="p">]</span>
+            <span class="n">specgramList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="s1">&#39;specgram&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrogram&#39;</span><span class="p">]</span>
+            <span class="n">azList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span> <span class="s1">&#39;az&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]</span>
 
-        <span class="n">plot_type</span> <span class="o">=</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-        <span class="n">kList</span> <span class="o">=</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kList</span><span class="p">):</span>
-            <span class="n">kList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">hvsrInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">compInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">specInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">azInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 
-        <span class="c1"># Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)</span>
-        <span class="c1"># HVSR index</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">hvsrList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvsrList</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">hv</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
-                    <span class="n">hvsrInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">hv</span><span class="p">)</span>
+            <span class="n">plot_type</span> <span class="o">=</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">kList</span> <span class="o">=</span> <span class="n">plot_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kList</span><span class="p">):</span>
+                <span class="n">kList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+            <span class="c1"># Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)</span>
+            <span class="c1"># HVSR index</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">hvsrList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvsrList</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">hv</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
+                        <span class="n">hvsrInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">hv</span><span class="p">)</span>
+                        <span class="k">break</span>
+            <span class="c1"># Component index</span>
+            <span class="c1">#if len(set(compList).intersection(kList)):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kList</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">c</span> <span class="ow">and</span> <span class="n">c</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">compList</span><span class="p">:</span>
+                    <span class="n">compInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
                     <span class="k">break</span>
-        <span class="c1"># Component index</span>
-        <span class="c1">#if len(set(compList).intersection(kList)):</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kList</span><span class="p">):</span>
-            <span class="k">if</span> <span class="s1">&#39;+&#39;</span> <span class="ow">in</span> <span class="n">c</span> <span class="ow">and</span> <span class="n">c</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">compList</span><span class="p">:</span>
-                <span class="n">compInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
-                <span class="k">break</span>
+                
+            <span class="c1"># Specgram index</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">specgramList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">specgramList</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
+                        <span class="n">specInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                        <span class="k">break</span>        
+
+            <span class="c1"># Azimuth index</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">azList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">azList</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
+                        <span class="n">azInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                        <span class="k">break</span>        
+
             
-        <span class="c1"># Specgram index</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">specgramList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">specgramList</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
-                    <span class="n">specInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
-                    <span class="k">break</span>        
+            <span class="c1"># Get indices for all plot type indicators</span>
+            <span class="n">indList</span> <span class="o">=</span> <span class="p">[</span><span class="n">hvsrInd</span><span class="p">,</span> <span class="n">compInd</span><span class="p">,</span> <span class="n">specInd</span><span class="p">,</span> <span class="n">azInd</span><span class="p">]</span>
+            <span class="n">indListCopy</span> <span class="o">=</span> <span class="n">indList</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">plotTypeList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;comp&#39;</span><span class="p">,</span> <span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="s1">&#39;az&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Azimuth index</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">azList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">kList</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">azList</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">kList</span><span class="p">:</span>
-                    <span class="n">azInd</span> <span class="o">=</span> <span class="n">kList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
-                    <span class="k">break</span>        
+            <span class="n">plotTypeOrder</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">plotIndOrder</span> <span class="o">=</span> <span class="p">[]</span>
 
-        
-        <span class="c1"># Get indices for all plot type indicators</span>
-        <span class="n">indList</span> <span class="o">=</span> <span class="p">[</span><span class="n">hvsrInd</span><span class="p">,</span> <span class="n">compInd</span><span class="p">,</span> <span class="n">specInd</span><span class="p">,</span> <span class="n">azInd</span><span class="p">]</span>
-        <span class="n">indListCopy</span> <span class="o">=</span> <span class="n">indList</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">plotTypeList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;comp&#39;</span><span class="p">,</span> <span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="s1">&#39;az&#39;</span><span class="p">]</span>
+            <span class="c1"># Get lists with first and last indices of the specifiers for each plot</span>
+            <span class="n">lastVal</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">lastVal</span> <span class="o">!=</span> <span class="mi">99</span><span class="p">:</span>
+                <span class="n">firstInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">indListCopy</span><span class="p">)</span>
+                <span class="n">plotTypeOrder</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">plotTypeList</span><span class="p">[</span><span class="n">firstInd</span><span class="p">])</span>
+                <span class="n">plotIndOrder</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indList</span><span class="p">[</span><span class="n">firstInd</span><span class="p">])</span>
+                <span class="n">lastVal</span> <span class="o">=</span> <span class="n">indListCopy</span><span class="p">[</span><span class="n">firstInd</span><span class="p">]</span>
+                <span class="n">indListCopy</span><span class="p">[</span><span class="n">firstInd</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99</span>  <span class="c1">#just a high number</span>
 
-        <span class="n">plotTypeOrder</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">plotIndOrder</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># Get lists with first and last indices of the specifiers for each plot</span>
-        <span class="n">lastVal</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">while</span> <span class="n">lastVal</span> <span class="o">!=</span> <span class="mi">99</span><span class="p">:</span>
-            <span class="n">firstInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">indListCopy</span><span class="p">)</span>
-            <span class="n">plotTypeOrder</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">plotTypeList</span><span class="p">[</span><span class="n">firstInd</span><span class="p">])</span>
-            <span class="n">plotIndOrder</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indList</span><span class="p">[</span><span class="n">firstInd</span><span class="p">])</span>
-            <span class="n">lastVal</span> <span class="o">=</span> <span class="n">indListCopy</span><span class="p">[</span><span class="n">firstInd</span><span class="p">]</span>
-            <span class="n">indListCopy</span><span class="p">[</span><span class="n">firstInd</span><span class="p">]</span> <span class="o">=</span> <span class="mi">99</span>  <span class="c1">#just a high number</span>
-
-        <span class="n">plotTypeOrder</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
-        <span class="n">plotIndOrder</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kList</span><span class="p">)</span>
-        
-        <span class="c1"># Get </span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plotTypeOrder</span><span class="p">):</span>
-            <span class="n">pStartInd</span> <span class="o">=</span> <span class="n">plotIndOrder</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">pEndInd</span> <span class="o">=</span> <span class="n">plotIndOrder</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">plotComponents</span> <span class="o">=</span> <span class="n">kList</span><span class="p">[</span><span class="n">pStartInd</span><span class="p">:</span><span class="n">pEndInd</span><span class="p">]</span>
-
-            <span class="k">if</span> <span class="n">use_subplots</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">mosaicPlots</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">pto</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">pto</span> <span class="o">==</span> <span class="s1">&#39;az&#39;</span><span class="p">:</span>
-                        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mosaicPlots</span><span class="p">):</span>
-                            <span class="k">if</span> <span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;hvsr&#39;</span> <span class="ow">or</span> <span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;comp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s2">&quot;hvsr&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                                <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                                <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pto</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">mosaicPlots</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pto</span><span class="p">])</span>
-                <span class="n">perSubPDict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">if</span> <span class="s1">&#39;az&#39;</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span><span class="p">:</span>
-                    <span class="n">perSubPDict</span><span class="p">[</span><span class="s1">&#39;az&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span><span class="s1">&#39;polar&#39;</span><span class="p">}</span>
-                <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot_mosaic</span><span class="p">(</span><span class="n">mosaicPlots</span><span class="p">,</span> <span class="n">per_subplot_kw</span><span class="o">=</span><span class="n">perSubPDict</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
-                <span class="n">axis</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">use_subplots</span><span class="p">:</span>
-                <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-                    <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span> <span class="c1">#Often warns about xlim when it is not an issue</span>
-                    <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-                <span class="n">axis</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;hvsr&#39;</span><span class="p">:</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subplot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
-                <span class="n">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotComponents</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;comp&#39;</span><span class="p">:</span>
-                <span class="n">plotComponents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">plotComponents</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subplot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
-                <span class="n">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotComponents</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;spec&#39;</span><span class="p">:</span>
-                <span class="n">plottypeKwargs</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">plotComponents</span><span class="p">:</span>
-                    <span class="n">plottypeKwargs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">plottypeKwargs</span><span class="p">)</span>
-                <span class="n">_plot_specgram_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;az&#39;</span><span class="p">:</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plotComponents</span>
-                <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Azimuth_fig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plot_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Plot type </span><span class="si">{p}</span><span class="s1"> not recognized&#39;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>   
-
-        <span class="n">windowsUsedStr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> windows used&quot;</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">windowsUsedStr</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;xx-small&#39;</span><span class="p">,</span>
-                 <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">get_layout_engine</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">h_pad</span><span class="o">=</span><span class="mf">0.075</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+            <span class="n">plotTypeOrder</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">plotIndOrder</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kList</span><span class="p">)</span>
             
-        <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
+            <span class="c1"># Get </span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plotTypeOrder</span><span class="p">):</span>
+                <span class="n">pStartInd</span> <span class="o">=</span> <span class="n">plotIndOrder</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">pEndInd</span> <span class="o">=</span> <span class="n">plotIndOrder</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">plotComponents</span> <span class="o">=</span> <span class="n">kList</span><span class="p">[</span><span class="n">pStartInd</span><span class="p">:</span><span class="n">pEndInd</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">use_subplots</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mosaicPlots</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">pto</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">pto</span> <span class="o">==</span> <span class="s1">&#39;az&#39;</span><span class="p">:</span>
+                            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mosaicPlots</span><span class="p">):</span>
+                                <span class="k">if</span> <span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;hvsr&#39;</span> <span class="ow">or</span> <span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;comp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s2">&quot;hvsr&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                    <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                                    <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                                    <span class="n">mosaicPlots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pto</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">mosaicPlots</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pto</span><span class="p">])</span>
+                    <span class="n">perSubPDict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">if</span> <span class="s1">&#39;az&#39;</span> <span class="ow">in</span> <span class="n">plotTypeOrder</span><span class="p">:</span>
+                        <span class="n">perSubPDict</span><span class="p">[</span><span class="s1">&#39;az&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;projection&#39;</span><span class="p">:</span><span class="s1">&#39;polar&#39;</span><span class="p">}</span>
+                    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot_mosaic</span><span class="p">(</span><span class="n">mosaicPlots</span><span class="p">,</span> <span class="n">per_subplot_kw</span><span class="o">=</span><span class="n">perSubPDict</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
+                    <span class="n">axis</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">use_subplots</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span> <span class="c1">#Often warns about xlim when it is not an issue</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span><span class="c1">#print(dir(ax), ax, len(ax))</span>
+                            <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                            <span class="n">axis</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;hvsr&#39;</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subplot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+                    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotComponents</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;comp&#39;</span><span class="p">:</span>
+                    <span class="n">plotComponents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">plotComponents</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subplot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+                    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotComponents</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;spec&#39;</span><span class="p">:</span>
+                    <span class="n">plottypeKwargs</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">plotComponents</span><span class="p">:</span>
+                        <span class="n">plottypeKwargs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">plottypeKwargs</span><span class="p">)</span>
+                    <span class="n">_plot_specgram_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="s1">&#39;az&#39;</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plotComponents</span>
+                    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Azimuth_fig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plot_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Plot type </span><span class="si">{p}</span><span class="s1"> not recognized&#39;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>   
+
+            <span class="n">windowsUsedStr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> windows used&quot;</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">windowsUsedStr</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;xx-small&#39;</span><span class="p">,</span>
+                    <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+            
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.constrained_layout.h_pad&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.075</span>
+            <span class="k">if</span> <span class="n">use_subplots</span><span class="p">:</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">()</span><span class="c1">#.set(h_pad=0.075, hspace=-5)</span>
+            <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+                
+            <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">fig</span>
     <span class="k">return</span></div>
 
 
@@ -3774,7 +3917,7 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span>
+        <span class="k">return</span> <span class="n">fig</span>
     <span class="k">return</span>                 </div>
 
 
@@ -3980,10 +4123,15 @@
             <span class="n">currTimesUsed</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;TimesProcessed_Obspy&#39;</span><span class="p">])</span>
             <span class="c1">#currTimesUsed[k] = ppsds[k][&#39;current_times_used&#39;] #original one</span>
         
-        <span class="c1">#Get string of method type</span>
+        <span class="c1"># Get string of method type</span>
+        <span class="c1"># First check if input is a string number</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="ow">and</span> <span class="n">method</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="n">method</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
             <span class="n">methodInt</span> <span class="o">=</span> <span class="n">method</span>
             <span class="n">method</span> <span class="o">=</span> <span class="n">methodList</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+        
         <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span>
 
         <span class="c1">#This gets the main hvsr curve averaged from all time steps</span>
@@ -4443,7 +4591,7 @@
 <span class="c1"># Remove outlier ppsds</span>
 <div class="viewcode-block" id="remove_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.remove_outlier_curves">[docs]</a>
-<span class="k">def</span> <span class="nf">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_outlier_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed</span>
 <span class="sd">    Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.</span>
 <span class="sd">    It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.</span>
@@ -4492,7 +4640,7 @@
     <span class="n">use_percentile</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;use_percentile&#39;</span><span class="p">]</span>
     <span class="n">rmse_thresh</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">]</span>
     <span class="n">use_hv_curve</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]</span>
-    <span class="n">show_outlier_plot</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">]</span>
+    <span class="n">show_plot</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
 
     <span class="c1">#Print if verbose, which changes depending on if batch data or not</span>
@@ -4547,14 +4695,15 @@
                     <span class="n">compNames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
             <span class="n">colNames</span> <span class="o">=</span> <span class="n">compNames</span>
             <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
-        <span class="k">if</span> <span class="n">show_outlier_plot</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;matplotlib&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">use_hv_curve</span><span class="p">:</span>
-                <span class="n">spMosaic</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">]</span>
+                <span class="n">spMosaic</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">]]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">spMosaic</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;Z&#39;</span><span class="p">],</span>
                             <span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">],</span>
                             <span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]]</span>
-            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplot_mosaic</span><span class="p">(</span><span class="n">spMosaic</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot_mosaic</span><span class="p">(</span><span class="n">spMosaic</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1">#Loop through each component, and determine which curves are outliers</span>
         <span class="n">bad_rmse</span><span class="o">=</span><span class="p">[]</span>
@@ -4588,44 +4737,61 @@
                     <span class="n">bad_rmse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
 
             <span class="c1"># Show plot of removed/retained data</span>
-            <span class="k">if</span> <span class="n">show_outlier_plot</span> <span class="ow">and</span> <span class="n">use_hv_curve</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
-                <span class="c1"># Intialize to only get unique labels</span>
-                <span class="n">rem_label_got</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">keep_label_got</span> <span class="o">=</span> <span class="kc">False</span>
-                
-                <span class="c1"># Iterate through each curve to determine if it&#39;s rmse is outside threshold, for plot</span>
-                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">curr_data</span><span class="p">):</span>
-                    <span class="n">label</span><span class="o">=</span><span class="kc">None</span>
-                    <span class="k">if</span> <span class="n">rmse</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">rmse_threshold</span><span class="p">:</span>
-                        <span class="n">linestyle</span> <span class="o">=</span> <span class="s1">&#39;dashed&#39;</span>
-                        <span class="n">linecolor</span><span class="o">=</span><span class="s1">&#39;darkred&#39;</span>
-                        <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span>
-                        <span class="n">linewidth</span> <span class="o">=</span> <span class="mi">1</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">rem_label_got</span><span class="p">:</span>
-                            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Removed Curve&#39;</span>
-                            <span class="n">rem_label_got</span><span class="o">=</span><span class="kc">True</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;solid&#39;</span>
-                        <span class="n">linecolor</span> <span class="o">=</span> <span class="s1">&#39;rosybrown&#39;</span>
-                        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.25</span>
-                        <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_label_got</span><span class="p">:</span>
-                            <span class="n">keep_label_got</span><span class="o">=</span><span class="kc">True</span>
-                            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Retained Curve&#39;</span>
-
-                    <span class="c1"># Plot each individual curve</span>
-                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
-                
-                <span class="c1"># Plot the median curve</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span><span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
-                
-                <span class="c1"># Format axis</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">semilogx</span><span class="p">()</span>             
-        <span class="k">if</span> <span class="n">show_outlier_plot</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">use_hv_curve</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;matplotlib&#39;</span><span class="p">:</span>
+                    <span class="c1"># Intialize to only get unique labels</span>
+                    <span class="n">rem_label_got</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">keep_label_got</span> <span class="o">=</span> <span class="kc">False</span>
                     
+                    <span class="c1"># Iterate through each curve to determine if it&#39;s rmse is outside threshold, for plot</span>
+                    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">curr_data</span><span class="p">):</span>
+                        <span class="n">label</span><span class="o">=</span><span class="kc">None</span>
+                        <span class="k">if</span> <span class="n">rmse</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">rmse_threshold</span><span class="p">:</span>
+                            <span class="n">linestyle</span> <span class="o">=</span> <span class="s1">&#39;dashed&#39;</span>
+                            <span class="n">linecolor</span><span class="o">=</span><span class="s1">&#39;darkred&#39;</span>
+                            <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="n">linewidth</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">rem_label_got</span><span class="p">:</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Removed Curve&#39;</span>
+                                <span class="n">rem_label_got</span><span class="o">=</span><span class="kc">True</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;solid&#39;</span>
+                            <span class="n">linecolor</span> <span class="o">=</span> <span class="s1">&#39;rosybrown&#39;</span>
+                            <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.25</span>
+                            <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_label_got</span><span class="p">:</span>
+                                <span class="n">keep_label_got</span><span class="o">=</span><span class="kc">True</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Retained Curve&#39;</span>
+
+                        <span class="c1"># Plot each individual curve</span>
+                        <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                            <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                    
+                    <span class="c1"># Plot the median curve</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span><span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Format axis</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">semilogx</span><span class="p">()</span>             
+       
+        <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;matplotlib&#39;</span><span class="p">:</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;OutlierPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+            <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;plotly&#39;</span><span class="p">:</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;OutlierPlot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="n">rmse_thresh</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="n">use_hv_curve</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="c1"># Get unique values of bad_rmse indices and set the &quot;Use&quot; column of the hvsr_windows_df to False for that window</span>
         <span class="n">bad_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -7109,7 +7275,7 @@
 
 <span class="c1"># Helper Functions for plotting</span>
 <span class="c1"># Plot hvsr curve, private supporting function for plot_hvsr</span>
-<span class="k">def</span> <span class="nf">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_type</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_plot_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_type</span><span class="p">,</span> <span class="n">xtype</span><span class="o">=</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function for plotting hvsr curve (or curves with components)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="s1">&#39;kwargs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -7553,13 +7719,13 @@
                         <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
                         <span class="n">plot_suffix</span><span class="o">=</span><span class="n">plotSuff</span><span class="p">,</span> 
                         <span class="n">user_suffix</span><span class="o">=</span><span class="n">save_suffix</span><span class="p">,</span> 
-                        <span class="n">show</span><span class="o">=</span><span class="n">show</span><span class="p">)</span>
+                        <span class="n">show_plot</span><span class="o">=</span><span class="n">show_plot</span><span class="p">)</span>
     
     <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
 
 
 <span class="c1"># Private function to help for when to show and format and save plots</span>
-<span class="k">def</span> <span class="nf">__plot_current_fig</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">plot_suffix</span><span class="p">,</span> <span class="n">user_suffix</span><span class="p">,</span> <span class="n">show</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__plot_current_fig</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">plot_suffix</span><span class="p">,</span> <span class="n">user_suffix</span><span class="p">,</span> <span class="n">show_plot</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function to support plot_hvsr, for plotting and showing plots&quot;&quot;&quot;</span>
     <span class="c1">#plt.gca()</span>
     <span class="c1">#plt.gcf()</span>
@@ -7570,7 +7736,7 @@
     <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">outFile</span> <span class="o">=</span> <span class="n">save_dir</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">filename</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">plot_suffix</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">())</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">user_suffix</span><span class="o">+</span><span class="s1">&#39;.png&#39;</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outFile</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span><span class="c1">#.show()</span>
         <span class="c1">#fig.tight_layout()</span>
         <span class="c1">#plt.ion()</span>
@@ -7942,7 +8108,7 @@
     
     <span class="c1">#cbar = plt.colorbar(mappable=im)</span>
     <span class="c1">#cbar.set_label(&#39;Power Spectral Density [dB]&#39;)</span>
-    <span class="c1">#stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap=&#39;turbo&#39;, dbscale=dbscale, show=False)</span>
+    <span class="c1">#stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap=&#39;turbo&#39;, dbscale=dbscale, show_plot=False)</span>
     
     <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;spec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">xaxis_date</span><span class="p">()</span>
     <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;signalz&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">xaxis_date</span><span class="p">()</span>
@@ -7993,13 +8159,12 @@
         <span class="c1">#fig.tight_layout()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ogFigsize</span>
         
-    <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
-
     <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
     
     <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
+        <span class="k">return</span> <span class="n">fig</span>
     
     <span class="k">return</span>
 

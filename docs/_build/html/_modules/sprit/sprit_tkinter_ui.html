@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_gui &mdash; sprit 1.0.2 documentation</title>
+  <title>sprit.sprit_tkinter_ui &mdash; sprit 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=1ed6394b"></script>
+        <script src="../../_static/documentation_options.js?v=fc837d61"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -61,7 +61,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">sprit.sprit_gui</li>
+      <li class="breadcrumb-item active">sprit.sprit_tkinter_ui</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -70,7 +70,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for sprit.sprit_gui</h1><div class="highlight"><pre>
+  <h1>Source code for sprit.sprit_tkinter_ui</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
@@ -119,7 +119,7 @@
 <span class="n">current_theme_name</span> <span class="o">=</span> <span class="n">curr_gui_dict</span><span class="p">[</span><span class="s1">&#39;theme_name&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="SPRIT_App">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.SPRIT_App">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.SPRIT_App">[docs]</a>
 <span class="k">class</span> <span class="nc">SPRIT_App</span><span class="p">:</span>
     <span class="k">global</span> <span class="n">spritApp</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">):</span>
@@ -168,7 +168,7 @@
 
     <span class="c1">#Method to log error message</span>
 <div class="viewcode-block" id="SPRIT_App.log_errorMsg">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.SPRIT_App.log_errorMsg">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.SPRIT_App.log_errorMsg">[docs]</a>
     <span class="k">def</span> <span class="nf">log_errorMsg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logMsg</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log_text</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="n">logMsg</span><span class="p">)</span>
@@ -177,13 +177,13 @@
 
     <span class="c1">#Not currently working</span>
 <div class="viewcode-block" id="SPRIT_App.manual_label_update">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.SPRIT_App.manual_label_update">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.SPRIT_App.manual_label_update">[docs]</a>
     <span class="k">def</span> <span class="nf">manual_label_update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">notebook</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">winfo_children</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">notebook</span><span class="p">,</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Notebook</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">tab_id</span> <span class="ow">in</span> <span class="n">notebook</span><span class="o">.</span><span class="n">tabs</span><span class="p">():</span>
                     <span class="n">tab_frame</span> <span class="o">=</span> <span class="n">notebook</span><span class="o">.</span><span class="n">nametowidget</span><span class="p">(</span><span class="n">tab_id</span><span class="p">)</span>
-                    <span class="c1">#print(type(tab_frame))</span>
+
                     <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">tab_frame</span><span class="o">.</span><span class="n">winfo_children</span><span class="p">():</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">ttk</span><span class="o">.</span><span class="n">LabelFrame</span><span class="p">):</span>
                             <span class="k">for</span> <span class="n">widget</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">winfo_children</span><span class="p">():</span>
@@ -197,7 +197,7 @@
 
 
 <div class="viewcode-block" id="SPRIT_App.create_menubar">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.SPRIT_App.create_menubar">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.SPRIT_App.create_menubar">[docs]</a>
     <span class="k">def</span> <span class="nf">create_menubar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">menubar</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Menu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">menu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">menubar</span><span class="p">)</span>
@@ -283,7 +283,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Menu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings_menu</span><span class="p">,</span> <span class="n">tearoff</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;Raspberry Shake&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span><span class="o">.</span><span class="n">add_radiobutton</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Raspberry Shake&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument_var</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Raspberry Shake&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span><span class="o">.</span><span class="n">add_radiobutton</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Nodes&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument_var</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Nodes&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span><span class="o">.</span><span class="n">add_radiobutton</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Tromino&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument_var</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Tromino&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span><span class="o">.</span><span class="n">add_radiobutton</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Other&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument_var</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Other&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_menu</span><span class="o">.</span><span class="n">add_cascade</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Instrument&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument_menu</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_menu</span><span class="o">.</span><span class="n">add_command</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Processing Settings&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tab_control</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings_tab</span><span class="p">))</span>
@@ -293,7 +293,7 @@
 
     
 <div class="viewcode-block" id="SPRIT_App.create_tabs">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.SPRIT_App.create_tabs">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.SPRIT_App.create_tabs">[docs]</a>
     <span class="k">def</span> <span class="nf">create_tabs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Style</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="p">)</span>
 
@@ -457,17 +457,16 @@
                                             <span class="n">detrend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detrend</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> 
                                             <span class="n">detrend_order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detrend_order</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
                 <span class="k">except</span><span class="p">:</span>
-                    <span class="c1">#print(dir(sys.exc_info()))</span>
                     <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
 
                 <span class="n">update_progress_bars</span><span class="p">(</span><span class="n">prog_percent</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
                 <span class="n">update_input_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">)</span>
 
-                <span class="c1">#Plot data in data preview tab</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fig_pre</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_pre</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">plot_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_pre</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_pre</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># Plot data in data preview tab</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fig_pre</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">plot_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_pre</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_pre</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                <span class="c1">#Plot data in noise preview tab</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
+                <span class="c1"># Plot data in noise preview tab</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
                 <span class="n">select_windows</span><span class="p">(</span><span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">plot_noise_windows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">)</span>
 
@@ -582,7 +581,7 @@
                                             <span class="n">rmse_thresh</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span>
                                             <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                             <span class="n">use_hv_curve</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                                            <span class="n">show_outlier_plot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+                                            <span class="n">show_plot</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
             <span class="n">update_progress_bars</span><span class="p">(</span><span class="n">prog_percent</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log_text</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">procHVSR_call</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -718,7 +717,7 @@
 
         <span class="c1">#Instrument select</span>
         <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">hvsrFrame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Instrument&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">inst_options</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Raspberry Shake&quot;</span><span class="p">,</span> <span class="s2">&quot;Nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;Other&quot;</span><span class="p">]</span>
+        <span class="n">inst_options</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Raspberry Shake&quot;</span><span class="p">,</span> <span class="s2">&quot;Tromino&quot;</span><span class="p">,</span> <span class="s2">&quot;Other&quot;</span><span class="p">]</span>
 
         
         <span class="k">def</span> <span class="nf">on_option_select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inst</span><span class="p">):</span>
@@ -1608,7 +1607,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">initial_setup</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">noise_canvasWidget</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">noise_toolbar</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">_plot_specgram_stream</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="n">params</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ax_noise</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_canvas</span> <span class="o">=</span> <span class="n">FigureCanvasTkAgg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_noise</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canvasFrame_noise</span><span class="p">)</span>  <span class="c1"># A tk.DrawingArea.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
@@ -1635,7 +1634,6 @@
                     <span class="c1">#Set initial input</span>
                     <span class="c1">#input = hv_data#[&#39;input_stream&#39;]</span>
 
-                    <span class="c1">#print(input[0].stats.starttime)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_stalta</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
                         <span class="n">hv_data</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">remove_method</span><span class="o">=</span><span class="s1">&#39;stalta&#39;</span><span class="p">,</span> <span class="n">sta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sta</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">lta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lta</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">stalta_thresh</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stalta_thresh_low</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">stalta_thresh_hi</span><span class="o">.</span><span class="n">get</span><span class="p">()])</span>
 
@@ -2105,7 +2103,7 @@
         <span class="n">maxPerLimEntry</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">minPerLim</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span> <span class="ow">or</span> <span class="n">maxPerLim</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">period_limits</span><span class="o">=</span><span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">period_limits</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">period_limits</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">minPerLim</span><span class="o">.</span><span class="n">get</span><span class="p">()),</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxPerLim</span><span class="o">.</span><span class="n">get</span><span class="p">())]</span>
 
@@ -2818,7 +2816,7 @@
         <span class="k">def</span> <span class="nf">update_site_dropdown</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">site_dropdown</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_options</span>
 
-        
+
         <span class="c1">#lambda value=string: self.om_variable.set(value)</span>
         <span class="c1"># Create the plot_hvsr Call LabelFrame</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">results_chartFrame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">LabelFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_tab</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Data Plots&quot;</span><span class="p">)</span>
@@ -2990,7 +2988,6 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_ind_subplots</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fig_results</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_fig_dir</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;working on individual subplots&#39;</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">extent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax_results</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">get_tightbbox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_results</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">renderer</span><span class="p">)</span><span class="o">.</span><span class="n">transformed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fig_results</span><span class="o">.</span><span class="n">dpi_scale_trans</span><span class="o">.</span><span class="n">inverted</span><span class="p">())</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">fig_results</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_fig_dir</span><span class="o">.</span><span class="n">get</span><span class="p">())</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span><span class="o">+</span><span class="s1">&#39;/Subplot&#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;.png&#39;</span><span class="p">,</span>  <span class="n">bbox_inches</span><span class="o">=</span><span class="n">extent</span><span class="p">)</span>
@@ -3074,7 +3071,7 @@
 
 <span class="c1">#Decorator that catches errors and warnings (to be modified later for gui)</span>
 <div class="viewcode-block" id="catch_errors">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.catch_errors">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.catch_errors">[docs]</a>
 <span class="k">def</span> <span class="nf">catch_errors</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">spritApp</span>
 
@@ -3182,7 +3179,7 @@
 
 
 <div class="viewcode-block" id="on_closing">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.on_closing">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.on_closing">[docs]</a>
 <span class="k">def</span> <span class="nf">on_closing</span><span class="p">():</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
     <span class="n">root</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
@@ -3190,7 +3187,7 @@
 
 
 <div class="viewcode-block" id="reboot_app">
-<a class="viewcode-back" href="../../sprit.sprit_gui.html#sprit.reboot_app">[docs]</a>
+<a class="viewcode-back" href="../../sprit.sprit_tkinter_ui.html#sprit.reboot_app">[docs]</a>
 <span class="k">def</span> <span class="nf">reboot_app</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Restarts the current program.</span>
 <span class="sd">    Note: this function does not return. Any cleanup action (like</span>
