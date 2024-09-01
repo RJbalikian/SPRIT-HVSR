@@ -573,6 +573,7 @@ def gui_test():
 
 
 # Launch the tkinter gui
+
 def gui(kind='browser'):
     """Function to open a graphical user interface (gui)
 
@@ -778,6 +779,13 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     
     # Calculate azimuths
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
+    if 'method' in kwargs.keys() and (str(kwargs['method']) == '8' or 'single' in str(kwargs['method']).lower()):
+        azimuth_calculation = True
+        azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
+        
+        if 'azimuth_angle' not in kwargs.keys():
+            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
+        
     if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
         try:
             dataIN = calculate_azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
@@ -1052,7 +1060,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
     # Get intput paramaters
     orig_args = locals().copy()
     start_time = datetime.datetime.now()
-    
+
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
         if 'calculate_azimuth' in hvsr_data['processing_parameters'].keys():
@@ -1114,7 +1122,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
         else:
             warnings.warn(f"azimuth_unit={azimuth_unit} not supported. Try 'degrees' or 'radians'. No azimuthal analysis run.")
             return hvsr_data
-        
+
         #Limit to 1-180 and "right" half of compass (will be reflected on other half)
         if az_angle_deg <= 1:
             if verbose:
@@ -1164,14 +1172,14 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
         statsDict = {}
         for key, value in eComp[0].stats.items():
             statsDict[key] = value
-        
+
         for i, az_rad in enumerate(azimuth_list):
             az_deg = azimuth_list_deg[i]
             statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
             statsDict['channel'] = f"EHR"#-{str(round(az_deg,0)).zfill(3)}" #Change channel name
             statsDict['azimuth_deg'] = az_deg
             statsDict['azimuth_rad'] = az_rad
-            
+
             hasMask = [False, False]
             if np.ma.is_masked(nComp[0].data):
                 nData = nComp[0].data.data
@@ -1180,7 +1188,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
             else:
                 nData = nComp[0].data
                 nMask = [True] * len(nData)
-            
+
             if np.ma.is_masked(eComp[0].data):
                 eData = eComp[0].data.data
                 eMask = eComp[0].data.mask
@@ -1612,6 +1620,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
+
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
@@ -1769,7 +1778,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         if argName in kwargs.keys():
             obspyReadKwargs[argName] = kwargs[argName]
 
-    #Select how reading will be done
+    # Select how reading will be done
     if isinstance(params['datapath'], obspy.Stream):
         rawDataIN = params['datapath'].copy()
         tr = params['datapath'][0]
@@ -1812,7 +1821,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 return HVSRBatch(obspyFiles)
         elif source=='file' and str(params['datapath']).lower() not in sampleList:
             # Read the file specified by datapath
-            if inst.lower() in trominoNameList:
+            if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
                 rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             else:
                 if isinstance(dPath, list) or isinstance(dPath, tuple):
@@ -2511,7 +2520,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec', plot_engine='matplotlib', show_plot=True, azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', show_plot=True, azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
     """Get a report of the HVSR analysis in a variety of formats.
         
     Parameters
@@ -3373,14 +3382,14 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC ann p', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
     ----------
     hvsr_data : dict                  
         Dictionary containing output from process_hvsr function
-    plot_type : str or list, default = 'HVSR ann p C+ ann p SPEC'
+    plot_type : str or list, default = 'HVSR ann p C+ ann p SPEC ann p'
         The plot_type of plot(s) to plot. If list, will plot all plots listed
         - 'HVSR' - Standard HVSR plot, including standard deviation. Options are included below:
             - 'p' shows a vertical dotted line at frequency of the "best" peak
@@ -3742,7 +3751,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
 
 
 # Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, verbose=False):
+def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -3761,6 +3770,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             4) 'Vector Summation': H ≡ √H2 N + H2 E
             5) 'Quadratic Mean': H ≡ √(H2 N + H2 E )/2
             6) 'Maximum Horizontal Value': H ≡ max {HN, HE}
+            7) 'Minimum Horizontal Valey': H ≡ min {HN, HE}
+            8) "Single Azimuth" : 
     smooth  : bool, default=True
         bool or int may be used. 
             If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
@@ -3783,6 +3794,8 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         If False, outlier curve removal is not carried out here. 
         If True, defaults to 98 (98th percentile). 
         Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().
+    azimuth : float, default = None
+        The azimuth angle to use when method is single azimuth.
     verbose : bool, defualt=False
         Whether to print output to terminal
 
@@ -3850,7 +3863,15 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
         ppsds = sprit_utils.check_xvalues(ppsds)
 
-        methodList = ['<placeholder_0>', 'Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value']
+        methodList = ['<placeholder_0>', # 0
+                      'Diffuse Field Assumption', # 1
+                      'Arithmetic Mean', # 2
+                      'Geometric Mean', # 3
+                      'Vector Summation', # 4
+                      'Quadratic Mean', # 5
+                      'Maximum Horizontal Value', # 6
+                      'Minimum Horizontal Value', # 7
+                      'Single Azimuth' ] # 8
         x_freqs = {}
         x_periods = {}
 
@@ -3942,8 +3963,11 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         
         # Get string of method type
         # First check if input is a string number
-        if type(method) is str and method.isdigit():
+        if type(method) is str:
+            if method.isdigit():
                 method = int(method)
+            else:
+                method = methodList.index(method.title())
 
         if type(method) is int:
             methodInt = method
@@ -3953,7 +3977,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
 
         #This gets the main hvsr curve averaged from all time steps
         anyK = list(x_freqs.keys())[0]
-        hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, verbose=verbose)
+        hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
         origPPSD = hvsr_data['ppsds_obspy'].copy()
 
         #print('hvcurv', np.array(hvsr_curve).shape)
@@ -4154,7 +4178,10 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
             hvsr_out['processing_parameters']['generate_ppsds'][key] = value
 
     hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
-
+    if str(method) == '8' or method.lower() == 'single azimuth':
+        if azimuth is None:
+            azimuth = 90
+        hvsr_out['single_azimuth'] = azimuth
     return hvsr_out
 
 
@@ -6818,7 +6845,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
 
 
 # Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
+def __get_hvsr_curve(x, psd, method, hvsr_data, azimuth=None, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -6867,7 +6894,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
             psd2 = [psd['N'][j], psd['N'][j + 1]]
             f =    [x[j], x[j + 1]]
 
-            hvratio = __get_hvsr(psd0, psd1, psd2, f, use_method=method)
+            hvratio = __get_hvsr(psd0, psd1, psd2, f, azimuth=azimuth, use_method=method)
             hvsr_curve.append(hvratio)
             
             # Do azimuth HVSR Calculations, if applicable
@@ -6875,7 +6902,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
             for k in psd.keys():
                 if k.lower() not in ['z', 'e', 'n']:
                     psd_az = [psd[k][j], psd[k][j + 1]]
-                    hvratio_az = __get_hvsr(psd0, psd_az, None, f, use_method='az')
+                    hvratio_az = __get_hvsr(psd0, psd_az, None, f, azimuth=azimuth, use_method='az')
                     if j == 0:
                         hvsr_azimuth[k] = [hvratio_az]
                     else:
@@ -6887,7 +6914,7 @@ def __get_hvsr_curve(x, psd, method, hvsr_data, verbose=False):
 
 
 # Get HVSR
-def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
+def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
     """
     _dbz : list
         Two item list with deciBel value of z component at either end of particular frequency step
@@ -6921,12 +6948,21 @@ def __get_hvsr(_dbz, _db1, _db2, _x, use_method=4):
         _p2 = __get_power(_db2, _x)
         _h2 = math.sqrt(_p2)
 
-    _h = {  2: (_h1 + _h2) / 2.0, #Arithmetic mean
-            3: math.sqrt(_h1 * _h2), #Geometric mean
-            4: math.sqrt(_p1 + _p2), #Vector summation
-            5: math.sqrt((_p1 + _p2) / 2.0), #Quadratic mean
-            6: max(_h1, _h2), #Max horizontal value
-         'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
+    def az_calc(az, h1, h2):
+        if az is None:
+            az = 90
+        az_rad = np.deg2rad(az)
+        return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
+        
+
+    _h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
+            3: math.sqrt(_h1 * _h2), # Geometric mean
+            4: math.sqrt(_p1 + _p2), # Vector summation
+            5: math.sqrt((_p1 + _p2) / 2.0), # Quadratic mean
+            6: max(_h1, _h2), # Max horizontal value
+            7: min(_h1, _h2), # Minimum horizontal value
+            8: az_calc(azimuth, _h1, _h2),
+            'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
 
     _hvsr = _h[use_method] / _hz
     return _hvsr
@@ -7142,8 +7178,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.tick_params(axis='y', labelsize=5)
     plt.suptitle(hvsr_data['input_params']['site'])
 
-    f0 = hvsr_data['BestPeak'][azimuth]['f0']
-    a0 = hvsr_data['BestPeak'][azimuth]['A0']
+    if "BestPeak" in hvsr_data.keys():
+        f0 = hvsr_data['BestPeak'][azimuth]['f0']
+        a0 = hvsr_data['BestPeak'][azimuth]['A0']
+    else:
+        f0 = hvsr_data['hvsr_band'][0]
+        a0 = 0
     f0_div4 = f0/4
     f0_mult4 = f0*4
     a0_div2 = a0/2
@@ -7456,7 +7496,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             minY = min(minY)
             maxY = max(maxY)
             if maxY > 20:
-                maxY=20
+                maxY = max(hvsr_data['hvsr_curve']) * 1.15
             rng = maxY-minY
             pad = abs(rng * 0.15)
             ylim = [minY-pad, maxY+pad]
@@ -7486,7 +7526,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 else:
                     pltColor = 'g'
 
-                if key.lower() in ['z', 'e', 'n'] or key == azimuth:
+                if key.lower() in keyList or key == azimuth:
                     y[key] = hvsr_data['psd_values_tavg'][key][:-1]
                     compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
                     if '-s' not in plot_type:
