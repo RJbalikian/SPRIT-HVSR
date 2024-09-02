@@ -3845,7 +3845,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                     print('\t  {}={}'.format(key, value))
             print()
 
-    #First, divide up for batch or not
+    # PROCESSING STARTS HERE (SEPARATE LOOP FOR BATCH)
     #Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
@@ -3865,330 +3865,337 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
                 hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
                 hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
         hvsr_out = HVSRBatch(hvsr_out)
+        hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        return hvsr_out
+    
+    ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
+    ppsds = sprit_utils.check_xvalues(ppsds)
+
+    methodList = ['<placeholder_0>', # 0
+                    'Diffuse Field Assumption', # 1
+                    'Arithmetic Mean', # 2
+                    'Geometric Mean', # 3
+                    'Vector Summation', # 4
+                    'Quadratic Mean', # 5
+                    'Maximum Horizontal Value', # 6
+                    'Minimum Horizontal Value', # 7
+                    'Single Azimuth' ] # 8
+    x_freqs = {}
+    x_periods = {}
+
+    psdValsTAvg = {}
+    stDev = {}
+    stDevValsP = {}
+    stDevValsM = {}
+    psdRaw={}
+    currTimesUsed={}
+    hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'].astype(bool)
+    hvsrDF = hvsr_data['hvsr_windows_df']
+    def move_avg(y, box_pts):
+        #box = np.ones(box_pts)/box_pts
+        box = np.hanning(box_pts)
+        y_smooth = np.convolve(y, box, mode='same') / sum(box)
+        return y_smooth
+
+    for k in ppsds.keys():
+        #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
+        input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
+
+        #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
+        #used_ppsds = np.stack(currPPSDs)
+
+        xValMin_per = np.round(1/hvsr_data['hvsr_band'][1], 4)
+        xValMax_per = np.round(1/hvsr_data['hvsr_band'][0], 4)
+        
+        #if reasmpling has been selected
+        if resample is True or type(resample) is int or type(resample) is float:
+            if resample is True:
+                resample = 1000 #Default smooth value
+
+            #xValMin_per = min(ppsds[k]['period_bin_centers'])
+            #xValMax_per = max(ppsds[k]['period_bin_centers'])
+
+            #Resample period bin values
+            #print('resample, prelogspace', x_periods[k].shape)
+            x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
+            if smooth or isinstance(smooth, (int, float)):
+                if smooth:
+                    smooth = 51 #Default smoothing window
+                    padVal = 25
+                elif smooth % 2==0:
+                    smooth +1 #Otherwise, needs to be odd
+                    padVal = smooth//2
+                    if padVal %2==0:
+                        padVal += 1
+
+            #Resample raw ppsd values
+            for i, ppsd_t in enumerate(input_ppsds):
+                if i==0:
+                    psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
+                    if smooth is not False:
+                        padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
+                        #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
+                        padRawKPadSmooth = move_avg(padRawKPad, smooth)
+                        psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
+
+                else:
+                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)))
+                    if smooth is not False:
+                        padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
+                        #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
+                        padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
+                        psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
+
+        else:
+            #If no resampling desired
+            #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
+            x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
+
+            # Clean up edge freq. values
+            x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
+            x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
+            psdRaw[k] = np.array(input_ppsds)
+        
+        hvsrDF['psd_values_'+k] = list(psdRaw[k])
+        use = hvsrDF['Use'].astype(bool)
+
+        #Get average psd value across time for each channel (used to calc main H/V curve)
+        psdValsTAvg[k] = np.nanmedian(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+        x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
+        stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+
+        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
+        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
+
+        currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
+        #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
+    
+    # Get string of method type
+    # If an azimuth has been calculated and it's only one, automatically use the single azimuth method
+    if len(hvsr_data.stream.merge().select(component='R')) == 1:
+        method = 8 # Single azimuth
+
+    # First check if input is a string number
+    if type(method) is str:
+        if method.isdigit():
+            method = int(method)
+        else:
+            method = methodList.index(method.title())
+
+    if type(method) is int:
+        methodInt = method
+        method = methodList[method]
+    
+    hvsr_data['method'] = method
+
+    #This gets the main hvsr curve averaged from all time steps
+    anyK = list(x_freqs.keys())[0]
+    hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
+    origPPSD = hvsr_data['ppsds_obspy'].copy()
+
+    #print('hvcurv', np.array(hvsr_curve).shape)
+    #print('hvaz', np.array(hvsr_az).shape)
+
+    #Add some other variables to our output dictionary
+    hvsr_dataUpdate = {'input_params':hvsr_data,
+                'x_freqs':x_freqs,
+                'hvsr_curve':hvsr_curve,
+                'hvsr_az':hvsr_az,
+                'x_period':x_periods,
+                'psd_raw':psdRaw,
+                'current_times_used': currTimesUsed,
+                'psd_values_tavg':psdValsTAvg,
+                'ppsd_std':stDev,
+                'ppsd_std_vals_m':stDevValsM,
+                'ppsd_std_vals_p':stDevValsP,
+                'method':method,
+                'ppsds':ppsds,
+                'ppsds_obspy':origPPSD,
+                'tsteps_used': hvsr_data['tsteps_used'].copy(),
+                'hvsr_windows_df':hvsr_data['hvsr_windows_df']
+                }
+    
+    hvsr_out = HVSRData(hvsr_dataUpdate)
+
+    #This is if manual editing was used (should probably be updated at some point to just use masks)
+    if 'x_windows_out' in hvsr_data.keys():
+        hvsr_out['x_windows_out'] = hvsr_data['x_windows_out']
     else:
-        ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
-        ppsds = sprit_utils.check_xvalues(ppsds)
+        hvsr_out['x_windows_out'] = []
 
-        methodList = ['<placeholder_0>', # 0
-                      'Diffuse Field Assumption', # 1
-                      'Arithmetic Mean', # 2
-                      'Geometric Mean', # 3
-                      'Vector Summation', # 4
-                      'Quadratic Mean', # 5
-                      'Maximum Horizontal Value', # 6
-                      'Minimum Horizontal Value', # 7
-                      'Single Azimuth' ] # 8
-        x_freqs = {}
-        x_periods = {}
+    freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
+    freq_smooth_constant = ['constant', 'const', 'c']
+    freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
 
-        psdValsTAvg = {}
-        stDev = {}
-        stDevValsP = {}
-        stDevValsM = {}
-        psdRaw={}
-        currTimesUsed={}
-        hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'].astype(bool)
-        hvsrDF = hvsr_data['hvsr_windows_df']
-        def move_avg(y, box_pts):
-            #box = np.ones(box_pts)/box_pts
-            box = np.hanning(box_pts)
-            y_smooth = np.convolve(y, box, mode='same') / sum(box)
-            return y_smooth
+    #Frequency Smoothing
+    if not freq_smooth:
+        if verbose:
+            warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+    elif freq_smooth is True or (freq_smooth.lower() in freq_smooth_ko and (not not f_smooth_width and not not freq_smooth)):
+        from obspy.signal import konnoohmachismoothing
+        for k in hvsr_out['psd_raw']:
+            colName = f'psd_values_{k}'
 
-        for k in ppsds.keys():
-            #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
-            input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
+            ppsd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
+            ppsd_data = hvsr_out['psd_raw'][k]
 
-            #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
-            #used_ppsds = np.stack(currPPSDs)
 
-            xValMin_per = np.round(1/hvsr_data['hvsr_band'][1], 4)
-            xValMax_per = np.round(1/hvsr_data['hvsr_band'][0], 4)
+            freqs = hvsr_out['x_freqs'][k]
+            padding_length = int(f_smooth_width)
+
+            padding_value_R = np.nanmean(ppsd_data[:,-1*padding_length:])
+            padding_value_L = np.nanmean(ppsd_data[:,:padding_length])
+
+            # Pad the data to prevent boundary anamolies
+            padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 
+                                        'constant', constant_values=(padding_value_L, padding_value_R))
+
+            # Pad the frequencies
+            ratio = freqs[1] / freqs[0]
+            # Generate new elements on either side and combine
+            left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
+            right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
+            padded_freqs = np.concatenate([left_padding, freqs, right_padding])
             
-            #if reasmpling has been selected
-            if resample is True or type(resample) is int or type(resample) is float:
-                if resample is True:
-                    resample = 1000 #Default smooth value
+            #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
+            with warnings.catch_warnings():
+                #warnings.simplefilter('ignore', category=UserWarning)
+                padded_ppsd_data = padded_ppsd_data.astype(padded_freqs.dtype) # Make them the same datatype
+                padded_ppsd_data = np.round(padded_ppsd_data, 12) # Prevent overflows
+                padded_freqs = np.round(padded_freqs, 9)
 
-                #xValMin_per = min(ppsds[k]['period_bin_centers'])
-                #xValMax_per = max(ppsds[k]['period_bin_centers'])
-
-                #Resample period bin values
-                #print('resample, prelogspace', x_periods[k].shape)
-                x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
-                if smooth or isinstance(smooth, (int, float)):
-                    if smooth:
-                        smooth = 51 #Default smoothing window
-                        padVal = 25
-                    elif smooth % 2==0:
-                        smooth +1 #Otherwise, needs to be odd
-                        padVal = smooth//2
-                        if padVal %2==0:
-                            padVal += 1
-
-                #Resample raw ppsd values
-                for i, ppsd_t in enumerate(input_ppsds):
-                    if i==0:
-                        psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
-                        if smooth is not False:
-                            padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
-                            #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
-                            padRawKPadSmooth = move_avg(padRawKPad, smooth)
-                            psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
-
-                    else:
-                        psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)))
-                        if smooth is not False:
-                            padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
-                            #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
-                            padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
-                            psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
-
-            else:
-                #If no resampling desired
-                #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
-                x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
-
-                # Clean up edge freq. values
-                x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
-                x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
-                psdRaw[k] = np.array(input_ppsds)
+                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, 
+                                                    bandwidth=f_smooth_width, normalize=True)
             
-            hvsrDF['psd_values_'+k] = list(psdRaw[k])
-            use = hvsrDF['Use'].astype(bool)
+            # Only use the original, non-padded data
+            smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
+            hvsr_out['psd_raw'][k] = smoothed_ppsd_data
+            hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
+    elif freq_smooth.lower() in freq_smooth_constant:
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
+    elif freq_smooth.lower() in freq_smooth_proport:
+        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
+    else:
+        if verbose:
+            warnings.warn(f'You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.')
 
-            #Get average psd value across time for each channel (used to calc main H/V curve)
-            psdValsTAvg[k] = np.nanmedian(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
-            x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
-            stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
-
-            stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
-            stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
-
-            currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
-            #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
-        
-        # Get string of method type
-        # First check if input is a string number
-        if type(method) is str:
-            if method.isdigit():
-                method = int(method)
-            else:
-                method = methodList.index(method.title())
-
-        if type(method) is int:
-            methodInt = method
-            method = methodList[method]
-        
-        hvsr_data['method'] = method
-
-        #This gets the main hvsr curve averaged from all time steps
-        anyK = list(x_freqs.keys())[0]
-        hvsr_curve, hvsr_az, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
-        origPPSD = hvsr_data['ppsds_obspy'].copy()
-
-        #print('hvcurv', np.array(hvsr_curve).shape)
-        #print('hvaz', np.array(hvsr_az).shape)
-
-        #Add some other variables to our output dictionary
-        hvsr_dataUpdate = {'input_params':hvsr_data,
-                    'x_freqs':x_freqs,
-                    'hvsr_curve':hvsr_curve,
-                    'hvsr_az':hvsr_az,
-                    'x_period':x_periods,
-                    'psd_raw':psdRaw,
-                    'current_times_used': currTimesUsed,
-                    'psd_values_tavg':psdValsTAvg,
-                    'ppsd_std':stDev,
-                    'ppsd_std_vals_m':stDevValsM,
-                    'ppsd_std_vals_p':stDevValsP,
-                    'method':method,
-                    'ppsds':ppsds,
-                    'ppsds_obspy':origPPSD,
-                    'tsteps_used': hvsr_data['tsteps_used'].copy(),
-                    'hvsr_windows_df':hvsr_data['hvsr_windows_df']
-                    }
-        
-        hvsr_out = HVSRData(hvsr_dataUpdate)
-
-        #This is if manual editing was used (should probably be updated at some point to just use masks)
-        if 'x_windows_out' in hvsr_data.keys():
-            hvsr_out['x_windows_out'] = hvsr_data['x_windows_out']
-        else:
-            hvsr_out['x_windows_out'] = []
-
-
-        freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
-        freq_smooth_constant = ['constant', 'const', 'c']
-        freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
-
-        #Frequency Smoothing
-        if not freq_smooth:
-            if verbose:
-                warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
-        elif freq_smooth is True or (freq_smooth.lower() in freq_smooth_ko and (not not f_smooth_width and not not freq_smooth)):
-            from obspy.signal import konnoohmachismoothing
+    #Get hvsr curve from three components at each time step
+    anyK = list(hvsr_out['psd_raw'].keys())[0]
+    if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
+        pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+    else:
+        hvsr_tSteps = []
+        hvsr_tSteps_az = {}
+        for tStep in range(len(hvsr_out['psd_raw'][anyK])):
+            tStepDict = {}
             for k in hvsr_out['psd_raw']:
-                colName = f'psd_values_{k}'
-
-                ppsd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
-                ppsd_data = hvsr_out['psd_raw'][k]
-
-
-                freqs = hvsr_out['x_freqs'][k]
-                padding_length = int(f_smooth_width)
-
-                padding_value_R = np.nanmean(ppsd_data[:,-1*padding_length:])
-                padding_value_L = np.nanmean(ppsd_data[:,:padding_length])
-
-                # Pad the data to prevent boundary anamolies
-                padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 
-                                          'constant', constant_values=(padding_value_L, padding_value_R))
-
-                # Pad the frequencies
-                ratio = freqs[1] / freqs[0]
-                # Generate new elements on either side and combine
-                left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
-                right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
-                padded_freqs = np.concatenate([left_padding, freqs, right_padding])
-                
-                #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
-                with warnings.catch_warnings():
-                    #warnings.simplefilter('ignore', category=UserWarning)
-                    padded_ppsd_data = padded_ppsd_data.astype(padded_freqs.dtype) # Make them the same datatype
-                    padded_ppsd_data = np.round(padded_ppsd_data, 12) # Prevent overflows
-                    padded_freqs = np.round(padded_freqs, 9)
-
-                    smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, 
-                                                     bandwidth=f_smooth_width, normalize=True)
-                
-                # Only use the original, non-padded data
-                smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
-                hvsr_out['psd_raw'][k] = smoothed_ppsd_data
-                hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
-        elif freq_smooth.lower() in freq_smooth_constant:
-            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
-        elif freq_smooth.lower() in freq_smooth_proport:
-            hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
-        else:
-            if verbose:
-                warnings.warn(f'You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.')
-
-        #Get hvsr curve from three components at each time step
-        anyK = list(hvsr_out['psd_raw'].keys())[0]
-        if method==1 or method =='dfa' or method =='Diffuse Field Assumption':
-            pass ###UPDATE HERE NEXT???__get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
-        else:
-            hvsr_tSteps = []
-            hvsr_tSteps_az = {}
-            for tStep in range(len(hvsr_out['psd_raw'][anyK])):
-                tStepDict = {}
-                for k in hvsr_out['psd_raw']:
-                    tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-                
-                hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
-                
-                hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
-                for k, v in hvsr_az_tstep.items():
-                    if tStep == 0:
-                        hvsr_tSteps_az[k] = [np.float32(v)]
-                    else:
-                        hvsr_tSteps_az[k].append(np.float32(v))
-        hvsr_out['hvsr_windows_df']['HV_Curves'] = hvsr_tSteps
-        
-        # Add azimuth HV Curves to hvsr_windows_df
-        for key, values in hvsr_tSteps_az.items():
-            hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
-        
-        hvsr_out['ind_hvsr_curves'] = {}
-        for col_name in hvsr_out['hvsr_windows_df']:
-            if "HV_Curves" in col_name:
-                if col_name == 'HV_Curves':
-                    colID = 'HV'
+                tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
+            
+            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+            
+            hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+            for k, v in hvsr_az_tstep.items():
+                if tStep == 0:
+                    hvsr_tSteps_az[k] = [np.float32(v)]
                 else:
-                    colID = col_name.split('_')[2]
-                hvsr_out['ind_hvsr_curves'][colID] = np.stack(hvsr_out['hvsr_windows_df'][hvsr_out['hvsr_windows_df']['Use']][col_name])
+                    hvsr_tSteps_az[k].append(np.float32(v))
+    hvsr_out['hvsr_windows_df']['HV_Curves'] = hvsr_tSteps
+    
+    # Add azimuth HV Curves to hvsr_windows_df
+    for key, values in hvsr_tSteps_az.items():
+        hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
+    
+    hvsr_out['ind_hvsr_curves'] = {}
+    for col_name in hvsr_out['hvsr_windows_df']:
+        if "HV_Curves" in col_name:
+            if col_name == 'HV_Curves':
+                colID = 'HV'
+            else:
+                colID = col_name.split('_')[2]
+            hvsr_out['ind_hvsr_curves'][colID] = np.stack(hvsr_out['hvsr_windows_df'][hvsr_out['hvsr_windows_df']['Use']][col_name])
 
-        #Initialize array based only on the curves we are currently using
-        indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
-        #indHVCurvesArr = hvsr_out['ind_hvsr_curves']
+    #Initialize array based only on the curves we are currently using
+    indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
+    #indHVCurvesArr = hvsr_out['ind_hvsr_curves']
 
-        if outlier_curve_rmse_percentile:
-            if outlier_curve_rmse_percentile is True:
-                outlier_curve_rmse_percentile = 98
-            hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
-  
-        hvsr_out['ind_hvsr_stdDev'] = {}
-        for col_name in hvsr_out['hvsr_windows_df'].columns:
-            if "HV_Curves" in col_name:
-                if col_name == 'HV_Curves':
-                    keyID = 'HV'
-                else:
-                    keyID = col_name.split('_')[2]
-                curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
-                hvsr_out['ind_hvsr_stdDev'][keyID] = np.nanstd(curr_indHVCurvesArr, axis=0)
+    if outlier_curve_rmse_percentile:
+        if outlier_curve_rmse_percentile is True:
+            outlier_curve_rmse_percentile = 98
+        hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
 
-        #Get peaks for each time step
-        hvsr_out['ind_hvsr_peak_indices'] = {}
-        tStepPFDict = {}
-        #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
-        for col_name in hvsr_out['hvsr_windows_df'].columns:
-            if col_name.startswith("HV_Curves"):
-                tStepPeaks = []
-                if len(col_name.split('_')) > 2:
-                    colSuffix = "_"+'_'.join(col_name.split('_')[2:])
-                else:
-                    colSuffix = '_HV'
+    hvsr_out['ind_hvsr_stdDev'] = {}
+    for col_name in hvsr_out['hvsr_windows_df'].columns:
+        if "HV_Curves" in col_name:
+            if col_name == 'HV_Curves':
+                keyID = 'HV'
+            else:
+                keyID = col_name.split('_')[2]
+            curr_indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df'][col_name][hvsr_out['hvsr_windows_df']['Use']])
+            hvsr_out['ind_hvsr_stdDev'][keyID] = np.nanstd(curr_indHVCurvesArr, axis=0)
 
-                for tStepHVSR in hvsr_out['hvsr_windows_df'][col_name]:
-                    tStepPeaks.append(__find_peaks(tStepHVSR))                
-                hvsr_out['ind_hvsr_peak_indices']['CurvesPeakIndices'+colSuffix] = tStepPeaks
+    #Get peaks for each time step
+    hvsr_out['ind_hvsr_peak_indices'] = {}
+    tStepPFDict = {}
+    #hvsr_out['hvsr_windows_df']['CurvesPeakFreqs'] = {}
+    for col_name in hvsr_out['hvsr_windows_df'].columns:
+        if col_name.startswith("HV_Curves"):
+            tStepPeaks = []
+            if len(col_name.split('_')) > 2:
+                colSuffix = "_"+'_'.join(col_name.split('_')[2:])
+            else:
+                colSuffix = '_HV'
 
-                tStepPFList = []
-                for tPeaks in tStepPeaks:
-                    tStepPFs = []
-                    for pInd in tPeaks:
-                        tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
-                    tStepPFList.append(tStepPFs)
-                tStepPFDict['CurvesPeakFreqs'+colSuffix] = tStepPFList
-        
-        indHVPeakIndsDF = pd.DataFrame(hvsr_out['ind_hvsr_peak_indices'], index=hvsr_out['hvsr_windows_df'].index)
-        tStepPFDictDF = pd.DataFrame(tStepPFDict, index=hvsr_out['hvsr_windows_df'].index)
-        hvsr_out['hvsr_windows_df'] = pd.concat([hvsr_out['hvsr_windows_df'], indHVPeakIndsDF, tStepPFDictDF], axis=1)
-  
-        #Get peaks of main HV curve
-        hvsr_out['hvsr_peak_indices'] = {}
-        hvsr_out['hvsr_peak_indices']['HV'] = __find_peaks(hvsr_out['hvsr_curve'])
-        for k in hvsr_az.keys():
-            hvsr_out['hvsr_peak_indices'][k] = __find_peaks(hvsr_out['hvsr_az'][k])
-        
-        #Get frequency values at HV peaks in main curve
-        hvsr_out['hvsr_peak_freqs'] = {}
-        for k in hvsr_out['hvsr_peak_indices'].keys():
-            hvsrPF = []
-            for p in hvsr_out['hvsr_peak_indices'][k]:
-                hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
-            hvsr_out['hvsr_peak_freqs'][k] = np.array(hvsrPF)
+            for tStepHVSR in hvsr_out['hvsr_windows_df'][col_name]:
+                tStepPeaks.append(__find_peaks(tStepHVSR))                
+            hvsr_out['ind_hvsr_peak_indices']['CurvesPeakIndices'+colSuffix] = tStepPeaks
 
-        #Get other HVSR parameters (i.e., standard deviations, etc.)
-        hvsr_out = __gethvsrparams(hvsr_out)
+            tStepPFList = []
+            for tPeaks in tStepPeaks:
+                tStepPFs = []
+                for pInd in tPeaks:
+                    tStepPFs.append(np.float32(hvsr_out['x_freqs'][anyK][pInd]))
+                tStepPFList.append(tStepPFs)
+            tStepPFDict['CurvesPeakFreqs'+colSuffix] = tStepPFList
+    
+    indHVPeakIndsDF = pd.DataFrame(hvsr_out['ind_hvsr_peak_indices'], index=hvsr_out['hvsr_windows_df'].index)
+    tStepPFDictDF = pd.DataFrame(tStepPFDict, index=hvsr_out['hvsr_windows_df'].index)
+    hvsr_out['hvsr_windows_df'] = pd.concat([hvsr_out['hvsr_windows_df'], indHVPeakIndsDF, tStepPFDictDF], axis=1)
 
-        #Include the original obspy stream in the output
-        hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
-        hvsr_out = sprit_utils.make_it_classy(hvsr_out)
-        hvsr_out['ProcessingStatus']['HVStatus'] = True
+    #Get peaks of main HV curve
+    hvsr_out['hvsr_peak_indices'] = {}
+    hvsr_out['hvsr_peak_indices']['HV'] = __find_peaks(hvsr_out['hvsr_curve'])
+    for k in hvsr_az.keys():
+        hvsr_out['hvsr_peak_indices'][k] = __find_peaks(hvsr_out['hvsr_az'][k])
+    
+    #Get frequency values at HV peaks in main curve
+    hvsr_out['hvsr_peak_freqs'] = {}
+    for k in hvsr_out['hvsr_peak_indices'].keys():
+        hvsrPF = []
+        for p in hvsr_out['hvsr_peak_indices'][k]:
+            hvsrPF.append(hvsr_out['x_freqs'][anyK][p])
+        hvsr_out['hvsr_peak_freqs'][k] = np.array(hvsrPF)
 
-        if 'processing_parameters' not in hvsr_out.keys():
-            hvsr_out['processing_parameters'] = {}
-        hvsr_out['processing_parameters']['generate_ppsds'] = {}
-        for key, value in orig_args.items():
-            hvsr_out['processing_parameters']['generate_ppsds'][key] = value
+    #Get other HVSR parameters (i.e., standard deviations, etc.)
+    hvsr_out = __gethvsrparams(hvsr_out)
 
-    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    #Include the original obspy stream in the output
+    hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
+    hvsr_out = sprit_utils.make_it_classy(hvsr_out)
+    hvsr_out['ProcessingStatus']['HVStatus'] = True
+
+    if 'processing_parameters' not in hvsr_out.keys():
+        hvsr_out['processing_parameters'] = {}
+    hvsr_out['processing_parameters']['generate_ppsds'] = {}
+    for key, value in orig_args.items():
+        hvsr_out['processing_parameters']['generate_ppsds'][key] = value
+    
     if str(method) == '8' or method.lower() == 'single azimuth':
         if azimuth is None:
             azimuth = 90
         hvsr_out['single_azimuth'] = azimuth
+
+    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+
     return hvsr_out
 
 
