@@ -7528,7 +7528,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             
             #Plot individual components
             y={}
-            for key in hvsr_data['psd_values_tavg']:
+            psdKeys = list(hvsr_data['psd_values_tavg'])
+            psdKeys.sort()
+            for key in psdKeys:
                 if key.upper() == 'Z':
                     pltColor = 'k'
                 elif key.upper() =='E':
@@ -7538,7 +7540,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 else:
                     pltColor = 'g'
 
-                if key.lower() in keyList or key == azimuth:
+                if key in keyList or key == azimuth:
                     y[key] = hvsr_data['psd_values_tavg'][key][:-1]
                     compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
                     if '-s' not in plot_type:
