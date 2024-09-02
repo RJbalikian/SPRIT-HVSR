@@ -870,7 +870,13 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     # Remove Outlier Curves
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-        data_curvesRemoved = remove_outlier_curves(hvsr_data=ppsd_data, verbose=verbose,**remove_outlier_curve_kwargs)   
+
+        # Check whether it is indicated to remove outlier curves
+        outlier_curve_keys_used = True
+        if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
+            outlier_curve_keys_used = False
+        if outlier_curves_removal or outlier_curve_keys_used:
+            data_curvesRemoved = remove_outlier_curves(hvsr_data=ppsd_data, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -3881,6 +3887,7 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         stDevValsM = {}
         psdRaw={}
         currTimesUsed={}
+        hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'].astype(bool)
         hvsrDF = hvsr_data['hvsr_windows_df']
         def move_avg(y, box_pts):
             #box = np.ones(box_pts)/box_pts
@@ -4515,145 +4522,150 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                 hvsr_out[site_name]['ProcessingStatus']['RemoveOutlierCurves'] = False
                 hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
         hvsr_out = HVSRBatch(hvsr_out)
-    else:  
-        #Create plot if designated        
-        if not use_hv_curve:
-            compNames = ['Z', 'E', 'N']
-            for col_name in hvsr_data['hvsr_windows_df'].columns:
-                if 'psd_values' in col_name and 'RMSE' not in col_name:
-                    cName = col_name.split('_')[2]
-                    if cName not in compNames:
-                        compNames.append(cName)
-            col_prefix = 'psd_values_'
-            colNames = [col_prefix+cn for cn in compNames]
+        hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        return hvsr_out
+
+    #Create plot if designated        
+    if not use_hv_curve:
+        compNames = ['Z', 'E', 'N']
+        for col_name in hvsr_data['hvsr_windows_df'].columns:
+            if 'psd_values' in col_name and 'RMSE' not in col_name:
+                cName = col_name.split('_')[2]
+                if cName not in compNames:
+                    compNames.append(cName)
+        col_prefix = 'psd_values_'
+        colNames = [col_prefix+cn for cn in compNames]
+    else:
+        compNames = []
+        for col_name in hvsr_data['hvsr_windows_df'].columns:
+            if col_name.startswith('HV_Curves') and "Log10" not in col_name:
+                compNames.append(col_name)
+        colNames = compNames
+        col_prefix = 'HV_Curves'
+    if plot_engine.lower() == 'matplotlib':
+        spMosaic = []
+        if use_hv_curve:
+            spMosaic.append(['HV Curve'])
+            fSize=(8.5, 6)
         else:
-            compNames = []
-            for col_name in hvsr_data['hvsr_windows_df'].columns:
-                if col_name.startswith('HV_Curves') and "Log10" not in col_name:
-                    compNames.append(col_name)
-            colNames = compNames
-            col_prefix = 'HV_Curves'
+            for c in compNames:
+                spMosaic.append([c])
+            fSize = (8.5, len(compNames) * 2)
 
-        if plot_engine.lower() == 'matplotlib':
-            if use_hv_curve:
-                spMosaic = [['HV Curve']]
-            else:
-                spMosaic = [['Z'],
-                            ['E'],
-                            ['N']]
-            fig, ax = plt.subplot_mosaic(spMosaic, sharex=True)
-
-        #Loop through each component, and determine which curves are outliers
-        bad_rmse=[]
-        for i, column in enumerate(colNames):
-            if column in compNames:
-                if use_hv_curve == False:
-                    column = col_prefix+column
-                else:
-                    column = column
-                
-            # Retrieve data from dataframe (use all windows, just in case)
-            curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
-            
-            # Calculate a median curve, and reshape so same size as original
-            medCurve = np.nanmedian(curr_data, axis=0)
-            medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
-            
-            # Calculate RMSE
-            rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
-            hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
-            if use_percentile is True:
-                rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], rmse_thresh)
-                if verbose:
-                    print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
-            else:
-                rmse_threshold = rmse_thresh
-            
-            # Retrieve index of those RMSE values that lie outside the threshold
-            for j, curve in enumerate(curr_data):
-                if rmse[j] > rmse_threshold:
-                    bad_rmse.append(j)
-
-            # Show plot of removed/retained data
+        fig, ax = plt.subplot_mosaic(spMosaic, sharex=True, figsize=fSize)
+        fig.suptitle(f"{hvsr_data['site']}\nOutlier Curves to be Removed")
+        fig.set_layout_engine('constrained')
+    
+    # Loop through each component, and determine which curves are outliers
+    bad_rmse=[]
+    for i, column in enumerate(colNames):
+        if column in compNames:
             if use_hv_curve == False:
-                if plot_engine.lower() == 'matplotlib':
-                    # Intialize to only get unique labels
-                    rem_label_got = False
-                    keep_label_got = False
-                    
-                    # Iterate through each curve to determine if it's rmse is outside threshold, for plot
-                    for j, curve in enumerate(curr_data):
-                        label=None
-                        if rmse[j] > rmse_threshold:
-                            linestyle = 'dashed'
-                            linecolor='darkred'
-                            alpha = 1
-                            linewidth = 1
-                            if not rem_label_got:
-                                label='Removed Curve'
-                                rem_label_got=True
-                        else:
-                            linestyle='solid'
-                            linecolor = 'rosybrown'
-                            alpha = 0.25
-                            linewidth=0.5
-                            if not keep_label_got:
-                                keep_label_got=True
-                                label='Retained Curve'
-
-                        # Plot each individual curve
-                        if 'x_freqs' in hvsr_data.keys():
-                            ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                        else:
-                            ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                    
-                    # Plot the median curve
-
-                    if 'x_freqs' in hvsr_data.keys():
-                        ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
-                    else:
-                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
-                    
-                    # Format axis
-                    ax[compNames[i]].set_ylabel(f"{compNames[i]}")
-                    ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
-                    ax[compNames[i]].semilogx()             
-       
-        if plot_engine.lower() == 'matplotlib':
-            hvsr_data['OutlierPlot'] = fig
-            if show_plot:
-                plt.show()
+                column = col_prefix+column
             else:
-                plt.close()
-        elif plot_engine.lower() == 'plotly':
-            hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, from_roc=True, show_plot=show_plot, verbose=verbose)
-        else:
-            pass
-
-        # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
-        bad_rmse = np.unique(bad_rmse)
-        if len(bad_rmse) > 0:
+                column = column
             
-            hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
-            #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
+        # Retrieve data from dataframe (use all windows, just in case)
+        curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
         
-        if verbose:
-            if len(bad_rmse)>0:
-                print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
-                for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
-                    print(f"\t\t  {b}")
-            else:
-                print('\tNo outlier curves have been removed')
-                    
-        hvsr_out = hvsr_data
+        # Calculate a median curve, and reshape so same size as original
+        medCurve = np.nanmedian(curr_data, axis=0)
+        medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+        
+        # Calculate RMSE
+        rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+        hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
+        if use_percentile is True:
+            rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], rmse_thresh)
+            if verbose:
+                print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
+        else:
+            rmse_threshold = rmse_thresh
+        
+        # Retrieve index of those RMSE values that lie outside the threshold
+        for j, curve in enumerate(curr_data):
+            if rmse[j] > rmse_threshold:
+                bad_rmse.append(j)
 
-        if 'processing_parameters' not in hvsr_out.keys():
-            hvsr_out['processing_parameters'] = {}
-        hvsr_out['processing_parameters']['remove_outlier_curves'] = {}
-        for key, value in orig_args.items():
-            hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
+        # Show plot of removed/retained data
+        if use_hv_curve == False:
+            if plot_engine.lower() == 'matplotlib':
+                # Intialize to only get unique labels
+                rem_label_got = False
+                keep_label_got = False
+                
+                # Iterate through each curve to determine if it's rmse is outside threshold, for plot
+                for j, curve in enumerate(curr_data):
+                    label=None
+                    if rmse[j] > rmse_threshold:
+                        linestyle = 'dashed'
+                        linecolor='darkred'
+                        alpha = 1
+                        linewidth = 1
+                        if not rem_label_got:
+                            label='Removed Curve'
+                            rem_label_got=True
+                    else:
+                        linestyle='solid'
+                        linecolor = 'rosybrown'
+                        alpha = 0.25
+                        linewidth=0.5
+                        if not keep_label_got:
+                            keep_label_got=True
+                            label='Retained Curve'
 
-        hvsr_data['ProcessingStatus']['RemoveOutlierCurvesStatus'] = True
+                    # Plot each individual curve
+                    if 'x_freqs' in hvsr_data.keys():
+                        ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    else:
+                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                
+                # Plot the median curve
+                if 'x_freqs' in hvsr_data.keys():
+                    ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
+                else:
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+                
+                # Format axis
+                ax[compNames[i]].set_ylabel(f"{compNames[i]}")
+                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
+                ax[compNames[i]].semilogx()             
+    
+    if plot_engine.lower() == 'matplotlib':
+        hvsr_data['OutlierPlot'] = fig
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
+    elif plot_engine.lower() == 'plotly':
+        hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, from_roc=True, show_plot=show_plot, verbose=verbose)
+    else:
+        pass
+
+    # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
+    bad_rmse = np.unique(bad_rmse)
+    if len(bad_rmse) > 0:
+        
+        hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
+        #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
+    
+    if verbose:
+        if len(bad_rmse)>0:
+            print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
+            for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
+                print(f"\t\t  {b}")
+        else:
+            print('\tNo outlier curves have been removed')
+                
+    hvsr_out = hvsr_data
+
+    if 'processing_parameters' not in hvsr_out.keys():
+        hvsr_out['processing_parameters'] = {}
+    hvsr_out['processing_parameters']['remove_outlier_curves'] = {}
+    for key, value in orig_args.items():
+        hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
+
+    hvsr_data['ProcessingStatus']['RemoveOutlierCurvesStatus'] = True
     
     hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     
