@@ -985,7 +985,6 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             #    hvsr_results_interim = hvsr_results_interim[site_name]            
             
         # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
-        print(hvsr_results.method)
         if not az_requested and hasAz and hvsr_results.method != 'Single Azimuth':
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
@@ -7180,7 +7179,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     y = hvsr_data['hvsr_curve']
     
     plotSuff = ''
-    legendLoc = 'upper right'
+    legendLoc = 'upper left'
     
     plotHVSR = False
     for item in plot_type:
@@ -7525,7 +7524,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 maxY = max(hvsr_data['hvsr_curve']) * 1.15
             rng = maxY-minY
             pad = abs(rng * 0.15)
-            ylim = [minY-pad, maxY+pad]
+            ylim = [minY-pad, maxY+pad+pad]
             compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
@@ -7566,7 +7565,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 if plot_type[0] != 'c':
                     compAxis.legend(loc=legendLoc2)
             else:
-                ax.legend(loc=legendLoc)
+                ax.legend(loc=legendLoc, ncols = len(psdKeys), 
+                        borderaxespad=0.1, columnspacing=1,markerfirst=False, reverse=True, borderpad=0.2)
         else:
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
             ax.text(x=xlim[0], y=yLoc, s=xlabel, 
