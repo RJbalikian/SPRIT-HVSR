@@ -984,8 +984,9 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
             #if not hvsr_results_interim[site_name]['batch']:
             #    hvsr_results_interim = hvsr_results_interim[site_name]            
             
-
-        if not az_requested and hasAz:
+        # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
+        print(hvsr_results.method)
+        if not az_requested and hasAz and hvsr_results.method != 'Single Azimuth':
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
     get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
@@ -2639,291 +2640,291 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 else:
                     csvExportPath = csvExportPath.parent
                 
-            combined_csvReport.to_csv(csvExportPath, index=False)       
-    else:       
-        #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
-        try:
-            curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
-                                hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
-                                hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime'])
-            curvePass = curvTestsPassed > 2
-            
-            #Peak Pass?
-            peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceBelow'] +
-                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceAbove']+
-                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
-                        hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
-                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
-                        hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD'])
-            peakPass = peakTestsPassed >= 5
-        except Exception as e:
-            errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
-            print(errMsg)
-            print(e)
-            return hvsr_results
-            #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
+            combined_csvReport.to_csv(csvExportPath, index=False)
+        return hvsr_results
     
-        if isinstance(report_format, (list, tuple)):
-            pass
+    #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
+    try:
+        curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
+                            hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
+                            hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime'])
+        curvePass = curvTestsPassed > 2
+        
+        #Peak Pass?
+        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceBelow'] +
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceAbove']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD'])
+        peakPass = peakTestsPassed >= 5
+    except Exception as e:
+        errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
+        print(errMsg)
+        print(e)
+        return hvsr_results
+        #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
+
+    if isinstance(report_format, (list, tuple)):
+        pass
+    else:
+        #We will use a loop later even if it's just one report type, so reformat to prepare for for loop
+        allList = [':', 'all']
+        if report_format.lower() in allList:
+            report_format = ['print', 'csv', 'plot']
         else:
-            #We will use a loop later even if it's just one report type, so reformat to prepare for for loop
-            allList = [':', 'all']
-            if report_format.lower() in allList:
-                report_format = ['print', 'csv', 'plot']
-            else:
-                report_format = [report_format]   
+            report_format = [report_format]   
 
-        def export_report(export_obj, _export_path, _rep_form):
-            if _export_path is None:
-                return
-            else:
-                if _rep_form == 'csv':
-                    ext = '.csv'
-                elif _rep_form =='plot':
-                    ext='.png'
-                else:
-                    ext=''
-                    
-                sitename=hvsr_results['input_params']['site']#.replace('.', '-')
-                fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
-                fname = fname.replace(':', '')
-
-                if _export_path==True:
-                    #Check so we don't write in sample directory
-                    if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
-                        if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
-                            inFile = pathlib.Path.home() #Use the path to user's home if all else fails
-                        else:
-                            inFile = pathlib.Path(os.getcwd())
-                    else:
-                        inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-                                 
-                    if inFile.is_dir():
-                        outFile = inFile.joinpath(fname)
-                    else:
-                        outFile = inFile.with_name(fname)
-                else:
-                    if not _export_path:
-                        pass
-                    elif pathlib.Path(_export_path).is_dir():
-                        outFile = pathlib.Path(_export_path).joinpath(fname)
-                    else:
-                        outFile=pathlib.Path(_export_path)
-
+    def export_report(export_obj, _export_path, _rep_form):
+        if _export_path is None:
+            return
+        else:
             if _rep_form == 'csv':
-                if outFile.exists():
-                    existFile = pd.read_csv(outFile)
-                    if csv_overwrite_opt.lower() == 'append':
-                        export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
-                    elif csv_overwrite_opt.lower() == 'overwrite':
-                        pass
-                    else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
-                        fileNameExists = True
-                        i=1
-                        while fileNameExists:
-                            outFile = outFile.with_stem(f"{outFile.stem}_{i}")
-                            i+=1
-                            if not outFile.exists():
-                                fileNameExists = False
-                try:
-                    print(f'\nSaving csv data to: {outFile}')
-                    export_obj.to_csv(outFile, index_label='ID')
-                except:
-                    warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+                ext = '.csv'
             elif _rep_form =='plot':
-                if verbose:
-                    print(f'\nSaving plot to: {outFile}')
-                plt.scf = export_obj
-                plt.savefig(outFile)
-            return 
-
-        def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', _export_path=None, _no_output=False, verbose=False):
-            if _report_format=='print':
-                #Print results
-
-                #Make separators for nicely formatted print output
-                sepLen = 99
-                siteSepSymbol = '='
-                intSepSymbol = u"\u2013"
-                extSepSymbol = u"\u2014"
+                ext='.png'
+            else:
+                ext=''
                 
-                if sepLen % 2 == 0:
-                    remainVal = 1
+            sitename=hvsr_results['input_params']['site']#.replace('.', '-')
+            fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+            fname = fname.replace(':', '')
+
+            if _export_path==True:
+                #Check so we don't write in sample directory
+                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                    if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                        inFile = pathlib.Path.home() #Use the path to user's home if all else fails
+                    else:
+                        inFile = pathlib.Path(os.getcwd())
                 else:
-                    remainVal = 0
+                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                                
+                if inFile.is_dir():
+                    outFile = inFile.joinpath(fname)
+                else:
+                    outFile = inFile.with_name(fname)
+            else:
+                if not _export_path:
+                    pass
+                elif pathlib.Path(_export_path).is_dir():
+                    outFile = pathlib.Path(_export_path).joinpath(fname)
+                else:
+                    outFile=pathlib.Path(_export_path)
 
-                siteWhitespace = 2
-                #Format the separator lines internal to each site
-                internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
+        if _rep_form == 'csv':
+            if outFile.exists():
+                existFile = pd.read_csv(outFile)
+                if csv_overwrite_opt.lower() == 'append':
+                    export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
+                elif csv_overwrite_opt.lower() == 'overwrite':
+                    pass
+                else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
+                    fileNameExists = True
+                    i=1
+                    while fileNameExists:
+                        outFile = outFile.with_stem(f"{outFile.stem}_{i}")
+                        i+=1
+                        if not outFile.exists():
+                            fileNameExists = False
+            try:
+                print(f'\nSaving csv data to: {outFile}')
+                export_obj.to_csv(outFile, index_label='ID')
+            except:
+                warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+        elif _rep_form =='plot':
+            if verbose:
+                print(f'\nSaving plot to: {outFile}')
+            plt.scf = export_obj
+            plt.savefig(outFile)
+        return 
 
-                extSiteSeparator = "".center(sepLen, extSepSymbol)
-                siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
-                endSiteSeparator = "".center(sepLen, siteSepSymbol)
+    def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', _export_path=None, _no_output=False, verbose=False):
+        if _report_format=='print':
+            #Print results
 
-                #Start building list to print
-                report_string_list = []
-                report_string_list.append("") #Blank line to start
-                report_string_list.append(extSiteSeparator)
-                report_string_list.append(siteSeparator)
-                report_string_list.append(extSiteSeparator)
-                #report_string_list.append(internalSeparator)
-                report_string_list.append('')
-                report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
-                report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
-                report_string_list.append(f"\tLocation : {hvsr_results['input_params']['longitude']}, {hvsr_results['input_params']['latitude']}")
-                report_string_list.append(f"\tElevation: {hvsr_results['input_params']['elevation']}")
+            #Make separators for nicely formatted print output
+            sepLen = 99
+            siteSepSymbol = '='
+            intSepSymbol = u"\u2013"
+            extSepSymbol = u"\u2014"
+            
+            if sepLen % 2 == 0:
+                remainVal = 1
+            else:
+                remainVal = 0
+
+            siteWhitespace = 2
+            #Format the separator lines internal to each site
+            internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
+
+            extSiteSeparator = "".center(sepLen, extSepSymbol)
+            siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
+            endSiteSeparator = "".center(sepLen, siteSepSymbol)
+
+            #Start building list to print
+            report_string_list = []
+            report_string_list.append("") #Blank line to start
+            report_string_list.append(extSiteSeparator)
+            report_string_list.append(siteSeparator)
+            report_string_list.append(extSiteSeparator)
+            #report_string_list.append(internalSeparator)
+            report_string_list.append('')
+            report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
+            report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
+            report_string_list.append(f"\tLocation : {hvsr_results['input_params']['longitude']}, {hvsr_results['input_params']['latitude']}")
+            report_string_list.append(f"\tElevation: {hvsr_results['input_params']['elevation']}")
+            report_string_list.append('')
+            report_string_list.append(internalSeparator)
+            report_string_list.append('')
+            if 'BestPeak' not in hvsr_results.keys():
+                report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
+            else:
+                report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak'][azimuth]['f0']))        
+                if curvePass and peakPass:
+                    report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
+                else:
+                    report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
                 report_string_list.append('')
                 report_string_list.append(internalSeparator)
                 report_string_list.append('')
-                if 'BestPeak' not in hvsr_results.keys():
-                    report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
+
+                justSize=34
+                #Print individual results
+                report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Lw']}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Nc']}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)']}")
+
+                report_string_list.append('')
+                report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f-)']}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f+)']}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A0']}")
+                if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
+                    res = sprit_utils.check_mark()
                 else:
-                    report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak'][azimuth]['f0']))        
-                    if curvePass and peakPass:
-                        report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
+                    res = sprit_utils.x_mark()
+                report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5]} and {hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1]} {res}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
+                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
+            report_string_list.append('')
+            report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
+            report_string_list.append(extSiteSeparator)
+            #report_string_list.append(endSiteSeparator)
+            #report_string_list.append(extSiteSeparator)
+            report_string_list.append('')
+            
+            reportStr=''
+            #Now print it
+            for line in report_string_list:
+                reportStr = reportStr+'\n'+line
+
+            if not _no_output:
+                print(reportStr)
+
+            export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
+            hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
+            hvsr_results['Print_Report'] = reportStr
+
+        elif _report_format=='csv':
+            import pandas as pd
+            pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
+                    'WindowLengthFreq.','SignificantCycles','LowCurveStDevOverTime',
+                    'PeakProminenceBelow','PeakProminenceAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
+            d = hvsr_results
+            criteriaList = []
+            for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
+                criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
+            criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
+            dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
+            dfList[0].extend(criteriaList)
+            outDF = pd.DataFrame(dfList, columns=pdCols)
+            outDF.index.name = 'ID'
+            
+            if verbose:
+                print('\nCSV Report:\n')
+                maxColWidth = 13
+                print('  ', end='')
+                for col in outDF.columns:
+                    if len(str(col)) > maxColWidth:
+                        colStr = str(col)[:maxColWidth-3]+'...'
                     else:
-                        report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
-                    report_string_list.append('')
-                    report_string_list.append(internalSeparator)
-                    report_string_list.append('')
-
-                    justSize=34
-                    #Print individual results
-                    report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Lw']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Nc']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)']}")
-
-                    report_string_list.append('')
-                    report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f-)']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f+)']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A0']}")
-                    if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
-                        res = sprit_utils.check_mark()
+                        colStr = str(col)
+                    print(colStr.ljust(maxColWidth), end='  ')
+                print() #new line
+                for c in range(len(outDF.columns) * (maxColWidth+2)):
+                    if c % (maxColWidth+2) == 0:
+                        print('|', end='')
                     else:
-                        res = sprit_utils.x_mark()
-                    report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5]} and {hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1]} {res}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
-                    report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
-                report_string_list.append('')
-                report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
-                report_string_list.append(extSiteSeparator)
-                #report_string_list.append(endSiteSeparator)
-                #report_string_list.append(extSiteSeparator)
-                report_string_list.append('')
-                
-                reportStr=''
-                #Now print it
-                for line in report_string_list:
-                    reportStr = reportStr+'\n'+line
-
-                if not _no_output:
-                    print(reportStr)
-
-                export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
-                hvsr_results['Print_Report'] = reportStr
-
-            elif _report_format=='csv':
-                import pandas as pd
-                pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
-                        'WindowLengthFreq.','SignificantCycles','LowCurveStDevOverTime',
-                        'PeakProminenceBelow','PeakProminenceAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
-                d = hvsr_results
-                criteriaList = []
-                for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
-                    criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-                criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
-                dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
-                dfList[0].extend(criteriaList)
-                outDF = pd.DataFrame(dfList, columns=pdCols)
-                outDF.index.name = 'ID'
-                
-                if verbose:
-                    print('\nCSV Report:\n')
-                    maxColWidth = 13
-                    print('  ', end='')
-                    for col in outDF.columns:
+                        print('-', end='')
+                print('|') #new line
+                print('  ', end='') #Small indent at start                    
+                for row in outDF.iterrows():
+                    for col in row[1]:
                         if len(str(col)) > maxColWidth:
                             colStr = str(col)[:maxColWidth-3]+'...'
                         else:
                             colStr = str(col)
                         print(colStr.ljust(maxColWidth), end='  ')
-                    print() #new line
-                    for c in range(len(outDF.columns) * (maxColWidth+2)):
-                        if c % (maxColWidth+2) == 0:
-                            print('|', end='')
-                        else:
-                            print('-', end='')
-                    print('|') #new line
-                    print('  ', end='') #Small indent at start                    
-                    for row in outDF.iterrows():
-                        for col in row[1]:
-                            if len(str(col)) > maxColWidth:
-                                colStr = str(col)[:maxColWidth-3]+'...'
-                            else:
-                                colStr = str(col)
-                            print(colStr.ljust(maxColWidth), end='  ')
-                        print()
+                    print()
 
-                if not not _export_path: # if _export_path is anything but False or None, etc.
-                    try:
-                        export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
-                    except:
-                        print("Error in exporting csv report. CSV not exported")
-                hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
-                hvsr_results['CSV_Report'] = outDF
-                        
-            elif _report_format=='plot':
-                plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-                if 'plot_type' in plot_hvsr_kwargs.keys():
-                    plot_hvsr_kwargs.pop('plot_type')
-                if 'plot_engine' in plot_hvsr_kwargs.keys():
-                    plot_hvsr_kwargs.pop('plot_engine')
-
-                fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
-
-                if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
-                    expFigAx = fig
-                else:
-                    expFigAx = fig
-
-                export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
-                hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
-
-                if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
-                    print('\nPlot of data report:')
+            if not not _export_path: # if _export_path is anything but False or None, etc.
+                try:
+                    export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
+                except:
+                    print("Error in exporting csv report. CSV not exported")
+            hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
+            hvsr_results['CSV_Report'] = outDF
                     
-                    if not verbose:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            fig.show()
-                    else:
+        elif _report_format=='plot':
+            plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+            if 'plot_type' in plot_hvsr_kwargs.keys():
+                plot_hvsr_kwargs.pop('plot_type')
+            if 'plot_engine' in plot_hvsr_kwargs.keys():
+                plot_hvsr_kwargs.pop('plot_engine')
+
+            fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
+
+            if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
+                expFigAx = fig
+            else:
+                expFigAx = fig
+
+            export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
+            hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
+
+            if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
+                print('\nPlot of data report:')
+                
+                if not verbose:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
                         fig.show()
                 else:
-                    if verbose:
-                        print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
-
-
-                
-            return hvsr_results
-
-        for i, rep_form in enumerate(report_format):
-            if isinstance(export_path, (list, tuple)):
-                if not isinstance(report_format, (list, tuple)):
-                    warnings.warn('export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
-                if isinstance(report_format, (list, tuple)) and isinstance(export_path, (list, tuple)) and len(report_format) != len(export_path):
-                    warnings.warn('export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
-            
-                exp_path = export_path[i]
+                    fig.show()
             else:
-                exp_path = export_path
-            hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+                if verbose:
+                    print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
+          
+        return hvsr_results
 
-        hvsr_results['processing_parameters']['get_report'] = {}
-        for key, value in orig_args.items():
-            hvsr_results['processing_parameters']['get_report'][key] = value
+    for i, rep_form in enumerate(report_format):
+        if isinstance(export_path, (list, tuple)):
+            if not isinstance(report_format, (list, tuple)):
+                warnings.warn('export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
+            if isinstance(report_format, (list, tuple)) and isinstance(export_path, (list, tuple)) and len(report_format) != len(export_path):
+                warnings.warn('export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
+        
+            exp_path = export_path[i]
+        else:
+            exp_path = export_path
+        hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+
+    hvsr_results['processing_parameters']['get_report'] = {}
+    for key, value in orig_args.items():
+        hvsr_results['processing_parameters']['get_report'][key] = value
+    
     return hvsr_results
 
 
@@ -3468,154 +3469,157 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC ann p', azimuth='HV
                     _hvsr_plot_batch(**args) #Call another function, that lets us run this function again
                 except:
                     print(f"{site_name} not able to be plotted.")
-    else:
-        mplList = ['matplotlib', 'mpl', 'm']
-        plotlyList = ['plotly', 'plty', 'p']
 
-        if plot_engine.lower() in plotlyList:
-            plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show_plot)
-            if return_fig:
-                return plotlyFigure
-        else: #plot_engine.lower() in mplList or any other value not in plotly list
-            if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
-                #Clear everything
-                for key in ax:
-                    ax[key].clear()
-                for t in fig.texts:
-                    del t
-                fig.clear()
-            if close_figs:
-                plt.close('all')
+        return
 
-            # The possible identifiers in plot_type for the different kind of plots
-            hvsrList = ['hvsr', 'hv', 'h']
-            compList = ['c', 'comp', 'component', 'components']
-            specgramList = ['spec', 'specgram', 'spectrogram']
-            azList = ['azimuth', 'az', 'a', 'radial', 'r']
+    mplList = ['matplotlib', 'mpl', 'm']
+    plotlyList = ['plotly', 'plty', 'p']
 
-            hvsrInd = np.nan
-            compInd = np.nan
-            specInd = np.nan
-            azInd = np.nan
+    if plot_engine.lower() in plotlyList:
+        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show_plot)
+        if return_fig:
+            return plotlyFigure
+    else: #plot_engine.lower() in mplList or any other value not in plotly list
+        if clear_fig and fig is not None and ax is not None: #Intended use for tkinter
+            #Clear everything
+            for key in ax:
+                ax[key].clear()
+            for t in fig.texts:
+                del t
+            fig.clear()
+        if close_figs:
+            plt.close('all')
 
-            plot_type = plot_type.replace(',', '')
-            kList = plot_type.split(' ')
-            for i, k in enumerate(kList):
-                kList[i] = k.lower()
+        # The possible identifiers in plot_type for the different kind of plots
+        hvsrList = ['hvsr', 'hv', 'h']
+        compList = ['c', 'comp', 'component', 'components']
+        specgramList = ['spec', 'specgram', 'spectrogram']
+        azList = ['azimuth', 'az', 'a', 'radial', 'r']
 
-            # Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
-            # HVSR index
-            if len(set(hvsrList).intersection(kList)):
-                for i, hv in enumerate(hvsrList):
-                    if hv in kList:
-                        hvsrInd = kList.index(hv)
-                        break
-            # Component index
-            #if len(set(compList).intersection(kList)):
-            for i, c in enumerate(kList):
-                if '+' in c and c[:-1] in compList:
-                    compInd = kList.index(c)
+        hvsrInd = np.nan
+        compInd = np.nan
+        specInd = np.nan
+        azInd = np.nan
+
+        plot_type = plot_type.replace(',', '')
+        kList = plot_type.split(' ')
+        for i, k in enumerate(kList):
+            kList[i] = k.lower()
+
+        # Get the plots in the right order, no matter how they were input (and ensure the right options go with the right plot)
+        # HVSR index
+        if len(set(hvsrList).intersection(kList)):
+            for i, hv in enumerate(hvsrList):
+                if hv in kList:
+                    hvsrInd = kList.index(hv)
                     break
-                
-            # Specgram index
-            if len(set(specgramList).intersection(kList)):
-                for i, sp in enumerate(specgramList):
-                    if sp in kList:
-                        specInd = kList.index(sp)
-                        break        
-
-            # Azimuth index
-            if len(set(azList).intersection(kList)):
-                for i, sp in enumerate(azList):
-                    if sp in kList:
-                        azInd = kList.index(sp)
-                        break        
-
+        # Component index
+        #if len(set(compList).intersection(kList)):
+        for i, c in enumerate(kList):
+            if '+' in c and c[:-1] in compList:
+                compInd = kList.index(c)
+                break
             
-            # Get indices for all plot type indicators
-            indList = [hvsrInd, compInd, specInd, azInd]
-            indListCopy = indList.copy()
-            plotTypeList = ['hvsr', 'comp', 'spec', 'az']
+        # Specgram index
+        if len(set(specgramList).intersection(kList)):
+            for i, sp in enumerate(specgramList):
+                if sp in kList:
+                    specInd = kList.index(sp)
+                    break        
 
-            plotTypeOrder = []
-            plotIndOrder = []
+        # Azimuth index
+        if len(set(azList).intersection(kList)):
+            for i, sp in enumerate(azList):
+                if sp in kList:
+                    azInd = kList.index(sp)
+                    break        
 
-            # Get lists with first and last indices of the specifiers for each plot
-            lastVal = 0
-            while lastVal != 99:
-                firstInd = np.nanargmin(indListCopy)
-                plotTypeOrder.append(plotTypeList[firstInd])
-                plotIndOrder.append(indList[firstInd])
-                lastVal = indListCopy[firstInd]
-                indListCopy[firstInd] = 99  #just a high number
+        
+        # Get indices for all plot type indicators
+        indList = [hvsrInd, compInd, specInd, azInd]
+        indListCopy = indList.copy()
+        plotTypeList = ['hvsr', 'comp', 'spec', 'az']
 
-            plotTypeOrder.pop()
-            plotIndOrder[-1] = len(kList)
+        plotTypeOrder = []
+        plotIndOrder = []
+
+        # Get lists with first and last indices of the specifiers for each plot
+        lastVal = 0
+        while lastVal != 99:
+            firstInd = np.nanargmin(indListCopy)
+            plotTypeOrder.append(plotTypeList[firstInd])
+            plotIndOrder.append(indList[firstInd])
+            lastVal = indListCopy[firstInd]
+            indListCopy[firstInd] = 99  #just a high number
+
+        plotTypeOrder.pop()
+        plotIndOrder[-1] = len(kList)
+        
+        # Get 
+        for i, p in enumerate(plotTypeOrder):
+            pStartInd = plotIndOrder[i]
+            pEndInd = plotIndOrder[i+1]
+            plotComponents = kList[pStartInd:pEndInd]
+
+            if use_subplots and i == 0 and fig is None and ax is None:
+                mosaicPlots = []
+                for pto in plotTypeOrder:
+                    if pto == 'az':
+                        for i, subp in enumerate(mosaicPlots):
+                            if (subp[0].lower() == 'hvsr' or subp[0].lower() == 'comp') and len([item for item in plotTypeOrder if item != "hvsr"]) > 0:
+                                mosaicPlots[i].append(subp[0])
+                                mosaicPlots[i].append(subp[0])
+                            else:
+                                mosaicPlots[i].append(subp[0])
+                                mosaicPlots[i].append(pto)
+                    else:
+                        mosaicPlots.append([pto])
+                perSubPDict = {}
+                if 'az' in plotTypeOrder:
+                    perSubPDict['az'] = {'projection':'polar'}
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
+                axis = ax[p]
+            elif use_subplots:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
+                    if hasattr(ax, '__len__'):#print(dir(ax), ax, len(ax))
+                        ax[p].clear()
+                        axis = ax[p]
+            else:
+                fig, axis = plt.subplots()
+
+            if p == 'hvsr':
+                kwargs['subplot'] = p
+                fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+            elif p == 'comp':
+                plotComponents[0] = plotComponents[0][:-1]
+                kwargs['subplot'] = p
+                fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
+            elif p == 'spec':
+                plottypeKwargs = {}
+                for c in plotComponents:
+                    plottypeKwargs[c] = True
+                kwargs.update(plottypeKwargs)
+                _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
+            elif p == 'az':
+                kwargs['plot_type'] = plotComponents
+                hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
+            else:
+                warnings.warn('Plot type {p} not recognized', UserWarning)   
+
+        windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
+        fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
+                bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
+        
+        matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
+        #if use_subplots:
+        #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
+        if show_plot:
+            fig.canvas.draw()
             
-            # Get 
-            for i, p in enumerate(plotTypeOrder):
-                pStartInd = plotIndOrder[i]
-                pEndInd = plotIndOrder[i+1]
-                plotComponents = kList[pStartInd:pEndInd]
+        if return_fig:
+            return fig
 
-                if use_subplots and i == 0 and fig is None and ax is None:
-                    mosaicPlots = []
-                    for pto in plotTypeOrder:
-                        if pto == 'az':
-                            for i, subp in enumerate(mosaicPlots):
-                                if (subp[0].lower() == 'hvsr' or subp[0].lower() == 'comp') and len([item for item in plotTypeOrder if item != "hvsr"]) > 0:
-                                    mosaicPlots[i].append(subp[0])
-                                    mosaicPlots[i].append(subp[0])
-                                else:
-                                    mosaicPlots[i].append(subp[0])
-                                    mosaicPlots[i].append(pto)
-                        else:
-                            mosaicPlots.append([pto])
-                    perSubPDict = {}
-                    if 'az' in plotTypeOrder:
-                        perSubPDict['az'] = {'projection':'polar'}
-                    fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
-                    axis = ax[p]
-                elif use_subplots:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore") #Often warns about xlim when it is not an issue
-                        if hasattr(ax, '__len__'):#print(dir(ax), ax, len(ax))
-                            ax[p].clear()
-                            axis = ax[p]
-                else:
-                    fig, axis = plt.subplots()
-
-                if p == 'hvsr':
-                    kwargs['subplot'] = p
-                    fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-                elif p == 'comp':
-                    plotComponents[0] = plotComponents[0][:-1]
-                    kwargs['subplot'] = p
-                    fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
-                elif p == 'spec':
-                    plottypeKwargs = {}
-                    for c in plotComponents:
-                        plottypeKwargs[c] = True
-                    kwargs.update(plottypeKwargs)
-                    _plot_specgram_hvsr(hvsr_data, fig=fig, ax=axis, azimuth=azimuth, colorbar=False, **kwargs)
-                elif p == 'az':
-                    kwargs['plot_type'] = plotComponents
-                    hvsr_data['Azimuth_fig'] = plot_azimuth(hvsr_data, fig=fig, ax=axis, **kwargs)
-                else:
-                    warnings.warn('Plot type {p} not recognized', UserWarning)   
-
-            windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
-            fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
-                    bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
-            
-            matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
-            #if use_subplots:
-            #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
-            if show_plot:
-                fig.canvas.draw()
-                
-            if return_fig:
-                return fig
     return
 
 
@@ -3757,7 +3761,7 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
 
 
 # Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, azimuth=None, verbose=False):
+def process_hvsr(hvsr_data, method=None, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -3971,6 +3975,9 @@ def process_hvsr(hvsr_data, method=3, smooth=True, freq_smooth='konno ohmachi', 
         #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
     
     # Get string of method type
+    if method is None:
+        method = 3 # Geometric mean is used as default if nothing is
+
     # If an azimuth has been calculated and it's only one, automatically use the single azimuth method
     if len(hvsr_data.stream.merge().select(component='R')) == 1:
         method = 8 # Single azimuth
@@ -7548,15 +7555,18 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                     pltColor = 'g'
 
                 if key in keyList or key == azimuth:
-                    y[key] = hvsr_data['psd_values_tavg'][key][:-1]
-                    compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
-                    if '-s' not in plot_type:
-                        compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
+                    if hvsr_data.method == 'Single Azimuth' and key in ['E', 'N']:
+                        pass
+                    else:
+                        y[key] = hvsr_data['psd_values_tavg'][key][:-1]
+                        compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
+                        if '-s' not in plot_type:
+                            compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
                 if plot_type[0] != 'c':
                     compAxis.legend(loc=legendLoc2)
             else:
-                pass#ax.legend(loc=legendLoc)
+                ax.legend(loc=legendLoc)
         else:
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
             ax.text(x=xlim[0], y=yLoc, s=xlabel, 
