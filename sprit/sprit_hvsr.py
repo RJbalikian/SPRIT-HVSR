@@ -2197,7 +2197,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             }
     
     ppsd_kwargs = get_default_args(PPSD)
-    ppsd_kwargs.update(ppsd_kwargs_sprit_defaults)#Update with sprit defaults, or user input
+    ppsd_kwargs.update(ppsd_kwargs_sprit_defaults) # Update with sprit defaults, or user input
     orig_args['ppsd_kwargs'] = ppsd_kwargs
 
     # Update with processing parameters specified previously in input_params, if applicable
@@ -2251,184 +2251,186 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 pass
                 #print(e)
         return hvsr_data
-    else:
-        paz = hvsr_data['paz']
-        stream = hvsr_data['stream']
-
-        # Get ppsds of e component
-        eStream = stream.select(component='E')
-        estats = eStream.traces[0].stats
-        ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-        ppsdE.add(eStream)
-
-        # Get ppsds of n component
-        nStream = stream.select(component='N')
-        nstats = nStream.traces[0].stats
-        ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-        ppsdN.add(nStream)
-
-        # Get ppsds of z component
-        zStream = stream.select(component='Z')
-        zstats = zStream.traces[0].stats
-        ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-        ppsdZ.add(zStream)
-
-        # Get ppsds of R components (azimuthal data)
-        has_az = False
-        ppsds = {'Z':ppsdZ, 'E':ppsdE, 'N':ppsdN}
-        rStream = stream.select(component='R')
-        for curr_trace in stream:
-            if 'R' in curr_trace.stats.channel:
-                curr_stats = curr_trace.stats
-                ppsd_curr = PPSD(curr_stats, paz['E'], **ppsd_kwargs)        
-                has_az = True
-                ppsdName = curr_trace.stats.location
-                ppsd_curr.add(rStream)
-                ppsds[ppsdName] = ppsd_curr
-        
-        # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-        hvsr_data['ppsds_obspy'] = ppsds
-        hvsr_data['ppsds'] = {}
-        anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
-        
-        # Get ppsd class members
-        members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-        for k in ppsds.keys():
-            hvsr_data['ppsds'][k] = {}
-        
-        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
-        listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
-        timeKeys= ['times_processed','current_times_used','psd_values']
-        timeDiffWarn = True
-        dfList = []
-        time_data = {}
-        time_dict = {}
-        for m in members:
-            for k in hvsr_data['ppsds'].keys():
-                hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
-                if m in listList:
-                    hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
-            
-            if str(m)=='times_processed':
-                unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
-                                                    hvsr_data['ppsds']['E'][m],
-                                                    hvsr_data['ppsds']['N'][m]]))
-
-                common_times = []
-                for currTime in unique_times:
-                    if currTime in hvsr_data['ppsds']['Z'][m]:
-                        if currTime in hvsr_data['ppsds']['E'][m]:
-                            if currTime in hvsr_data['ppsds']['N'][m]:
-                                common_times.append(currTime)
-
-                cTimeIndList = []
-                for cTime in common_times:
-                    ZArr = hvsr_data['ppsds']['Z'][m]
-                    EArr = hvsr_data['ppsds']['E'][m]
-                    NArr = hvsr_data['ppsds']['N'][m]
-
-                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
-                                        int(np.where(EArr == cTime)[0][0]),
-                                        int(np.where(NArr == cTime)[0][0])])
-                    
-            # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
-            if m in timeKeys:
-                if str(m) != 'times_processed':
-                    time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
-
-                tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
-
-                if not tSteps_same:
-                    shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
-
-                    maxPctDiff = 0
-                    for comp in hvsr_data['ppsds'].keys():
-                        currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
-                        timeLengthDiff = currCompTimeLength - shortestTimeLength
-                        percentageDiff = timeLengthDiff / currCompTimeLength
-                        if percentageDiff > maxPctDiff:
-                            maxPctDiff = percentageDiff
-
-                    for comp in hvsr_data['ppsds'].keys():
-                        while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
-                            hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
-                    
-                    
-                    if maxPctDiff > 0.05 and timeDiffWarn:
-                        warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
-                    elif verbose  and timeDiffWarn:
-                        print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
-                    timeDiffWarn = False #So we only do this warning once, even though there may be multiple arrays that need to be trimmed
-
-        for i, currTStep in enumerate(cTimeIndList):
-            colList = []
-            currTStepList = []
-            colList.append('Use')
-            currTStepList.append(np.ones_like(common_times[i]).astype(bool))
-            for tk in time_data.keys():
-                if 'current_times_used' not in tk:
-                    for i, k in enumerate(hvsr_data['ppsds'].keys()):
-                        if k.lower() in ['z', 'e', 'n']:
-                            colList.append(str(tk)+'_'+k)
-                            currTStepList.append(time_data[tk][i][currTStep[i]])
-
-            dfList.append(currTStepList)
-        hvsrDF = pd.DataFrame(dfList, columns=colList)
-        if verbose:
-            print(f"\t\thvsr_windows_df created with columns: {', '.join(hvsrDF.columns)}")
-        hvsrDF['Use'].astype(bool)
-        # Add azimuthal ppsds values
-        for k in hvsr_data['ppsds'].keys():
-            if k.upper() not in ['Z', 'E', 'N']:
-                hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
-
-        hvsrDF['TimesProcessed_Obspy'] = common_times
-        hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
-        #    colList.append('TimesProcessed_Obspy')
-        #    currTStepList.append(common_times[i])            
-        # Add other times (for start times)
-        def convert_to_datetime(obspyUTCDateTime):
-            return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
-
-        def convert_to_mpl_dates(obspyUTCDateTime):
-            return obspyUTCDateTime.matplotlib_date
-
-        hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)
-        hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=ppsd_kwargs['ppsd_length'])
-        hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
-        hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
-        
-        # Take care of existing time gaps, in case not taken care of previously
-        for gap in hvsr_data['ppsds']['Z']['times_gaps']:
-            hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
-                            (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
-        hvsrDF.set_index('TimesProcessed', inplace=True)
-        hvsr_data['hvsr_windows_df'] = hvsrDF
-        
-        if 'x_windows_out' in hvsr_data.keys():
-            if verbose:
-                print("\t\tRemoving Noisy windows from hvsr_windows_df.")
-            hvsr_data = __remove_windows_from_df(hvsr_data, verbose=verbose)
-            #for window in hvsr_data['x_windows_out']:
-            #    print(window)
-            #    hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
-            #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
-            #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-            
-
-        # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-        hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
-        #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
-        
-        hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
-        
-        hvsr_data = sprit_utils.make_it_classy(hvsr_data)
     
-        if 'processing_parameters' not in hvsr_data.keys():
-            hvsr_data['processing_parameters'] = {}
-        hvsr_data['processing_parameters']['generate_ppsds'] = {}
-        for key, value in orig_args.items():
-            hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+    paz = hvsr_data['paz']
+    stream = hvsr_data['stream']
+
+    # Get ppsds of e component
+    eStream = stream.select(component='E')
+    estats = eStream.traces[0].stats
+    ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
+    ppsdE.add(eStream)
+
+    # Get ppsds of n component
+    nStream = stream.select(component='N')
+    nstats = nStream.traces[0].stats
+    ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
+    ppsdN.add(nStream)
+
+    # Get ppsds of z component
+    zStream = stream.select(component='Z')
+    zstats = zStream.traces[0].stats
+    ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
+    ppsdZ.add(zStream)
+
+    # Get ppsds of R components (azimuthal data)
+    has_az = False
+    ppsds = {'Z':ppsdZ, 'E':ppsdE, 'N':ppsdN}
+    rStream = stream.select(component='R')
+    for curr_trace in stream:
+        if 'R' in curr_trace.stats.channel:
+            curr_stats = curr_trace.stats
+            ppsd_curr = PPSD(curr_stats, paz['E'], **ppsd_kwargs)        
+            has_az = True
+            ppsdName = curr_trace.stats.location
+            ppsd_curr.add(rStream)
+            ppsds[ppsdName] = ppsd_curr
+    
+    # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+    hvsr_data['ppsds_obspy'] = ppsds
+    hvsr_data['ppsds'] = {}
+    anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
+    
+    # Get ppsd class members
+    members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+    for k in ppsds.keys():
+        hvsr_data['ppsds'][k] = {}
+    
+    #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+    listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
+    timeKeys= ['times_processed','current_times_used','psd_values']
+    timeDiffWarn = True
+    dfList = []
+    time_data = {}
+    time_dict = {}
+    for m in members:
+        for k in hvsr_data['ppsds'].keys():
+            hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
+            if m in listList:
+                hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
+        
+        if str(m)=='times_processed':
+            unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
+                                                hvsr_data['ppsds']['E'][m],
+                                                hvsr_data['ppsds']['N'][m]]))
+
+            common_times = []
+            for currTime in unique_times:
+                if currTime in hvsr_data['ppsds']['Z'][m]:
+                    if currTime in hvsr_data['ppsds']['E'][m]:
+                        if currTime in hvsr_data['ppsds']['N'][m]:
+                            common_times.append(currTime)
+
+            cTimeIndList = []
+            for cTime in common_times:
+                ZArr = hvsr_data['ppsds']['Z'][m]
+                EArr = hvsr_data['ppsds']['E'][m]
+                NArr = hvsr_data['ppsds']['N'][m]
+
+                cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                    int(np.where(EArr == cTime)[0][0]),
+                                    int(np.where(NArr == cTime)[0][0])])
+                
+        # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
+        if m in timeKeys:
+            if str(m) != 'times_processed':
+                time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
+
+            tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
+
+            if not tSteps_same:
+                shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
+
+                maxPctDiff = 0
+                for comp in hvsr_data['ppsds'].keys():
+                    currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
+                    timeLengthDiff = currCompTimeLength - shortestTimeLength
+                    percentageDiff = timeLengthDiff / currCompTimeLength
+                    if percentageDiff > maxPctDiff:
+                        maxPctDiff = percentageDiff
+
+                for comp in hvsr_data['ppsds'].keys():
+                    while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
+                        hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
+                
+                
+                if maxPctDiff > 0.05 and timeDiffWarn:
+                    warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
+                elif verbose  and timeDiffWarn:
+                    print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
+                timeDiffWarn = False #So we only do this warning once, even though there may be multiple arrays that need to be trimmed
+
+    for i, currTStep in enumerate(cTimeIndList):
+        colList = []
+        currTStepList = []
+        colList.append('Use')
+        currTStepList.append(np.ones_like(common_times[i]).astype(bool))
+        for tk in time_data.keys():
+            if 'current_times_used' not in tk:
+                for i, k in enumerate(hvsr_data['ppsds'].keys()):
+                    if k.lower() in ['z', 'e', 'n']:
+                        colList.append(str(tk)+'_'+k)
+                        currTStepList.append(time_data[tk][i][currTStep[i]])
+
+        dfList.append(currTStepList)
+    hvsrDF = pd.DataFrame(dfList, columns=colList)
+    if verbose:
+        print(f"\t\thvsr_windows_df created with columns: {', '.join(hvsrDF.columns)}")
+    hvsrDF['Use'].astype(bool)
+    # Add azimuthal ppsds values
+    for k in hvsr_data['ppsds'].keys():
+        if k.upper() not in ['Z', 'E', 'N']:
+            hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
+
+    hvsrDF['TimesProcessed_Obspy'] = common_times
+    hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
+    #    colList.append('TimesProcessed_Obspy')
+    #    currTStepList.append(common_times[i])            
+    # Add other times (for start times)
+    def convert_to_datetime(obspyUTCDateTime):
+        return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+
+    def convert_to_mpl_dates(obspyUTCDateTime):
+        return obspyUTCDateTime.matplotlib_date
+
+    hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)
+    hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=ppsd_kwargs['ppsd_length'])
+    hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
+    hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
+    
+    # Take care of existing time gaps, in case not taken care of previously
+    for gap in hvsr_data['ppsds']['Z']['times_gaps']:
+        hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
+                        (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
+    hvsrDF.set_index('TimesProcessed', inplace=True)
+    hvsr_data['hvsr_windows_df'] = hvsrDF
+    
+    if 'x_windows_out' in hvsr_data.keys():
+        if verbose:
+            print("\t\tRemoving Noisy windows from hvsr_windows_df.")
+        hvsr_data = __remove_windows_from_df(hvsr_data, verbose=verbose)
+        #for window in hvsr_data['x_windows_out']:
+        #    print(window)
+        #    hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
+        #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
+        #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
+        
+
+    # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
+    hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
+    #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
+    
+    hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
+    
+    hvsr_data = sprit_utils.make_it_classy(hvsr_data)
+
+    if 'processing_parameters' not in hvsr_data.keys():
+        hvsr_data['processing_parameters'] = {}
+    hvsr_data['processing_parameters']['generate_ppsds'] = {}
+    for key, value in orig_args.items():
+        hvsr_data['processing_parameters']['generate_ppsds'][key] = value
+
+    
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return hvsr_data
@@ -3928,7 +3930,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 elif smooth % 2==0:
                     smooth +1 #Otherwise, needs to be odd
                     padVal = smooth//2
-                    if padVal %2==0:
+                    if padVal %2 == 0:
                         padVal += 1
 
             #Resample raw ppsd values
