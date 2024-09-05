@@ -1701,6 +1701,14 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             print('\t  {}={}'.format(key, value))
         print()
 
+    raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
+    trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
+
+    if 'trc' in pathlib.Path(params['datapath']).suffix:
+        if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
+            print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
+        params['instrument'] = 'Tromino'
+
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
     date = params['acq_date']
@@ -1775,9 +1783,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         warnings.warn("Did not recognize date, using year {} and day {}".format(year, doy))
 
     # Select which instrument we are reading from (requires different processes for each instrument)
-    raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
-    trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
-
     # Get any kwargs that are included in obspy.read
     obspyReadKwargs = {}
     for argName in inspect.getfullargspec(obspy.read)[0]:
@@ -1802,7 +1807,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             try:
                 if inst.lower() in raspShakeInstNameList:
                     rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-
                 elif inst.lower() in trominoNameList:
                     rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             except:
@@ -1826,7 +1830,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
         elif source=='file' and str(params['datapath']).lower() not in sampleList:
-            # Read the file specified by datapath
+            # Read the file specified by datapath          
             if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
                 rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             else:
@@ -2475,36 +2479,42 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         params['paz']['E'] =  params['paz']['Z']
         params['paz']['N'] =  params['paz']['Z']
 
-        channelObj_Z = obspy.core.inventory.channel.Channel(code='BHZ', location_code='00', latitude=params['params']['latitude'], 
+        tromino_paz = { 'zeros': params['paz']['Z']['zeros'],
+                        'poles':params['paz']['Z']['poles'],
+                        'stage_gain':90,
+                        'stage_gain_frequency':10,
+                        'normalization_frequency':5.0, 
+                        'normalization_factor':673.959}
+
+        tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
+
+        obspyStartDate = obspy.UTCDateTime(1900,1,1)
+        obspyNow = obspy.UTCDateTime.now()
+
+        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code='00', latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
-                                                azimuth=0, dip=90, types=None, external_references=None, 
-                                                sample_rate=None, sample_rate_ratio_number_samples=None, sample_rate_ratio_number_seconds=None,
-                                                storage_format=None, clock_drift_in_seconds_per_sample=None, calibration_units=None, 
-                                                calibration_units_description=None, sensor=None, pre_amplifier=None, data_logger=None,
-                                                equipments=None, response=None, description=None, comments=None, start_date=None, end_date=None, 
-                                                restricted_status=None, alternate_code=None, historical_code=None, data_availability=None, 
-                                                identifiers=None, water_level=None, source_id=None)
-        channelObj_E = obspy.core.inventory.channel.Channel(code='BHE', location_code='00', latitude=params['params']['latitude'], 
+                                                azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
+        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code='00', latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
-                                                azimuth=90, dip=0) 
-        
-        channelObj_N = obspy.core.inventory.channel.Channel(code='BHN', location_code='00', latitude=params['params']['latitude'], 
+                                                azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
+        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code='00', latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
-                                                azimuth=0, dip=0) 
+                                                azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
         
         siteObj = obspy.core.inventory.util.Site(name=params['params']['site'], description=None, town=None, county=None, region=None, country=None)
-        stationObj = obspy.core.inventory.station.Station(code='TZ', latitude=params['params']['latitude'], longitude=params['params']['longitude'], 
+        stationObj = obspy.core.inventory.station.Station(code='TRMNO', latitude=params['params']['latitude'], longitude=params['params']['longitude'], 
                                             elevation=params['params']['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
-                                            vault=None, geology=None, equipments=None, operators=None, creation_date=datetime.datetime.today(),
-                                            termination_date=None, total_number_of_channels=None, 
-                                            selected_number_of_channels=None, description='Estimated data for Tromino, this is NOT from the manufacturer',
-                                            comments=None, start_date=None, 
-                                            end_date=None, restricted_status=None, alternate_code=None, historical_code=None, 
-                                            data_availability=None, identifiers=None, water_level=None, source_id=None)
+                                            vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
+                                            termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
+                                            selected_number_of_channels=3, description='Estimated data for Tromino, this is NOT from the manufacturer',
+                                            comments=None, start_date=obspyStartDate, end_date=obspyNow, 
+                                            restricted_status=None, alternate_code=None, historical_code=None, 
+                                            data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
+                                            identifiers=None, water_level=None, source_id=None)
 
-        network = [obspy.core.inventory.network.Network(code='TROM', stations=[stationObj], total_number_of_stations=None, 
-                                            selected_number_of_stations=None, description=None, comments=None, start_date=None, 
-                                            end_date=None, restricted_status=None, alternate_code=None, historical_code=None, 
+        network = [obspy.core.inventory.network.Network(code='AM', stations=[stationObj], total_number_of_stations=None, 
+                                            selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
+                                            end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
                                             data_availability=None, identifiers=None, operators=None, source_id=None)]
         
         params['inv'] = obspy.Inventory(networks=network)
@@ -5697,13 +5707,13 @@ def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, ve
             'network':'AM',
             'location':'00',
             'station' : 'TRMNO',
-            'channel':'BHE',
+            'channel':'EHE',
             'starttime':sTime}
     
     traceHeader2=traceHeader1.copy()
     traceHeader3=traceHeader1.copy()
-    traceHeader2['channel'] = 'BHN'
-    traceHeader3['channel'] = 'BHZ'
+    traceHeader2['channel'] = 'EHN'
+    traceHeader3['channel'] = 'EHZ'
 
     trace1 = obspy.Trace(data=comp1, header=traceHeader1)
     trace2 = obspy.Trace(data=comp2, header=traceHeader2)
