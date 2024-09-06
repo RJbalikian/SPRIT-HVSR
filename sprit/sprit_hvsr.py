@@ -1626,7 +1626,6 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
@@ -1701,8 +1700,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             print('\t  {}={}'.format(key, value))
         print()
 
-    params = get_metadata(params, update_metadata=update_metadata, source=source)
-    inv = params['inv']
+    #params = get_metadata(params, update_metadata=update_metadata, source=source)
+    #inv = params['inv']
     date = params['acq_date']
 
     # Cleanup for gui input
@@ -1788,8 +1787,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     if isinstance(params['datapath'], obspy.Stream):
         rawDataIN = params['datapath'].copy()
         tr = params['datapath'][0]
-        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
-                                       str(tr.stats.starttime)[11:19], 
+        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
+                                       str(tr.stats.starttime)[11:19],
                                        str(tr.stats.endtime)[11:19]])
     elif isinstance(params['datapath'], obspy.Trace):
         rawDataIN = obspy.Stream(params['datapath'])
@@ -1844,10 +1843,10 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-                import warnings # For some reason not being imported at the start
-                with warnings.catch_warnings():
-                    warnings.simplefilter(action='ignore', category=UserWarning)
-                    rawDataIN.attach_response(inv)
+                #import warnings # For some reason not being imported at the start
+                #with warnings.catch_warnings():
+                    #warnings.simplefilter(action='ignore', category=UserWarning)
+                    #rawDataIN.attach_response(inv)
         elif source=='batch' and str(params['datapath']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -1884,7 +1883,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         else:
             try:
                 rawDataIN = obspy.read(dPath)
-                rawDataIN.attach_response(inv)
+                #rawDataIN.attach_response(inv)
             except:
                 RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
 
@@ -2006,6 +2005,10 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     except Exception as e:
         raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
 
+    # Get and update metadata
+    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    inv = params['inv']
+
     #Trim and save data as specified
     if trim_dir=='None':
         trim_dir=None
@@ -2115,6 +2118,18 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     for key, value in orig_args.items():
         params['processing_parameters']['fetch_data'][key] = value
 
+    try:
+        params['stream'].attach_response(params['inv'])
+        for tr in params['stream']:
+            cmpnt = tr.stats.component
+
+            params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
+            params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
+            params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
+            params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
+    except Exception:
+        raise ValueError("Metadata missing, incomplete, or incorrect")
+    
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
@@ -2458,6 +2473,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
+    
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'trm', 't']
@@ -3169,7 +3185,8 @@ def input_params(datapath,
         processing_parameters = import_settings(processing_parameters, settings_import_type='processing', verbose=verbose)
 
     #Add key/values to input parameter dictionary
-    inputParamDict = {'site':site, 'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
+    inputParamDict = {'site':site, 'network':network, 'station':station,'location':location, 'channels':channels,
+                      'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'input_crs':input_crs, 'output_crs':output_crs,
                     'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
@@ -3193,7 +3210,6 @@ def input_params(datapath,
         if metapath is None or metapath=='':
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
             inputParamDict['metapath'] = metapath
-            #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
     for settingName in instrument_settings_dict.keys():
         if settingName in inputParamDict.keys():
