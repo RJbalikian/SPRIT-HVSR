@@ -4,18 +4,18 @@
   <Sender>RaspberryShake</Sender>
   <Module/>
   <ModuleURI/>
-  <Created>2022-10-21T16:12:33.879781Z</Created>
+  <Created>2016-10-21T16:12:33.879781Z</Created>
   <Network code="AM" startDate="2016-01-01T00:00:00.000000Z" restrictedStatus="open">
     <Description>RASPBERRY SHAKE NETWORK</Description>
-    <Station code="REA4F" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open">
+    <Station code="RAC84" startDate="1900-03-18T12:47:02.625000Z" endDate="2100-03-20T17:01:43.454000Z" restrictedStatus="open">
       <Latitude unit="DEGREES">44.82882883</Latitude>
       <Longitude unit="DEGREES">-92.24068772</Longitude>
       <Elevation>326.0</Elevation>
       <Site>
         <Name>Raspberry Shake Citizen Science Station</Name>
       </Site>
-      <CreationDate>2022-03-18T12:47:02.625000Z</CreationDate>
-      <Channel code="EHE" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+      <CreationDate>2016-03-18T12:47:02.625000Z</CreationDate>
+      <Channel code="EHE" startDate="1900-03-18T12:47:02.625000Z" endDate="2100-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
         <Latitude unit="DEGREES">44.82882883</Latitude>
         <Longitude unit="DEGREES">-92.24068772</Longitude>
         <Elevation>326.0</Elevation>
@@ -176,7 +176,7 @@
           </Stage>
         </Response>
       </Channel>
-      <Channel code="EHN" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+      <Channel code="EHN" startDate="1900-03-18T12:47:02.625000Z" endDate="2100-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
         <Latitude unit="DEGREES">44.82882883</Latitude>
         <Longitude unit="DEGREES">-92.24068772</Longitude>
         <Elevation>326.0</Elevation>
@@ -337,7 +337,7 @@
           </Stage>
         </Response>
       </Channel>
-      <Channel code="EHZ" startDate="2022-03-18T12:47:02.625000Z" endDate="2022-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
+      <Channel code="EHZ" startDate="1900-03-18T12:47:02.625000Z" endDate="2100-03-20T17:01:43.454000Z" restrictedStatus="open" locationCode="00">
         <Latitude unit="DEGREES">44.82882883</Latitude>
         <Longitude unit="DEGREES">-92.24068772</Longitude>
         <Elevation>326.0</Elevation>
