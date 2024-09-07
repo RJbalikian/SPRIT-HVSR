@@ -1682,7 +1682,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 if k!='params' and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     orig_args[k] = v
 
-    #Update local variables, in case of previously-specified parameters
+    # Update local variables, in case of previously-specified parameters
     source=orig_args['source'].lower()
     trim_dir=orig_args['trim_dir']
     export_format=orig_args['export_format']
@@ -1694,6 +1694,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     verbose=orig_args['verbose']
     kwargs=orig_args['kwargs']
 
+    # Print inputs for verbose setting
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         for key, value in orig_args.items():
@@ -1703,15 +1704,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
+    # Check if data is from tromino, and adjust parameters accordingly
     if 'trc' in pathlib.Path(params['datapath']).suffix:
         if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
             print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
         params['instrument'] = 'Tromino'
 
+    # Get metadata (inventory/response information)
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
-    #params = get_metadata(params, update_metadata=update_metadata, source=source)
-    #inv = params['inv']
     date = params['acq_date']
 
     # Cleanup for gui input
@@ -2088,8 +2089,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         clean_ends = kwargs['clean_ends']
 
     if clean_ends:
-        maxStarttime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
-        minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) 
+        
+        maxStarttime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
+        minEndtime = datetime.datetime.now(datetime.timezone.utc)
 
         for tr in dataIN:
             currStarttime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day, 
@@ -2105,7 +2107,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             if currEndtime < minEndtime:
                 minEndtime = currEndtime
 
-
         maxStarttime = obspy.UTCDateTime(maxStarttime)
         minEndtime = obspy.UTCDateTime(minEndtime)
         dataIN = dataIN.split()
@@ -2114,9 +2115,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             pass
         dataIN.merge()
     
-    params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['input_stream'] = dataIN.copy()
-    params['stream'] = dataIN.copy()
+    params['batch'] = False # Set False by default, will get corrected later if batch
+    params['input_stream'] = dataIN.copy() # Original stream as read
+    params['stream'] = dataIN.copy() # Stream that may be modified later
     
     if 'processing_parameters' not in params.keys():
         params['processing_parameters'] = {}
@@ -2124,6 +2125,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     for key, value in orig_args.items():
         params['processing_parameters']['fetch_data'][key] = value
 
+    # Attach response data to stream and get paz (for PPSD later)
     try:
         params['stream'].attach_response(params['inv'])
         for tr in params['stream']:
@@ -3197,7 +3199,7 @@ def input_params(datapath,
         processing_parameters = import_settings(processing_parameters, settings_import_type='processing', verbose=verbose)
 
     #Add key/values to input parameter dictionary
-    inputParamDict = {'site':site, 'network':network, 'station':station,'location':location, 'channels':channels,
+    inputParamDict = {'site':site, 'network':network, 'station':station,'location':loc, 'channels':channels,
                       'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'input_crs':input_crs, 'output_crs':output_crs,
