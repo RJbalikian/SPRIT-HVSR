@@ -13,7 +13,7 @@ from obspy.core.utcdatetime import UTCDateTime
 
 try:  # For distribution
     from sprit import sprit_hvsr
-except: #For testing
+except Exception: #For testing
     import sprit_hvsr
     pass
 
@@ -71,7 +71,7 @@ def check_mark(incolor=False, interminal=False):
     if incolor:
         try:
             check = get_char(u'\u2705')
-        except:
+        except Exception:
             check = get_char(u'\u2714')
     else:
         check = get_char(u'\u2714')
@@ -81,7 +81,7 @@ def check_mark(incolor=False, interminal=False):
     return check
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, sample_list='', verbose=False):
+def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -108,10 +108,11 @@ def checkifpath(filepath, sample_list='', verbose=False):
     else:
         try:
             filepath = pathlib.Path(filepath)
-        except:
+        except Exception:
             if verbose:
                 warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
         if not filepath.exists():
+            
             raise RuntimeError('File does not exist: {}'.format(filepath))
     return filepath
 
@@ -499,7 +500,7 @@ def x_mark(incolor=False, inTerminal=False):
     if incolor:
         try:
             xmark = get_char(u'\u274C')
-        except:
+        except Exception:
             xmark = get_char(u'\u2718')
     else:
         xmark = get_char(u'\u2718')

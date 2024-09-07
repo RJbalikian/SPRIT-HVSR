@@ -1626,7 +1626,6 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
@@ -1683,7 +1682,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 if k!='params' and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     orig_args[k] = v
 
-    #Update local variables, in case of previously-specified parameters
+    # Update local variables, in case of previously-specified parameters
     source=orig_args['source'].lower()
     trim_dir=orig_args['trim_dir']
     export_format=orig_args['export_format']
@@ -1695,6 +1694,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     verbose=orig_args['verbose']
     kwargs=orig_args['kwargs']
 
+    # Print inputs for verbose setting
     if source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         for key, value in orig_args.items():
@@ -1704,11 +1704,13 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
+    # Check if data is from tromino, and adjust parameters accordingly
     if 'trc' in pathlib.Path(params['datapath']).suffix:
         if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
             print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
         params['instrument'] = 'Tromino'
 
+    # Get metadata (inventory/response information)
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
     date = params['acq_date']
@@ -1793,8 +1795,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     if isinstance(params['datapath'], obspy.Stream):
         rawDataIN = params['datapath'].copy()
         tr = params['datapath'][0]
-        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
-                                       str(tr.stats.starttime)[11:19], 
+        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
+                                       str(tr.stats.starttime)[11:19],
                                        str(tr.stats.endtime)[11:19]])
     elif isinstance(params['datapath'], obspy.Trace):
         rawDataIN = obspy.Stream(params['datapath'])
@@ -1848,10 +1850,10 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-                import warnings # For some reason not being imported at the start
-                with warnings.catch_warnings():
-                    warnings.simplefilter(action='ignore', category=UserWarning)
-                    rawDataIN.attach_response(inv)
+                #import warnings # For some reason not being imported at the start
+                #with warnings.catch_warnings():
+                    #warnings.simplefilter(action='ignore', category=UserWarning)
+                    #rawDataIN.attach_response(inv)
         elif source=='batch' and str(params['datapath']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -1888,7 +1890,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         else:
             try:
                 rawDataIN = obspy.read(dPath)
-                rawDataIN.attach_response(inv)
+                #rawDataIN.attach_response(inv)
             except:
                 RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
 
@@ -2010,6 +2012,10 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     except Exception as e:
         raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
 
+    # Get and update metadata
+    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    inv = params['inv']
+
     #Trim and save data as specified
     if trim_dir=='None':
         trim_dir=None
@@ -2083,8 +2089,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         clean_ends = kwargs['clean_ends']
 
     if clean_ends:
-        maxStarttime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
-        minEndtime = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) 
+        
+        maxStarttime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=36500) #100 years ago
+        minEndtime = datetime.datetime.now(datetime.timezone.utc)
 
         for tr in dataIN:
             currStarttime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day, 
@@ -2100,7 +2107,6 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             if currEndtime < minEndtime:
                 minEndtime = currEndtime
 
-
         maxStarttime = obspy.UTCDateTime(maxStarttime)
         minEndtime = obspy.UTCDateTime(minEndtime)
         dataIN = dataIN.split()
@@ -2109,9 +2115,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             pass
         dataIN.merge()
     
-    params['batch'] = False #Set False by default, will get corrected later in batch mode        
-    params['input_stream'] = dataIN.copy()
-    params['stream'] = dataIN.copy()
+    params['batch'] = False # Set False by default, will get corrected later if batch
+    params['input_stream'] = dataIN.copy() # Original stream as read
+    params['stream'] = dataIN.copy() # Stream that may be modified later
     
     if 'processing_parameters' not in params.keys():
         params['processing_parameters'] = {}
@@ -2119,6 +2125,19 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     for key, value in orig_args.items():
         params['processing_parameters']['fetch_data'][key] = value
 
+    # Attach response data to stream and get paz (for PPSD later)
+    try:
+        params['stream'].attach_response(params['inv'])
+        for tr in params['stream']:
+            cmpnt = tr.stats.component
+
+            params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
+            params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
+            params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
+            params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
+    except Exception:
+        raise ValueError("Metadata missing, incomplete, or incorrect")
+    
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
         dataINStr = dataIN.__str__().split('\n')
@@ -2462,6 +2481,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
     params : dict
         Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
+    
     invPath = params['metapath']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom', 'trm', 't']
@@ -3179,7 +3199,8 @@ def input_params(datapath,
         processing_parameters = import_settings(processing_parameters, settings_import_type='processing', verbose=verbose)
 
     #Add key/values to input parameter dictionary
-    inputParamDict = {'site':site, 'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
+    inputParamDict = {'site':site, 'network':network, 'station':station,'location':loc, 'channels':channels,
+                      'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'input_crs':input_crs, 'output_crs':output_crs,
                     'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
@@ -3203,7 +3224,6 @@ def input_params(datapath,
         if metapath is None or metapath=='':
             metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
             inputParamDict['metapath'] = metapath
-            #metapath = pathlib.Path(os.path.realpath(__file__)).parent.joinpath('/resources/rs3dv7_metadata.inv')
 
     for settingName in instrument_settings_dict.keys():
         if settingName in inputParamDict.keys():
