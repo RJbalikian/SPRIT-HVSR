@@ -2491,21 +2491,23 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         params = _read_RS_Metadata(params, source=source)
     elif params['instrument'].lower() in trominoNameList:
         params['paz'] = {'Z':{}, 'E':{}, 'N':{}}
-        #ALL THESE VALUES ARE PLACEHOLDERS, taken from RASPBERRY SHAKE! (Needed for PPSDs)
-        params['paz']['Z'] = {'sensitivity': 360000000.0,
-                              'gain': 360000000.0,
-                              'poles': [(-1+0j), (-3.03+0j), (-3.03+0j), (-666.67+0j)],  
-                              'zeros': [0j, 0j, 0j]}
-        params['paz']['E'] =  params['paz']['Z']
-        params['paz']['N'] =  params['paz']['Z']
+        #THESE VALUES ARE PLACEHOLDERS, taken from RASPBERRY SHAKE! (Needed for PPSDs)
+        #params['paz']['Z'] = {'sensitivity': 360000000.0,
+        #                      'gain': 360000000.0,
+        #                      'poles': [(-1+0j), (-3.03+0j), (-3.03+0j), (-666.67+0j)],
+        #                      'zeros': [0j, 0j, 0j]}
+        #params['paz']['E'] =  params['paz']['Z']
+        #params['paz']['N'] =  params['paz']['Z']
 
-        tromino_paz = { 'zeros': params['paz']['Z']['zeros'],
-                        'poles':params['paz']['Z']['poles'],
-                        'stage_gain':90,
+        tromino_paz = { 'zeros': [0j, 0j],
+                        'poles': [(17-24j), (17+24j)],
+                        'stage_gain':100,
                         'stage_gain_frequency':10,
-                        'normalization_frequency':5.0, 
-                        'normalization_factor':673.959}
-
+                        'normalization_frequency':5, 
+                        'normalization_factor':1}
+        
+        params['paz']['Z'] =  params['paz']['E'] = params['paz']['N'] = tromino_paz
+        
         tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
 
         obspyStartDate = obspy.UTCDateTime(1900,1,1)
