@@ -1711,8 +1711,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         params['instrument'] = 'Tromino'
 
     # Get metadata (inventory/response information)
-    params = get_metadata(params, update_metadata=update_metadata, source=source)
-    inv = params['inv']
+    #params = get_metadata(params, update_metadata=update_metadata, source=source)
+    #inv = params['inv']
     date = params['acq_date']
 
     # Cleanup for gui input
@@ -1810,6 +1810,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 if inst.lower() in raspShakeInstNameList:
                     rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
                 elif inst.lower() in trominoNameList:
+                    params['instrument'] = 'Tromino'
+                    params['params']['instrument'] = 'Tromino'                    
                     rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             except:
                 raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
@@ -1834,7 +1836,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         elif source=='file' and str(params['datapath']).lower() not in sampleList:
             # Read the file specified by datapath          
             if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
-                rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
+                params['instrument'] = 'Tromino'
+                params['params']['instrument'] = 'Tromino'
+                if 'trc' in dPath.suffix:
+                    rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
+                else:
+                    try:
+                        rawDataIN = obspy.read(dPath)
+                    except Exception:
+                        raise ValueError(f"{dPath.suffix} is not a a filetype that can be read by SpRIT (via ObsPy)")
             else:
                 if isinstance(dPath, list) or isinstance(dPath, tuple):
                     rawStreams = []
@@ -1922,7 +1932,9 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             sta_default = inspect.signature(input_params).parameters['station'].default
             if str(params['sta']) == sta_default and str(params['sta']) != dataIN[0].stats.station:
                 params['sta'] = dataIN[0].stats.station
+                params['station'] = dataIN[0].stats.station
                 params['params']['sta'] = dataIN[0].stats.station
+                params['params']['station'] = dataIN[0].stats.station
                 if verbose:
                     print(f"\t\tStation name updated to {params['sta']}")
 
@@ -2016,7 +2028,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     params = get_metadata(params, update_metadata=update_metadata, source=source)
     inv = params['inv']
 
-    #Trim and save data as specified
+    # Trim and save data as specified
     if trim_dir=='None':
         trim_dir=None
     if not trim_dir:
@@ -2027,23 +2039,23 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         else:
             dataIN = _trim_data(input=params, stream=dataIN, export_dir=trim_dir, source=source, export_format=export_format)
 
-    #Split data if masked array (if there are gaps)...detrending cannot be done without
+    # Split data if masked array (if there are gaps)...detrending cannot be done without
     for tr in dataIN:
         if isinstance(tr.data, np.ma.masked_array):
             dataIN = dataIN.split()
             #Splits entire stream if any trace is masked_array
             break
 
-    #Detrend data
+    # Detrend data
     if isinstance(params, HVSRBatch):
         pass
     else:
         dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
 
-    #Remerge data
+    # Remerge data
     dataIN = dataIN.merge(method=1)
 
-    #Plot the input stream?
+    # Plot the input stream?
     if plot_input_stream:
         if plot_engine.lower() in ['plotly', 'plty', 'p']:
             if 'spectrogram_component' in kwargs.keys():
@@ -2126,6 +2138,68 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         params['processing_parameters']['fetch_data'][key] = value
 
     # Attach response data to stream and get paz (for PPSD later)
+    # Check if response can be attached
+    params['stream'].attach_response(params['inv'])
+
+    responseMatch = {}
+    for trace in params['stream']:
+        k = trace.stats.component
+        responseMatch[k] = False
+
+        for sta in params['inv'].networks[0].stations: # Assumes only one network per inst
+            hasCha = False
+            hasLoc = False
+            hasSta = False
+            isStarted= False
+            notEnded = False
+            
+            # Check station
+            if sta.code == params['stream'][0].stats.station:
+                hasSta = True
+            else:
+                continue
+
+            # Check Channel
+            for cha in sta:
+                if cha.code==trace.stats.channel:
+                    hasCha = True
+
+                # Check location
+                if cha.location_code == trace.stats.location:
+                    hasLoc = True
+
+
+                # Check time
+                if (cha.start_date is None or cha.start_date <= tr.stats.starttime):
+                    isStarted = True
+
+                if (cha.end_date is None or cha.end_date >= tr.stats.endtime):
+                    notEnded = True
+
+                
+                if all([hasSta, hasCha, hasLoc, isStarted, notEnded]):
+                    responseMatch[k] = True
+
+        if responseMatch[k] is not True:
+            responseMatch[k] = {'Station':  (hasSta,[sta.code for sta in params['inv'].networks[0].stations]),
+                                'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
+
+    metadataMatchError = False
+    for comp, matchItems in responseMatch.items():
+        if matchItems is not True:
+            metadataMatchError = True
+            errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
+            for matchType, match in matchItems.items():
+                if match[0] is False:
+                    errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
+
+    if metadataMatchError:
+        print(errorMsg)
+        raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
+
     try:
         params['stream'].attach_response(params['inv'])
         for tr in params['stream']:
@@ -2499,7 +2573,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         #params['paz']['E'] =  params['paz']['Z']
         #params['paz']['N'] =  params['paz']['Z']
 
-        tromino_paz = { 'zeros': [0j, 0j],
+        tromino_paz = { 'zeros': [-3.141592653589793/2-10j, -3.141592653589793/2-10j],
                         'poles': [(17-24j), (17+24j)],
                         'stage_gain':100,
                         'stage_gain_frequency':10,
@@ -2512,7 +2586,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
         obspyStartDate = obspy.UTCDateTime(1900,1,1)
         obspyNow = obspy.UTCDateTime.now()
-
+        
         channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code='00', latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
@@ -5657,7 +5731,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
 
 
 # Read data from Tromino
-def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(datapath, params, bitFormat='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
@@ -5683,7 +5757,7 @@ def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, ve
                 'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
 
     #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
-    structFormat = 'H'
+    structFormat = bitFormat
     structSize = strucSizes[structFormat]
 
     dataList = []
@@ -5741,7 +5815,7 @@ def read_tromino_files(datapath, params, sampling_rate=128, start_byte=24576, ve
     trace2 = obspy.Trace(data=comp2, header=traceHeader2)
     trace3 = obspy.Trace(data=comp3, header=traceHeader3)
 
-    st = obspy.Stream([trace1, trace2, trace3])    
+    st = obspy.Stream([trace1, trace2, trace3])
     return st
 
 
