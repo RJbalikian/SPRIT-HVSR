@@ -2573,7 +2573,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         #params['paz']['E'] =  params['paz']['Z']
         #params['paz']['N'] =  params['paz']['Z']
 
-        tromino_paz = { 'zeros': [-3.141592653589793/2-10j, -3.141592653589793/2-10j],
+        tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
                         'poles': [(17-24j), (17+24j)],
                         'stage_gain':100,
                         'stage_gain_frequency':10,
