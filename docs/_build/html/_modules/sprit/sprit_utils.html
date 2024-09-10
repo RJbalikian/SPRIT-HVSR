@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_utils &mdash; sprit 1.1.1 documentation</title>
+  <title>sprit.sprit_utils &mdash; sprit 1.2-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=58fbf978"></script>
+        <script src="../../_static/documentation_options.js?v=83f3f2d6"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -86,7 +86,7 @@
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
-<span class="k">except</span><span class="p">:</span> <span class="c1">#For testing</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="c1">#For testing</span>
     <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
     <span class="k">pass</span>
 
@@ -152,7 +152,7 @@
     <span class="k">if</span> <span class="n">incolor</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2705</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2714</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2714</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -165,7 +165,7 @@
 <span class="c1">#Converts filepaths to pathlib paths, if not already</span>
 <div class="viewcode-block" id="checkifpath">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.checkifpath">[docs]</a>
-<span class="k">def</span> <span class="nf">checkifpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">sample_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">checkifpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">sample_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raise_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Support function to check if a filepath is a pathlib.Path object and tries to convert if not</span>
 
 <span class="sd">    Parameters</span>
@@ -192,10 +192,11 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">filepath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Filepath cannot be converted to pathlib path: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;File does not exist: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">filepath</span></div>
 
@@ -610,7 +611,7 @@
     <span class="k">if</span> <span class="n">incolor</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u274C</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2718</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2718</span><span class="s1">&#39;</span><span class="p">)</span>
