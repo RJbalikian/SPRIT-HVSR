@@ -2573,6 +2573,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
         #params['paz']['E'] =  params['paz']['Z']
         #params['paz']['N'] =  params['paz']['Z']
 
+        # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
         tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
                         'poles': [(17-24j), (17+24j)],
                         'stage_gain':100,
