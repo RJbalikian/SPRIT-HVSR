@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Report</title>
+    <link rel="stylesheet" type="text/css" href="./css_report_Template.css">
+</head>
+<body>
+    <div class="container">
+        <header class="banner">
+            <h1>HVSR Data Report</h1>
+        </header>
+        <section class="content">
+            <img src="./TrominoSingleGeophoneresponsespectrum.png" alt="Matplotlib Figure" class="report-image">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="max-width: 50mm;">Site</th>
+                        <th style="max-width: 30mm;">XCoord</th>
+                        <th style="max-width: 20mm;">YCoord</th>
+                        <th style="max-width: 15mm;">Elev.</th>
+                        <th style="max-width: 15mm;">f<sub>0</sub></th>
+                        <th style="max-width: 15mm;">σ<sub>f<sub>0</sub></sub></th>
+                        <th style="max-width: 30mm;">Pass?</th>
+                        <th colspan="3" style="max-width: 50mm;">SESAME Curve Tests</th>
+                        <th colspan='6' style="max-width: 100mm;"> SESAME Peak Tests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>site_report</td>
+                        <td>XCoordinate</td>
+                        <td>YCoordinate</td>
+                        <td>elev_rep</td>
+                        <td>f0_report</td>
+                        <td>f0_std_report</td>
+                        <td>all_pass</td>
+                        <td>pass1</td>
+                        <td>pass2</td>
+                        <td>pass3</td>
+                        <td>pass4</td>
+                        <td>pass5</td>
+                        <td>pass6</td>
+                        <td>pass7</td>
+                        <td>pass8</td>
+                        <td>pass9</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="print-report-text">-----------</p>
+            <p class="print-report-text">TEST PASSED</p>
+            <p class="print-report-text">-----------</p>
+        </section>
+    </div>
+</body>
+<footer class="footer">
+    <p>This data and report were produced using the SpRIT HVSR processing package, developed at the Illinois State Geological Survey.</p>
+    <p>
+        <a href="https://github.com/RJbalikian/SPRIT-HVSR">|  Homepage </a> | 
+        <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki"> Wiki and Tutorials </a> |
+        <a href="https://sprit.readthedocs.io/en/latest/index.html"> Documentation </a> | 
+        <a href="https://github.com/RJbalikian/SPRIT-HVSR/issues"> Report Issues </a> |
+        <a href="https://pypi.org/project/sprit/"> Download </a> | 
+    </p>
+    <p>&copy; 2024 RJBalikian. All rights reserved.</p>
+</footer>
+</html>
