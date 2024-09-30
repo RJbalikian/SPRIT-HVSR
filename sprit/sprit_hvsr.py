@@ -1705,7 +1705,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
     # Check if data is from tromino, and adjust parameters accordingly
-    if 'trc' in pathlib.Path(params['datapath']).suffix:
+    if 'trc' in pathlib.Path(str(params['datapath'])).suffix:
         if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
             print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
         params['instrument'] = 'Tromino'
@@ -1893,10 +1893,10 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
                 dPath = params['datapath']
                 rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-                import warnings
-                with warnings.catch_warnings():
-                    warnings.simplefilter(action='ignore', category=UserWarning)
-                    rawDataIN.attach_response(inv)
+                #import warnings
+                #with warnings.catch_warnings():
+                #    warnings.simplefilter(action='ignore', category=UserWarning)
+                #    rawDataIN.attach_response(inv)
         else:
             try:
                 rawDataIN = obspy.read(dPath)
