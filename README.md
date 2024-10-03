@@ -39,13 +39,15 @@ Aside from the modules in the python standard library, the following package dep
 - [Pandas](https://pandas.pydata.org): "A fast, powerful, flexible and easy to use open source data analysis and manipulation tool"
 - [pyproj](https://pyproj4.github.io/pyproj/stable/): Module for cartographic projections and coordinate transformations, a python interface to [PROJ](https://proj.org/en/9.2/)
 - [Matplotlib](https://matplotlib.org/): Comprehensive library for creating static, animated, and interactive visualizations in python
-- plotly
+- [plotly](https://plotly.com/python/): Open Source Graphing Library for Python that makes interactive, publication-quality graphs.
 
 ## Dependencies specifically for GUIs
 - [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
 - ipython
 - ipywidgets
-- nbformat 
+- nbformat
+- streamlit
+- tkinter (may not be installed with python on linux systems)
 
 # References
 - <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>
