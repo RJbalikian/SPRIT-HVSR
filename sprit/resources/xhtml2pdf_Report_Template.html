@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+            @frame header {           /* Static Frame for Header */
+                -pdf-frame-content: header_content;
+                left: 25pt; width: 792pt; top: 10pt; height: 40pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+
+            @frame f0_summary {          /* Frame for Text Content */
+                -pdf-frame-content: f0_summary;
+                left: 25pt; width: 792pt; top: 60pt; height: 50pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+
+            @frame plot_frame {          /* Frame for Image Content */
+                -pdf-frame-content: plot_frame;
+                left: 25pt; width: 400pt; top: 125pt; height: 300pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+
+            @frame print_results {          /* Frame for Monospace Text */
+                -pdf-frame-content: print_results;
+                left: 450pt; width: 367pt; top: 125; height: 300pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+
+            @frame table_frame {          /* Frame for Table Content */
+                -pdf-frame-content: table_frame;
+                left: 25pt; width: 792pt; top: 440pt; height: 60pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+
+            @frame footer_frame {          /* Frame for Table Content */
+                -pdf-frame-content: footer;
+                left: 25pt; width: 792pt; top: 510pt; height: 80pt;
+                -pdf-frame-border: 1;    /* for debugging the layout */
+            }
+            }
+    </style
+</head>
+<body>
+    <!-- Header Section -->
+    <div id="header_content">
+        HVSR Report
+    </div>
+
+    <!-- Frame 1: Text -->
+    <div id="f0_summary">
+        <p>SummaryResults</p>
+    </div>
+
+    <!-- Frame 2: Image -->
+    <div id="plot_frame">
+        <img src="C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\output.png" alt="Image description">
+    </div>
+
+    <!-- Frame 3: Monospace Text -->
+    <div id="print_results" style="font-family: monospace;">
+        <p>SESAME TESTS (Printed)</p>
+    </div>
+
+    <!-- Frame 4: Table -->
+    <div id="table_frame">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="border: 1px solid black;">Header 1</th>
+                <th style="border: 1px solid black;">Header 2</th>
+                <th style="border: 1px solid black;">Header 3</th>
+                <th style="border: 1px solid black;">Header 4</th>
+                <th style="border: 1px solid black;">Header 5</th>
+                <th style="border: 1px solid black;">Header 6</th>
+                <th style="border: 1px solid black;">Header 7</th>
+                <th style="border: 1px solid black;">Header 8</th>
+                <th style="border: 1px solid black;">Header 9</th>
+                <th style="border: 1px solid black;">Header 10</th>
+                <th style="border: 1px solid black;">Header 11</th>
+                <th style="border: 1px solid black;">Header 12</th>
+                <th style="border: 1px solid black;">Header 13</th>
+                <th style="border: 1px solid black;">Header 14</th>
+                <th style="border: 1px solid black;">Header 15</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">Data 1</td>
+                <td style="border: 1px solid black;">Data 2</td>
+                <td style="border: 1px solid black;">Data 3</td>
+                <td style="border: 1px solid black;">Data 4</td>
+                <td style="border: 1px solid black;">Data 5</td>
+                <td style="border: 1px solid black;">Data 6</td>
+                <td style="border: 1px solid black;">Data 7</td>
+                <td style="border: 1px solid black;">Data 8</td>
+                <td style="border: 1px solid black;">Data 9</td>
+                <td style="border: 1px solid black;">Data 10</td>
+                <td style="border: 1px solid black;">Data 11</td>
+                <td style="border: 1px solid black;">Data 12</td>
+                <td style="border: 1px solid black;">Data 13</td>
+                <td style="border: 1px solid black;">Data 14</td>
+                <td style="border: 1px solid black;">Data 15</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer Section -->
+    <div id="footer">
+        (C) RJBalikian
+    </div>
+
+</body>
+</html>
