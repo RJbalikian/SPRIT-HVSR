@@ -1625,6 +1625,24 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             print()
 
 
+def export_report(hvsr_data, report_filepath=None, verbose=False):
+    # This needs to be fixed up
+    from xhtml2pdf import pisa 
+
+    if not hasattr(hvsr_data, 'HTML_Report'):
+        print('No HTML Report previously generated, attempting now.')
+        # try Code to generate HTML report from template
+
+    input_html = hvsr_data['HTML_Report']
+    if report_filepath is not None:
+        with open(report_filepath, "w+b") as export_file:
+            pisa_status = pisa.CreatePDF(input_html, dest=export_file)
+    
+    if verbose:
+        print(pisa_status.err)
+
+    return input_html
+
 # Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
