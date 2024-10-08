@@ -5,43 +5,87 @@
         @page {
             size: A4 landscape;
             margin: 0;
-            @frame header {           /* Static Frame for Header */
+            @frame header {
                 -pdf-frame-content: header_content;
                 left: 25pt; width: 792pt; top: 10pt; height: 40pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+                -pdf-frame-border: 1;
+                background-color: #00008B;
             }
 
-            @frame f0_summary {          /* Frame for Text Content */
+            @frame f0_summary {=
                 -pdf-frame-content: f0_summary;
                 left: 25pt; width: 792pt; top: 60pt; height: 50pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+                -pdf-frame-border: 1;
             }
 
-            @frame plot_frame {          /* Frame for Image Content */
+            @frame plot_frame {
                 -pdf-frame-content: plot_frame;
-                left: 25pt; width: 400pt; top: 125pt; height: 300pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+                left: 15pt; width: 440pt; 
+                top: 125pt; height: 345pt;
             }
 
-            @frame print_results {          /* Frame for Monospace Text */
+            @frame print_results {
                 -pdf-frame-content: print_results;
-                left: 450pt; width: 367pt; top: 125; height: 300pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+                left: 460pt; width: 357pt; 
+                top: 125; height: 345pt;
             }
 
-            @frame table_frame {          /* Frame for Table Content */
+            @frame table_frame {
                 -pdf-frame-content: table_frame;
-                left: 25pt; width: 792pt; top: 440pt; height: 60pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+                left: 25pt; width: 792pt; 
+                top: 490pt; height: 30pt;
             }
 
-            @frame footer_frame {          /* Frame for Table Content */
-                -pdf-frame-content: footer;
-                left: 25pt; width: 792pt; top: 510pt; height: 80pt;
-                -pdf-frame-border: 1;    /* for debugging the layout */
+            @frame footer_frame {          
+                -pdf-frame-content: footer_frame;
+                left: 25pt; 
+                width: 792pt; 
+                top: 540pt; 
+                height: 40pt;
             }
-            }
-    </style
+        }
+
+        #header_content {
+            text-align: center;
+            font-size: 24pt;
+            color: white;
+            background-color: #00008B;
+            padding-top: 10pt;
+            line-height: 28pt;
+            height: 40pt;
+        }
+
+        #f0_summary {
+            text-align: center;
+            font-size: 16pt;
+            padding-top: 10pt;
+            line-height: 20pt;
+            height: 50pt;
+        }
+
+        #f0_summary p {
+            margin: 0;
+            line-height: 0pt;
+        }
+
+        .small-text {
+            margin: 0;
+            font-size: 8pt;
+            line-height: 0pt;
+        }
+
+        #footer_frame {
+            display: block;
+            text-align: center;
+            font-size: 10pt;
+            color: white;
+            top: 5%;
+            line-height: 12;
+            background-color: #00008B;
+            line-height: 1.2;
+        }
+
+    </style>
 </head>
 <body>
     <!-- Header Section -->
@@ -51,7 +95,8 @@
 
     <!-- Frame 1: Text -->
     <div id="f0_summary">
-        <p>SummaryResults</p>
+        <p>3.35 Hz <u>+</u> 0.214 Hz</p>
+        <p class="small-text">Peak passed validation tests</p>
     </div>
 
     <!-- Frame 2: Image -->
@@ -105,8 +150,15 @@
     </div>
 
     <!-- Footer Section -->
-    <div id="footer">
-        (C) RJBalikian
+    <div id="footer_frame">
+        <p>This report was produced by the SpRIT HVSR software, developed at the Illinois State Geological Survey.<br>
+        <a href="https://github.com/RJbalikian/SPRIT-HVSR" style="color:#ffffff;">Homepage</a> | 
+            <a href="https://sprit.readthedocs.io/en/latest/sprit.sprit_hvsr.html" style="color:#ffffff;">Documentation</a> | 
+            <a href="https://pypi.org/project/sprit/" style="color:#ffffff;">Install</a> | 
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki" style="color:#ffffff;">Tutorials & Wiki</a> | 
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR/issues" style="color:#ffffff;"">Issues</a>
+            <br>
+        &copy; RJBalikian</p>
     </div>
 
 </body>
