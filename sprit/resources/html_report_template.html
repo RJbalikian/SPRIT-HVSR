@@ -21,14 +21,14 @@
 
             @frame plot_frame {
                 -pdf-frame-content: plot_frame;
-                left: 15pt; width: 440pt; 
+                left: 15pt; width: 390pt; 
                 top: 125pt; height: 345pt;
             }
 
             @frame print_results {
                 -pdf-frame-content: print_results;
-                left: 460pt; width: 357pt; 
-                top: 125; height: 345pt;
+                left: 425pt; width: 372pt; 
+                top: 150; height: 345pt;
             }
 
             @frame table_frame {
@@ -42,7 +42,20 @@
                 left: 25pt; width: 792pt; 
                 top: 540pt; height: 60pt;
             }
+       
         }
+
+        @media print {
+            .image-size {
+                width: 386pt; /* Set the desired width for printing */
+                height: auto; /* Maintain aspect ratio */
+                }
+            
+            .mono-text{
+                font-family: monospace;
+                font-size: 9pt;
+            }
+        }     
 
         #header_content {
             text-align: center;
@@ -87,6 +100,20 @@
             line-height: 1.2;
         }
 
+        .results {
+            display: flex;
+        }
+        .box {
+            flex: 1;
+            padding: 5pt;
+        }
+        
+        .mono-text{
+            font-family: monospace;
+            font-size: 10pt;
+            
+        }
+
     </style>
 </head>
 <body>
@@ -102,39 +129,39 @@
     </div>
 
     <!-- Frame 2: Image -->
-    <div id="plot_frame">
-        <img src="C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\output.png" alt="Image description">
-    </div>
+    <div class='results'>
+        <div id="plot_frame", class="box">
+            <img src="C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\output.png" class="image-size", alt="Image description">
+        </div>
 
     <!-- Frame 3: Monospace Text -->
-    <div id="print_results" style="font-family: monospace;">
-        <p> 
-        <br>
-        <br>
-        <br>
-            Site Name: GRILLA22<br>
-            Acq. Date: 2024-09-08<br>
-            Location : -88.2290526, 40.1012122<br>
-            Elevation: 755<br>
-        <br>
-            39.962 Hz Peak Frequency<br>
-        &nbsp;&nbsp;&cross; Peak at 39.962 Hz did NOT pass quality checks :(<br>
-        <br>
-             Curve Tests: 3/3 passed (3/3 needed)<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Length of processing windows     39.962 > 0.333 (10 / 30)  &#10004;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Number of significant cycles     94711 > 200  &#10004;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Small H/V StDev over time        H/V Amp. St.Dev. for 19.981-79.925Hz < 2  &#10004;<br>
-        <br>
-             Peak Tests: 3/6 passed (5/6 needed)<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is prominent below          Amp. of H/V Curve @12.197Hz (1.591) < 1.601 &#10004;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak is prominent above          H/V curve > 1.60 for all 39.96 Hz-159.850 Hz &cross;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is large                    Amplitude of peak (3.20) > 2 &#10004;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak freq. is stable over time   1.36  and 0.43 Hz within &plusmn;5% of 39.96 Hz  &cross;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&cross; Stability of peak (Freq. StDev)  St.Dev. of Peak Freq. (3.67) < 1.998 &cross;<br>
-             &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Stability of peak (Amp. StDev)   St.Dev. of Peak Amp. (0.015) < 0.20 &#10004;<br>
-        <br>
-        Calculated using 79/79 time windows<br>
-        </p>
+        <div id="print_results" class="box">
+            <p> 
+            <br>
+                Site Name: GRILLA22<br>
+                Acq. Date: 2024-09-08<br>
+                Location : -88.2290526, 40.1012122<br>
+                Elevation: 755<br>
+            <br>
+                39.962 Hz Peak Frequency<br>
+            &nbsp;&nbsp;&cross; Peak at 39.962 Hz did NOT pass quality checks :(<br>
+            <br>
+                Curve Tests: 3/3 passed (3/3 needed)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Length of processing windows     39.962 > 0.333 (10 / 30)  &#10004;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Number of significant cycles     94711 > 200  &#10004;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Small H/V StDev over time        H/V Amp. St.Dev. for 19.981-79.925Hz < 2  &#10004;<br>
+            <br>
+                Peak Tests: 3/6 passed (5/6 needed)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is prominent below          Amp. of H/V Curve @12.197Hz (1.591) < 1.601 &#10004;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak is prominent above          H/V curve > 1.60 for all 39.96 Hz-159.850 Hz &cross;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is large                    Amplitude of peak (3.20) > 2 &#10004;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak freq. is stable over time   1.36  and 0.43 Hz within &plusmn;5% of 39.96 Hz  &cross;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Stability of peak (Freq. StDev)  St.Dev. of Peak Freq. (3.67) < 1.998 &cross;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Stability of peak (Amp. StDev)   St.Dev. of Peak Amp. (0.015) < 0.20 &#10004;<br>
+            <br>
+            Calculated using 79/79 time windows<br>
+            </p>
+        </div>
     </div>
 
     <!-- Frame 4: Table -->
