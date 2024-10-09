@@ -2,7 +2,7 @@
 %“Œ‹ž ReportLab Generated PDF document http://www.reportlab.com
 1 0 obj
 <<
-/F1 2 0 R /F2 5 0 R /F3 6 0 R
+/F1 2 0 R /F2 5 0 R /F3 6 0 R /F4 7 0 R
 >>
 endobj
 2 0 obj
@@ -33,49 +33,54 @@ endobj
 endobj
 6 0 obj
 <<
-/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F3 /Subtype /Type1 /Type /Font
+/BaseFont /ZapfDingbats /Name /F3 /Subtype /Type1 /Type /Font
 >>
 endobj
 7 0 obj
 <<
-/A <<
-/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR)
->> /Border [ 0 0 0 ] /Rect [ 284.365 33.77559 333.275 45.77559 ] /Subtype /Link /Type /Annot
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F4 /Subtype /Type1 /Type /Font
 >>
 endobj
 8 0 obj
 <<
 /A <<
 /S /URI /Type /Action /URI (https://sprit.readthedocs.io/en/latest/sprit.sprit_hvsr.html)
->> /Border [ 0 0 0 ] /Rect [ 341.435 33.77559 408.685 45.77559 ] /Subtype /Link /Type /Annot
+>> /Border [ 0 0 0 ] /Rect [ 279.64 27.77559 346.89 39.77559 ] /Subtype /Link /Type /Annot
 >>
 endobj
 9 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://pypi.org/project/sprit/)
->> /Border [ 0 0 0 ] /Rect [ 416.845 33.77559 442.965 45.77559 ] /Subtype /Link /Type /Annot
+/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR)
+>> /Border [ 0 0 0 ] /Rect [ 355.05 27.77559 413.41 39.77559 ] /Subtype /Link /Type /Annot
 >>
 endobj
 10 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR/wiki)
->> /Border [ 0 0 0 ] /Rect [ 451.125 33.77559 520.575 45.77559 ] /Subtype /Link /Type /Annot
+/S /URI /Type /Action /URI (https://pypi.org/project/sprit/)
+>> /Border [ 0 0 0 ] /Rect [ 421.57 27.77559 447.69 39.77559 ] /Subtype /Link /Type /Annot
 >>
 endobj
 11 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR/issues)
->> /Border [ 0 0 0 ] /Rect [ 528.735 33.77559 557.635 45.77559 ] /Subtype /Link /Type /Annot
+/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR/wiki)
+>> /Border [ 0 0 0 ] /Rect [ 455.85 27.77559 525.3 39.77559 ] /Subtype /Link /Type /Annot
 >>
 endobj
 12 0 obj
 <<
-/Annots [ 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R ] /Contents 16 0 R /MediaBox [ 0 0 841.8898 595.2756 ] /Parent 15 0 R /Resources <<
+/A <<
+/S /URI /Type /Action /URI (https://github.com/RJbalikian/SPRIT-HVSR/issues)
+>> /Border [ 0 0 0 ] /Rect [ 533.46 27.77559 562.36 39.77559 ] /Subtype /Link /Type /Annot
+>>
+endobj
+13 0 obj
+<<
+/Annots [ 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R ] /Contents 17 0 R /MediaBox [ 0 0 841.8898 595.2756 ] /Parent 16 0 R /Resources <<
 /Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ] /XObject <<
-/FormXob.3c2bdf7283102ea14eeb2a1cbbb77c88 3 0 R
+/FormXob.1d7fa5a0e733a3843d1c6009c027a45c 3 0 R
 >>
 >> /Rotate 0 
   /Trans <<
@@ -83,58 +88,59 @@ endobj
 >> /Type /Page
 >>
 endobj
-13 0 obj
-<<
-/PageMode /UseNone /Pages 15 0 R /Type /Catalog
->>
-endobj
 14 0 obj
 <<
-/Author () /CreationDate (D:20241008014552-05'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20241008014552-05'00') /Producer (xhtml2pdf <https://github.com/xhtml2pdf/xhtml2pdf/>) 
-  /Subject () /Title () /Trapped /False
+/PageMode /UseNone /Pages 16 0 R /Type /Catalog
 >>
 endobj
 15 0 obj
 <<
-/Count 1 /Kids [ 12 0 R ] /Type /Pages
+/Author () /CreationDate (D:20241009001624-05'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20241009001624-05'00') /Producer (xhtml2pdf <https://github.com/xhtml2pdf/xhtml2pdf/>) 
+  /Subject () /Title () /Trapped /False
 >>
 endobj
 16 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 2014
+/Count 1 /Kids [ 13 0 R ] /Type /Pages
+>>
+endobj
+17 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 2714
 >>
 stream
-GauHN?#SIU'Rf_Zi7!d2/'Dj&O"6YW/N08YKl%?KO_lCeCKmd?2!D.c^IqIhBKIOe">UB2L31bPkORs0d\M]7LRQ!L2*u5%o_KRsPbJ!j;1Snns$2qHj?%aFZ+>3FU$-L%5tiIO,\Dm4.*3;="DpdgSQpdrD.n?eq&3RI_C88?CB&@?.[Hap*AD5%a)q3!O,BZ5PkH6YN+#HrU'_R&64?c,ek.J@_sm>=!eJcXG(:iGPHS1I62:Se'QZT$f570bKaH3Xk-M`g(KZ)\DpV4(?Z#*F.0#1qQfus@!ArT>$,Z[)DEs>1%4G"/+A&hO)t8^HTNDHKP!]l_CC6bN,n*(9)0c2Pc%?c+fF+<DoA##&0ZtC-d/BpO*?p*^XUcF5a'>@>J!#Tbi`H!f&^72(a'NP+Hj?e4Kdb@XP>I&p3U/ECYl]Ro/Hk]EC7QVnaD/ua^>r($nI=:j]3Vs45Dn!3;:Nd(KBdJYmlJ9Kf*T8m6IS1u-Cc+b[SOV5"Qq`j6C:iE6&.uocnLRn0A*pd=)HRh<&;b]CppiJ=NW($AO/afc<*BqZe6m$k0T*+/+AQ4)!f3EQXd#j>gMZ<Ij!&p"JK$DJIqs#Om0>%b^GZgE=,-rO9m9#WLe)Mo;&N'95\lLMQNo1n!MSOouZiHqYQnO.)2;7;tTnFdrr:$bJiW\Y!5YlR1uN7,%Y@t36$eZ^PJ;WXBiNPEFT.=Kjtq6e'UGD.2r]3dS5`S/q+el<EUlq/Y_XBnrP5.OpksW3Q86(i[BpkSQ-[PU/&Q4Guf&sJ3'PFc`0_M;5_^oEb^+_aJ3C>'?Lf..Qd6l8-c(,YR`a4cXoPo-1[IF_X*,6/B+EMk<VnH`QoKHK>l4]i_o?k=YX#")^%qmf&Cu(@^%sY6scmb3A1T['*I;A4?N;UO9=RO.Yb,RSJHOQj_[j2h/4[K6Q4?:MtjcNTFh@sQiOJ=),Yp?mCUVDAjcYT-:!P/^P]P1)j1d:,V]=3cS;/E1a9_Q.n157`<;R!_jIJ9M(V/j%KRJR##5(=;aG4CZmgGt"gO?>B(7Sj`0N`ZW5hkVC+Wu[,<5VT*Ve=*0n"EVP>e3`9pFeP53gTMXM;/!Z&cR3LChH]o5K[>RhP[^qSrjrXDdF"SR[ikqfDXI"ECe]m)'e"2@]@-pJ1d`B]%Ht45XcYF][D>OD7#:ep-!r]mcc+`?%>AVEWXX24:U3[9np6d@RTRDg^:bf:Uj%[A.EmfS;QG-GT4$pFGJfg,&H]mCJDiT^I]u#dQ8QJBjq3Ac50u\i5B99RUm?e`O(7e:'t.7Jk(gh"`jrX$=.%YK"t]Yn(c#gRQfdgb2-lB]%Ht45Unp5cq0CQU,/jmk^'6FLGG`#%#:mVlcH_^!bAD/lt":;9l+Q4pk,t1,4ArXSV%O&>uQ9_`2;Z/,KGdD$_&tW%P5l`];$"lF[\Jg%<KA!Cg/?7<"5d^RPqrF>[;?kH'!lOT;:0fcmrGW_Wg*1"u1LKWu<+ZGm2'=+UT1ND7/-&RokD<Z(#$HKKn]V^nno\AkOU/dQI.;C[WH<dh8=Lf)oi0ICjiY)e'VVMW$kiI6"=Fe+5a-a'fJi1Ps:6M4%e6D2O9.`%Mo*=X7=\1.E/*":D+%Ws.aesn$+@Q5^>(L,)mOqn,":L[?]@cDPAgu9Tai4`46YY#G.1)Qb&ZP)aZ;[6?T8ZXH)c70K0*dX'(iPbI=3Q6mE=bUc!.>9cN*"$[>QO2eM[-%?&$W(d0`\^t0:Y$C18UECNlsC.C^FXTEW36Aua'shl\(0JH?7sUk-`XqGBR51"+\1\cd&ss^+,b"3)d8Ijb#NQp<^gl,5-.f.9a+5>\u89o^8tAch/ZgeL_&5^j\K]Q#P@gW##Rp8jPQ!IV?9bF3WSFuY,ZVi?egpk<Ls/YX#k7#q89f!eE/O1_7L5I?!XO4#>arH]%ScpeIMP0ra(%X*eJRILXKM-1$U0GS4jpDCUuf?HgBtV1QsN`5/&IH5Zhj6lT!J`pa:ps+!i1k'mI^bH@dLD"&^`c2#~>endstream
+Gb!l!=``U]&q9SYka1,RA7HG]_8DP,g.<:19Zf6)A#Zd2i"qi6D.Y'@Q70AX[6K*Z!'rr;`?UD-LFncDU5uJs%<ON8"r(FgHtIGM+")#Jc@Bo%g].^Q!0[fcH#iP-05@F<59;P(3a)NM+9P2[,X[A#%KV9[K(75i,\<6CT-g&f!25"$83m,*_DpTg/8nC[k%Q*sI((8V_(fF_KF#k[?m2b9:_of8;@dOg<[K3hoB?MiA[UpH&g>M1??9&49S(5P:aUkhJbBE]N*"5=GmgBC^Q'u+;V`/4nf:DQK?8=V]HI7qpXL*h5IVXM`1@(m%L:FL"LS>=E<d`BTNX=d!2[\K\jjO;NCm"TK!-fN:re=d9Ub:er/gED6BBS;44DS$1u7HDV@+RnI/4?j]17@W?U+p1!FGK4iQ6H*%F;s8:'b\mO[NDp`WQU16\>jMS>Y!hM/:7Jbjd%@J#`,[go%3<R_iPqbGT'B(CMYAWa%E3I9AW31Pr8#=%7dY"1D8PNWL@p9S:+h$'#ZCFeB<rd9`V/3A6]iIi$^i9r"1WVGouNU`p;eP[u#78Odui"u:h;!k"3t@spFX"d)u[RlUH=!^,"HK_@fe&V@_foVaKcP@TH>6&;.Q6n!P%B&(<a>lS`W2E-^G-;rKa@#W``3'$0Io5ta^n%8=-S<jSsUiUYc+"oic>^YJb"JQe3O?F.791p8cPR#5c3MpdPHr4E4IS\o^NcF=tN3)MqgcGh;N&+hjcSP6-Lef1WZG(4r6pd&ul_SFKa8&UrXOSMADQ$$JOe8-OB2*7%.&r$sp5kQ+QI'<4k#;'GO,7"mn?Bni=?])qVm:4k35$5I!rH]FHrMfIX7I%DM/Z,^C8Ck\Pa\W:e[mE#RpW@N%U),)W5WV!#K7/-08iN+<r(_jT(9k-GZm+#hW$dI0IpCf(kiV7o]k9$de3p_rj&,&X/1Qab&8*l9qJ2>'!g\:VH/c]&alF_0oY=gNH73XB/B=)ngf[B1\D$m,GHg^\MDc#bjPiJ&0)j4;_3Kn_ddj0i>7gt5X,8Kr>+Ui1,2qP<7o-R`'=-V.AJ_,l%kek$\]78X_,P92&E/aRr5#"n!KeO&tu-=>=9eH,O5SB,c'c<1Y91+2iL;2EV9h9b^b1]J=:c4PAD!BY52WT'23k^Xqh5AhSVb*dcIUZm`,cM4]Q+%lQP%e#hQ-QrEJ:J&+oT*m`%X>?BsdJ9R4g8@8REs@Z"Ae+LGpVo("D?^_IBJeLUZom;fOP#hQPR1I_IeZem^e4u_&\N<"Cpeif&FR>@4Z$);5Q,Y@oHLX9g[<86!iAsgE8&]J?M)DeTeI`"'[11NAgehaB9VQ_uS.8!@0`5Y62Wp20PGKh.<c\'b5@d?!TTH(KHO;crfDZ@AdgAos+#As4F;%@K.7p,_E[PjjJ]'c:APCfnlC%Oun;iGj"(Zle%%\"`aG3+hDp],8l8eN0ZSJZrR@Z,M.FMRs!>Y@1-3]R=KGZ`:G"0`(I*dCCI6dUP/J_*:P!+!D9J_*:F"C3;1\0fEoV'0%tXl4Q,487aDL#$-UC^@P<^2[-]L;sP7$\`icZ5=!G%"T4MDd4*2i<9>A79K($G[\Yon7iZTGEW4=gW"9"Q>'8L[8fbEeB^5KgEL<l!(7V';s3KZ5gTPIQ83di+M.W,HaQ*):i?`)4T^GN!193bNr\/L!4Ju],ClQtJ>jO^\I6g1D.p*r^cJqjPQ1B6TPGdZ.=Rlp\opE0`V54^CFccKHCkIdm=cO/6&!'2:JC0)7K*-%(T2qs9pFeLITEHRXM24iZ'W-c%W+<LRE&C.Z8o1n;#`F?(U$X#F$%>f(\X3_h]q@Ip5".j9".NIrIt,m!'7Z=@\;K@%YojX])+,*E7<[4G[;]0IR=!n]n=c]opM@OPNhq%p:Kj4DNEF_YB8MEf3c&FCNjgr`'1f^D=Un\iI301c0Z,?m.J()%hRPRaW6l\@Dh:cRU"E>W8I>mEI+EEF/@FLYPt9pQF<"3-hc5aDNhX-$hsPKDJkNfB<QF3SCLuVhi)`!qnt\1e",t/U,@'VfZKUul>0$r3a9mF!\`T\h:0u"YOo2+Q>7IE\K"JmI+0@g[>>oO'ii!ge0`XeL$a8JW`Sn.O_@t7<h?P#X$,M0P3)PQ2BGB;1V^:fFA6$G?U`KuVmOQf4^:(@U["7;>%G41Xb3gOlB=Nf,hhsnNQ4rhar3?P\JD93VkWFB,MFESG,q1[;>&-@/M^UQe\P<aoudMU10lE\cKD/&A:ZXqR[1DR,Yl\;mH;dW^oL0**9G^5c,&'"o>"36)(]<O14:^6;JbrV0Hu@6N_1KeKPCEhAT3KIL5A(!e6G4!kM%cY_-h<cf5\_SNm)sl1!1.'^Y1,]6E'NiieRa("\g1tN#J.81D7E`'6&B6`hQ*<+uW"<7F>O2,"8HVO*EMK8#ep%f6:#qqaPlL&b1_d2]D>hZa)Sg>l!:6:?R:"ond.hH'inuQ`j5[5"lD]WB"WK?"[mZf?[:M.2^rLI\)'MEkNr?b,9?\^5&\6<3tR*WRB3kI@e^S7=gWAAQgSYW/=_tRqF2(W"1=?PPSfX_FZ.*>]k.W=VFcl&4#TWZQ`W"eY4mU-`_;5s/ccmN/R?a;t*^?<A-g*032XFS%Z<m=dR)_:M23Q/,UptQG6s6Xk'L5\"Vb8FB05qicF]&'73i0FN#O1gb1mh1DH3/RT%FrE;Mr>k+`3M"SL1?Y=ER(5BZ6[FT~>endstream
 endobj
 xref
-0 17
+0 18
 0000000000 65535 f 
 0000000073 00000 n 
-0000000124 00000 n 
-0000000231 00000 n 
-0000123297 00000 n 
-0000123617 00000 n 
-0000123722 00000 n 
-0000123834 00000 n 
-0000124024 00000 n 
-0000124234 00000 n 
-0000124415 00000 n 
-0000124611 00000 n 
-0000124809 00000 n 
-0000125122 00000 n 
-0000125192 00000 n 
-0000125445 00000 n 
-0000125506 00000 n 
+0000000134 00000 n 
+0000000241 00000 n 
+0000123307 00000 n 
+0000123627 00000 n 
+0000123732 00000 n 
+0000123815 00000 n 
+0000123927 00000 n 
+0000124135 00000 n 
+0000124323 00000 n 
+0000124503 00000 n 
+0000124696 00000 n 
+0000124892 00000 n 
+0000125206 00000 n 
+0000125276 00000 n 
+0000125529 00000 n 
+0000125590 00000 n 
 trailer
 <<
 /ID 
-[<e3dd7801c600547612656d1462dea221><e3dd7801c600547612656d1462dea221>]
+[<e76e420afedca46959445ee74a09f358><e76e420afedca46959445ee74a09f358>]
 % ReportLab generated PDF document -- digest (http://www.reportlab.com)
 
-/Info 14 0 R
-/Root 13 0 R
-/Size 17
+/Info 15 0 R
+/Root 14 0 R
+/Size 18
 >>
 startxref
-127612
+128396
 %%EOF
