@@ -1627,7 +1627,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 def export_report(hvsr_data, pdf_report_filepath=None, show_html=False, verbose=False):
     # This needs to be fixed up
-    from xhtml2pdf import pisa 
+    from xhtml2pdf import pisa
 
     if not hasattr(hvsr_data, 'HTML_Report'):
         print('No HTML Report previously generated, attempting now.')
