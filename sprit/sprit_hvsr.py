@@ -1625,32 +1625,6 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
             print()
 
 
-def export_report(hvsr_data, pdf_report_filepath=None, show_html=False, verbose=False):
-    # This needs to be fixed up
-    from xhtml2pdf import pisa
-
-    if not hasattr(hvsr_data, 'HTML_Report'):
-        print('No HTML Report previously generated, attempting now.')
-        # try Code to generate HTML report from template
-
-    htmlReport = hvsr_data['HTML_Report']
-    if pdf_report_filepath is not None:
-        with open(pdf_report_filepath, "w+b") as export_file:
-            pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
-    
-    if verbose:
-        print(pisa_status.err)
-
-    if show_html:
-        import webbrowser
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
-            # Write the HTML content to the file
-            temp_file.write(htmlReport.encode('utf-8'))
-            webbrowser.open('file://' + os.path.realpath(temp_file.name))
-
-    return htmlReport
-
 # Reads in traces to obspy stream
 def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
@@ -8656,7 +8630,21 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
     return stdf
 
 # HELPER functions for report generation
-def _generate_html_report(hvsr_results, open_report=False):
+def _generate_html_report(hvsr_results, open_html=False):
+    """Private function that generates html report, intented to be used by get_report() public function
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData or HVSRBatch
+        Input data from which to generate report
+    open_html : bool, optional
+        Whether to show the report or simply generate and save it in the "HTML_Report" attribute of hvsr_results, by default False
+
+    Returns
+    -------
+    HVSRData or HVSRBatch
+        Returns the input dataset, with the HTML_Report attribute updated with the html text of the report
+    """
     resources_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
     htmlTemplatePath = resources_dir.joinpath('html_report_template.html')
 
@@ -8713,41 +8701,89 @@ def _generate_html_report(hvsr_results, open_report=False):
         tableValue = hvsr_results.CSV_Report.iloc[:,i][0]
         html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
 
-    if open_report:
-        import http.server
-        import socketserver
-        import threading
+    try:
+        if open_html:
+            import http.server
+            import socketserver
+            import threading
 
-        html_content = html
-        class Handler(http.server.SimpleHTTPRequestHandler):
-            def do_GET(self):
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                self.wfile.write(html_content.encode('utf-8'))
+            html_content = html
+            class Handler(http.server.SimpleHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(html_content.encode('utf-8'))
 
-        def start_server(port=8000):
-            with socketserver.TCPServer(("", port), Handler) as httpd:
-                print(f"Serving on port {port}")
-                httpd.serve_forever()
+            def start_server(port=8000):
+                with socketserver.TCPServer(("", port), Handler) as httpd:
+                    print(f"Serving on port {port}")
+                    httpd.serve_forever()
 
-        # Start the server in a separate thread
-        server_thread = threading.Thread(target=start_server)
-        server_thread.daemon = True
-        server_thread.start()
+            # Start the server in a separate thread
+            server_thread = threading.Thread(target=start_server)
+            server_thread.daemon = True
+            server_thread.start()
 
-        # Open the default web browser
-        import webbrowser
-        webbrowser.open("http://localhost:8000")
+            # Open the default web browser
+            import webbrowser
+            webbrowser.open("http://localhost:8000")
 
-        # Keep the script running
-        try:
-            while True:
-                pass
-        except KeyboardInterrupt:
-            print("Shutting down server.")
-    
+            # Keep the script running
+            try:
+                while True:
+                    pass
+            except KeyboardInterrupt:
+                print("Shutting down server.")
+    except Exception as e:
+        pass
+
     hvsr_results['HTML_Report'] = html
 
     return hvsr_results
-     
+
+def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_html=False, open_pdf=False, verbose=False):
+    """Private/helper function to generate pdf report from HTML report, intended to be used by get_report() function
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData or HVSRBatch
+        Input dataset with all processing already carried out
+    open_report : bool, optional
+        Whether to open the report after generating it, by default False
+    verbose : bool, optional
+        Whether to print verbose description of what the function is doing
+    """
+    from xhtml2pdf import pisa
+
+    # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
+    if not hasattr(hvsr_results, "HTML_Report"):
+        hvsr_results = _generate_html_report(hvsr_results)
+
+        print('hasattrNo HTML Report previously generated, attempting now.')
+        # try Code to generate HTML report from template
+
+    htmlReport = hvsr_results['HTML_Report']
+    
+    if pdf_report_filepath is not None:
+        with open(pdf_report_filepath, "w+b") as export_file:
+            pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
+    
+    if verbose:
+        print(pisa_status.err)
+
+    if open_html:
+        import webbrowser
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
+            # Write the HTML content to a temporary file
+            temp_file.write(htmlReport.encode('utf-8'))
+
+            #Open html file in browser window
+            webbrowser.open('file://' + os.path.realpath(temp_file.name))
+
+    if open_pdf:
+        os.system(pdf_report_filepath)
+
+    return htmlReport
+    
