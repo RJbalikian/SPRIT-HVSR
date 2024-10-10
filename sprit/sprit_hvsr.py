@@ -8688,7 +8688,7 @@ def _generate_html_report(hvsr_results, open_report=False):
     # Encode the image to base64
     hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
     # Embed the image in the html document
-    html = html.replace(".\output.png", f'data:image/png;base64,{hvplot_base64}')
+    html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
 
     # Update print report
     html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
@@ -8738,14 +8738,16 @@ def _generate_html_report(hvsr_results, open_report=False):
 
         # Open the default web browser
         import webbrowser
-        with webbrowser.open("http://localhost:8000"):
+        webbrowser.open("http://localhost:8000")
 
-            # Keep the script running
-            try:
-                while True:
-                    pass
-            except KeyboardInterrupt:
-                print("Shutting down server.")
+        # Keep the script running
+        try:
+            while True:
+                pass
+        except KeyboardInterrupt:
+            print("Shutting down server.")
+    
+    hvsr_results['HTML_Report'] = html
 
-    return html
+    return hvsr_results
      
