@@ -18,26 +18,27 @@
             @frame f0_summary {
                 -pdf-frame-content: f0_summary;
                 left: 25pt; width: 792pt; 
-                top: 60pt; height: 50pt;
+                top: 55pt; height: 50pt;
                 -pdf-frame-border: 1;
             }
 
             @frame plot_frame {
                 -pdf-frame-content: plot_frame;
-                left: 15pt; width: 390pt; 
-                top: 125pt; height: 345pt;
+                left: 10pt; width: 500pt; 
+                top: 110pt; height: 360pt;
             }
 
             @frame print_results {
                 -pdf-frame-content: print_results;
-                left: 425pt; width: 372pt; 
-                top: 150; height: 345pt;
+                left: 511pt; width: 320pt; 
+                top: 110; height: 360pt;
             }
 
             @frame table_frame {
                 -pdf-frame-content: table_frame;
+                -pdf-keep-in-frame-mode: truncate;
                 left: 25pt; width: 792pt; 
-                top: 490pt; height: 30pt;
+                top: 475pt; height: 50pt;
             }
 
             @frame footer_frame {          
@@ -50,15 +51,21 @@
 
         @media print {
             .image-size {
-                width: 386pt; /* width for printing */
+                width: 500pt; /* width for printing */
                 height: auto; /* Maintain aspect ratio */
                 }
             
             .mono-text{
                 font-family: monospace;
-                font-size: 9pt;
+                font-size: 8pt;
             }
-        }     
+
+            .table {
+                border: solid 1px #747474;
+                text-overflow: ellipsis; 
+                overflow: hidden;
+            }
+            }     
 
         #header_content {
             text-align: center;
@@ -108,14 +115,20 @@
         }
         .box {
             flex: 1;
-            padding: 5pt;
+            padding: 1pt;
+        }
+
+        .print-report-text {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 7pt;
+        }
+
+        .table-header-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 1px solid black; 
         }
         
-        .mono-text{
-            font-family: monospace;
-            font-size: 9pt;
-            
-        }
 
     </style>
 </head>
@@ -139,13 +152,33 @@
 
     <!-- Frame 3: Monospace Text -->
         <div id="print_results" class="box">
-            <p>HVSR_PRINT_REPORT</p>
+            <p class="print-report-text">HVSR_PRINT_REPORT</p>
         </div>
     </div>
 
     <!-- Frame 4: Table -->
     <div id="table_frame">
-        <table style="width: 100%; border-collapse: collapse;">
+        <table style="width: 100%; border-collapse: collapse; text-overflow: ellipsis; overflow: hidden;">
+            <colgroup>
+                <col style="width: 15%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+                <col style="width: 5%;">
+            </colgroup>
+            
             <tr>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_00</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_01</th>
@@ -153,7 +186,7 @@
                 <th style="border: 1px solid black;">TableHeader_03</th>
                 <th style="border: 1px solid black;">TableHeader_04</th>
                 <th style="border: 1px solid black;">TableHeader_05</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_06</th>
+                <th style="border: 1px solid black;">TableHeader_06</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_07</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_08</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_09</th>
@@ -162,11 +195,14 @@
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_12</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_13</th>
                 <th rowspan=2 style="border: 1px solid black;">TableHeader_14</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_15</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_16</th>
             </tr>
             <tr>
                 <th style="border: 1px solid black;">Deg E</th>
                 <th style="border: 1px solid black;">Deg N</th>
                 <th style="border: 1px solid black;">meters</th>
+                <th style="border: 1px solid black;">Hz</th>
                 <th style="border: 1px solid black;">Hz</th>
             </tr>            
             <tr>
@@ -185,6 +221,8 @@
                 <td style="border: 1px solid black;">TableData_12</td>
                 <td style="border: 1px solid black;">TableData_13</td>
                 <td style="border: 1px solid black;">TableData_14</td>
+                <td style="border: 1px solid black;">TableData_15</td>
+                <td style="border: 1px solid black;">TableData_16</td>
             </tr>
         </table>
     </div>

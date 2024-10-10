@@ -1389,7 +1389,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 #   Get the BestPeak based on the peak score
                 #   Calculate whether each peak passes enough tests
                 curveTests = ['WinLen','SigCycles', 'LowCurveStD']
-                peakTests = ['PeakProminentLow', 'PeakProminentHi', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
+                peakTests = ['ProminenceLow', 'ProminenceHi', 'AmpClarity', 'FreqStability', 'LowStDev_Freq', 'LowStDev_Amp']
                 bestPeakScore = 0
 
                 for p in hvsr_data['PeakReport'][col_id]:
@@ -2759,12 +2759,12 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
         curvePass = curvTestsPassed > 2
         
         #Peak Pass?
-        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminentLow'] +
-                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminentHi']+
-                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
+        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
+                    hvsr_results['BestPeak'][azimuth]['PassList']['ProminenceHi']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['AmpClarity']+
                     hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
-                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
-                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD'])
+                    hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Freq']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
         peakPass = peakTestsPassed >= 5
     except Exception as e:
         errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
@@ -2937,16 +2937,17 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
 
         elif _report_format=='csv':
             import pandas as pd
-            pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
-                    'WinLen','SigCycles','LowCurveStD',
-                    'PeakProminentLow','PeakProminentHi','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
+            pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation', 'Peak', 'Peak_StDev',
+                    'PeakPasses','WinLen','SigCycles','LowCurveStD',
+                    'ProminenceLow','ProminenceHi','AmpClarity','FreqStability', 'LowStDev_Freq','LowStDev_Amp']
             d = hvsr_results
             criteriaList = []
+            criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
             for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
                 criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-            criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
-            dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3)]]
+            dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
             dfList[0].extend(criteriaList)
+
             outDF = pd.DataFrame(dfList, columns=pdCols)
             outDF.index.name = 'ID'
             
@@ -8317,14 +8318,14 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i]['f-'] = sprit_utils.x_mark()
         _peak[_i]['Report']['A(f-)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']/4:0.2f} Hz-{_peak[_i]['f0']:0.3f} Hz {sprit_utils.x_mark()}"
-        _peak[_i]['PassList']['PeakProminentLow'] = False #Start with assumption that it is False until we find an instance where it is True
+        _peak[_i]['PassList']['ProminenceLow'] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
             if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and float(_peak[_i]['A0']) / _y[_j] > 2.0:
                 _peak[_i]['Score'] += 1
                 _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], sprit_utils.check_mark())
                 _peak[_i]['Report']['A(f-)'] = f"Amp. of H/V Curve @{_x[_j]:0.3f}Hz ({_y[_j]:0.3f}) < {_peak[_i]['A0']/2:0.3f} {sprit_utils.check_mark()}"
-                _peak[_i]['PassList']['PeakProminentLow'] = True
+                _peak[_i]['PassList']['ProminenceLow'] = True
                 break
             else:
                 pass
@@ -8335,7 +8336,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i]['f+'] = sprit_utils.x_mark()
         _peak[_i]['Report']['A(f+)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']:0.2f} Hz-{_peak[_i]['f0']*4:0.3f} Hz {sprit_utils.x_mark()}"
-        _peak[_i]['PassList']['PeakProminentHi'] = False
+        _peak[_i]['PassList']['ProminenceHi'] = False
         for _j in range(len(_x) - 1):
 
             # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
@@ -8344,7 +8345,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
                 _peak[_i]['Score'] += 1
                 _peak[_i]['f+'] = f"{_x[_j]:0.3f} {sprit_utils.check_mark()}"
                 _peak[_i]['Report']['A(f+)'] = f"H/V Curve at {_x[_j]:0.2f} Hz: {_y[_j]:0.2f} < {_peak[_i]['A0']/2:0.2f} (f0/2) {sprit_utils.check_mark()}"
-                _peak[_i]['PassList']['PeakProminentHi'] = True
+                _peak[_i]['PassList']['ProminenceHi'] = True
                 break
             else:
                 pass
@@ -8359,10 +8360,10 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         if float(_peak[_i]['A0']) > _a0:
             _peak[_i]['Report']['A0'] = f"Amplitude of peak ({_peak[_i]['A0']:0.2f}) > {int(_a0)} {sprit_utils.check_mark()}"
             _peak[_i]['Score'] += 1
-            _peak[_i]['PassList']['PeakAmpClarity'] = True
+            _peak[_i]['PassList']['AmpClarity'] = True
         else:
             _peak[_i]['Report']['A0'] = '%0.2f > %0.1f %1s' % (_peak[_i]['A0'], _a0, sprit_utils.x_mark())
-            _peak[_i]['PassList']['PeakAmpClarity'] = False
+            _peak[_i]['PassList']['AmpClarity'] = False
 
     return _peak
 
@@ -8483,95 +8484,95 @@ def __check_stability(_stdf, _peak, _hvsr_log_std, rank):
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_FreqStD'] = True
+                _this_peak['PassList']['LowStDev_Freq'] = True
             else:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.x_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
             _t = 0.48
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_AmpStD'] = True
+                _this_peak['PassList']['LowStDev_Amp'] = True
             else:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
-                _this_peak['PassList']['PeakStability_AmpStD'] = False
+                _this_peak['PassList']['LowStDev_Amp'] = False
 
         elif 0.2 <= _this_peak['f0'] < 0.5:
             _e = 0.2
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_FreqStD'] = True
+                _this_peak['PassList']['LowStDev_Freq'] = True
             else:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.x_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
             _t = 0.40
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_AmpStD'] = True
+                _this_peak['PassList']['LowStDev_Amp'] = True
             else:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
-                _this_peak['PassList']['PeakStability_AmpStD'] = False
+                _this_peak['PassList']['LowStDev_Amp'] = False
 
         elif 0.5 <= _this_peak['f0'] < 1.0:
             _e = 0.15
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_FreqStD'] = True
+                _this_peak['PassList']['LowStDev_Freq'] = True
             else:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.x_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
             _t = 0.3
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_AmpStD'] = True
+                _this_peak['PassList']['LowStDev_Amp'] = True
             else:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
-                _this_peak['PassList']['PeakStability_AmpStD'] = False
+                _this_peak['PassList']['LowStDev_Amp'] = False
 
         elif 1.0 <= _this_peak['f0'] <= 2.0:
             _e = 0.1
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_FreqStD'] = True
+                _this_peak['PassList']['LowStDev_Freq'] = True
             else:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.x_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
             _t = 0.25
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_AmpStD'] = True
+                _this_peak['PassList']['LowStDev_Amp'] = True
             else:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
-                _this_peak['PassList']['PeakStability_AmpStD'] = False
+                _this_peak['PassList']['LowStDev_Amp'] = False
 
         elif _this_peak['f0'] > 0.2:
             _e = 0.05
             if _stdf[_i] < _e * _this_peak['f0']:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_FreqStD'] = True
+                _this_peak['PassList']['LowStDev_Freq'] = True
             else:
                 _peak[_i]['Report']['Sf'] = f"St.Dev. of Peak Freq. ({_stdf[_i]:0.2f}) < {(_e * _this_peak['f0']):0.3f} {sprit_utils.x_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
             _t = 0.2
             if _hvsr_log_std[_i] < _t:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
                 _this_peak['Score'] += 1
-                _this_peak['PassList']['PeakStability_AmpStD'] = True
+                _this_peak['PassList']['LowStDev_Amp'] = True
             else:
                 _peak[_i]['Report']['Sa'] = f"St.Dev. of Peak Amp. ({_hvsr_log_std[_i]:0.3f}) < {_t:0.2f} {sprit_utils.check_mark()}"
-                _this_peak['PassList']['PeakStability_FreqStD'] = False
+                _this_peak['PassList']['LowStDev_Freq'] = False
 
     return _peak
 
@@ -8678,29 +8679,38 @@ def _generate_html_report(hvsr_results, open_html=False):
     # Embed the image in the html document
     html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
 
-    # Update print report
+    # Update formatting for print report for html
     html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
+    html_print_report = html_print_report.replace('<br>', '', 2) #Remove the first two breaks
     html_print_report = html_print_report.replace('✔', '&#10004;')
     html_print_report = html_print_report.replace('✘', '&cross;')
 
     majorSepLine = u"\u2014"*99
+    majorSepLine = u"\u2014"*99
     minorSepLine = u"\u2012"*95
     majorSepLineHTML = '&mdash;'*40
     minorSepLineHTML = '&mdash;&nbsp;'*25
-    html_print_report = html_print_report.replace(majorSepLine, majorSepLineHTML) # Replace the major separator lines
+
+    startInd = html_print_report.index('&nbsp;&nbsp;&nbsp;&nbsp;Site Name:')
+    html_print_report = "<br><br>" + html_print_report[startInd:]
+    lastInd = html_print_report.index(majorSepLine)
+    html_print_report = html_print_report[:lastInd]
+    
+    html_print_report = html_print_report.replace(majorSepLine, 'majorSepLineHTML') # Replace the major separator lines
     html_print_report = html_print_report.replace(minorSepLine, minorSepLineHTML) # Replace the minor separator lines
     html_print_report = html_print_report.replace("=", '') # Get rid of =
 
     html = html.replace('HVSR_PRINT_REPORT', html_print_report)
 
     # Update table
-    for i in range(15):
+    for i in range(17):
         tableHeader = hvsr_results.CSV_Report.columns[i]
         html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
         
         tableValue = hvsr_results.CSV_Report.iloc[:,i][0]
         html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
 
+    # View in browser, if indicated to
     try:
         if open_html:
             import http.server
@@ -8760,7 +8770,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_pdf=False,
 
     # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
     if not hasattr(hvsr_results, "HTML_Report"):
-        hvsr_results = _generate_html_report(hvsr_results)
+        hvsr_results = _generate_html_report(hvsr_results, open_html=open_html)
         if verbose:
             print('\tNo HTML Report previously generated, attempting now.')
         # try Code to generate HTML report from template
