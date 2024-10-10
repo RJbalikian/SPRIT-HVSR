@@ -8742,15 +8742,17 @@ def _generate_html_report(hvsr_results, open_html=False):
 
     return hvsr_results
 
-def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_html=False, open_pdf=False, verbose=False):
+def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_pdf=False, open_html=False, verbose=False):
     """Private/helper function to generate pdf report from HTML report, intended to be used by get_report() function
 
     Parameters
     ----------
     hvsr_results : HVSRData or HVSRBatch
         Input dataset with all processing already carried out
-    open_report : bool, optional
-        Whether to open the report after generating it, by default False
+    open_pdf : bool, optional
+        EXPERIMENTAL: Whether to open the report after generating it, by default False
+    open_html : bool, optional
+        Whether to open the html report that the pdf report is based on, by default False
     verbose : bool, optional
         Whether to print verbose description of what the function is doing
     """
@@ -8759,18 +8761,35 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_html=False
     # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
     if not hasattr(hvsr_results, "HTML_Report"):
         hvsr_results = _generate_html_report(hvsr_results)
-
-        print('hasattrNo HTML Report previously generated, attempting now.')
+        if verbose:
+            print('\tNo HTML Report previously generated, attempting now.')
         # try Code to generate HTML report from template
 
     htmlReport = hvsr_results['HTML_Report']
-    
-    if pdf_report_filepath is not None:
+
+    if pdf_report_filepath is None:
+        if verbose:
+            print('\t pdf_report_filepath not specified, saving to temporary file.')
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            pdf_export_path = temp_file.name  # Get the name of the temporary file
+
+        # Now, open the file again for writing
+        with open(pdf_export_path, 'wb') as temp_file:
+            pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+
+    else:
+        if pathlib.Path(pdf_report_filepath).is_dir():
+            fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
+            pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
         with open(pdf_report_filepath, "w+b") as export_file:
             pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
+        pdf_export_path = pdf_report_filepath
+        if verbose:
+            print(f'\tPDF report saved to {pdf_export_path}')
     
     if verbose:
-        print(pisa_status.err)
+        if not str(pisa_status.err) == '0':
+            print(pisa_status.err)
 
     if open_html:
         import webbrowser
@@ -8783,7 +8802,11 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_html=False
             webbrowser.open('file://' + os.path.realpath(temp_file.name))
 
     if open_pdf:
-        os.system(pdf_report_filepath)
+        print('Opening pdfs with the open_pdf=True parameter is experimental and may not work')
+        if verbose:
+            print(f'\tOpening pdf at {pdf_export_path}')
+        import subprocess
+        subprocess.Popen([pdf_export_path])
 
     return htmlReport
     
