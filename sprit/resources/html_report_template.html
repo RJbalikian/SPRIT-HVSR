@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="description" content="SpRIT HVSR Site Report">
+
     <style>
         @page {
             size: A4 landscape;
@@ -47,7 +50,7 @@
 
         @media print {
             .image-size {
-                width: 386pt; /* Set the desired width for printing */
+                width: 386pt; /* width for printing */
                 height: auto; /* Maintain aspect ratio */
                 }
             
@@ -110,7 +113,7 @@
         
         .mono-text{
             font-family: monospace;
-            font-size: 10pt;
+            font-size: 9pt;
             
         }
 
@@ -119,48 +122,24 @@
 <body>
     <!-- Header Section -->
     <div id="header_content">
-        HVSR Report
+        HVSR_REPORT_TITLE
     </div>
 
     <!-- Frame 1: Text -->
     <div id="f0_summary">
-        3.35 Hz &plusmn; 0.214 Hz<br>
-        <p class="small-text">Peak passed validation tests</p>
+        PEAKFREQ Hz &plusmn; PEAKSTDEV Hz<br>
+        <p class="small-text">SESAME_TESTS_RESULTS</p>
     </div>
 
     <!-- Frame 2: Image -->
     <div class='results'>
         <div id="plot_frame", class="box">
-            <img src="C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\output.png" class="image-size", alt="Image description">
+            <img src="./output.png" class="image-size", alt="Image description">
         </div>
 
     <!-- Frame 3: Monospace Text -->
         <div id="print_results" class="box">
-            <p> 
-            <br>
-                Site Name: GRILLA22<br>
-                Acq. Date: 2024-09-08<br>
-                Location : -88.2290526, 40.1012122<br>
-                Elevation: 755<br>
-            <br>
-                39.962 Hz Peak Frequency<br>
-            &nbsp;&nbsp;&cross; Peak at 39.962 Hz did NOT pass quality checks :(<br>
-            <br>
-                Curve Tests: 3/3 passed (3/3 needed)<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Length of processing windows     39.962 > 0.333 (10 / 30)  &#10004;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Number of significant cycles     94711 > 200  &#10004;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Small H/V StDev over time        H/V Amp. St.Dev. for 19.981-79.925Hz < 2  &#10004;<br>
-            <br>
-                Peak Tests: 3/6 passed (5/6 needed)<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is prominent below          Amp. of H/V Curve @12.197Hz (1.591) < 1.601 &#10004;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak is prominent above          H/V curve > 1.60 for all 39.96 Hz-159.850 Hz &cross;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Peak is large                    Amplitude of peak (3.20) > 2 &#10004;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Peak freq. is stable over time   1.36  and 0.43 Hz within &plusmn;5% of 39.96 Hz  &cross;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&cross; Stability of peak (Freq. StDev)  St.Dev. of Peak Freq. (3.67) < 1.998 &cross;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&#10004; Stability of peak (Amp. StDev)   St.Dev. of Peak Amp. (0.015) < 0.20 &#10004;<br>
-            <br>
-            Calculated using 79/79 time windows<br>
-            </p>
+            <p>HVSR_PRINT_REPORT</p>
         </div>
     </div>
 
@@ -168,38 +147,44 @@
     <div id="table_frame">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
-                <th style="border: 1px solid black;">Header 1</th>
-                <th style="border: 1px solid black;">Header 2</th>
-                <th style="border: 1px solid black;">Header 3</th>
-                <th style="border: 1px solid black;">Header 4</th>
-                <th style="border: 1px solid black;">Header 5</th>
-                <th style="border: 1px solid black;">Header 6</th>
-                <th style="border: 1px solid black;">Header 7</th>
-                <th style="border: 1px solid black;">Header 8</th>
-                <th style="border: 1px solid black;">Header 9</th>
-                <th style="border: 1px solid black;">Header 10</th>
-                <th style="border: 1px solid black;">Header 11</th>
-                <th style="border: 1px solid black;">Header 12</th>
-                <th style="border: 1px solid black;">Header 13</th>
-                <th style="border: 1px solid black;">Header 14</th>
-                <th style="border: 1px solid black;">Header 15</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_00</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_01</th>
+                <th style="border: 1px solid black;">TableHeader_02</th>
+                <th style="border: 1px solid black;">TableHeader_03</th>
+                <th style="border: 1px solid black;">TableHeader_04</th>
+                <th style="border: 1px solid black;">TableHeader_05</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_06</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_07</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_08</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_09</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_10</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_11</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_12</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_13</th>
+                <th rowspan=2 style="border: 1px solid black;">TableHeader_14</th>
             </tr>
             <tr>
-                <td style="border: 1px solid black;">Data 1</td>
-                <td style="border: 1px solid black;">Data 2</td>
-                <td style="border: 1px solid black;">Data 3</td>
-                <td style="border: 1px solid black;">Data 4</td>
-                <td style="border: 1px solid black;">Data 5</td>
-                <td style="border: 1px solid black;">Data 6</td>
-                <td style="border: 1px solid black;">Data 7</td>
-                <td style="border: 1px solid black;">Data 8</td>
-                <td style="border: 1px solid black;">Data 9</td>
-                <td style="border: 1px solid black;">Data 10</td>
-                <td style="border: 1px solid black;">Data 11</td>
-                <td style="border: 1px solid black;">Data 12</td>
-                <td style="border: 1px solid black;">Data 13</td>
-                <td style="border: 1px solid black;">Data 14</td>
-                <td style="border: 1px solid black;">Data 15</td>
+                <th style="border: 1px solid black;">Deg E</th>
+                <th style="border: 1px solid black;">Deg N</th>
+                <th style="border: 1px solid black;">meters</th>
+                <th style="border: 1px solid black;">Hz</th>
+            </tr>            
+            <tr>
+                <td style="border: 1px solid black;">TableData_00</td>
+                <td style="border: 1px solid black;">TableData_01</td>
+                <td style="border: 1px solid black;">TableData_02</td>
+                <td style="border: 1px solid black;">TableData_03</td>
+                <td style="border: 1px solid black;">TableData_04</td>
+                <td style="border: 1px solid black;">TableData_05</td>
+                <td style="border: 1px solid black;">TableData_06</td>
+                <td style="border: 1px solid black;">TableData_07</td>
+                <td style="border: 1px solid black;">TableData_08</td>
+                <td style="border: 1px solid black;">TableData_09</td>
+                <td style="border: 1px solid black;">TableData_10</td>
+                <td style="border: 1px solid black;">TableData_11</td>
+                <td style="border: 1px solid black;">TableData_12</td>
+                <td style="border: 1px solid black;">TableData_13</td>
+                <td style="border: 1px solid black;">TableData_14</td>
             </tr>
         </table>
     </div>

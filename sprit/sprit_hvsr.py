@@ -1388,8 +1388,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 #Iterate through peaks and 
                 #   Get the BestPeak based on the peak score
                 #   Calculate whether each peak passes enough tests
-                curveTests = ['WindowLengthFreq.','SignificantCycles', 'LowCurveStDevOverTime']
-                peakTests = ['PeakProminenceBelow', 'PeakProminenceAbove', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
+                curveTests = ['WinLen','SigCycles', 'LowCurveStD']
+                peakTests = ['PeakProminentLow', 'PeakProminentHi', 'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD', 'PeakStability_AmpStD']
                 bestPeakScore = 0
 
                 for p in hvsr_data['PeakReport'][col_id]:
@@ -1643,14 +1643,11 @@ def export_report(hvsr_data, pdf_report_filepath=None, show_html=False, verbose=
 
     if show_html:
         import webbrowser
-        import os
-        import tempfile
         # Create a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
             # Write the HTML content to the file
             temp_file.write(htmlReport.encode('utf-8'))
             webbrowser.open('file://' + os.path.realpath(temp_file.name))
-            # Open the HTML file in the default web browser
 
     return htmlReport
 
@@ -2782,14 +2779,14 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
     
     #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
     try:
-        curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WindowLengthFreq.'] +
-                            hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
-                            hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime'])
+        curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WinLen'] +
+                            hvsr_results['BestPeak'][azimuth]['PassList']['SigCycles']+
+                            hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStD'])
         curvePass = curvTestsPassed > 2
         
         #Peak Pass?
-        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceBelow'] +
-                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminenceAbove']+
+        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminentLow'] +
+                    hvsr_results['BestPeak'][azimuth]['PassList']['PeakProminentHi']+
                     hvsr_results['BestPeak'][azimuth]['PassList']['PeakAmpClarity']+
                     hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
                     hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
@@ -2883,7 +2880,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             #Make separators for nicely formatted print output
             sepLen = 99
             siteSepSymbol = '='
-            intSepSymbol = u"\u2013"
+            intSepSymbol = u"\u2012"
             extSepSymbol = u"\u2014"
             
             if sepLen % 2 == 0:
@@ -2917,11 +2914,11 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             if 'BestPeak' not in hvsr_results.keys():
                 report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
             else:
-                report_string_list.append('\t{0:.3f} Hz Peak Frequency'.format(hvsr_results['BestPeak'][azimuth]['f0']))        
+                report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
                 if curvePass and peakPass:
-                    report_string_list.append('\t  {} Curve at {} Hz passed quality checks! ☺ :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
+                    report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
                 else:
-                    report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks ☹:('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
+                    report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
                 report_string_list.append('')
                 report_string_list.append(internalSeparator)
                 report_string_list.append('')
@@ -2967,8 +2964,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
         elif _report_format=='csv':
             import pandas as pd
             pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitide', 'Elevation', 'PeakFrequency', 
-                    'WindowLengthFreq.','SignificantCycles','LowCurveStDevOverTime',
-                    'PeakProminenceBelow','PeakProminenceAbove','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
+                    'WinLen','SigCycles','LowCurveStD',
+                    'PeakProminentLow','PeakProminentHi','PeakAmpClarity','FreqStability', 'PeakStability_FreqStD','PeakStability_AmpStD', 'PeakPasses']
             d = hvsr_results
             criteriaList = []
             for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
@@ -8299,9 +8296,9 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
         else:
             _peak[_i]['Report']['σ_A(f)'] = f'H/V Amp. St.Dev. for {peakFreq*0.5:0.3f}-{peakFreq*2:0.3f}Hz < {compVal}  {sprit_utils.x_mark()}'
 
-        _peak[_i]['PassList']['WindowLengthFreq.'] = test1
-        _peak[_i]['PassList']['SignificantCycles'] = test2
-        _peak[_i]['PassList']['LowCurveStDevOverTime'] = test3
+        _peak[_i]['PassList']['WinLen'] = test1
+        _peak[_i]['PassList']['SigCycles'] = test2
+        _peak[_i]['PassList']['LowCurveStD'] = test3
     return _peak
 
 
@@ -8346,14 +8343,14 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i]['f-'] = sprit_utils.x_mark()
         _peak[_i]['Report']['A(f-)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']/4:0.2f} Hz-{_peak[_i]['f0']:0.3f} Hz {sprit_utils.x_mark()}"
-        _peak[_i]['PassList']['PeakProminenceBelow'] = False #Start with assumption that it is False until we find an instance where it is True
+        _peak[_i]['PassList']['PeakProminentLow'] = False #Start with assumption that it is False until we find an instance where it is True
         for _j in range(jstart, -1, -1):
             # There exist one frequency f-, lying between f0/4 and f0, such that A0 / A(f-) > 2.
             if (float(_peak[_i]['f0']) / 4.0 <= _x[_j] < float(_peak[_i]['f0'])) and float(_peak[_i]['A0']) / _y[_j] > 2.0:
                 _peak[_i]['Score'] += 1
                 _peak[_i]['f-'] = '%10.3f %1s' % (_x[_j], sprit_utils.check_mark())
                 _peak[_i]['Report']['A(f-)'] = f"Amp. of H/V Curve @{_x[_j]:0.3f}Hz ({_y[_j]:0.3f}) < {_peak[_i]['A0']/2:0.3f} {sprit_utils.check_mark()}"
-                _peak[_i]['PassList']['PeakProminenceBelow'] = True
+                _peak[_i]['PassList']['PeakProminentLow'] = True
                 break
             else:
                 pass
@@ -8364,7 +8361,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
         #Initialize as False
         _peak[_i]['f+'] = sprit_utils.x_mark()
         _peak[_i]['Report']['A(f+)'] = f"H/V curve > {_peak[_i]['A0']/2:0.2f} for all {_peak[_i]['f0']:0.2f} Hz-{_peak[_i]['f0']*4:0.3f} Hz {sprit_utils.x_mark()}"
-        _peak[_i]['PassList']['PeakProminenceAbove'] = False
+        _peak[_i]['PassList']['PeakProminentHi'] = False
         for _j in range(len(_x) - 1):
 
             # There exist one frequency f+, lying between f0 and 4*f0, such that A0 / A(f+) > 2.
@@ -8373,7 +8370,7 @@ def __check_clarity(_x, _y, _peak, do_rank=True):
                 _peak[_i]['Score'] += 1
                 _peak[_i]['f+'] = f"{_x[_j]:0.3f} {sprit_utils.check_mark()}"
                 _peak[_i]['Report']['A(f+)'] = f"H/V Curve at {_x[_j]:0.2f} Hz: {_y[_j]:0.2f} < {_peak[_i]['A0']/2:0.2f} (f0/2) {sprit_utils.check_mark()}"
-                _peak[_i]['PassList']['PeakProminenceAbove'] = True
+                _peak[_i]['PassList']['PeakProminentHi'] = True
                 break
             else:
                 pass
@@ -8657,3 +8654,98 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         # Contains std of frequencies of the peaks from each time window H/V curve that are closest to the main H/V peak
         stdf.append(np.std(v))
     return stdf
+
+# HELPER functions for report generation
+def _generate_html_report(hvsr_results, open_report=False):
+    resources_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+    htmlTemplatePath = resources_dir.joinpath('html_report_template.html')
+
+    with open(htmlTemplatePath, 'r') as htmlF:
+        html = htmlF.read()
+
+    # Update report title (site name)
+    html = html.replace("HVSR_REPORT_TITLE", hvsr_results['site'])
+
+    # Update peak freq info
+    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))
+    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak']['HV']['Sf'], 3)))
+
+    if hvsr_results.CSV_Report['PeakPasses'][0]:
+        html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
+    else:
+        html = html.replace("SESAME_TESTS_RESULTS", 'Peak did not pass the SESAME validation tests.')
+
+    # Update image source
+    # Save the plot to a BytesIO object
+    import io
+    import base64
+
+    # Create a byte stream from the image
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    # Encode the image to base64
+    hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    # Embed the image in the html document
+    html = html.replace(".\output.png", f'data:image/png;base64,{hvplot_base64}')
+
+    # Update print report
+    html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
+    html_print_report = html_print_report.replace('✔', '&#10004;')
+    html_print_report = html_print_report.replace('✘', '&cross;')
+
+    majorSepLine = u"\u2014"*99
+    minorSepLine = u"\u2012"*95
+    majorSepLineHTML = '&mdash;'*40
+    minorSepLineHTML = '&mdash;&nbsp;'*25
+    html_print_report = html_print_report.replace(majorSepLine, majorSepLineHTML) # Replace the major separator lines
+    html_print_report = html_print_report.replace(minorSepLine, minorSepLineHTML) # Replace the minor separator lines
+    html_print_report = html_print_report.replace("=", '') # Get rid of =
+
+    html = html.replace('HVSR_PRINT_REPORT', html_print_report)
+
+    # Update table
+    for i in range(15):
+        tableHeader = hvsr_results.CSV_Report.columns[i]
+        html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
+        
+        tableValue = hvsr_results.CSV_Report.iloc[:,i][0]
+        html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
+
+    if open_report:
+        import http.server
+        import socketserver
+        import threading
+
+        html_content = html
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(html_content.encode('utf-8'))
+
+        def start_server(port=8000):
+            with socketserver.TCPServer(("", port), Handler) as httpd:
+                print(f"Serving on port {port}")
+                httpd.serve_forever()
+
+        # Start the server in a separate thread
+        server_thread = threading.Thread(target=start_server)
+        server_thread.daemon = True
+        server_thread.start()
+
+        # Open the default web browser
+        import webbrowser
+        with webbrowser.open("http://localhost:8000"):
+
+            # Keep the script running
+            try:
+                while True:
+                    pass
+            except KeyboardInterrupt:
+                print("Shutting down server.")
+
+    return html
+     
