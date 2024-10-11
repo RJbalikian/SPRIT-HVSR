@@ -8816,7 +8816,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_pdf=False,
         if verbose:
             print(f'\tOpening pdf at {pdf_export_path}')
         import subprocess
-        subprocess.Popen([pdf_export_path])
+        subprocess.Popen([pdf_export_path], shell=True)
 
     return htmlReport
     
