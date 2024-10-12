@@ -64,8 +64,17 @@
                 border: solid 1px #747474;
                 text-overflow: ellipsis; 
                 overflow: hidden;
+                justify-content: center;
+                font-size: 8pt;
+                text-align: center;
             }
-            }     
+            .table td, .table th {
+                padding-top: 2.5px;
+            }
+            .table td {
+                font-size: 8pt;
+            }
+            }
 
         #header_content {
             text-align: center;
@@ -123,12 +132,14 @@
             font-size: 7pt;
         }
 
-        .table-header-text {
+        .table {
             overflow: hidden;
             text-overflow: ellipsis;
-            border: 1px solid black; 
+            border: solid 1px #413d53;
+            text-overflow: ellipsis;
+            text-align: center;
+            justify-content: center;
         }
-        
 
     </style>
 </head>
@@ -158,45 +169,16 @@
 
     <!-- Frame 4: Table -->
     <div id="table_frame">
-        <table style="width: 100%; border-collapse: collapse; text-overflow: ellipsis; overflow: hidden;">
-            <colgroup>
-                <col style="width: 15%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-                <col style="width: 5%;">
-            </colgroup>
-            
+        <table class="table" style="width: 100%; border-collapse: collapse; text-overflow: ellipsis; overflow: hidden;">
             <tr>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_00</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_01</th>
-                <th style="border: 1px solid black;">TableHeader_02</th>
-                <th style="border: 1px solid black;">TableHeader_03</th>
-                <th style="border: 1px solid black;">TableHeader_04</th>
-                <th style="border: 1px solid black;">TableHeader_05</th>
-                <th style="border: 1px solid black;">TableHeader_06</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_07</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_08</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_09</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_10</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_11</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_12</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_13</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_14</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_15</th>
-                <th rowspan=2 style="border: 1px solid black;">TableHeader_16</th>
+                <th style="border: 1px solid black;">XCoord</th>
+                <th style="border: 1px solid black;">YCoord</th>
+                <th style="border: 1px solid black;">Elevation</th>
+                <th style="border: 1px solid black;">f<sub>0</sub></th>
+                <th style="border: 1px solid black;">St.Dev.<sub>f<sub>0</sub></sub></th>
+                <th rowspan="2" style="border: 1px solid black;">Passes?</th>
+                <th rowspan="2" colspan="3" style="border: 1px solid black;">Curve Tests (3/3 should pass)</th>
+                <th rowspan="2" colspan="6" style="border: 1px solid black;">Peak Tests (5/6 should pass)</th>
             </tr>
             <tr>
                 <th style="border: 1px solid black;">Deg E</th>
@@ -204,7 +186,7 @@
                 <th style="border: 1px solid black;">meters</th>
                 <th style="border: 1px solid black;">Hz</th>
                 <th style="border: 1px solid black;">Hz</th>
-            </tr>            
+            </tr>
             <tr>
                 <td style="border: 1px solid black;">TableData_00</td>
                 <td style="border: 1px solid black;">TableData_01</td>
@@ -221,8 +203,6 @@
                 <td style="border: 1px solid black;">TableData_12</td>
                 <td style="border: 1px solid black;">TableData_13</td>
                 <td style="border: 1px solid black;">TableData_14</td>
-                <td style="border: 1px solid black;">TableData_15</td>
-                <td style="border: 1px solid black;">TableData_16</td>
             </tr>
         </table>
     </div>

@@ -8703,11 +8703,12 @@ def _generate_html_report(hvsr_results, open_html=False):
     html = html.replace('HVSR_PRINT_REPORT', html_print_report)
 
     # Update table
-    for i in range(17):
-        tableHeader = hvsr_results.CSV_Report.columns[i]
-        html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
+    htmlTable = hvsr_results.CSV_Report.iloc[:,2:]
+    for i in range(len(htmlTable.columns)):
+        tableHeader = htmlTable.columns[i]
+        #html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
         
-        tableValue = hvsr_results.CSV_Report.iloc[:,i][0]
+        tableValue = htmlTable.iloc[:,i][0]
         html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
 
     # View in browser, if indicated to
