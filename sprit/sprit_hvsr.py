@@ -158,17 +158,17 @@ class HVSRBatch:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-    def export(self, export_path=True, ext='hvsr'):
+    def export(self, hvsr_export_path=True, ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
         Parameters
         ----------
-        export_path : filepath, default=True
+        hvsr_export_path : filepath, default=True
             Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
-        export_data(hvsr_data=self, export_path=export_path, ext=ext)
+        export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     def keys(self):
         """Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
@@ -354,19 +354,19 @@ class HVSRData:
             # dump the JSON string to the file
             json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)
 
-    def export(self, export_path=None, ext='hvsr'):
+    def export(self, hvsr_export_path=None, ext='hvsr'):
         """Method to export HVSRData objects to .hvsr pickle files.
 
         Parameters
         ----------
-        export_path : filepath, default=True
+        hvsr_export_path : filepath, default=True
             Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). 
             By default True. 
             If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
-        export_data(hvsr_data=self, export_path=export_path, ext=ext)
+        export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     # METHODS (many reflect dictionary methods)
     def keys(self):
@@ -1017,16 +1017,16 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
         else:
             pass
     
-    #Export processed data if export_path(as pickle currently, default .hvsr extension)
-    if 'export_path' in kwargs.keys():
-        if kwargs['export_path'] is None:
+    #Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+    if 'hvsr_export_path' in kwargs.keys():
+        if kwargs['hvsr_export_path'] is None:
             pass
         else:
             if 'ext' in kwargs.keys():
                 ext = kwargs['ext']
             else:
                 ext = 'hvsr'
-            export_data(hvsr_data=hvsr_results, export_path=kwargs['export_path'], ext=ext, verbose=verbose)        
+            export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
     if 'show_plot' in kwargs:
         if not kwargs['show_plot']:
             plt.close()
@@ -1436,7 +1436,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
 
 
 # Function to export data to file
-def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
+def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     """Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time. 
     Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
 
@@ -1444,12 +1444,12 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
     ----------
     hvsr_data : HVSRData or HVSRBatch
         Data to be exported
-    export_path : str or filepath object, default = None
-        String or filepath object to be read by pathlib.Path() and/or a with open(export_path, 'wb') statement. If None, defaults to input datapath directory, by default None
+    hvsr_export_path : str or filepath object, default = None
+        String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, 'wb') statement. If None, defaults to input datapath directory, by default None
     ext : str, default = 'hvsr'
         Filepath extension to use for data file, by default 'hvsr'
     """
-    def _do_export(_hvsr_data=hvsr_data, _export_path=export_path, _ext=ext):
+    def _do_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
         fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickled.{ext}"
         if _export_path is None or _export_path is True:
@@ -1469,9 +1469,9 @@ def export_data(hvsr_data, export_path=None, ext='hvsr', verbose=False):
             
     if isinstance(hvsr_data, HVSRBatch):
         for sitename in hvsr_data.keys():
-            _do_export(hvsr_data[sitename], export_path, ext)
+            _do_export(hvsr_data[sitename], hvsr_export_path, ext)
     elif isinstance(hvsr_data, HVSRData):
-        _do_export(hvsr_data, export_path, ext)
+        _do_export(hvsr_data, hvsr_export_path, ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     return
@@ -2635,8 +2635,22 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', show_plot=True, azimuth='HV', export_path=None, csv_overwrite_opt='append', no_output=False, verbose=False, **kwargs):    
-    """Get a report of the HVSR analysis in a variety of formats.
+def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf'], azimuth='HV',
+               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', show_plot=True,
+               csv_overwrite_opt='append', 
+               report_export_formats=['pdf'], report_export_path=None, 
+               suppress_report_output=False, verbose=False, **kwargs):    
+    """Get a report of the HVSR analysis in a variety of formats. 
+    
+    Formats include:
+    - 'print': A (monospace) text summary of the HVSR results
+    - 'csv': A pandas.DataFrame (that can be exported as a csv) summary of the HVSR Results.
+            This is useful for copy/pasting directly into a larger worksheet.
+    - 'plot': A plot summary of the HVSR results, generated using the plot_hvsr() function.
+    - 'html': An HTML document/text of the HVSR results. This includes the csv, print, and plot reports in one document.
+    - 'pdf': A PDF document showing the summary of the HVSR Results. 
+            The PDF report is simply the HTML report saved to an A4 size PDF document.
+
         
     Parameters
     ----------
@@ -2645,22 +2659,27 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
     report_format : {'csv', 'print', plot}
         Format in which to print or export the report.
         The following report_formats return the following items in the following attributes:
-            - 'plot': hvsr_results['Print_Report'] as a str str
+            - 'plot': hvsr_results['Print_Report'] as a str
             - 'print': hvsr_results['HV_Plot'] - matplotlib.Figure object
             - 'csv':  hvsr_results['CSV_Report']- pandas.DataFrame object
                 - list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
+            - 'html': hvsr_results['HTML_Report'] - a string containing the text for an HTML document
+            - 'pdf': currently does not save to the HVSRData object itself, can only be saved to the disk directly
     plot_type : str, default = 'HVSR p ann C+ p ann Spec
         What type of plot to plot, if 'plot' part of report_format input
     azimuth : str, default = 'HV'
         Which azimuth to plot, by default "HV" which is the main "azimuth" combining the E and N components
-    export_path : None, bool, or filepath, default = None
-        If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
-        Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
-        If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". The suffix defaults to png for report_format="plot", csv for 'csv', and does not export if 'print.'
     csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
         How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
-    no_output : bool, default=False
+    suppress_report_output : bool, default=False
         If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
+    report_export_formats : list or str, default=['pdf']
+        A string or list of strings indicating which report formats should be exported to disk.
+    report_export_path : None, bool, or filepath, default = None
+        If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
+        Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
+        If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". 
+        The extension/suffix defaults to png for report_format="plot", csv for 'csv', txt for 'print', html for 'html', and pdf for 'pdf.'
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format='print', and will not repeat if that is already selected
 
@@ -2686,9 +2705,9 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
     plot_engine = orig_args['plot_engine']
     show_plot = orig_args['show_plot']
     azimuth = orig_args['azimuth']
-    export_path = orig_args['export_path']
+    report_export_path = orig_args['report_export_path']
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
-    no_output = orig_args['no_output']
+    suppress_report_output = orig_args['suppress_report_output']
     verbose = orig_args['verbose']
     kwargs = orig_args['kwargs']
     
@@ -2731,16 +2750,16 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             if 'CSV_Report' in hvsr_results[site_name].keys():
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['CSV_Report']], ignore_index=True, join='inner')
         
-        if export_path is not None:
-            if export_path is True:
+        if report_export_path is not None:
+            if report_export_path is True:
                 if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
                     csvExportPath = pathlib.Path(hvsr_results['input_params']['datapath'])
-            elif pathlib.Path(export_path).is_dir():
-                csvExportPath = export_path
-            elif pathlib.Path(export_path).is_file():
-                csvExportPath = export_path.parent
+            elif pathlib.Path(report_export_path).is_dir():
+                csvExportPath = report_export_path
+            elif pathlib.Path(report_export_path).is_file():
+                csvExportPath = report_export_path.parent
             else:
                 csvExportPath = pathlib.Path(hvsr_results[site_name].datapath)
                 if csvExportPath.is_dir():
@@ -2783,208 +2802,13 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
         else:
             report_format = [report_format]   
 
-    def export_report(export_obj, _export_path, _rep_form):
-        if _export_path is None:
-            return
-        else:
-            if _rep_form == 'csv':
-                ext = '.csv'
-            elif _rep_form =='plot':
-                ext='.png'
-            else:
-                ext=''
-                
-            sitename=hvsr_results['input_params']['site']#.replace('.', '-')
-            fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
-            fname = fname.replace(':', '')
-
-            if _export_path==True:
-                #Check so we don't write in sample directory
-                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
-                    if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
-                        inFile = pathlib.Path.home() #Use the path to user's home if all else fails
-                    else:
-                        inFile = pathlib.Path(os.getcwd())
-                else:
-                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-                                
-                if inFile.is_dir():
-                    outFile = inFile.joinpath(fname)
-                else:
-                    outFile = inFile.with_name(fname)
-            else:
-                if not _export_path:
-                    pass
-                elif pathlib.Path(_export_path).is_dir():
-                    outFile = pathlib.Path(_export_path).joinpath(fname)
-                else:
-                    outFile=pathlib.Path(_export_path)
-
-        if _rep_form == 'csv':
-            if outFile.exists():
-                existFile = pd.read_csv(outFile)
-                if csv_overwrite_opt.lower() == 'append':
-                    export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
-                elif csv_overwrite_opt.lower() == 'overwrite':
-                    pass
-                else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
-                    fileNameExists = True
-                    i=1
-                    while fileNameExists:
-                        outFile = outFile.with_stem(f"{outFile.stem}_{i}")
-                        i+=1
-                        if not outFile.exists():
-                            fileNameExists = False
-            try:
-                print(f'\nSaving csv data to: {outFile}')
-                export_obj.to_csv(outFile, index_label='ID')
-            except:
-                warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
-        elif _rep_form =='plot':
-            if verbose:
-                print(f'\nSaving plot to: {outFile}')
-            plt.scf = export_obj
-            plt.savefig(outFile)
-        return 
-
-    def report_output(_report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', _export_path=None, _no_output=False, verbose=False):
+    def report_output(_hvsr_results, _report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', report_export_path=None, suppress_report_output=False, verbose=False):
         if _report_format=='print':
-            #Print results
-
-            #Make separators for nicely formatted print output
-            sepLen = 99
-            siteSepSymbol = '='
-            intSepSymbol = u"\u2012"
-            extSepSymbol = u"\u2014"
-            
-            if sepLen % 2 == 0:
-                remainVal = 1
-            else:
-                remainVal = 0
-
-            siteWhitespace = 2
-            #Format the separator lines internal to each site
-            internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
-
-            extSiteSeparator = "".center(sepLen, extSepSymbol)
-            siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
-            endSiteSeparator = "".center(sepLen, siteSepSymbol)
-
-            #Start building list to print
-            report_string_list = []
-            report_string_list.append("") #Blank line to start
-            report_string_list.append(extSiteSeparator)
-            report_string_list.append(siteSeparator)
-            report_string_list.append(extSiteSeparator)
-            #report_string_list.append(internalSeparator)
-            report_string_list.append('')
-            report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
-            report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
-            report_string_list.append(f"\tLocation : {hvsr_results['input_params']['longitude']}, {hvsr_results['input_params']['latitude']}")
-            report_string_list.append(f"\tElevation: {hvsr_results['input_params']['elevation']}")
-            report_string_list.append('')
-            report_string_list.append(internalSeparator)
-            report_string_list.append('')
-            if 'BestPeak' not in hvsr_results.keys():
-                report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
-            else:
-                report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
-                if curvePass and peakPass:
-                    report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
-                else:
-                    report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
-                report_string_list.append('')
-                report_string_list.append(internalSeparator)
-                report_string_list.append('')
-
-                justSize=34
-                #Print individual results
-                report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Lw']}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Nc']}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)']}")
-
-                report_string_list.append('')
-                report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f-)']}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f+)']}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A0']}")
-                if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
-                    res = sprit_utils.check_mark()
-                else:
-                    res = sprit_utils.x_mark()
-                report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5]} and {hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1]} {res}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
-                report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
-            report_string_list.append('')
-            report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
-            report_string_list.append(extSiteSeparator)
-            #report_string_list.append(endSiteSeparator)
-            #report_string_list.append(extSiteSeparator)
-            report_string_list.append('')
-            
-            reportStr=''
-            #Now print it
-            for line in report_string_list:
-                reportStr = reportStr+'\n'+line
-
-            if not _no_output:
-                print(reportStr)
-
-            export_report(export_obj=reportStr, _export_path=_export_path, _rep_form=_report_format)
-            hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
-            hvsr_results['Print_Report'] = reportStr
+            # Generates print report and saves to _hvsr_results["Print_Report"]
+            _hvsr_results = _generate_print_report(_hvsr_results, suppress_print_output=suppress_report_output)
 
         elif _report_format=='csv':
-            import pandas as pd
-            pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation', 'Peak', 'Peak_StDev',
-                    'PeakPasses','WinLen','SigCycles','LowCurveStD',
-                    'ProminenceLow','ProminenceHi','AmpClarity','FreqStability', 'LowStDev_Freq','LowStDev_Amp']
-            d = hvsr_results
-            criteriaList = []
-            criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
-            for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
-                criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-            dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
-            dfList[0].extend(criteriaList)
-
-            outDF = pd.DataFrame(dfList, columns=pdCols)
-            outDF.index.name = 'ID'
-            
-            if verbose:
-                print('\nCSV Report:\n')
-                maxColWidth = 13
-                print('  ', end='')
-                for col in outDF.columns:
-                    if len(str(col)) > maxColWidth:
-                        colStr = str(col)[:maxColWidth-3]+'...'
-                    else:
-                        colStr = str(col)
-                    print(colStr.ljust(maxColWidth), end='  ')
-                print() #new line
-                for c in range(len(outDF.columns) * (maxColWidth+2)):
-                    if c % (maxColWidth+2) == 0:
-                        print('|', end='')
-                    else:
-                        print('-', end='')
-                print('|') #new line
-                print('  ', end='') #Small indent at start                    
-                for row in outDF.iterrows():
-                    for col in row[1]:
-                        if len(str(col)) > maxColWidth:
-                            colStr = str(col)[:maxColWidth-3]+'...'
-                        else:
-                            colStr = str(col)
-                        print(colStr.ljust(maxColWidth), end='  ')
-                    print()
-
-            if not not _export_path: # if _export_path is anything but False or None, etc.
-                try:
-                    export_report(export_obj=outDF, _export_path=_export_path, _rep_form=_report_format)
-                except:
-                    print("Error in exporting csv report. CSV not exported")
-            hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
-            hvsr_results['CSV_Report'] = outDF
+            _hvsr_results = _generate_csv_report(_hvsr_results, azimuth=azimuth, verbose=verbose)
                     
         elif _report_format=='plot':
             plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
@@ -3000,7 +2824,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
             else:
                 expFigAx = fig
 
-            export_report(export_obj=expFigAx, _export_path=_export_path, _rep_form=_report_format)
+            export_report(export_obj=expFigAx, report_export_path=report_export_path, report_export_format=_report_format)
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
@@ -3016,19 +2840,19 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot'], plot_type='
                 if verbose:
                     print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
           
-        return hvsr_results
+        return _hvsr_results
 
     for i, rep_form in enumerate(report_format):
-        if isinstance(export_path, (list, tuple)):
+        if isinstance(report_export_path, (list, tuple)):
             if not isinstance(report_format, (list, tuple)):
-                warnings.warn('export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
-            if isinstance(report_format, (list, tuple)) and isinstance(export_path, (list, tuple)) and len(report_format) != len(export_path):
-                warnings.warn('export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
+                warnings.warn('report_export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
+            if isinstance(report_format, (list, tuple)) and isinstance(report_export_path, (list, tuple)) and len(report_format) != len(report_export_path):
+                warnings.warn('report_export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
         
-            exp_path = export_path[i]
+            exp_path = report_export_path[i]
         else:
-            exp_path = export_path
-        hvsr_results = report_output(_report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, _export_path=exp_path, _no_output=no_output, verbose=verbose)
+            exp_path = report_export_path
+        hvsr_results = report_output(_hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_output=suppress_report_output, verbose=verbose)
 
     hvsr_results['processing_parameters']['get_report'] = {}
     for key, value in orig_args.items():
@@ -7245,7 +7069,446 @@ def __gethvsrparams(hvsr_out):
     return hvsr_out
 
 
-# Helper Functions for plotting
+# HELPER FUNCTIONS FOR GET REPORT
+def _generate_print_report(hvsr_results, azimuth="HV", suppress_print_output=False, print_output_path=None):
+    """Helper function to perform create a printed (monospace) report with summary data for HVSR Site 
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData object
+        HVSRData object with data to be reported on
+    suppress_print_output : bool, optional
+        Whether output will be produced or not (if suppress_print_output=True, no ouptut will be produced (report will not be printed)), by default False
+
+    Returns
+    -------
+    HVSRData object
+        HVSRData object with the ["Print_Report"] attribute created or updated.
+        The .Print_Report attribute is a formatted string that can be 
+        displayed using print(hvsr_results['Print_Report'] with a summary of the HVSR results)
+    """
+    #Print results
+
+    #Make separators for nicely formatted print output
+    sepLen = 99
+    siteSepSymbol = '='
+    intSepSymbol = u"\u2012"
+    extSepSymbol = u"\u2014"
+    
+    if sepLen % 2 == 0:
+        remainVal = 1
+    else:
+        remainVal = 0
+
+    siteWhitespace = 2
+    #Format the separator lines internal to each site
+    internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
+
+    extSiteSeparator = "".center(sepLen, extSepSymbol)
+    siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
+    endSiteSeparator = "".center(sepLen, siteSepSymbol)
+
+    #Start building list to print
+    report_string_list = []
+    report_string_list.append("") #Blank line to start
+    report_string_list.append(extSiteSeparator)
+    report_string_list.append(siteSeparator)
+    report_string_list.append(extSiteSeparator)
+    #report_string_list.append(internalSeparator)
+    report_string_list.append('')
+    report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
+    report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
+    report_string_list.append(f"\tLocation : {hvsr_results['input_params']['longitude']}, {hvsr_results['input_params']['latitude']}")
+    report_string_list.append(f"\tElevation: {hvsr_results['input_params']['elevation']}")
+    report_string_list.append('')
+    report_string_list.append(internalSeparator)
+    report_string_list.append('')
+    if 'BestPeak' not in hvsr_results.keys():
+        report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
+    else:
+        report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
+        if curvePass and peakPass:
+            report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
+        else:
+            report_string_list.append('\t  {} Peak at {} Hz did NOT pass quality checks :('.format(sprit_utils.x_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))            
+        report_string_list.append('')
+        report_string_list.append(internalSeparator)
+        report_string_list.append('')
+
+        justSize=34
+        #Print individual results
+        report_string_list.append('\tCurve Tests: {}/3 passed (3/3 needed)'.format(curvTestsPassed))
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Lw'][-1]}"+" Length of processing windows".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Lw']}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Nc'][-1]}"+" Number of significant cycles".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Nc']}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)'][-1]}"+" Small H/V StDev over time".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['σ_A(f)']}")
+
+        report_string_list.append('')
+        report_string_list.append("\tPeak Tests: {}/6 passed (5/6 needed)".format(peakTestsPassed))
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1]}"+" Peak is prominent below".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f-)']}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A(f+)'][-1]}"+" Peak is prominent above".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A(f+)']}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['A0'][-1]}"+" Peak is large".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['A0']}")
+        if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
+            res = sprit_utils.check_mark()
+        else:
+            res = sprit_utils.x_mark()
+        report_string_list.append(f"\t\t {res}"+ " Peak freq. is stable over time".ljust(justSize)+ f"{hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5]} and {hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1]} {res}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1]}"+" Stability of peak (Freq. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sf']}")
+        report_string_list.append(f"\t\t {hvsr_results['BestPeak'][azimuth]['Report']['Sa'][-1]}"+" Stability of peak (Amp. StDev)".ljust(justSize)+f"{hvsr_results['BestPeak'][azimuth]['Report']['Sa']}")
+    report_string_list.append('')
+    report_string_list.append(f"Calculated using {hvsr_results['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_results['hvsr_windows_df']['Use'].count()} time windows".rjust(sepLen-1))
+    report_string_list.append(extSiteSeparator)
+    #report_string_list.append(endSiteSeparator)
+    #report_string_list.append(extSiteSeparator)
+    report_string_list.append('')
+    
+    reportStr=''
+    #Now print it
+    for line in report_string_list:
+        reportStr = reportStr+'\n'+line
+
+    if not suppress_print_output:
+        print(reportStr)
+
+    export_report(export_obj=reportStr, report_export_path=print_output_path, report_export_format='print')
+    hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
+    hvsr_results['Print_Report'] = reportStr
+    return hvsr_results
+
+def _generate_csv_report(hvsr_results, azimuth='HV', verbose=False, csv_export_path=None):
+    """Helper function for get_report() to generate a site report formatted into a pandas dataframe 
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData
+        HVSRData object containing information about which the report will be generated.
+    azimuth : str, optional
+        The azimuth for which this report will be generated. If none specified/calculated, by default 'HV'
+    verbose : bool, optional
+        Whether or not to print the pandas dataframe upon creation, by default False
+    csv_export_path : None, or path-like object
+        Filepath 
+
+    Returns
+    -------
+    HVSRData
+        An HVSRData object with the ["CSV_Report"] attribute created/updated. 
+        This is a pandas.DataFrame instance, but can be exported to csv.
+    """
+    pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation', 'Peak', 'Peak_StDev',
+            'PeakPasses','WinLen','SigCycles','LowCurveStD',
+            'ProminenceLow','ProminenceHi','AmpClarity','FreqStability', 'LowStDev_Freq','LowStDev_Amp']
+    d = hvsr_results
+    criteriaList = []
+    criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
+    for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
+        criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
+    dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
+    dfList[0].extend(criteriaList)
+
+    outDF = pd.DataFrame(dfList, columns=pdCols)
+    outDF.index.name = 'ID'
+    
+    if verbose:
+        print('\nCSV Report:\n')
+        maxColWidth = 13
+        print('  ', end='')
+        for col in outDF.columns:
+            if len(str(col)) > maxColWidth:
+                colStr = str(col)[:maxColWidth-3]+'...'
+            else:
+                colStr = str(col)
+            print(colStr.ljust(maxColWidth), end='  ')
+        print() #new line
+        for c in range(len(outDF.columns) * (maxColWidth+2)):
+            if c % (maxColWidth+2) == 0:
+                print('|', end='')
+            else:
+                print('-', end='')
+        print('|') #new line
+        print('  ', end='') #Small indent at start                    
+        for row in outDF.iterrows():
+            for col in row[1]:
+                if len(str(col)) > maxColWidth:
+                    colStr = str(col)[:maxColWidth-3]+'...'
+                else:
+                    colStr = str(col)
+                print(colStr.ljust(maxColWidth), end='  ')
+            print()
+
+    if not not csv_export_path: # if csv_export_path is anything but False or None, etc.
+        try:
+            export_report(export_obj=outDF, report_export_path=csv_export_path, report_export_format='csv')
+        except:
+            print("Error in exporting csv report. CSV not exported")
+    hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
+    hvsr_results['CSV_Report'] = outDF
+    return hvsr_results
+
+# HELPER functions for html report generation
+def _generate_html_report(hvsr_results, show_html_report=False):
+    """Private function that generates html report, intented to be used by get_report() public function
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData or HVSRBatch
+        Input data from which to generate report
+    show_html_report : bool, optional
+        Whether to show the report or simply generate and save it in the "HTML_Report" attribute of hvsr_results, by default False
+
+    Returns
+    -------
+    HVSRData or HVSRBatch
+        Returns the input dataset, with the HTML_Report attribute updated with the html text of the report
+    """
+    resources_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+    htmlTemplatePath = resources_dir.joinpath('html_report_template.html')
+
+    with open(htmlTemplatePath, 'r') as htmlF:
+        html = htmlF.read()
+
+    # Update report title (site name)
+    html = html.replace("HVSR_REPORT_TITLE", hvsr_results['site'])
+
+    # Update peak freq info
+    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))
+    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak']['HV']['Sf'], 3)))
+
+    if hvsr_results.CSV_Report['PeakPasses'][0]:
+        html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
+    else:
+        html = html.replace("SESAME_TESTS_RESULTS", 'Peak did not pass the SESAME validation tests.')
+
+    # Update image source
+    # Save the plot to a BytesIO object
+    import io
+    import base64
+
+    # Create a byte stream from the image
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    # Encode the image to base64
+    hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    # Embed the image in the html document
+    html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
+
+    # Update formatting for print report for html
+    html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
+    html_print_report = html_print_report.replace('<br>', '', 2) #Remove the first two breaks
+    html_print_report = html_print_report.replace('✔', '&#10004;')
+    html_print_report = html_print_report.replace('✘', '&cross;')
+
+    majorSepLine = u"\u2014"*99
+    majorSepLine = u"\u2014"*99
+    minorSepLine = u"\u2012"*95
+    majorSepLineHTML = '&mdash;'*40
+    minorSepLineHTML = '&mdash;&nbsp;'*25
+
+    startInd = html_print_report.index('&nbsp;&nbsp;&nbsp;&nbsp;Site Name:')
+    html_print_report = "<br><br>" + html_print_report[startInd:]
+    lastInd = html_print_report.index(majorSepLine)
+    html_print_report = html_print_report[:lastInd]
+    
+    html_print_report = html_print_report.replace(majorSepLine, 'majorSepLineHTML') # Replace the major separator lines
+    html_print_report = html_print_report.replace(minorSepLine, minorSepLineHTML) # Replace the minor separator lines
+    html_print_report = html_print_report.replace("=", '') # Get rid of =
+
+    html = html.replace('HVSR_PRINT_REPORT', html_print_report)
+
+    # Update table
+    htmlTable = hvsr_results.CSV_Report.iloc[:,2:]
+    for i in range(len(htmlTable.columns)):
+        tableHeader = htmlTable.columns[i]
+        #html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
+        
+        tableValue = htmlTable.iloc[:,i][0]
+        html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
+
+    # View in browser, if indicated to
+    try:
+        if show_html_report:
+            import http.server
+            import socketserver
+            import threading
+
+            html_content = html
+            class Handler(http.server.SimpleHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    self.wfile.write(html_content.encode('utf-8'))
+
+            def start_server(port=8000):
+                with socketserver.TCPServer(("", port), Handler) as httpd:
+                    print(f"Serving on port {port}")
+                    httpd.serve_forever()
+
+            # Start the server in a separate thread
+            server_thread = threading.Thread(target=start_server)
+            server_thread.daemon = True
+            server_thread.start()
+
+            # Open the default web browser
+            import webbrowser
+            webbrowser.open("http://localhost:8000")
+
+            # Keep the script running
+            try:
+                while True:
+                    pass
+            except KeyboardInterrupt:
+                print("Shutting down server.")
+    except Exception as e:
+        pass
+
+    hvsr_results['HTML_Report'] = html
+
+    return hvsr_results
+
+# Helper function to generate pdf report
+def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report=False, show_html_report=False, verbose=False):
+    """Private/helper function to generate pdf report from HTML report, intended to be used by get_report() function
+
+    Parameters
+    ----------
+    hvsr_results : HVSRData or HVSRBatch
+        Input dataset with all processing already carried out
+    show_pdf_report : bool, optional
+        EXPERIMENTAL: Whether to open the report after generating it, by default False
+    show_html_report : bool, optional
+        Whether to open the html report that the pdf report is based on, by default False
+    verbose : bool, optional
+        Whether to print verbose description of what the function is doing
+    """
+    from xhtml2pdf import pisa
+
+    # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
+    if not hasattr(hvsr_results, "HTML_Report"):
+        hvsr_results = _generate_html_report(hvsr_results, show_html_report=show_html_report)
+        if verbose:
+            print('\tNo HTML Report previously generated, attempting now.')
+        # try Code to generate HTML report from template
+
+    htmlReport = hvsr_results['HTML_Report']
+
+    if pdf_report_filepath is None:
+        if verbose:
+            print('\t pdf_report_filepath not specified, saving to temporary file.')
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            pdf_export_path = temp_file.name  # Get the name of the temporary file
+
+        # Now, open the file again for writing
+        with open(pdf_export_path, 'wb') as temp_file:
+            pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+
+    else:
+        if pathlib.Path(pdf_report_filepath).is_dir():
+            fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
+            pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
+        with open(pdf_report_filepath, "w+b") as export_file:
+            pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
+        pdf_export_path = pdf_report_filepath
+        if verbose:
+            print(f'\tPDF report saved to {pdf_export_path}')
+    
+    if verbose:
+        if not str(pisa_status.err) == '0':
+            print(pisa_status.err)
+
+    if show_html_report:
+        import webbrowser
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
+            # Write the HTML content to a temporary file
+            temp_file.write(htmlReport.encode('utf-8'))
+
+            #Open html file in browser window
+            webbrowser.open('file://' + os.path.realpath(temp_file.name))
+
+    if show_pdf_report:
+        print('Opening pdfs with the show_pdf_report=True parameter is experimental and may not work')
+        if verbose:
+            print(f'\tOpening pdf at {pdf_export_path}')
+        import subprocess
+        subprocess.Popen([pdf_export_path], shell=True)
+
+    return htmlReport
+    
+# Helper functin to export report(s)
+def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='append', report_export_format=['pdf']):
+    if report_export_path is None:
+        return
+    else:
+        if report_export_format == 'csv':
+            ext = '.csv'
+            export_obj = pd.DataFrame()
+        elif report_export_format =='plot':
+            ext = '.png'
+        elif report_export_format == 'print':
+            ext = '.txt'
+        elif report_export_format == 'html':
+            ext = '.html'
+        else:
+            report_export_format == 'pdf'
+            ext = '.pdf'
+            
+        sitename = hvsr_results['input_params']['site']#.replace('.', '-')
+        fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+        fname = fname.replace(':', '')
+
+        # Initialize output as file in home directory (if not updated)
+        outFile=pathlib.Path().home().joinpath(fname)
+        if report_export_path==True:
+            # Check so we don't write in sample directory
+            if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                    inFile = pathlib.Path.home() #Use the path to user's home if all else fails
+                else:
+                    inFile = pathlib.Path(os.getcwd())
+            else:
+                inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                            
+            if inFile.is_dir():
+                outFile = inFile.joinpath(fname)
+            else:
+                outFile = inFile.with_name(fname)
+        else:
+            if not report_export_path:
+                pass
+            elif pathlib.Path(report_export_path).is_dir():
+                outFile = pathlib.Path(report_export_path).joinpath(fname)
+            else:
+                outFile=pathlib.Path(report_export_path)
+
+    if report_export_format == 'csv':
+        if outFile.exists():
+            existFile = pd.read_csv(outFile)
+            if csv_overwrite_opt.lower() == 'append':
+                export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
+            elif csv_overwrite_opt.lower() == 'overwrite':
+                pass
+            else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
+                fileNameExists = True
+                i=1
+                while fileNameExists:
+                    outFile = outFile.with_stem(f"{outFile.stem}_{i}")
+                    i+=1
+                    if not outFile.exists():
+                        fileNameExists = False
+        try:
+            print(f'\nSaving csv data to: {outFile}')
+            export_obj.to_csv(outFile, index_label='ID')
+        except:
+            warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+    elif report_export_format =='plot':
+        if verbose:
+            print(f'\nSaving plot to: {outFile}')
+        plt.scf = export_obj
+        plt.savefig(outFile)
+    return 
+
 # Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
@@ -8629,195 +8892,3 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         # Contains std of frequencies of the peaks from each time window H/V curve that are closest to the main H/V peak
         stdf.append(np.std(v))
     return stdf
-
-# HELPER functions for report generation
-def _generate_html_report(hvsr_results, open_html=False):
-    """Private function that generates html report, intented to be used by get_report() public function
-
-    Parameters
-    ----------
-    hvsr_results : HVSRData or HVSRBatch
-        Input data from which to generate report
-    open_html : bool, optional
-        Whether to show the report or simply generate and save it in the "HTML_Report" attribute of hvsr_results, by default False
-
-    Returns
-    -------
-    HVSRData or HVSRBatch
-        Returns the input dataset, with the HTML_Report attribute updated with the html text of the report
-    """
-    resources_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
-    htmlTemplatePath = resources_dir.joinpath('html_report_template.html')
-
-    with open(htmlTemplatePath, 'r') as htmlF:
-        html = htmlF.read()
-
-    # Update report title (site name)
-    html = html.replace("HVSR_REPORT_TITLE", hvsr_results['site'])
-
-    # Update peak freq info
-    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))
-    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak']['HV']['Sf'], 3)))
-
-    if hvsr_results.CSV_Report['PeakPasses'][0]:
-        html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
-    else:
-        html = html.replace("SESAME_TESTS_RESULTS", 'Peak did not pass the SESAME validation tests.')
-
-    # Update image source
-    # Save the plot to a BytesIO object
-    import io
-    import base64
-
-    # Create a byte stream from the image
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-
-    # Encode the image to base64
-    hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
-    # Embed the image in the html document
-    html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
-
-    # Update formatting for print report for html
-    html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
-    html_print_report = html_print_report.replace('<br>', '', 2) #Remove the first two breaks
-    html_print_report = html_print_report.replace('✔', '&#10004;')
-    html_print_report = html_print_report.replace('✘', '&cross;')
-
-    majorSepLine = u"\u2014"*99
-    majorSepLine = u"\u2014"*99
-    minorSepLine = u"\u2012"*95
-    majorSepLineHTML = '&mdash;'*40
-    minorSepLineHTML = '&mdash;&nbsp;'*25
-
-    startInd = html_print_report.index('&nbsp;&nbsp;&nbsp;&nbsp;Site Name:')
-    html_print_report = "<br><br>" + html_print_report[startInd:]
-    lastInd = html_print_report.index(majorSepLine)
-    html_print_report = html_print_report[:lastInd]
-    
-    html_print_report = html_print_report.replace(majorSepLine, 'majorSepLineHTML') # Replace the major separator lines
-    html_print_report = html_print_report.replace(minorSepLine, minorSepLineHTML) # Replace the minor separator lines
-    html_print_report = html_print_report.replace("=", '') # Get rid of =
-
-    html = html.replace('HVSR_PRINT_REPORT', html_print_report)
-
-    # Update table
-    htmlTable = hvsr_results.CSV_Report.iloc[:,2:]
-    for i in range(len(htmlTable.columns)):
-        tableHeader = htmlTable.columns[i]
-        #html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
-        
-        tableValue = htmlTable.iloc[:,i][0]
-        html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
-
-    # View in browser, if indicated to
-    try:
-        if open_html:
-            import http.server
-            import socketserver
-            import threading
-
-            html_content = html
-            class Handler(http.server.SimpleHTTPRequestHandler):
-                def do_GET(self):
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
-                    self.end_headers()
-                    self.wfile.write(html_content.encode('utf-8'))
-
-            def start_server(port=8000):
-                with socketserver.TCPServer(("", port), Handler) as httpd:
-                    print(f"Serving on port {port}")
-                    httpd.serve_forever()
-
-            # Start the server in a separate thread
-            server_thread = threading.Thread(target=start_server)
-            server_thread.daemon = True
-            server_thread.start()
-
-            # Open the default web browser
-            import webbrowser
-            webbrowser.open("http://localhost:8000")
-
-            # Keep the script running
-            try:
-                while True:
-                    pass
-            except KeyboardInterrupt:
-                print("Shutting down server.")
-    except Exception as e:
-        pass
-
-    hvsr_results['HTML_Report'] = html
-
-    return hvsr_results
-
-def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, open_pdf=False, open_html=False, verbose=False):
-    """Private/helper function to generate pdf report from HTML report, intended to be used by get_report() function
-
-    Parameters
-    ----------
-    hvsr_results : HVSRData or HVSRBatch
-        Input dataset with all processing already carried out
-    open_pdf : bool, optional
-        EXPERIMENTAL: Whether to open the report after generating it, by default False
-    open_html : bool, optional
-        Whether to open the html report that the pdf report is based on, by default False
-    verbose : bool, optional
-        Whether to print verbose description of what the function is doing
-    """
-    from xhtml2pdf import pisa
-
-    # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
-    if not hasattr(hvsr_results, "HTML_Report"):
-        hvsr_results = _generate_html_report(hvsr_results, open_html=open_html)
-        if verbose:
-            print('\tNo HTML Report previously generated, attempting now.')
-        # try Code to generate HTML report from template
-
-    htmlReport = hvsr_results['HTML_Report']
-
-    if pdf_report_filepath is None:
-        if verbose:
-            print('\t pdf_report_filepath not specified, saving to temporary file.')
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            pdf_export_path = temp_file.name  # Get the name of the temporary file
-
-        # Now, open the file again for writing
-        with open(pdf_export_path, 'wb') as temp_file:
-            pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
-
-    else:
-        if pathlib.Path(pdf_report_filepath).is_dir():
-            fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
-            pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
-        with open(pdf_report_filepath, "w+b") as export_file:
-            pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
-        pdf_export_path = pdf_report_filepath
-        if verbose:
-            print(f'\tPDF report saved to {pdf_export_path}')
-    
-    if verbose:
-        if not str(pisa_status.err) == '0':
-            print(pisa_status.err)
-
-    if open_html:
-        import webbrowser
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
-            # Write the HTML content to a temporary file
-            temp_file.write(htmlReport.encode('utf-8'))
-
-            #Open html file in browser window
-            webbrowser.open('file://' + os.path.realpath(temp_file.name))
-
-    if open_pdf:
-        print('Opening pdfs with the open_pdf=True parameter is experimental and may not work')
-        if verbose:
-            print(f'\tOpening pdf at {pdf_export_path}')
-        import subprocess
-        subprocess.Popen([pdf_export_path], shell=True)
-
-    return htmlReport
-    
