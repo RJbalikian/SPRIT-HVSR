@@ -7428,7 +7428,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
             webbrowser.open('file://' + os.path.realpath(temp_file.name))
 
     if show_pdf_report:
-        print('Opening pdfs with the show_pdf_report=True parameter is experimental and may not work')
+        print('Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work')
         if verbose:
             print(f'\tOpening pdf at {pdf_export_path}')
         import subprocess
@@ -7437,77 +7437,139 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
     return htmlReport
     
 # Helper functin to export report(s)
-def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='append', report_export_format=['pdf']):
-    if report_export_path is None:
-        return
-    else:
-        if report_export_format == 'csv':
-            ext = '.csv'
-            export_obj = pd.DataFrame()
-        elif report_export_format =='plot':
-            ext = '.png'
-        elif report_export_format == 'print':
-            ext = '.txt'
-        elif report_export_format == 'html':
-            ext = '.html'
-        else:
-            report_export_format == 'pdf'
-            ext = '.pdf'
-            
-        sitename = hvsr_results['input_params']['site']#.replace('.', '-')
-        fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
-        fname = fname.replace(':', '')
+def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rename', report_export_format=['pdf'], show_report=True, verbose=False):
+    """Function to export reports to disk. Exportable formats include: 
+    * 'csv': saves a pandas DataFrame as a csv)
+    * 'plot': saves the matplotlib or plotly plot figure (depending on what is designated via plot_engine) as an image (png by default)
+    * 'print': saves the print report as a .txt file
+    * 'html': saves the html report as a .html file
+    * 'pdf': saves the pdf report as a .pdf file
 
-        # Initialize output as file in home directory (if not updated)
-        outFile=pathlib.Path().home().joinpath(fname)
-        if report_export_path==True:
-            # Check so we don't write in sample directory
-            if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
-                if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
-                    inFile = pathlib.Path.home() #Use the path to user's home if all else fails
+    Parameters
+    ----------
+    hvsr_results : HVSRData object
+        HVSRData object containing the HVSR data
+    report_export_path : path-like object, optional
+        The path to where the report should be exported. 
+        If this is None (default), this is written to the home directory.
+        If this is a True, uses the same directory as the input data, but generates a filename.
+        If this is a directory, generates a filename. 
+        If filename is specified and the extension does not match the report type, the extension is adjusted.
+        Otherwise, this is the output file or , by default None
+    csv_overwrite_opt : {'rename', 'append', 'overwrite', 'keep'}, optional
+        If csv is the report type, this can prevent overwriting data, by default 'rename'.
+        * "rename" (or "keep"): renames the new file to prevent overwrite, appends a digit to the end of filename
+        * "append": appends the new data to the existing file
+        * "overwrite": overwrites the existing file
+    report_export_format : str or list, optional
+        The format (or a list of formats) to export the report, by default ['pdf'].
+    show_report : bool, optional
+        Whether to show the designated reports that were chosen for export, by default True
+    verbose : bool, optional
+        Whether to print progress and other information to terminal, by default False
+
+    Returns
+    -------
+    HVSRData
+        An HVSRData object that is the same as hvsr_results, but with any additionally generated reports.
+    """
+
+    if type(report_export_format) is str:
+        report_export_format = [report_export_format]
+    
+    for ref in report_export_format:
+
+        if report_export_path is None:
+            return
+        else:
+            if ref == 'csv':
+                ext = '.csv'
+                export_obj = pd.DataFrame()
+            elif ref =='plot':
+                ext = '.png'
+            elif ref == 'print':
+                ext = '.txt'
+            elif ref == 'html':
+                ext = '.html'
+            else:
+                ref == 'pdf'
+                ext = '.pdf'
+                
+            sitename = hvsr_results['input_params']['site']#.replace('.', '-')
+            fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+            fname = fname.replace(':', '')
+
+            # Initialize output as file in home directory (if not updated)
+            outFile=pathlib.Path().home().joinpath(fname)
+            if report_export_path==True:
+                # Check so we don't write in sample directory
+                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                    if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                        inFile = pathlib.Path.home() #Use the path to user's home if all else fails
+                    else:
+                        inFile = pathlib.Path(os.getcwd())
                 else:
-                    inFile = pathlib.Path(os.getcwd())
+                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                                
+                if inFile.is_dir():
+                    outFile = inFile.joinpath(fname)
+                else:
+                    outFile = inFile.with_name(fname)
             else:
-                inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-                            
-            if inFile.is_dir():
-                outFile = inFile.joinpath(fname)
-            else:
-                outFile = inFile.with_name(fname)
-        else:
-            if not report_export_path:
-                pass
-            elif pathlib.Path(report_export_path).is_dir():
-                outFile = pathlib.Path(report_export_path).joinpath(fname)
-            else:
-                outFile=pathlib.Path(report_export_path)
+                if not report_export_path:
+                    pass
+                elif pathlib.Path(report_export_path).is_dir():
+                    outFile = pathlib.Path(report_export_path).joinpath(fname)
+                else:
+                    outFile=pathlib.Path(report_export_path)
 
-    if report_export_format == 'csv':
-        if outFile.exists():
-            existFile = pd.read_csv(outFile)
-            if csv_overwrite_opt.lower() == 'append':
-                export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
-            elif csv_overwrite_opt.lower() == 'overwrite':
-                pass
-            else:# csv_overwrite_opt.lower() in ['keep', 'rename']:
-                fileNameExists = True
-                i=1
-                while fileNameExists:
-                    outFile = outFile.with_stem(f"{outFile.stem}_{i}")
-                    i+=1
-                    if not outFile.exists():
-                        fileNameExists = False
-        try:
-            print(f'\nSaving csv data to: {outFile}')
-            export_obj.to_csv(outFile, index_label='ID')
-        except:
-            warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
-    elif report_export_format =='plot':
-        if verbose:
-            print(f'\nSaving plot to: {outFile}')
-        plt.scf = export_obj
-        plt.savefig(outFile)
-    return 
+        if ref == 'csv':
+            if outFile.exists():
+                existFile = pd.read_csv(outFile)
+                if csv_overwrite_opt.lower() == 'append':
+                    export_obj = pd.concat([existFile, export_obj], ignore_index=True, join='inner')
+                elif csv_overwrite_opt.lower() == 'overwrite':
+                    pass
+                elif csv_overwrite_opt.lower() in ['keep', 'rename']:
+                    if outFile.stem[-3] == '_' and outFile.stem[-2:].isdigit():
+                        fileDigit = int(outFile.stem[-2:]) + 1
+                    else:
+                        fileDigit = 1
+                    fileDigit = str(fileDigit).zfill(2)
+                    outFile = outFile.with_stem(outFile.stem + '_' + fileDigit)
+                else:
+                    fileNameExists = True
+                    i=1
+                    while fileNameExists:
+                        outFile = outFile.with_stem(f"{outFile.stem}_{i}")
+                        i+=1
+                        if not outFile.exists():
+                            fileNameExists = False
+            try:
+                print(f'\nSaving csv data to: {outFile}')
+                export_obj.to_csv(outFile, index_label='ID')
+            except:
+                warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+        elif ref =='plot':
+            if verbose:
+                print(f'\nSaving plot to: {outFile}')
+            plt.scf = export_obj
+            plt.savefig(outFile)
+        elif ref == 'print':
+            with open(outFile, 'w') as outF:
+                outF.write(hvsr_results['Print_Report'])
+                # Could write more details in the future
+        elif ref == "html":
+            if not hasattr(hvsr_results, "HTML_Report") or hvsr_results['HTML_Report'] is None:
+                hvsr_results = _generate_html_report(hvsr_results)
+            with open(outFile, 'w') as outF:
+                outF.write(hvsr_results['HTML_Report'])
+        elif ref == "pdf":
+            # PDF report is built from HTML report
+            if not hasattr(hvsr_results, "HTML_Report") or hvsr_results['HTML_Report'] is None:
+                hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=report_export_path, show_pdf_report=show_report, verbose=verbose)
+        
+    return hvsr_results
 
 # Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
