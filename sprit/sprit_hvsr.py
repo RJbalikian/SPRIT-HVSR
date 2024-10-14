@@ -1521,48 +1521,48 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
     for ref in report_export_format:
 
         if report_export_paths is None:
-            return
-        else:
-            if ref == 'table':
-                ext = '.csv'
-                export_obj = pd.DataFrame()
-            elif ref =='plot':
-                ext = '.png'
-            elif ref == 'print':
-                ext = '.txt'
-            elif ref == 'html':
-                ext = '.html'
-            else:
-                ref == 'pdf'
-                ext = '.pdf'
-                
-            sitename = hvsr_results['input_params']['site']#.replace('.', '-')
-            fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
-            fname = fname.replace(':', '')
+            print('The export_report(report_export_path) parameter was not specified.')
+            print(f'The report will be saved the home directory: {pathlib.Path.home()}')
 
-            # Initialize output as file in home directory (if not updated)
-            outFile  = pathlib.Path().home().joinpath(fname)
-            if report_export_paths==True:
-                # Check so we don't write in sample directory
-                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
-                    if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
-                        inFile = pathlib.Path.home() #Use the path to user's home if all else fails
-                    else:
-                        inFile = pathlib.Path(os.getcwd())
+        if ref == 'table':
+            ext = '.csv'
+        elif ref =='plot':
+            ext = '.png'
+        elif ref == 'print':
+            ext = '.txt'
+        elif ref == 'html':
+            ext = '.html'
+        else:
+            ref == 'pdf'
+            ext = '.pdf'
+            
+        sitename = hvsr_results['input_params']['site']
+        fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+        fname = fname.replace(':', '')
+
+        # Initialize output as file in home directory (if not updated)
+        outFile  = pathlib.Path().home().joinpath(fname)
+        if report_export_paths == True or report_export_paths is None:
+            # Check so we don't write in sample directory
+            if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
+                    inFile = pathlib.Path.home() #Use the path to user's home if all else fails
                 else:
-                    inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
-                                
-                if inFile.is_dir():
-                    outFile = inFile.joinpath(fname)
-                else:
-                    outFile = inFile.with_name(fname)
+                    inFile = pathlib.Path(os.getcwd())
             else:
-                if not report_export_paths:
-                    pass
-                elif pathlib.Path(report_export_paths).is_dir():
-                    outFile = pathlib.Path(report_export_paths).joinpath(fname)
-                else:
-                    outFile = pathlib.Path(report_export_paths)
+                inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                            
+            if inFile.is_dir():
+                outFile = inFile.joinpath(fname)
+            else:
+                outFile = inFile.with_name(fname)
+        else:
+            if not report_export_paths:
+                pass
+            elif pathlib.Path(report_export_paths).is_dir():
+                outFile = pathlib.Path(report_export_paths).joinpath(fname)
+            else:
+                outFile = pathlib.Path(report_export_paths)
 
         if ref == 'table':
             if not hasattr(hvsr_results, 'Table_Report'):
@@ -2810,11 +2810,11 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
-               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
-               show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
-               suppress_report_outputs=False, show_report_outputs=False,
-               csv_handling='append', 
-               report_export_formats=['pdf'], report_export_paths=None, 
+                plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
+                show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
+                suppress_report_outputs=False, show_report_outputs=False,
+                csv_handling='append', 
+                report_export_formats=['pdf'], report_export_paths=None, 
                 verbose=False, **kwargs):    
     """Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. 
     
@@ -2865,7 +2865,10 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     """
     orig_args = locals().copy() #Get the initial arguments
     orig_args['report_formats'] = [str(f).lower() for f in orig_args['report_formats']]
-    orig_args['report_export_paths'] = [str(f).lower() for f in orig_args['report_export_paths']]
+    if orig_args['report_export_paths'] is not None:
+        if not isinstance(orig_args['report_export_paths'], (list, tuple)):
+            orig_args['report_export_paths'] = [orig_args['report_export_paths']]
+        orig_args['report_export_paths'] = [str(f).lower() for f in orig_args['report_export_paths']]
 
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_results.keys():
@@ -3011,6 +3014,13 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             exp_path = report_export_paths[i]
         else:
             exp_path = report_export_paths
+        
+        #fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
+
+        #if exp_path is None:
+        #    exp_path = pathlib.Path(hvsr_results['datapath'])
+        #    if not exp_path.parent.exists():
+        #        exp_path = pathlib.Path().home().joinpath(fname)
         #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_paths=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
         
         if rep_form=='print':
@@ -3024,7 +3034,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                                 show_print_report = True, verbose=verbose_print)
 
             if 'print' in report_export_formats:
-                print_exp_path = pathlib.Path(exp_path).with_suffix('.txt')
+                if exp_path is None:
+                    print_exp_path = exp_path
+                else:
+                    print_exp_path = pathlib.Path(exp_path).with_suffix('.txt')
+                
                 export_report(hvsr_results, azimuth=azimuth,
                               report_export_format='print', report_export_paths=print_exp_path, 
                               show_report = False, # If report is to be shown, done in previous step
@@ -3041,7 +3055,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                                 verbose=verbose_table)
 
             if 'table' in report_export_formats:
-                table_exp_path = pathlib.Path(exp_path).with_suffix('.csv')
+                if exp_path is None:
+                    table_exp_path = exp_path
+                else:
+                    table_exp_path = pathlib.Path(exp_path).with_suffix('.csv')
+                
                 export_report(hvsr_results, azimuth=azimuth,
                             report_export_format='table', report_export_paths=table_exp_path,
                             csv_handling=csv_handling,
@@ -3086,7 +3104,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             hvsr_results = _generate_html_report(hsvr_results, show_html_report=show_html_report, verbose=verbose_html)
 
             if 'html' in report_export_formats:
-                html_exp_path = pathlib.Path(exp_path).with_suffix('.html')
+                if exp_path is None:
+                    html_exp_path = exp_path
+                else:
+                    html_exp_path = pathlib.Path(exp_path).with_suffix('.html')
+
                 export_report(hvsr_results, azimuth=azimuth,
                             report_export_format='html', report_export_paths=html_exp_path,
                             show_report = False, # If report is to be shown, done in previous step
@@ -3103,7 +3125,10 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             else:
                 show_html_report = show_html_report
 
-            pdf_exp_path = pathlib.Path(exp_path).with_suffix('.pdf')
+            if exp_path is None:
+                pdf_exp_path = exp_path
+            else:
+                pdf_exp_path = pathlib.Path(exp_path).with_suffix('.pdf')
             hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=pdf_exp_path,
                             show_pdf_report=show_pdf_report, show_html_report=show_html_report, verbose=verbose_pdf)
 
@@ -7705,7 +7730,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         import subprocess
         subprocess.Popen([pdf_export_path], shell=True)
 
-    return htmlReport
+    return hvsr_results
 
 # Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
