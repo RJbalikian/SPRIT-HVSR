@@ -241,7 +241,7 @@ class HVSRBatch:
         get_report
         """
         if 'report_format' in kwargs.keys():
-            if 'csv' == kwargs['report_format']:
+            if 'table' == kwargs['report_format']:
                 for sitename in self:
                     rowList = []
                     rowList.append(get_report(self[sitename], **kwargs))
@@ -2635,19 +2635,21 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 
 # Get or print report
-def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf'], azimuth='HV',
-               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', show_plot=True,
+def get_report(hvsr_results, report_format=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
+               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
+               show_print_report=True, show_plot_report=False, show_table_report=False, show_html_report=False, show_pdf_report=True,
+               suppress_report_outputs=False, show_report_outputs=False,
                csv_overwrite_opt='append', 
                report_export_formats=['pdf'], report_export_path=None, 
-               suppress_report_output=False, verbose=False, **kwargs):    
+                verbose=False, **kwargs):    
     """Get a report of the HVSR analysis in a variety of formats. 
     
     Formats include:
     - 'print': A (monospace) text summary of the HVSR results
-    - 'csv': A pandas.DataFrame (that can be exported as a csv) summary of the HVSR Results.
+    - 'table': A pandas.DataFrame summary of the HVSR Results.
             This is useful for copy/pasting directly into a larger worksheet.
     - 'plot': A plot summary of the HVSR results, generated using the plot_hvsr() function.
-    - 'html': An HTML document/text of the HVSR results. This includes the csv, print, and plot reports in one document.
+    - 'html': An HTML document/text of the HVSR results. This includes the table, print, and plot reports in one document.
     - 'pdf': A PDF document showing the summary of the HVSR Results. 
             The PDF report is simply the HTML report saved to an A4 size PDF document.
 
@@ -2656,12 +2658,12 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
     ----------
     hvsr_results : dict
         Dictionary containing all the information about the processed hvsr data
-    report_format : {'csv', 'print', plot}
+    report_format : {'table', 'print', plot}
         Format in which to print or export the report.
         The following report_formats return the following items in the following attributes:
             - 'plot': hvsr_results['Print_Report'] as a str
             - 'print': hvsr_results['HV_Plot'] - matplotlib.Figure object
-            - 'csv':  hvsr_results['CSV_Report']- pandas.DataFrame object
+            - 'table':  hvsr_results['Table_Report']- pandas.DataFrame object
                 - list/tuple - a list or tuple of the above objects, in the same order they are in the report_format list
             - 'html': hvsr_results['HTML_Report'] - a string containing the text for an HTML document
             - 'pdf': currently does not save to the HVSRData object itself, can only be saved to the disk directly
@@ -2670,8 +2672,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
     azimuth : str, default = 'HV'
         Which azimuth to plot, by default "HV" which is the main "azimuth" combining the E and N components
     csv_overwrite_opts : str, {'append', 'overwrite', 'keep/rename'}
-        How to handle csv report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
-    suppress_report_output : bool, default=False
+        How to handle table report outputs if the designated csv output file already exists. By default, appends the new information to the end of the existing file.
+    suppress_report_outputs : bool, default=False
         If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
     report_export_formats : list or str, default=['pdf']
         A string or list of strings indicating which report formats should be exported to disk.
@@ -2679,7 +2681,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
         If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
         If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". 
-        The extension/suffix defaults to png for report_format="plot", csv for 'csv', txt for 'print', html for 'html', and pdf for 'pdf.'
+        The extension/suffix defaults to png for report_format="plot", csv for 'table', txt for 'print', html for 'html', and pdf for 'pdf.'
     verbose : bool, default=True
         Whether to print the results to terminal. This is the same output as report_format='print', and will not repeat if that is already selected
 
@@ -2707,7 +2709,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
     azimuth = orig_args['azimuth']
     report_export_path = orig_args['report_export_path']
     csv_overwrite_opt = orig_args['csv_overwrite_opt']
-    suppress_report_output = orig_args['suppress_report_output']
+    suppress_report_outputs = orig_args['suppress_report_outputs']
     verbose = orig_args['verbose']
     kwargs = orig_args['kwargs']
     
@@ -2747,8 +2749,8 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
         
         combined_csvReport = pd.DataFrame()
         for site_name in hvsr_results.keys():
-            if 'CSV_Report' in hvsr_results[site_name].keys():
-                combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['CSV_Report']], ignore_index=True, join='inner')
+            if 'Table_Report' in hvsr_results[site_name].keys():
+                combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['Table_Report']], ignore_index=True, join='inner')
         
         if report_export_path is not None:
             if report_export_path is True:
@@ -2770,6 +2772,10 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
             combined_csvReport.to_csv(csvExportPath, index=False)
         return hvsr_results
     
+    if suppress_report_outputs:
+        show_print_report = show_plot_report = show_table_report = show_html_report = show_pdf_report = False
+    elif show_report_outputs:
+        show_print_report = show_plot_report = show_table_report = show_html_report = show_pdf_report = True
     #if 'BestPeak' in hvsr_results.keys() and 'PassList' in hvsr_results['BestPeak'].keys():
     try:
         curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WinLen'] +
@@ -2789,6 +2795,7 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
         errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
         print(errMsg)
         print(e)
+        hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type='HVSR t all C+ t SPEC', azimuth=azimuth, return_fig=True)
         return hvsr_results
         #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
 
@@ -2798,33 +2805,72 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
         #We will use a loop later even if it's just one report type, so reformat to prepare for for loop
         allList = [':', 'all']
         if report_format.lower() in allList:
-            report_format = ['print', 'csv', 'plot']
+            report_format = ['print', 'table', 'plot', 'html', 'pdf']
         else:
             report_format = [report_format]   
 
-    def report_output(_hvsr_results, _report_format, _plot_type='HVSR p ann C+ p ann Spec', _plot_engine='matplotlib', report_export_path=None, suppress_report_output=False, verbose=False):
-        if _report_format=='print':
-            # Generates print report and saves to _hvsr_results["Print_Report"]
-            _hvsr_results = _generate_print_report(_hvsr_results, suppress_print_output=suppress_report_output)
+    for i, rep_form in enumerate(report_format):
+        if isinstance(report_export_path, (list, tuple)):
+            if not isinstance(report_format, (list, tuple)):
+                warnings.warn('report_export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
+            if isinstance(report_format, (list, tuple)) and isinstance(report_export_path, (list, tuple)) and len(report_format) != len(report_export_path):
+                warnings.warn('report_export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
+            exp_path = report_export_path[i]
+        else:
+            exp_path = report_export_path
+        #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
+        
+        if rep_form=='print':
+            verbose_print = verbose
+            if show_print_report:
+                verbose_print = True
+            
+            # Generates print report and saves to hvsr_results["Print_Report"]
+            hsvr_results = _generate_print_report(hvsr_results, 
+                                azimuth = azimuth, 
+                                show_print_report = True, verbose=verbose_print)
 
-        elif _report_format=='csv':
-            _hvsr_results = _generate_csv_report(_hvsr_results, azimuth=azimuth, verbose=verbose)
-                    
-        elif _report_format=='plot':
+            if 'print' in report_export_formats:
+                print_exp_path = pathlib.Path(exp_path).with_suffix('.txt')
+                export_report(hvsr_results, report_export_path=print_exp_path, 
+                              show_report = False, # If report is to be shown, done in previous step
+                              verbose = verbose_print)
+
+        elif rep_form=='table':
+            verbose_print = verbose
+            if show_print_report:
+                verbose_print = True
+            
+            # Generates print report and saves to hvsr_results["Print_Report"]
+            #hsvr_results = _generate_print_report(hvsr_results, 
+            #                    azimuth = azimuth, 
+            #                    show_print_report = True, verbose=False)
+            hsvr_results = _generate_table_report(hsvr_results, 
+                                azimuth=azimuth,
+                                show_table_report=show_table_report,
+                                verbose=verbose)
+
+            if 'print' in report_export_formats:
+                print_exp_path = pathlib.Path(exp_path).with_suffix('.txt')
+                export_report(hvsr_results, report_export_path=print_exp_path, 
+                              show_report = False, # If report is to be shown, done in previous step
+                              verbose = verbose_print)
+            
+        elif rep_form=='plot':
             plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
             if 'plot_type' in plot_hvsr_kwargs.keys():
                 plot_hvsr_kwargs.pop('plot_type')
             if 'plot_engine' in plot_hvsr_kwargs.keys():
                 plot_hvsr_kwargs.pop('plot_engine')
 
-            fig = plot_hvsr(hvsr_results, plot_type=_plot_type, plot_engine=_plot_engine, show_plot=False, return_fig=True)
+            fig = plot_hvsr(hvsr_results, plot_type=plot_type, plot_engine=plot_engine, show_plot=False, return_fig=True)
 
-            if _plot_engine.lower() not in ['plotly', 'plty', 'p']:
+            if plot_engine.lower() not in ['plotly', 'plty', 'p']:
                 expFigAx = fig
             else:
                 expFigAx = fig
-
-            export_report(export_obj=expFigAx, report_export_path=report_export_path, report_export_format=_report_format)
+            if 'plot' in report_export_formats:
+                export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format=rep_form)
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
@@ -2839,21 +2885,12 @@ def get_report(hvsr_results, report_format=['print', 'csv', 'plot', 'html', 'pdf
             else:
                 if verbose:
                     print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
-          
-        return _hvsr_results
 
-    for i, rep_form in enumerate(report_format):
-        if isinstance(report_export_path, (list, tuple)):
-            if not isinstance(report_format, (list, tuple)):
-                warnings.warn('report_export_path is a list/tuple and report_format is not. This may result in unexpected behavior.')
-            if isinstance(report_format, (list, tuple)) and isinstance(report_export_path, (list, tuple)) and len(report_format) != len(report_export_path):
-                warnings.warn('report_export_path and report_format are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
-        
-            exp_path = report_export_path[i]
-        else:
-            exp_path = report_export_path
-        hvsr_results = report_output(_hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_output=suppress_report_output, verbose=verbose)
+        elif rep_form=='html':
+            hvsr_results = _generate_html_report(hsvr_results, show_html_report=show_html_report)
 
+        elif rep_form=='pdf':
+            hvsr_results = _generate_pdf_report(hvsr_results, exp_path, )
     hvsr_results['processing_parameters']['get_report'] = {}
     for key, value in orig_args.items():
         hvsr_results['processing_parameters']['get_report'][key] = value
@@ -2961,15 +2998,15 @@ def input_params(datapath,
         If int, should be the int value of the UTC offset (e.g., for American Eastern Standard Time: -5). 
         This is necessary for Raspberry Shake data in 'raw' format.
     xcoord : float, default=-88.2290526
-        Longitude (or easting, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in csv output, but will likely be used in future for mapping/profile purposes.
+        Longitude (or easting, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in table output, but will likely be used in future for mapping/profile purposes.
     ycoord : float, default=40.1012122
-        Latitute (or northing, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in csv output, but will likely be used in future for mapping/profile purposes.
+        Latitute (or northing, or, generally, X coordinate) of data point, in Coordinate Reference System (CRS) designated by input_crs. Currently only used in table output, but will likely be used in future for mapping/profile purposes.
     input_crs : str or other format read by pyproj, default='EPSG:4326'
         Coordinate reference system of input data, as used by pyproj.CRS.from_user_input()
     output_crs : str or other format read by pyproj, default='EPSG:4326'
         Coordinate reference system to which input data will be transformed, as used by pyproj.CRS.from_user_input()
     elevation : float, default=755
-        Surface elevation of data point. Not currently used (except in csv output), but will likely be used in the future.
+        Surface elevation of data point. Not currently used (except in table output), but will likely be used in the future.
     depth : float, default=0
         Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str {'Raspberry Shake', "Tromino"}
@@ -6225,7 +6262,7 @@ def _select_windows(input):
 
     if isinstance(input, (HVSRData, dict)):
         if 'hvsr_curve' in input.keys():
-            fig, ax = plot_hvsr(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
+            fig = plot_hvsr(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
         else:
             hvsr_data = input#.copy()
             input_stream = hvsr_data['stream']
@@ -7070,15 +7107,15 @@ def __gethvsrparams(hvsr_out):
 
 
 # HELPER FUNCTIONS FOR GET REPORT
-def _generate_print_report(hvsr_results, azimuth="HV", suppress_print_output=False, print_output_path=None):
+def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, verbose=False):
     """Helper function to perform create a printed (monospace) report with summary data for HVSR Site 
 
     Parameters
     ----------
     hvsr_results : HVSRData object
         HVSRData object with data to be reported on
-    suppress_print_output : bool, optional
-        Whether output will be produced or not (if suppress_print_output=True, no ouptut will be produced (report will not be printed)), by default False
+    show_print_report : bool, optional
+        Whether output will be produced or not (if show_print_report=True, no ouptut will be produced (report will not be printed)), by default False
 
     Returns
     -------
@@ -7126,6 +7163,20 @@ def _generate_print_report(hvsr_results, azimuth="HV", suppress_print_output=Fal
     if 'BestPeak' not in hvsr_results.keys():
         report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
     else:
+        curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WinLen'] +
+                            hvsr_results['BestPeak'][azimuth]['PassList']['SigCycles']+
+                            hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStD'])
+        curvePass = curvTestsPassed > 2
+        
+        #Peak Pass?
+        peakTestsPassed = ( hvsr_results['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
+                    hvsr_results['BestPeak'][azimuth]['PassList']['ProminenceHi']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['AmpClarity']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Freq']+
+                    hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
+        peakPass = peakTestsPassed >= 5
+
         report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
         if curvePass and peakPass:
             report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils.check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
@@ -7166,15 +7217,14 @@ def _generate_print_report(hvsr_results, azimuth="HV", suppress_print_output=Fal
     for line in report_string_list:
         reportStr = reportStr+'\n'+line
 
-    if not suppress_print_output:
+    if show_print_report:
         print(reportStr)
 
-    export_report(export_obj=reportStr, report_export_path=print_output_path, report_export_format='print')
     hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
     hvsr_results['Print_Report'] = reportStr
     return hvsr_results
 
-def _generate_csv_report(hvsr_results, azimuth='HV', verbose=False, csv_export_path=None):
+def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, verbose=False):
     """Helper function for get_report() to generate a site report formatted into a pandas dataframe 
 
     Parameters
@@ -7183,15 +7233,16 @@ def _generate_csv_report(hvsr_results, azimuth='HV', verbose=False, csv_export_p
         HVSRData object containing information about which the report will be generated.
     azimuth : str, optional
         The azimuth for which this report will be generated. If none specified/calculated, by default 'HV'
+    show_table_report : bool, optional
+        Whether to print the table report (as text) to the terminal
     verbose : bool, optional
         Whether or not to print the pandas dataframe upon creation, by default False
-    csv_export_path : None, or path-like object
-        Filepath 
+
 
     Returns
     -------
     HVSRData
-        An HVSRData object with the ["CSV_Report"] attribute created/updated. 
+        An HVSRData object with the ["Table_Report"] attribute created/updated. 
         This is a pandas.DataFrame instance, but can be exported to csv.
     """
     pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation', 'Peak', 'Peak_StDev',
@@ -7208,7 +7259,7 @@ def _generate_csv_report(hvsr_results, azimuth='HV', verbose=False, csv_export_p
     outDF = pd.DataFrame(dfList, columns=pdCols)
     outDF.index.name = 'ID'
     
-    if verbose:
+    if show_table_report or verbose:
         print('\nCSV Report:\n')
         maxColWidth = 13
         print('  ', end='')
@@ -7235,13 +7286,8 @@ def _generate_csv_report(hvsr_results, azimuth='HV', verbose=False, csv_export_p
                 print(colStr.ljust(maxColWidth), end='  ')
             print()
 
-    if not not csv_export_path: # if csv_export_path is anything but False or None, etc.
-        try:
-            export_report(export_obj=outDF, report_export_path=csv_export_path, report_export_format='csv')
-        except:
-            print("Error in exporting csv report. CSV not exported")
-    hvsr_results['BestPeak'][azimuth]['Report']['CSV_Report'] = outDF
-    hvsr_results['CSV_Report'] = outDF
+    hvsr_results['BestPeak'][azimuth]['Report']['Table_Report'] = outDF
+    hvsr_results['Table_Report'] = outDF
     return hvsr_results
 
 # HELPER functions for html report generation
@@ -7273,7 +7319,7 @@ def _generate_html_report(hvsr_results, show_html_report=False):
     html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))
     html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak']['HV']['Sf'], 3)))
 
-    if hvsr_results.CSV_Report['PeakPasses'][0]:
+    if hvsr_results.Table_Report['PeakPasses'][0]:
         html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
     else:
         html = html.replace("SESAME_TESTS_RESULTS", 'Peak did not pass the SESAME validation tests.')
@@ -7317,7 +7363,7 @@ def _generate_html_report(hvsr_results, show_html_report=False):
     html = html.replace('HVSR_PRINT_REPORT', html_print_report)
 
     # Update table
-    htmlTable = hvsr_results.CSV_Report.iloc[:,2:]
+    htmlTable = hvsr_results.Table_Report.iloc[:,2:]
     for i in range(len(htmlTable.columns)):
         tableHeader = htmlTable.columns[i]
         #html = html.replace(f"TableHeader_{str(i).zfill(2)}", tableHeader)
@@ -7439,7 +7485,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 # Helper functin to export report(s)
 def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rename', report_export_format=['pdf'], show_report=True, verbose=False):
     """Function to export reports to disk. Exportable formats include: 
-    * 'csv': saves a pandas DataFrame as a csv)
+    * 'table': saves a pandas DataFrame as a csv)
     * 'plot': saves the matplotlib or plotly plot figure (depending on what is designated via plot_engine) as an image (png by default)
     * 'print': saves the print report as a .txt file
     * 'html': saves the html report as a .html file
@@ -7457,7 +7503,7 @@ def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rena
         If filename is specified and the extension does not match the report type, the extension is adjusted.
         Otherwise, this is the output file or , by default None
     csv_overwrite_opt : {'rename', 'append', 'overwrite', 'keep'}, optional
-        If csv is the report type, this can prevent overwriting data, by default 'rename'.
+        If table is the report type, this can prevent overwriting data, by default 'rename'.
         * "rename" (or "keep"): renames the new file to prevent overwrite, appends a digit to the end of filename
         * "append": appends the new data to the existing file
         * "overwrite": overwrites the existing file
@@ -7482,7 +7528,7 @@ def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rena
         if report_export_path is None:
             return
         else:
-            if ref == 'csv':
+            if ref == 'table':
                 ext = '.csv'
                 export_obj = pd.DataFrame()
             elif ref =='plot':
@@ -7523,7 +7569,7 @@ def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rena
                 else:
                     outFile=pathlib.Path(report_export_path)
 
-        if ref == 'csv':
+        if ref == 'table':
             if outFile.exists():
                 existFile = pd.read_csv(outFile)
                 if csv_overwrite_opt.lower() == 'append':
@@ -7549,7 +7595,7 @@ def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rena
                 print(f'\nSaving csv data to: {outFile}')
                 export_obj.to_csv(outFile, index_label='ID')
             except:
-                warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['CSV_Report]", category=RuntimeWarning)
+                warnings.warn("Report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['Table_Report]", category=RuntimeWarning)
         elif ref =='plot':
             if verbose:
                 print(f'\nSaving plot to: {outFile}')
@@ -7559,6 +7605,8 @@ def export_report(hvsr_results, report_export_path=None, csv_overwrite_opt='rena
             with open(outFile, 'w') as outF:
                 outF.write(hvsr_results['Print_Report'])
                 # Could write more details in the future
+                if show_report or verbose:
+                    print(hvsr_results['Print_Report'])
         elif ref == "html":
             if not hasattr(hvsr_results, "HTML_Report") or hvsr_results['HTML_Report'] is None:
                 hvsr_results = _generate_html_report(hvsr_results)
