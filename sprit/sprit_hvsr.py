@@ -1598,7 +1598,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
                 warnings.warn("Table report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['Table_Report]", category=RuntimeWarning)
  
             if show_report or verbose:
-                print('\nCSV Report:\n')
+                print('\nTable Report:\n')
                 maxColWidth = 13
                 print('  ', end='')
                 for col in reportDF.columns:
@@ -1623,7 +1623,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
                             colStr = str(col)
                         print(colStr.ljust(maxColWidth), end='  ')
                     print()
-        elif ref =='plot':
+        elif ref == 'plot':
             if not hasattr(hvsr_results, 'HV_Plot'):
                 fig = plot_hvsr(hvsr_results, return_fig=True)
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
@@ -2865,10 +2865,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     """
     orig_args = locals().copy() #Get the initial arguments
     orig_args['report_formats'] = [str(f).lower() for f in orig_args['report_formats']]
-    if orig_args['report_export_paths'] is not None:
-        if not isinstance(orig_args['report_export_paths'], (list, tuple)):
-            orig_args['report_export_paths'] = [orig_args['report_export_paths']]
-        orig_args['report_export_paths'] = [str(f).lower() for f in orig_args['report_export_paths']]
 
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_results.keys():
@@ -3128,7 +3124,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             if exp_path is None:
                 pdf_exp_path = exp_path
             else:
-                pdf_exp_path = pathlib.Path(exp_path).with_suffix('.pdf')
+                pdf_exp_path = pathlib.Path(exp_path)
             hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=pdf_exp_path,
                             show_pdf_report=show_pdf_report, show_html_report=show_html_report, verbose=verbose_pdf)
 
@@ -3188,6 +3184,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
 # Define input parameters
 def input_params(datapath,
                 site='HVSR Site',
+                id_prefix=None,
                 network='AM', 
                 station='RAC84', 
                 loc='00', 
@@ -3199,9 +3196,9 @@ def input_params(datapath,
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
                 elevation = 755,
-                input_crs='EPSG:4326',#4269 is NAD83, defautling to WGS
-                output_crs='EPSG:4326',
-                elev_unit = 'feet',
+                input_crs = 'EPSG:4326',#4269 is NAD83, defaults to WGS (4326)
+                output_crs = 'EPSG:4326',
+                elev_unit = 'meters',
                 depth = 0,
                 instrument = 'Raspberry Shake',
                 metapath = None,
@@ -3218,6 +3215,11 @@ def input_params(datapath,
         Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
     site : str, default="HVSR Site"
         Site name as designated by user for ease of reference. Used for plotting titles, filenames, etc.
+    id_prefix : str, default=None
+        A prefix that may be used to create unique identifiers for each site. 
+        The identifier created is saved as the ['HVSR_ID'] attribute of the HVSRData object,
+        and is equivalent to the following formatted string:
+        f"{id_prefix}-{acq_date.strftime("%Y%m%d")}-{starttime.strftime("%H%M")}-{station}".
     network : str, default='AM'
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
     station : str, default='RAC84'
@@ -3360,17 +3362,32 @@ def input_params(datapath,
     acq_date = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
-    if output_crs is None:
-        output_crs='EPSG:4326'
-
+    # If no CRS specified, assume WGS84
     if input_crs is None:
-        input_crs = 'EPSG:4326'#Default to WGS84
-    else:        
-        input_crs = CRS.from_user_input(input_crs)
-        output_crs = CRS.from_user_input(output_crs)
+        if verbose:
+            print('No value specified for input_crs, assuming WGS84 (EPSG:4326)')        
+        input_crs = 'EPSG:4326'
+    
+    if output_crs is None:
+        if verbose:
+            print('No value specified for output_crs, using same coordinate system is input_crs (default is EPSG:4326)')        
+        output_crs = input_crs
 
-        coord_transformer = Transformer.from_crs(input_crs, output_crs, always_xy=True)
-        xcoord, ycoord = coord_transformer.transform(xcoord, ycoord)
+    # Get CRS Objects
+    input_crs = CRS.from_user_input(input_crs)
+    output_crs = CRS.from_user_input(output_crs)
+    wgs84_crs = CRS.from_user_input('EPSG:4326')
+
+    # Get WGS84 coordinates (needed for inventory)
+    wgs84_transformer = Transformer.from_crs(input_crs, wgs84_crs, always_xy=True)
+    xcoord_wgs84, ycoord_wgs84 = wgs84_transformer.transform(xcoord, ycoord)
+
+    xcoord_wgs84 = round(xcoord_wgs84, 7)
+    ycoord_wgs84 = round(ycoord_wgs84, 7)
+
+    # Get coordinates in CRS specified in output_crs
+    coord_transformer = Transformer.from_crs(input_crs, output_crs, always_xy=True)
+    xcoord, ycoord = coord_transformer.transform(xcoord, ycoord)
 
     if isinstance(processing_parameters, dict):
         pass
@@ -3378,11 +3395,20 @@ def input_params(datapath,
         processing_parameters = sprit_utils.checkifpath(processing_parameters)
         processing_parameters = import_settings(processing_parameters, settings_import_type='processing', verbose=verbose)
 
-    #Add key/values to input parameter dictionary
-    inputParamDict = {'site':site, 'network':network, 'station':station,'location':loc, 'channels':channels,
+    # Get elevation in meters
+    if str(elev_unit).lower() in ['feet', 'foot', 'ft', 'f', 'imperial', 'imp', 'american', 'us']:
+        elevation = elevation * 0.3048
+        elev_unit = 'meters'
+
+    # Create a unique identifier for each site
+    hvsr_id = f"{id_prefix}-{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
+
+    #Add key/values to input parameter dictionary for use throughout the rest of the package
+    inputParamDict = {'site':site, 'id_prefix':id_prefix, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':loc, 'channels':channels,
                       'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
-                    'longitude':xcoord,'latitude':ycoord,'elevation':elevation,'input_crs':input_crs, 'output_crs':output_crs,
+                    'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
+                    'elevation':elevation, 'elev_unit':elev_unit, 'input_crs':input_crs, 'output_crs':output_crs,
                     'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
                     'processing_parameters':processing_parameters, 'ProcessingStatus':{'InputParamsStatus':True, 'OverallStatus':True}
                     }
@@ -5338,10 +5364,14 @@ def _update_shake_metadata(filepath, params, write_path=''):
     for k in optKeys:
         if k not in params.keys():
             params[k] = '0'
+    
+    wgs84_transformer = Transformer.from_crs(params['input_crs'], "4326")
+    
     xcoord = str(params['longitude'])
     ycoord = str(params['latitude'])
     elevation = str(params['elevation'])
     depth = str(params['depth'])
+    
     
     startdate = str(datetime.datetime(year=2023, month=2, day=15)) #First day sprit code worked :)
     enddate=str(datetime.datetime.today())
@@ -7490,7 +7520,28 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
         An HVSRData object with the ["Table_Report"] attribute created/updated. 
         This is a pandas.DataFrame instance, but can be exported to csv.
     """
-    pdCols = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation', 'Peak', 'Peak_StDev',
+    
+    coord0Dir = hvsr_results['input_params']['output_crs'].axis_info[0].direction
+
+    # Figure out which coordinate axis is which (some CRS do Y, X)
+    if coord0Dir.lower() in ['north', 'south']:
+        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+    else:
+        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+    
+    # Get the axis name
+    xaxis_name = xaxisinfo.name
+    yaxis_name = yaxisinfo.name
+    
+    # Simplify the axis name
+    if 'longitude' in xaxis_name.lower():
+        xaxis_name = 'Longitude'
+    if 'latitude' in yaxis_name.lower():
+        yaxis_name = 'Latitude'
+        
+    pdCols = ['Site Name', 'Acq_Date', xaxis_name, yaxis_name, 'Elevation', 'Peak', 'Peak_StDev',
             'PeakPasses','WinLen','SigCycles','LowCurveStD',
             'ProminenceLow','ProminenceHi','AmpClarity','FreqStability', 'LowStDev_Freq','LowStDev_Amp']
     d = hvsr_results
@@ -7498,14 +7549,14 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
     for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
         criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-    dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['longitude'], d['input_params']['latitude'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
+    dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['xcoord'], d['input_params']['ycoord'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
     dfList[0].extend(criteriaList)
 
     outDF = pd.DataFrame(dfList, columns=pdCols)
     outDF.index.name = 'ID'
     
     if show_table_report or verbose:
-        print('\nCSV Report:\n')
+        print('\nTable Report:\n')
         maxColWidth = 13
         print('  ', end='')
         for col in outDF.columns:
@@ -7620,6 +7671,33 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
         tableValue = htmlTable.iloc[:,i][0]
         html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
 
+    coord0Dir = hvsr_results['input_params']['output_crs'].axis_info[0].direction
+
+    # Figure out which coordinate axis is which (some CRS do Y, X)
+    if coord0Dir.lower() in ['north', 'south']:
+        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+    else:
+        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+
+    # Get the axis name
+    xaxis_name = xaxisinfo.name
+    yaxis_name = yaxisinfo.name
+    
+    # Simplify the axis name
+    if 'longitude' in xaxis_name.lower():
+        xaxis_name = 'Longitude'
+    if 'latitude' in yaxis_name.lower():
+        yaxis_name = 'Latitude'
+        
+    
+    html = html.replace("X_Coordinate", xaxis_name)
+    html = html.replace("Y_Coordinate", yaxis_name)
+
+    html = html.replace("Deg_E", xaxisinfo.unit_name)
+    html = html.replace("Deg_N", yaxisinfo.unit_name)
+
     # View in browser, if indicated to
     try:
         if show_html_report:
@@ -7701,14 +7779,28 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
-            fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
+            fname = f"HVSR_REPORT_{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
             pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
-        with open(pdf_report_filepath, "w+b") as export_file:
-            pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
-        pdf_export_path = pdf_report_filepath
-        if verbose:
-            print(f'\tPDF report saved to {pdf_export_path}')
-    
+        
+        try:        
+            with open(pdf_report_filepath, "w+b") as export_file:
+                pisa_status = pisa.CreatePDF(htmlReport, dest=export_file)
+            pdf_export_path = pdf_report_filepath
+            if verbose:
+                print(f'PDF report saved to {pdf_export_path}')
+        except Exception as e:
+            print(f'PDF could not be saved to {pdf_report_filepath}')
+            if verbose:
+                print(f'\t{e}')
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                pdf_export_path = temp_file.name  # Get the name of the temporary file
+            print(f'Saving pdf to temporary file instead: {temp_file.name}')
+            # Now, open the file again for writing
+            with open(pdf_export_path, 'wb') as temp_file:
+                pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+
+        
     if verbose:
         if not str(pisa_status.err) == '0':
             print(pisa_status.err)
@@ -7724,9 +7816,9 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
             webbrowser.open('file://' + os.path.realpath(temp_file.name))
 
     if show_pdf_report:
-        print('**Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work**')
         if verbose:
             print(f'Attempting to open pdf at {pdf_export_path}')
+        print('\t**Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work**')
 
 
         import subprocess
