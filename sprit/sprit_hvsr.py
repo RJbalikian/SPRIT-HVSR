@@ -3196,8 +3196,8 @@ def input_params(datapath,
                 xcoord = -88.2290526,
                 ycoord =  40.1012122,
                 elevation = 755,
-                input_crs = 'EPSG:4326',#4269 is NAD83, defaults to WGS (4326)
-                output_crs = 'EPSG:4326',
+                input_crs = None, #'EPSG:4326',#4269 is NAD83, defaults to WGS (4326)
+                output_crs = None,
                 elev_unit = 'meters',
                 depth = 0,
                 instrument = 'Raspberry Shake',
@@ -3401,7 +3401,12 @@ def input_params(datapath,
         elev_unit = 'meters'
 
     # Create a unique identifier for each site
-    hvsr_id = f"{id_prefix}-{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
+    if id_prefix is None:
+        id_pre = ''
+    else:
+        id_pre = str(id_prefix)+'-'
+    
+    hvsr_id = f"{id_pre}{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
 
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'id_prefix':id_prefix, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':loc, 'channels':channels,
@@ -7779,7 +7784,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
-            fname = f"HVSR_REPORT_{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
+            fname = f"REPORT_{hvsr_results['site']}_{hvsr_results['hvsr_id']}.pdf"
             pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
         
         try:        
