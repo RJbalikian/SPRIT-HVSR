@@ -7724,11 +7724,28 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
             webbrowser.open('file://' + os.path.realpath(temp_file.name))
 
     if show_pdf_report:
-        print('Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work')
+        print('**Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work**')
         if verbose:
-            print(f'\tOpening pdf at {pdf_export_path}')
+            print(f'Attempting to open pdf at {pdf_export_path}')
+
+
         import subprocess
-        subprocess.Popen([pdf_export_path], shell=True)
+        result = subprocess.Popen([pdf_export_path], shell=True)
+        result.wait()
+
+        if str(result.returncode) == "126" and not show_html_report:
+            print(f"SpRIT cannot open your pdf report, but it has been saved here: {pdf_export_path}")
+            print('Attempting to open HTML version of report')
+            
+            import webbrowser
+            # Create a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
+                # Write the HTML content to a temporary file
+                temp_file.write(htmlReport.encode('utf-8'))
+
+                #Open html file in browser window
+                webbrowser.open('file://' + os.path.realpath(temp_file.name))
+
 
     return hvsr_results
 
