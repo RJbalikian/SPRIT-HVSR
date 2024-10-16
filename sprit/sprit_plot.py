@@ -224,9 +224,9 @@ def process_data(button):
     progress_bar.value = 0
     log_textArea.value += f"\n\nPROCESSING DATA [{startProc}]"
     global hvsr_data
-    # Read data again only if internal hvsr_data datapath variable is different from what is in the gui
-    if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'datapath') or \
-            (pathlib.Path(hvsr_data.datapath).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
+    # Read data again only if internal hvsr_data input_data variable is different from what is in the gui
+    if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'input_data') or \
+            (pathlib.Path(hvsr_data.input_data).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
         hvsr_data = read_data(button)
 
     remove_noise_kwargs = get_remove_noise_kwargs()

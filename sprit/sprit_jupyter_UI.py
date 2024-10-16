@@ -506,7 +506,7 @@ def create_jupyter_ui():
 
     # Update input_param call
     def update_input_param_call():
-        input_param_text = f"""(datapath='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
+        input_param_text = f"""(input_data='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
                     station='{station_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
@@ -552,7 +552,7 @@ def create_jupyter_ui():
 
     def get_input_params():
         input_params_kwargs={
-            'datapath':data_filepath.value,
+            'input_data':data_filepath.value,
             'metapath':metadata_filepath.value,
             'site':site_name.value,
             'instrument':instrument_dropdown.value,
@@ -789,9 +789,9 @@ def create_jupyter_ui():
         progress_bar.value = 0
         log_textArea.value += f"\n\nPROCESSING DATA [{startProc}]"
         global hvsr_data
-        # Read data again only if internal hvsr_data datapath variable is different from what is in the gui
-        if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'datapath') or \
-                (pathlib.Path(hvsr_data.datapath).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
+        # Read data again only if internal hvsr_data input_data variable is different from what is in the gui
+        if not 'hvsr_data' in globals() or not hasattr(hvsr_data, 'input_data') or \
+                (pathlib.Path(hvsr_data.input_data).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
             hvsr_data = read_data(button)
 
         remove_noise_kwargs = get_remove_noise_kwargs()

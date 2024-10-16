@@ -164,7 +164,7 @@ class HVSRBatch:
         Parameters
         ----------
         hvsr_export_path : filepath, default=True
-            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
+            Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). By default True. If True, it will first try to save each file to the same directory as input_data, then if that does not work, to the current working directory, then to the user's home directory, by default True
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
@@ -362,7 +362,7 @@ class HVSRData:
         hvsr_export_path : filepath, default=True
             Filepath to save file. Can be either directory (which will assign a filename based on the HVSRData attributes). 
             By default True. 
-            If True, it will first try to save each file to the same directory as datapath, then if that does not work, to the current working directory, then to the user's home directory, by default True
+            If True, it will first try to save each file to the same directory as input_data, then if that does not work, to the current working directory, then to the user's home directory, by default True
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
@@ -693,16 +693,16 @@ def gui(kind='browser'):
 
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(datapath, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
+def run(input_data, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
-    The datapath parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
+    The input_data parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
     
     Notes
     -----
     The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
-    - input_params(): The datapath parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
-    - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from datapath and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
+    - input_params(): The input_data parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
+    - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from input_data and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
     - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
     - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
     - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
@@ -713,13 +713,13 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
 
     Parameters
     ----------
-    datapath : str or filepath object that can be read by obspy
+    input_data : str or filepath object that can be read by obspy
         Filepath to data to be processed. This may be a file or directory, depending on what kind of data is being processed (this can be specified with the source parameter). 
-        For sample data, The following can be specified as the datapath parameter:
-            - Any integer 1-6 (inclusive), or the string (e.g., datapath="1" or datapath=1 will work)
-            - The word "sample" before any integer (e.g., datapath="sample1")
+        For sample data, The following can be specified as the input_data parameter:
+            - Any integer 1-6 (inclusive), or the string (e.g., input_data="1" or input_data=1 will work)
+            - The word "sample" before any integer (e.g., input_data="sample1")
             - The word "sample" will default to "sample1" if source='file'. 
-            - If source='batch', datapath should be datapath='sample' or datapath='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
+            - If source='batch', input_data should be input_data='sample' or input_data='batch'. In this case, it will read and process all the sample files using the HVSRBatch class. Set verbose=True to see all the information in the sample batch csv file.
     source : str, optional
         _description_, by default 'file'
     azimuth_calculation : bool, optional
@@ -760,7 +760,7 @@ def run(datapath, source='file', azimuth_calculation=False, noise_removal=False,
     # Get the input parameters
     input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
     try:
-        params = input_params(datapath=datapath, verbose=verbose, **input_params_kwargs)
+        params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
     except:
         #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
@@ -1445,7 +1445,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     hvsr_data : HVSRData or HVSRBatch
         Data to be exported
     hvsr_export_path : str or filepath object, default = None
-        String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, 'wb') statement. If None, defaults to input datapath directory, by default None
+        String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, 'wb') statement. If None, defaults to input input_data directory, by default None
     ext : str, default = 'hvsr'
         Filepath extension to use for data file, by default 'hvsr'
     """
@@ -1453,7 +1453,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
         
         fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickled.{ext}"
         if _export_path is None or _export_path is True:
-            _export_path = _hvsr_data['datapath']
+            _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
         else:
             _export_path = pathlib.Path(_export_path)
@@ -1544,13 +1544,13 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
         outFile  = pathlib.Path().home().joinpath(fname)
         if report_export_paths == True or report_export_paths is None:
             # Check so we don't write in sample directory
-            if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+            if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                 if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
                     inFile = pathlib.Path.home() #Use the path to user's home if all else fails
                 else:
                     inFile = pathlib.Path(os.getcwd())
             else:
-                inFile = pathlib.Path(hvsr_results['input_params']['datapath'])
+                inFile = pathlib.Path(hvsr_results['input_params']['input_data'])
                             
             if inFile.is_dir():
                 outFile = inFile.joinpath(fname)
@@ -1812,7 +1812,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
             'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
             'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-            'file' is used if the params['datapath'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+            'file' is used if the params['input_data'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
             'batch' is used to read a list or specified set of seismic files. 
                 Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
     trim_dir : None or str or pathlib obj, default=None
@@ -1879,7 +1879,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
     # Check if data is from tromino, and adjust parameters accordingly
-    if 'trc' in pathlib.Path(str(params['datapath'])).suffix:
+    if 'trc' in pathlib.Path(str(params['input_data'])).suffix:
         if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
             print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
         params['instrument'] = 'Tromino'
@@ -1890,11 +1890,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     date = params['acq_date']
 
     # Cleanup for gui input
-    if isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
+    if isinstance(params['input_data'], (obspy.Stream, obspy.Trace)):
         pass
-    elif '}' in str(params['datapath']):
-        params['datapath'] = params['datapath'].as_posix().replace('{', '')
-        params['datapath'] = params['datapath'].split('}')
+    elif '}' in str(params['input_data']):
+        params['input_data'] = params['input_data'].as_posix().replace('{', '')
+        params['input_data'] = params['input_data'].split('}')
     
     sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
     sampleList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'batch', 'sample', 'sample_batch']
@@ -1902,15 +1902,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         sampleList.append(f'sample{s}')
         sampleList.append(f'sample_{s}')
 
-    #Make sure datapath is pointing to an actual file
-    if isinstance(params['datapath'],list):
-        for i, d in enumerate(params['datapath']):
-            params['datapath'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=sampleList)
-        dPath = params['datapath']
-    elif isinstance(params['datapath'], (obspy.Stream, obspy.Trace)):
+    #Make sure input_data is pointing to an actual file
+    if isinstance(params['input_data'],list):
+        for i, d in enumerate(params['input_data']):
+            params['input_data'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=sampleList)
+        dPath = params['input_data']
+    elif isinstance(params['input_data'], (obspy.Stream, obspy.Trace)):
         pass
     else:
-        dPath = sprit_utils.checkifpath(params['datapath'], sample_list=sampleList)
+        dPath = sprit_utils.checkifpath(params['input_data'], sample_list=sampleList)
 
     inst = params['instrument']
 
@@ -1966,16 +1966,16 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             obspyReadKwargs[argName] = kwargs[argName]
 
     # Select how reading will be done
-    if isinstance(params['datapath'], obspy.Stream):
-        rawDataIN = params['datapath'].copy()
-        tr = params['datapath'][0]
-        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
+    if isinstance(params['input_data'], obspy.Stream):
+        rawDataIN = params['input_data'].copy()
+        tr = params['input_data'][0]
+        params['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
                                        str(tr.stats.starttime)[11:19],
                                        str(tr.stats.endtime)[11:19]])
-    elif isinstance(params['datapath'], obspy.Trace):
-        rawDataIN = obspy.Stream(params['datapath'])
-        tr = params['datapath']
-        params['datapath'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
+    elif isinstance(params['input_data'], obspy.Trace):
+        rawDataIN = obspy.Stream(params['input_data'])
+        tr = params['input_data']
+        params['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
                                        str(tr.stats.starttime)[11:19], 
                                        str(tr.stats.endtime)[11:19]])
     else:
@@ -1990,7 +1990,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             except:
                 raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
         elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
-            rawDataIN = params['datapath'].copy()
+            rawDataIN = params['input_data'].copy()
         elif source=='dir':
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -2000,15 +2000,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
                     for f in temp_file_glob:
                         currParams = params
-                        currParams['datapath'] = f
+                        currParams['input_data'] = f
 
                         curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
                                     trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source=='file' and str(params['datapath']).lower() not in sampleList:
-            # Read the file specified by datapath          
+        elif source=='file' and str(params['input_data']).lower() not in sampleList:
+            # Read the file specified by input_data          
             if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
                 params['params']['instrument'] = 'Tromino'
@@ -2038,34 +2038,34 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 #with warnings.catch_warnings():
                     #warnings.simplefilter(action='ignore', category=UserWarning)
                     #rawDataIN.attach_response(inv)
-        elif source=='batch' and str(params['datapath']).lower() not in sampleList:
+        elif source=='batch' and str(params['input_data']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
-            params = batch_data_read(input_data=params['datapath'], verbose=verbose, **batch_data_read_kwargs)
+            params = batch_data_read(batch_data=params['input_data'], verbose=verbose, **batch_data_read_kwargs)
             params = HVSRBatch(params)
             return params
-        elif str(params['datapath']).lower() in sampleList or f"sample{params['datapath'].lower()}" in sampleList:
+        elif str(params['input_data']).lower() in sampleList or f"sample{params['input_data'].lower()}" in sampleList:
             sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             if source=='batch':
-                params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
-                params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+                params['input_data'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
                 params = HVSRBatch(params)
                 return params
             elif source=='dir':
-                params['datapath'] = sample_data_dir.joinpath('Batch_SampleData.csv')
-                params = batch_data_read(input_data=params['datapath'], batch_type='sample', verbose=verbose)
+                params['input_data'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
                 params = HVSRBatch(params)
                 return params
             elif source=='file':
-                params['datapath'] = str(params['datapath']).lower()
+                params['input_data'] = str(params['input_data']).lower()
                 
-                if params['datapath'].lower() in sampleFileKeyMap.keys():
-                    params['datapath'] = sampleFileKeyMap[params['datapath'].lower()]
+                if params['input_data'].lower() in sampleFileKeyMap.keys():
+                    params['input_data'] = sampleFileKeyMap[params['input_data'].lower()]
                 else:
-                    params['datapath'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+                    params['input_data'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
 
-                dPath = params['datapath']
+                dPath = params['input_data']
                 rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
                 #import warnings
                 #with warnings.catch_warnings():
@@ -2076,7 +2076,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                 rawDataIN = obspy.read(dPath)
                 #rawDataIN.attach_response(inv)
             except:
-                RuntimeError(f'source={source} not recognized, and datapath cannot be read using obspy.read()')
+                RuntimeError(f'source={source} not recognized, and input_data cannot be read using obspy.read()')
 
     #Get metadata from the data itself, if not reading raw data
     try:
@@ -2852,7 +2852,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     report_export_formats : list or str, default=['pdf']
         A string or list of strings indicating which report formats should be exported to disk.
     report_export_paths : None, bool, or filepath, default = None
-        If None or False, does not export; if True, will export to same directory as the datapath parameter in the input_params() function.
+        If None or False, does not export; if True, will export to same directory as the input_data parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
         If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". 
         The extension/suffix defaults to png for report_formats="plot", csv for 'table', txt for 'print', html for 'html', and pdf for 'pdf.'
@@ -2936,16 +2936,16 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         
         if report_export_paths is not None:
             if report_export_paths is True:
-                if pathlib.Path(hvsr_results['input_params']['datapath']) in sampleFileKeyMap.values():
+                if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
-                    csvExportPath = pathlib.Path(hvsr_results['input_params']['datapath'])
+                    csvExportPath = pathlib.Path(hvsr_results['input_params']['input_data'])
             elif pathlib.Path(report_export_paths).is_dir():
                 csvExportPath = report_export_paths
             elif pathlib.Path(report_export_paths).is_file():
                 csvExportPath = report_export_paths.parent
             else:
-                csvExportPath = pathlib.Path(hvsr_results[site_name].datapath)
+                csvExportPath = pathlib.Path(hvsr_results[site_name].input_data)
                 if csvExportPath.is_dir():
                     pass
                 else:
@@ -3014,7 +3014,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         #fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
 
         #if exp_path is None:
-        #    exp_path = pathlib.Path(hvsr_results['datapath'])
+        #    exp_path = pathlib.Path(hvsr_results['input_data'])
         #    if not exp_path.parent.exists():
         #        exp_path = pathlib.Path().home().joinpath(fname)
         #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_paths=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
@@ -3182,7 +3182,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
 
 
 # Define input parameters
-def input_params(datapath,
+def input_params(input_data,
                 site='HVSR Site',
                 id_prefix=None,
                 network='AM', 
@@ -3211,7 +3211,7 @@ def input_params(datapath,
     
     Parameters
     ----------
-    datapath : str or pathlib.Path object
+    input_data : str or pathlib.Path object
         Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
     site : str, default="HVSR Site"
         Site name as designated by user for ease of reference. Used for plotting titles, filenames, etc.
@@ -3414,7 +3414,7 @@ def input_params(datapath,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
                     'elevation':elevation, 'elev_unit':elev_unit, 'input_crs':input_crs, 'output_crs':output_crs,
-                    'depth':depth, 'datapath': datapath, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
+                    'depth':depth, 'input_data': input_data, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
                     'processing_parameters':processing_parameters, 'ProcessingStatus':{'InputParamsStatus':True, 'OverallStatus':True}
                     }
     
@@ -4929,19 +4929,19 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
 
 
 # Read data as batch
-def batch_data_read(input_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
+def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs):
     """Function to read data in data as a batch of multiple data files. This is best used through sprit.fetch_data(*args, source='batch', **other_kwargs).
 
     Parameters
     ----------
-    input_data : filepath or list
+    batch_data : filepath or list
         Input data information for how to read in data as batch
     batch_type : str, optional
         Type of batch read, only 'table' and 'filelist' accepted. If 'table', will read data from a file read in using pandas.read_csv(), by default 'table'
     param_col : None or str, optional
         Name of parameter column from batch information file. Only used if a batch_type='table' and single parameter column is used, rather than one column per parameter (for single parameter column, parameters are formatted with = between keys/values and , between item pairs), by default None
     batch_params : list, dict, or None, default = None
-        Parameters to be used if batch_type='filelist'. If it is a list, needs to be the same length as input_data. If it is a dict, will be applied to all files in input_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.
+        Parameters to be used if batch_type='filelist'. If it is a list, needs to be the same length as batch_data. If it is a dict, will be applied to all files in batch_data and will combined with extra keyword arguments caught by **readcsv_getMeta_fetch_kwargs.
     verbose : bool, optional
         Whether to print information to terminal during batch read, by default False
     **readcsv_getMeta_fetch_kwargs
@@ -4972,23 +4972,23 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
     stream_dict = {}
     data_dict = {}
     if batch_type == 'table':
-        if isinstance(input_data, pd.DataFrame):
-            dataReadInfoDF = input_data
-        elif isinstance(input_data, dict):
+        if isinstance(batch_data, pd.DataFrame):
+            dataReadInfoDF = batch_data
+        elif isinstance(batch_data, dict):
             #For params input
             pass
         else:#Read csv
             read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
-            dataReadInfoDF = pd.read_csv(input_data, **read_csv_kwargs)
-            if 'datapath' in dataReadInfoDF.columns:
-                filelist = list(dataReadInfoDF['datapath'])
+            dataReadInfoDF = pd.read_csv(batch_data, **read_csv_kwargs)
+            if 'input_data' in dataReadInfoDF.columns:
+                filelist = list(dataReadInfoDF['input_data'])
             #dataReadInfoDF = dataReadInfoDF.replace(np.nan, None)
 
         #If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
             sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             for index, row in dataReadInfoDF.iterrows():
-                dataReadInfoDF.loc[index, 'datapath'] = sample_data_dir.joinpath(row.loc['datapath'])
+                dataReadInfoDF.loc[index, 'input_data'] = sample_data_dir.joinpath(row.loc['input_data'])
 
         default_dict = {'site':'HVSR Site',
                     'network':'AM', 
@@ -5076,34 +5076,34 @@ def batch_data_read(input_data, batch_type='table', param_col=None, batch_params
                 param_dict_list.append(param_dict)
         else:
             if param_col not in dataReadInfoDF.columns:
-                raise IndexError('{} is not a column in {} (columns are: {})'.format(param_col, input_data, dataReadInfoDF.columns))
+                raise IndexError('{} is not a column in {} (columns are: {})'.format(param_col, batch_data, dataReadInfoDF.columns))
             for row in dataReadInfoDF[param_col]:
                 param_dict = {}
                 splitRow = str(row).split(',')
                 for item in splitRow:
                     param_dict[item.split('=')[0]] = item.split('=')[1]
                 param_dict_list.append(param_dict)
-        #input_params(datapath,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
+        #input_params(input_data,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
         #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
         #get_metadata(params, write_path)
     elif batch_type == 'filelist':
         if isinstance(batch_params, list):
-            if len(batch_params) != len(input_data):
-                raise RuntimeError('If batch_params is list, it must be the same length as input_data. len(batch_params)={} != len(input_data)={}'.format(len(batch_params), len(input_data)))
+            if len(batch_params) != len(batch_data):
+                raise RuntimeError('If batch_params is list, it must be the same length as batch_data. len(batch_params)={} != len(batch_data)={}'.format(len(batch_params), len(batch_data)))
             param_dict_list = batch_params
         elif isinstance(batch_params, dict):
             batch_params.update(readcsv_getMeta_fetch_kwargs)
             param_dict_list = []
-            for i in range(len(input_data)):
+            for i in range(len(batch_data)):
                 param_dict_list.append(batch_params)
         
         # Read and process each MiniSEED file
-        for i, file in enumerate(input_data):
+        for i, file in enumerate(batch_data):
             if isinstance(file, obspy.core.stream.Stream):
                 warnings.warn('Reading in a list of Obspy streams is not currently supported, but may be implemented in the future', FutureWarning)
                 pass 
             else:
-                param_dict_list[i]['datapath'] = file
+                param_dict_list[i]['input_data'] = file
 
     hvsr_metaDict = {}
     zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
@@ -5765,20 +5765,20 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
 
 
 # Read data from raspberry shake
-def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=False):
+def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=False):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
     from obspy.core import UTCDateTime
     fileList = []
     folderPathList = []
     filesinfolder = False
-    datapath = sprit_utils.checkifpath(datapath)
+    input_data = sprit_utils.checkifpath(input_data)
     #Read RS files
     if source=='raw': #raw data with individual files per trace
-        if datapath.is_dir():
-            for child in datapath.iterdir():
+        if input_data.is_dir():
+            for child in input_data.iterdir():
                 if child.is_file() and child.name.startswith('AM') and str(doy).zfill(3) in child.name and str(year) in child.name:
                     filesinfolder = True
-                    folderPathList.append(datapath)
+                    folderPathList.append(input_data)
                     fileList.append(child)
                 elif child.is_dir() and child.name.startswith('EH') and not filesinfolder:
                     folderPathList.append(child)
@@ -5826,11 +5826,11 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
                 warnings.filterwarnings(action='ignore', message='Found more than one matching response.*')
                 rawDataIN.attach_response(inv)
         else:
-            rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
+            rawDataIN = obspy.read(str(input_data), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
             rawDataIN.attach_response(inv)
     elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
         obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
-        for file in datapath.iterdir():
+        for file in input_data.iterdir():
             ext = file.suffix[1:]
             rawFormat = False
             if ext.isnumeric():
@@ -5839,7 +5839,7 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
             
             if ext.upper() in obspyFormats or rawFormat:
                 filesinfolder = True
-                folderPathList.append(datapath)
+                folderPathList.append(input_data)
                 fileList.append(file.name)
                         
         filepaths = []
@@ -5859,10 +5859,10 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
         if type(rawDataIN) is list and len(rawDataIN)==1:
             rawDataIN = rawDataIN[0]
     elif source=='file':
-        rawDataIN = obspy.read(str(datapath), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
+        rawDataIN = obspy.read(str(input_data), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest=True)
         rawDataIN.merge()   
         rawDataIN.attach_response(inv)
-    elif type(source) is list or type(datapath) is list:
+    elif type(source) is list or type(input_data) is list:
         pass #Eventually do something
         rawDataIN.attach_response(inv)
 
@@ -5870,12 +5870,12 @@ def __read_RS_file_struct(datapath, source, year, doy, inv, params, verbose=Fals
 
 
 # Read data from Tromino
-def read_tromino_files(datapath, params, bitFormat='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(input_data, params, bitFormat='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
     ----------
-    datapath : str, pathlib.Path()
+    input_data : str, pathlib.Path()
         The input parameter _datapath_ from sprit.input_params()
     params : HVSRData or HVSRBatch
         The parameters as read in from input_params() and and fetch_data()
@@ -5887,7 +5887,7 @@ def read_tromino_files(datapath, params, bitFormat='H', sampling_rate=128, start
     obspy.Stream
         An obspy.Stream object containing the trace data from the Tromino instrument
     """
-    dPath = datapath
+    dPath = input_data
 
     strucSizes = {'c':1, 'b':1,'B':1, '?':1,
                 'h':2,'H':2,'e':2,

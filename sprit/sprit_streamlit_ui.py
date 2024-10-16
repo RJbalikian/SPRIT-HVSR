@@ -245,7 +245,7 @@ def on_file_upload():
             f.write(file.getvalue())
     if verbose:
         print(file.name)
-    st.session_state.datapath = path.as_posix()
+    st.session_state.input_data = path.as_posix()
 
 
 def on_run_data():
@@ -253,7 +253,7 @@ def on_run_data():
     inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
     plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
 
-    if st.session_state.datapath!='':
+    if st.session_state.input_data!='':
         srun = {}
         for key, value in st.session_state.items():
             if key in st.session_state.run_kws and value != st.session_state.default_params[key]:
@@ -292,7 +292,7 @@ def on_run_data():
             if nonDefaultParams:
                 spinnerText = spinnerText.replace('default', 'the following non-default')
             with st.spinner(spinnerText):
-                st.session_state.hvsr_data = sprit_hvsr.run(datapath=st.session_state.datapath, **srun)
+                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
         
         write_to_info_tab(infoTab)
         st.balloons()
@@ -303,7 +303,7 @@ def on_run_data():
         csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
         strReportTab.text(st.session_state.hvsr_data['Print_Report'])
 
-    st.session_state.prev_datapath=st.session_state.datapath
+    st.session_state.prev_datapath=st.session_state.input_data
     
 def write_to_info_tab(info_tab):
     with info_tab:
@@ -331,7 +331,7 @@ with st.sidebar:
         print_param(param2print)
 
     st.header('SpRIT HVSR', divider='rainbow')
-    datapathInput = st.text_input("Datapath", key='datapath', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
+    datapathInput = st.text_input("Datapath", key='input_data', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
     #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
     with st.expander("Click to access data uploader"):
         st.file_uploader("Upload data file(s)", type=OBSPYFORMATS, accept_multiple_files=False, key='datapath_uploader', on_change=on_file_upload)
