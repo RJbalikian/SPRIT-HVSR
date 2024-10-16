@@ -1478,7 +1478,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
 
 
 # Function to export reports to disk in various formats
-def export_report(hvsr_results, report_export_paths=None, report_export_format=['pdf'], azimuth='HV', csv_handling='rename', show_report=True, verbose=False):
+def export_report(hvsr_results, report_export_path=None, report_export_format=['pdf'], azimuth='HV', csv_handling='rename', show_report=True, verbose=False):
     """Function to export reports to disk. Exportable formats include: 
     * 'table': saves a pandas DataFrame as a csv)
     * 'plot': saves the matplotlib or plotly plot figure (depending on what is designated via plot_engine) as an image (png by default)
@@ -1490,7 +1490,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
     ----------
     hvsr_results : HVSRData object
         HVSRData object containing the HVSR data
-    report_export_paths : path-like object, optional
+    report_export_path : path-like object, optional
         The path to where the report should be exported. 
         If this is None (default), this is written to the home directory.
         If this is a True, uses the same directory as the input data, but generates a filename.
@@ -1520,7 +1520,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
     
     for ref in report_export_format:
 
-        if report_export_paths is None:
+        if report_export_path is None:
             print('The export_report(report_export_path) parameter was not specified.')
             print(f'The report will be saved the home directory: {pathlib.Path.home()}')
 
@@ -1542,7 +1542,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
 
         # Initialize output as file in home directory (if not updated)
         outFile  = pathlib.Path().home().joinpath(fname)
-        if report_export_paths == True or report_export_paths is None:
+        if report_export_path == True or report_export_path is None:
             # Check so we don't write in sample directory
             if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                 if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
@@ -1557,12 +1557,12 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
             else:
                 outFile = inFile.with_name(fname)
         else:
-            if not report_export_paths:
+            if not report_export_path:
                 pass
-            elif pathlib.Path(report_export_paths).is_dir():
-                outFile = pathlib.Path(report_export_paths).joinpath(fname)
+            elif pathlib.Path(report_export_path).is_dir():
+                outFile = pathlib.Path(report_export_path).joinpath(fname)
             else:
-                outFile = pathlib.Path(report_export_paths)
+                outFile = pathlib.Path(report_export_path)
 
         if ref == 'table':
             if not hasattr(hvsr_results, 'Table_Report'):
@@ -1646,7 +1646,7 @@ def export_report(hvsr_results, report_export_paths=None, report_export_format=[
         elif ref == "pdf":
             # PDF report is built from HTML report
             if not hasattr(hvsr_results, "HTML_Report") or hvsr_results['HTML_Report'] is None:
-                hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=report_export_paths, show_pdf_report=show_report, verbose=verbose)
+                hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=report_export_path, show_pdf_report=show_report, verbose=verbose)
         
     return hvsr_results
 
@@ -2814,7 +2814,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
                 suppress_report_outputs=False, show_report_outputs=False,
                 csv_handling='append', 
-                report_export_formats=['pdf'], report_export_paths=None, 
+                report_export_formats=['pdf'], report_export_path=None, 
                 verbose=False, **kwargs):    
     """Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. 
     
@@ -2851,7 +2851,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         If True, only reads output to appropriate attribute of data class (ie, print does not print, only reads text into variable). If False, performs as normal.
     report_export_formats : list or str, default=['pdf']
         A string or list of strings indicating which report formats should be exported to disk.
-    report_export_paths : None, bool, or filepath, default = None
+    report_export_path : None, bool, or filepath, default = None
         If None or False, does not export; if True, will export to same directory as the input_data parameter in the input_params() function.
         Otherwise, it should be a string or path object indicating where to export results. May be a file or directory.
         If a directory is specified, the filename will be  "<site_name>_<acq_date>_<UTC start time>-<UTC end time>". 
@@ -2889,7 +2889,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     suppress_report_outputs = orig_args['suppress_report_outputs']
     show_report_outputs = orig_args['show_report_outputs']
     report_export_formats = orig_args['report_export_formats']
-    report_export_paths = orig_args['report_export_paths']
+    report_export_path = orig_args['report_export_path']
     csv_handling = orig_args['csv_handling']
     suppress_report_outputs = orig_args['suppress_report_outputs']
     verbose = orig_args['verbose']
@@ -2934,16 +2934,16 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             if 'Table_Report' in hvsr_results[site_name].keys():
                 combined_csvReport = pd.concat([combined_csvReport, hvsr_results[site_name]['Table_Report']], ignore_index=True, join='inner')
         
-        if report_export_paths is not None:
-            if report_export_paths is True:
+        if report_export_path is not None:
+            if report_export_path is True:
                 if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
                     csvExportPath = pathlib.Path(hvsr_results['input_params']['input_data'])
-            elif pathlib.Path(report_export_paths).is_dir():
-                csvExportPath = report_export_paths
-            elif pathlib.Path(report_export_paths).is_file():
-                csvExportPath = report_export_paths.parent
+            elif pathlib.Path(report_export_path).is_dir():
+                csvExportPath = report_export_path
+            elif pathlib.Path(report_export_path).is_file():
+                csvExportPath = report_export_path.parent
             else:
                 csvExportPath = pathlib.Path(hvsr_results[site_name].input_data)
                 if csvExportPath.is_dir():
@@ -3002,14 +3002,14 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             report_export_formats = [report_export_formats]   
 
     for i, rep_form in enumerate(report_formats):
-        if isinstance(report_export_paths, (list, tuple)):
+        if isinstance(report_export_path, (list, tuple)):
             if not isinstance(report_formats, (list, tuple)):
-                warnings.warn('report_export_paths is a list/tuple and report_formats is not. This may result in unexpected behavior.')
-            if isinstance(report_formats, (list, tuple)) and isinstance(report_export_paths, (list, tuple)) and len(report_formats) != len(report_export_paths):
-                warnings.warn('report_export_paths and report_formats are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
-            exp_path = report_export_paths[i]
+                warnings.warn('report_export_path is a list/tuple and report_formats is not. This may result in unexpected behavior.')
+            if isinstance(report_formats, (list, tuple)) and isinstance(report_export_path, (list, tuple)) and len(report_formats) != len(report_export_path):
+                warnings.warn('report_export_path and report_formats are both lists or tuples, but they are not the same length. This may result in unexpected behavior.')
+            exp_path = report_export_path[i]
         else:
-            exp_path = report_export_paths
+            exp_path = report_export_path
         
         #fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
 
@@ -3017,7 +3017,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         #    exp_path = pathlib.Path(hvsr_results['input_data'])
         #    if not exp_path.parent.exists():
         #        exp_path = pathlib.Path().home().joinpath(fname)
-        #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_paths=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
+        #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
         
         if rep_form=='print':
             verbose_print = verbose
@@ -3036,7 +3036,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     print_exp_path = pathlib.Path(exp_path).with_suffix('.txt')
                 
                 export_report(hvsr_results, azimuth=azimuth,
-                              report_export_format='print', report_export_paths=print_exp_path, 
+                              report_export_format='print', report_export_path=print_exp_path, 
                               show_report = False, # If report is to be shown, done in previous step
                               verbose = verbose_print)
 
@@ -3057,7 +3057,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     table_exp_path = pathlib.Path(exp_path).with_suffix('.csv')
                 
                 export_report(hvsr_results, azimuth=azimuth,
-                            report_export_format='table', report_export_paths=table_exp_path,
+                            report_export_format='table', report_export_path=table_exp_path,
                             csv_handling=csv_handling,
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_table)
@@ -3077,7 +3077,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 expFigAx = fig
             
             if 'plot' in report_export_formats:
-                export_report(hvsr_results=hvsr_results, report_export_paths=report_export_paths, report_export_format='plot')
+                export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format='plot')
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
@@ -3106,7 +3106,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     html_exp_path = pathlib.Path(exp_path).with_suffix('.html')
 
                 export_report(hvsr_results, azimuth=azimuth,
-                            report_export_format='html', report_export_paths=html_exp_path,
+                            report_export_format='html', report_export_path=html_exp_path,
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_html)
 
@@ -4449,7 +4449,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Function to remove noise windows from data
-def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[8, 16], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
+def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[8, 16], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -4509,6 +4509,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                     orig_args[k] = v
 
     remove_method = orig_args['remove_method']
+    processing_window = orig_args['processing_window']
     sat_percent = orig_args['sat_percent']
     noise_percent = orig_args['noise_percent']
     sta = orig_args['sta']
@@ -4532,7 +4533,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 else:
                     print('\t  {}={}'.format(key, value))
 
-    #Setup lists
+    # Set up lists
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
@@ -4540,7 +4541,7 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
 
-    #Get Stream from hvsr_data
+    # Get Stream from hvsr_data
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
@@ -4588,12 +4589,47 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
         else:
             warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
             return output
-            
+
+        # Check if any parameter values are different from default (if they are, automatically add that method to remove_method)
+        rn_signature = inspect.signature(remove_noise)
+
+        methodDict = {'antitrigger':['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
+                    'sat_thresh':['sat_percent'],
+                    'noise_thresh':['noise_percent', 'min_win_size'],
+                    'warmup_cooldown':['warmup_time', 'cooldown_time']}
+
+        defaultValDict = {param.name: param.default for param in rn_signature.parameters.values() if param.default is not inspect.Parameter.empty}
+
+        # If a non-default parameter is specified, add the method it corresponds to to remove_method
+        for key, def_val in defaultValDict.items():
+            if key in orig_args:
+                if def_val != orig_args[key]:
+                    for methodKey, methParamList in methodDict.items():
+                        if key in methParamList:
+                            # Add the corresponding method to remove_mehtod if not already
+                            if (methodKey not in remove_method) and ('auto' not in remove_method):
+                                if remove_method == [None]:
+                                    remove_method = [methodKey]
+                                else:
+                                    remove_method.append(methodKey)
+
         # Reorder list so manual is always first, if it is specified
+        do_manual = False
         if len(set(remove_method).intersection(manualList)) > 0:
+            do_manual = True
             manInd = list(set(remove_method).intersection(manualList))[0]
             remove_method.remove(manInd)
             remove_method.insert(0, manInd)
+
+        # Reorder list so auto is always first (if no manual) or second (if manual)
+        # B/c if 'auto' is carried out, no other methods need to be carried out (repetitive)
+        newAutoInd = 0
+        if do_manual:
+            newAutoInd = 1
+        if len(set(remove_method).intersection(autoList)) > 0:
+            autoInd = list(set(remove_method).intersection(autoList))[0]
+            remove_method.remove(autoInd)
+            remove_method.insert(newAutoInd, autoInd)        
         
         #Go through each type of removal and remove
         for rem_kind in remove_method:
@@ -4620,6 +4656,8 @@ def remove_noise(hvsr_data, remove_method='auto', sat_percent=0.995, noise_perce
                 outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
                 outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+                # Break for-loop, since all the rest are already done as part of auto
+                break
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot)
             elif rem_kind.lower() in saturationThresh:
