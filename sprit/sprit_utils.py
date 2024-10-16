@@ -191,6 +191,9 @@ def format_time(inputDT, tzone='UTC'):
         else:
             hasTime = False
         
+        year = 0
+        month = 0
+        day = 0
         if hasDate:
             #If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
             if len(inputDT.split(div)[0])>2:
@@ -247,10 +250,10 @@ def format_time(inputDT, tzone='UTC'):
                     month = inputDT.split(div)[0]
                     day = inputDT.split(div)[1]                  
 
-        hour=0
-        minute=0
-        sec=0
-        microS=0
+        hour = 0
+        minute = 0
+        sec = 0
+        microS = 0
         if hasTime:
             if hasDate:
                 timeStr = inputDT.split(timeDiv)[1]
@@ -276,7 +279,7 @@ def format_time(inputDT, tzone='UTC'):
                 timeStrList.append('00')
 
             hour = int(timeStrList[0])
-            minute=int(timeStrList[1])
+            minute = int(timeStrList[1])
             sec = int(timeStrList[2])
 
         outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),

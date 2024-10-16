@@ -749,7 +749,6 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
-   
     if 'hvsr_band' not in kwargs.keys():
         kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
     if 'peak_freq_range' not in kwargs.keys():
@@ -4466,6 +4465,10 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
     remove_method : str, {'auto', 'manual', 'stalta'/'antitrigger', 'saturation threshold', 'noise threshold', 'warmup'/'cooldown'/'buffer'/'warm_cool'}
         The different methods for removing noise from the dataset. A list of strings will also work, in which case, it should be a list of the above strings. See descriptions above for what how each method works. By default 'auto.'
         If remove_method='auto', this is the equivalent of remove_method=['noise threshold', 'antitrigger', 'saturation threshold', 'warm_cool']
+    processing_window : list, tuple, or None
+        A list/tuple of two items [s, e] or a list/tuple of two-item lists/tuples [[s0, e0], [s1,e1],...[sn, en]] with start and end time(s) for windows to *keep* for processing. 
+        Data outside of these times will be excluded from processing. 
+        Times should be obspy.UTCDateTime objects to ensure precision, but time strings ("13:05") will also work in most cases (excpetions may be when the data stream starts/ends on different UTC days)
     sat_percent : float, default=0.995
         Percentage (between 0 and 1), to use as the threshold at which to remove data. This is used in the saturation method. By default 0.995. 
         If a value is passed that is greater than 1, it will be divided by 100 to obtain the percentage.
@@ -4540,6 +4543,7 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
     saturationThresh = ['saturation threshold', 'saturation', 'sat', 's']
     noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
+    procWinList = ['processing_window', 'windows', 'window', 'win', 'pw']
 
     # Get Stream from hvsr_data
     if isinstance(hvsr_data, HVSRBatch):
@@ -4596,7 +4600,8 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
         methodDict = {'antitrigger':['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
                     'sat_thresh':['sat_percent'],
                     'noise_thresh':['noise_percent', 'min_win_size'],
-                    'warmup_cooldown':['warmup_time', 'cooldown_time']}
+                    'warmup_cooldown':['warmup_time', 'cooldown_time'],
+                    'processing_window':['processing_window']}
 
         defaultValDict = {param.name: param.default for param in rn_signature.parameters.values() if param.default is not inspect.Parameter.empty}
 
@@ -4666,6 +4671,8 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
                 outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
             elif rem_kind.lower() in warmup_cooldown:
                 outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+            elif rem_kind.lower() in procWinList:
+                outStream = _keep_processing_windows(stream=outStream, processing_window=processing_window)
             else:
                 if len(remove_method)==1:
                     warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
@@ -6346,6 +6353,55 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
         outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
+def _keep_processing_windows(stream, processing_window=[":"]):
+    instream = stream.copy()
+    allList = [':', 'all', 'everything']
+
+    year = instream[0].stats.starttime.year
+    month = instream[0].stats.starttime.month
+    day = instream[0].stats.starttime.day
+    
+    if not isinstance(processing_windows, (tuple, list)):
+        processing_windows = [processing_windows]
+        
+    
+    pWinUTC = []
+    for p in processing_windows:
+        if str(p).lower() in allList:
+            return instream
+        
+        if isinstance(p, (tuple, list)):
+            pWinUTC.append([])
+            if isinstance(p[0], (obspy.UTCDateTime, datetime.datetime)) and isinstance(p[1], (obspy.UTCDateTime, datetime.datetime)):
+                pWinUTC[-1][0] = obspy.UTCDateTime(p[0])
+                pWinUTC[-1][1] = obspy.UTCDateTime(p[1])
+            else:
+                pWinUTC[-1][0] = obspy.UTCDateTime(sprit_utils.format_time(p[0], tzone='UTC'))
+                pWinUTC[-1][1] = obspy.UTCDateTime(sprit_utils.format_time(p[1], tzone='UTC'))
+
+                # Make sure date and time are the same 
+                pWinUTC[-1][0] = obspy.UTCDateTime(year, month, day, pWinUTC[-1][0].hour, pWinUTC[-1][0].minute, pWinUTC[-1][0].second)
+                pWinUTC[-1][1] = obspy.UTCDateTime(year, month, day, pWinUTC[-1][1].hour, pWinUTC[-1][1].minute, pWinUTC[-1][1].second)
+        else:
+            if len(processing_windows) == 2:
+                pWinUTC = [[obspy.UTCDateTime(sprit_utils.format_time(processing_windows[0], tzone='UTC')),
+                        obspy.UTCDateTime(sprit_utils.format_time(processing_windows[1], tzone='UTC'))]]
+            else:
+                print(f'The processing_windows parameter of remove_noise was set as {processing_windows}')
+                print("The processing_windows parameter must be a list or tuple with a start and end time or with lists/tuples of start/end times.")
+                print('processing_windows noise removal method not applied')
+                return instream
+    
+    print(pWinUTC)
+    # pWinUTC should be a list of two-item lists with UTCDateTime objects no matter how it came in
+    outstream = obspy.Stream()
+    stream = stream.split()
+    for pwin in pWinUTC:
+        splitStream = stream.copy()
+        outstream = outstream + splitStream.trim(starttime=pwin[0], endtime=pwin[1])
+    outstream.merge()
+
+    return outstream
 
 # Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
