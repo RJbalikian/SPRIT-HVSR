@@ -1478,8 +1478,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
         with open(_export_path, 'wb') as f:
             pickle.dump(_hvsr_data, f) 
             
-        if verbose:
-            print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
+        print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
             
     if isinstance(hvsr_data, HVSRBatch):
         for sitename in hvsr_data.keys():
