@@ -1461,9 +1461,9 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     ext : str, default = 'hvsr'
         Filepath extension to use for data file, by default 'hvsr'
     """
-    def _do_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
+    def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
-        fname = f"{_hvsr_data.site}_{_hvsr_data.acq_date}_pickled.{ext}"
+        fname = f"REPORT_{_hvsr_data['site']}_{_hvsr_data['hvsr_id']}_pickled.{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
@@ -1481,9 +1481,9 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
             
     if isinstance(hvsr_data, HVSRBatch):
         for sitename in hvsr_data.keys():
-            _do_export(hvsr_data[sitename], hvsr_export_path, ext)
+            _hvsr_export(hvsr_data[sitename], hvsr_export_path, ext)
     elif isinstance(hvsr_data, HVSRData):
-        _do_export(hvsr_data, hvsr_export_path, ext)
+        _hvsr_export(hvsr_data, hvsr_export_path, ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     return
