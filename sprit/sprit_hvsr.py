@@ -8658,6 +8658,13 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     # Create chart
     if 'subplot' in kwargs.keys():
         del kwargs['subplot']
+    
+    # Get min and max of colormap normalization from array that is used
+    if 'vmin' not in kwargs.keys():
+        kwargs['vmin'] = np.min(np.stack(hvsrDF[used]['HV_Curves']))
+    if 'vmax' not in kwargs.keys():
+        kwargs['vmax'] = np.max(np.stack(hvsrDF[used]['HV_Curves']))
+
     im = ax.imshow(linear_arr.T, origin='lower', extent=extList, aspect='auto', alpha=useArr, **kwargs)
     ax.tick_params(left=True, right=True, top=True)
 
