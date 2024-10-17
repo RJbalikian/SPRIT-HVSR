@@ -1128,17 +1128,30 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
             warnings.warn(f"azimuth_unit={azimuth_unit} not supported. Try 'degrees' or 'radians'. No azimuthal analysis run.")
             return hvsr_data
 
-        #Limit to 1-180 and "right" half of compass (will be reflected on other half)
-        if az_angle_deg <= 1:
-            if verbose:
-                warnings.warn(f"Minimum azimuth rotation is 1 degree (max. is 180). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=1 degree ({np.round(np.pi/180,3)} radians) ")
-            az_angle_deg = 1
-            az_angle_rad = np.pi/180
-        elif az_angle_deg >= 180:
-            if verbose:
-                warnings.warn(f"Maximum azimuth value is azimuth_angle=180 degrees (min. is 1). You have selected {az_angle_deg} degrees ({az_angle_rad} radians). Converting to azimuth_angle=180 degrees ({np.round(np.pi,3)} radians) ")
-            az_angle_deg = 180
-            az_angle_rad = np.pi
+        # Limit to 1-180 (and "right" half of compass) (will be reflected on other half if applicable to save computation time)
+        conversion_message = ''
+        will_convert = False
+        if az_angle_deg < 0:
+            will_convert = True
+            conversion_message = conversion_message + 'converted to a positive value'
+            if az_angle_deg < -180:
+                conversion_message = conversion_message + ' between 0 and 180 degrees'
+
+        if az_angle_deg > 180:
+            will_convert = True
+            conversion_message = conversion_message + ' converted to a value between 0 and 180 degrees'
+
+        if will_convert:
+            conversion_message = f"\tThe azimuth angle specified will be{conversion_message}"
+
+        if verbose:
+            print(conversion_message, end=f': {az_angle_deg}')
+        # Convert angle to 0-180
+        az_angle_deg = az_angle_deg - (180 * (az_angle_deg // 180))
+        az_angle_rad = az_angle_rad = np.deg2rad(azimuth_angle)
+
+        if verbose:
+            print(f' degrees --> {az_angle_deg} degrees.')
 
         multAzList = ['multiple', 'multi', 'mult', 'm']
         singleAzList = ['single', 'sing', 's']
@@ -4540,12 +4553,12 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
-    saturationThresh = ['saturation threshold', 'saturation', 'sat', 's']
-    noiseThresh = ['noise threshold', 'noise', 'threshold', 'n']
+    saturationThresh = ['saturation threshold', 'sat_thresh', 'sat thresh', 'saturation', 'sat', 's']
+    noiseThresh = ['noise threshold', 'noise thresh', 'noise_thresh', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
-    procWinList = ['processing_window', 'windows', 'window', 'win', 'pw']
+    procWinList = ['processing_window', 'processing window', 'windows', 'window', 'win', 'pw']
 
-    # Get Stream from hvsr_data
+    # Do batch runs
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
@@ -4567,77 +4580,88 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
 
         output = HVSRBatch(hvsr_out)
         return output
-    elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream, obspy.Trace)):
-        if isinstance(hvsr_data, (HVSRData, dict)):
-            if remove_raw_noise:
-                inStream = hvsr_data['input_stream'].copy()
-            else:
-                inStream = hvsr_data['stream'].copy()
-            output = hvsr_data#.copy()
+    
+    if not isinstance(hvsr_data, (HVSRData, dict, obspy.Stream, obspy.Trace)):
+        warnings.warn(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
+        return hvsr_data
+    
+    # Which stream to use (input, or current)
+    if isinstance(hvsr_data, (HVSRData, dict)):
+        if remove_raw_noise:
+            inStream = hvsr_data['input_stream'].copy()
         else:
-            inStream = hvsr_data.copy()
-            output = inStream.copy()
+            inStream = hvsr_data['stream'].copy()
+        output = hvsr_data#.copy()
+    else:
+        inStream = hvsr_data.copy()
+        output = inStream.copy()
 
-        outStream = inStream
+    outStream = inStream
 
-        # Get remove_method into consistent format (list)
-        if isinstance(remove_method, str):
-            if ',' in remove_method:
-                remove_method = remove_method.split(',')
-            else:
-                remove_method = [remove_method]
-        elif isinstance(remove_method, (list, tuple)):
-            pass
-        elif not remove_method:
-            remove_method=[None]
+    # Get remove_method into consistent format (list)
+    if isinstance(remove_method, str):
+        if ',' in remove_method:
+            remove_method = remove_method.split(',')
         else:
-            warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
-            return output
+            remove_method = [remove_method]
+    elif isinstance(remove_method, (list, tuple)):
+        pass
+    elif not remove_method:
+        remove_method=[None]
+    else:
+        warnings.warn(f"Input value remove_method={remove_method} must be either string, list of strings, None, or False. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
+        return output
+    orig_removeMeth = remove_method
+    # Check if any parameter values are different from default (if they are, automatically add that method to remove_method)
+    rn_signature = inspect.signature(remove_noise)
 
-        # Check if any parameter values are different from default (if they are, automatically add that method to remove_method)
-        rn_signature = inspect.signature(remove_noise)
+    methodDict = {'antitrigger':['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
+                'sat_thresh':['sat_percent'],
+                'noise_thresh':['noise_percent', 'min_win_size'],
+                'warmup_cooldown':['warmup_time', 'cooldown_time'],
+                'processing_window':['processing_window']}
 
-        methodDict = {'antitrigger':['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
-                    'sat_thresh':['sat_percent'],
-                    'noise_thresh':['noise_percent', 'min_win_size'],
-                    'warmup_cooldown':['warmup_time', 'cooldown_time'],
-                    'processing_window':['processing_window']}
+    defaultValDict = {param.name: param.default for param in rn_signature.parameters.values() if param.default is not inspect.Parameter.empty}
 
-        defaultValDict = {param.name: param.default for param in rn_signature.parameters.values() if param.default is not inspect.Parameter.empty}
+    # If a non-default parameter is specified, add the method it corresponds to to remove_method
+    for key, def_val in defaultValDict.items():
+        if key in orig_args:
+            if def_val != orig_args[key]:
+                for methodKey, methParamList in methodDict.items():
+                    if key in methParamList:
+                        # Add the corresponding method to remove_mehtod if not already
+                        if (methodKey not in remove_method) and ('auto' not in remove_method):
+                            if remove_method == [None]:
+                                remove_method = [methodKey]
+                            else:
+                                remove_method.append(methodKey)
 
-        # If a non-default parameter is specified, add the method it corresponds to to remove_method
-        for key, def_val in defaultValDict.items():
-            if key in orig_args:
-                if def_val != orig_args[key]:
-                    for methodKey, methParamList in methodDict.items():
-                        if key in methParamList:
-                            # Add the corresponding method to remove_mehtod if not already
-                            if (methodKey not in remove_method) and ('auto' not in remove_method):
-                                if remove_method == [None]:
-                                    remove_method = [methodKey]
-                                else:
-                                    remove_method.append(methodKey)
+    # Reorder list so manual is always first, if it is specified
+    do_manual = False
+    if len(set(remove_method).intersection(manualList)) > 0:
+        do_manual = True
+        manInd = list(set(remove_method).intersection(manualList))[0]
+        remove_method.remove(manInd)
+        remove_method.insert(0, manInd)
 
-        # Reorder list so manual is always first, if it is specified
-        do_manual = False
-        if len(set(remove_method).intersection(manualList)) > 0:
-            do_manual = True
-            manInd = list(set(remove_method).intersection(manualList))[0]
-            remove_method.remove(manInd)
-            remove_method.insert(0, manInd)
+    # Reorder list so auto is always first (if no manual) or second (if manual)
+    # B/c if 'auto' is carried out, no other methods need to be carried out (repetitive)
+    newAutoInd = 0
+    if do_manual:
+        newAutoInd = 1
+    if len(set(remove_method).intersection(autoList)) > 0:
+        autoInd = list(set(remove_method).intersection(autoList))[0]
+        remove_method.remove(autoInd)
+        remove_method.insert(newAutoInd, autoInd)        
+    
+    #Go through each type of removal and remove
+    if orig_removeMeth != remove_method:
+        if verbose:
+            print(f'\tThe remove_method parameter has been updated because non-default parameter values were detected.')
+            print(f'\tThe remove_method parameter was entered as {orig_removeMeth}, but has been updated to {remove_method}')
 
-        # Reorder list so auto is always first (if no manual) or second (if manual)
-        # B/c if 'auto' is carried out, no other methods need to be carried out (repetitive)
-        newAutoInd = 0
-        if do_manual:
-            newAutoInd = 1
-        if len(set(remove_method).intersection(autoList)) > 0:
-            autoInd = list(set(remove_method).intersection(autoList))[0]
-            remove_method.remove(autoInd)
-            remove_method.insert(newAutoInd, autoInd)        
-        
-        #Go through each type of removal and remove
-        for rem_kind in remove_method:
+    for rem_kind in remove_method:
+        try:
             if not rem_kind:
                 break
             elif rem_kind.lower() in manualList:
@@ -4657,81 +4681,82 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
                 else:
                     RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot)
-                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
-                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
-                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
+                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size, verbose=verbose)
+                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
+                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time, verbose=verbose)
                 # Break for-loop, since all the rest are already done as part of auto
                 break
             elif rem_kind.lower() in antitrigger:
-                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot)
+                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
             elif rem_kind.lower() in saturationThresh:
-                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size)
+                outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
-                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size)
+                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in warmup_cooldown:
-                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time)
+                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time, verbose=verbose)
             elif rem_kind.lower() in procWinList:
-                outStream = _keep_processing_windows(stream=outStream, processing_window=processing_window)
+                outStream = _keep_processing_windows(stream=outStream, processing_window=processing_window, verbose=verbose)
             else:
                 if len(remove_method)==1:
                     warnings.warn(f"Input value remove_method={remove_method} is not recognized. No noise removal will be carried out. Please choose one of the following: 'manual', 'auto', 'antitrigger', 'noise threshold', 'warmup_cooldown'.")
                     break
                 warnings.warn(f"Input value remove_method={remove_method} is not recognized. Continuing with other noise removal methods.")
-
-        #Add output
-        if isinstance(output, (HVSRData, dict)):
-            if isinstance(outStream, (obspy.Stream, obspy.Trace)):
-                output['stream_edited'] = outStream
-            else:
-                output['stream_edited'] = outStream['stream']
-            output['input_stream'] = hvsr_data['input_stream']
-            
-            if 'processing_parameters' not in output.keys():
-                output['processing_parameters'] = {}
-            output['processing_parameters']['remove_noise'] = {}
-            for key, value in orig_args.items():
-                output['processing_parameters']['remove_noise'][key] = value
-            
-            output['ProcessingStatus']['RemoveNoiseStatus'] = True
-            output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
-
-            output = __remove_windows_from_df(output, verbose=verbose)
-
-            #if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output['input_params'].keys()):
-            #    hvsrDF = output['hvsr_windows_df']
-            #    
-            #    outStream = output['stream_edited'].split()
-            #    for i, trace in enumerate(outStream):
-            #        if i == 0:
-            #            trEndTime = trace.stats.endtime
-            #            comp_end = trace.stats.component
-            #            continue
-            #        trStartTime = trace.stats.starttime
-            #        comp_start = trace.stats.component
-                    
-            #        if trEndTime < trStartTime and comp_end == comp_start:
-            #            gap = [trEndTime,trStartTime]
-
-            #            output['hvsr_windows_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
-            #                            (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
-            #            output['hvsr_windows_df']['Use'] = output['hvsr_windows_df']['Use'].astype(bool)
-            #        
-            #        trEndTime = trace.stats.endtime
-            #    
-            #    outStream.merge()
-            #    output['stream_edited'] = outStream
-                    
-        elif isinstance(hvsr_data, obspy.Stream) or isinstance(hvsr_data, obspy.Trace):
-            output = outStream
+        except Exception as e:
+            if verbose:
+                print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
+                print(f'\t  *{e}')
+    #Add output
+    if isinstance(output, (HVSRData, dict)):
+        if isinstance(outStream, (obspy.Stream, obspy.Trace)):
+            output['stream_edited'] = outStream
         else:
-            warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
-            return hvsr_data
-        output = sprit_utils.make_it_classy(output)
-        if 'x_windows_out' not in output.keys():
-            output['x_windows_out'] = []
+            output['stream_edited'] = outStream['stream']
+        output['input_stream'] = hvsr_data['input_stream']
+        
+        if 'processing_parameters' not in output.keys():
+            output['processing_parameters'] = {}
+        output['processing_parameters']['remove_noise'] = {}
+        for key, value in orig_args.items():
+            output['processing_parameters']['remove_noise'][key] = value
+        
+        output['ProcessingStatus']['RemoveNoiseStatus'] = True
+        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+
+        output = __remove_windows_from_df(output, verbose=verbose)
+
+        #if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output['input_params'].keys()):
+        #    hvsrDF = output['hvsr_windows_df']
+        #    
+        #    outStream = output['stream_edited'].split()
+        #    for i, trace in enumerate(outStream):
+        #        if i == 0:
+        #            trEndTime = trace.stats.endtime
+        #            comp_end = trace.stats.component
+        #            continue
+        #        trStartTime = trace.stats.starttime
+        #        comp_start = trace.stats.component
+                
+        #        if trEndTime < trStartTime and comp_end == comp_start:
+        #            gap = [trEndTime,trStartTime]
+
+        #            output['hvsr_windows_df']['Use'] = (hvsrDF['TimesProcessed_Obspy'].gt(gap[0]) & hvsrDF['TimesProcessed_Obspy'].gt(gap[1]) )| \
+        #                            (hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[0]) & hvsrDF['TimesProcessed_ObspyEnd'].lt(gap[1]))# | \
+        #            output['hvsr_windows_df']['Use'] = output['hvsr_windows_df']['Use'].astype(bool)
+        #        
+        #        trEndTime = trace.stats.endtime
+        #    
+        #    outStream.merge()
+        #    output['stream_edited'] = outStream
+                
+    elif isinstance(hvsr_data, obspy.Stream) or isinstance(hvsr_data, obspy.Trace):
+        output = outStream
     else:
-        RuntimeError(f"Input of type type(hvsr_data)={type(hvsr_data)} cannot be used.")
+        warnings.warn(f"Output of type {type(output)} for this function will likely result in errors in other processing steps. Returning hvsr_data data.")
+        return hvsr_data
+    output = sprit_utils.make_it_classy(output)
+    if 'x_windows_out' not in output.keys():
+        output['x_windows_out'] = []
 
     return output
 
@@ -6013,13 +6038,13 @@ def __remove_gaps(stream, window_gaps_obspy):
     for i in range(len(window_gaps_obspy)-2):
         if window_gaps_obspy[i][1] > window_gaps_obspy[i+1][0]:
             overlapList.append(i)
-
+    
     for i, t in enumerate(overlapList):
         if i < len(window_gaps_obspy)-2:
             window_gaps_obspy[i][1] = window_gaps_obspy[i+1][1]
             window_gaps_obspy.pop(i+1)
 
-    #Add streams
+    # Add streams
     window_gaps_s = []
     for w, win in enumerate(window_gaps_obspy):
         if w == 0:
@@ -6028,7 +6053,7 @@ def __remove_gaps(stream, window_gaps_obspy):
             pass
         else:
             window_gaps_s.append(win[1]-win[0])
-
+    
     if len(window_gaps_s) > 0:
         stream_windows = []
         j = 0
@@ -6046,7 +6071,7 @@ def __remove_gaps(stream, window_gaps_obspy):
             else:
                 newSt = st.copy()
                 gap = window_gaps_s[i-1]
-                outStream = outStream + newSt.trim(starttime=stream[0].stats.starttime - gap, pad=True, fill_value=None)       
+                outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)
         outStream.merge()
     else:
         outStream = stream.copy()
@@ -6055,7 +6080,7 @@ def __remove_gaps(stream, window_gaps_obspy):
 
 
 # Helper function for getting windows to remove noise using stalta antitrigger method
-def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False):
+def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False, verbose=False):
     """Helper function for getting windows to remove noise using stalta antitrigger method
 
     Parameters
@@ -6081,6 +6106,8 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False):
     """
     from obspy.signal.trigger import classic_sta_lta
 
+    if verbose:
+        print(f'\tRemoving noise using sta/lta antitrigger method: sta={sta}, lta={lta}, stalta_thresh={thresh}')
     sampleRate = float(stream[0].stats.delta)
 
     sta_samples = sta / sampleRate #Convert to samples
@@ -6156,7 +6183,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False):
 
 
 # Remove noise saturation
-def __remove_noise_saturate(stream, sat_percent, min_win_size):
+def __remove_noise_saturate(stream, sat_percent, min_win_size, verbose=False):
     """Function to remove "saturated" data points that exceed a certain percent (sat_percent) of the maximum data value in the stream.  
 
     Parameters
@@ -6173,6 +6200,8 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
     obspy.Stream
         Stream with masked array (if data removed) with "saturated" data removed
     """
+    if verbose:
+        print(f'\tRemoving noise using noise saturation method: sat_percent={sat_percent}, min_win_size={min_win_size}')
     if sat_percent > 1:
         sat_percent = sat_percent / 100
 
@@ -6205,8 +6234,6 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
                 startInd = removeInd[i]
             endInd = removeInd[i]
 
-
-
     removeList.append([-1, -1]) #figure out a way to get rid of this
 
     #Convert removeList from samples to seconds after start to UTCDateTime
@@ -6226,7 +6253,7 @@ def __remove_noise_saturate(stream, sat_percent, min_win_size):
 
 
 # Helper function for removing data using the noise threshold input from remove_noise()
-def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
+def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1, verbose=False):
     """Helper function for removing data using the noise threshold input from remove_noise()
 
     The purpose of the noise threshold method is to remove noisy windows (e.g., lots of traffic all at once). 
@@ -6250,6 +6277,8 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
     outStream : obspy.core.stream.Stream object
         Stream with a masked array for the data where 'noise' has been removed. Passed to remove_noise().
     """
+    if verbose:
+        print(f'\tRemoving noise using continuous noise threshold method: sat_percent={noise_percent}, lta={lta}')
     if noise_percent > 1:
         noise_percent = noise_percent / 100
 
@@ -6314,7 +6343,27 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1):
 
 
 # Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
-def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
+def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0, verbose=False):
+    """Private helper function to remove data from the start and/or end of each site
+
+    Parameters
+    ----------
+    stream : obspy.Stream()
+        Input stream to use for analysis for noise removal
+    warmup_time : int, optional
+        Time in seconds at the start of the record to remove from analysis, by default 0
+    cooldown_time : int, optional
+        Time in seconds at the end of the record to remove from analysis, by default 0
+    verbose : bool, optional
+        Whether to print information about the process to the terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream()
+        obspy.Stream() with masked arrays for the data where removed/kept.
+    """
+    if verbose:
+        print(f"\tRemoving noise using warmup/cooldown buffers: warmup_time={warmup_time} s, cooldown_time={cooldown_time} s ")
     sampleRate = float(stream[0].stats.delta)
     outStream = stream.copy()
 
@@ -6323,85 +6372,131 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0):
     for tr in stream:
         totalSamples = len(tr.data)-1#float(tr.stats.endtime - tr.stats.starttime) / tr.stats.delta
         cooldown_samples = int(totalSamples - (cooldown_time / sampleRate)) #Convert to samples
+    
+    # Initiate list with warmup and cooldown samples
     windows_samples = [[0, warmup_samples],[cooldown_samples, totalSamples]]
-    if cooldown_time==0:
+    
+    # Remove cooldown and warmup samples if there is none indicated (default of 0 for both)
+    if cooldown_time == 0:
         windows_samples.pop(1)
-    if warmup_time==0:
+    if warmup_time == 0:
         windows_samples.pop(0)
 
+
     if windows_samples == []:
+        # If no warmup or cooldown indicated, don't do anything
         pass
     else:
+        # Otherwise, get the actual starttime (UTCDateTime)
         startT = stream[0].stats.starttime
         endT = stream[-1].stats.endtime
         window_UTC = []
         window_MPL = []
-        window_UTC.append([startT, startT])
 
+        print("warmup starttime", startT)
+        # Initiate list with starttimes
         for w, win in enumerate(windows_samples):
+            # win is a list with start/end time for each buffer, in samples
             for j, tm in enumerate(win):
-
+                # For each side (warmup or cooldown), add a new item
+                # There will be 2 list items for warmup, 2 for cooldown (extra is for "padding")
                 if j == 0:
                     window_UTC.append([])
                     window_MPL.append([])
                 tSec = tm * sampleRate
-                window_UTC[w+1].append(startT+tSec)
+
+                # Get the UTC time for the new item
+                window_UTC[w].append(startT+tSec)
                 window_MPL[w].append(window_UTC[w][j].matplotlib_date)
+        # "pad" list with endtime
+        window_UTC.insert(0, [startT, startT])
         window_UTC.append([endT, endT])
 
-        #window_MPL[w].append(window_UTC[w][i].matplotlib_date)
         outStream = __remove_gaps(stream, window_UTC)
+    
     return outStream
 
-def _keep_processing_windows(stream, processing_window=[":"]):
-    instream = stream.copy()
+
+# Helper function for selecting windows
+def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
+    """Keep processing windows
+
+    Parameters
+    ----------
+    stream : obspy.Stream()
+        Stream
+    processing_window : list, optional
+        Processing window list, by default [":"]
+    verbose : bool, optional
+        Whether to print information about the removal to the terminal
+
+    Returns
+    -------
+    obspy.Stream()
+        Obspy stream object with selected windows retained and all else removed
+    """
+
+    if verbose:
+        print(f"\tRemoving noise outside the indicated processing window(s): processing_window={processing_window}")
+    instream = stream
     allList = [':', 'all', 'everything']
 
     year = instream[0].stats.starttime.year
     month = instream[0].stats.starttime.month
     day = instream[0].stats.starttime.day
-    
-    if not isinstance(processing_windows, (tuple, list)):
-        processing_windows = [processing_windows]
-        
-    
-    pWinUTC = []
-    for p in processing_windows:
+
+    if not isinstance(processing_window, (tuple, list)):
+        processing_window = [processing_window]
+
+    windows_to_get = []
+    for p in processing_window:
         if str(p).lower() in allList:
             return instream
         
         if isinstance(p, (tuple, list)):
-            pWinUTC.append([])
+            windows_to_get.append([])
             if isinstance(p[0], (obspy.UTCDateTime, datetime.datetime)) and isinstance(p[1], (obspy.UTCDateTime, datetime.datetime)):
-                pWinUTC[-1][0] = obspy.UTCDateTime(p[0])
-                pWinUTC[-1][1] = obspy.UTCDateTime(p[1])
+                windows_to_get[-1][0] = obspy.UTCDateTime(p[0])
+                windows_to_get[-1][1] = obspy.UTCDateTime(p[1])
             else:
-                pWinUTC[-1][0] = obspy.UTCDateTime(sprit_utils.format_time(p[0], tzone='UTC'))
-                pWinUTC[-1][1] = obspy.UTCDateTime(sprit_utils.format_time(p[1], tzone='UTC'))
+                windows_to_get[-1][0] = obspy.UTCDateTime(sprit_utils.format_time(p[0], tzone='UTC'))
+                windows_to_get[-1][1] = obspy.UTCDateTime(sprit_utils.format_time(p[1], tzone='UTC'))
 
                 # Make sure date and time are the same 
-                pWinUTC[-1][0] = obspy.UTCDateTime(year, month, day, pWinUTC[-1][0].hour, pWinUTC[-1][0].minute, pWinUTC[-1][0].second)
-                pWinUTC[-1][1] = obspy.UTCDateTime(year, month, day, pWinUTC[-1][1].hour, pWinUTC[-1][1].minute, pWinUTC[-1][1].second)
+                windows_to_get[-1][0] = obspy.UTCDateTime(year, month, day, windows_to_get[-1][0].hour, windows_to_get[-1][0].minute, windows_to_get[-1][0].second)
+                windows_to_get[-1][1] = obspy.UTCDateTime(year, month, day, windows_to_get[-1][1].hour, windows_to_get[-1][1].minute, windows_to_get[-1][1].second)
         else:
-            if len(processing_windows) == 2:
-                pWinUTC = [[obspy.UTCDateTime(sprit_utils.format_time(processing_windows[0], tzone='UTC')),
-                        obspy.UTCDateTime(sprit_utils.format_time(processing_windows[1], tzone='UTC'))]]
+            if len(processing_window) == 2:
+                windows_to_get = [[obspy.UTCDateTime(sprit_utils.format_time(processing_window[0], tzone='UTC')),
+                        obspy.UTCDateTime(sprit_utils.format_time(processing_window[1], tzone='UTC'))]]
             else:
-                print(f'The processing_windows parameter of remove_noise was set as {processing_windows}')
-                print("The processing_windows parameter must be a list or tuple with a start and end time or with lists/tuples of start/end times.")
-                print('processing_windows noise removal method not applied')
+                print(f'The processing_window parameter of remove_noise was set as {processing_window}')
+                print("The processing_window parameter must be a list or tuple with a start and end time or with lists/tuples of start/end times.")
+                print('processing_window noise removal method not applied')
                 return instream
     
-    print(pWinUTC)
-    # pWinUTC should be a list of two-item lists with UTCDateTime objects no matter how it came in
-    outstream = obspy.Stream()
-    stream = stream.split()
-    for pwin in pWinUTC:
-        splitStream = stream.copy()
-        outstream = outstream + splitStream.trim(starttime=pwin[0], endtime=pwin[1])
-    outstream.merge()
+    # windows_to_get should be a list of two-item lists with UTCDateTime objects no matter how it came in
+    stime = instream[0].stats.starttime
+    etime = instream[-1].stats.endtime
+    
+    windows_to_get.insert(0, [stime, stime])
+    windows_to_get.append([etime, etime])
 
-    return outstream
+    # Need the list formatted slightly different, use window_UTC
+    window_UTC = []
+    # Rearrange
+    for i, win in enumerate(windows_to_get):
+        if i == 0:
+            window_UTC.append([stime, windows_to_get[i+1][0]])
+        elif i < len(windows_to_get) - 1:
+            window_UTC.append([win[1], windows_to_get[i+1][0]])
+
+    window_UTC.insert(0, windows_to_get[0])
+    window_UTC.append(windows_to_get[-1])
+
+    outStream = __remove_gaps(stream, window_UTC)
+
+    return outStream
 
 # Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
