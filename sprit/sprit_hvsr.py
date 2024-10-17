@@ -4709,7 +4709,6 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
                 print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
                 print(f'\t  *{e}')
     
-    print(outStream)
     # Add output
     if isinstance(output, (HVSRData, dict)):
         if isinstance(outStream, (obspy.Stream, obspy.Trace)):
