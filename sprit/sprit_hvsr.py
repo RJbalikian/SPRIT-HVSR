@@ -2206,6 +2206,17 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                     if verbose:
                         print(f"\t\tEndtime updated to {params['endtime']}")
 
+            # HVSR_ID (derived)
+            id_prefix = params['id_prefix']
+            if id_prefix is None:
+                id_pre = ''
+            else:
+                id_pre = str(id_prefix)+'-'
+            
+            params['hvsr_id'] = f"{id_pre}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
+            params['params']['hvsr_id'] = f"{id_pre}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
+
+            # Clean up
             dataIN = dataIN.split()
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
