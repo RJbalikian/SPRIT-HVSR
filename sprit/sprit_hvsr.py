@@ -1434,8 +1434,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 hvsr_data['BestPeak'][col_id] = bestPeak
         else:
             for i, col_id in enumerate(HVColIDList):
-                hvsr_data['BestPeak'][col_id] = {}
-            print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']} (azimuth {col_id})")
+                if hasattr(hvsr_data, 'BestPeak'):
+                    hvsr_data['BestPeak'][col_id] = {}
+                else:
+                    print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']} (azimuth {col_id})")
             try:
                 hvsr_data.plot()
             except:
@@ -4706,7 +4708,9 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
             if verbose:
                 print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
                 print(f'\t  *{e}')
-    #Add output
+    
+    print(outStream)
+    # Add output
     if isinstance(output, (HVSRData, dict)):
         if isinstance(outStream, (obspy.Stream, obspy.Trace)):
             output['stream_edited'] = outStream
@@ -8439,6 +8443,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 stdalpha=0.2
             
             #Plot individual components
+            azsLabeled = False
             y={}
             psdKeys = list(hvsr_data['psd_values_tavg'])
             psdKeys.sort()
@@ -8457,7 +8462,17 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                         pass
                     else:
                         y[key] = hvsr_data['psd_values_tavg'][key][:-1]
-                        compAxis.plot(x, y[key], c=pltColor, label=key, alpha=linalpha)
+                        # Make sure azimuth only shows up in legend once
+                        if pltColor == 'g':
+                            if azsLabeled:
+                                leglabel = None
+                            else:
+                                leglabel = 'Azimuths'    
+                            azsLabeled = True
+                        else:
+                            leglabel = key
+
+                        compAxis.plot(x, y[key], c=pltColor, label=leglabel, alpha=linalpha)
                         if '-s' not in plot_type:
                             compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
