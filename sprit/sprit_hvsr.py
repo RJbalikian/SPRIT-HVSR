@@ -1813,7 +1813,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
+def fetch_data(params, source='file', data_export_path=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -1828,11 +1828,11 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
             'file' is used if the params['input_data'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
             'batch' is used to read a list or specified set of seismic files. 
                 Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
-    trim_dir : None or str or pathlib obj, default=None
+    data_export_path : None or str or pathlib obj, default=None
         If None (or False), data is not trimmed in this function.
         Otherwise, this is the directory to save trimmed and exported data.
     export_format: str='mseed'
-        If trim_dir is not None, this is the format in which to save the data
+        If data_export_path is not None, this is the format in which to save the data
     detrend : str or bool, default='spline'
         If False, data is not detrended.
         Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
@@ -1871,7 +1871,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
 
     # Update local variables, in case of previously-specified parameters
     source=orig_args['source'].lower()
-    trim_dir=orig_args['trim_dir']
+    data_export_path=orig_args['data_export_path']
     export_format=orig_args['export_format']
     detrend=orig_args['detrend']
     detrend_order=orig_args['detrend_order']
@@ -2016,7 +2016,7 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
                         currParams['input_data'] = f
 
                         curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                    trim_dir=trim_dir, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                                    data_export_path=data_export_path, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
@@ -2227,15 +2227,15 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
     inv = params['inv']
 
     # Trim and save data as specified
-    if trim_dir=='None':
-        trim_dir=None
-    if not trim_dir:
+    if data_export_path=='None':
+        data_export_path=None
+    if not data_export_path:
         pass
     else:
         if isinstance(params, HVSRBatch):
             pass
         else:
-            dataIN = _trim_data(input=params, stream=dataIN, export_dir=trim_dir, source=source, export_format=export_format)
+            dataIN = _trim_data(input=params, stream=dataIN, export_dir=data_export_path, source=source, export_format=export_format)
 
     # Split data if masked array (if there are gaps)...detrending cannot be done without
     for tr in dataIN:
@@ -3290,7 +3290,7 @@ def input_params(input_data,
         If dictionary, dictionary containing nested dictionaries of function names as they key, and the parameter names/values as key/value pairs for each key. 
         If a function name is not present, or if a parameter name is not present, default values will be used.
         For example: 
-            `{ 'fetch_data' : {'source':'batch', 'trim_dir':"/path/to/trimmed/data", 'export_format':'mseed', 'detrend':'spline', 'plot_input_stream':True, 'verbose':False, kwargs:{'kwargskey':'kwargsvalue'}} }`
+            `{ 'fetch_data' : {'source':'batch', 'data_export_path':"/path/to/trimmed/data", 'export_format':'mseed', 'detrend':'spline', 'plot_input_stream':True, 'verbose':False, kwargs:{'kwargskey':'kwargsvalue'}} }`
     verbose : bool, default=False
         Whether to print output and results to terminal
 
@@ -5167,7 +5167,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                     param_dict[item.split('=')[0]] = item.split('=')[1]
                 param_dict_list.append(param_dict)
         #input_params(input_data,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
-        #fetch_data(params, inv, source, trim_dir, export_format, detrend, detrend_order, verbose)
+        #fetch_data(params, inv, source, data_export_path, export_format, detrend, detrend_order, verbose)
         #get_metadata(params, write_path)
     elif batch_type == 'filelist':
         if isinstance(batch_params, list):
