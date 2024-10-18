@@ -1465,7 +1465,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
-        fname = f"REPORT_{_hvsr_data['site']}_{_hvsr_data['hvsr_id']}_pickled.{ext}"
+        fname = f"HVSRData_{_hvsr_data['site']}_{_hvsr_data['hvsr_id']}_pickled.{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
