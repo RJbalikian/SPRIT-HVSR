@@ -165,6 +165,12 @@ def format_time(inputDT, tzone='UTC'):
         Output datetime.datetime object, now in UTC time.
 
     """
+    # Initialize values
+    year = 2000
+    month = 1
+    day = 1  
+    
+    # Parse whether inputDT has date or not
     if isinstance(inputDT, str):
         #tzone = 'America/Chicago'
         #Format string to datetime obj
@@ -191,9 +197,6 @@ def format_time(inputDT, tzone='UTC'):
         else:
             hasTime = False
         
-        year = 0
-        month = 0
-        day = 0
         if hasDate:
             #If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
             if len(inputDT.split(div)[0])>2:
@@ -289,10 +292,10 @@ def format_time(inputDT, tzone='UTC'):
     elif isinstance(inputDT, UTCDateTime):
         outputTimeObj = inputDT.datetime
 
-    #Add timezone info
+    # Add timezone info
     availableTimezones = list(map(str.lower, zoneinfo.available_timezones()))
     if outputTimeObj.tzinfo is not None and outputTimeObj.tzinfo.utcoffset(outputTimeObj) is not None:
-        #This is already timezone aware
+        # This is already timezone aware
         pass
     elif type(tzone) is int:
         outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
@@ -304,7 +307,7 @@ def format_time(inputDT, tzone='UTC'):
     elif isinstance(tzone, zoneinfo.ZoneInfo):
         outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
     else:
-        raise ValueError("Timezone must be either str or int")
+        raise ValueError("Timezone must be either str, int, or zoneinfo.ZoneInfo object")
     
     #Convert to UTC
     outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)
