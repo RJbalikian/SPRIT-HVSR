@@ -2785,18 +2785,26 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
         obspyStartDate = obspy.UTCDateTime(1900,1,1)
         obspyNow = obspy.UTCDateTime.now()
-        
-        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code='00', latitude=params['params']['latitude'], 
+
+        # Update location code to match partition
+        if type(params['station']) is int or str(params['station']).isdigit():
+            params['loc'] = str(params['station'])
+
+        # Create channel objects to be used in inventory                
+        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=params['loc'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code='00', latitude=params['params']['latitude'], 
+        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=params['loc'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code='00', latitude=params['params']['latitude'], 
+        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=params['loc'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
         
+        # Create site object for inventory
         siteObj = obspy.core.inventory.util.Site(name=params['params']['site'], description=None, town=None, county=None, region=None, country=None)
+        
+        # Create station object for inventory
         stationObj = obspy.core.inventory.station.Station(code='TRMNO', latitude=params['params']['latitude'], longitude=params['params']['longitude'], 
                                             elevation=params['params']['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
                                             vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
@@ -2807,6 +2815,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
                                             data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
                                             identifiers=None, water_level=None, source_id=None)
 
+        # Create network object for inventory
         network = [obspy.core.inventory.network.Network(code='AM', stations=[stationObj], total_number_of_stations=None, 
                                             selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
                                             end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
@@ -4472,6 +4481,99 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     return hvsr_out
 
 
+# Read data from Tromino
+def read_tromino_files(input_data, params, struct_format='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+    """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
+
+    Parameters
+    ----------
+    input_data : str, pathlib.Path()
+        The input parameter _datapath_ from sprit.input_params()
+    params : HVSRData or HVSRBatch
+        The parameters as read in from input_params() and and fetch_data()
+    verbose : bool, optional
+        Whether to print results to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        An obspy.Stream object containing the trace data from the Tromino instrument
+    """
+    dPath = input_data
+
+    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
+                'h':2,'H':2,'e':2,
+                'i':4,'I':4,'l':4,'L':4,'f':4,
+                'q':8,'Q':8,'d':8,
+                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
+
+    #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
+    structFormat = struct_format
+    structSize = strucSizes[structFormat]
+
+    dataList = []
+    with open(dPath, 'rb') as f:
+        while True:
+            data = f.read(structSize)  # Read 4 bytes
+            if not data:  # End of file
+                break
+            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
+            dataList.append(value)
+     
+    import numpy as np
+    dataArr = np.array(dataList)
+    import matplotlib.pyplot as plt
+
+    medVal = np.nanmedian(dataArr[50000:100000])
+
+    if 'start_byte' in kwargs.keys():
+        start_byte = kwargs['start_byte']
+
+    startByte = start_byte
+    comp1 = dataArr[startByte::3] - medVal
+    comp2 = dataArr[startByte+1::3] - medVal
+    comp3 = dataArr[startByte+2::3] - medVal
+    headerBytes = dataArr[:startByte]
+
+    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
+    #ax[0].plot(comp1, linewidth=0.1, c='k')
+    #ax[1].plot(comp2, linewidth=0.1, c='k')
+    #ax[2].plot(comp3, linewidth=0.1, c='k')
+
+    if 'sampling_rate' in kwargs.keys():
+        sampling_rate = kwargs['sampling_rate']
+
+    sTime = obspy.UTCDateTime(params['acq_date'].year, params['acq_date'].month, params['acq_date'].day,
+                              params['starttime'].hour, params['starttime'].minute,
+                              params['starttime'].second,params['starttime'].microsecond)
+    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
+
+    loc = ''
+    if type(params['station']) is int or params['station'].isdigit():
+        loc = str(params['station'])
+
+    traceHeader1 = {'sampling_rate':sampling_rate,
+            'calib' : 1,
+            'npts':len(comp1),
+            'network':'AM',
+            'location': loc,
+            'station' : 'TRMNO',
+            'channel':'EHE',
+            'starttime':sTime}
+    
+    traceHeader2=traceHeader1.copy()
+    traceHeader3=traceHeader1.copy()
+    traceHeader2['channel'] = 'EHN'
+    traceHeader3['channel'] = 'EHZ'
+
+    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
+    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
+    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
+
+    st = obspy.Stream([trace1, trace2, trace3])
+    return st
+
+
 # Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[8, 16], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
@@ -4672,6 +4774,7 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
             print(f'\tThe remove_method parameter has been updated because non-default parameter values were detected.')
             print(f'\tThe remove_method parameter was entered as {orig_removeMeth}, but has been updated to {remove_method}')
 
+    # REMOVE DATA FROM ANALYSIS
     for rem_kind in remove_method:
         try:
             if not rem_kind:
@@ -4715,10 +4818,11 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
                     break
                 warnings.warn(f"Input value remove_method={remove_method} is not recognized. Continuing with other noise removal methods.")
         except Exception as e:
-            if verbose:
-                print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
-                print(f'\t  *{e}')
+            print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
+            print(f'\t  *{e}')
     
+
+
     # Add output
     if isinstance(output, (HVSRData, dict)):
         if isinstance(outStream, (obspy.Stream, obspy.Trace)):
@@ -5952,95 +6056,6 @@ def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=Fa
     return rawDataIN
 
 
-# Read data from Tromino
-def read_tromino_files(input_data, params, bitFormat='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
-    """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
-
-    Parameters
-    ----------
-    input_data : str, pathlib.Path()
-        The input parameter _datapath_ from sprit.input_params()
-    params : HVSRData or HVSRBatch
-        The parameters as read in from input_params() and and fetch_data()
-    verbose : bool, optional
-        Whether to print results to terminal, by default False
-
-    Returns
-    -------
-    obspy.Stream
-        An obspy.Stream object containing the trace data from the Tromino instrument
-    """
-    dPath = input_data
-
-    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
-                'h':2,'H':2,'e':2,
-                'i':4,'I':4,'l':4,'L':4,'f':4,
-                'q':8,'Q':8,'d':8,
-                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
-
-    #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
-    structFormat = bitFormat
-    structSize = strucSizes[structFormat]
-
-    dataList = []
-    with open(dPath, 'rb') as f:
-        while True:
-            data = f.read(structSize)  # Read 4 bytes
-            if not data:  # End of file
-                break
-            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
-            dataList.append(value)
-     
-    import numpy as np
-    dataArr = np.array(dataList)
-    import matplotlib.pyplot as plt
-
-    medVal = np.nanmedian(dataArr[50000:100000])
-
-    if 'start_byte' in kwargs.keys():
-        start_byte = kwargs['start_byte']
-
-    startByte = start_byte
-    comp1 = dataArr[startByte::3] - medVal
-    comp2 = dataArr[startByte+1::3] - medVal
-    comp3 = dataArr[startByte+2::3] - medVal
-    headerBytes = dataArr[:startByte]
-
-    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
-    #ax[0].plot(comp1, linewidth=0.1, c='k')
-    #ax[1].plot(comp2, linewidth=0.1, c='k')
-    #ax[2].plot(comp3, linewidth=0.1, c='k')
-
-    if 'sampling_rate' in kwargs.keys():
-        sampling_rate = kwargs['sampling_rate']
-
-    sTime = obspy.UTCDateTime(params['acq_date'].year, params['acq_date'].month, params['acq_date'].day,
-                              params['starttime'].hour, params['starttime'].minute,
-                              params['starttime'].second,params['starttime'].microsecond)
-    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
-
-    traceHeader1 = {'sampling_rate':sampling_rate,
-            'calib' : 1,
-            'npts':len(comp1),
-            'network':'AM',
-            'location':'00',
-            'station' : 'TRMNO',
-            'channel':'EHE',
-            'starttime':sTime}
-    
-    traceHeader2=traceHeader1.copy()
-    traceHeader3=traceHeader1.copy()
-    traceHeader2['channel'] = 'EHN'
-    traceHeader3['channel'] = 'EHZ'
-
-    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
-    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
-    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
-
-    st = obspy.Stream([trace1, trace2, trace3])
-    return st
-
-
 # Helper functions for remove_noise()
 # Helper function for removing gaps
 def __remove_gaps(stream, window_gaps_obspy):
@@ -6454,9 +6469,10 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
     instream = stream
     allList = [':', 'all', 'everything']
 
-    year = instream[0].stats.starttime.year
-    month = instream[0].stats.starttime.month
-    day = instream[0].stats.starttime.day
+    print(stream[0].stats.starttime.year)
+    year = stream[0].stats.starttime.year
+    month = stream[0].stats.starttime.month
+    day = stream[0].stats.starttime.day
 
     if not isinstance(processing_window, (tuple, list)):
         processing_window = [processing_window]
@@ -6469,13 +6485,13 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
         if isinstance(p, (tuple, list)):
             windows_to_get.append([])
             if isinstance(p[0], (obspy.UTCDateTime, datetime.datetime)) and isinstance(p[1], (obspy.UTCDateTime, datetime.datetime)):
-                windows_to_get[-1][0] = obspy.UTCDateTime(p[0])
-                windows_to_get[-1][1] = obspy.UTCDateTime(p[1])
+                windows_to_get[-1].append(obspy.UTCDateTime(p[0]))
+                windows_to_get[-1].append(obspy.UTCDateTime(p[1]))
             else:
-                windows_to_get[-1][0] = obspy.UTCDateTime(sprit_utils.format_time(p[0], tzone='UTC'))
-                windows_to_get[-1][1] = obspy.UTCDateTime(sprit_utils.format_time(p[1], tzone='UTC'))
+                windows_to_get[-1].append(obspy.UTCDateTime(sprit_utils.format_time(p[0], tzone='UTC')))
+                windows_to_get[-1].append(obspy.UTCDateTime(sprit_utils.format_time(p[1], tzone='UTC')))
 
-                # Make sure date and time are the same 
+                # Make sure time are on the right day
                 windows_to_get[-1][0] = obspy.UTCDateTime(year, month, day, windows_to_get[-1][0].hour, windows_to_get[-1][0].minute, windows_to_get[-1][0].second)
                 windows_to_get[-1][1] = obspy.UTCDateTime(year, month, day, windows_to_get[-1][1].hour, windows_to_get[-1][1].minute, windows_to_get[-1][1].second)
         else:
@@ -6491,7 +6507,7 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
     # windows_to_get should be a list of two-item lists with UTCDateTime objects no matter how it came in
     stime = instream[0].stats.starttime
     etime = instream[-1].stats.endtime
-    
+
     windows_to_get.insert(0, [stime, stime])
     windows_to_get.append([etime, etime])
 
