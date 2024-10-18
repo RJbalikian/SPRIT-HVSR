@@ -1898,8 +1898,8 @@ def fetch_data(params, source='file', trim_dir=None, export_format='mseed', detr
         params['instrument'] = 'Tromino'
 
     # Get metadata (inventory/response information)
-    #params = get_metadata(params, update_metadata=update_metadata, source=source)
-    #inv = params['inv']
+    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    inv = params['inv']
     date = params['acq_date']
 
     # Cleanup for gui input
