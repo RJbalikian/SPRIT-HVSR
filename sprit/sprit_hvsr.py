@@ -7368,21 +7368,23 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             print('\tUsing Diffuuse Field Assumption (DFA)', flush=True)
         xlen = len(x)
         xnum = 0
+        eie = params['dfa']['equal_interval_energy'] # Moved out of for-loop to reduce run time
         for j in range(len(x)-1):
             xnum+=1
             if verbose:
                 print(f"\tBeginning {xnum}/{xlen} frequencies ({round(100*xnum/xlen, 2)}%)")
             ti = 0
+            
             for time_interval in params['ppsds']['Z']['current_times_used']:
                 ti+=1
-                if verbose:
-                    print(f"\t\t{ti}/{len(params['ppsds']['Z']['current_times_used'])} time intervals completed")
+                #if verbose: # A little too verbose
+                #    print(f"\t\t{ti}/{len(params['ppsds']['Z']['current_times_used'])} time intervals completed")
                 hvsr_curve_tinterval = []
                 params = _dfa(params, verbose=verbose)
                 
                 # Second dfa section in original iris script
-                eie = params['dfa']['equal_interval_energy']
-                if time_interval in list(eie['Z'].keys()) and time_interval in list(eie['E'].keys()) and time_interval in list(eie['N'].keys()):
+                #eie = params['dfa']['equal_interval_energy'] # Moved earlier so doesn't run every loop iteration
+                if time_interval in eie['Z'] and time_interval in eie['E'] and time_interval in eie['N']:
                     hvsr = math.sqrt(
                         (eie['E'][str(time_interval)][j] + eie['N'][str(time_interval)][j]) / eie['Z'][str(time_interval)][j])
                     hvsr_curve_tinterval.append(hvsr)
