@@ -7365,7 +7365,7 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
         warnings.warn('WARNING: DFA method is currently experimental. DFA takes significantly longer than the other methods and has not been extensively tested.')
         if verbose:
             print('\tUsing Diffuuse Field Assumption (DFA)', flush=True)
-        xlen = len(x
+        xlen = len(x)
         xnum = 0
         for j in range(len(x)-1):
             xnum+=1
