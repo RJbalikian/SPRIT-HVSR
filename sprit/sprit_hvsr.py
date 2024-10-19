@@ -7181,9 +7181,10 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 # Helper functions for process_hvsr()
 # Get diffuse field assumption data
 def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
-    """Function for performing Diffuse Field Assumption (DFA) analysis
+    """Helper function for performing Diffuse Field Assumption (DFA) analysis
+
+        Not extensively tested
     
-        This feature is not yet implemented.
     """
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
     # the same as large ones, so that P1+P2+P3=1
@@ -7420,7 +7421,8 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
 
 # Get HVSR
 def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
-    """
+    """ Helper function to calculate H/V ratio
+
     _dbz : list
         Two item list with deciBel value of z component at either end of particular frequency step
     _db1 : list
@@ -7459,7 +7461,6 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
         
-
     _h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
             3: math.sqrt(_h1 * _h2), # Geometric mean
             4: math.sqrt(_p1 + _p2), # Vector summation
@@ -7475,7 +7476,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
 
 # For converting dB scaled data to power units
 def __get_power(_db, _x):
-    """Calculate HVSR
+    """Calculate power for HVSR
 
     #FROM ORIGINAL (I think this is only step 6)
         Undo deciBel calculations as outlined below:
