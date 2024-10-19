@@ -4251,22 +4251,23 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     
     # Get string of horizontal_method type
     if horizontal_method is None:
-        horizontal_method = 3 # Geometric mean is used as default if nothing is
+        horizontal_method = 3 # Geometric mean is used as default if nothing is specified
 
     # If an azimuth has been calculated and it's only one, automatically use the single azimuth method
     if len(hvsr_data.stream.merge().select(component='R')) == 1:
         horizontal_method = 8 # Single azimuth
 
-    # First check if input is a string number
+    # horizontal_method needs to be str or int
+    # First check if input is a string
     if type(horizontal_method) is str:
         if horizontal_method.isdigit():
             horizontal_method = int(horizontal_method)
         else:
             horizontal_method = methodList.index(horizontal_method.title())
 
-    if type(horizontal_method) is int:
-        methodInt = horizontal_method
-        horizontal_method = methodList[horizontal_method]
+    # Now, horizontal_method is int no matter how it was entered
+    methodInt = horizontal_method
+    horizontal_method = methodList[horizontal_method]
     
     hvsr_data['horizontal_method'] = horizontal_method
 
@@ -7197,8 +7198,6 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
         horizontal_method = methodList[horizontal_method]
 
     if horizontal_method.lower() in dfaList:
-        if verbose:
-            print('[Using Diffuuse Field Assumption (DFA)', flush=True)
         params['dfa'] = {}
         params['dfa']['sum_ns_power'] = list()
         params['dfa']['sum_ew_power'] = list()
@@ -7213,11 +7212,13 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
             #    continue
             
             #Currently the same as day_time, and probably notneeded to redefine
+            # Add the time interval to the time_values list
             time_int = str(t_int)#day_time.split('T')[0]
             if time_int not in params['dfa']['time_values']:
                 params['dfa']['time_values'].append(time_int)
 
-            # Initialize the PSDs.
+            # Initialize the PSDs
+            # use the Z component as the main tracker
             if time_int not in params['dfa']['time_int_psd']['Z'].keys():
                 params['dfa']['time_int_psd']['Z'][time_int] = list()
                 params['dfa']['time_int_psd']['E'][time_int] = list()
@@ -7264,15 +7265,16 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
                         params['dfa']['sum_z_power'][j] += (Pz[j] / sum_power)
                         params['dfa']['sum_ns_power'][j] += (P1[j] / sum_power)
                         params['dfa']['sum_ew_power'][j] += (P2[j] / sum_power)
-            # Average the normalized daily power
+            
+            # Average the normalized time interval power
             for j in range(len(x_values) - 1):
                 params['dfa']['sum_z_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
                 params['dfa']['sum_ns_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
                 params['dfa']['sum_ew_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
 
             params['dfa']['equal_interval_energy']['Z'][time_int] = params['dfa']['sum_z_power']
-            params['dfa']['equal_interval_energy']['E'][time_int] = params['dfa']['sum_ns_power']
-            params['dfa']['equal_interval_energy']['N'][time_int] = params['dfa']['sum_ew_power']
+            params['dfa']['equal_interval_energy']['E'][time_int] = params['dfa']['sum_ew_power']
+            params['dfa']['equal_interval_energy']['N'][time_int] = params['dfa']['sum_ns_power']
 
     return params
 
@@ -7360,15 +7362,28 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
 
     params = hvsr_data
     if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
-        warnings.warn('WARNING: DFA method is currently experimental and not supported')
+        warnings.warn('WARNING: DFA method is currently experimental. DFA takes significantly longer than the other methods and has not been extensively tested.')
+        if verbose:
+            print('\tUsing Diffuuse Field Assumption (DFA)', flush=True)
+        xlen = len(x
+        xnum = 0
         for j in range(len(x)-1):
+            xnum+=1
+            if verbose:
+                print(f"\tBeginning {xnum}/{xlen} frequencies ({round(100*xnum/xlen, 2)}%)")
+            ti = 0
             for time_interval in params['ppsds']['Z']['current_times_used']:
+                ti+=1
+                if verbose:
+                    print(f"\t\t{ti}/{len(params['ppsds']['Z']['current_times_used'])} time intervals completed")
                 hvsr_curve_tinterval = []
                 params = _dfa(params, verbose=verbose)
+                
+                # Second dfa section in original iris script
                 eie = params['dfa']['equal_interval_energy']
                 if time_interval in list(eie['Z'].keys()) and time_interval in list(eie['E'].keys()) and time_interval in list(eie['N'].keys()):
                     hvsr = math.sqrt(
-                        (eie['Z'][str(time_interval)][j] + eie['N'][str(time_interval)][j]) / eie['Z'][str(time_interval)][j])
+                        (eie['E'][str(time_interval)][j] + eie['N'][str(time_interval)][j]) / eie['Z'][str(time_interval)][j])
                     hvsr_curve_tinterval.append(hvsr)
                 else:
                     if verbose > 0:
