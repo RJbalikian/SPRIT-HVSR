@@ -7181,7 +7181,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
 # Helper functions for process_hvsr()
 # Get diffuse field assumption data
-def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
+def _dfa(x, psd=None, horizontal_method='Diffuse Field Assumption', hvsr_data=None, hvsr_curve=None, hvsr_tSteps=[], hvsr_azimuth=None, verbose=False):#, equal_interval_energy, median_daily_psd, verbose=False):
     """Helper function for performing Diffuse Field Assumption (DFA) analysis
 
         Not extensively tested
@@ -7190,6 +7190,7 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
     # the same as large ones, so that P1+P2+P3=1
 
+    params=hvsr_data
     x_values=params['ppsds']['Z']['period_bin_centers']
 
     horizontal_method=params['horizontal_method']
@@ -7200,170 +7201,6 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
         horizontal_method = methodList[horizontal_method]
 
     if horizontal_method.lower() in dfaList:
-        params['dfa'] = {}
-        sum_ns_power = list()
-        sum_ew_power = list()
-        sum_z_power = list()
-        params['dfa']['time_int_psd'] = {'Z':{}, 'E':{}, 'N':{}}
-        params['dfa']['time_values'] = list()
-        params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
-
-        # Make sure we have all 3 components for every time sample
-        for i, t_int in enumerate(params['ppsds']['Z']['current_times_used']):#day_time_values):
-            #if day_time not in (day_time_psd[0].keys()) or day_time not in (day_time_psd[1].keys()) or day_time not in (day_time_psd[2].keys()):
-            #    continue
-            
-            #Currently the same as day_time, and probably notneeded to redefine
-            # Add the time interval to the time_values list
-            time_int = str(t_int)#day_time.split('T')[0]
-            if time_int not in params['dfa']['time_values']:
-                params['dfa']['time_values'].append(time_int)
-
-            # Initialize the PSDs
-            # use the Z component as the main tracker
-            if time_int not in params['dfa']['time_int_psd']['Z'].keys():
-                params['dfa']['time_int_psd']['Z'][time_int] = list()
-                params['dfa']['time_int_psd']['E'][time_int] = list()
-                params['dfa']['time_int_psd']['N'][time_int] = list()
-
-            params['dfa']['time_int_psd']['Z'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_Z'])[i])
-            params['dfa']['time_int_psd']['E'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_E'])[i])
-            params['dfa']['time_int_psd']['N'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_N'])[i])
-
-        # For each time_int equalize energy
-        for time_int in params['dfa']['time_values']:
-
-            # Each PSD for the time_int
-            for k in range(len(params['dfa']['time_int_psd']['Z'][time_int])):
-                Pz = list()
-                P1 = list()
-                P2 = list()
-                sum_pz = 0
-                sum_p1 = 0
-                sum_p2 = 0
-
-                # Each sample of the PSD , convert to power
-                for j in range(len(x_values) - 1):
-                    pz = __get_power([params['dfa']['time_int_psd']['Z'][time_int][k][j], params['dfa']['time_int_psd']['Z'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
-                    Pz.append(pz)
-                    sum_pz += pz
-                    p1 = __get_power([params['dfa']['time_int_psd']['E'][time_int][k][j], params['dfa']['time_int_psd']['E'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
-                    P1.append(p1)
-                    sum_p1 += p1
-                    p2 = __get_power([params['dfa']['time_int_psd']['N'][time_int][k][j], params['dfa']['time_int_psd']['N'][time_int][k][j + 1]], [x_values[j], x_values[j + 1]])
-                    P2.append(p2)
-                    sum_p2 += p2
-
-                sum_power = sum_pz + sum_p1 + sum_p2  # total power
-
-                # Mormalized power
-                for j in range(len(x_values) - 1):
-                    # Initialize if this is the first sample of the time_int
-                    if k == 0:
-                        sum_z_power.append(Pz[j] / sum_power)
-                        sum_ns_power.append(P1[j] / sum_power)
-                        sum_ew_power.append(P2[j] / sum_power)
-                    else:
-                        sum_z_power[j] += (Pz[j] / sum_power)
-                        sum_ns_power[j] += (P1[j] / sum_power)
-                        sum_ew_power[j] += (P2[j] / sum_power)
-            
-            # Average the normalized time interval power
-            for j in range(len(x_values) - 1):
-                sum_z_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                sum_ns_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                sum_ew_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-
-            params['dfa']['equal_interval_energy']['Z'][time_int] = sum_z_power
-            params['dfa']['equal_interval_energy']['E'][time_int] = sum_ew_power
-            params['dfa']['equal_interval_energy']['N'][time_int] = sum_ns_power
-
-    return params
-
-
-# Helper function for smoothing across frequencies
-def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
-    """Helper function to smooth frequency if 'constant' or 'proportional' is passed to freq_smooth parameter of process_hvsr() function"""
-    if kind_freq_smooth == 'constant':
-        fwidthHalf = f_smooth_width//2
-    elif kind_freq_smooth == 'proportional':
-        anyKey = list(hvsr_out['psd_raw'].keys())[0]
-        freqLength = hvsr_out['psd_raw'][anyKey].shape[1]
-        if f_smooth_width > 1:
-            fwidthHalf = int(f_smooth_width/100 * freqLength)
-        else:
-            fwidthHalf = int(f_smooth_width * freqLength)
-    else:
-        warnings.warn('Oops, typo somewhere')
-
-
-    for k in hvsr_out['psd_raw']:
-        colName = f'psd_values_{k}'
-
-        newTPSD = list(np.stack(hvsr_out['hvsr_windows_df'][colName]))
-        #newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
-
-        for t, tPSD in enumerate(hvsr_out['psd_raw'][k]):
-            for i, fVal in enumerate(tPSD):
-                if i < fwidthHalf:
-                    downWin = i
-                    ind = -1*(fwidthHalf-downWin)
-                    windMultiplier_down = np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
-                    windMultiplier_down = windMultiplier_down[:ind]
-                else:
-                    downWin = fwidthHalf
-                    windMultiplier_down =  np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
-                if i + fwidthHalf >= len(tPSD):
-                    upWin = (len(tPSD) - i)
-                    ind = -1 * (fwidthHalf-upWin+1)
-                    windMultiplier_up = np.linspace(1-1/fwidthHalf, 0, fwidthHalf)
-                    windMultiplier_up = windMultiplier_up[:ind]
-
-                else:
-                    upWin = fwidthHalf+1
-                    windMultiplier_up = np.linspace(1 - 1/fwidthHalf, 0, fwidthHalf)
-            
-                windMultiplier = list(np.hstack([windMultiplier_down, windMultiplier_up]))
-                midInd = np.argmax(windMultiplier)
-                if i > 0:
-                    midInd+=1
-                windMultiplier.insert(midInd, 1)
-                smoothVal = np.divide(np.sum(np.multiply(tPSD[i-downWin:i+upWin], windMultiplier)), np.sum(windMultiplier))
-                newTPSD[t][i] = smoothVal
-
-        hvsr_out['psd_raw'][k] = newTPSD
-        hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(newTPSD), index=hvsr_out['hvsr_windows_df'].index)
-
-
-    return hvsr_out
-
-
-# Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose=False):
-    """ Get an HVSR curve from three components over the same time period/frequency intervals
-
-    Parameters
-    ----------
-        x   : list or array_like
-            x value (frequency or period)
-        psd : dict
-            Dictionary with psd values for three components. Usually read in as part of hvsr_data from process_hvsr
-        horizontal_method : int or str
-            Integer or string, read in from process_hvsr method parameter
-    
-    Returns
-    -------
-        tuple
-         (hvsr_curve, hvsr_tSteps), both np.arrays. hvsr_curve is a numpy array containing H/V ratios at each frequency/period in x.
-         hvsr_tSteps only used with diffuse field assumption method. 
-
-    """
-    hvsr_curve = []
-    hvsr_tSteps = []
-    hvsr_azimuth = {}
-
-    params = hvsr_data
-    if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
         warnings.warn('WARNING: DFA method is currently experimental and has not been extensively tested.')
         if verbose:
             print('\tUsing Diffuse Field Assumption (DFA)', flush=True)
@@ -7507,6 +7344,95 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             
             #Average over time
             hvsr_tSteps.append(hvsr_curve_tinterval)
+    return hvsr_tSteps
+
+
+# Helper function for smoothing across frequencies
+def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
+    """Helper function to smooth frequency if 'constant' or 'proportional' is passed to freq_smooth parameter of process_hvsr() function"""
+    if kind_freq_smooth == 'constant':
+        fwidthHalf = f_smooth_width//2
+    elif kind_freq_smooth == 'proportional':
+        anyKey = list(hvsr_out['psd_raw'].keys())[0]
+        freqLength = hvsr_out['psd_raw'][anyKey].shape[1]
+        if f_smooth_width > 1:
+            fwidthHalf = int(f_smooth_width/100 * freqLength)
+        else:
+            fwidthHalf = int(f_smooth_width * freqLength)
+    else:
+        warnings.warn('Oops, typo somewhere')
+
+
+    for k in hvsr_out['psd_raw']:
+        colName = f'psd_values_{k}'
+
+        newTPSD = list(np.stack(hvsr_out['hvsr_windows_df'][colName]))
+        #newTPSD = list(np.ones_like(hvsr_out['psd_raw'][k]))
+
+        for t, tPSD in enumerate(hvsr_out['psd_raw'][k]):
+            for i, fVal in enumerate(tPSD):
+                if i < fwidthHalf:
+                    downWin = i
+                    ind = -1*(fwidthHalf-downWin)
+                    windMultiplier_down = np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
+                    windMultiplier_down = windMultiplier_down[:ind]
+                else:
+                    downWin = fwidthHalf
+                    windMultiplier_down =  np.linspace(1/fwidthHalf, 1-1/fwidthHalf, fwidthHalf)
+                if i + fwidthHalf >= len(tPSD):
+                    upWin = (len(tPSD) - i)
+                    ind = -1 * (fwidthHalf-upWin+1)
+                    windMultiplier_up = np.linspace(1-1/fwidthHalf, 0, fwidthHalf)
+                    windMultiplier_up = windMultiplier_up[:ind]
+
+                else:
+                    upWin = fwidthHalf+1
+                    windMultiplier_up = np.linspace(1 - 1/fwidthHalf, 0, fwidthHalf)
+            
+                windMultiplier = list(np.hstack([windMultiplier_down, windMultiplier_up]))
+                midInd = np.argmax(windMultiplier)
+                if i > 0:
+                    midInd+=1
+                windMultiplier.insert(midInd, 1)
+                smoothVal = np.divide(np.sum(np.multiply(tPSD[i-downWin:i+upWin], windMultiplier)), np.sum(windMultiplier))
+                newTPSD[t][i] = smoothVal
+
+        hvsr_out['psd_raw'][k] = newTPSD
+        hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(newTPSD), index=hvsr_out['hvsr_windows_df'].index)
+
+
+    return hvsr_out
+
+
+# Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
+def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose=False):
+    """ Get an HVSR curve from three components over the same time period/frequency intervals
+
+    Parameters
+    ----------
+        x   : list or array_like
+            x value (frequency or period)
+        psd : dict
+            Dictionary with psd values for three components. Usually read in as part of hvsr_data from process_hvsr
+        horizontal_method : int or str
+            Integer or string, read in from process_hvsr method parameter
+    
+    Returns
+    -------
+        tuple
+         (hvsr_curve, hvsr_tSteps), both np.arrays. hvsr_curve is a numpy array containing H/V ratios at each frequency/period in x.
+         hvsr_tSteps only used with diffuse field assumption method. 
+
+    """
+    hvsr_curve = []
+    hvsr_tSteps = []
+    hvsr_azimuth = {}
+
+    params = hvsr_data
+    if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
+        hvsr_tSteps = _dfa(x, psd, horizontal_method, hvsr_data, hvsr_curve, hvsr_tSteps, hvsr_azimuth, verbose)
+        hvsr_curve = np.mean(hvsr_tSteps, axis=0)
+
     else:
         for j in range(len(x)-1):
             psd0 = [psd['Z'][j], psd['Z'][j + 1]]
@@ -7530,7 +7456,6 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             
         hvsr_tSteps = None # Only used for DFA
 
-    hvsr_curve = np.mean(hvsr_tSteps, axis=0)
 
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
