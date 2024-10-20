@@ -7201,9 +7201,9 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
 
     if horizontal_method.lower() in dfaList:
         params['dfa'] = {}
-        params['dfa']['sum_ns_power'] = list()
-        params['dfa']['sum_ew_power'] = list()
-        params['dfa']['sum_z_power'] = list()
+        sum_ns_power = list()
+        sum_ew_power = list()
+        sum_z_power = list()
         params['dfa']['time_int_psd'] = {'Z':{}, 'E':{}, 'N':{}}
         params['dfa']['time_values'] = list()
         params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
@@ -7226,9 +7226,9 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
                 params['dfa']['time_int_psd']['E'][time_int] = list()
                 params['dfa']['time_int_psd']['N'][time_int] = list()
 
-            params['dfa']['time_int_psd']['Z'][time_int].append(params['ppsds']['Z']['psd_values'][i])
-            params['dfa']['time_int_psd']['E'][time_int].append(params['ppsds']['E']['psd_values'][i])
-            params['dfa']['time_int_psd']['N'][time_int].append(params['ppsds']['N']['psd_values'][i])
+            params['dfa']['time_int_psd']['Z'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_Z'])[i])
+            params['dfa']['time_int_psd']['E'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_E'])[i])
+            params['dfa']['time_int_psd']['N'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_N'])[i])
 
         # For each time_int equalize energy
         for time_int in params['dfa']['time_values']:
@@ -7260,23 +7260,23 @@ def _dfa(params, verbose=False):#, equal_interval_energy, median_daily_psd, verb
                 for j in range(len(x_values) - 1):
                     # Initialize if this is the first sample of the time_int
                     if k == 0:
-                        params['dfa']['sum_z_power'].append(Pz[j] / sum_power)
-                        params['dfa']['sum_ns_power'].append(P1[j] / sum_power)
-                        params['dfa']['sum_ew_power'].append(P2[j] / sum_power)
+                        sum_z_power.append(Pz[j] / sum_power)
+                        sum_ns_power.append(P1[j] / sum_power)
+                        sum_ew_power.append(P2[j] / sum_power)
                     else:
-                        params['dfa']['sum_z_power'][j] += (Pz[j] / sum_power)
-                        params['dfa']['sum_ns_power'][j] += (P1[j] / sum_power)
-                        params['dfa']['sum_ew_power'][j] += (P2[j] / sum_power)
+                        sum_z_power[j] += (Pz[j] / sum_power)
+                        sum_ns_power[j] += (P1[j] / sum_power)
+                        sum_ew_power[j] += (P2[j] / sum_power)
             
             # Average the normalized time interval power
             for j in range(len(x_values) - 1):
-                params['dfa']['sum_z_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                params['dfa']['sum_ns_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                params['dfa']['sum_ew_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                sum_z_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                sum_ns_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                sum_ew_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
 
-            params['dfa']['equal_interval_energy']['Z'][time_int] = params['dfa']['sum_z_power']
-            params['dfa']['equal_interval_energy']['E'][time_int] = params['dfa']['sum_ew_power']
-            params['dfa']['equal_interval_energy']['N'][time_int] = params['dfa']['sum_ns_power']
+            params['dfa']['equal_interval_energy']['Z'][time_int] = sum_z_power
+            params['dfa']['equal_interval_energy']['E'][time_int] = sum_ew_power
+            params['dfa']['equal_interval_energy']['N'][time_int] = sum_ns_power
 
     return params
 
@@ -7364,31 +7364,30 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
 
     params = hvsr_data
     if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
-        warnings.warn('WARNING: DFA method is currently experimental. DFA takes significantly longer than the other methods and has not been extensively tested.')
+        warnings.warn('WARNING: DFA method is currently experimental and has not been extensively tested.')
         if verbose:
-            print('\tUsing Diffuuse Field Assumption (DFA)', flush=True)
+            print('\tUsing Diffuse Field Assumption (DFA)', flush=True)
         xlen = len(x)
         xnum = 0
 
         params['dfa'] = {}
-        params['dfa']['sum_ns_power'] = list()
-        params['dfa']['sum_ew_power'] = list()
-        params['dfa']['sum_z_power'] = list()
+        sum_ns_power = list()
+        sum_ew_power = list()
+        sum_z_power = list()
         params['dfa']['time_int_psd'] = {'Z':{}, 'E':{}, 'N':{}}
         params['dfa']['time_values'] = list()
         params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
 
-        eie = params['dfa']['equal_interval_energy'] # Moved out of for-loop to reduce run time
+        #eie = params['dfa']['equal_interval_energy'] # Moved out of for-loop to reduce run time
         #for j in range(len(x)-1):
         #    xnum+=1
         #    if verbose:
         #        print(f"\tBeginning {xnum}/{xlen} frequencies ({round(100*xnum/xlen, 2)}%)")
-        
         ti = 0    
         for i, t_int in enumerate(params['ppsds']['Z']['current_times_used']):
             ti+=1
-            if verbose: # A little too verbose
-                print(f"\t\t{ti}/{len(params['ppsds']['Z']['current_times_used'])} time intervals completed")
+            #if verbose: 
+            #    print(f"\t\t{ti}/{len(params['ppsds']['Z']['current_times_used'])} time intervals completed")
             hvsr_curve_tinterval = []
 
             ###################################################
@@ -7404,9 +7403,9 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
 
             #if horizontal_method.lower() in dfaList:#indented after comment
             #params['dfa'] = {}
-            #params['dfa']['sum_ns_power'] = list()
-            #params['dfa']['sum_ew_power'] = list()
-            #params['dfa']['sum_z_power'] = list()
+            sum_ns_power = list()
+            sum_ew_power = list()
+            sum_z_power = list()
             #params['dfa']['time_int_psd'] = {'Z':{}, 'E':{}, 'N':{}}
             #params['dfa']['time_values'] = list()
             #params['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
@@ -7421,6 +7420,7 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             time_int = str(t_int)#day_time.split('T')[0]
             if time_int not in params['dfa']['time_values']:
                 params['dfa']['time_values'].append(time_int)
+            #print('time_values', np.array(params['dfa']['time_values']).shape)
 
             # Initialize the PSDs
             # use the Z component as the main tracker
@@ -7429,15 +7429,18 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
                 params['dfa']['time_int_psd']['E'][time_int] = list()
                 params['dfa']['time_int_psd']['N'][time_int] = list()
 
-            params['dfa']['time_int_psd']['Z'][time_int].append(params['ppsds']['Z']['psd_values'][i])
-            params['dfa']['time_int_psd']['E'][time_int].append(params['ppsds']['E']['psd_values'][i])
-            params['dfa']['time_int_psd']['N'][time_int].append(params['ppsds']['N']['psd_values'][i])
+            params['dfa']['time_int_psd']['Z'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_Z'])[i])
+            params['dfa']['time_int_psd']['E'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_E'])[i])
+            params['dfa']['time_int_psd']['N'][time_int].append(np.stack(params['hvsr_windows_df']['psd_values_N'])[i])
+
+            #print('time_int_psd', np.array(params['dfa']['time_int_psd']['Z'][time_int]).shape)
 
             # For each time_int equalize energy
             # for time_int in params['dfa']['time_values']:#indented after comment
 
             # Each PSD for the time_int
             for k in range(len(params['dfa']['time_int_psd']['Z'][time_int])):
+
                 Pz = list()
                 P1 = list()
                 P2 = list()
@@ -7458,41 +7461,44 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
                     p2 = __get_power([params['dfa']['time_int_psd']['N'][time_int][k][j], params['dfa']['time_int_psd']['N'][time_int][k][j + 1]], [x[j], x[j + 1]])
                     P2.append(p2)
                     sum_p2 += p2
-                    
-
+                
+                #print('pz',np.array(Pz).shape)
+                #print('sumpz', sum_pz)
                 sum_power = sum_pz + sum_p1 + sum_p2  # total power
 
                 # Mormalized power
                 for j in range(len(x) - 1):
                     # Initialize if this is the first sample of the time_int
-                    if k == 0:
-                        params['dfa']['sum_z_power'].append(Pz[j] / sum_power)
-                        params['dfa']['sum_ns_power'].append(P1[j] / sum_power)
-                        params['dfa']['sum_ew_power'].append(P2[j] / sum_power)
-                    else:
-                        params['dfa']['sum_z_power'][j] += (Pz[j] / sum_power)
-                        params['dfa']['sum_ns_power'][j] += (P1[j] / sum_power)
-                        params['dfa']['sum_ew_power'][j] += (P2[j] / sum_power)
-            
+                    #print('jk', j, k)
+
+                    #if k == 0:
+                    sum_z_power.append(Pz[j] / sum_power)
+                    sum_ew_power.append(P1[j] / sum_power)
+                    sum_ns_power.append(P2[j] / sum_power)
+                    #else:
+                        # This should never be trigerred
+                    #    sum_z_power[j] += (Pz[j] / sum_power)
+                    #    sum_ew_power[j] += (P1[j] / sum_power)
+                    #    sum_ns_power[j] += (P2[j] / sum_power)
+                
             # Average the normalized time interval power
             for j in range(len(x) - 1):
-                params['dfa']['sum_z_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                params['dfa']['sum_ns_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
-                params['dfa']['sum_ew_power'][j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                sum_z_power[j] /= len(params['dfa']['time_int_psd']['Z'][time_int])
+                sum_ew_power[j] /= len(params['dfa']['time_int_psd']['E'][time_int])
+                sum_ns_power[j] /= len(params['dfa']['time_int_psd']['N'][time_int])
 
-            params['dfa']['equal_interval_energy']['Z'][time_int] = params['dfa']['sum_z_power']
-            params['dfa']['equal_interval_energy']['E'][time_int] = params['dfa']['sum_ew_power']
-            params['dfa']['equal_interval_energy']['N'][time_int] = params['dfa']['sum_ns_power']
+            params['dfa']['equal_interval_energy']['Z'][time_int] = sum_z_power
+            params['dfa']['equal_interval_energy']['E'][time_int] = sum_ew_power
+            params['dfa']['equal_interval_energy']['N'][time_int] = sum_ns_power
 
             ##### END OF DFA FUNCTION
             #params = _dfa(params, verbose=verbose)
             
             # Second dfa section in original iris script
-            #eie = params['dfa']['equal_interval_energy'] # Moved earlier so doesn't run every loop iteration
+            eie = params['dfa']['equal_interval_energy'] # Moved earlier so doesn't run every loop iteration
             for j in range(len(x) - 1):
-                if (t_int in list(eie['Z'].keys())) and (t_int in list(eie['E'].keys())) and (t_int in list(eie['N'].keys())):
-                    hv_x = math.sqrt(
-                        (eie['E'][str(t_int)][j] + eie['N'][str(t_int)][j]) / eie['Z'][str(t_int)][j])
+                if (time_int in list(eie['Z'].keys())) and (time_int in list(eie['E'].keys())) and (time_int in list(eie['N'].keys())):
+                    hv_x = math.sqrt((eie['E'][time_int][j] + eie['N'][time_int][j]) / eie['Z'][time_int][j])
                     hvsr_curve_tinterval.append(hv_x)
                 else:
                     if verbose > 0:
@@ -7524,8 +7530,8 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             
         hvsr_tSteps = None # Only used for DFA
 
-    hvsr_curve = np.mean(hvsr_tSteps)
-    print(np.array(hvsr_curve).shape)
+    hvsr_curve = np.mean(hvsr_tSteps, axis=0)
+
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
 
