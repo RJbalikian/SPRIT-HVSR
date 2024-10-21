@@ -3679,6 +3679,7 @@ def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC ann p', azimuth='HV
             - 'all' shows all the peaks identified in check_peaks() (by default, only the max is identified)
             - 't' shows the H/V curve for all time windows
             - 'tp' shows all the peaks from the H/V curves of all the time windows
+            - 'fr' shows the window within which SpRIT will search for peak frequencies, as set by peak_freq_range
             - 'test' shows a visualization of the results of the peak validity test(s). Examples:
                 - 'tests' visualizes the results of all the peak tests (not the curve tests)
                 - 'test12' shows the results of tests 1 and 2.
@@ -8429,14 +8430,14 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         
         # Plot frequency search range bars
         if 'fr' in k:
-            lowPeakSearchThresh = np.log10(hvsr_data.peak_freq_range[0])
-            hiPeakSearchThresh = np.log10(hvsr_data.peak_freq_range[1])
+            lowPeakSearchThresh = hvsr_data.peak_freq_range[0]
+            hiPeakSearchThresh = hvsr_data.peak_freq_range[1]
             
-            print('fr')
-            frDict = {'linestyle':'dashed', 'facecolors':'#1B0605C4', 'edgecolors':'#000000'}
-            ax.fill_betweenx(ylim, [np.log10(xlim[0]), np.log10(xlim[0])], [lowPeakSearchThresh,lowPeakSearchThresh], **frDict)
-            ax.fill_betweenx(ylim, [hiPeakSearchThresh, hiPeakSearchThresh], [np.log10(xlim[1]), np.log10(xlim[1])], **frDict)
-        
+            frStyleDict = {'linestyle':'dashed', 'facecolors':'#1B060544', 'edgecolors':'#000000'}
+
+            ax.fill_betweenx(ylim, [xlim[0], xlim[0]],[lowPeakSearchThresh,lowPeakSearchThresh], **frStyleDict)          
+            ax.fill_betweenx(ylim, [hiPeakSearchThresh, hiPeakSearchThresh],[xlim[1],xlim[1]], **frStyleDict)          
+
         # Plot individual components
         if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
