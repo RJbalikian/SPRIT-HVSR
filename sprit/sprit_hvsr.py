@@ -8142,8 +8142,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     peakLine = False
     used = hvsrDF['Use'].astype(bool)
     notused = ~hvsrDF['Use'].astype(bool)     
+    
     for k in plot_type:
-        # Show peak
+        
+        # Show peak(s)
+        # Show f0 peak (and annotate if indicated)
         if k=='p' and 'all' not in plot_type:
             plotSuff=plotSuff+'BestPeak_'
             
@@ -8154,17 +8157,22 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                     bestPeak = p
 
             ax.axvline(bestPeak['f0'], color='k', linestyle='dotted', label='Peak')          
+            
+            # Annotate primary peak
             if 'ann' in plot_type:
                 xLoc = bestPeak['f0']
                 yLoc = ylim[0] + (ylim[1] - ylim[0]) * 0.008
                 ax.text(x=xLoc, y=yLoc, s="Peak at "+str(round(bestPeak['f0'],2))+'Hz',
                             fontsize='xx-small', horizontalalignment='center', verticalalignment='bottom', 
                             bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
-                plotSuff = plotSuff+'ann_'
+                plotSuff = plotSuff+'ann_'  
+        #Show all peaks in h/v curve
         elif k=='p'  and 'all' in plot_type:
             plotSuff = plotSuff+'allPeaks_'
 
             ax.vlines(hvsr_data['hvsr_peak_freqs'][azimuth], ax.get_ylim()[0], ax.get_ylim()[1], colors='k', linestyles='dotted', label='Peak')          
+
+            # Annotate all peaks
             if 'ann' in plot_type:
                 for i, p in enumerate(hvsr_data['hvsr_peak_freqs']):
                     y = hvsr_data['hvsr_curve'][hvsr_data['hvsr_peak_indices'][i]]
@@ -8173,23 +8181,27 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                                     bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
                 plotSuff=plotSuff+'ann_'
 
-        # Show peak annotations/lines
+        # Show primary peak amplitude (and annotate if indicated)
         if k=='pa':
             ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
             ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
             peakPoint = True
             peakLine = True
+            
+            # Annotate primary peak amplitude
             if 'ann' in plot_type:
                 ax.annotate(f"Peak Amp.: {a0:.2f}", [f0+0.1*f0, a0])
                 peakAmpAnn = True                
 
-        # Show the curves and/or peaks at each time
+        # Show the curves and/or peaks at each time window
         if 't' in k and 'test' not in k:
             plotSuff = plotSuff+'allTWinCurves_'
 
+            # If this is a component subplot
             if kwargs['subplot'] == 'comp':
+                
                 if k == 'tp':
-                    pass  # This is not something calculated
+                    pass  # This is not calculated for individual components
                 if k == 't':
                     azKeys = ['Z', 'E', 'N']
                     azKeys.extend(list(hvsr_data.hvsr_az.keys()))
@@ -8202,7 +8214,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
 
                         for pv, t in enumerate(np.stack(hvsrDF[used]['psd_values_'+az])):
                             ax.plot(x, t[:-1], color=col, alpha=0.2, linewidth=0.8, linestyle=':', zorder=0)
+            # For the main H/V plot
             else:
+                # Show all peaks at all times (semitransparent red bars)
                 if k == 'tp':
                     for j, t in enumerate(hvsrDF[used]['CurvesPeakIndices_'+azimuth]):
                         for i, v in enumerate(t):
@@ -8215,15 +8229,16 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                                 ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05, label='Individual H/V Peaks')
                             else:
                                 ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
+                # Show curves at all time windows
                 if k == 't':
                     for t in np.stack(hvsrDF[used]['HV_Curves']):
                         ax.plot(x, t, color='k', alpha=0.25, linewidth=0.8, linestyle=':')
                     for t in np.stack(hvsrDF[notused]['HV_Curves']):
                         ax.plot(x, t, color='orangered', alpha=0.666, linewidth=0.8, linestyle=':', zorder=0)
 
-        # Only plot test results on HVSR plot
+        # Plot SESAME test results and thresholds on HVSR plot
         if 'test' in k and kwargs['subplot'] == 'hvsr':
-            if k=='tests':
+            if k=='tests' or 'all' in k or ':' in k:
                 # Change k to pass all test plot conditions
                 k='test123456c'
 
@@ -8412,6 +8427,17 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                     ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
                     peakPoint = True
         
+        # Plot frequency search range bars
+        if 'fr' in k:
+            lowPeakSearchThresh = np.log10(hvsr_data.peak_freq_range[0])
+            hiPeakSearchThresh = np.log10(hvsr_data.peak_freq_range[1])
+            
+            print('fr')
+            frDict = {'linestyle':'dashed', 'facecolors':'#1B0605C4', 'edgecolors':'#000000'}
+            ax.fill_betweenx(ylim, [np.log10(xlim[0]), np.log10(xlim[0])], [lowPeakSearchThresh,lowPeakSearchThresh], **frDict)
+            ax.fill_betweenx(ylim, [hiPeakSearchThresh, hiPeakSearchThresh], [np.log10(xlim[1]), np.log10(xlim[1])], **frDict)
+        
+        # Plot individual components
         if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
