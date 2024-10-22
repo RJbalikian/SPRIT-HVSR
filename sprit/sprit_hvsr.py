@@ -7203,9 +7203,10 @@ def _dfa(x, hvsr_data=None, verbose=False):#, equal_interval_energy, median_dail
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
     # the same as large ones, so that P1+P2+P3=1
     hvsr_tSteps = []
-    warnings.warn('WARNING: DFA method is currently experimental and has not been extensively tested.')
+    
     if verbose:
         print('\tUsing Diffuse Field Assumption (DFA)', flush=True)
+        warnings.warn('WARNING: DFA method is currently experimental and has not been extensively tested.')
 
     hvsr_data['dfa'] = {}
     sum_ns_power = list()
