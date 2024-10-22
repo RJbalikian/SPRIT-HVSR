@@ -526,27 +526,41 @@ def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fi
         use_secondary=False
         transparency_modifier = 1
 
-    alpha = 0.4 * transparency_modifier
+    # Keep components if azimuth is used, but make them lighter
+    if len(hvsr_data.hvsr_az.keys()) > 0:
+        h_transparency_modifier = transparency_modifier * 0.5
+    else:
+        h_transparency_modifier = transparency_modifier
+        
+    v_transparency_modifier = transparency_modifier
+    az_transparency_modifier = transparency_modifier
+
+        
+    h_alpha = 0.4 * h_transparency_modifier
+    v_alpha = 0.4 * v_transparency_modifier
+    az_alpha = 0.4 * az_transparency_modifier
     components = ['Z', 'E', 'N']
 
-    compColor_semi_light = {'Z':f'rgba(128,128,128,{alpha})',
-                'E':f'rgba(0,0,128,{alpha})',
-                'N':f'rgba(128,0,0,{alpha})'}
+    compColor_semi_light = {'Z':f'rgba(128,128,128,{v_alpha})',
+                'E':f'rgba(0,0,128,{h_alpha})',
+                'N':f'rgba(128,0,0,{h_alpha})'}
 
-    alpha = 0.7 * transparency_modifier
-    compColor_semi = {'Z':f'rgba(128,128,128,{alpha})',
-                    'E':f'rgba(100,100,128,{alpha})', 
-                    'N':f'rgba(128,100,100,{alpha})'}
+    h_alpha = 0.7 * h_transparency_modifier
+    v_alpha = 0.7 * v_transparency_modifier
+    az_alpha = 0.7 * az_transparency_modifier    
+    compColor_semi = {'Z':f'rgba(128,128,128,{v_alpha})',
+                    'E':f'rgba(100,100,128,{h_alpha})', 
+                    'N':f'rgba(128,100,100,{h_alpha})'}
 
-    compColor = {'Z':f'rgba(128,128,128,{alpha})', 
-                'E':f'rgba(100,100,250,{alpha})', 
-                'N':f'rgba(250,100,100,{alpha})'}
+    compColor = {'Z':f'rgba(128,128,128,{v_alpha})', 
+                'E':f'rgba(100,100,250,{h_alpha})', 
+                'N':f'rgba(250,100,100,{h_alpha})'}
 
     for az in hvsr_data.hvsr_az.keys():
         components.append(az)
-        compColor_semi_light[az] = f'rgba(0,128,0,{alpha})'
-        compColor_semi[az] = f'rgba(100,128,100,{alpha})'
-        compColor[az] = f'rgba(100,250,100,{alpha})'
+        compColor_semi_light[az] = f'rgba(0,128,0,{az_alpha})'
+        compColor_semi[az] = f'rgba(100,128,100,{az_alpha})'
+        compColor[az] = f'rgba(100,250,100,{az_alpha})'
 
     # Whether to plot in new subplot or not
     if same_plot:
