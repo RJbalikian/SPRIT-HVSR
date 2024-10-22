@@ -369,8 +369,13 @@ def parse_plot_string(plot_string):
 
 def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
     hvsr_data = hv_data
+    hv_plot_list = hvsr_plot_list[0]
     x_data = hvsr_data.x_freqs['Z']
     hvsrDF = hvsr_data.hvsr_windows_df
+
+    plotymax = max(hvsr_data.hvsrp2['HV']) + (max(hvsr_data.hvsrp2['HV']) - max(hvsr_data.hvsr_curve))
+    ylim = [0, plotymax]
+
 
     if results_fig is None:
         results_fig = go.Figure()
@@ -380,7 +385,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
     else:
         HVCol = 'HV_Curves_'+azimuth
 
-    if 'tp' in hvsr_plot_list:
+    if 'tp' in hv_plot_list:
         allpeaks = []
         for row in hvsrDF[hvsrDF['Use']]['CurvesPeakFreqs_'+azimuth].values:
             for peak in row:
@@ -404,7 +409,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                         name='Best Peaks Over Time'),
                                         row=1, col=1)
 
-    if 't' in hvsr_plot_list:
+    if 't' in hv_plot_list:
         alltimecurves = np.stack(hvsrDF[hvsrDF['Use']][HVCol])
         for i, row in enumerate(alltimecurves):
             if i==0:
@@ -419,7 +424,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                         hoverinfo='none'),
                                         row=1, col=1)
 
-    if 'all' in hvsr_plot_list:
+    if 'all' in hv_plot_list:
         for i, p in enumerate(hvsr_data['hvsr_peak_freqs'][azimuth]):
             if i==0:
                 showLeg = True
@@ -435,7 +440,35 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                 showlegend=showLeg),
                 row=1, col=1)
 
-    if '-s' not in hvsr_plot_list:
+    if 'fr' in hv_plot_list:
+        lowX = [hvsr_data.hvsr_band[0], hvsr_data.hvsr_band[0]]
+        lowWinX = [hvsr_data.peak_freq_range[0], hvsr_data.peak_freq_range[0]]
+        hiWinX = [hvsr_data.peak_freq_range[1], hvsr_data.peak_freq_range[1]]
+        hiX =  [hvsr_data.hvsr_band[1], hvsr_data.hvsr_band[1]]
+        
+        yPts = ylim
+        
+        # Show windows where peak_freq_range is
+        results_fig.add_trace(go.Scatter(x=lowWinX, y=yPts,
+                                line={'color':'black', 'width':0.1}, marker=None,
+                                fill='tozerox', fillcolor="rgba(128, 100, 100, 0.6)",
+                                showlegend=False, name='Peak Frequency exclusion range',
+                                hoverinfo='none'),
+                                row=1, col=1)
+        
+        results_fig.add_trace(go.Scatter(x=hiWinX, y=yPts,
+                                line={'color':'black', 'width':0.1},marker=None, 
+                                showlegend=False,
+                                hoverinfo='none'),
+                                row=1, col=1)
+        
+        results_fig.add_trace(go.Scatter(x=hiX, y=yPts,
+                                line=None, marker=None,
+                                fill='tonextx', fillcolor="rgba(128, 100, 100, 0.6)",
+                                name='Peak frequency exclusion range', hoverinfo='none'),
+                                row=1, col=1)        
+
+    if '-s' not in hv_plot_list:
         # Show standard deviation
         results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2[azimuth],
                                 line={'color':'black', 'width':0.1},marker=None, 
@@ -449,7 +482,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                 name='Log. St.Dev.', hoverinfo='none'),
                                 row=1, col=1)
             
-    if 'p' in hvsr_plot_list:
+    if 'p' in hv_plot_list:
         results_fig.add_trace(go.Scatter(
             x=[hvsr_data['BestPeak'][azimuth]['f0'], hvsr_data['BestPeak'][azimuth]['f0'], None], # set x to None
             y=[0,np.nanmax(np.stack(hvsrDF['HV_Curves'])),None], # set y to None
@@ -458,7 +491,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
             name="Best Peak"),
             row=1, col=1)
 
-    if 'ann' in hvsr_plot_list:
+    if 'ann' in hv_plot_list:
         # Annotate best peak
         results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak'][azimuth]['f0']),
                                 y=0, yanchor='bottom', xanchor='center',
@@ -468,7 +501,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                 row=1, col=1)
     return results_fig
 
-def parse_comp_plot_list(hv_data, comp_plot_list, results_fig=None, azimuth='HV'):
+def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fig=None, azimuth='HV'):
     
     hvsr_data = hv_data
     if results_fig is None:
@@ -477,7 +510,12 @@ def parse_comp_plot_list(hv_data, comp_plot_list, results_fig=None, azimuth='HV'
     # Initial setup
     x_data = hvsr_data.x_freqs['Z']
     hvsrDF = hvsr_data.hvsr_windows_df
-    same_plot = ((comp_plot_list != []) and ('+' not in comp_plot_list[0]))
+    
+    same_plot = False
+    if plot_with_hv:
+        same_plot = True
+    else:
+        same_plot = ((comp_plot_list != []) and ('+' not in comp_plot_list[0]))
 
     if same_plot:
         yaxis_to_use = 'y2'
@@ -511,10 +549,10 @@ def parse_comp_plot_list(hv_data, comp_plot_list, results_fig=None, azimuth='HV'
         compColor[az] = f'rgba(100,250,100,{alpha})'
 
     # Whether to plot in new subplot or not
-    if  comp_plot_list != [] and '+' in comp_plot_list[0]:
-        compRow=2
-    else:
+    if same_plot:
         compRow=1
+    else:
+        compRow=2
 
     # Whether to plot individual time curves
     if 't' in comp_plot_list:
@@ -579,9 +617,9 @@ def parse_comp_plot_list(hv_data, comp_plot_list, results_fig=None, azimuth='HV'
         
     # Code to annotate value of best peak
     if 'ann' in comp_plot_list:
-        minVal = 10000
+        minVal = 1e6 # A high number to compare against (comparer should always be lower)
         for comp in components:
-            currPPSDCurve = hvsr_data['psd_values_tavg'][comp]
+            currPPSDCurve = hvsr_data['ppsd_std_vals_m'][comp]
             if np.nanmin(currPPSDCurve) < minVal:
                 minVal = np.nanmin(currPPSDCurve)
         results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak'][azimuth]['f0']),
@@ -698,6 +736,10 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     hvsr_data = hv_data
 
+    xlim = [hvsr_data.hvsr_band[0], hvsr_data.hvsr_band[1]]
+    plotymax = max(hvsr_data.hvsrp2['HV']) + (max(hvsr_data.hvsrp2['HV']) - max(hvsr_data.hvsr_curve))
+    ylim = [0, plotymax]
+
     if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
         hvsr_data=hvsr_data[0]
 
@@ -706,69 +748,73 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
     plot_list = parse_plot_string(plot_string)
 
     combinedComp=False
-    noSubplots = 3 - plot_list.count([])
+    # By default there 3 subplots
+    noSubplots = 3
+    # Remove any subplots that are not indicated by plot_type parameter
+    noSubplots = noSubplots - plot_list.count([])
+    
+    # Now, check if comp plot is combined with HV
     if plot_list[1] != [] and '+' not in plot_list[1][0]:
         combinedComp = True
         noSubplots -= 1
     
-
     # Get all data for each plotted item
-    # COMP Plot
-    # Figure out which subplot is which
+    # Get subplot numbers based on plot_list
     spec=[]
     if plot_list[0]==[]:
-        hv_plot_row=1
-        noSubplots+=1
-        if plot_list[1]==[]:
-            comp_plot_row=None
-            if plot_list[2]==[]:
-                spec_plot_row=None
-                hv_plot_row=1 #If nothing specified, do basic h/v plot
+        # if for some reason, HVSR plot was not indicated, add it
+        hv_plot_row = 1 # Default first row to hv (may change later)
+        noSubplots += 1
+        if plot_list[1] == []:
+            comp_plot_row = None
+            if plot_list[2] == []:
+                spec_plot_row = None
+                hv_plot_row = 1 #If nothing specified, do basic h/v plot
             else:
-                spec_plot_row=1
+                spec_plot_row = 1 # If only spec specified
         else:
-            comp_plot_row=1
+            comp_plot_row = 1 # If no HV specified by comp is, comp is subplot 1
 
-            if plot_list[2]==[]:
-                spec_plot_row=None
+            if plot_list[2] == []:
+                spec_plot_row = None
             else:
-                spec_plot_row=1
+                spec_plot_row = 2 # If only comp and spec specified comp first then spec
     else:
-        hv_plot_row=1
-        if plot_list[1]==[]:
-            comp_plot_row=None
-            if plot_list[2]==[]:
-                spec_plot_row=None
+        hv_plot_row = 1 # HV specified explicitly
+        if plot_list[1] == []:
+            comp_plot_row = None
+            if plot_list[2] == []:
+                spec_plot_row = None
             else:
-                spec_plot_row=2
+                spec_plot_row = 2 # if no comp specified, spec is 2nd subplot
         else:
             if combinedComp:
-                comp_plot_row=1
-                if plot_list[2]==[]:
-                    spec_plot_row=None
+                comp_plot_row = 1
+                if plot_list[2] == []:
+                    spec_plot_row = None
                 else:
-                    spec_plot_row=2
+                    spec_plot_row = 2
             else:
-                comp_plot_row=2
-                if plot_list[2]==[]:
-                    spec_plot_row=None
+                comp_plot_row = 2
+                if plot_list[2] == []:
+                    spec_plot_row = None
                 else:
-                    spec_plot_row=3        
+                    spec_plot_row = 3       
 
     specList=[]
     rHeights=[1]
-    if hv_plot_row==1:
-        if comp_plot_row==1:
+    if hv_plot_row == 1:
+        if comp_plot_row == 1:
             specList.append([{'secondary_y': True}])
-            if spec_plot_row==2:
+            if spec_plot_row == 2:
                 specList.append([{'secondary_y': False}])
     else:
         specList.append([{'secondary_y': False}])
 
-        if noSubplots>=2:
+        if noSubplots >= 2:
             specList.append([{'secondary_y': False}])
-            rHeights=[1.5,1]
-        if noSubplots==3:
+            rHeights = [1.5,1]
+        if noSubplots == 3:
             specList.append([{'secondary_y': False}])
             rHeights = [2,1.5,1]
     
@@ -781,57 +827,65 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     # Re-initialize results_fig
     results_fig.data = []
-    results_fig.update_layout(grid=None)  # Clear the existing grid layout
+    results_fig.update_layout(grid=None)  # Clear the existing grid layout, in case applicable
 
     results_subp = subplots.make_subplots(rows=noSubplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                 specs=specList,
                                 row_heights=rHeights)
     results_fig.update_layout(grid={'rows': noSubplots})
-    #del results_fig
+
     results_fig = go.FigureWidget(results_subp)
 
     if plot_list[1] != []:
         results_fig = parse_comp_plot_list(hvsr_data, results_fig=results_fig, comp_plot_list=plot_list[1])
+        results_fig.update_xaxes(title_text='Frequency [Hz]', row=comp_plot_row, col=1)
 
     # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
-    results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0], results_fig=results_fig)
+    results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list, results_fig=results_fig)
+    
     # Will always plot the HV Curve
     results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
-                        line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'),
+                        line={'color':'black', 'width':1.5}, marker=None, name='HVSR Curve'),
                         row=1, col='all')
-
     # SPEC plot
     if plot_list[2] != []:
         results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
 
     # Final figure updating
-    showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
-    if showtickLabels:
-        side='bottom'
-    else:
-        side='top'
-    results_fig.update_xaxes(type='log',
-                    range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                    side='top',
-                    row=1, col=1)
-    
-    results_fig.update_xaxes(type='log',overlaying='x',
-                    range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                    side='bottom',
-                    row=1, col=1)
-    if comp_plot_row!=1:
-        results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
-
     resultsFigWidth=800
+
+    components_HV_on_same_plot = (plot_list[1]==[] or '+' not in plot_list[1][0])
+    if components_HV_on_same_plot:
+        compxside = 'bottom'
+        secondaryY = True
+        showHVTickLabels = True
+        showComptickLabels = True
+    else:
+        compxside = 'bottom'
+        secondaryY = False
+        showHVTickLabels = True
+        showComptickLabels = True
+    
+    # Update H/V Plot
+    results_fig.update_xaxes(type='log', title_text='Frequency [Hz]', title_standoff=0,
+                    range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                    side='bottom', showticklabels=showHVTickLabels,
+                    row=1, col=1)
+    results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1, secondary_y=False, range=ylim)
+
+    # Update Component plot
+    results_fig.update_xaxes(type='log',overlaying='x', showticklabels=showComptickLabels,  title_standoff=0,
+                             range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                             side=compxside, row=comp_plot_row, col=1)    
+    results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=secondaryY, row=comp_plot_row, col=1)
+
+    # Update Spec plot
+    results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
+
+    # Update entire figure
     results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
                             showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.8,
                             title=f"{hvsr_data['site']} Results")
-    results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
-    results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
-    if comp_plot_row==1:
-        results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
-    else:
-        results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
     
     # Reset results_graph_widget and display 
     if results_graph_widget is not None:
@@ -1083,4 +1137,3 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
         outlier_fig.show()
 
     return outlier_fig
-

@@ -5,9 +5,11 @@ The functions defined here are read both by the SpRIT graphical user interface a
 
 See documentation for individual functions for more information.
 """
+import base64
 import copy
 import datetime
 import inspect
+import io
 import json
 import math
 import operator
@@ -30,6 +32,7 @@ import numpy as np
 import obspy
 from obspy.signal import PPSD
 import pandas as pd
+import plotly
 from pyproj import CRS, Transformer
 import scipy
 
@@ -1646,6 +1649,8 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             plt.scf = fig
             plt.savefig(outFile)
         elif ref == 'print':
+            if not hasattr(hvsr_results, "Print_Report") or hvsr_results['Print_Report'] is None:
+                hvsr_results = _generate_print_report(hvsr_results, azimuth=azimuth, show_print_report=show_report, verbose=verbose)            
             with open(outFile, 'w') as outF:
                 outF.write(hvsr_results['Print_Report'])
                 # Could write more details in the future
@@ -1657,9 +1662,7 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             with open(outFile, 'w') as outF:
                 outF.write(hvsr_results['HTML_Report'])
         elif ref == "pdf":
-            # PDF report is built from HTML report
-            if not hasattr(hvsr_results, "HTML_Report") or hvsr_results['HTML_Report'] is None:
-                hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=report_export_path, show_pdf_report=show_report, verbose=verbose)
+            hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=report_export_path, show_pdf_report=show_report, verbose=verbose)
         
     return hvsr_results
 
@@ -2927,6 +2930,12 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     suppress_report_outputs = orig_args['suppress_report_outputs']
     verbose = orig_args['verbose']
     kwargs = orig_args['kwargs']
+
+    # Put Processing parameters in hvsr_results immediately (gets used later local function in get_report)
+    hvsr_results['processing_parameters']['get_report'] = {}
+    for key, value in orig_args.items():
+        hvsr_results['processing_parameters']['get_report'][key] = value
+    
     
     if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
         if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
@@ -3014,6 +3023,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         return hvsr_results
         #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
 
+    # Figure out which reports will be used, and format them correctly
     if isinstance(report_formats, (list, tuple)):
         pass
     else:
@@ -3024,6 +3034,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         else:
             report_formats = [report_formats]   
 
+    # Format the export formats correctly
     if isinstance(report_export_formats, (list, tuple)):
         pass
     else:
@@ -3161,10 +3172,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             hvsr_results = _generate_pdf_report(hvsr_results, pdf_report_filepath=pdf_exp_path,
                             show_pdf_report=show_pdf_report, show_html_report=show_html_report, verbose=verbose_pdf)
 
-    hvsr_results['processing_parameters']['get_report'] = {}
-    for key, value in orig_args.items():
-        hvsr_results['processing_parameters']['get_report'][key] = value
-    
+
     return hvsr_results
 
 
@@ -7845,18 +7853,27 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
 
     # Update image source
     # Save the plot to a BytesIO object
-    import io
-    import base64
+    # Default to matplotlib object
+    plotEngine = 'matplotlib'
+    if 'get_report' in hvsr_results.processing_parameters:
+        plotEngine = hvsr_results.processing_parameters['get_report']['plot_engine'].lower()
+        
+    if plotEngine not in ['plotly', 'plty', 'p']:
+        # Create a byte stream from the image
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
 
-    # Create a byte stream from the image
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
+        # Encode the image to base64
+        hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        # Embed the image in the html document
+        html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
+    else:
 
-    # Encode the image to base64
-    hvplot_base64 = base64.b64encode(buf.read()).decode('utf-8')
-    # Embed the image in the html document
-    html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
+        img = plotly.io.to_image(hvsr_results.HV_Plot, format='png', engine='auto')
+        hvplot_base64 = base64.b64encode(img).decode('utf8')
+
+        html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
 
     # Update formatting for print report for html
     html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
