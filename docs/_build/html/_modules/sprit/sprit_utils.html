@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_utils &mdash; sprit 1.2-dev documentation</title>
+  <title>sprit.sprit_utils &mdash; sprit 1.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=83f3f2d6"></script>
+        <script src="../../_static/documentation_options.js?v=c55cb9cb"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -258,6 +258,12 @@
 <span class="sd">        Output datetime.datetime object, now in UTC time.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize values</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">day</span> <span class="o">=</span> <span class="mi">1</span>  
+    
+    <span class="c1"># Parse whether inputDT has date or not</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="c1">#tzone = &#39;America/Chicago&#39;</span>
         <span class="c1">#Format string to datetime obj</span>
@@ -340,10 +346,10 @@
                     <span class="n">month</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">day</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">div</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>                  
 
-        <span class="n">hour</span><span class="o">=</span><span class="mi">0</span>
-        <span class="n">minute</span><span class="o">=</span><span class="mi">0</span>
-        <span class="n">sec</span><span class="o">=</span><span class="mi">0</span>
-        <span class="n">microS</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">hour</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">minute</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">microS</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">hasTime</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hasDate</span><span class="p">:</span>
                 <span class="n">timeStr</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">timeDiv</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
@@ -369,7 +375,7 @@
                 <span class="n">timeStrList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;00&#39;</span><span class="p">)</span>
 
             <span class="n">hour</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">minute</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">minute</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">sec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeStrList</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">),</span><span class="n">month</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">month</span><span class="p">),</span> <span class="n">day</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">),</span>
@@ -379,10 +385,10 @@
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="n">UTCDateTime</span><span class="p">):</span>
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">inputDT</span><span class="o">.</span><span class="n">datetime</span>
 
-    <span class="c1">#Add timezone info</span>
+    <span class="c1"># Add timezone info</span>
     <span class="n">availableTimezones</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">zoneinfo</span><span class="o">.</span><span class="n">available_timezones</span><span class="p">()))</span>
     <span class="k">if</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">tzinfo</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">(</span><span class="n">outputTimeObj</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1">#This is already timezone aware</span>
+        <span class="c1"># This is already timezone aware</span>
         <span class="k">pass</span>
     <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">tzone</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">-</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
@@ -394,7 +400,7 @@
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tzone</span><span class="p">,</span> <span class="n">zoneinfo</span><span class="o">.</span><span class="n">ZoneInfo</span><span class="p">):</span>
         <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timezone must be either str or int&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timezone must be either str, int, or zoneinfo.ZoneInfo object&quot;</span><span class="p">)</span>
     
     <span class="c1">#Convert to UTC</span>
     <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
