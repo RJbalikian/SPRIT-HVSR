@@ -13,7 +13,7 @@ from obspy.core.utcdatetime import UTCDateTime
 
 try:  # For distribution
     from sprit import sprit_hvsr
-except: #For testing
+except Exception: #For testing
     import sprit_hvsr
     pass
 
@@ -71,7 +71,7 @@ def check_mark(incolor=False, interminal=False):
     if incolor:
         try:
             check = get_char(u'\u2705')
-        except:
+        except Exception:
             check = get_char(u'\u2714')
     else:
         check = get_char(u'\u2714')
@@ -81,7 +81,7 @@ def check_mark(incolor=False, interminal=False):
     return check
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, sample_list='', verbose=False):
+def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -108,10 +108,11 @@ def checkifpath(filepath, sample_list='', verbose=False):
     else:
         try:
             filepath = pathlib.Path(filepath)
-        except:
+        except Exception:
             if verbose:
                 warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
         if not filepath.exists():
+            
             raise RuntimeError('File does not exist: {}'.format(filepath))
     return filepath
 
@@ -164,6 +165,12 @@ def format_time(inputDT, tzone='UTC'):
         Output datetime.datetime object, now in UTC time.
 
     """
+    # Initialize values
+    year = 2000
+    month = 1
+    day = 1  
+    
+    # Parse whether inputDT has date or not
     if isinstance(inputDT, str):
         #tzone = 'America/Chicago'
         #Format string to datetime obj
@@ -246,10 +253,10 @@ def format_time(inputDT, tzone='UTC'):
                     month = inputDT.split(div)[0]
                     day = inputDT.split(div)[1]                  
 
-        hour=0
-        minute=0
-        sec=0
-        microS=0
+        hour = 0
+        minute = 0
+        sec = 0
+        microS = 0
         if hasTime:
             if hasDate:
                 timeStr = inputDT.split(timeDiv)[1]
@@ -275,7 +282,7 @@ def format_time(inputDT, tzone='UTC'):
                 timeStrList.append('00')
 
             hour = int(timeStrList[0])
-            minute=int(timeStrList[1])
+            minute = int(timeStrList[1])
             sec = int(timeStrList[2])
 
         outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
@@ -285,10 +292,10 @@ def format_time(inputDT, tzone='UTC'):
     elif isinstance(inputDT, UTCDateTime):
         outputTimeObj = inputDT.datetime
 
-    #Add timezone info
+    # Add timezone info
     availableTimezones = list(map(str.lower, zoneinfo.available_timezones()))
     if outputTimeObj.tzinfo is not None and outputTimeObj.tzinfo.utcoffset(outputTimeObj) is not None:
-        #This is already timezone aware
+        # This is already timezone aware
         pass
     elif type(tzone) is int:
         outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
@@ -300,7 +307,7 @@ def format_time(inputDT, tzone='UTC'):
     elif isinstance(tzone, zoneinfo.ZoneInfo):
         outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
     else:
-        raise ValueError("Timezone must be either str or int")
+        raise ValueError("Timezone must be either str, int, or zoneinfo.ZoneInfo object")
     
     #Convert to UTC
     outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)
@@ -499,7 +506,7 @@ def x_mark(incolor=False, inTerminal=False):
     if incolor:
         try:
             xmark = get_char(u'\u274C')
-        except:
+        except Exception:
             xmark = get_char(u'\u2718')
     else:
         xmark = get_char(u'\u2718')

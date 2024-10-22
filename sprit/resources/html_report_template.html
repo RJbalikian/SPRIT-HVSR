@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="SpRIT HVSR Site Report">
+
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+            @frame header {
+                -pdf-frame-content: header_content;
+                left: 25pt; width: 792pt; 
+                top: 10pt; height: 40pt;
+                -pdf-frame-border: 1;
+            }
+
+            @frame f0_summary {
+                -pdf-frame-content: f0_summary;
+                left: 25pt; width: 792pt; 
+                top: 55pt; height: 50pt;
+                -pdf-frame-border: 1;
+            }
+
+            @frame plot_frame {
+                -pdf-frame-content: plot_frame;
+                left: 10pt; width: 500pt; 
+                top: 110pt; height: 360pt;
+            }
+
+            @frame print_results {
+                -pdf-frame-content: print_results;
+                left: 511pt; width: 320pt; 
+                top: 110; height: 360pt;
+            }
+
+            @frame table_frame {
+                -pdf-frame-content: table_frame;
+                -pdf-keep-in-frame-mode: truncate;
+                left: 25pt; width: 792pt; 
+                top: 475pt; height: 50pt;
+            }
+
+            @frame footer_frame {          
+                -pdf-frame-content: footer_frame;
+                left: 25pt; width: 792pt; 
+                top: 540pt; height: 60pt;
+            }
+       
+        }
+
+        @media print {
+            .image-size {
+                width: 500pt; /* width for printing */
+                height: auto; /* Maintain aspect ratio */
+                }
+            
+            .mono-text{
+                font-family: monospace;
+                font-size: 8pt;
+            }
+
+            .table {
+                border: solid 1px #747474;
+                text-overflow: ellipsis; 
+                overflow: hidden;
+                justify-content: center;
+                font-size: 8pt;
+                text-align: center;
+            }
+            .table td, .table th {
+                padding-top: 2.5px;
+            }
+            .table td {
+                font-size: 8pt;
+            }
+            }
+
+        #header_content {
+            text-align: center;
+            font-size: 24pt;
+            color: white;
+            background-color:  #08085e;
+            padding-top: 10pt;
+            line-height: 28pt;
+            height: 40pt;
+        }
+
+        #f0_summary {
+            text-align: center;
+            font-size: 16pt;
+            padding-top: 10pt;
+            line-height: 16pt;
+            height: 60pt;
+        }
+
+        #f0_summary_text {
+            text-align: center;
+            font-size: 16pt;
+            padding-top: 10pt;
+            line-height: 16pt;
+        }
+
+        .small-text {
+            font-size: 8pt;
+            margin:0;
+            padding-top: 0;
+        }
+
+        #footer_frame {
+            display: block;
+            text-align: center;
+            font-size: 10pt;
+            color: white;
+            line-height: 12;
+            padding-top: 6pt;
+            padding-bottom: 6pt;
+            background-color: #08085e;
+            line-height: 1.2;
+        }
+
+        .results {
+            display: flex;
+        }
+        .box {
+            flex: 1;
+            padding: 1pt;
+        }
+
+        .print-report-text {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 7pt;
+        }
+
+        .table {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: solid 1px #413d53;
+            text-overflow: ellipsis;
+            text-align: center;
+            justify-content: center;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div id="header_content">
+        HVSR_REPORT_TITLE
+    </div>
+
+    <!-- Frame 1: Text -->
+    <div id="f0_summary">
+        PEAKFREQ Hz &plusmn; PEAKSTDEV Hz<br>
+        <p class="small-text">SESAME_TESTS_RESULTS</p>
+    </div>
+
+    <!-- Frame 2: Image -->
+    <div class='results'>
+        <div id="plot_frame", class="box">
+            <img src="./output.png" class="image-size", alt="Image description">
+        </div>
+
+    <!-- Frame 3: Monospace Text -->
+        <div id="print_results" class="box">
+            <p class="print-report-text">HVSR_PRINT_REPORT</p>
+        </div>
+    </div>
+
+    <!-- Frame 4: Table -->
+    <div id="table_frame">
+        <table class="table" style="width: 100%; border-collapse: collapse; text-overflow: ellipsis; overflow: hidden;">
+            <tr>
+                <th style="border: 1px solid black;">X_Coordinate</th>
+                <th style="border: 1px solid black;">Y_Coordinate</th>
+                <th style="border: 1px solid black;">Elevation</th>
+                <th style="border: 1px solid black;">f<sub>0</sub></th>
+                <th style="border: 1px solid black;">St.Dev.<sub>f<sub>0</sub></sub></th>
+                <th rowspan="2" style="border: 1px solid black;">Passes?</th>
+                <th rowspan="2" colspan="3" style="border: 1px solid black;">Curve Tests (3/3 should pass)</th>
+                <th rowspan="2" colspan="6" style="border: 1px solid black;">Peak Tests (5/6 should pass)</th>
+            </tr>
+            <tr>
+                <th style="border: 1px solid black;">Deg_E</th>
+                <th style="border: 1px solid black;">Deg_N</th>
+                <th style="border: 1px solid black;">meter</th>
+                <th style="border: 1px solid black;">Hz</th>
+                <th style="border: 1px solid black;">Hz</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black;">TableData_00</td>
+                <td style="border: 1px solid black;">TableData_01</td>
+                <td style="border: 1px solid black;">TableData_02</td>
+                <td style="border: 1px solid black;">TableData_03</td>
+                <td style="border: 1px solid black;">TableData_04</td>
+                <td style="border: 1px solid black;">TableData_05</td>
+                <td style="border: 1px solid black;">TableData_06</td>
+                <td style="border: 1px solid black;">TableData_07</td>
+                <td style="border: 1px solid black;">TableData_08</td>
+                <td style="border: 1px solid black;">TableData_09</td>
+                <td style="border: 1px solid black;">TableData_10</td>
+                <td style="border: 1px solid black;">TableData_11</td>
+                <td style="border: 1px solid black;">TableData_12</td>
+                <td style="border: 1px solid black;">TableData_13</td>
+                <td style="border: 1px solid black;">TableData_14</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer Section -->
+    <div id="footer_frame">
+        <p>This data and report were generated using SpRIT HVSR, an open-source python package developed at the Illinois State Geological Survey.<br>
+            <a href="https://sprit.readthedocs.io/en/latest/sprit.sprit_hvsr.html" style="color:#ffffff;">Documentation</a> | 
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR" style="color:#ffffff;">Source Code</a> | 
+            <a href="https://pypi.org/project/sprit/" style="color:#ffffff;">Installation</a> | 
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki" style="color:#ffffff;">Tutorials & Wiki</a> | 
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR/issues" style="color:#ffffff;"">Issues</a>
+            <br>
+        &copy; RJBalikian</p>
+    </div>
+
+</body>
+</html>

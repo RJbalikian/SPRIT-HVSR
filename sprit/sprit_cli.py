@@ -4,7 +4,7 @@ The arguments here should correspond to any of the keyword arguments that can be
 
 For list inputs, you should pass the argument multiple times(e.g., --report_format "csv" --report_format "print" --report_format "plot"). (In the case of --report_format, you can also just use "all" to get csv, print, and plot report types)
 
-The datapath parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.
+The input_data parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.
 """
 
 import argparse
@@ -58,7 +58,7 @@ def main():
             if name not in paramNamesList and name not in intermediate_params_list:
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
-                if name == 'datapath':
+                if name == 'input_data':
                     parser.add_argument(name, help=f'{curr_doc_str}')
                 elif name == 'verbose':
                     parser.add_argument('-v', '--verbose',  action='store_true', help='Print status and results to terminal.', default=parameter.default)
@@ -90,8 +90,8 @@ def main():
         kwargs[arg_name] = arg_value
     
     # Call the sprit.run function with the generated kwargs
-    kwargs['datapath'] = kwargs['datapath'].replace("'", "") #Remove single quotes to reduce errors
-    if str(kwargs['datapath']).lower()=='gui':
+    kwargs['input_data'] = kwargs['input_data'].replace("'", "") #Remove single quotes to reduce errors
+    if str(kwargs['input_data']).lower()=='gui':
         sprit.gui()
     else:
         #Print a summary if not verbose
