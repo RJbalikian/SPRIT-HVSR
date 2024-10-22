@@ -10,7 +10,7 @@ import sys
 import markdown
 
 
-RELEASE_VERSION = "1.3"
+RELEASE_VERSION = "1.3.1"
 
 VERBOSE = True
 
@@ -19,7 +19,7 @@ RTD_DOCS = True
 GITHUB_PAGES = False  # Don't think I  need this anymore, and it still works
 
 CONVERT_MD = True
-RTD_THEME = False  # Not currently working
+RTD_THEME = False  # Not currently working, for github pages
 
 RUN_TESTS = False
 LINT_IT = False
@@ -48,11 +48,6 @@ initFPath = spritDir.joinpath('__init__.py')
 requirePath = docsDir.joinpath('requirements.txt')
 
 # Set the package name, SUB_DIRectory, and output directory
-OUTPUT_DIR = docsDir
-
-SUB_DIR = './sprit'
-output_dir = docsDir
-
 venvPath = pathlib.Path(sys.executable).parent.parent
 
 os.environ['PYTHONPATH'] = '..' + os.pathsep + os.environ.get('PYTHONPATH', '')
@@ -128,8 +123,9 @@ if RTD_DOCS:
     if VERBOSE:
         print('Running sphinx-apidoc')
     # Run apidoc to update api documentation from docstrings
-    subprocess.run(['sphinx-apidoc', '-F', '-M', '-e', '-f', '-o',
-                    docsDir.as_posix(), spritDir.as_posix()],
+    subprocess.run(['sphinx-apidoc', '-F', '-M', '-e', '-f', 
+                    '-o',docsDir.as_posix(), spritDir.as_posix(),
+                    '-H', 'SpRIT HVSR'],
                    check=False)
 
     if VERBOSE:
@@ -209,7 +205,7 @@ if GITHUB_PAGES:
                 break
 
     src_path = spritDir  # pathlib.Path(SUB_DIR)
-    trg_path = docsDir   # this is main repo folder, usually
+    trg_path = docsDir   # 
 
     print('Reading .py files from', src_path.absolute())
     print('Placing html files in', trg_path.absolute())

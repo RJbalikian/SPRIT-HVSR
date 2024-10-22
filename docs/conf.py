@@ -26,7 +26,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 project = 'sprit'
 copyright = '2024, Author'
 author = 'Riley Balikian'
-release = '1.3'
+release = '1.3.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -36,7 +36,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'numpydoc'
-
 ]
 
 templates_path = ['_templates']
@@ -48,7 +47,7 @@ language = 'en'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+#html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # -- Options for todo extension ----------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#configuration

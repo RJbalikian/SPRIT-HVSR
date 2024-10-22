@@ -1816,7 +1816,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', data_export_path=None, export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
+def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -1834,7 +1834,7 @@ def fetch_data(params, source='file', data_export_path=None, export_format='msee
     data_export_path : None or str or pathlib obj, default=None
         If None (or False), data is not trimmed in this function.
         Otherwise, this is the directory to save trimmed and exported data.
-    export_format: str='mseed'
+    data_export_format: str='mseed'
         If data_export_path is not None, this is the format in which to save the data
     detrend : str or bool, default='spline'
         If False, data is not detrended.
@@ -1875,7 +1875,7 @@ def fetch_data(params, source='file', data_export_path=None, export_format='msee
     # Update local variables, in case of previously-specified parameters
     source=orig_args['source'].lower()
     data_export_path=orig_args['data_export_path']
-    export_format=orig_args['export_format']
+    data_export_format=orig_args['data_export_format']
     detrend=orig_args['detrend']
     detrend_order=orig_args['detrend_order']
     update_metadata=orig_args['update_metadata']
@@ -2019,7 +2019,7 @@ def fetch_data(params, source='file', data_export_path=None, export_format='msee
                         currParams['input_data'] = f
 
                         curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                    data_export_path=data_export_path, export_format=export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                                    data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
@@ -2238,7 +2238,7 @@ def fetch_data(params, source='file', data_export_path=None, export_format='msee
         if isinstance(params, HVSRBatch):
             pass
         else:
-            dataIN = _trim_data(input=params, stream=dataIN, export_dir=data_export_path, source=source, export_format=export_format)
+            dataIN = _trim_data(input=params, stream=dataIN, export_dir=data_export_path, source=source, data_export_format=data_export_format)
 
     # Split data if masked array (if there are gaps)...detrending cannot be done without
     for tr in dataIN:
@@ -3307,7 +3307,7 @@ def input_params(input_data,
         If dictionary, dictionary containing nested dictionaries of function names as they key, and the parameter names/values as key/value pairs for each key. 
         If a function name is not present, or if a parameter name is not present, default values will be used.
         For example: 
-            `{ 'fetch_data' : {'source':'batch', 'data_export_path':"/path/to/trimmed/data", 'export_format':'mseed', 'detrend':'spline', 'plot_input_stream':True, 'verbose':False, kwargs:{'kwargskey':'kwargsvalue'}} }`
+            `{ 'fetch_data' : {'source':'batch', 'data_export_path':"/path/to/trimmed/data", 'data_export_format':'mseed', 'detrend':'spline', 'plot_input_stream':True, 'verbose':False, kwargs:{'kwargskey':'kwargsvalue'}} }`
     verbose : bool, default=False
         Whether to print output and results to terminal
 
@@ -5208,7 +5208,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                     'hvsr_band' : [0.4, 40],
                     'write_path':'',
                     'source':'file', 
-                    'export_format':'mseed', 
+                    'data_export_format':'mseed', 
                     'detrend':'spline', 
                     'detrend_order':2, 
                     'verbose':False}
@@ -5281,7 +5281,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                     param_dict[item.split('=')[0]] = item.split('=')[1]
                 param_dict_list.append(param_dict)
         #input_params(input_data,site,network,station,loc,channels, acq_date,starttime, endtime, tzone, xcoord, ycoord, elevation, depth, instrument, metapath, hvsr_band)
-        #fetch_data(params, inv, source, data_export_path, export_format, detrend, detrend_order, verbose)
+        #fetch_data(params, inv, source, data_export_path, data_export_format, detrend, detrend_order, verbose)
         #get_metadata(params, write_path)
     elif batch_type == 'filelist':
         if isinstance(batch_params, list):
@@ -5794,11 +5794,11 @@ def _sort_channels(input, source, verbose):
 
 
 # Trim data 
-def _trim_data(input, stream=None, export_dir=None, export_format=None, source=None, **kwargs):
+def _trim_data(input, stream=None, export_dir=None, data_export_format=None, source=None, **kwargs):
     """Function to trim data to start and end time
 
         Trim data to start and end times so that stream being analyzed only contains wanted data.
-        Can also export data to specified directory using a specified site name and/or export_format
+        Can also export data to specified directory using a specified site name and/or data_export_format
 
         Parameters
         ----------
@@ -5808,8 +5808,8 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
                 Obspy stream to be trimmed
             export_dir: str or pathlib obj   
                 Output filepath to export trimmed data to. If not specified, does not export. 
-            export_format  : str or None, default=None  
-                If None, and export_dir is specified, format defaults to .mseed. Otherwise, exports trimmed stream using obspy.core.stream.Stream.write() method, with export_format being passed to the format argument. 
+            data_export_format  : str or None, default=None  
+                If None, and export_dir is specified, format defaults to .mseed. Otherwise, exports trimmed stream using obspy.core.stream.Stream.write() method, with data_export_format being passed to the format argument. 
                 https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html#obspy.core.stream.Stream.write
             **kwargs
                 Keyword arguments passed directly to obspy.core.stream.Stream.trim() method.
@@ -5861,8 +5861,8 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
 
     st_trimmed.merge(method=1)
 
-    if export_format is None:
-        export_format = '.mseed'
+    if data_export_format is None:
+        data_export_format = '.mseed'
 
     #Format export filepath, if exporting
     if export_dir is not None:
@@ -5870,8 +5870,8 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
             site=''
         else:
             site = site+'_'
-        if '.' not in export_format:
-            export_format = '.'+export_format
+        if '.' not in data_export_format:
+            data_export_format = '.'+data_export_format
         net = st_trimmed[0].stats.network
         sta = st_trimmed[0].stats.station
         loc = st_trimmed[0].stats.location
@@ -5888,9 +5888,9 @@ def _trim_data(input, stream=None, export_dir=None, export_format=None, source=N
         export_dir = export_dir.replace('\\', '/')
         export_dir = export_dir.replace('\\'[0], '/')
 
-        if type(export_format) is str:
-            filename = site+net+'.'+sta+'.'+loc+'.'+yr+'.'+doy+'_'+strtD+'_'+strtT+'-'+endT+export_format
-        elif type(export_format) is bool:
+        if type(data_export_format) is str:
+            filename = site+net+'.'+sta+'.'+loc+'.'+yr+'.'+doy+'_'+strtD+'_'+strtT+'-'+endT+data_export_format
+        elif type(data_export_format) is bool:
             filename = site+net+'.'+sta+'.'+loc+'.'+yr+'.'+doy+'_'+strtD+'_'+strtT+'-'+endT+'.mseed'
 
         if export_dir[-1]=='/':

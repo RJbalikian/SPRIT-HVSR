@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 1.3.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=bb516dca"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            sprit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.html">sprit package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sprit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sprit.sprit_streamlit_ui</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sprit.sprit_streamlit_ui</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">zoneinfo</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">streamlit</span> <span class="k">as</span> <span class="nn">st</span>
+<span class="kn">from</span> <span class="nn">obspy</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
+<span class="kn">from</span> <span class="nn">obspy.signal.spectral_estimation</span> <span class="kn">import</span> <span class="n">PPSD</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">sprit</span>
+
+<span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start of file, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+<span class="n">param2print</span> <span class="o">=</span> <span class="kc">None</span><span class="c1"># &#39;period_limits&#39;</span>
+<div class="viewcode-block" id="print_param">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.print_param">[docs]</a>
+<span class="k">def</span> <span class="nf">print_param</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">param2print</span><span class="p">,</span> <span class="n">show_type</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;type:&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span></div>
+
+<span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+<span class="n">icon</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;C:\Users\riley\LocalData\Github\SPRIT-HVSR\sprit\resources\icon\sprit_icon_alpha.ico&quot;</span>
+<span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/ssid_chart:&quot;</span>
+<span class="n">aboutStr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2"># About SpRIT</span>
+<span class="s2">## v1.0.2</span>
+
+<span class="s2">SpRIT is developed by Riley Balikian at the Illinois State Geological Survey.</span>
+
+<span class="s2">Please visit the following links for any questions:</span>
+<span class="s2">* [API Documentation](https://sprit.readthedocs.io/en/latest/)</span>
+<span class="s2">* [Wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki) </span>
+<span class="s2">* [Pypi Repository](https://pypi.org/project/sprit/)</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start setting up page config, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+<span class="n">st</span><span class="o">.</span><span class="n">set_page_config</span><span class="p">(</span><span class="s1">&#39;SpRIT HVSR&#39;</span><span class="p">,</span>
+                <span class="n">page_icon</span><span class="o">=</span><span class="n">icon</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;wide&#39;</span><span class="p">,</span>
+                <span class="n">menu_items</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Get help&#39;</span><span class="p">:</span> <span class="s1">&#39;https://github.com/RJbalikian/SPRIT-HVSR/wiki&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;Report a bug&#39;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/RJbalikian/SPRIT-HVSR/issues&quot;</span><span class="p">,</span>
+                                <span class="s1">&#39;About&#39;</span><span class="p">:</span> <span class="n">aboutStr</span><span class="p">})</span>
+
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start setting up constants/variables, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+<span class="n">OBSPYFORMATS</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;AH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_PSE&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTN&#39;</span><span class="p">,</span> <span class="s1">&#39;CSS&#39;</span><span class="p">,</span> <span class="s1">&#39;DMX&#39;</span><span class="p">,</span> <span class="s1">&#39;GCF&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE1&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE2&#39;</span><span class="p">,</span> <span class="s1">&#39;KINEMETRICS_EVT&#39;</span><span class="p">,</span> <span class="s1">&#39;KNET&#39;</span><span class="p">,</span> <span class="s1">&#39;MSEED&#39;</span><span class="p">,</span> <span class="s1">&#39;NNSA_KB_CORE&#39;</span><span class="p">,</span> <span class="s1">&#39;PDAS&#39;</span><span class="p">,</span> <span class="s1">&#39;PICKLE&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;REFTEK130&#39;</span><span class="p">,</span> <span class="s1">&#39;RG16&#39;</span><span class="p">,</span> <span class="s1">&#39;SAC&#39;</span><span class="p">,</span> <span class="s1">&#39;SACXY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEG2&#39;</span><span class="p">,</span> <span class="s1">&#39;SEGY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEISAN&#39;</span><span class="p">,</span> <span class="s1">&#39;SH_ASC&#39;</span><span class="p">,</span> <span class="s1">&#39;SLIST&#39;</span><span class="p">,</span> <span class="s1">&#39;SU&#39;</span><span class="p">,</span> <span class="s1">&#39;TSPAIR&#39;</span><span class="p">,</span> <span class="s1">&#39;WAV&#39;</span><span class="p">,</span> <span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">]</span>
+<span class="n">bandVals</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.6</span><span class="p">,</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.8</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">70</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">100</span><span class="p">]</span>
+
+<span class="c1"># SETUP KWARGS</span>
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start setting up kwargs dicts, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+<span class="n">ip_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">fd_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">ca_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">rn_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">gppsd_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">phvsr_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cp_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">gr_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">run_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start getting default values, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+<span class="c1"># Get default values</span>
+<span class="n">sigList</span> <span class="o">=</span> <span class="p">[[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">,</span> <span class="n">ip_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span> <span class="n">fd_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">,</span> <span class="n">ca_kwargs</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span> <span class="n">rn_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_ppsds</span><span class="p">,</span> <span class="n">gppsd_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">PPSD</span><span class="p">,</span> <span class="n">gppsd_kwargs</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span> <span class="n">phvsr_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="n">roc_kwargs</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span> <span class="n">cp_kwargs</span><span class="p">],</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">,</span> <span class="n">gr_kwargs</span><span class="p">]]</span>
+
+
+<div class="viewcode-block" id="setup_session_state">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.setup_session_state">[docs]</a>
+<span class="k">def</span> <span class="nf">setup_session_state</span><span class="p">():</span>
+    <span class="k">if</span> <span class="s2">&quot;default_params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># &quot;Splash screen&quot; (only shows at initial startup)</span>
+        <span class="n">mainContainerInitText</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        # SpRIT HVSR</span>
+<span class="s2">        ## About</span>
+<span class="s2">        SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.</span>
+<span class="s2">        </span>
+<span class="s2">        ## Links</span>
+<span class="s2">        * API Documentation may be accessed [here (hosted by ReadtheDocs)](https://sprit.readthedocs.io/en/latest/) and [here (hosted by Github Pages)](https://rjbalikian.github.io/SPRIT-HVSR/main.html)</span>
+<span class="s2">        * The Wiki and Tutorials may be accessed [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)</span>
+<span class="s2">        * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)</span>
+<span class="s2">        * PyPI repository may be accessed [here](https://pypi.org/project/sprit/)</span>
+
+<span class="s2">        ## MIT License</span>
+<span class="s2">        It is licensed under the MIT License:</span>
+<span class="s2">        &gt; Permission is hereby granted, free of charge, to any person obtaining a copy </span>
+<span class="s2">        &gt; of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="s2">        &gt; in the Software without restriction, including without limitation the rights</span>
+<span class="s2">        &gt; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="s2">        &gt; copies of the Software, and to permit persons to whom the Software is</span>
+<span class="s2">        &gt; furnished to do so, subject to the following conditions:</span>
+<span class="s2">        &gt; </span>
+<span class="s2">        &gt; The above copyright notice and this permission notice shall be included in all</span>
+<span class="s2">        &gt; copies or substantial portions of the Software.</span>
+<span class="s2">        &gt; </span>
+<span class="s2">        &gt; THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="s2">        &gt; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="s2">        &gt; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="s2">        &gt; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="s2">        &gt; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="s2">        &gt; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="s2">        &gt; SOFTWARE.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">mainContainerInitText</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start sig loop, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">sigList</span><span class="p">:</span>
+            <span class="n">funSig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">empty</span><span class="p">):</span>
+                    <span class="n">sig</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+
+        <span class="n">gppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;ppsd_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;ppsd_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">30</span>
+        <span class="n">gppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;skip_on_gaps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;skip_on_gaps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">gppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_step_octaves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;period_step_octaves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.03125</span>
+        <span class="n">gppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done getting kwargs: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up session state: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="c1">#st.session_state[&quot;updated_kwargs&quot;] = {}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">run_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Resetting </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="c1">#    if key in st.session_state.keys() and (st.session_state[key] != value):</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c1">#listItems = [&#39;source&#39;, &#39;tzone&#39;, &#39;elev_unit&#39;, &#39;data_export_format&#39;, &#39;detrend&#39;, &#39;special_handling&#39;, &#39;peak_selection&#39;, &#39;freq_smooth&#39;, &#39;horizontal_method&#39;, &#39;stalta_thresh&#39;]</span>
+        <span class="c1">## Convert items to lists</span>
+        <span class="c1">#for arg, value in st.session_state.items():</span>
+        <span class="c1">#    if arg in listItems:</span>
+        <span class="c1">#        valList = [value]</span>
+        <span class="c1">#        st.session_state[arg] = valList</span>
+        <span class="c1">#        run_kwargs[arg] = st.session_state[arg]</span>
+
+        <span class="n">strItems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">,</span> <span class="s1">&#39;xcoord&#39;</span><span class="p">,</span> <span class="s1">&#39;ycoord&#39;</span><span class="p">,</span> <span class="s1">&#39;elevation&#39;</span><span class="p">,</span> <span class="s1">&#39;detrend_order&#39;</span><span class="p">,</span> <span class="s1">&#39;horizontal_method&#39;</span><span class="p">]</span>
+        <span class="c1"># Convert lists and numbers to strings</span>
+        <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">strItems</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="n">newVal</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="n">newVal</span> <span class="o">=</span> <span class="n">newVal</span><span class="o">+</span><span class="n">item</span><span class="o">+</span><span class="s1">&#39;, &#39;</span>
+                    <span class="n">newVal</span> <span class="o">=</span> <span class="n">newVal</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;]&#39;</span>
+
+                    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">newVal</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">newVal</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+        <span class="n">dtimeItems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;acq_date&#39;</span><span class="p">,</span> <span class="s1">&#39;starttime&#39;</span><span class="p">,</span> <span class="s1">&#39;endtime&#39;</span><span class="p">]</span>
+        <span class="c1"># Convert everything to python datetime objects</span>
+        <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">dtimeItems</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">],</span> <span class="n">UTCDateTime</span><span class="p">):</span>
+                    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">datetime</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">datetime</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="n">run_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+        <span class="c1"># Case matching</span>
+        <span class="c1"># Add if statement for docs building</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1">#print(&#39;allkeys&#39;, list(st.session_state.keys()))</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">data_export_format</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;data_export_format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">data_export_format</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">detrend</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;detrend&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">detrend</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">remove_method</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;remove_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">remove_method</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">peak_selection</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;peak_selection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">peak_selection</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">freq_smooth</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;freq_smooth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">freq_smooth</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+
+            <span class="c1"># Default adjustments</span>
+            <span class="n">methodDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;None&#39;</span><span class="p">:</span><span class="s1">&#39;Geometric Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span><span class="s1">&#39;Diffuse Field Assumption&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span><span class="s1">&#39;Arithmetic Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span><span class="s1">&#39;Geometric Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">:</span><span class="s1">&#39;Vector Summation&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span><span class="s1">&#39;Quadratic Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span><span class="s1">&#39;Maximum Horizontal Value&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">:</span><span class="s1">&#39;Azimuth&#39;</span><span class="p">}</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">horizontal_method</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">methodDict</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">horizontal_method</span><span class="p">]</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">=</span> <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Plotly&#39;</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span> <span class="o">=</span> <span class="n">run_kwargs</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">run_kws</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">run_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;session st: &quot;</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">type</span><span class="p">(</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]),</span> <span class="s1">&#39;| rkwargs:&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with setup, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span></div>
+
+
+<span class="n">setup_session_state</span><span class="p">()</span>
+
+<div class="viewcode-block" id="check_if_default">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.check_if_default">[docs]</a>
+<span class="k">def</span> <span class="nf">check_if_default</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking defaults, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="n">check_if_default</span><span class="p">()</span>
+
+<div class="viewcode-block" id="text_change">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.text_change">[docs]</a>
+<span class="k">def</span> <span class="nf">text_change</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">):</span>
+    <span class="c1">#Just a function to run so something is done when text changes</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;TEXTCHange&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="on_file_upload">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_file_upload">[docs]</a>
+<span class="k">def</span> <span class="nf">on_file_upload</span><span class="p">():</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">datapath_uploader</span>
+    <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="on_run_data">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_run_data">[docs]</a>
+<span class="k">def</span> <span class="nf">on_run_data</span><span class="p">():</span>
+    <span class="n">mainContainer</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">()</span>
+    <span class="n">inputTab</span><span class="p">,</span> <span class="n">outlierTab</span><span class="p">,</span> <span class="n">infoTab</span><span class="p">,</span> <span class="n">resultsTab</span> <span class="o">=</span> <span class="n">mainContainer</span><span class="o">.</span><span class="n">tabs</span><span class="p">([</span><span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Outliers&#39;</span><span class="p">,</span> <span class="s1">&#39;Info&#39;</span><span class="p">,</span><span class="s1">&#39;Results&#39;</span><span class="p">])</span>
+    <span class="n">plotReportTab</span><span class="p">,</span> <span class="n">csvReportTab</span><span class="p">,</span> <span class="n">strReportTab</span> <span class="o">=</span> <span class="n">resultsTab</span><span class="o">.</span><span class="n">tabs</span><span class="p">([</span><span class="s1">&#39;Plot&#39;</span><span class="p">,</span> <span class="s1">&#39;Results Table&#39;</span><span class="p">,</span> <span class="s1">&#39;Print Report&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span><span class="o">!=</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">srun</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">run_kws</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">srun</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c1"># Get plots all right</span>
+        <span class="n">srun</span><span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plotly&#39;</span>
+        <span class="n">srun</span><span class="p">[</span><span class="s1">&#39;plot_input_stream&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">srun</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">srun</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1">#True</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SPRIT RUN&#39;</span><span class="p">,</span> <span class="n">srun</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s1">&#39;Data is processing&#39;</span><span class="p">,</span> <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;⌛&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">mainContainer</span><span class="p">:</span>
+            <span class="n">spinnerText</span> <span class="o">=</span> <span class="s1">&#39;Data is processing with default parameters.&#39;</span>
+            <span class="n">excludedKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_input_stream&#39;</span><span class="p">,</span> <span class="s1">&#39;show_plot&#39;</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
+            <span class="n">NOWTIME</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">secondaryDefaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;acq_date&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">NOWTIME</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
+                                 <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="s1">&#39;use_hv_curve&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span><span class="mi">59</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+                                 <span class="s1">&#39;stalta_thresh&#39;</span><span class="p">:(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+                                 <span class="s1">&#39;period_limits&#39;</span><span class="p">:(</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span>
+                                 <span class="s1">&#39;remove_method&#39;</span><span class="p">:[</span><span class="s1">&#39;Auto&#39;</span><span class="p">],</span>
+                                 <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;plot_type&#39;</span><span class="p">:</span><span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span>
+                                 <span class="p">}</span>
+            <span class="n">nonDefaultParams</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">srun</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">excludedKeys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">secondaryDefaults</span> <span class="ow">and</span> <span class="n">secondaryDefaults</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">nonDefaultParams</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">spinnerText</span> <span class="o">=</span> <span class="n">spinnerText</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\t</span><span class="s2"> </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2"> is not </span><span class="si">{</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">; </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">])</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="k">if</span> <span class="n">nonDefaultParams</span><span class="p">:</span>
+                <span class="n">spinnerText</span> <span class="o">=</span> <span class="n">spinnerText</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;the following non-default&#39;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">spinner</span><span class="p">(</span><span class="n">spinnerText</span><span class="p">):</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span><span class="p">,</span> <span class="o">**</span><span class="n">srun</span><span class="p">)</span>
+        
+        <span class="n">write_to_info_tab</span><span class="p">(</span><span class="n">infoTab</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">balloons</span><span class="p">()</span>
+        
+        <span class="n">inputTab</span><span class="o">.</span><span class="n">plotly_chart</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;InputPlot&#39;</span><span class="p">],</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">outlierTab</span><span class="o">.</span><span class="n">plotly_chart</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;OutlierPlot&#39;</span><span class="p">],</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plotReportTab</span><span class="o">.</span><span class="n">plotly_chart</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">],</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">csvReportTab</span><span class="o">.</span><span class="n">dataframe</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;CSV_Report&#39;</span><span class="p">])</span>
+        <span class="n">strReportTab</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">])</span>
+
+    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">prev_datapath</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span></div>
+
+    
+<div class="viewcode-block" id="write_to_info_tab">
+<a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.write_to_info_tab">[docs]</a>
+<span class="k">def</span> <span class="nf">write_to_info_tab</span><span class="p">(</span><span class="n">info_tab</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">info_tab</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;# Processing Parameters Used&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fun</span><span class="p">,</span> <span class="n">kwargDict</span> <span class="ow">in</span> <span class="n">sigList</span><span class="p">:</span>
+            <span class="n">funSig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
+            <span class="c1">#excludeKeys = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]</span>
+            <span class="n">funMD</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">funSig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">funMD</span> <span class="o">=</span> <span class="n">funMD</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span><span class="s2">    * </span><span class="si">{</span><span class="n">arg</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
+
+            <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fun</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">funMD</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># DEFINE SIDEBAR</span>
+<span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;About to start setting up sidebar, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start setting up sidebar, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+    <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s1">&#39;SpRIT HVSR&#39;</span><span class="p">,</span> <span class="n">divider</span><span class="o">=</span><span class="s1">&#39;rainbow&#39;</span><span class="p">)</span>
+    <span class="n">datapathInput</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Datapath&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;input_data&#39;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;Enter data filepath (to be read by obspy.core.Stream.read())&#39;</span><span class="p">)</span>    
+    <span class="c1">#st.file_uploader(&#39;Upload data file(s)&#39;, type=OBSPYFORMATS, accept_multiple_files=True, key=&#39;datapath_uploader&#39;, on_change=on_file_upload)</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Click to access data uploader&quot;</span><span class="p">):</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">file_uploader</span><span class="p">(</span><span class="s2">&quot;Upload data file(s)&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">OBSPYFORMATS</span><span class="p">,</span> <span class="n">accept_multiple_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;datapath_uploader&#39;</span><span class="p">,</span> <span class="n">on_change</span><span class="o">=</span><span class="n">on_file_upload</span><span class="p">)</span>
+
+    <span class="n">bottom_container</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">()</span>
+
+    <span class="c1"># Create top menu</span>
+    <span class="k">with</span> <span class="n">bottom_container</span><span class="p">:</span>
+
+        <span class="n">resetCol</span><span class="p">,</span> <span class="n">readCol</span><span class="p">,</span> <span class="n">runCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">])</span>
+        <span class="n">resetCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s1">&#39;Reset&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">readCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s1">&#39;Read&#39;</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">((</span><span class="kc">True</span><span class="p">,</span> <span class="p">)))</span>
+        <span class="n">runCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s1">&#39;Run&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;primary&#39;</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="n">on_run_data</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up bottom container, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s1">&#39;Settings&#39;</span><span class="p">,</span> <span class="n">divider</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s1">&#39;Expand to modify settings&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up sidebar expander, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="n">ipSetTab</span><span class="p">,</span> <span class="n">fdSetTab</span><span class="p">,</span> <span class="n">rmnocSetTab</span><span class="p">,</span> <span class="n">gpSetTab</span><span class="p">,</span> <span class="n">phvsrSetTab</span><span class="p">,</span> <span class="n">plotSetTab</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">tabs</span><span class="p">([</span><span class="s1">&#39;Input&#39;</span><span class="p">,</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="s2">&quot;Noise&quot;</span><span class="p">,</span> <span class="s1">&#39;PPSDs&#39;</span><span class="p">,</span> <span class="s1">&#39;H/V&#39;</span><span class="p">,</span> <span class="s1">&#39;Plot&#39;</span><span class="p">])</span>
+            <span class="c1">#@st.experimental_dialog(&quot;Update Input Parameters&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def open_ip_dialog():</span>
+            <span class="k">with</span> <span class="n">ipSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up input tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Site Name&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;HVSR Site&#39;</span><span class="p">,</span> <span class="n">on_change</span><span class="o">=</span><span class="n">text_change</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;site&#39;</span><span class="p">)</span>
+
+                <span class="c1">#with st.expander(&#39;Primary Input Parameters&#39;, expanded=True):</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Instrument&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;instrument&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Metadata Filepath&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Filepath to instrument response file&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;metapath&#39;</span><span class="p">)</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;HVSR Band&#39;</span><span class="p">,</span>  <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_band</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">bandVals</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;Peak Frequency Range&#39;</span><span class="p">,</span>  <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">peak_freq_range</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">bandVals</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">)</span>
+
+                <span class="c1">#with st.expander(&#39;Acquisition Date/Time&#39;):</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">date_input</span><span class="p">(</span><span class="s1">&#39;Acquisition Date&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;YYYY-MM-DD&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;acq_date&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">time_input</span><span class="p">(</span><span class="s1">&#39;Start time&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;starttime&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">time_input</span><span class="p">(</span><span class="s1">&#39;End time&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;endtime&#39;</span><span class="p">)</span>
+
+                <span class="n">tZoneList</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">zoneinfo</span><span class="o">.</span><span class="n">available_timezones</span><span class="p">())</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;localtime&quot;</span><span class="p">)</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;US/Pacific&quot;</span><span class="p">)</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;US/Eastern&quot;</span><span class="p">)</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;US/Central&quot;</span><span class="p">)</span>
+                <span class="n">tZoneList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;UTC&quot;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Timezone&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">tZoneList</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;tzone&#39;</span><span class="p">)</span>
+
+
+                <span class="c1">#with st.expander(&#39;Instrument settings&#39;):</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Network&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;AM&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;network&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Station&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;RAC84&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;station&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Location&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;00&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;loc&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Channels&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s1">&#39;EHZ, EHE, EHN&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;channels&#39;</span><span class="p">)</span>
+
+                <span class="c1">#with st.expander(&#39;Location settings&#39;):</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;X Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Longitude or Easting&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;xcoord&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Y Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Latitude or Northing&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;ycoord&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Z Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">elev_unit</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Z Unit&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;ft&#39;</span><span class="p">],</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation unit&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Depth&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Depth of measurement below ground surface (not currently used)&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;depth&#39;</span><span class="p">)</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;CRS of Input Coordinates&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;input_crs&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;CRS for Export&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;output_crs&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="c1">#@st.experimental_dialog(&quot;Update Parameters to Fetch Data&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def open_fd_dialog():</span>
+            <span class="k">with</span> <span class="n">fdSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up fd tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="c1">#source: str = &#39;file&#39;,</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Source&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;File&#39;</span><span class="p">,</span> <span class="s1">&#39;Raw&#39;</span><span class="p">,</span> <span class="s1">&#39;Directory&#39;</span><span class="p">,</span> <span class="s2">&quot;Batch&quot;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;source&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Trim Directory&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Directory for saving trimmed data&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;trim_dir&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Data format&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">OBSPYFORMATS</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;data_export_format&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Detrend horizontal_method&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;Simple&#39;</span><span class="p">,</span> <span class="s1">&#39;Linear&#39;</span><span class="p">,</span> <span class="s1">&#39;Constant/Demean&#39;</span><span class="p">,</span> <span class="s1">&#39;Polynomial&#39;</span><span class="p">,</span> <span class="s1">&#39;Spline&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Detrend horizontal_method use by `type` parameter of obspy.trace.Trace.detrend()&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;detrend&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Detrend options&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;detrend_order=2&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;detrend_order&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            
+            <span class="c1">#@st.experimental_dialog(&quot;Update Parameters to Generate PPSDs&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def open_ppsd_dialog():</span>
+            <span class="k">with</span> <span class="n">gpSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up ppsd tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="s1">&#39;Skip on gaps&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.&#39;</span><span class="p">,</span>
+                        <span class="n">key</span><span class="o">=</span><span class="s1">&#39;skip_on_gaps&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Minimum Decibel Value&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mi">200</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;min_deb&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Maximum Decibel Value&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mi">50</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;max_deb&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Decibel bin size&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;deb_step&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">db_bins</span> <span class="o">=</span> <span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">min_deb</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">max_deb</span><span class="p">,</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">deb_step</span><span class="p">)</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;PPSD Length (seconds)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;ppsd_length&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;PPSD Window overlap (%, 0-1)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;overlap&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Period Smoothing Width (octaves)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_smoothing_width_octaves&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Period Step (octaves)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.5f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_step_octaves&#39;</span><span class="p">)</span>
+                <span class="n">periodVals</span><span class="o">=</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bandVals</span><span class="p">]</span>
+                <span class="n">periodVals</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;Period Limits (s)&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">periodVals</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">period_limits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_limits&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s2">&quot;Special Handling&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;Ringlaser&#39;</span><span class="p">,</span> <span class="s1">&#39;Hydrophone&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;special_handling&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="c1">#@st.experimental_dialog(&quot;Update Parameters to Remove Noise and Outlier Curves&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def open_outliernoise_dialog():</span>
+            <span class="k">with</span> <span class="n">rmnocSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up noise tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Outlier Threshold&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">radio</span><span class="p">(</span><span class="s1">&#39;Threshold type&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Percentile&#39;</span><span class="p">,</span> <span class="s1">&#39;Value&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;threshRadio&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">use_percentile</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">threshRadio</span><span class="o">==</span><span class="s1">&#39;Percentile&#39;</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">radio</span><span class="p">(</span><span class="s1">&#39;Threshold curve&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">,</span> <span class="s1">&#39;Component Curves&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;curveRadio&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">use_hv_curve</span> <span class="o">=</span> <span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">curveRadio</span><span class="o">==</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">)</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">multiselect</span><span class="p">(</span><span class="s2">&quot;Noise Removal Method&quot;</span><span class="p">,</span>
+                                <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span><span class="s1">&#39;Auto&#39;</span><span class="p">,</span> <span class="s1">&#39;Manual&#39;</span><span class="p">,</span> <span class="s1">&#39;Stalta&#39;</span><span class="p">,</span> <span class="s1">&#39;Saturation Threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;Noise Threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;Warmup&#39;</span><span class="p">,</span> <span class="s1">&#39;Cooldown&#39;</span><span class="p">,</span> <span class="s1">&#39;Buffer&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;remove_method&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Saturation Percent&#39;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;sat_percent&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Noise Percent&#39;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;noise_percent&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Short Term Average (STA)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.1f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;sta&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Long Term Average (LTA)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.1f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;lta&#39;</span><span class="p">)</span>
+                <span class="n">staltaVals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">51</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;STA/LTA Thresholds&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">stalta_thresh</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">staltaVals</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;stalta_thresh&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Warmup Time (seconds)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;warmup&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Cooldown Time (seconds)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;cooldown&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Minimum Window Size (samples)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;min_win_size&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="s2">&quot;Remove Raw Noise&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to use the raw input data to remove noise.&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;remove_raw_noise&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="c1">#@st.experimental_dialog(&quot;Update Parameters to Process HVSR&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def open_processHVSR_dialog():</span>
+            <span class="k">with</span> <span class="n">phvsrSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up hvsr tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Peak Selection Method&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Max&#39;</span><span class="p">,</span> <span class="s1">&#39;Scored&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;peak_selection&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s2">&quot;Method to combine hoizontal components&quot;</span><span class="p">,</span> 
+                            <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Diffuse Field Assumption&#39;</span><span class="p">,</span> <span class="s1">&#39;Arithmetic Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;Geometric Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;Vector Summation&#39;</span><span class="p">,</span> <span class="s1">&#39;Quadratic Mean&#39;</span><span class="p">,</span> <span class="s1">&#39;Maximum Horizontal Value&#39;</span><span class="p">,</span> <span class="s1">&#39;Azimuth&#39;</span><span class="p">],</span> 
+                            <span class="n">index</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">)</span>
+                <span class="n">rList</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1001</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">rList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s2">&quot;Curve Smoothing&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;Savgoy Filter&#39;</span><span class="p">,</span> <span class="s1">&#39;Konno Ohmachi&#39;</span><span class="p">,</span> <span class="s2">&quot;Proportional&quot;</span><span class="p">,</span> <span class="s2">&quot;Constant&quot;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;freq_smooth&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s2">&quot;Curve Smoothing Parameter&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">value</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;f_smooth_width&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s2">&quot;Resample&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">rList</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;resample&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;Outlier Curve Removal&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">rList</span><span class="p">[:</span><span class="mi">100</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;outlier_curve_rmse_percentile&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">update_plot_string</span><span class="p">():</span>
+                <span class="n">plotStringDict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Peak Frequency&#39;</span><span class="p">:</span><span class="s1">&#39; p&#39;</span><span class="p">,</span> <span class="s1">&#39;Peak Amplitude&#39;</span><span class="p">:</span><span class="s1">&#39; pa&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">:</span><span class="s1">&#39; ann&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;Time windows&#39;</span><span class="p">:</span><span class="s1">&#39; t&#39;</span><span class="p">,</span> <span class="s2">&quot;Peaks of Time Windows&quot;</span><span class="p">:</span> <span class="s1">&#39; tp&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;Test 1: Peak &gt; 2x trough below&#39;</span><span class="p">:</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> 
+                                <span class="s2">&quot;Test 2: Peak &gt; 2x trough above&quot;</span><span class="p">:</span><span class="s1">&#39;2&#39;</span><span class="p">,</span>
+                                <span class="s2">&quot;Test 3: Peak &gt; 2&quot;</span><span class="p">:</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> 
+                                <span class="s2">&quot;Test 4&quot;</span><span class="p">:</span><span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s2">&quot;Test 5&quot;</span><span class="p">:</span><span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s2">&quot;Test 6&quot;</span><span class="p">:</span><span class="s1">&#39;6&#39;</span><span class="p">,</span>
+                                <span class="p">}</span>
+                
+                <span class="n">plotString</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">for</span> <span class="n">plot</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plotPlotStr</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">plot</span><span class="o">==</span><span class="s1">&#39;HVSR&#39;</span><span class="p">:</span>
+                        <span class="n">plotString</span><span class="o">=</span><span class="n">plotString</span><span class="o">+</span><span class="s1">&#39;HVSR&#39;</span>
+                        <span class="k">for</span> <span class="n">pc</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsrPlotStr</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">pc</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                                <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plotString</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                                    <span class="n">plotString</span> <span class="o">=</span> <span class="n">plotString</span> <span class="o">+</span> <span class="s1">&#39; Test&#39;</span>
+                                <span class="n">test_end_index</span> <span class="o">=</span> <span class="n">plotString</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+                                <span class="n">nextSpaceIndex</span> <span class="o">=</span> <span class="n">plotString</span><span class="p">[</span><span class="n">test_end_index</span><span class="p">:]</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">nextSpaceIndex</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                                    <span class="n">nextSpaceIndex</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">plotString</span><span class="p">)</span>
+                                <span class="n">noString</span> <span class="o">=</span> <span class="n">plotString</span><span class="p">[</span><span class="n">test_end_index</span><span class="p">:</span><span class="n">nextSpaceIndex</span><span class="p">]</span>
+                                <span class="n">noString</span> <span class="o">=</span> <span class="n">noString</span> <span class="o">+</span> <span class="n">plotStringDict</span><span class="p">[</span><span class="n">pc</span><span class="p">]</span>
+
+                                <span class="c1"># Order test numbers correctly</span>
+                                <span class="n">testNos</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">noString</span><span class="p">))</span>
+                                <span class="n">plotString</span> <span class="o">=</span> <span class="n">plotString</span><span class="p">[:</span><span class="n">test_end_index</span><span class="p">]</span> <span class="o">+</span> <span class="n">testNos</span>                             
+        
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">plotString</span> <span class="o">=</span> <span class="n">plotString</span> <span class="o">+</span> <span class="n">plotStringDict</span><span class="p">[</span><span class="n">pc</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">plot</span><span class="o">==</span><span class="s1">&#39;Components&#39;</span><span class="p">:</span>
+                        <span class="n">plotString</span><span class="o">=</span><span class="n">plotString</span><span class="o">+</span><span class="s1">&#39; C+&#39;</span>
+                        <span class="k">for</span> <span class="n">pc</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">compPlotStr</span><span class="p">:</span>
+                            <span class="n">plotString</span> <span class="o">=</span> <span class="n">plotString</span> <span class="o">+</span> <span class="n">plotStringDict</span><span class="p">[</span><span class="n">pc</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">plot</span><span class="o">==</span><span class="s1">&#39;Spectrogram&#39;</span><span class="p">:</span>
+                        <span class="n">plotString</span><span class="o">=</span><span class="n">plotString</span><span class="o">+</span><span class="s1">&#39; SPEC&#39;</span>
+                        <span class="k">for</span> <span class="n">pc</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">specPlotStr</span><span class="p">:</span>
+                            <span class="n">plotString</span> <span class="o">=</span> <span class="n">plotString</span> <span class="o">+</span> <span class="n">plotStringDict</span><span class="p">[</span><span class="n">pc</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">plot</span><span class="o">==</span><span class="s1">&#39;Azimuth&#39;</span><span class="p">:</span>
+                        <span class="n">plotString</span><span class="o">=</span><span class="n">plotString</span><span class="o">+</span><span class="s1">&#39; AZ&#39;</span>    
+                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_type</span> <span class="o">=</span> <span class="n">plotString</span>
+
+
+            <span class="c1">#@st.experimental_dialog(&quot;Update Plot Settings&quot;, width=&#39;large&#39;)</span>
+            <span class="c1">#def plot_settings_dialog():</span>
+            <span class="k">with</span> <span class="n">plotSetTab</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting up plot tab, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s2">&quot;Plot Engine (currently only plotly supported)&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Matplotlib&#39;</span><span class="p">,</span> <span class="s2">&quot;Plotly&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Plot type (plot string)&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;plot_type&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">multiselect</span><span class="p">(</span><span class="s2">&quot;Charts to show&quot;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HVSR&#39;</span><span class="p">,</span> <span class="s2">&quot;Components&quot;</span><span class="p">,</span> <span class="s1">&#39;Spectrogram&#39;</span><span class="p">,</span> <span class="s1">&#39;Azimuth&#39;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HVSR&#39;</span><span class="p">,</span> <span class="s1">&#39;Components&#39;</span><span class="p">,</span> <span class="s2">&quot;Spectrogram&quot;</span><span class="p">],</span> 
+                                                <span class="n">on_change</span><span class="o">=</span><span class="n">update_plot_string</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;plotPlotStr&#39;</span><span class="p">)</span>
+                
+                <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">&quot;HVSR Chart&quot;</span><span class="p">,</span> <span class="n">divider</span><span class="o">=</span><span class="s1">&#39;rainbow&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">multiselect</span><span class="p">(</span><span class="s1">&#39;Items to plot&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Peak Frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;Peak Amplitude&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">,</span> <span class="s1">&#39;Time windows&#39;</span><span class="p">,</span> <span class="s2">&quot;Peaks of Time Windows&quot;</span><span class="p">,</span>
+                                                        <span class="s1">&#39;Test 1: Peak &gt; 2x trough below&#39;</span> <span class="p">,</span> <span class="s2">&quot;Test 2: Peak &gt; 2x trough above&quot;</span><span class="p">,</span> <span class="s2">&quot;Test 3: Peak &gt; 2&quot;</span><span class="p">,</span> <span class="s2">&quot;Test 4&quot;</span><span class="p">,</span> <span class="s2">&quot;Test 5&quot;</span><span class="p">,</span> <span class="s2">&quot;Test 6&quot;</span><span class="p">],</span>
+                                                        <span class="n">on_change</span><span class="o">=</span><span class="n">update_plot_string</span><span class="p">,</span>
+                                                        <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Peak Frequency&quot;</span><span class="p">,</span> <span class="s2">&quot;Annotation&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;hvsrPlotStr&#39;</span><span class="p">)</span>
+
+                <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">&quot;Component Chart&quot;</span><span class="p">,</span> <span class="n">divider</span><span class="o">=</span><span class="s1">&#39;rainbow&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">multiselect</span><span class="p">(</span><span class="s1">&#39;Items to plot&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Peak Frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">,</span> <span class="s1">&#39;Time windows&#39;</span><span class="p">],</span> <span class="n">on_change</span><span class="o">=</span><span class="n">update_plot_string</span><span class="p">,</span>
+                                                        <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Peak Frequency&quot;</span><span class="p">,</span> <span class="s2">&quot;Annotation&quot;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;compPlotStr&#39;</span><span class="p">)</span>
+                
+                <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s1">&#39;Spectrogram Chart&#39;</span><span class="p">,</span> <span class="n">divider</span><span class="o">=</span><span class="s1">&#39;rainbow&#39;</span><span class="p">)</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">multiselect</span><span class="p">(</span><span class="s1">&#39;Items to plot&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Peak Frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;specPlotStr&#39;</span><span class="p">,</span> <span class="n">on_change</span><span class="o">=</span><span class="n">update_plot_string</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up sidebar, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up everything (end of main), session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+    <span class="c1">#if __name__ == &quot;__main__&quot;:</span>
+    <span class="c1">#    main()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Author.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -142,13 +142,13 @@ def setup_session_state():
         #st.session_state["updated_kwargs"] = {}
         for key, value in run_kwargs.items():
             if verbose:
-                print('resetting')
+                print(f'Resetting {key} to {value}')
                 print_param(param2print)
 
             #    if key in st.session_state.keys() and (st.session_state[key] != value):
             st.session_state[key] = value
 
-        #listItems = ['source', 'tzone', 'elev_unit', 'export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'method', 'stalta_thresh']
+        #listItems = ['source', 'tzone', 'elev_unit', 'data_export_format', 'detrend', 'special_handling', 'peak_selection', 'freq_smooth', 'horizontal_method', 'stalta_thresh']
         ## Convert items to lists
         #for arg, value in st.session_state.items():
         #    if arg in listItems:
@@ -156,7 +156,7 @@ def setup_session_state():
         #        st.session_state[arg] = valList
         #        run_kwargs[arg] = st.session_state[arg]
 
-        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'method']
+        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'horizontal_method']
         # Convert lists and numbers to strings
         for arg, value in st.session_state.items():
             if arg in strItems:
@@ -175,9 +175,9 @@ def setup_session_state():
         if verbose:
             print_param(param2print)
 
-        dtimeItems=['acq_date', 'starttime', 'endtime']
+        dtimeItems = ['acq_date', 'starttime', 'endtime']
         # Convert everything to python datetime objects
-        for arg , value in st.session_state.items():
+        for arg, value in st.session_state.items():
             if arg in dtimeItems:
                 if isinstance(value, str):
                     st.session_state[arg] = datetime.datetime.strptime(value, "%Y-%m-%d")
@@ -193,35 +193,38 @@ def setup_session_state():
             print_param(param2print)
 
         # Case matching
-        st.session_state.export_format = run_kwargs['export_format'] = st.session_state.export_format.upper()
-        st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
-        st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
-        st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
-        st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
-        st.session_state.source = run_kwargs['source'] = st.session_state.source.title()
-        if verbose:
-            print_param(param2print)
-
-
-        # Default adjustments
-        methodDict = {'0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
-        st.session_state.method = run_kwargs['method'] = methodDict[st.session_state.method]
-        st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
-        if verbose:
-            print_param(param2print)
-
+        # Add if-statement for docs building
+        if len(st.session_state.keys()) > 0:  #print('allkeys', list(st.session_state.keys()))
+            st.session_state.data_export_format = run_kwargs['data_export_format'] = st.session_state.data_export_format.upper()
+            st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
+            st.session_state.remove_method = run_kwargs['remove_method'] = str(st.session_state.remove_method).title()
+            st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
+            st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
+            st.session_state.source = run_kwargs['source'] = st.session_state.source.title()
         
-        st.session_state.default_params = run_kwargs
-        st.session_state.run_kws = list(run_kwargs.keys())
-        
-        if verbose:
-            for key, value in st.session_state.items():
-                print("session st: ", st.session_state[key], type( st.session_state[key]), '| rkwargs:', value, type(value))
+            if verbose:
+                print_param(param2print)
 
 
-        if verbose:
-            print('Done with setup, session state length: ', len(st.session_state.keys()))
-            print_param(param2print)
+            # Default adjustments
+            methodDict = {'None':'Geometric Mean', '0':'Diffuse Field Assumption', '1':'Arithmetic Mean', '2':'Geometric Mean', '3':'Vector Summation', '4':'Quadratic Mean', '5':'Maximum Horizontal Value', '6':'Azimuth'}
+            st.session_state.horizontal_method = run_kwargs['horizontal_method'] = methodDict[st.session_state.horizontal_method]
+            st.session_state.plot_engine = run_kwargs['plot_engine'] = 'Plotly'
+            if verbose:
+                print_param(param2print)
+
+            
+            st.session_state.default_params = run_kwargs
+            st.session_state.run_kws = list(run_kwargs.keys())
+            
+            if verbose:
+                for key, value in st.session_state.items():
+                    print("session st: ", st.session_state[key], type( st.session_state[key]), '| rkwargs:', value, type(value))
+
+
+            if verbose:
+                print('Done with setup, session state length: ', len(st.session_state.keys()))
+                print_param(param2print)
 
 setup_session_state()
 
@@ -332,7 +335,7 @@ with st.sidebar:
 
     st.header('SpRIT HVSR', divider='rainbow')
     datapathInput = st.text_input("Datapath", key='input_data', placeholder='Enter data filepath (to be read by obspy.core.Stream.read())')    
-    #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
+    # st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
     with st.expander("Click to access data uploader"):
         st.file_uploader("Upload data file(s)", type=OBSPYFORMATS, accept_multiple_files=False, key='datapath_uploader', on_change=on_file_upload)
 
@@ -350,218 +353,218 @@ with st.sidebar:
         print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
 
-
-
-    st.header('Settings', divider='gray')
-    with st.expander('Expand to modify settings'):
-        if verbose:
-            print('Setting up sidebar expander, session state length: ', len(st.session_state.keys()))
-            print_param(param2print)
-
-        ipSetTab, fdSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs(['Input', 'Data', "Noise", 'PPSDs', 'H/V', 'Plot'])
-        #@st.experimental_dialog("Update Input Parameters", width='large')
-        #def open_ip_dialog():
-        with ipSetTab:
+    # Add if-statement for docs building
+    if len(list(st.session_state.keys())) > 0:
+        st.header('Settings', divider='gray')
+        with st.expander('Expand to modify settings'):
             if verbose:
-                print('Setting up input tab, session state length: ', len(st.session_state.keys()))
-            st.text_input("Site Name", placeholder='HVSR Site', on_change=text_change, key='site')
-
-            #with st.expander('Primary Input Parameters', expanded=True):
-
-            st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
-            st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
-
-            st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
-            st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
-
-            #with st.expander('Acquisition Date/Time'):
-            st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
-            st.time_input('Start time', step=60, key='starttime')
-            st.time_input('End time', step=60, key='endtime')
-
-            tZoneList=list(zoneinfo.available_timezones())
-            tZoneList.sort()
-            tZoneList.insert(0, "localtime")
-            tZoneList.insert(0, "US/Pacific")
-            tZoneList.insert(0, "US/Eastern")
-            tZoneList.insert(0, "US/Central")
-            tZoneList.insert(0, "UTC")
-            st.selectbox('Timezone', options=tZoneList, key='tzone')
-
-
-            #with st.expander('Instrument settings'):
-            st.text_input("Network", placeholder='AM', key='network')
-            st.text_input("Station", placeholder='RAC84', key='station')
-            st.text_input("Location", placeholder='00', key='loc')
-            st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
-
-            #with st.expander('Location settings'):
-            st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
-            st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
-            st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
-            st.session_state.elev_unit = st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit')
-            st.number_input('Depth', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
-
-            st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
-            st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
-            if verbose:
+                print('Setting up sidebar expander, session state length: ', len(st.session_state.keys()))
                 print_param(param2print)
 
-        #@st.experimental_dialog("Update Parameters to Fetch Data", width='large')
-        #def open_fd_dialog():
-        with fdSetTab:
-            if verbose:
-                print('Setting up fd tab, session state length: ', len(st.session_state.keys()))
-            #source: str = 'file',
-            st.selectbox('Source', options=['File', 'Raw', 'Directory', "Batch"], index=0, key='source')
-            st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
-            st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='export_format')
-            st.selectbox('Detrend method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
-            st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
-            if verbose:
-                print_param(param2print)
+            ipSetTab, fdSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs(['Input', 'Data', "Noise", 'PPSDs', 'H/V', 'Plot'])
+            #@st.experimental_dialog("Update Input Parameters", width='large')
+            #def open_ip_dialog():
+            with ipSetTab:
+                if verbose:
+                    print('Setting up input tab, session state length: ', len(st.session_state.keys()))
+                st.text_input("Site Name", placeholder='HVSR Site', on_change=text_change, key='site')
 
+                #with st.expander('Primary Input Parameters', expanded=True):
+
+                st.text_input('Instrument', help='Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)', key='instrument')
+                st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
+
+                st.select_slider('HVSR Band',  value=st.session_state.hvsr_band, options=bandVals, key='hvsr_band')
+                st.select_slider('Peak Frequency Range',  value=st.session_state.peak_freq_range, options=bandVals, key='peak_freq_range')
+
+                # with st.expander('Acquisition Date/Time'):
+                st.date_input('Acquisition Date', format='YYYY-MM-DD', key='acq_date')
+                st.time_input('Start time', step=60, key='starttime')
+                st.time_input('End time', step=60, key='endtime')
+
+                tZoneList=list(zoneinfo.available_timezones())
+                tZoneList.sort()
+                tZoneList.insert(0, "localtime")
+                tZoneList.insert(0, "US/Pacific")
+                tZoneList.insert(0, "US/Eastern")
+                tZoneList.insert(0, "US/Central")
+                tZoneList.insert(0, "UTC")
+                st.selectbox('Timezone', options=tZoneList, key='tzone')
+
+
+                #with st.expander('Instrument settings'):
+                st.text_input("Network", placeholder='AM', key='network')
+                st.text_input("Station", placeholder='RAC84', key='station')
+                st.text_input("Location", placeholder='00', key='loc')
+                st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
+
+                #with st.expander('Location settings'):
+                st.text_input('X Coordinate', help='i.e., Longitude or Easting', key='xcoord')
+                st.text_input('Y Coordinate', help='i.e., Latitude or Northing', key='ycoord')
+                st.text_input('Z Coordinate', help='i.e., Elevation', key='elevation')
+                st.session_state.elev_unit = st.selectbox('Z Unit', options=['m', 'ft'], help='i.e., Elevation unit')
+                st.number_input('Depth', help='i.e., Depth of measurement below ground surface (not currently used)', key='depth')
+
+                st.text_input('CRS of Input Coordinates', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='input_crs')
+                st.text_input('CRS for Export', help='Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()', key='output_crs')
+                if verbose:
+                    print_param(param2print)
+
+            #@st.experimental_dialog("Update Parameters to Fetch Data", width='large')
+            #def open_fd_dialog():
+            with fdSetTab:
+                if verbose:
+                    print('Setting up fd tab, session state length: ', len(st.session_state.keys()))
+                #source: str = 'file',
+                st.selectbox('Source', options=['File', 'Raw', 'Directory', "Batch"], index=0, key='source')
+                st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
+                st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='data_export_format')
+                st.selectbox('Detrend horizontal_method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend horizontal_method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
+                st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
+                if verbose:
+                    print_param(param2print)
+
+            
+            #@st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
+            #def open_ppsd_dialog():
+            with gpSetTab:
+                if verbose:
+                    print('Setting up ppsd tab, session state length: ', len(st.session_state.keys()))
+                st.toggle('Skip on gaps', help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
+                        key='skip_on_gaps')
+                st.number_input("Minimum Decibel Value", value=-200, step=1, key='min_deb')
+                st.number_input("Maximum Decibel Value", value=-50, step=1, key='max_deb')
+                st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
+                st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
+
+                st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
+                st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
+                st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
+                st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
+                periodVals=[round(1/x,3) for x in bandVals]
+                periodVals.sort()
+
+                st.select_slider('Period Limits (s)', options=periodVals, value=st.session_state.period_limits, key='period_limits')
+                st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
+                if verbose:
+                    print_param(param2print)
+
+            #@st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
+            #def open_outliernoise_dialog():
+            with rmnocSetTab:
+                if verbose:
+                    print('Setting up noise tab, session state length: ', len(st.session_state.keys()))
+                st.number_input("Outlier Threshold", value=98, key='rmse_thresh')
+                st.radio('Threshold type', options=['Percentile', 'Value'], key='threshRadio')
+                st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
+                st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
+                st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
+
+                st.multiselect("Noise Removal Method",
+                                options=['None','Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'], key='remove_method')
+                st.number_input('Saturation Percent', min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
+                st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
+                st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
+                st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
+                staltaVals = np.arange(0, 51).tolist()
+                st.select_slider('STA/LTA Thresholds', value=st.session_state.stalta_thresh, options=staltaVals, key='stalta_thresh')
+                st.number_input('Warmup Time (seconds)', step=1, key='warmup')
+                st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
+                st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
+                st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
+                if verbose:
+                    print_param(param2print)
+
+            #@st.experimental_dialog("Update Parameters to Process HVSR", width='large')
+            #def open_processHVSR_dialog():
+            with phvsrSetTab:
+                if verbose:
+                    print('Setting up hvsr tab, session state length: ', len(st.session_state.keys()))
+                st.selectbox('Peak Selection Method', options=['Max', 'Scored'], key='peak_selection')
+                st.selectbox("Method to combine hoizontal components", 
+                            options=['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value', 'Azimuth'], 
+                            index=2, key='horizontal_method')
+                rList = np.arange(1001).tolist()
+                rList[0] = False
+                st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2, key='freq_smooth')
+                st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
+                st.select_slider("Resample", options=rList, value=1000, key='resample')
+                st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
+                if verbose:
+                    print_param(param2print)
+
+            def update_plot_string():
+                plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
+                                'Time windows':' t', "Peaks of Time Windows": ' tp',
+                                'Test 1: Peak > 2x trough below':'1', 
+                                "Test 2: Peak > 2x trough above":'2',
+                                "Test 3: Peak > 2":'3', 
+                                "Test 4":'4', "Test 5":'5', "Test 6":'6',
+                                }
+                
+                plotString = ''
+                for plot in st.session_state.plotPlotStr:
+                    if plot=='HVSR':
+                        plotString=plotString+'HVSR'
+                        for pc in st.session_state.hvsrPlotStr:
+                            if 'test' in pc.lower():
+                                if 'test' not in plotString.lower():
+                                    plotString = plotString + ' Test'
+                                test_end_index = plotString.rfind("Test") + len("Test")
+                                nextSpaceIndex = plotString[test_end_index:].rfind(" ")
+                                if nextSpaceIndex == -1:
+                                    nextSpaceIndex=len(plotString)
+                                noString = plotString[test_end_index:nextSpaceIndex]
+                                noString = noString + plotStringDict[pc]
+
+                                # Order test numbers correctly
+                                testNos = ''.join(sorted(noString))
+                                plotString = plotString[:test_end_index] + testNos                             
         
-        #@st.experimental_dialog("Update Parameters to Generate PPSDs", width='large')
-        #def open_ppsd_dialog():
-        with gpSetTab:
-            if verbose:
-                print('Setting up ppsd tab, session state length: ', len(st.session_state.keys()))
-            st.toggle('Skip on gaps', help='Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.',
-                    key='skip_on_gaps')
-            st.number_input("Minimum Decibel Value", value=-200, step=1, key='min_deb')
-            st.number_input("Maximum Decibel Value", value=-50, step=1, key='max_deb')
-            st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
-            st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
-
-            st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
-            st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
-            st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
-            st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
-            periodVals=[round(1/x,3) for x in bandVals]
-            periodVals.sort()
-
-            st.select_slider('Period Limits (s)', options=periodVals, value=st.session_state.period_limits, key='period_limits')
-            st.selectbox("Special Handling", options=['None', 'Ringlaser', 'Hydrophone'], key='special_handling')
-            if verbose:
-                print_param(param2print)
-
-        #@st.experimental_dialog("Update Parameters to Remove Noise and Outlier Curves", width='large')
-        #def open_outliernoise_dialog():
-        with rmnocSetTab:
-            if verbose:
-                print('Setting up noise tab, session state length: ', len(st.session_state.keys()))
-            st.number_input("Outlier Threshold", value=98, key='rmse_thresh')
-            st.radio('Threshold type', options=['Percentile', 'Value'], key='threshRadio')
-            st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
-            st.radio('Threshold curve', options=['HV Curve', 'Component Curves'], key='curveRadio')
-            st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
-
-            st.multiselect("Noise Removal Method",
-                        options=['Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer'], key='remove_method')
-            st.number_input('Saturation Percent', min_value=0.0, max_value=1.0, step=0.01, format="%.3f", key='sat_percent')
-            st.number_input('Noise Percent', min_value=0.0, max_value=1.0, step=0.1, format="%.2f", key='noise_percent')
-            st.number_input('Short Term Average (STA)', step=1.0, format="%.1f", key='sta')
-            st.number_input('Long Term Average (LTA)', step=1.0, format="%.1f", key='lta')
-            staltaVals = np.arange(0, 51).tolist()
-            st.select_slider('STA/LTA Thresholds', value=st.session_state.stalta_thresh, options=staltaVals, key='stalta_thresh')
-            st.number_input('Warmup Time (seconds)', step=1, key='warmup')
-            st.number_input('Cooldown Time (seconds)', step=1, key='cooldown')
-            st.number_input('Minimum Window Size (samples)', step=1, key='min_win_size')
-            st.toggle("Remove Raw Noise", help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
-            if verbose:
-                print_param(param2print)
-
-        #@st.experimental_dialog("Update Parameters to Process HVSR", width='large')
-        #def open_processHVSR_dialog():
-        with phvsrSetTab:
-            if verbose:
-                print('Setting up hvsr tab, session state length: ', len(st.session_state.keys()))
-            st.selectbox('Peak Selection Method', options=['Max', 'Scored'], key='peak_selection')
-            st.selectbox("Method to combine hoizontal components", 
-                        options=['Diffuse Field Assumption', 'Arithmetic Mean', 'Geometric Mean', 'Vector Summation', 'Quadratic Mean', 'Maximum Horizontal Value', 'Azimuth'], 
-                        index=2, key='method')
-            rList = np.arange(1001).tolist()
-            rList[0] = False
-            st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2, key='freq_smooth')
-            st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
-            st.select_slider("Resample", options=rList, value=1000, key='resample')
-            st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
-            if verbose:
-                print_param(param2print)
-
-        def update_plot_string():
-            plotStringDict={'Peak Frequency':' p', 'Peak Amplitude':' pa', 'Annotation':' ann',
-                            'Time windows':' t', "Peaks of Time Windows": ' tp',
-                            'Test 1: Peak > 2x trough below':'1', 
-                            "Test 2: Peak > 2x trough above":'2',
-                            "Test 3: Peak > 2":'3', 
-                            "Test 4":'4', "Test 5":'5', "Test 6":'6',
-                            }
-            
-            plotString = ''
-            for plot in st.session_state.plotPlotStr:
-                if plot=='HVSR':
-                    plotString=plotString+'HVSR'
-                    for pc in st.session_state.hvsrPlotStr:
-                        if 'test' in pc.lower():
-                            if 'test' not in plotString.lower():
-                                plotString = plotString + ' Test'
-                            test_end_index = plotString.rfind("Test") + len("Test")
-                            nextSpaceIndex = plotString[test_end_index:].rfind(" ")
-                            if nextSpaceIndex == -1:
-                                nextSpaceIndex=len(plotString)
-                            noString = plotString[test_end_index:nextSpaceIndex]
-                            noString = noString + plotStringDict[pc]
-
-                            # Order test numbers correctly
-                            testNos = ''.join(sorted(noString))
-                            plotString = plotString[:test_end_index] + testNos                             
-    
-                        else:
+                            else:
+                                plotString = plotString + plotStringDict[pc]
+                    if plot=='Components':
+                        plotString=plotString+' C+'
+                        for pc in st.session_state.compPlotStr:
                             plotString = plotString + plotStringDict[pc]
-                if plot=='Components':
-                    plotString=plotString+' C+'
-                    for pc in st.session_state.compPlotStr:
-                        plotString = plotString + plotStringDict[pc]
-                if plot=='Spectrogram':
-                    plotString=plotString+' SPEC'
-                    for pc in st.session_state.specPlotStr:
-                        plotString = plotString + plotStringDict[pc]
-                if plot=='Azimuth':
-                    plotString=plotString+' AZ'    
-            st.session_state.plot_type = plotString
+                    if plot=='Spectrogram':
+                        plotString=plotString+' SPEC'
+                        for pc in st.session_state.specPlotStr:
+                            plotString = plotString + plotStringDict[pc]
+                    if plot=='Azimuth':
+                        plotString=plotString+' AZ'    
+                st.session_state.plot_type = plotString
 
 
-        #@st.experimental_dialog("Update Plot Settings", width='large')
-        #def plot_settings_dialog():
-        with plotSetTab:
-            if verbose:
-                print('Setting up plot tab, session state length: ', len(st.session_state.keys()))
+            #@st.experimental_dialog("Update Plot Settings", width='large')
+            #def plot_settings_dialog():
+            with plotSetTab:
+                if verbose:
+                    print('Setting up plot tab, session state length: ', len(st.session_state.keys()))
 
-            st.selectbox("Plot Engine (currently only plotly supported)", options=['Matplotlib', "Plotly"], key='plot_engine', disabled=True)
-            st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
-            st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
-                                            on_change=update_plot_string, key='plotPlotStr')
-            
-            st.header("HVSR Chart", divider='rainbow')
-            st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows",
-                                                    'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
-                                                    on_change=update_plot_string,
-                                                    default=["Peak Frequency", "Annotation"], key='hvsrPlotStr')
+                st.selectbox("Plot Engine (currently only plotly supported)", options=['Matplotlib', "Plotly"], key='plot_engine', disabled=True)
+                st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
+                st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
+                                                on_change=update_plot_string, key='plotPlotStr')
+                
+                st.header("HVSR Chart", divider='rainbow')
+                st.multiselect('Items to plot', options=['Peak Frequency', 'Peak Amplitude', 'Annotation', 'Time windows', "Peaks of Time Windows",
+                                                        'Test 1: Peak > 2x trough below' , "Test 2: Peak > 2x trough above", "Test 3: Peak > 2", "Test 4", "Test 5", "Test 6"],
+                                                        on_change=update_plot_string,
+                                                        default=["Peak Frequency", "Annotation"], key='hvsrPlotStr')
 
-            st.header("Component Chart", divider='rainbow')
-            st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', 'Time windows'], on_change=update_plot_string,
-                                                    default=["Peak Frequency", "Annotation"], key='compPlotStr')
-            
-            st.header('Spectrogram Chart', divider='rainbow')
-            st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
-            if verbose:
-                print_param(param2print)
+                st.header("Component Chart", divider='rainbow')
+                st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation', 'Time windows'], on_change=update_plot_string,
+                                                        default=["Peak Frequency", "Annotation"], key='compPlotStr')
+                
+                st.header('Spectrogram Chart', divider='rainbow')
+                st.multiselect('Items to plot', options=['Peak Frequency', 'Annotation'], key='specPlotStr', on_change=update_plot_string)
+                if verbose:
+                    print_param(param2print)
 
-if verbose:
-    print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
-    print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
-    print_param(param2print)
-#if __name__ == "__main__":
-#    main()
+    if verbose:
+        print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
+        print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
+        print_param(param2print)
+    #if __name__ == "__main__":
+    #    main()

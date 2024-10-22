@@ -11,4 +11,4 @@ sphinx
 markdown
 pytest
 flake8
-sprit==1.3
+sprit==1.3.1
