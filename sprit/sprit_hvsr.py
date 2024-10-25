@@ -2209,11 +2209,11 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                         print(f"\t\tEndtime updated to {params['endtime']}")
 
             # HVSR_ID (derived)
-            id_prefix = params['id_prefix']
-            if id_prefix is None:
+            project = params['project']
+            if project is None:
                 id_pre = ''
             else:
-                id_pre = str(id_prefix)+'-'
+                id_pre = str(project)+'-'
             
             params['hvsr_id'] = f"{id_pre}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
             params['params']['hvsr_id'] = f"{id_pre}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
@@ -3225,7 +3225,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
 # Define input parameters
 def input_params(input_data,
                 site='HVSR Site',
-                id_prefix=None,
+                project=None,
                 network='AM', 
                 station='RAC84', 
                 loc='00', 
@@ -3256,11 +3256,11 @@ def input_params(input_data,
         Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()
     site : str, default="HVSR Site"
         Site name as designated by user for ease of reference. Used for plotting titles, filenames, etc.
-    id_prefix : str, default=None
+    project : str, default=None
         A prefix that may be used to create unique identifiers for each site. 
         The identifier created is saved as the ['HVSR_ID'] attribute of the HVSRData object,
         and is equivalent to the following formatted string:
-        f"{id_prefix}-{acq_date.strftime("%Y%m%d")}-{starttime.strftime("%H%M")}-{station}".
+        f"{project}-{acq_date.strftime("%Y%m%d")}-{starttime.strftime("%H%M")}-{station}".
     network : str, default='AM'
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
     station : str, default='RAC84'
@@ -3442,15 +3442,15 @@ def input_params(input_data,
         elev_unit = 'meters'
 
     # Create a unique identifier for each site
-    if id_prefix is None:
+    if project is None:
         id_pre = ''
     else:
-        id_pre = str(id_prefix)+'-'
+        id_pre = str(project)+'-'
     
     hvsr_id = f"{id_pre}{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
 
     #Add key/values to input parameter dictionary for use throughout the rest of the package
-    inputParamDict = {'site':site, 'id_prefix':id_prefix, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':loc, 'channels':channels,
+    inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':loc, 'channels':channels,
                       'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
                     'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                     'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
