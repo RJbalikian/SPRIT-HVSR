@@ -694,6 +694,11 @@ def gui(kind='browser'):
             print(e)
 
 
+def _batch_run(hvsr_batch):
+    # Currently just a placeholder
+    return hvsr_batch
+
+
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
 def run(input_data, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
@@ -796,6 +801,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     else:
         hvsrData_toprocess = hvsrDataIN
     
+    
+
     for sitename, hvsrData in hvsrData_toprocess.items():
         if verbose:
             print(f'\nProcessing {sitename}')
