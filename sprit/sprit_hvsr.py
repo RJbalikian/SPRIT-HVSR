@@ -763,275 +763,316 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
     try:
         params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
-    except:
-        #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+    except Exception as e:
+        if hasattr(e, 'message'):
+            errMsg = e.message
+        else:
+            errMsg = e
+        
+        print(f"ERROR during input_params(): {errMsg}")        
+        # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
         raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
-        #If input_params fails, initialize params as an HVSRDATA
-        params = {'ProcessingStatus':{'InputParamsStatus':False, 'OverallStatus':False}}
-        params.update(input_params_kwargs)
-        params = sprit_utils.make_it_classy(params)
+        # If input_params fails, initialize params as an HVSRDATA
+        #params = {'ProcessingStatus':{'InputParamsStatus':False, 'OverallStatus':False}}
+        #params.update(input_params_kwargs)
+        #params = sprit_utils.make_it_classy(params)
 
     # Fetch Data
     try:
         fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
-        dataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
-    except:
-        #Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+        hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
+    except Exception as e:
+        # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+        if hasattr(e, 'message'):
+            errMsg = e.message
+        else:
+            errMsg = e
+        
+        print(f"ERROR during fetch_data(): {errMsg}")
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
-    # Calculate azimuths
-    azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-    if 'horizontal_method' in kwargs.keys() and (str(kwargs['horizontal_method']) == '8' or 'single' in str(kwargs['horizontal_method']).lower()):
-        azimuth_calculation = True
-        azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
-        
-        if 'azimuth_angle' not in kwargs.keys():
-            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
-        
-    if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
-        try:
-            dataIN = calculate_azimuth(dataIN, verbose=verbose, **azimuth_kwargs)
-        except Exception as e:
-            #Reformat data so HVSRData and HVSRBatch data both work here
-            if isinstance(dataIN, HVSRData):
-                dataIN = {'place_holder_sitename':dataIN}
-                
-            for site_name in dataIN.keys():
-                dataIN[site_name]['ProcessingStatus']['Azimuth'] = False
-                # If it wasn't originally HVSRBatch, make it HVSRData object again
-                if not dataIN[site_name]['batch']:
-                    dataIN = dataIN[site_name]
-                
-
-    # Remove Noise
-    remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-    if noise_removal or remove_noise_kwargs != {}:
-        remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-        try:
-            data_noiseRemoved = remove_noise(hvsr_data=dataIN, verbose=verbose,**remove_noise_kwargs)   
-        except:
-            data_noiseRemoved = dataIN
-            
-            #Reformat data so HVSRData and HVSRBatch data both work here
-            if isinstance(data_noiseRemoved, HVSRData):
-                data_noiseRemoved = {'place_holder_sitename':data_noiseRemoved}
-                dataIN = {'place_holder_sitename':dataIN}
-                
-            for site_name in data_noiseRemoved.keys():
-                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
-                #Since noise removal is not required for data processing, check others first
-                if dataIN[site_name]['ProcessingStatus']['OverallStatus']:
-                    data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
-                else:
-                    data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
-
-                #If it wasn't originally HVSRBatch, make it HVSRData object again
-                if not data_noiseRemoved[site_name]['batch']:
-                    data_noiseRemoved = data_noiseRemoved[site_name]
+    if source != 'batch':
+        hvsrData_toprocess = {hvsrDataIN['site']: hvsrDataIN}
     else:
-        if isinstance(dataIN, HVSRData):
-            dataIN = {'place_holder_sitename':dataIN}
-            
-        for site_name in dataIN.keys(): #This should work more or less the same for batch and regular data now
-            data_noiseRemoved = dataIN
-            data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
-            
-            data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
+        hvsrData_toprocess = hvsrDataIN
     
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not data_noiseRemoved[site_name]['batch']:
-                data_noiseRemoved = data_noiseRemoved[site_name]
-    
-    # Generate PPSDs
-    try:
-        generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
-        PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
-        generate_ppsds_kwargs.update(PPSDkwargs)
-        ppsd_data = generate_ppsds(hvsr_data=data_noiseRemoved, verbose=verbose,**generate_ppsds_kwargs)
-    except Exception as e:
-        if source == 'file' or source=='raw':
+    for sitename, hvsrData in hvsrData_toprocess.items():
+        if verbose:
+            print(f'\nProcessing {sitename}')
+        # Calculate azimuths
+        
+        azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
+        if 'horizontal_method' in kwargs.keys() and (str(kwargs['horizontal_method']) == '8' or 'single' in str(kwargs['horizontal_method']).lower()):
+            azimuth_calculation = True
+            azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
+            
+            if 'azimuth_angle' not in kwargs.keys():
+                azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
+            
+        if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
+            try:
+                hvsrData = calculate_azimuth(hvsrData, verbose=verbose, **azimuth_kwargs)
+            except Exception as e:
+                # Reformat data so HVSRData and HVSRBatch data both work here
+                if isinstance(hvsrData, HVSRData):
+                    hvsrData = {sitename: hvsrData}
+                    
+                for site_name in hvsrData.keys():
+                    hvsrData[site_name]['ProcessingStatus']['Azimuth'] = False
+                    # If it wasn't originally HVSRBatch, make it HVSRData object again
+                    #if not hvsrData[site_name]['batch']:
+
+                    hvsrData = hvsrData[site_name]
+                    
+        # Remove Noise
+        data_noiseRemoved = hvsrData
+        try:
+            remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+            if noise_removal or remove_noise_kwargs != {}:
+                remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+                try:
+                    data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
+                except Exception as e:
+                    if hasattr(e, 'message'):
+                        errMsg = e.message
+                    else:
+                        errMsg = e                    
+                    
+                    print(f"Error with remove_noise for site {sitename}: {errMsg}")
+                    
+                    # Mark that remove_noise failed
+                    # Reformat data so HVSRData and HVSRBatch data both work here
+                    if isinstance(data_noiseRemoved, HVSRData):
+                        data_noiseRemoved = {sitename: data_noiseRemoved}
+                        hvsrData = {sitename: hvsrData}
+                        
+                    for site_name in data_noiseRemoved.keys():
+                        data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
+                        # Since noise removal is not required for data processing, check others first
+                        if hvsrData[site_name]['ProcessingStatus']['OverallStatus']:
+                            data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
+                        else:
+                            data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+
+                        # If it wasn't originally HVSRBatch, make it HVSRData object again
+                        if not data_noiseRemoved[site_name]['batch']:
+                            data_noiseRemoved = data_noiseRemoved[site_name]
+            else:
+                if isinstance(hvsrData, HVSRData):
+                    hvsrData = {sitename: hvsrData}
+                    
+                for site_name in hvsrData.keys():  # This should work more or less the same for batch and regular data now
+                    data_noiseRemoved = hvsrData
+                    data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
+                    
+                    data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
+            
+                    # If it wasn't originally HVSRBatch, make it HVSRData object again
+                    #if not data_noiseRemoved[site_name]['batch']:
+                    data_noiseRemoved = data_noiseRemoved[site_name]
+        except Exception as e:
+            if (source == 'file' or source == 'raw'):
+                if hasattr(e, 'message'):
+                    errMsg = e.message
+                else:
+                    errMsg = e
+                if not ('batch' in data_noiseRemoved.keys() and data_noiseRemoved['batch']):
+                    raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+        
+        # Generate PPSDs
+        ppsd_data = data_noiseRemoved
+        try:
+            generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
+            PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
+            generate_ppsds_kwargs.update(PPSDkwargs)
+            ppsd_data = generate_ppsds(hvsr_data=ppsd_data, verbose=verbose, **generate_ppsds_kwargs)
+        except Exception as e:
             if hasattr(e, 'message'):
                 errMsg = e.message
             else:
                 errMsg = e
-            raise RuntimeError(f"generate_ppsds() error: {errMsg}")
-
-        #Reformat data so HVSRData and HVSRBatch data both work here
-        ppsd_data = data_noiseRemoved
-        if isinstance(ppsd_data, HVSRData):
-            ppsd_data = {'place_holder_sitename':ppsd_data}
             
-        for site_name in ppsd_data.keys(): #This should work more or less the same for batch and regular data now
-            ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-            ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
-    
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not ppsd_data[site_name]['batch']:
-                ppsd_data = ppsd_data[site_name]
-    
-    # Remove Outlier Curves
-    try:
-        remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+            print(f"Error during generate_ppsds() for {site_name}: \n{errMsg}")
+            if source == 'file' or source == 'raw':
+                raise RuntimeError(f"generate_ppsds() error: {errMsg}")
 
-        # Check whether it is indicated to remove outlier curves
-        outlier_curve_keys_used = True
-        if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
-            outlier_curve_keys_used = False
-        if outlier_curves_removal or outlier_curve_keys_used:
-            data_curvesRemoved = remove_outlier_curves(hvsr_data=ppsd_data, verbose=verbose,**remove_outlier_curve_kwargs)   
-    except Exception as e:
-        traceback.print_exception(sys.exc_info()[1])
-        exc_type, exc_obj, tb = sys.exc_info()
-        f = tb.tb_frame
-        lineno = tb.tb_lineno
-        filename = f.f_code.co_filename
-        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-        error_category = type(e).__name__.title().replace('error', 'Error')
-        error_message = f"{e} ({errLineNo})"
-        print(f"{error_category} ({errLineNo}): {error_message}")
-        print(lineno, filename, f)
-        
-        #Reformat data so HVSRData and HVSRBatch data both work here
-        data_curvesRemoved = ppsd_data
-        if isinstance(data_curvesRemoved, HVSRData):
-            data_curvesRemoved = {'place_holder_sitename':data_curvesRemoved}
-            
-        for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
-            data_curvesRemoved[site_name]['ProcessingStatus']['RemoveOutlierCurvesStatus'] = False
-            data_curvesRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
-    
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not data_curvesRemoved[site_name]['batch']:
-                data_curvesRemoved = data_curvesRemoved[site_name]
-    
-    # Process HVSR Curves
-    try:
-        process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
-        hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
-    except Exception as e:
-        traceback.print_exception(sys.exc_info()[1])
-        exc_type, exc_obj, tb = sys.exc_info()
-        f = tb.tb_frame
-        lineno = tb.tb_lineno
-        filename = f.f_code.co_filename
-        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-        error_category = type(e).__name__.title().replace('error', 'Error')
-        error_message = f"{e} ({errLineNo})"
-        print(f"{error_category} ({errLineNo}): {error_message}")
-        print(lineno, filename, f)
-
-        hvsr_results = ppsd_data
-        if isinstance(hvsr_results, HVSRData):
-            hvsr_results = {'place_holder_sitename':hvsr_results}
-            
-        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
-        
-            hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
-            hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
-            
-            # If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not hvsr_results[site_name]['batch']:
-                hvsr_results = hvsr_results[site_name]            
-            
-    # Final post-processing/reporting
-    # Check peaks
-    check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-    hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
-
-    get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
-    # Add 'az' as a default plot if the following conditions
-    # first check if report_formats is specified, if not, add default value
-    if 'report_formats' not in get_report_kwargs.keys():
-        get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
-    
-    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
-    if 'plot' in get_report_kwargs['report_formats']:
-        plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-        get_report_kwargs.update(plot_hvsr_kwargs)
-        usingDefault = True
-        if 'plot_type' not in get_report_kwargs.keys():
-            get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
-        else:
-            usingDefault = False
-
-        # Check if az is already specified as plot output
-        azList = ['azimuth', 'az', 'a', 'radial', 'r']
-        az_requested = False
-        
-        get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
-        for azStr in azList:
-            if azStr.lower() in get_report_kwargs['plot_type']:
-                az_requested = True
-                break
-        get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
-
-        if isinstance(hvsr_results, HVSRData):
-            hvsr_results_interim = {'place_holder_sitename':hvsr_results}
-        else:
-            hvsr_results_interim = hvsr_results
-
-        for site_name in hvsr_results_interim.keys(): #This should work more or less the same for batch and regular data now
-            # Check if data has azimuth data
-            hasAz = False
-            for tr in hvsr_results_interim[site_name]['stream']:
-                if tr.stats.component == 'R':
-                    hasAz = True
-                    break
-            
-            # Assuming all sites in batch have az if one does
-            if hasAz:
-                break
-
-            # If it wasn't originally HVSRBatch, make it HVSRData object again
-            #if not hvsr_results_interim[site_name]['batch']:
-            #    hvsr_results_interim = hvsr_results_interim[site_name]            
-            
-        # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
-        if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
-            get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
-    get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
-
-    if verbose:
-        if 'report_formats' in get_report_kwargs.keys():
-            if type(get_report_kwargs['report_formats']) is str:
-                report_formats = get_report_kwargs['report_formats'].lower()
-            elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
-                for i, rf in enumerate(get_report_kwargs['report_formats']):
-                    get_report_kwargs['report_formats'][i] = rf.lower()
-                    
-            # if report_formats is 'print', we would have already printed it in previous step
-            if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
-                # We do not need to print another report if already printed to terminal
-                pass
-            else:
-                # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
-                #   now need to print for verbose output
-                get_report_kwargs['report_formats'] = 'print'
-                get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+            # Reformat data so HVSRData and HVSRBatch data both work here
+            if isinstance(ppsd_data, HVSRData):
+                ppsd_data = {sitename: ppsd_data}
                 
-            if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
-                # We do not need to plot another report if already plotted
+            for site_name in ppsd_data.keys(): # This should work more or less the same for batch and regular data now
+                ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+                ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+        
+                #If it wasn't originally HVSRBatch, make it HVSRData object again
+                if not ppsd_data[site_name]['batch']:
+                    ppsd_data = ppsd_data[site_name]
+        
+        # Remove Outlier Curves
+        data_curvesRemoved = ppsd_data
+        try:
+            remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+
+            # Check whether it is indicated to remove outlier curves
+            outlier_curve_keys_used = True
+            if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
+                outlier_curve_keys_used = False
+            if outlier_curves_removal or outlier_curve_keys_used:
+                data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
+        except Exception as e:
+            traceback.print_exception(sys.exc_info()[1])
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace('error', 'Error')
+            error_message = f"{e} ({errLineNo})"
+            print(f"{error_category} ({errLineNo}): {error_message}")
+            print(lineno, filename, f)
+            
+            # Reformat data so HVSRData and HVSRBatch data both work here
+            if isinstance(data_curvesRemoved, HVSRData):
+                data_curvesRemoved = {sitename: data_curvesRemoved}
+                
+            for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
+                data_curvesRemoved[site_name]['ProcessingStatus']['RemoveOutlierCurvesStatus'] = False
+                data_curvesRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+        
+                #If it wasn't originally HVSRBatch, make it HVSRData object again
+                if not data_curvesRemoved[site_name]['batch']:
+                    data_curvesRemoved = data_curvesRemoved[site_name]
+        
+        # Process HVSR Curves
+        try:
+            process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
+            hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
+        except Exception as e:
+            traceback.print_exception(sys.exc_info()[1])
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace('error', 'Error')
+            error_message = f"{e} ({errLineNo})"
+            print(f"{error_category} ({errLineNo}): {error_message}")
+            print(lineno, filename, f)
+
+            hvsr_results = ppsd_data
+            if isinstance(hvsr_results, HVSRData):
+                hvsr_results = {sitename:hvsr_results}
+                
+            for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+            
+                hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
+                hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
+                
+                # If it wasn't originally HVSRBatch, make it HVSRData object again
+                if not hvsr_results[site_name]['batch']:
+                    hvsr_results = hvsr_results[site_name]            
+                
+        # Final post-processing/reporting
+        # Check peaks
+        check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+        hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
+
+        get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+        # Add 'az' as a default plot if the following conditions
+        # first check if report_formats is specified, if not, add default value
+        if 'report_formats' not in get_report_kwargs.keys():
+            get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
+        
+        # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
+        if 'plot' in get_report_kwargs['report_formats']:
+            plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+            get_report_kwargs.update(plot_hvsr_kwargs)
+            usingDefault = True
+            if 'plot_type' not in get_report_kwargs.keys():
+                get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
+            else:
+                usingDefault = False
+
+            # Check if az is already specified as plot output
+            azList = ['azimuth', 'az', 'a', 'radial', 'r']
+            az_requested = False
+            
+            get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
+            for azStr in azList:
+                if azStr.lower() in get_report_kwargs['plot_type']:
+                    az_requested = True
+                    break
+            get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
+
+            if isinstance(hvsr_results, HVSRData):
+                hvsr_results_interim = {sitename: hvsr_results}
+            else:
+                hvsr_results_interim = hvsr_results
+
+            for site_name in hvsr_results_interim.keys():  # This should work more or less the same for batch and regular data now
+                # Check if data has azimuth data
+                hasAz = False
+                if 'stream' in hvsr_results_interim[site_name].keys():
+                    for tr in hvsr_results_interim[site_name]['stream']:
+                        if tr.stats.component == 'R':
+                            hasAz = True
+                            break
+                
+                # Assuming all sites in batch have az if one does
+                if hasAz:
+                    break
+
+                # If it wasn't originally HVSRBatch, make it HVSRData object again
+                #if not hvsr_results_interim[site_name]['batch']:
+                #    hvsr_results_interim = hvsr_results_interim[site_name]            
+                
+            # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
+            if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
+                get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
+        get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+
+        if verbose:
+            if 'report_formats' in get_report_kwargs.keys():
+                if type(get_report_kwargs['report_formats']) is str:
+                    report_formats = get_report_kwargs['report_formats'].lower()
+                elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
+                    for i, rf in enumerate(get_report_kwargs['report_formats']):
+                        get_report_kwargs['report_formats'][i] = rf.lower()
+                        
+                # if report_formats is 'print', we would have already printed it in previous step
+                if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
+                    # We do not need to print another report if already printed to terminal
+                    pass
+                else:
+                    # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
+                    #   now need to print for verbose output
+                    get_report_kwargs['report_formats'] = 'print'
+                    get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                    
+                if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
+                    # We do not need to plot another report if already plotted
+                    pass
+                else:
+                    # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
+                    # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
+                    pass
+            else:
+                pass
+        
+        # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+        if 'hvsr_export_path' in kwargs.keys():
+            if kwargs['hvsr_export_path'] is None:
                 pass
             else:
-                # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
-                pass
-        else:
-            pass
-    
-    #Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if 'hvsr_export_path' in kwargs.keys():
-        if kwargs['hvsr_export_path'] is None:
-            pass
-        else:
-            if 'ext' in kwargs.keys():
-                ext = kwargs['ext']
-            else:
-                ext = 'hvsr'
-            export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
-    if 'show_plot' in kwargs:
-        if not kwargs['show_plot']:
-            plt.close()
+                if 'ext' in kwargs.keys():
+                    ext = kwargs['ext']
+                else:
+                    ext = 'hvsr'
+                export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
+        if 'show_plot' in kwargs:
+            if not kwargs['show_plot']:
+                plt.close()
+        
     return hvsr_results
 
 
@@ -1283,18 +1324,19 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
     peak_freq_range = orig_args['peak_freq_range']
     verbose = orig_args['verbose']
 
-    if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
-        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
-            pass
-        else:
-            print('\nChecking peaks in the H/V Curve (check_peaks())')
-            print('\tUsing the following parameters:')
-            for key, value in orig_args.items():
-                if key=='hvsr_data':
-                    pass
-                else:
-                    print('\t  {}={}'.format(key, value))
-            print()
+    #if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
+    #    if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
+    #        pass
+    #    else:
+    if verbose:
+        print('\nChecking peaks in the H/V Curve (check_peaks())')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key=='hvsr_data':
+                pass
+            else:
+                print('\t  {}={}'.format(key, value))
+        print()
   
     #First, divide up for batch or not
     if isinstance(hvsr_data, HVSRBatch):
@@ -1610,7 +1652,7 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             try:
                 print(f'\nSaving table report to: {outFile}')
                 reportDF.to_csv(outFile, index_label='ID')
-            except:
+            except Exception:
                 warnings.warn("Table report not exported. \n\tDataframe to be exported as csv has been saved in hvsr_results['BestPeak']['Report']['Table_Report]", category=RuntimeWarning)
  
             if show_report or verbose:
@@ -1885,7 +1927,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     kwargs=orig_args['kwargs']
 
     # Print inputs for verbose setting
-    if source != 'batch' and verbose:
+    if verbose: #source != 'batch' and verbose:
         print('\nFetching data (fetch_data())')
         for key, value in orig_args.items():
             print('\t  {}={}'.format(key, value))
@@ -1919,7 +1961,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         sampleList.append(f'sample_{s}')
 
     #Make sure input_data is pointing to an actual file
-    if isinstance(params['input_data'],list):
+    if isinstance(params['input_data'], list):
         for i, d in enumerate(params['input_data']):
             params['input_data'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=sampleList)
         dPath = params['input_data']
@@ -1968,7 +2010,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     elif type(date) is int:
         doy = date
         year = datetime.datetime.today().year
-    else:  #FOR NOW, need to update
+    else:  # FOR NOW, need to update
         date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
@@ -1995,7 +2037,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                                        str(tr.stats.starttime)[11:19], 
                                        str(tr.stats.endtime)[11:19]])
     else:
-        if source=='raw':
+        if source == 'raw':
             try:
                 if inst.lower() in raspShakeInstNameList:
                     rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
@@ -2005,9 +2047,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
             except:
                 raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
-        elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
+        elif source == 'stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
             rawDataIN = params['input_data'].copy()
-        elif source=='dir':
+        elif source == 'dir':
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
             else:
@@ -2023,7 +2065,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source=='file' and str(params['input_data']).lower() not in sampleList:
+        elif source == 'file' and str(params['input_data']).lower() not in sampleList:
             # Read the file specified by input_data          
             if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
@@ -2054,7 +2096,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 #with warnings.catch_warnings():
                     #warnings.simplefilter(action='ignore', category=UserWarning)
                     #rawDataIN.attach_response(inv)
-        elif source=='batch' and str(params['input_data']).lower() not in sampleList:
+        elif source == 'batch' and str(params['input_data']).lower() not in sampleList:
             if verbose:
                 print('\nFetching data (fetch_data())')
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
@@ -2094,12 +2136,12 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             except:
                 RuntimeError(f'source={source} not recognized, and input_data cannot be read using obspy.read()')
 
-    #Get metadata from the data itself, if not reading raw data
+    # Get metadata from the data itself, if not reading raw data
     try:
         # If the data already exists (not reading in raw from RS, for example), get the parameters from the data
         dataIN = rawDataIN.copy()
-        if source!='raw':
-            #Use metadata from file for;
+        if source != 'raw':
+            # Use metadata from file for;
             # site
             site_default = inspect.signature(input_params).parameters['site'].default
             if params['site'] == site_default and params['site'] != dPath.stem:
@@ -2230,7 +2272,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     inv = params['inv']
 
     # Trim and save data as specified
-    if data_export_path=='None':
+    if data_export_path == 'None':
         data_export_path=None
     if not data_export_path:
         pass
@@ -2328,9 +2370,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             pass
         dataIN.merge()
     
-    params['batch'] = False # Set False by default, will get corrected later if batch
-    params['input_stream'] = dataIN.copy() # Original stream as read
-    params['stream'] = dataIN.copy() # Stream that may be modified later
+    params['batch'] = False  # Set False by default, will get corrected later if batch
+    params['input_stream'] = dataIN.copy()  # Original stream as read
+    params['stream'] = dataIN.copy()  # Stream that may be modified later
     
     if 'processing_parameters' not in params.keys():
         params['processing_parameters'] = {}
@@ -2451,12 +2493,14 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             ppsds : HVSRData object
                 Dictionary containing entries with ppsds for each channel
     """
-    #First, divide up for batch or not
+    
+    # First, divide up for batch or not
     orig_args = locals().copy() #Get the initial arguments
     start_time = datetime.datetime.now()
 
     ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
-    #Set defaults here that are different than obspy defaults
+    
+    # Set defaults here that are different than obspy defaults
     if 'ppsd_length' not in ppsd_kwargs.keys():
         ppsd_kwargs_sprit_defaults['ppsd_length'] = 30.0
     if 'skip_on_gaps' not in ppsd_kwargs.keys():
@@ -2484,8 +2528,8 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             hvsr_data['input_params']['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
             
         
-    #Get Probablistic power spectral densities (PPSDs)
-    #Get default args for function
+    # Get Probablistic power spectral densities (PPSDs)
+    # Get default args for function
     def get_default_args(func):
         signature = inspect.signature(func)
         return {
@@ -2513,19 +2557,21 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     verbose = orig_args['verbose']
     ppsd_kwargs = orig_args['ppsd_kwargs']
 
-    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
-        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
-            pass
-        else:
-            print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
-            print('\tUsing the following parameters:')
-            for key, value in orig_args.items():
-                if key=='hvsr_data':
-                    pass
-                else:
-                    print('\t  {}={}'.format(key, value))
+    #if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+    if verbose:
+        #if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
+        #    pass
+        #else:
+        print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key == 'hvsr_data':
+                pass
+            else:
+                print('\t  {}={}'.format(key, value))
+        print()
 
-    #Site is in the keys anytime it's not batch
+    # Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each one
         for site_name in hvsr_data.keys():
@@ -2846,12 +2892,12 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
-                plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
-                show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
-                suppress_report_outputs=False, show_report_outputs=False,
-                csv_handling='append', 
-                report_export_formats=['pdf'], report_export_path=None, 
-                verbose=False, **kwargs):    
+               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
+               show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
+               suppress_report_outputs=False, show_report_outputs=False,
+               csv_handling='append', 
+               report_export_formats=['pdf'], report_export_path=None, 
+               verbose=False, **kwargs):    
     """Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. 
     
     Formats include:
@@ -2932,23 +2978,24 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     kwargs = orig_args['kwargs']
 
     # Put Processing parameters in hvsr_results immediately (gets used later local function in get_report)
-    hvsr_results['processing_parameters']['get_report'] = {}
-    for key, value in orig_args.items():
-        hvsr_results['processing_parameters']['get_report'][key] = value
+    if 'processing_parameters' in hvsr_results.keys():
+        hvsr_results['processing_parameters']['get_report'] = {}
+        for key, value in orig_args.items():
+            hvsr_results['processing_parameters']['get_report'][key] = value
     
-    
-    if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
-        if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
-            pass
-        else:
-            print('\nGetting HVSR Report: get_report()')
-            print('\tUsing the following parameters:')
-            for key, value in orig_args.items():
-                if key=='params':
-                    pass
-                else:
-                    print('\t  {}={}'.format(key, value))
-            print()
+    #if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
+    #    if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
+    #        pass
+    #    else:
+    if verbose:
+        print('\nGetting HVSR Report: get_report()')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key == 'params':
+                pass
+            else:
+                print('\t  {}={}'.format(key, value))
+        print()
 
     if isinstance(hvsr_results, HVSRBatch):
         if verbose:
@@ -3016,7 +3063,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
         peakPass = peakTestsPassed >= 5
     except Exception as e:
-        errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
+        errMsg = 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
         print(errMsg)
         print(e)
         hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type='HVSR t all C+ t SPEC', azimuth=azimuth, return_fig=True)
@@ -3037,6 +3084,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     # Format the export formats correctly
     if isinstance(report_export_formats, (list, tuple)):
         pass
+    elif report_export_formats is None:
+        pass
     else:
         # We will use list methods later even if it's just one report type, so reformat as list
         allList = [':', 'all']
@@ -3055,6 +3104,9 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         else:
             exp_path = report_export_path
         
+        if report_export_formats is None:
+            report_export_formats = ''
+        
         #fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
 
         #if exp_path is None:
@@ -3063,7 +3115,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         #        exp_path = pathlib.Path().home().joinpath(fname)
         #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
         
-        if rep_form=='print':
+        if rep_form == 'print':
             verbose_print = verbose
             if show_print_report:
                 verbose_print = True
@@ -3084,7 +3136,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                               show_report = False, # If report is to be shown, done in previous step
                               verbose = verbose_print)
 
-        elif rep_form=='table':
+        elif rep_form == 'table':
             verbose_table = verbose
             if show_table_report:
                 verbose_table = True
@@ -3106,7 +3158,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_table)
             
-        elif rep_form=='plot':
+        elif rep_form == 'plot':
             plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
             if 'plot_type' in plot_hvsr_kwargs.keys():
                 plot_hvsr_kwargs.pop('plot_type')
@@ -3137,7 +3189,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 if verbose:
                     print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
 
-        elif rep_form=='html':
+        elif rep_form == 'html':
             verbose_html = verbose
             if verbose or show_html_report:
                 verbose_html = True
@@ -3154,7 +3206,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_html)
 
-        elif rep_form=='pdf':
+        elif rep_form == 'pdf':
             verbose_pdf = verbose
             if verbose or show_pdf_report:
                 verbose_pdf = True
@@ -4120,18 +4172,19 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     outlier_curve_rmse_percentile = orig_args['outlier_curve_rmse_percentile']
     verbose = orig_args['verbose']
 
-    if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
-        if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
-            pass
-        else:
-            print('\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
-            print('\tUsing the following parameters:')
-            for key, value in orig_args.items():
-                if key=='hvsr_data':
-                    pass
-                else:
-                    print('\t  {}={}'.format(key, value))
-            print()
+    #if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+    #    if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
+    #        pass
+    #    else:
+    if verbose:
+        print('\nCalculating Horizontal/Vertical Ratios at all frequencies/time steps (process_hvsr())')
+        print('\tUsing the following parameters:')
+        for key, value in orig_args.items():
+            if key=='hvsr_data':
+                pass
+            else:
+                print('\t  {}={}'.format(key, value))
+        print()
 
     # PROCESSING STARTS HERE (SEPARATE LOOP FOR BATCH)
     #Site is in the keys anytime it's not batch
@@ -5174,7 +5227,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         elif isinstance(batch_data, dict):
             #For params input
             pass
-        else:#Read csv
+        else:  # Read csv
             read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in pd.read_csv.__code__.co_varnames}
             dataReadInfoDF = pd.read_csv(batch_data, **read_csv_kwargs)
             if 'input_data' in dataReadInfoDF.columns:
@@ -5187,31 +5240,17 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             for index, row in dataReadInfoDF.iterrows():
                 dataReadInfoDF.loc[index, 'input_data'] = sample_data_dir.joinpath(row.loc['input_data'])
 
-        default_dict = {'site':'HVSR Site',
-                    'network':'AM', 
-                    'station':'RAC84', 
-                    'loc':'00', 
-                    'channels':['EHZ', 'EHN', 'EHE'],
-                    'acq_date':str(datetime.datetime.now().date()),
-                    'starttime' : '00:00:00.00',
-                    'endtime' : '23:59:59.999',
-                    'tzone' : 'UTC',
-                    'xcoord' : -88.2290526,
-                    'ycoord' :  40.1012122,
-                    'elevation' : 755,
-                    'input_crs':'EPSG:4326',#4269 is NAD83, defautling to WGS
-                    'output_crs':'EPSG:4326',
-                    'elev_unit' : 'feet',
-                    'depth' : 0,
-                    'instrument' : 'Raspberry Shake',
-                    'metapath' : '',
-                    'hvsr_band' : [0.4, 40],
-                    'write_path':'',
-                    'source':'file', 
-                    'data_export_format':'mseed', 
-                    'detrend':'spline', 
-                    'detrend_order':2, 
-                    'verbose':False}
+
+        default_dict = {}
+        ipsig = inspect.signature(input_params).parameters
+        for k, v in ipsig.items():
+            if v.default is not inspect._empty:
+                default_dict[k] = v.default
+
+        fdsig = inspect.signature(fetch_data).parameters
+        for k, v in fdsig.items():
+            if v.default is not inspect._empty:
+                default_dict[k] = v.default   
 
         print(f"\t{dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
         if verbose:
@@ -5249,6 +5288,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             print(endline)
 
             print('Fetching the following files:')
+            
         param_dict_list = []
         verboseStatement = []
         if param_col is None: #Not a single parameter column, each col=parameter
@@ -5303,7 +5343,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 param_dict_list[i]['input_data'] = file
 
     hvsr_metaDict = {}
-    zfillDigs = len(str(len(param_dict_list))) #Get number of digits of length of param_dict_list
+    zfillDigs = len(str(len(param_dict_list)))  # Get number of digits of length of param_dict_list
     i=0
     for i, param_dict in enumerate(param_dict_list):
         # Read the data file into a Stream object
