@@ -796,11 +796,20 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         print(f"ERROR during fetch_data(): {errMsg}")
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
+    # BREAK OUT FOR BATCH PROCESSING
     if isinstance(input_data, HVSRBatch):
         hvsrBatchDict = {}
         for site_name, site_data in input_data.items():
             print(f'\n\n**PROCESSING DATA FOR SITE {site_name.Upper()}**\n')
-            hvsrBatchDict[site_name] = run(site_data)
+            try:
+                hvsrBatchDict[site_name] = run(site_data)
+            except Exception as e:
+                if hasattr(e, 'message'):
+                    errMsg = e.message
+                else:
+                    errMsg = e
+                print(f"\n\nError processing {site_name}: \n{errMsg}")
+                hvsrBatchDict[site_name] = site_data
         return HVSRBatch(hvsrBatchDict)
 
     # Calculate azimuths
@@ -811,8 +820,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
         if 'azimuth_angle' not in kwargs.keys():
-            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
-        
+            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45  
     if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
         try:
             hvsr_az = calculate_azimuth(hvsrDataIN, verbose=verbose, **azimuth_kwargs)
@@ -831,7 +839,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 hvsr_az['ProcessingStatus']['Azimuth'] = False
      
     # Remove Noise
-    data_noiseRemoved = hvsrData
+    data_noiseRemoved = hvsr_az
     try:
         remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         if noise_removal or remove_noise_kwargs != {}:
@@ -844,18 +852,18 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 else:
                     errMsg = e                    
                 
-                print(f"Error with remove_noise for site {sitename}: {errMsg}")
+                print(f"Error with remove_noise for site {data_noiseRemoved.site}: {errMsg}")
                 
                 # Mark that remove_noise failed
                 # Reformat data so HVSRData and HVSRBatch data both work here
                 if isinstance(data_noiseRemoved, HVSRData):
-                    data_noiseRemoved = {sitename: data_noiseRemoved}
-                    hvsrData = {sitename: hvsrData}
+                    data_noiseRemoved = {data_noiseRemoved.site: data_noiseRemoved}
+                    data_noiseRemoved = {data_noiseRemoved.site: data_noiseRemoved}
                     
                 for site_name in data_noiseRemoved.keys():
                     data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
                     # Since noise removal is not required for data processing, check others first
-                    if hvsrData[site_name]['ProcessingStatus']['OverallStatus']:
+                    if data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus']:
                         data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
                     else:
                         data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
@@ -864,11 +872,10 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                     if not data_noiseRemoved[site_name]['batch']:
                         data_noiseRemoved = data_noiseRemoved[site_name]
         else:
-            if isinstance(hvsrData, HVSRData):
-                hvsrData = {sitename: hvsrData}
+            if isinstance(data_noiseRemoved, HVSRData):
+                data_noiseRemoved = {data_noiseRemoved.site: data_noiseRemoved}
                 
-            for site_name in hvsrData.keys():  # This should work more or less the same for batch and regular data now
-                data_noiseRemoved = hvsrData
+            for site_name in data_noiseRemoved.keys():  # This should work more or less the same for batch and regular data now
                 data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
                 
                 data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
@@ -1080,12 +1087,6 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             plt.close()
     
     return hvsr_results
-
-
-# Batch helper for run function
-def _batch_run(hvsr_batch):
-    # Currently just a placeholder
-    return hvsr_batch
 
 
 # Function to generate azimuthal readings from the horizontal components
@@ -2908,7 +2909,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
-               report_export_formats=['pdf'], report_export_path=None, 
+               report_export_formats=None, report_export_path=None, 
                verbose=False, **kwargs):    
     """Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. 
     
