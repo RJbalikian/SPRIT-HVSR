@@ -121,11 +121,16 @@ def check_instance(init):
 
 # Class for batch data
 class HVSRBatch:
-    """HVSRBatch is the data container used for batch processing. It contains several HVSRData objects (one for each site). These can be accessed using their site name, either square brackets (HVSRBatchVariable["SiteName"]) or the dot (HVSRBatchVariable.SiteName) accessor.
+    """HVSRBatch is the data container used for batch processing. 
+    It contains several HVSRData objects (one for each site). 
+    These can be accessed using their site name, 
+    either square brackets (HVSRBatchVariable["SiteName"]) or the dot (HVSRBatchVariable.SiteName) accessor.
     
     The dot accessor may not work if there is a space in the site name.
     
-    All of the  functions in the sprit.pacakge are designed to perform the bulk of their operations iteratively on the individual HVSRData objects contained in the HVSRBatch object, and do little with the HVSRBatch object itself, besides using it determine which sites are contained within it.
+    All of the  functions in the sprit package are designed to perform the bulk of their operations iteratively
+    on the individual HVSRData objects contained in the HVSRBatch object, and do little with the HVSRBatch object itself, 
+    besides using it determine which sites are contained within it.
     
     """
     @check_instance
@@ -135,7 +140,7 @@ class HVSRBatch:
         Parameters
         ----------
         batch_dict : dict
-            Dictionary containing Key value pairs with either {sitename:HVSRData object} or {azimuth_angle_degrees:HVSRData object}
+            Dictionary containing Key value pairs with {sitename: HVSRData object}
         """
         self._batch_dict = batch_dict
         self.batch_dict = self._batch_dict
@@ -143,7 +148,7 @@ class HVSRBatch:
         
         for sitename, hvsrdata in batch_dict.items():
             setattr(self, sitename, hvsrdata)
-            self[sitename]['batch']=True  
+            self[sitename]['batch'] = True  
         self.sites = list(self._batch_dict.keys())
 
 
@@ -694,11 +699,6 @@ def gui(kind='browser'):
             print(e)
 
 
-def _batch_run(hvsr_batch):
-    # Currently just a placeholder
-    return hvsr_batch
-
-
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
 def run(input_data, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
@@ -796,291 +796,296 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         print(f"ERROR during fetch_data(): {errMsg}")
         raise RuntimeError('Data not read correctly, see sprit.fetch_data() function and parameters for more details.')
     
-    if source != 'batch':
-        hvsrData_toprocess = {hvsrDataIN['site']: hvsrDataIN}
-    else:
-        hvsrData_toprocess = hvsrDataIN
-    
-    
+    if isinstance(input_data, HVSRBatch):
+        hvsrBatchDict = {}
+        for site_name, site_data in input_data.items():
+            print(f'\n\n**PROCESSING DATA FOR SITE {site_name.Upper()}**\n')
+            hvsrBatchDict[site_name] = run(site_data)
+        return HVSRBatch(hvsrBatchDict)
 
-    for sitename, hvsrData in hvsrData_toprocess.items():
-        if verbose:
-            print(f'\nProcessing {sitename}')
-        # Calculate azimuths
+    # Calculate azimuths
+    hvsr_az = hvsrDataIN
+    azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
+    if 'horizontal_method' in kwargs.keys() and (str(kwargs['horizontal_method']) == '8' or 'single' in str(kwargs['horizontal_method']).lower()):
+        azimuth_calculation = True
+        azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
-        azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-        if 'horizontal_method' in kwargs.keys() and (str(kwargs['horizontal_method']) == '8' or 'single' in str(kwargs['horizontal_method']).lower()):
-            azimuth_calculation = True
-            azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
-            
-            if 'azimuth_angle' not in kwargs.keys():
-                azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
-            
-        if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
-            try:
-                hvsrData = calculate_azimuth(hvsrData, verbose=verbose, **azimuth_kwargs)
-            except Exception as e:
-                # Reformat data so HVSRData and HVSRBatch data both work here
-                if isinstance(hvsrData, HVSRData):
-                    hvsrData = {sitename: hvsrData}
-                    
-                for site_name in hvsrData.keys():
-                    hvsrData[site_name]['ProcessingStatus']['Azimuth'] = False
-                    # If it wasn't originally HVSRBatch, make it HVSRData object again
-                    #if not hvsrData[site_name]['batch']:
-
-                    hvsrData = hvsrData[site_name]
-                    
-        # Remove Noise
-        data_noiseRemoved = hvsrData
-        try:
-            remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-            if noise_removal or remove_noise_kwargs != {}:
-                remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-                try:
-                    data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
-                except Exception as e:
-                    if hasattr(e, 'message'):
-                        errMsg = e.message
-                    else:
-                        errMsg = e                    
-                    
-                    print(f"Error with remove_noise for site {sitename}: {errMsg}")
-                    
-                    # Mark that remove_noise failed
-                    # Reformat data so HVSRData and HVSRBatch data both work here
-                    if isinstance(data_noiseRemoved, HVSRData):
-                        data_noiseRemoved = {sitename: data_noiseRemoved}
-                        hvsrData = {sitename: hvsrData}
-                        
-                    for site_name in data_noiseRemoved.keys():
-                        data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
-                        # Since noise removal is not required for data processing, check others first
-                        if hvsrData[site_name]['ProcessingStatus']['OverallStatus']:
-                            data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
-                        else:
-                            data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
-
-                        # If it wasn't originally HVSRBatch, make it HVSRData object again
-                        if not data_noiseRemoved[site_name]['batch']:
-                            data_noiseRemoved = data_noiseRemoved[site_name]
-            else:
-                if isinstance(hvsrData, HVSRData):
-                    hvsrData = {sitename: hvsrData}
-                    
-                for site_name in hvsrData.keys():  # This should work more or less the same for batch and regular data now
-                    data_noiseRemoved = hvsrData
-                    data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
-                    
-                    data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
-            
-                    # If it wasn't originally HVSRBatch, make it HVSRData object again
-                    #if not data_noiseRemoved[site_name]['batch']:
-                    data_noiseRemoved = data_noiseRemoved[site_name]
-        except Exception as e:
-            if (source == 'file' or source == 'raw'):
-                if hasattr(e, 'message'):
-                    errMsg = e.message
-                else:
-                    errMsg = e
-                if not ('batch' in data_noiseRemoved.keys() and data_noiseRemoved['batch']):
-                    raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+        if 'azimuth_angle' not in kwargs.keys():
+            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
         
-        # Generate PPSDs
-        ppsd_data = data_noiseRemoved
+    if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
         try:
-            generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
-            PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
-            generate_ppsds_kwargs.update(PPSDkwargs)
-            ppsd_data = generate_ppsds(hvsr_data=ppsd_data, verbose=verbose, **generate_ppsds_kwargs)
+            hvsr_az = calculate_azimuth(hvsrDataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
             if hasattr(e, 'message'):
                 errMsg = e.message
             else:
                 errMsg = e
             
-            print(f"Error during generate_ppsds() for {site_name}: \n{errMsg}")
-            if source == 'file' or source == 'raw':
-                raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+            print(f"Error during generate_ppsds() for {hvsr_az.site}: \n{errMsg}")            
 
-            # Reformat data so HVSRData and HVSRBatch data both work here
-            if isinstance(ppsd_data, HVSRData):
-                ppsd_data = {sitename: ppsd_data}
-                
-            for site_name in ppsd_data.keys(): # This should work more or less the same for batch and regular data now
-                ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-                ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
-        
-                #If it wasn't originally HVSRBatch, make it HVSRData object again
-                if not ppsd_data[site_name]['batch']:
-                    ppsd_data = ppsd_data[site_name]
-        
-        # Remove Outlier Curves
-        data_curvesRemoved = ppsd_data
-        try:
-            remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-
-            # Check whether it is indicated to remove outlier curves
-            outlier_curve_keys_used = True
-            if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
-                outlier_curve_keys_used = False
-            if outlier_curves_removal or outlier_curve_keys_used:
-                data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
-        except Exception as e:
-            traceback.print_exception(sys.exc_info()[1])
-            exc_type, exc_obj, tb = sys.exc_info()
-            f = tb.tb_frame
-            lineno = tb.tb_lineno
-            filename = f.f_code.co_filename
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = f"{e} ({errLineNo})"
-            print(f"{error_category} ({errLineNo}): {error_message}")
-            print(lineno, filename, f)
-            
-            # Reformat data so HVSRData and HVSRBatch data both work here
-            if isinstance(data_curvesRemoved, HVSRData):
-                data_curvesRemoved = {sitename: data_curvesRemoved}
-                
-            for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
-                data_curvesRemoved[site_name]['ProcessingStatus']['RemoveOutlierCurvesStatus'] = False
-                data_curvesRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
-        
-                #If it wasn't originally HVSRBatch, make it HVSRData object again
-                if not data_curvesRemoved[site_name]['batch']:
-                    data_curvesRemoved = data_curvesRemoved[site_name]
-        
-        # Process HVSR Curves
-        try:
-            process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
-            hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
-        except Exception as e:
-            traceback.print_exception(sys.exc_info()[1])
-            exc_type, exc_obj, tb = sys.exc_info()
-            f = tb.tb_frame
-            lineno = tb.tb_lineno
-            filename = f.f_code.co_filename
-            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-            error_category = type(e).__name__.title().replace('error', 'Error')
-            error_message = f"{e} ({errLineNo})"
-            print(f"{error_category} ({errLineNo}): {error_message}")
-            print(lineno, filename, f)
-
-            hvsr_results = ppsd_data
-            if isinstance(hvsr_results, HVSRData):
-                hvsr_results = {sitename:hvsr_results}
-                
-            for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
-            
-                hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
-                hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
-                
-                # If it wasn't originally HVSRBatch, make it HVSRData object again
-                if not hvsr_results[site_name]['batch']:
-                    hvsr_results = hvsr_results[site_name]            
-                
-        # Final post-processing/reporting
-        # Check peaks
-        check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-        hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
-
-        get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
-        # Add 'az' as a default plot if the following conditions
-        # first check if report_formats is specified, if not, add default value
-        if 'report_formats' not in get_report_kwargs.keys():
-            get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
-        
-        # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
-        if 'plot' in get_report_kwargs['report_formats']:
-            plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-            get_report_kwargs.update(plot_hvsr_kwargs)
-            usingDefault = True
-            if 'plot_type' not in get_report_kwargs.keys():
-                get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
+            if isinstance(hvsr_az, HVSRBatch):
+                for site_name in hvsr_az.keys():
+                    hvsr_az[site_name]['ProcessingStatus']['Azimuth'] = False
             else:
-                usingDefault = False
-
-            # Check if az is already specified as plot output
-            azList = ['azimuth', 'az', 'a', 'radial', 'r']
-            az_requested = False
-            
-            get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
-            for azStr in azList:
-                if azStr.lower() in get_report_kwargs['plot_type']:
-                    az_requested = True
-                    break
-            get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
-
-            if isinstance(hvsr_results, HVSRData):
-                hvsr_results_interim = {sitename: hvsr_results}
-            else:
-                hvsr_results_interim = hvsr_results
-
-            for site_name in hvsr_results_interim.keys():  # This should work more or less the same for batch and regular data now
-                # Check if data has azimuth data
-                hasAz = False
-                if 'stream' in hvsr_results_interim[site_name].keys():
-                    for tr in hvsr_results_interim[site_name]['stream']:
-                        if tr.stats.component == 'R':
-                            hasAz = True
-                            break
-                
-                # Assuming all sites in batch have az if one does
-                if hasAz:
-                    break
-
-                # If it wasn't originally HVSRBatch, make it HVSRData object again
-                #if not hvsr_results_interim[site_name]['batch']:
-                #    hvsr_results_interim = hvsr_results_interim[site_name]            
-                
-            # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
-            if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
-                get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
-        get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
-
-        if verbose:
-            if 'report_formats' in get_report_kwargs.keys():
-                if type(get_report_kwargs['report_formats']) is str:
-                    report_formats = get_report_kwargs['report_formats'].lower()
-                elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
-                    for i, rf in enumerate(get_report_kwargs['report_formats']):
-                        get_report_kwargs['report_formats'][i] = rf.lower()
-                        
-                # if report_formats is 'print', we would have already printed it in previous step
-                if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
-                    # We do not need to print another report if already printed to terminal
-                    pass
+                hvsr_az['ProcessingStatus']['Azimuth'] = False
+     
+    # Remove Noise
+    data_noiseRemoved = hvsrData
+    try:
+        remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+        if noise_removal or remove_noise_kwargs != {}:
+            remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+            try:
+                data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
+            except Exception as e:
+                if hasattr(e, 'message'):
+                    errMsg = e.message
                 else:
-                    # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
-                    #   now need to print for verbose output
-                    get_report_kwargs['report_formats'] = 'print'
-                    get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                    errMsg = e                    
+                
+                print(f"Error with remove_noise for site {sitename}: {errMsg}")
+                
+                # Mark that remove_noise failed
+                # Reformat data so HVSRData and HVSRBatch data both work here
+                if isinstance(data_noiseRemoved, HVSRData):
+                    data_noiseRemoved = {sitename: data_noiseRemoved}
+                    hvsrData = {sitename: hvsrData}
                     
-                if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
-                    # We do not need to plot another report if already plotted
-                    pass
-                else:
-                    # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                    # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
-                    pass
-            else:
-                pass
+                for site_name in data_noiseRemoved.keys():
+                    data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
+                    # Since noise removal is not required for data processing, check others first
+                    if hvsrData[site_name]['ProcessingStatus']['OverallStatus']:
+                        data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
+                    else:
+                        data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+
+                    # If it wasn't originally HVSRBatch, make it HVSRData object again
+                    if not data_noiseRemoved[site_name]['batch']:
+                        data_noiseRemoved = data_noiseRemoved[site_name]
+        else:
+            if isinstance(hvsrData, HVSRData):
+                hvsrData = {sitename: hvsrData}
+                
+            for site_name in hvsrData.keys():  # This should work more or less the same for batch and regular data now
+                data_noiseRemoved = hvsrData
+                data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
+                
+                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
         
-        # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-        if 'hvsr_export_path' in kwargs.keys():
-            if kwargs['hvsr_export_path'] is None:
+                # If it wasn't originally HVSRBatch, make it HVSRData object again
+                #if not data_noiseRemoved[site_name]['batch']:
+                data_noiseRemoved = data_noiseRemoved[site_name]
+    except Exception as e:
+        if (source == 'file' or source == 'raw'):
+            if hasattr(e, 'message'):
+                errMsg = e.message
+            else:
+                errMsg = e
+            if not ('batch' in data_noiseRemoved.keys() and data_noiseRemoved['batch']):
+                raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+    
+    # Generate PPSDs
+    ppsd_data = data_noiseRemoved
+    try:
+        generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
+        PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
+        generate_ppsds_kwargs.update(PPSDkwargs)
+        ppsd_data = generate_ppsds(hvsr_data=ppsd_data, verbose=verbose, **generate_ppsds_kwargs)
+    except Exception as e:
+        if hasattr(e, 'message'):
+            errMsg = e.message
+        else:
+            errMsg = e
+        
+        print(f"Error during generate_ppsds() for {site_name}: \n{errMsg}")
+        if source == 'file' or source == 'raw':
+            raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+
+        # Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(ppsd_data, HVSRData):
+            ppsd_data = {sitename: ppsd_data}
+            
+        for site_name in ppsd_data.keys(): # This should work more or less the same for batch and regular data now
+            ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+            ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+    
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not ppsd_data[site_name]['batch']:
+                ppsd_data = ppsd_data[site_name]
+    
+    # Remove Outlier Curves
+    data_curvesRemoved = ppsd_data
+    try:
+        remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+
+        # Check whether it is indicated to remove outlier curves
+        outlier_curve_keys_used = True
+        if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
+            outlier_curve_keys_used = False
+        if outlier_curves_removal or outlier_curve_keys_used:
+            data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
+    except Exception as e:
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+        
+        # Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(data_curvesRemoved, HVSRData):
+            data_curvesRemoved = {sitename: data_curvesRemoved}
+            
+        for site_name in data_curvesRemoved.keys(): #This should work more or less the same for batch and regular data now
+            data_curvesRemoved[site_name]['ProcessingStatus']['RemoveOutlierCurvesStatus'] = False
+            data_curvesRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+    
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not data_curvesRemoved[site_name]['batch']:
+                data_curvesRemoved = data_curvesRemoved[site_name]
+    
+    # Process HVSR Curves
+    try:
+        process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
+        hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose,**process_hvsr_kwargs)
+    except Exception as e:
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+
+        hvsr_results = ppsd_data
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results = {sitename:hvsr_results}
+            
+        for site_name in hvsr_results.keys(): #This should work more or less the same for batch and regular data now
+        
+            hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
+            hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
+            
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not hvsr_results[site_name]['batch']:
+                hvsr_results = hvsr_results[site_name]            
+            
+    # Final post-processing/reporting
+    # Check peaks
+    check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+    hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
+
+    get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+    # Add 'az' as a default plot if the following conditions
+    # first check if report_formats is specified, if not, add default value
+    if 'report_formats' not in get_report_kwargs.keys():
+        get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
+    
+    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
+    if 'plot' in get_report_kwargs['report_formats']:
+        plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+        get_report_kwargs.update(plot_hvsr_kwargs)
+        usingDefault = True
+        if 'plot_type' not in get_report_kwargs.keys():
+            get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
+        else:
+            usingDefault = False
+
+        # Check if az is already specified as plot output
+        azList = ['azimuth', 'az', 'a', 'radial', 'r']
+        az_requested = False
+        
+        get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
+        for azStr in azList:
+            if azStr.lower() in get_report_kwargs['plot_type']:
+                az_requested = True
+                break
+        get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
+
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results_interim = {sitename: hvsr_results}
+        else:
+            hvsr_results_interim = hvsr_results
+
+        for site_name in hvsr_results_interim.keys():  # This should work more or less the same for batch and regular data now
+            # Check if data has azimuth data
+            hasAz = False
+            if 'stream' in hvsr_results_interim[site_name].keys():
+                for tr in hvsr_results_interim[site_name]['stream']:
+                    if tr.stats.component == 'R':
+                        hasAz = True
+                        break
+            
+            # Assuming all sites in batch have az if one does
+            if hasAz:
+                break
+
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
+            #if not hvsr_results_interim[site_name]['batch']:
+            #    hvsr_results_interim = hvsr_results_interim[site_name]            
+            
+        # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
+        if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
+            get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
+    get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+
+    if verbose:
+        if 'report_formats' in get_report_kwargs.keys():
+            if type(get_report_kwargs['report_formats']) is str:
+                report_formats = get_report_kwargs['report_formats'].lower()
+            elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
+                for i, rf in enumerate(get_report_kwargs['report_formats']):
+                    get_report_kwargs['report_formats'][i] = rf.lower()
+                    
+            # if report_formats is 'print', we would have already printed it in previous step
+            if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
+                # We do not need to print another report if already printed to terminal
                 pass
             else:
-                if 'ext' in kwargs.keys():
-                    ext = kwargs['ext']
-                else:
-                    ext = 'hvsr'
-                export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
-        if 'show_plot' in kwargs:
-            if not kwargs['show_plot']:
-                plt.close()
-        
+                # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
+                #   now need to print for verbose output
+                get_report_kwargs['report_formats'] = 'print'
+                get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                
+            if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
+                # We do not need to plot another report if already plotted
+                pass
+            else:
+                # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
+                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
+                pass
+        else:
+            pass
+    
+    # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+    if 'hvsr_export_path' in kwargs.keys():
+        if kwargs['hvsr_export_path'] is None:
+            pass
+        else:
+            if 'ext' in kwargs.keys():
+                ext = kwargs['ext']
+            else:
+                ext = 'hvsr'
+            export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
+    if 'show_plot' in kwargs:
+        if not kwargs['show_plot']:
+            plt.close()
+    
     return hvsr_results
+
+
+# Batch helper for run function
+def _batch_run(hvsr_batch):
+    # Currently just a placeholder
+    return hvsr_batch
 
 
 # Function to generate azimuthal readings from the horizontal components
