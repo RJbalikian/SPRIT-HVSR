@@ -5,6 +5,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import traceback
 import warnings
 import zoneinfo
 
@@ -323,6 +324,22 @@ def get_char(in_char):
         out_char = in_char.encode(encoding='utf-8')
     return out_char.decode('utf-8')
 
+
+# Get fuller traceback information on errors
+def _get_error_from_exception(exception=None):
+    if exception is not None:
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(exception).__name__.title().replace('error', 'Error')
+        error_message = f"{exception} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+
+
 #Check that input strema has Z, E, N channels
 def has_required_channels(stream):
     channel_set = set()
@@ -484,7 +501,6 @@ def _run_docstring():
 
     run_docstring = dsIntro + dsParameters + f"{nl.join(funcStrList)}\n\n" + dsReturns
     return run_docstring
-
 
 #Time functions, for timing how long a process takes
 def time_it(_t, proc_name='', verbose=True):
