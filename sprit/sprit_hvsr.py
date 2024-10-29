@@ -1169,6 +1169,10 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         _description_
     """
 
+    if verbose:
+        print(f'Processing batch data from {batch_type}:')
+        print(f"  Batch data source: {batch_data}")
+
     # First figure out which parameters go with which function
     input_params_params = inspect.signature(input_params).parameters
     get_metadata_params = inspect.signature(get_metadata).parameters
@@ -1242,7 +1246,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             dataReadInfoDF['site'] = siterows
 
         # Print information about batch read, as specified
-        print(f"\t{dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
+        print(f"  {dataReadInfoDF.shape[0]} sites found: {list(dataReadInfoDF['site'])}")
         if verbose:
             maxLength = 25
             maxColWidth = 12
@@ -1252,12 +1256,12 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             
             # Print nicely formatted df
             # Print column names
-            print('\t', end='')
+            print('  ', end='')
             for col in dataReadInfoDF.columns:
                 print(str(col)[:maxColWidth].ljust(maxColWidth), end='  ')
-            print('\n\t', end='')
-
-            #Print separator
+            
+            print('\n', end='')
+            # Print separator
             tableLen = (maxColWidth+2)*len(dataReadInfoDF.columns)
             for r in range(tableLen):
                 print('-', end='')
@@ -1265,7 +1269,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
             #Print columns/rows
             for index, row in dataReadInfoDF.iterrows():
-                print('\t', end='')
+                print('  ', end='')
                 for col in row:
                     if len(str(col)) > maxColWidth:
                         print((str(col)[:maxColWidth-3]+'...').ljust(maxColWidth), end='  ')
@@ -1282,12 +1286,11 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             
         param_dict_list = []
         verboseStatement = []
-        if param_col is None: # Not a single parameter column, each col=parameter
+        if param_col is None:  # Not a single parameter column, each col=parameter
             for row_ind in range(dataReadInfoDF.shape[0]):
                 param_dict = {}
                 verboseStatement.append([])
                 for col in dataReadInfoDF.columns:
-                    #if col in input_params_params or col in get_metadata_params or col in fetch_data_params:
                     for fun in run_functions_list:
                         if col in inspect.signature(fun).parameters:
                             currParam = dataReadInfoDF.loc[row_ind, col]
@@ -1347,32 +1350,58 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
         # Run input_params
         try:
+            ipverboseString = '\tinput_params: <No parameters specified>, '
+            for arg, value in input_params_kwargs.items():
+                ipverboseString = ipverboseString.replace('<No parameters specified>, ', '')                    
+                ipverboseString += f"{arg}={value}, "
+            ipverboseString = ipverboseString[:-2]
+            ipverboseString = (ipverboseString[:96] + '...') if len(ipverboseString) > 99 else ipverboseString
+
             params = input_params(**input_params_kwargs)
         except Exception as e:
             params['ProcessingStatus']['InputParamsStatus'] = False
-            params['ProcessingStatus']['OverallStatus'] = False  
-            raise RuntimeError(f"Error with input_params paramters:\n{e}")
+            params['ProcessingStatus']['OverallStatus'] = False 
+            verboseStatement.append(f"\t{e}")
 
         fetch_data_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in inspect.signature(fetch_data).parameters}
         fetch_data_kwargs2 = {k: v for k, v in param_dict.items() if k in inspect.signature(fetch_data).parameters}
         fetch_data_kwargs.update(fetch_data_kwargs2)
         
         try:
+            fdverboseString = '\tfetch_data: <No parameters specified>, '
+            for arg, value in fetch_data_kwargs.items():
+                fdverboseString = fdverboseString.replace('<No parameters specified>, ', '')
+                fdverboseString += f"{arg}={value}, "
+            fdverboseString = fdverboseString[:-2]
+            fdverboseString = (fdverboseString[:96] + '...') if len(fdverboseString) > 99 else fdverboseString
+                
             hvsrData = fetch_data(params=params, **fetch_data_kwargs)
         except Exception as e:
             hvsrData['ProcessingStatus']['FetchDataStatus'] = False
             hvsrData['ProcessingStatus']['OverallStatus'] = False
-            #raise RuntimeError(f"Error with fetch_data parameters:\n{e}")
+            verboseStatement.append(f"\t{e}")
     
-        
-        if verbose and hvsrData['ProcessingStatus']['FetchDataStatus']:
-            print(f"\t  {hvsrData['site']}")
+        if verbose and hvsrData['ProcessingStatus']['OverallStatus']:
+            print(f"  {hvsrData['site']}")
+            print(ipverboseString)
+            print(fdverboseString)
             if verboseStatement != []:
                 for item in verboseStatement[i]:
                     print(item)
-        elif verbose and not hvsrData['ProcessingStatus']['FetchDataStatus']:
-            print(f"\t  {hvsrData['site']} not read correctly. Processing will not be carried out.")
+        elif verbose and not hvsrData['ProcessingStatus']['OverallStatus']:
+            if 'site' in param_dict.keys():
+                sitename = param_dict['site']
+            else:
+                sitename = 'UNSPECIFIED_SITE'
                 
+            print(f"  {sitename}")
+            print(ipverboseString)
+            print(fdverboseString)
+            if verboseStatement != []:
+                for item in verboseStatement[i]:
+                    print(item)
+            print(f"     *{sitename} not read correctly. Processing will not be carried out.")
+
         hvsrData['batch'] = True
 
         # This may be redundant
@@ -3272,7 +3301,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
                plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
-               show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
+               show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
                report_export_format=None, report_export_path=None, 
@@ -3364,10 +3393,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         for key, value in orig_args.items():
             hvsr_results['processing_parameters']['get_report'][key] = value
     
-    #if (verbose and isinstance(hvsr_results, HVSRBatch)) or (verbose and not hvsr_results['batch']):
-    #    if isinstance(hvsr_results, HVSRData) and hvsr_results['batch']:
-    #        pass
-    #    else:
     if verbose:
         print('\nGetting HVSR Report: get_report()')
         print('\tUsing the following parameters:')
@@ -3391,6 +3416,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             for key, value in orig_args.items():
                 print(f'\t  {key}={value}')    
             print()
+        
         #If running batch, we'll loop through each site
         for site_name in hvsr_results.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
@@ -3492,15 +3518,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         
         if report_export_format is None:
             report_export_format = ''
-        
-        #fname = f"{hvsr_results['site']}_{hvsr_results['acq_date']}_{str(hvsr_results.starttime.time).replace(':','')[:4]}-{str(hvsr_results.endtime.time).replace(':','')[:4]}.pdf"
-
-        #if exp_path is None:
-        #    exp_path = pathlib.Path(hvsr_results['input_data'])
-        #    if not exp_path.parent.exists():
-        #        exp_path = pathlib.Path().home().joinpath(fname)
-        #hvsr_results = report_output(hvsr_results=hvsr_results, _report_format=rep_form, _plot_type=plot_type, _plot_engine=plot_engine, report_export_path=exp_path, suppress_report_outputs=suppress_report_outputs, verbose=verbose, curvePass=curvePass, peakPass=peakPass)
-        
+       
+        # Print_Report
         if rep_form == 'print':
             verbose_print = verbose
             if show_print_report:
@@ -3522,6 +3541,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                               show_report = False, # If report is to be shown, done in previous step
                               verbose = verbose_print)
 
+        # Table_Report
         elif rep_form == 'table':
             verbose_table = verbose
             if show_table_report:
@@ -3543,7 +3563,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                             csv_handling=csv_handling,
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_table)
-            
+
+        # HV_Plot
         elif rep_form == 'plot':
             plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
             if 'plot_type' in plot_hvsr_kwargs.keys():
@@ -3575,6 +3596,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 if verbose:
                     print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
 
+        # HTML_Report
         elif rep_form == 'html':
             verbose_html = verbose
             if verbose or show_html_report:
@@ -3592,6 +3614,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_html)
 
+        # PDF_Report
         elif rep_form == 'pdf':
             verbose_pdf = verbose
             if verbose or show_pdf_report:
@@ -8088,6 +8111,41 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     return hvsr_results
 
 
+# Display html report without creating temporary file
+def _display_html_report(html_report):
+    import platform
+    import tempfile
+    import time
+    import webbrowser
+
+    autodelete = platform.system() != "Windows"
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=autodelete, suffix=".html") as tmp_file:
+        tmp_file.write(html_report)
+        file_path = tmp_file.name
+        file_path = file_path.replace('\\'[0], '/')
+        rawfpath = file_path
+        print(rawfpath)
+        
+        if autodelete:
+            client = webbrowser
+            if not file_path.startswith("file:///"):
+                file_path = f"file:///{file_path}"
+            client.open_new(file_path)                
+            # Adding a short sleep so that the file does not get cleaned
+            # up immediately in case the browser takes a while to boot.
+            time.sleep(3)
+
+    if not autodelete:
+        client = webbrowser
+        if not file_path.startswith("file:///"):
+            file_path = f"file:///{file_path}"
+        client.open_new(file_path)
+        
+        time.sleep(3)
+        os.unlink(rawfpath)  # Cleaning up the file in case of Windows
+
+
 # Private function for html report generation
 def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
     """Private function that generates html report, intented to be used by get_report() public function
@@ -8207,45 +8265,15 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
     html = html.replace("Deg_E", xaxisinfo.unit_name)
     html = html.replace("Deg_N", yaxisinfo.unit_name)
 
-    # View in browser, if indicated to
-    try:
-        if show_html_report:
-            import http.server
-            import socketserver
-            import threading
-
-            html_content = html
-            class Handler(http.server.SimpleHTTPRequestHandler):
-                def do_GET(self):
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
-                    self.end_headers()
-                    self.wfile.write(html_content.encode('utf-8'))
-
-            def start_server(port=8000):
-                with socketserver.TCPServer(("", port), Handler) as httpd:
-                    print(f"Serving on port {port}")
-                    httpd.serve_forever()
-
-            # Start the server in a separate thread
-            server_thread = threading.Thread(target=start_server)
-            server_thread.daemon = True
-            server_thread.start()
-
-            # Open the default web browser
-            import webbrowser
-            webbrowser.open("http://localhost:8000")
-
-            # Keep the script running
-            try:
-                while True:
-                    pass
-            except KeyboardInterrupt:
-                print("Shutting down server.")
-    except Exception as e:
-        pass
-
     hvsr_results['HTML_Report'] = html
+
+    # View in browser, if indicated to
+    if show_html_report:
+        try:
+            _display_html_report(html)
+        except Exception as e:
+            print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
+            print(e)
 
     return hvsr_results
 
@@ -8312,41 +8340,26 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         
     if verbose:
         if not str(pisa_status.err) == '0':
-            print(pisa_status.err)
+            print('\t', pisa_status.err)
 
     if show_html_report:
-        import webbrowser
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
-            # Write the HTML content to a temporary file
-            temp_file.write(htmlReport.encode('utf-8'))
-
-            #Open html file in browser window
-            webbrowser.open('file://' + os.path.realpath(temp_file.name))
-
+        _display_html_report(hvsr_results['HTML_Report'])
+        
     if show_pdf_report:
         if verbose:
-            print(f'Attempting to open pdf at {pdf_export_path}')
-        print('\t**Opening pdfs with the show_pdf_report or show_report parameter is experimental and may not work**')
+            print(f'\tAttempting to open pdf at {pdf_export_path}')
+        
+        print('\t**Opening pdfs with the show_pdf_report or show_report parameter is experimental**')
 
-
-        import subprocess
-        result = subprocess.Popen([pdf_export_path], shell=True)
-        result.wait()
-
-        if str(result.returncode) == "126" and not show_html_report:
-            print(f"SpRIT cannot open your pdf report, but it has been saved here: {pdf_export_path}")
-            print('Attempting to open HTML version of report')
-            
-            import webbrowser
-            # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.html') as temp_file:
-                # Write the HTML content to a temporary file
-                temp_file.write(htmlReport.encode('utf-8'))
-
-                #Open html file in browser window
-                webbrowser.open('file://' + os.path.realpath(temp_file.name))
-
+        try:
+            os.startfile(pdf_export_path)
+        except Exception as e:
+            print(f"\tSpRIT cannot open your pdf report, but it has been saved to {pdf_export_path}")
+            print('\tAttempting to open HTML version of report')
+            try:
+                _display_html_report(html)
+            except Exception as e:
+                print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
 
     return hvsr_results
 
