@@ -832,11 +832,20 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 for funk, funv in fundict.items():
                     run_kwargs[funk] = funv
                                                 
-            # Overwrite per-site processing parameters with params passed explicity to sprit.run()
+            # Overwrite per-site processing parameters with params passed  to sprit.run() as kwargs
             for paramname, paramval in kwargs.items():
                 if paramname != 'source':  # Don't update source for batch data
                     run_kwargs[paramname] = paramval
-            
+
+            dont_update_these_args = ['input_data', 'source', 'kwargs']
+
+            # Overwrite per-site processing parameters with sprit.run()
+            run_args = orig_args.copy()
+            for k, v in run_args.items():
+                if k not in dont_update_these_args:
+                    if v != inspect.signature(run).parameters[k].default:
+                        run_kwargs[k] = v
+                                   
             try:
                 hvsrBatchDict[site_name] = run(**run_kwargs)
             except Exception as e:
@@ -2924,7 +2933,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     verbose = orig_args['verbose']
     ppsd_kwargs = orig_args['ppsd_kwargs']
 
-    #if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
+    # if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
     if verbose:
         print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
         print('\tUsing the following parameters:')
@@ -3317,11 +3326,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     """
     orig_args = locals().copy() #Get the initial arguments
     orig_args['report_formats'] = [str(f).lower() for f in orig_args['report_formats']]
+    update_msg = []
 
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_results.keys():
         if 'get_report' in hvsr_results['processing_parameters'].keys():
-            update_msg = []
             for k, v in hvsr_results['processing_parameters']['get_report'].items():
                 defaultVDict = dict(zip(inspect.getfullargspec(get_report).args[1:], 
                                         inspect.getfullargspec(get_report).defaults))
