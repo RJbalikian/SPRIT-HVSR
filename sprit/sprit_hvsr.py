@@ -825,22 +825,18 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             run_kwargs = {}#orig_args.copy()  # Make a copy so we don't accidentally overwrite
             print(f'\n\n**PROCESSING DATA FOR SITE {site_name.upper()}**\n')
             run_kwargs['input_data'] = site_data
-            # Update run kwargs
             
+            # Update run kwargs       
             # First, get processing_parameters per site
             for funname, fundict in site_data['processing_parameters'].items():
                 for funk, funv in fundict.items():
                     run_kwargs[funk] = funv
-                    
+                                                
             # Overwrite per-site processing parameters with params passed explicity to sprit.run()
             for paramname, paramval in kwargs.items():
-                if paramname != 'source': # Don't update source for batch data
+                if paramname != 'source':  # Don't update source for batch data
                     run_kwargs[paramname] = paramval
             
-            print('run_kwargs_print')
-            for k, v in run_kwargs.items():
-                print(k, ': ', v)
-                
             try:
                 hvsrBatchDict[site_name] = run(**run_kwargs)
             except Exception as e:
@@ -1371,15 +1367,15 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         hvsrData['batch'] = True
 
         # This may be redundant
-        if hvsrData['site'] == default_dict['site']: # If site was not designated
+        if hvsrData['site'] == default_dict['site']:  # If site was not designated
             hvsrData['site'] = "{}_{}".format(hvsrData['site'], str(i).zfill(zfillDigs))
             i += 1
             
         # Get processing parameters for other functions in sprit.run() besides input_params and fetch_data
         if 'processing_parameters' in hvsrData.keys():
-            processing_parameters = hvsrData['processing_parameters']
+            processing_parameters = hvsrData['processing_parameters'].copy()
         else:
-            processing_parameters = {}#"input_params": input_params_kwargs, "fetch_data": fetch_data_kwargs}
+            processing_parameters = {}  #"input_params": input_params_kwargs, "fetch_data": fetch_data_kwargs}
 
         for fun in run_functions_list:
             specified_params = {k: v for k, v in param_dict.items() if k in inspect.signature(fun).parameters}
