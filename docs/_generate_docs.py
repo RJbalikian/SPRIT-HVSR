@@ -16,7 +16,7 @@ VERBOSE = True
 
 # Whether to CONVERT_MD using markdown (True), or github (False)
 RTD_DOCS = True
-GITHUB_PAGES = True  # Don't think I  need this anymore, and it still works
+GITHUB_PAGES = False  # Don't think I  need this anymore, and it still works
 
 CONVERT_MD = True
 RTD_THEME = False  # Not currently working, for github pages
@@ -211,8 +211,8 @@ if GITHUB_PAGES:
     print('Placing html files in', trg_path.absolute())
 
     # Move items back into the main docs folder
-    keepList = ['generate_docs.py', 'conf.py', 'requirements.txt',
-                'wiki', 'pyinstaller']
+    keepList = ['_generate_docs.py', 'conf.py', 'requirements.txt',
+                'wiki', 'pyinstaller', '.readthedocs.yaml', 'index.rst']
     
     for t in trg_path.iterdir():
 
