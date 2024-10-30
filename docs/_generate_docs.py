@@ -16,7 +16,7 @@ VERBOSE = True
 
 # Whether to CONVERT_MD using markdown (True), or github (False)
 RTD_DOCS = True
-GITHUB_PAGES = False  # Don't think I  need this anymore, and it still works
+GITHUB_PAGES = True  # Don't think I  need this anymore, and it still works
 
 CONVERT_MD = True
 RTD_THEME = False  # Not currently working, for github pages

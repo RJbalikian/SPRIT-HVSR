@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.10.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.1">
 <title>sprit.sprit_utils API documentation</title>
-<meta name="description" content="" />
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
-<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
-<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+})</script>
 </head>
 <body>
 <main>
@@ -22,440 +25,6 @@
 <h1 class="title">Module <code>sprit.sprit_utils</code></h1>
 </header>
 <section id="section-intro">
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">import datetime
-import functools
-import os
-import pathlib
-import subprocess
-import sys
-import warnings
-import zoneinfo
-
-import numpy as np
-
-try: # For distribution
-    from sprit import sprit_hvsr
-except: #For testing
-    import sprit_hvsr
-    pass
-
-greek_chars = {&#39;sigma&#39;: u&#39;\u03C3&#39;, &#39;epsilon&#39;: u&#39;\u03B5&#39;, &#39;teta&#39;: u&#39;\u03B8&#39;}
-channel_order = {&#39;Z&#39;: 0, &#39;1&#39;: 1, &#39;N&#39;: 1, &#39;2&#39;: 2, &#39;E&#39;: 2}
-
-def check_gui_requirements():
-    #First, check requirements
-    # Define a command that tries to open a window
-    command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
-
-    # Run the command and get the exit code
-    exit_code = os.system(command)
-    
-    # Check if tkinter gui could be created
-    if exit_code == 0:
-        #Tkinter 
-        oktoproceed=True
-    else:
-        oktoproceed=False
-        print(&#34;GUI window cannot be created.&#34;)
-
-    return oktoproceed
-
-    #if sys.platform == &#39;linux&#39;:
-    #    # Check if qtwayland5 is installed
-    #    output = subprocess.run([&#34;dpkg&#34;, &#34;-s&#34;, &#34;qtwayland5&#34;], capture_output=True, text=True)
-    #    if &#34;Status: install ok installed&#34; in output.stdout:
-    #        print(&#34;qtwayland5 is already installed&#34;)
-    #    else:
-    #        print(&#34;qtwayland5 is not installed&#34;)
-    #        # Install qtwayland5
-    #        os.system(&#34;sudo apt install qtwayland5&#34;)
-
-#Get check mark
-def check_mark(incolor=False, interminal=False):
-    &#34;&#34;&#34;The default Windows terminal is not able to display the check mark character correctly.
-       This function returns another displayable character if platform is Windows&#34;&#34;&#34;
-    if incolor:
-        try:
-            check = get_char(u&#39;\u2705&#39;)
-        except:
-            check = get_char(u&#39;\u2714&#39;)
-    else:
-        check = get_char(u&#39;\u2714&#39;)
-
-    if sys.platform==&#39;win32&#39; and interminal:
-        check = get_char(u&#39;\u039E&#39;)
-    return check
-
-#Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
-    &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
-
-    Parameters
-    ----------
-    filepath : str or pathlib.Path, or anything
-        Filepath to check. If not a valid filepath, will not convert and raises error
-
-    Returns
-    -------
-    filepath : pathlib.Path
-        pathlib.Path of filepath
-    &#34;&#34;&#34;
-    if sample_list==&#39;&#39;:
-        sample_list = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;sample&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
-        for s in range(1, 7):
-            sample_list.append(f&#34;sample{s}&#34;)
-            sample_list.append(f&#34;sample_{s}&#34;)
-
-    # checks if the variable is any instance of pathlib
-    if isinstance(filepath, pathlib.PurePath):
-        pass
-    elif str(filepath) in sample_list:
-        pass
-    else:
-        try:
-            filepath = pathlib.Path(filepath)
-        except:
-            if verbose:
-                warnings.warn(&#39;Filepath cannot be converted to pathlib path: {}&#39;.format(filepath))
-        if not filepath.exists():
-            raise RuntimeError(&#39;File does not exist: {}&#39;.format(filepath))
-    return filepath
-
-#Check to make the number of time-steps are the same for each channel
-def check_tsteps(hvsr_data):
-    &#34;&#34;&#34;Check time steps of PPSDS to make sure they are all the same length&#34;&#34;&#34;
-    ppsds = hvsr_data[&#39;ppsds&#39;]
-    tSteps = []
-    for k in ppsds.keys():
-        tSteps.append(np.array(ppsds[k][&#39;psd_values&#39;]).shape[0])
-    if len(set(tSteps)) &lt;= 1:
-        pass #This means all channels have same number of period_bin_centers
-        minTStep=tSteps[0]
-    else:
-        print(&#39;There is a different number of time-steps used to calculate HVSR curves. \n This may result in computational errors. Trimming longest.&#39;)
-        minTStep = min(tSteps)
-    return minTStep
-
-#Check the x-values for each channel, to make sure they are all the same length
-def check_xvalues(ppsds):
-    &#34;&#34;&#34;Check x_values of PPSDS to make sure they are all the same length&#34;&#34;&#34;
-    xLengths = []
-    for k in ppsds.keys():
-        xLengths.append(len(ppsds[k][&#39;period_bin_centers&#39;]))
-    if len(set(xLengths)) &lt;= 1:
-        pass #This means all channels have same number of period_bin_centers
-    else:
-        print(&#39;X-values (periods or frequencies) do not have the same values. \n This may result in computational errors&#39;)
-        #Do stuff to fix it?
-    return ppsds
-
-#Formats time into desired output
-def format_time(inputDT, tzone=&#39;UTC&#39;):
-    &#34;&#34;&#34;Private function to format time, used in other functions
-
-    Formats input time to datetime objects in utc
-
-    Parameters
-    ----------
-    inputDT : str or datetime obj 
-        Input datetime. Can include date and time, just date (time inferred to be 00:00:00.00) or just time (if so, date is set as today)
-    tzone   : str=&#39;utc&#39; or int {&#39;utc&#39;, &#39;local&#39;} 
-        Timezone of data entry. 
-            If string and not utc, assumed to be timezone of computer running the process.
-            If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT in the United States is -5)
-
-    Returns
-    -------
-    outputTimeObj : datetime object in UTC
-        Output datetime.datetime object, now in UTC time.
-
-    &#34;&#34;&#34;
-    if type(inputDT) is str:
-        #tzone = &#39;America/Chicago&#39;
-        #Format string to datetime obj
-        div = &#39;-&#39;
-        timeDiv = &#39;T&#39;
-        if &#34;/&#34; in inputDT:
-            div = &#39;/&#39;
-            hasDate = True
-        elif &#39;-&#39; in inputDT:
-            div = &#39;-&#39;
-            hasDate = True
-        else:
-            hasDate= False
-            year = datetime.datetime.today().year
-            month = datetime.datetime.today().month
-            day = datetime.datetime.today().day
-
-        if &#39;:&#39; in inputDT:
-            hasTime = True
-            if &#39;T&#39; in inputDT:
-                timeDiv = &#39;T&#39;
-            else:
-                timeDiv = &#39; &#39;
-        else:
-            hasTime = False
-        
-        if hasDate:
-            #If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
-            if len(inputDT.split(div)[0])&gt;2:
-                year = inputDT.split(div)[0]
-                month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
-
-            #If last number is 4-dig year            
-            elif len(inputDT.split(div)[2].split(timeDiv)[0])&gt;2:
-                #..and first number is day
-                if int(inputDT.split(div)[0])&gt;12:
-                    #dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%Y&#39;   
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]
-                #...and first number is month (like American style)                             
-                else:
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]     
-            
-            #Another way to catch if first number is (2-digit) year
-            elif int(inputDT.split(div)[0])&gt;31:
-                #dateStr = &#39;%y&#39;+div+&#39;%m&#39;+div+&#39;%d&#39;
-                year = inputDT.split(div)[0]
-                #Assumes anything less than current year is from this century
-                if year &lt; datetime.datetime.today().year:
-                    year = &#39;20&#39;+year
-                else:#...and anything more than current year is from last century
-                    year = &#39;19&#39;+year
-                #assumes day will always come last in this instance, as above
-                month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
-
-            #If last digit is (2 digit) year           
-            elif int(inputDT.split(div)[2].split(timeDiv)[0])&gt;31:
-                #...and first digit is day
-                if int(inputDT.split(div)[0])&gt;12:
-                    #dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%y&#39;       
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    if year &lt; datetime.datetime.today().year:
-                        year = &#39;20&#39;+year
-                    else:
-                        year = &#39;19&#39;+year
-                    month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]                           
-                else: #...and second digit is day
-                    #dateStr = &#39;%m&#39;+div+&#39;%d&#39;+div+&#39;%y&#39;
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    if year &lt; datetime.datetime.today().year:
-                        year = &#39;20&#39;+year
-                    else:
-                        year = &#39;19&#39;+year
-                    month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]                  
-
-        hour=0
-        minute=0
-        sec=0
-        microS=0
-        if hasTime:
-            if hasDate:
-                timeStr = inputDT.split(timeDiv)[1]
-            else:
-                timeStr = inputDT
-            
-            if &#39;T&#39; in timeStr:
-                timeStr=timeStr.split(&#39;T&#39;)[1]
-            elif &#39; &#39; in timeStr:
-                timeStr=timeStr.split(&#39; &#39;)[1]
-
-            timeStrList = timeStr.split(&#39;:&#39;)
-            if len(timeStrList[0])&gt;2:
-                timeStrList[0] = timeStrList[0][-2:]
-            elif int(timeStrList[0]) &gt; 23:
-                timeStrList[0] = timeStrList[0][-1:]
-            
-            if len(timeStrList) == 3:
-                if &#39;.&#39; in timeStrList[2]:
-                    microS = int(timeStrList[2].split(&#39;.&#39;)[1])
-                    timeStrList[2] = timeStrList[2].split(&#39;.&#39;)[0]
-            elif len(timeStrList) == 2:
-                timeStrList.append(&#39;00&#39;)
-
-            hour = int(timeStrList[0])
-            minute=int(timeStrList[1])
-            sec = int(timeStrList[2])
-
-        outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
-                                hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
-
-    elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
-        outputTimeObj = inputDT
-
-    #Add timezone info
-    availableTimezones = list(map(str.lower, zoneinfo.available_timezones()))
-    if outputTimeObj.tzinfo is not None and outputTimeObj.tzinfo.utcoffset(outputTimeObj) is not None:
-        #This is already timezone aware
-        pass
-    elif type(tzone) is int:
-        outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
-    elif type(tzone) is str:
-        if tzone.lower() in availableTimezones:
-            outputTimeObj = outputTimeObj.replace(tzinfo=zoneinfo.ZoneInfo(tzone))
-        else:
-            raise ValueError(&#34;Timezone {} is not in official list. \nAvailable timezones:\n{}&#34;.format(tzone, availableTimezones))
-    elif isinstance(tzone, zoneinfo.ZoneInfo):
-        outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
-    else:
-        raise ValueError(&#34;Timezone must be either str or int&#34;)
-    
-    #Convert to UTC
-    outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)   
-
-    return outputTimeObj
-
-#Get character for printing
-def get_char(in_char):
-    &#34;&#34;&#34;Outputs character with proper encoding/decoding&#34;&#34;&#34;
-    if in_char in greek_chars.keys():
-        out_char = greek_chars[in_char].encode(encoding=&#39;utf-8&#39;)
-    else:
-        out_char = in_char.encode(encoding=&#39;utf-8&#39;)
-    return out_char.decode(&#39;utf-8&#39;)
-
-#Check that input strema has Z, E, N channels
-def has_required_channels(stream):
-    channel_set = set()
-    
-    # Extract the channel codes from the traces in the stream
-    for trace in stream:
-        channel_set.add(trace.stats.channel)
-    
-    # Check if Z, E, and N channels are present
-    return {&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;}.issubset(channel_set)
-
-#Make input data (dict) into sprit_hvsr class
-def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
-        for k, v in input_data.items():
-            if k==&#39;input_params&#39;:
-                for kin in input_data[&#39;input_params&#39;].keys():
-                    if kin not in input_data.keys():
-                        input_data[kin] = input_data[&#39;input_params&#39;][kin]
-            if k==&#39;params&#39;:
-                for kin in input_data[&#39;params&#39;].keys():
-                    print(kin)
-                    if kin not in input_data.keys():
-                        input_data[kin] = input_data[&#39;params&#39;][kin]                
-        output_class = input_data
-    else:
-        output_class = sprit_hvsr.HVSRData(input_data)
-    if verbose:
-        print(&#39;Made it classy | {} --&gt; {}&#39;.format(type(input_data), type(output_class)))
-    return output_class
-
-#Read data directly from Raspberry Shake
-def read_from_RS(dest, src=&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/&#39;, opts=&#39;az&#39;, username=&#39;myshake&#39;, password=&#39;shakeme&#39;,hostname=&#39;rs.local&#39;, year=&#39;2023&#39;, sta=&#39;RAC84&#39;,sleep_time=0.1, verbose=True, save_progress=True, method=&#39;scp&#39;):
-    src = src.replace(&#39;SHAKENAME&#39;, username)
-    src = src.replace(&#39;SHAKENAME&#39;, hostname)
-    src = src.replace(&#39;YEAR&#39;, year)
-    src = src.replace(&#39;STATION&#39;, sta)
-
-    if method == &#39;src&#39;:
-        &#34;&#34;&#34;This does not work from within a virtual environment!!!!&#34;&#34;&#34;
-        #import pexpect
-        import sys
-        #from pexpect import popen_spawn
-        import time
-        import wexpect
-
-        scp_command = &#39;scp -r {} &#34;{}&#34;&#39;.format(src, dest)
-
-        print(&#39;Command:&#39;, scp_command)
-        child = wexpect.spawn(scp_command, timeout=5)
-
-        child.expect(&#34;password:&#34;)
-        child.sendline(password)
-
-        child.expect(wexpect.EOF)
-
-        print(&#34;Files have been successfully transferred to {}!&#34;.format(dest))
-    elif method==&#39;rsync&#39;:
-        if verbose:
-            opts = opts + &#39;v&#39;
-        if save_progress:
-            opts = opts + &#39;p&#39;   
-
-        #import subprocess
-        #subprocess.run([&#34;rsync&#34;, &#34;-&#34;+opts, src, dest])
-        #subprocess.run([&#34;rsync&#34;, &#34;-&#34;+opts, src, dest])
-
-        import pty
-        #Test, from https://stackoverflow.com/questions/13041732/ssh-password-through-python-subprocess
-        command = [
-            &#39;rsync&#39;,
-            &#34;-&#34;+opts,
-            src,
-            dest
-            #&#39;{0}@{1}&#39;.format(shakename, hostname),
-            #&#39;-o&#39;, &#39;NumberOfPasswordPrompts=1&#39;,
-            #&#39;sleep {0}&#39;.format(sleep_time),
-        ]
-
-        # PID = 0 for child, and the PID of the child for the parent    
-        pid, child_fd = pty.fork()
-
-        if not pid: # Child process
-            # Replace child process with our SSH process
-            os.execv(command[0], command)
-
-        while True:
-            output = os.read(child_fd, 1024).strip()
-            lower = output.lower()
-            # Write the password
-            if lower.endswith(&#39;password:&#39;):
-                os.write(child_fd, password + &#39;\n&#39;)
-                break
-            elif &#39;are you sure you want to continue connecting&#39; in lower:
-                # Adding key to known_hosts
-                os.write(child_fd, &#39;yes\n&#39;)
-            elif &#39;company privacy warning&#39; in lower:
-                pass # This is an understood message
-            else:
-                print(&#34;SSH Connection Failed&#34;,
-                    &#34;Encountered unrecognized message when spawning &#34;
-                    &#34;the SSH tunnel: &#39;{0}&#39;&#34;.format(output))
-
-    return dest
-
-#Time functions, for timing how long a process takes
-def time_it(_t, proc_name=&#39;&#39;, verbose=True):
-    &#34;&#34;&#34;Computes elapsed time since the last call.&#34;&#34;&#34;
-    t1 = datetime.datetime.now().time()
-    dt = t1 - _t
-    t = _t
-    if dt &gt; 0.05:
-        if verbose:
-            print(f&#39;[ELAPSED TIME] {dt:0.1f} s&#39;, flush=True)
-        t = t1
-    return t
-
-#Get x mark (for negative test results)
-def x_mark(incolor=False, inTerminal=False):
-    &#34;&#34;&#34;The default Windows terminal is not able to display the check mark character correctly.
-       This function returns another displayable character if platform is Windows&#34;&#34;&#34;
-    
-    if incolor:
-        try:
-            xmark = get_char(u&#39;\u274C&#39;)
-        except:
-            xmark = get_char(u&#39;\u2718&#39;)
-    else:
-        xmark = get_char(u&#39;\u2718&#39;)
-    return xmark</code></pre>
-</details>
 </section>
 <section>
 </section>
@@ -464,43 +33,17 @@ def x_mark(incolor=False, inTerminal=False):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="sprit.sprit_utils.assert_check"><code class="name flex">
+<span>def <span class="ident">assert_check</span></span>(<span>var, cond=None, var_type=None, error_message='Output not valid', verbose=False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="sprit.sprit_utils.check_gui_requirements"><code class="name flex">
 <span>def <span class="ident">check_gui_requirements</span></span>(<span>)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def check_gui_requirements():
-    #First, check requirements
-    # Define a command that tries to open a window
-    command = &#34;python -c \&#34;import tkinter; tkinter.Tk()\&#34;&#34;
-
-    # Run the command and get the exit code
-    exit_code = os.system(command)
-    
-    # Check if tkinter gui could be created
-    if exit_code == 0:
-        #Tkinter 
-        oktoproceed=True
-    else:
-        oktoproceed=False
-        print(&#34;GUI window cannot be created.&#34;)
-
-    return oktoproceed
-
-    #if sys.platform == &#39;linux&#39;:
-    #    # Check if qtwayland5 is installed
-    #    output = subprocess.run([&#34;dpkg&#34;, &#34;-s&#34;, &#34;qtwayland5&#34;], capture_output=True, text=True)
-    #    if &#34;Status: install ok installed&#34; in output.stdout:
-    #        print(&#34;qtwayland5 is already installed&#34;)
-    #    else:
-    #        print(&#34;qtwayland5 is not installed&#34;)
-    #        # Install qtwayland5
-    #        os.system(&#34;sudo apt install qtwayland5&#34;)</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.check_mark"><code class="name flex">
 <span>def <span class="ident">check_mark</span></span>(<span>incolor=False, interminal=False)</span>
@@ -508,74 +51,21 @@ def x_mark(incolor=False, inTerminal=False):
 <dd>
 <div class="desc"><p>The default Windows terminal is not able to display the check mark character correctly.
 This function returns another displayable character if platform is Windows</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def check_mark(incolor=False, interminal=False):
-    &#34;&#34;&#34;The default Windows terminal is not able to display the check mark character correctly.
-       This function returns another displayable character if platform is Windows&#34;&#34;&#34;
-    if incolor:
-        try:
-            check = get_char(u&#39;\u2705&#39;)
-        except:
-            check = get_char(u&#39;\u2714&#39;)
-    else:
-        check = get_char(u&#39;\u2714&#39;)
-
-    if sys.platform==&#39;win32&#39; and interminal:
-        check = get_char(u&#39;\u039E&#39;)
-    return check</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.check_tsteps"><code class="name flex">
 <span>def <span class="ident">check_tsteps</span></span>(<span>hvsr_data)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Check time steps of PPSDS to make sure they are all the same length</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def check_tsteps(hvsr_data):
-    &#34;&#34;&#34;Check time steps of PPSDS to make sure they are all the same length&#34;&#34;&#34;
-    ppsds = hvsr_data[&#39;ppsds&#39;]
-    tSteps = []
-    for k in ppsds.keys():
-        tSteps.append(np.array(ppsds[k][&#39;psd_values&#39;]).shape[0])
-    if len(set(tSteps)) &lt;= 1:
-        pass #This means all channels have same number of period_bin_centers
-        minTStep=tSteps[0]
-    else:
-        print(&#39;There is a different number of time-steps used to calculate HVSR curves. \n This may result in computational errors. Trimming longest.&#39;)
-        minTStep = min(tSteps)
-    return minTStep</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.check_xvalues"><code class="name flex">
 <span>def <span class="ident">check_xvalues</span></span>(<span>ppsds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Check x_values of PPSDS to make sure they are all the same length</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def check_xvalues(ppsds):
-    &#34;&#34;&#34;Check x_values of PPSDS to make sure they are all the same length&#34;&#34;&#34;
-    xLengths = []
-    for k in ppsds.keys():
-        xLengths.append(len(ppsds[k][&#39;period_bin_centers&#39;]))
-    if len(set(xLengths)) &lt;= 1:
-        pass #This means all channels have same number of period_bin_centers
-    else:
-        print(&#39;X-values (periods or frequencies) do not have the same values. \n This may result in computational errors&#39;)
-        #Do stuff to fix it?
-    return ppsds</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.checkifpath"><code class="name flex">
-<span>def <span class="ident">checkifpath</span></span>(<span>filepath, sample_list='', verbose=False)</span>
+<span>def <span class="ident">checkifpath</span></span>(<span>filepath, sample_list='', verbose=False, raise_error=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Support function to check if a filepath is a pathlib.Path object and tries to convert if not</p>
@@ -589,44 +79,6 @@ This function returns another displayable character if platform is Windows</p></
 <dt><strong><code>filepath</code></strong> :&ensp;<code>pathlib.Path</code></dt>
 <dd>pathlib.Path of filepath</dd>
 </dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def checkifpath(filepath, sample_list=&#39;&#39;, verbose=False):
-    &#34;&#34;&#34;Support function to check if a filepath is a pathlib.Path object and tries to convert if not
-
-    Parameters
-    ----------
-    filepath : str or pathlib.Path, or anything
-        Filepath to check. If not a valid filepath, will not convert and raises error
-
-    Returns
-    -------
-    filepath : pathlib.Path
-        pathlib.Path of filepath
-    &#34;&#34;&#34;
-    if sample_list==&#39;&#39;:
-        sample_list = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;, &#39;6&#39;, &#39;sample&#39;, &#39;batch&#39;, &#39;sample&#39;, &#39;sample_batch&#39;]
-        for s in range(1, 7):
-            sample_list.append(f&#34;sample{s}&#34;)
-            sample_list.append(f&#34;sample_{s}&#34;)
-
-    # checks if the variable is any instance of pathlib
-    if isinstance(filepath, pathlib.PurePath):
-        pass
-    elif str(filepath) in sample_list:
-        pass
-    else:
-        try:
-            filepath = pathlib.Path(filepath)
-        except:
-            if verbose:
-                warnings.warn(&#39;Filepath cannot be converted to pathlib path: {}&#39;.format(filepath))
-        if not filepath.exists():
-            raise RuntimeError(&#39;File does not exist: {}&#39;.format(filepath))
-    return filepath</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.format_time"><code class="name flex">
 <span>def <span class="ident">format_time</span></span>(<span>inputDT, tzone='UTC')</span>
@@ -649,343 +101,36 @@ If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT
 <dt><strong><code>outputTimeObj</code></strong> :&ensp;<code>datetime object in UTC</code></dt>
 <dd>Output datetime.datetime object, now in UTC time.</dd>
 </dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def format_time(inputDT, tzone=&#39;UTC&#39;):
-    &#34;&#34;&#34;Private function to format time, used in other functions
-
-    Formats input time to datetime objects in utc
-
-    Parameters
-    ----------
-    inputDT : str or datetime obj 
-        Input datetime. Can include date and time, just date (time inferred to be 00:00:00.00) or just time (if so, date is set as today)
-    tzone   : str=&#39;utc&#39; or int {&#39;utc&#39;, &#39;local&#39;} 
-        Timezone of data entry. 
-            If string and not utc, assumed to be timezone of computer running the process.
-            If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT in the United States is -5)
-
-    Returns
-    -------
-    outputTimeObj : datetime object in UTC
-        Output datetime.datetime object, now in UTC time.
-
-    &#34;&#34;&#34;
-    if type(inputDT) is str:
-        #tzone = &#39;America/Chicago&#39;
-        #Format string to datetime obj
-        div = &#39;-&#39;
-        timeDiv = &#39;T&#39;
-        if &#34;/&#34; in inputDT:
-            div = &#39;/&#39;
-            hasDate = True
-        elif &#39;-&#39; in inputDT:
-            div = &#39;-&#39;
-            hasDate = True
-        else:
-            hasDate= False
-            year = datetime.datetime.today().year
-            month = datetime.datetime.today().month
-            day = datetime.datetime.today().day
-
-        if &#39;:&#39; in inputDT:
-            hasTime = True
-            if &#39;T&#39; in inputDT:
-                timeDiv = &#39;T&#39;
-            else:
-                timeDiv = &#39; &#39;
-        else:
-            hasTime = False
-        
-        if hasDate:
-            #If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
-            if len(inputDT.split(div)[0])&gt;2:
-                year = inputDT.split(div)[0]
-                month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
-
-            #If last number is 4-dig year            
-            elif len(inputDT.split(div)[2].split(timeDiv)[0])&gt;2:
-                #..and first number is day
-                if int(inputDT.split(div)[0])&gt;12:
-                    #dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%Y&#39;   
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]
-                #...and first number is month (like American style)                             
-                else:
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]     
-            
-            #Another way to catch if first number is (2-digit) year
-            elif int(inputDT.split(div)[0])&gt;31:
-                #dateStr = &#39;%y&#39;+div+&#39;%m&#39;+div+&#39;%d&#39;
-                year = inputDT.split(div)[0]
-                #Assumes anything less than current year is from this century
-                if year &lt; datetime.datetime.today().year:
-                    year = &#39;20&#39;+year
-                else:#...and anything more than current year is from last century
-                    year = &#39;19&#39;+year
-                #assumes day will always come last in this instance, as above
-                month = inputDT.split(div)[1]
-                day = inputDT.split(div)[2].split(timeDiv)[0]
-
-            #If last digit is (2 digit) year           
-            elif int(inputDT.split(div)[2].split(timeDiv)[0])&gt;31:
-                #...and first digit is day
-                if int(inputDT.split(div)[0])&gt;12:
-                    #dateStr = &#39;%d&#39;+div+&#39;%m&#39;+div+&#39;%y&#39;       
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    if year &lt; datetime.datetime.today().year:
-                        year = &#39;20&#39;+year
-                    else:
-                        year = &#39;19&#39;+year
-                    month = inputDT.split(div)[1]
-                    day = inputDT.split(div)[0]                           
-                else: #...and second digit is day
-                    #dateStr = &#39;%m&#39;+div+&#39;%d&#39;+div+&#39;%y&#39;
-                    year = inputDT.split(div)[2].split(timeDiv)[0]
-                    if year &lt; datetime.datetime.today().year:
-                        year = &#39;20&#39;+year
-                    else:
-                        year = &#39;19&#39;+year
-                    month = inputDT.split(div)[0]
-                    day = inputDT.split(div)[1]                  
-
-        hour=0
-        minute=0
-        sec=0
-        microS=0
-        if hasTime:
-            if hasDate:
-                timeStr = inputDT.split(timeDiv)[1]
-            else:
-                timeStr = inputDT
-            
-            if &#39;T&#39; in timeStr:
-                timeStr=timeStr.split(&#39;T&#39;)[1]
-            elif &#39; &#39; in timeStr:
-                timeStr=timeStr.split(&#39; &#39;)[1]
-
-            timeStrList = timeStr.split(&#39;:&#39;)
-            if len(timeStrList[0])&gt;2:
-                timeStrList[0] = timeStrList[0][-2:]
-            elif int(timeStrList[0]) &gt; 23:
-                timeStrList[0] = timeStrList[0][-1:]
-            
-            if len(timeStrList) == 3:
-                if &#39;.&#39; in timeStrList[2]:
-                    microS = int(timeStrList[2].split(&#39;.&#39;)[1])
-                    timeStrList[2] = timeStrList[2].split(&#39;.&#39;)[0]
-            elif len(timeStrList) == 2:
-                timeStrList.append(&#39;00&#39;)
-
-            hour = int(timeStrList[0])
-            minute=int(timeStrList[1])
-            sec = int(timeStrList[2])
-
-        outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
-                                hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
-
-    elif type(inputDT) is datetime.datetime or type(inputDT) is datetime.time:
-        outputTimeObj = inputDT
-
-    #Add timezone info
-    availableTimezones = list(map(str.lower, zoneinfo.available_timezones()))
-    if outputTimeObj.tzinfo is not None and outputTimeObj.tzinfo.utcoffset(outputTimeObj) is not None:
-        #This is already timezone aware
-        pass
-    elif type(tzone) is int:
-        outputTimeObj = outputTimeObj-datetime.timedelta(hours=tzone)
-    elif type(tzone) is str:
-        if tzone.lower() in availableTimezones:
-            outputTimeObj = outputTimeObj.replace(tzinfo=zoneinfo.ZoneInfo(tzone))
-        else:
-            raise ValueError(&#34;Timezone {} is not in official list. \nAvailable timezones:\n{}&#34;.format(tzone, availableTimezones))
-    elif isinstance(tzone, zoneinfo.ZoneInfo):
-        outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
-    else:
-        raise ValueError(&#34;Timezone must be either str or int&#34;)
-    
-    #Convert to UTC
-    outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)   
-
-    return outputTimeObj</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.get_char"><code class="name flex">
 <span>def <span class="ident">get_char</span></span>(<span>in_char)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Outputs character with proper encoding/decoding</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_char(in_char):
-    &#34;&#34;&#34;Outputs character with proper encoding/decoding&#34;&#34;&#34;
-    if in_char in greek_chars.keys():
-        out_char = greek_chars[in_char].encode(encoding=&#39;utf-8&#39;)
-    else:
-        out_char = in_char.encode(encoding=&#39;utf-8&#39;)
-    return out_char.decode(&#39;utf-8&#39;)</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.has_required_channels"><code class="name flex">
 <span>def <span class="ident">has_required_channels</span></span>(<span>stream)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def has_required_channels(stream):
-    channel_set = set()
-    
-    # Extract the channel codes from the traces in the stream
-    for trace in stream:
-        channel_set.add(trace.stats.channel)
-    
-    # Check if Z, E, and N channels are present
-    return {&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;}.issubset(channel_set)</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.make_it_classy"><code class="name flex">
 <span>def <span class="ident">make_it_classy</span></span>(<span>input_data, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def make_it_classy(input_data, verbose=False):
-    if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
-        for k, v in input_data.items():
-            if k==&#39;input_params&#39;:
-                for kin in input_data[&#39;input_params&#39;].keys():
-                    if kin not in input_data.keys():
-                        input_data[kin] = input_data[&#39;input_params&#39;][kin]
-            if k==&#39;params&#39;:
-                for kin in input_data[&#39;params&#39;].keys():
-                    print(kin)
-                    if kin not in input_data.keys():
-                        input_data[kin] = input_data[&#39;params&#39;][kin]                
-        output_class = input_data
-    else:
-        output_class = sprit_hvsr.HVSRData(input_data)
-    if verbose:
-        print(&#39;Made it classy | {} --&gt; {}&#39;.format(type(input_data), type(output_class)))
-    return output_class</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.read_from_RS"><code class="name flex">
 <span>def <span class="ident">read_from_RS</span></span>(<span>dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme', hostname='rs.local', year='2023', sta='RAC84', sleep_time=0.1, verbose=True, save_progress=True, method='scp')</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def read_from_RS(dest, src=&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/&#39;, opts=&#39;az&#39;, username=&#39;myshake&#39;, password=&#39;shakeme&#39;,hostname=&#39;rs.local&#39;, year=&#39;2023&#39;, sta=&#39;RAC84&#39;,sleep_time=0.1, verbose=True, save_progress=True, method=&#39;scp&#39;):
-    src = src.replace(&#39;SHAKENAME&#39;, username)
-    src = src.replace(&#39;SHAKENAME&#39;, hostname)
-    src = src.replace(&#39;YEAR&#39;, year)
-    src = src.replace(&#39;STATION&#39;, sta)
-
-    if method == &#39;src&#39;:
-        &#34;&#34;&#34;This does not work from within a virtual environment!!!!&#34;&#34;&#34;
-        #import pexpect
-        import sys
-        #from pexpect import popen_spawn
-        import time
-        import wexpect
-
-        scp_command = &#39;scp -r {} &#34;{}&#34;&#39;.format(src, dest)
-
-        print(&#39;Command:&#39;, scp_command)
-        child = wexpect.spawn(scp_command, timeout=5)
-
-        child.expect(&#34;password:&#34;)
-        child.sendline(password)
-
-        child.expect(wexpect.EOF)
-
-        print(&#34;Files have been successfully transferred to {}!&#34;.format(dest))
-    elif method==&#39;rsync&#39;:
-        if verbose:
-            opts = opts + &#39;v&#39;
-        if save_progress:
-            opts = opts + &#39;p&#39;   
-
-        #import subprocess
-        #subprocess.run([&#34;rsync&#34;, &#34;-&#34;+opts, src, dest])
-        #subprocess.run([&#34;rsync&#34;, &#34;-&#34;+opts, src, dest])
-
-        import pty
-        #Test, from https://stackoverflow.com/questions/13041732/ssh-password-through-python-subprocess
-        command = [
-            &#39;rsync&#39;,
-            &#34;-&#34;+opts,
-            src,
-            dest
-            #&#39;{0}@{1}&#39;.format(shakename, hostname),
-            #&#39;-o&#39;, &#39;NumberOfPasswordPrompts=1&#39;,
-            #&#39;sleep {0}&#39;.format(sleep_time),
-        ]
-
-        # PID = 0 for child, and the PID of the child for the parent    
-        pid, child_fd = pty.fork()
-
-        if not pid: # Child process
-            # Replace child process with our SSH process
-            os.execv(command[0], command)
-
-        while True:
-            output = os.read(child_fd, 1024).strip()
-            lower = output.lower()
-            # Write the password
-            if lower.endswith(&#39;password:&#39;):
-                os.write(child_fd, password + &#39;\n&#39;)
-                break
-            elif &#39;are you sure you want to continue connecting&#39; in lower:
-                # Adding key to known_hosts
-                os.write(child_fd, &#39;yes\n&#39;)
-            elif &#39;company privacy warning&#39; in lower:
-                pass # This is an understood message
-            else:
-                print(&#34;SSH Connection Failed&#34;,
-                    &#34;Encountered unrecognized message when spawning &#34;
-                    &#34;the SSH tunnel: &#39;{0}&#39;&#34;.format(output))
-
-    return dest</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.time_it"><code class="name flex">
 <span>def <span class="ident">time_it</span></span>(<span>_t, proc_name='', verbose=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Computes elapsed time since the last call.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def time_it(_t, proc_name=&#39;&#39;, verbose=True):
-    &#34;&#34;&#34;Computes elapsed time since the last call.&#34;&#34;&#34;
-    t1 = datetime.datetime.now().time()
-    dt = t1 - _t
-    t = _t
-    if dt &gt; 0.05:
-        if verbose:
-            print(f&#39;[ELAPSED TIME] {dt:0.1f} s&#39;, flush=True)
-        t = t1
-    return t</code></pre>
-</details>
 </dd>
 <dt id="sprit.sprit_utils.x_mark"><code class="name flex">
 <span>def <span class="ident">x_mark</span></span>(<span>incolor=False, inTerminal=False)</span>
@@ -993,23 +138,6 @@ If int, assumed to be offset from UTC (e.g., CST in the United States is -6; CDT
 <dd>
 <div class="desc"><p>The default Windows terminal is not able to display the check mark character correctly.
 This function returns another displayable character if platform is Windows</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def x_mark(incolor=False, inTerminal=False):
-    &#34;&#34;&#34;The default Windows terminal is not able to display the check mark character correctly.
-       This function returns another displayable character if platform is Windows&#34;&#34;&#34;
-    
-    if incolor:
-        try:
-            xmark = get_char(u&#39;\u274C&#39;)
-        except:
-            xmark = get_char(u&#39;\u2718&#39;)
-    else:
-        xmark = get_char(u&#39;\u2718&#39;)
-    return xmark</code></pre>
-</details>
 </dd>
 </dl>
 </section>
@@ -1017,7 +145,6 @@ This function returns another displayable character if platform is Windows</p></
 </section>
 </article>
 <nav id="sidebar">
-<h1>Index</h1>
 <div class="toc">
 <ul></ul>
 </div>
@@ -1029,6 +156,7 @@ This function returns another displayable character if platform is Windows</p></
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="sprit.sprit_utils.assert_check" href="#sprit.sprit_utils.assert_check">assert_check</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_gui_requirements" href="#sprit.sprit_utils.check_gui_requirements">check_gui_requirements</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_mark" href="#sprit.sprit_utils.check_mark">check_mark</a></code></li>
 <li><code><a title="sprit.sprit_utils.check_tsteps" href="#sprit.sprit_utils.check_tsteps">check_tsteps</a></code></li>
@@ -1047,7 +175,7 @@ This function returns another displayable character if platform is Windows</p></
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
 </footer>
 </body>
 </html>
