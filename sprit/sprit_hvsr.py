@@ -8170,6 +8170,7 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
 
     # Update report title (site name)
     html = html.replace("HVSR_REPORT_TITLE", hvsr_results['site'])
+    html = html.replace("HVSR_ID", hvsr_results['hvsr_id'])
 
     # Update peak freq info
     html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))

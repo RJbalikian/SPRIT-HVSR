@@ -8,56 +8,58 @@
         @page {
             size: A4 landscape;
             margin: 0;
+
             @frame header {
                 -pdf-frame-content: header_content;
-                left: 25pt; width: 792pt; 
-                top: 10pt; height: 40pt;
-                -pdf-frame-border: 1;
+                left: 5mm; width: 287mm; max-width: 297mm;
+                top: 5mm; height: 18mm;
             }
 
             @frame f0_summary {
                 -pdf-frame-content: f0_summary;
-                left: 25pt; width: 792pt; 
-                top: 55pt; height: 50pt;
+                left: 5mm; width: 287mm; 
+                top: 22mm; height: 15mm;
                 -pdf-frame-border: 1;
             }
 
             @frame plot_frame {
                 -pdf-frame-content: plot_frame;
-                left: 10pt; width: 500pt; 
-                top: 110pt; height: 360pt;
+                left 5mm; width: 175mm; max-width: 175mm;
+                top: 40mm; height:125mm;
             }
 
             @frame print_results {
                 -pdf-frame-content: print_results;
-                left: 511pt; width: 320pt; 
-                top: 110; height: 360pt;
+                left: 180mm; width: 125mm; max-width: 125mm;
+                top: 40mm; height: 130mm;
             }
 
             @frame table_frame {
                 -pdf-frame-content: table_frame;
                 -pdf-keep-in-frame-mode: truncate;
-                left: 25pt; width: 792pt; 
-                top: 475pt; height: 50pt;
+                left: 5mm; width: 287mm; max-width: 297mm;
+                top: 165mm; height: 20mm;
             }
 
             @frame footer_frame {          
                 -pdf-frame-content: footer_frame;
-                left: 25pt; width: 792pt; 
-                top: 540pt; height: 60pt;
+                left: 0mm; width: 297mm; 
+                top: 185mm; height: 27mm;
             }
        
         }
 
         @media print {
             .image-size {
-                width: 500pt; /* width for printing */
+                max-width: 175mm;
+                width: 175mm; /* width for printing */
                 height: auto; /* Maintain aspect ratio */
                 }
             
             .mono-text{
                 font-family: monospace;
                 font-size: 8pt;
+                max-width: 175m;
             }
 
             .table {
@@ -67,12 +69,14 @@
                 justify-content: center;
                 font-size: 8pt;
                 text-align: center;
+                max-width: 200mm;
             }
             .table td, .table th {
                 padding-top: 2.5px;
             }
             .table td {
                 font-size: 8pt;
+                max-width: 20mm;
             }
             }
 
@@ -83,40 +87,57 @@
             background-color:  #08085e;
             padding-top: 10pt;
             line-height: 20pt;
-            height: 40pt;
+            height: 42pt;
+            max-width: 297mm;
+
         }
 
+        .hvsr-id-text {
+            max-width: 297mm;
+            font-size: 8pt;
+            line-height: 13pt;
+            height: 8pt;
+            margin:0;
+            padding-top: 0;
+            color: white;
+            background-color:  #08085e;            
+        }
+
+
         #f0_summary {
+            max-width: 297mm;
             text-align: center;
             font-size: 16pt;
-            padding-top: 10pt;
+            padding-top: 2mm;
             line-height: 16pt;
             height: 60pt;
         }
 
         #f0_summary_text {
+            max-width: 297mm;
             text-align: center;
             font-size: 16pt;
-            padding-top: 10pt;
+            padding-top: 1mm;
             line-height: 16pt;
         }
 
         .small-text {
+            max-width: 297mm;
             font-size: 8pt;
             margin:0;
             padding-top: 0;
         }
 
         #footer_frame {
+            max-width: 297mm;
             display: block;
             text-align: center;
             font-size: 10pt;
             color: white;
-            line-height: 12;
-            padding-top: 6pt;
-            padding-bottom: 6pt;
+            line-height: 12pt;
+            padding-top: 7mm;
+            padding-bottom: 5mm;
             background-color: #08085e;
-            line-height: 1.2;
         }
 
         .results {
@@ -124,12 +145,14 @@
         }
         .box {
             flex: 1;
-            padding: 1pt;
+            padding: 5mm;
+            max-width: 125mm;
         }
 
         .print-report-text {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             font-size: 7pt;
+            max-width: 125mm;
         }
 
         .table {
@@ -139,6 +162,7 @@
             text-overflow: ellipsis;
             text-align: center;
             justify-content: center;
+            max-width: 297mm;
         }
 
     </style>
@@ -147,7 +171,7 @@
     <!-- Header Section -->
     <div id="header_content">
         HVSR_REPORT_TITLE
-        <p class="small-text">HVSR_ID</p>
+        <p class="hvsr-id-text">HVSR_ID</p>
     </div>
 
     <!-- Frame 1: Text -->
@@ -211,10 +235,10 @@
     <!-- Footer Section -->
     <div id="footer_frame">
         <p>This data and report were generated using SpRIT HVSR, an open-source python package developed at the Illinois State Geological Survey.<br>
-            <a href="https://sprit.readthedocs.io/en/latest/sprit.sprit_hvsr.html" style="color:#ffffff;">Documentation</a> | 
-            <a href="https://github.com/RJbalikian/SPRIT-HVSR" style="color:#ffffff;">Source Code</a> | 
-            <a href="https://pypi.org/project/sprit/" style="color:#ffffff;">Installation</a> | 
-            <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki" style="color:#ffffff;">Tutorials & Wiki</a> | 
+            <a href="https://sprit.readthedocs.io/en/latest/sprit.sprit_hvsr.html" style="color:#ffffff;">Documentation</a>  |  
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR" style="color:#ffffff;">Source Code</a>  |  
+            <a href="https://pypi.org/project/sprit/" style="color:#ffffff;">Installation</a>  |  
+            <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki" style="color:#ffffff;">Tutorials & Wiki</a>  |  
             <a href="https://github.com/RJbalikian/SPRIT-HVSR/issues" style="color:#ffffff;"">Issues</a>
             <br>
         &copy; RJBalikian</p>
