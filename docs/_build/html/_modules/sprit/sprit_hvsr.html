@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 1.4.1 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 1.4.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=350a9c04"></script>
+        <script src="../../_static/documentation_options.js?v=02f2166e"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -3861,7 +3861,7 @@
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.input_params">[docs]</a>
 <span class="k">def</span> <span class="nf">input_params</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span>
                 <span class="n">site</span><span class="o">=</span><span class="s1">&#39;HVSR Site&#39;</span><span class="p">,</span>
-                <span class="n">id_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">network</span><span class="o">=</span><span class="s1">&#39;AM&#39;</span><span class="p">,</span> 
                 <span class="n">station</span><span class="o">=</span><span class="s1">&#39;RAC84&#39;</span><span class="p">,</span> 
                 <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;00&#39;</span><span class="p">,</span> 
@@ -3892,11 +3892,11 @@
 <span class="sd">        Filepath of data. This can be a directory or file, but will need to match with what is chosen later as the source parameter in fetch_data()</span>
 <span class="sd">    site : str, default=&quot;HVSR Site&quot;</span>
 <span class="sd">        Site name as designated by user for ease of reference. Used for plotting titles, filenames, etc.</span>
-<span class="sd">    id_prefix : str, default=None</span>
+<span class="sd">    project : str, default=None</span>
 <span class="sd">        A prefix that may be used to create unique identifiers for each site. </span>
 <span class="sd">        The identifier created is saved as the [&#39;HVSR_ID&#39;] attribute of the HVSRData object,</span>
 <span class="sd">        and is equivalent to the following formatted string:</span>
-<span class="sd">        f&quot;{id_prefix}-{acq_date.strftime(&quot;%Y%m%d&quot;)}-{starttime.strftime(&quot;%H%M&quot;)}-{station}&quot;.</span>
+<span class="sd">        f&quot;{project}-{acq_date.strftime(&quot;%Y%m%d&quot;)}-{starttime.strftime(&quot;%H%M&quot;)}-{station}&quot;.</span>
 <span class="sd">    network : str, default=&#39;AM&#39;</span>
 <span class="sd">        The network designation of the seismometer. This is necessary for data from Raspberry Shakes. &#39;AM&#39; is for Amateur network, which fits Raspberry Shakes.</span>
 <span class="sd">    station : str, default=&#39;RAC84&#39;</span>
@@ -4105,7 +4105,7 @@
     <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">hvsr_id generated from input parameters: </span><span class="si">{</span><span class="n">hvsr_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1">#Add key/values to input parameter dictionary for use throughout the rest of the package</span>
-    <span class="n">inputParamDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;site&#39;</span><span class="p">:</span><span class="n">site</span><span class="p">,</span> <span class="s1">&#39;id_prefix&#39;</span><span class="p">:</span><span class="n">id_prefix</span><span class="p">,</span> <span class="s1">&#39;hvsr_id&#39;</span><span class="p">:</span><span class="n">hvsr_id</span><span class="p">,</span> <span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;station&#39;</span><span class="p">:</span><span class="n">station</span><span class="p">,</span><span class="s1">&#39;location&#39;</span><span class="p">:</span><span class="n">loc</span><span class="p">,</span> <span class="s1">&#39;channels&#39;</span><span class="p">:</span><span class="n">channels</span><span class="p">,</span>
+    <span class="n">inputParamDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;site&#39;</span><span class="p">:</span><span class="n">site</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">:</span><span class="n">project</span><span class="p">,</span> <span class="s1">&#39;hvsr_id&#39;</span><span class="p">:</span><span class="n">hvsr_id</span><span class="p">,</span> <span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;station&#39;</span><span class="p">:</span><span class="n">station</span><span class="p">,</span><span class="s1">&#39;location&#39;</span><span class="p">:</span><span class="n">loc</span><span class="p">,</span> <span class="s1">&#39;channels&#39;</span><span class="p">:</span><span class="n">channels</span><span class="p">,</span>
                       <span class="s1">&#39;net&#39;</span><span class="p">:</span><span class="n">network</span><span class="p">,</span><span class="s1">&#39;sta&#39;</span><span class="p">:</span><span class="n">station</span><span class="p">,</span> <span class="s1">&#39;loc&#39;</span><span class="p">:</span><span class="n">loc</span><span class="p">,</span> <span class="s1">&#39;cha&#39;</span><span class="p">:</span><span class="n">channels</span><span class="p">,</span> <span class="s1">&#39;instrument&#39;</span><span class="p">:</span><span class="n">instrument</span><span class="p">,</span>
                       <span class="s1">&#39;acq_date&#39;</span><span class="p">:</span><span class="n">acq_date</span><span class="p">,</span><span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">starttime</span><span class="p">,</span><span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">endtime</span><span class="p">,</span> <span class="s1">&#39;timezone&#39;</span><span class="p">:</span><span class="s1">&#39;UTC&#39;</span><span class="p">,</span> <span class="c1">#Will be in UTC by this point</span>
                       <span class="s1">&#39;xcoord&#39;</span><span class="p">:</span><span class="n">xcoord</span><span class="p">,</span> <span class="s1">&#39;ycoord&#39;</span><span class="p">:</span><span class="n">ycoord</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">:</span><span class="n">xcoord_wgs84</span><span class="p">,</span><span class="s1">&#39;latitude&#39;</span><span class="p">:</span><span class="n">ycoord_wgs84</span><span class="p">,</span>
