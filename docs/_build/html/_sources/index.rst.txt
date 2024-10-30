@@ -14,7 +14,6 @@ Welcome to the documentation for SpRIT!
    sprit.sprit_hvsr
    sprit.sprit_utils
 
-
 Indices and tables
 ==================
 
