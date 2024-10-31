@@ -50,7 +50,7 @@ except Exception:  # For testing
 
 # Constants, etc
 NOWTIME = datetime.datetime.now()
-DEF_PLOT_STRING = "HVSR p ann COMP p ann SPEC p ann"
+DEF_PLOT_STRING = "HVSR p ann COMP+ p ann SPEC p ann"
 OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 # Resources directory path, and the other paths as well
@@ -5071,8 +5071,9 @@ def read_tromino_files(input_data, params, struct_format='H', sampling_rate=128,
 # Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method=None, 
                  processing_window=None, sat_percent=0.995, noise_percent=0.80, 
-                 sta=2, lta=30, stalta_thresh=[8, 16], std_thresh=None, std_window=20,
-                 warmup_time=0, cooldown_time=0, min_win_size=1, 
+                 sta=2, lta=30, stalta_thresh=[8, 16], 
+                 std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0,
+                 warmup_time=0, cooldown_time=0, min_win_size=1,
                  remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
@@ -5106,6 +5107,13 @@ def remove_noise(hvsr_data, remove_method=None,
         Long term average (STA) window (in seconds), by default 30. For use with sta/lta antitrigger method.
     stalta_thresh : list, default=[0.5,5]
         Two-item list or tuple with the thresholds for the stalta antitrigger. The first value (index [0]) is the lower threshold, the second value (index [1] is the upper threshold), by default [0.5,5]
+    std_ratio_thresh : float, optional
+        The ratio to use as a threshold for removal of noise. The ratio represents the standard deviation value for a rolling window (the size of which is determined by the std_window_size parameter) 
+        divided by the standard deviation calculated for the entire trace. This rolling window standard deviation method is similar to the default noise removal method used by the Grilla HVSR software.
+    std_window_size : float, optional
+        The length of the window (in seconds) to use for calculating the rolling/moving standard deviation of a trace for the rolling standard deviation method.
+    min_std_win : float, optional
+        The minimum size of "window" that will be remove using the rolling standard deviation method.
     warmup_time : int, default=0
         Time in seconds to allow for warmup of the instrument (or while operator is still near instrument). This will renove any data before this time, by default 0.
     cooldown_time : int, default=0
@@ -5238,7 +5246,7 @@ def remove_noise(hvsr_data, remove_method=None,
     # Check if any parameter values are different from default (if they are, automatically add that method to remove_method)
     rn_signature = inspect.signature(remove_noise)
 
-    methodDict = {'moving_std': ['std_thresh', 'std_window'],
+    methodDict = {'moving_std': ['std_ratio_thresh', 'std_window_size', 'min_std_win'],
                   'sat_thresh': ['sat_percent'],
                   'antitrigger': ['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
                   'noise_thresh': ['noise_percent', 'min_win_size'],
@@ -5315,7 +5323,7 @@ def remove_noise(hvsr_data, remove_method=None,
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
             elif rem_kind.lower() in movingstdList:
-                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_thresh, std_window_s=std_window)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
@@ -5333,8 +5341,6 @@ def remove_noise(hvsr_data, remove_method=None,
             print(f'\t  *Error with {rem_kind} method. Data was not removed using that method.')
             print(f'\t  *{e}')
     
-
-
     # Add output
     if isinstance(output, (HVSRData, dict)):
         if isinstance(outStream, (obspy.Stream, obspy.Trace)):
@@ -6514,17 +6520,37 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False, verbo
 
 
 # Helper function for getting windows to remove noise using moving stdev
-def __remove_moving_std(stream, std_ratio_thresh, std_window_s):
+def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_size=5):
+    """Helper function for removing noisy data due to high local standard deviation.
+    This is similar to the default noise removal method used in Grilla software.
+
+    Parameters
+    ----------
+    stream : obspy.Stream
+        Obspy stream that should be analyzed and segmented for noise removal
+    std_ratio_thresh : float, optional
+        Threshold ratio value to use for removing data.
+        Ratio is calculated as the total standard deviation (of entire trace) over 
+        moving/local standard deviation (over rolling window specified by std_window_s), by default 2
+    std_window_s : float, optional
+        Size of the rolling window in seconds to use to calculate the local/moving/rolling standard deviation, by default 20
+    min_win_size : float, optional
+        The minimum size of window in seconds for data removal (where all points in that window exceed std_ratio_thresh), by default 5
+
+    Returns
+    -------
+    obspy.Stream
+        Obspy Stream object with "noisy" windows calculated by remove_moving_std masked, if applicable.
+    """
     instream = stream.copy()
-    std_ratio_thresh = 1
+    outstream = instream.copy()
 
     removeDTs = pd.DatetimeIndex([], tz='UTC')  # Empty index to start
     # Use pandas to simplify rolling/moving std
     for tr in instream.split():
         dtList = []
         for t in tr.times(type="utcdatetime"):
-            dtList.append(t.datetime.astimezone(zoneinfo.ZoneInfo('UTC')))
-
+            dtList.append(t.datetime.replace(tzinfo=zoneinfo.ZoneInfo('UTC')))
         # Create pandas series out of trace data
         traceData = pd.Series(data=tr.data,
                             index=dtList)
@@ -6536,18 +6562,57 @@ def __remove_moving_std(stream, std_ratio_thresh, std_window_s):
         # Calculate whether ratio is larger than threshold value
         boolseries = np.abs(movingSTD/totalSTD) > std_ratio_thresh
 
-        # Create index of just remove windows
+        # Create index of just removed windows
         removeDTs = removeDTs.join(boolseries.iloc[np.nonzero(boolseries)[0]].index, how='outer')
 
     # Get unique indices as datetime.datetime objects
-    removeDTs = removeDTs.unique()
-    removeDTs = removeDTs.to_pydatetime()
+    removeDTs = removeDTs.unique()  # Get unique dtindex
+    removeDTs.sort_values()  # Sort dt index
+    removeDTs = removeDTs.to_pydatetime()  # Convert to np.array of datetime.datetime objs
 
+    delta = stream[0].stats.delta  # Get sample rate
+
+    # Convert instances of mstd/totstd > thresh to windows (keep if longer than min_win_size)
+    windows = []
+    windex = 0
+    for i, rdt in enumerate(removeDTs):
+        if i == 0:
+            # Intialize windows list
+            windows.append([rdt, None])
+        else:
+            # If the "window" is just two samples next to each other, keep moving
+            if (rdt - removeDTs[i-1]).total_seconds() == delta:
+                pass
+            elif (rdt - removeDTs[i-1]).total_seconds() < delta:
+                # if for some reason the window is less than sample rate, move on
+                pass
+            else:
+                # if window exists, but is smaller than min_win_size
+                if (removeDTs[i-1] - windows[windex][0]).total_seconds() < min_win_size:
+                    windows.pop()  # remove this window
+                    windows.append([removeDTs[i+1], None]) # Rest the window w/next data point
+                    continue  # Go to next dt
+
+                windows[windex][1] = removeDTs[i-1] # Close last window
+                windows.append([rdt, None]) # Start a new window
+                windex += 1 # Update window index
+    windows = windows[:-1]
     # Need to convert these to windows now!
+    removeUTC = []
+    for swin, ewin in windows:
+        removeUTC.append([obspy.UTCDateTime(swin), obspy.UTCDateTime(ewin)])
+    
+    stime = outstream.split()[0].stats.starttime
+    etime = outstream.split()[-1].stats.endtime
+    removeUTC.insert(0, [stime, stime])
+    removeUTC.append([etime, etime])
 
-    # Not needed: df = pd.DataFrame(np.ones_like(removeDT, dtype=int), index=removeDT, columns=['ONES'])
+    #for win0, win1 in removeUTC:
+    #    print(win0, win1, win1>win0)
+    outstream  = __remove_gaps(outstream, removeUTC)
 
     return outstream
+
 
 # Remove noise saturation
 def __remove_noise_saturate(stream, sat_percent, min_win_size, verbose=False):
