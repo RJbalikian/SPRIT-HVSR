@@ -3616,8 +3616,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         # PDF_Report
         elif rep_form == 'pdf':
             verbose_pdf = verbose
-            if verbose or show_pdf_report:
-                verbose_pdf = True
 
             # Don't repeat html printing, etc. if already done
             if 'html' in report_formats:
@@ -8312,7 +8310,6 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         # Now, open the file again for writing
         with open(pdf_export_path, 'wb') as temp_file:
             pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
-
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
             fname = f"REPORT_{hvsr_results['site']}_{hvsr_results['hvsr_id']}.pdf"
@@ -8348,15 +8345,45 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         if verbose:
             print(f'\tAttempting to open pdf at {pdf_export_path}')
         
-        print('\t**Opening pdfs with the show_pdf_report or show_report parameter is experimental**')
+        pdf_report_shown = False
+        if hasattr(os, 'startfile'):
+            try:
+                os.startfile(pdf_export_path)
+                pdf_report_shown = True
+            except Exception as e:
+                print(f"\tError opening pdf report: {e}")
+        
+        if not pdf_report_shown:
+            try:
+                import webbrowser
+                webbrowser.open_new(pdf_export_path)
+                pdf_report_shown = True
+            except Exception as e:
+                print(f"\tOpening pdf via webbrowser did not work, Error opening pdf report: {e}")
 
-        try:
-            os.startfile(pdf_export_path)
-        except Exception as e:
+        if not pdf_report_shown:
+            try:
+                print(f"\tAttempting os.open()")
+                os.open(pdf_export_path, flags=os.O_RDWR)
+                pdf_report_shown = True            
+            except Exception as e:
+                print(f"\tError opening pdf report: {e}")
+
+        if not pdf_report_shown:
+            try:
+                print("\tAttempting os.system")
+                os.system(pdf_export_path)
+                pdf_report_shown = True                
+            except Exception as e:
+                print(f"\tError opening pdf report: {e}")
+                
+        if not pdf_report_shown:
             print(f"\tSpRIT cannot open your pdf report, but it has been saved to {pdf_export_path}")
             print('\tAttempting to open HTML version of report')
+        
             try:
-                _display_html_report(html)
+                print('\tOpening via pdf did not work, opening HTML')
+                _display_html_report(hvsr_results['HTML_Report'])
             except Exception as e:
                 print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
 
