@@ -23,6 +23,7 @@ import tempfile
 import traceback
 import warnings
 import xml.etree.ElementTree as ET
+import zoneinfo
 
 import matplotlib
 from matplotlib.backend_bases import MouseButton
@@ -5321,7 +5322,7 @@ def remove_noise(hvsr_data, remove_method=None,
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
             elif rem_kind.lower() in movingstdList:
-                outStream = __remove_moving_std()
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_thresh, std_window_s=std_window)
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
@@ -6526,7 +6527,7 @@ def __remove_moving_std(stream, std_ratio_thresh, std_window_s):
 
     removeDTs = pd.DatetimeIndex([], tz='UTC')  # Empty index to start
     # Use pandas to simplify rolling/moving std
-    for tr in hvsrData.stream.split():
+    for tr in instream.split():
         dtList = []
         for t in tr.times(type="utcdatetime"):
             dtList.append(t.datetime.astimezone(zoneinfo.ZoneInfo('UTC')))
