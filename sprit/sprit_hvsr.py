@@ -5075,7 +5075,11 @@ def read_tromino_files(input_data, params, struct_format='H', sampling_rate=128,
 
 
 # Function to remove noise windows from data
-def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_percent=0.995, noise_percent=0.80, sta=2, lta=30, stalta_thresh=[8, 16], warmup_time=0, cooldown_time=0, min_win_size=1, remove_raw_noise=False, show_stalta_plot=False, verbose=False):
+def remove_noise(hvsr_data, remove_method=None, 
+                 processing_window=None, sat_percent=0.995, noise_percent=0.80, 
+                 sta=2, lta=30, stalta_thresh=[8, 16], std_thresh=None, std_window=20,
+                 warmup_time=0, cooldown_time=0, min_win_size=1, 
+                 remove_raw_noise=False, show_stalta_plot=False, verbose=False):
     """Function to remove noisy windows from data, using various methods.
     
     Methods include 
@@ -5177,6 +5181,7 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
     manualList = ['manual', 'man', 'm', 'window', 'windows', 'w']
     autoList = ['auto', 'automatic', 'all', 'a']
     antitrigger = ['stalta', 'anti', 'antitrigger', 'trigger', 'at']
+    movingstdList = ['moving_std', 'std', 'stdev', 'standard deviation', 'stdev', 'moving_stdev', 'movingstd', 'movingstdev']
     saturationThresh = ['saturation threshold', 'sat_thresh', 'sat thresh', 'saturation', 'sat', 's']
     noiseThresh = ['noise threshold', 'noise thresh', 'noise_thresh', 'noise', 'threshold', 'n']
     warmup_cooldown=['warmup', 'cooldown', 'warm', 'cool', 'buffer', 'warmup-cooldown', 'warmup_cooldown', 'wc', 'warm_cool', 'warm-cool']
@@ -5239,11 +5244,12 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
     # Check if any parameter values are different from default (if they are, automatically add that method to remove_method)
     rn_signature = inspect.signature(remove_noise)
 
-    methodDict = {'antitrigger':['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
-                'sat_thresh':['sat_percent'],
-                'noise_thresh':['noise_percent', 'min_win_size'],
-                'warmup_cooldown':['warmup_time', 'cooldown_time'],
-                'processing_window':['processing_window']}
+    methodDict = {'moving_std': ['std_thresh', 'std_window'],
+                  'sat_thresh': ['sat_percent'],
+                  'antitrigger': ['sta', 'lta', 'stalta_thresh', 'show_stalta_plot'],
+                  'noise_thresh': ['noise_percent', 'min_win_size'],
+                  'warmup_cooldown': ['warmup_time', 'cooldown_time'],
+                  'processing_window': ['processing_window']}
 
     defaultValDict = {param.name: param.default for param in rn_signature.parameters.values() if param.default is not inspect.Parameter.empty}
 
@@ -5314,6 +5320,8 @@ def remove_noise(hvsr_data, remove_method=None, processing_window=None, sat_perc
                 break
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
+            elif rem_kind.lower() in movingstdList:
+                outStream = __remove_moving_std()
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
@@ -6510,6 +6518,42 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False, verbo
     outStream = __remove_gaps(stream, window_UTC)
     return outStream
 
+
+# Helper function for getting windows to remove noise using moving stdev
+def __remove_moving_std(stream, std_ratio_thresh, std_window_s):
+    instream = stream.copy()
+    std_ratio_thresh = 1
+
+    removeDTs = pd.DatetimeIndex([], tz='UTC')  # Empty index to start
+    # Use pandas to simplify rolling/moving std
+    for tr in hvsrData.stream.split():
+        dtList = []
+        for t in tr.times(type="utcdatetime"):
+            dtList.append(t.datetime.astimezone(zoneinfo.ZoneInfo('UTC')))
+
+        # Create pandas series out of trace data
+        traceData = pd.Series(data=tr.data,
+                            index=dtList)
+
+        # Get StDev values
+        totalSTD = traceData.std()
+        movingSTD = traceData.rolling(datetime.timedelta(seconds=std_window_s), center=True).std()
+
+        # Calculate whether ratio is larger than threshold value
+        boolseries = np.abs(movingSTD/totalSTD) > std_ratio_thresh
+
+        # Create index of just remove windows
+        removeDTs = removeDTs.join(boolseries.iloc[np.nonzero(boolseries)[0]].index, how='outer')
+
+    # Get unique indices as datetime.datetime objects
+    removeDTs = removeDTs.unique()
+    removeDTs = removeDTs.to_pydatetime()
+
+    # Need to convert these to windows now!
+
+    # Not needed: df = pd.DataFrame(np.ones_like(removeDT, dtype=int), index=removeDT, columns=['ONES'])
+
+    return outstream
 
 # Remove noise saturation
 def __remove_noise_saturate(stream, sat_percent, min_win_size, verbose=False):
