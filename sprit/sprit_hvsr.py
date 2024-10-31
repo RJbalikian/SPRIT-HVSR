@@ -62,6 +62,8 @@ global spritApp
 
 # Predefined variables
 max_rank = 0
+global do_run 
+do_run = False
 
 sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 SAMPLE_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'batch', 'sample', 'sample_batch']
@@ -759,7 +761,9 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     """
    
     orig_args = locals().copy()  # Get the initial arguments
-   
+    global do_run
+    do_run = True
+
     if 'hvsr_band' not in kwargs.keys():
         kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
     if 'peak_freq_range' not in kwargs.keys():
@@ -7571,11 +7575,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
         outStream.merge()
         hvsr_data['stream_edited'] = outStream
-    else:
-        if verbose:
-            print("\n\t\t\tThe dataframe at hvsr_data['hvsr_windows_df'] has not been created yet (this is created by generate_ppsds())")
-            print('\t\t\tNoisy windows have been set aside for removal, ', end='')
-            print('but will not be removed from analysis until after hvsr_windows_df has been created')
+
     hvsr_data['x_gaps_obspyDT'] = gaps
 
     return hvsr_data
