@@ -48,58 +48,20 @@ except Exception:  # For testing
     import sprit_jupyter_UI
     import sprit_plot
 
+# Constants, etc
 NOWTIME = datetime.datetime.now()
+DEF_PLOT_STRING = "HVSR p ann COMP p ann SPEC p ann"
+OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+
+# Resources directory path, and the other paths as well
+RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
+SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
+
 global spritApp
 
-# Main variables
-greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
-channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-separator_character = '='
-obspyFormats = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
-
-t0 = datetime.datetime.now().time()
+# Predefined variables
 max_rank = 0
-plotRows = 4
-
-# Get the main resources directory path, and the other paths as well
-resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
-sample_data_dir = resource_dir.joinpath('sample_data')
-settings_dir = resource_dir.joinpath('settings')
-
-sampleFileKeyMap = {'1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    '2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    '3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    '4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    '5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    '6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    '7':sample_data_dir.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    '8':sample_data_dir.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    '9':sample_data_dir.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    '10':sample_data_dir.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    
-                    'sample1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    'sample2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    'sample3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    'sample4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    'sample5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    'sample6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    'sample7':sample_data_dir.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    'sample8':sample_data_dir.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    'sample9':sample_data_dir.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    'sample10':sample_data_dir.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-
-                    'sample_1':sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    'sample_2':sample_data_dir.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    'sample_3':sample_data_dir.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    'sample_4':sample_data_dir.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    'sample_5':sample_data_dir.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    'sample_6':sample_data_dir.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    'sample_7':sample_data_dir.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    'sample_8':sample_data_dir.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    'sample_9':sample_data_dir.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    'sample_10':sample_data_dir.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    
-                    'batch':sample_data_dir.joinpath('Batch_SampleData.csv')}
 
 sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 SAMPLE_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'batch', 'sample', 'sample_batch']
@@ -107,12 +69,43 @@ for s in sampleListNos:
     SAMPLE_LIST.append(f'sample{s}')
     SAMPLE_LIST.append(f'sample_{s}')
 
-# plt.rcParams['figure.figsize'] = (8,5.25)
-# plt.rcParams['figure.dpi'] = 500
+sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    '2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    '3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    '4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    '5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    '6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                    '7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    '8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
+                    '9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
+                    '10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    
+                    'sample1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    'sample2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    'sample3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    'sample4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    'sample5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    'sample6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                    'sample7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    'sample8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
+                    'sample9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
+                    'sample10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+
+                    'sample_1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
+                    'sample_2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
+                    'sample_3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
+                    'sample_4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
+                    'sample_5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
+                    'sample_6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
+                    'sample_7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    'sample_8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
+                    'sample_9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
+                    'sample_10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    
+                    'batch':SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
+
 
 # CLASSES
-
-
 # Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
 def check_instance(init):
@@ -324,9 +317,8 @@ class HVSRBatch:
 
     def __getitem__(self, key):
         return getattr(self, key)
-
-
-# Class for each HVSR site
+    
+# Class for HVSR site data
 class HVSRData:
     """HVSRData is the basic data class of the sprit package. 
     It contains all the processed data, input parameters, and reports.
@@ -588,18 +580,18 @@ def gui_test():
     subprocess.call(guiFile, shell=True)
 
 
-# Launch the tkinter gui
-
+# Launch a gui
 def gui(kind='browser'):
     """Function to open a graphical user interface (gui)
 
     Parameters
     ----------
     kind : str, optional
-        What type of gui to open. "default" opens regular windowed interface, 
-        "widget" opens jupyter widget'
-        "lite" open lite (pending update), by default 'default'
-
+        What type of gui to open: 
+        * "browser" or "default" opens browser interface (using streamlit)
+        * "widget" opens jupyter widget (using ipywidgets)
+        * "window" opens windowed gui (using tkinter)
+        
     """
     browserList = ['browser', 'remi', 'default', 'd']
     windowList = ['windowed', 'window', 'qt', 'tkinter', 'tk']
@@ -1235,9 +1227,9 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
-            sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+            SAMPLE_DATA_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             for index, row in dataReadInfoDF.iterrows():
-                dataReadInfoDF.loc[index, 'input_data'] = sample_data_dir.joinpath(row.loc['input_data'])
+                dataReadInfoDF.loc[index, 'input_data'] = SAMPLE_DATA_DIR.joinpath(row.loc['input_data'])
 
         # Generate site names if they don't exist already           
         if 'site' not in dataReadInfoDF.columns:
@@ -2116,7 +2108,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
     fnameDict['processing'] = "processing_settings.json"
 
     if export_settings_path == 'default' or export_settings_path is True:
-        settingsPath = resource_dir.joinpath('settings')
+        settingsPath = RESOURCE_DIR.joinpath('settings')
     else:
         export_settings_path = pathlib.Path(export_settings_path)
         if not export_settings_path.exists():
@@ -2458,7 +2450,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
             else:
                 obspyFiles = {}
-                for obForm in obspyFormats:
+                for obForm in OBSPY_FORMATS:
                     temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
                     for f in temp_file_glob:
                         currParams = params
@@ -2509,14 +2501,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             params = HVSRBatch(params)
             return params
         elif str(params['input_data']).lower() in SAMPLE_LIST or f"sample{params['input_data'].lower()}" in SAMPLE_LIST:
-            sample_data_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
+            SAMPLE_DATA_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             if source=='batch':
-                params['input_data'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
                 params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
                 params = HVSRBatch(params)
                 return params
             elif source=='dir':
-                params['input_data'] = sample_data_dir.joinpath('Batch_SampleData.csv')
+                params['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
                 params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
                 params = HVSRBatch(params)
                 return params
@@ -2526,7 +2518,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 if params['input_data'].lower() in sampleFileKeyMap.keys():
                     params['input_data'] = sampleFileKeyMap[params['input_data'].lower()]
                 else:
-                    params['input_data'] = sample_data_dir.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+                    params['input_data'] = SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
 
                 dPath = params['input_data']
                 rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
@@ -3301,7 +3293,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
-               plot_type='HVSR p ann C+ p ann Spec p ann', plot_engine='matplotlib', 
+               plot_type=DEF_PLOT_STRING, plot_engine='matplotlib', 
                show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
@@ -3332,7 +3324,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 - list/tuple - a list or tuple of the above objects, in the same order they are in the report_formats list
             - 'html': hvsr_results['HTML_Report'] - a string containing the text for an HTML document
             - 'pdf': currently does not save to the HVSRData object itself, can only be saved to the disk directly
-    plot_type : str, default = 'HVSR p ann C+ p ann Spec
+    plot_type : str, default = 'HVSR p ann C+ p ann Spec p ann'
         What type of plot to plot, if 'plot' part of report_formats input
     azimuth : str, default = 'HV'
         Which azimuth to plot, by default "HV" which is the main "azimuth" combining the E and N components
@@ -3478,7 +3470,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
         print(errMsg)
         print(e)
-        hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type='HVSR t all C+ t SPEC', azimuth=azimuth, return_fig=True)
+        plotString_noBestPeak = 'HVSR t all C+ t SPEC'
+        hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, return_fig=True)
         return hvsr_results
         #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
 
@@ -4154,7 +4147,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type='HVSR ann p C+ ann p SPEC ann p', azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -4481,12 +4474,12 @@ def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0
         for i, tr in enumerate(st):
             key = tr.stats.component
             if key == 'Z':
-                C='k'
+                pColor='k'
             elif key=='N':
-                C='r'
+                pColor='r'
             else:
-                C='b'
-            axes[key].plot(mplTimes[key], tr.data, color=C, linewidth=0.15)
+                pColor='b'
+            axes[key].plot(mplTimes[key], tr.data, color=pColor, linewidth=0.15)
 
 
     axes['Z'].set_ylabel('Z')
@@ -6326,7 +6319,7 @@ def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=Fa
             rawDataIN = obspy.read(str(input_data), starttime=UTCDateTime(params['starttime']), endttime=UTCDateTime(params['endtime']), nearest_sample=True)
             rawDataIN.attach_response(inv)
     elif source=='dir': #files with 3 traces, but may be several in a directory or only directory name provided
-        obspyFormats = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
+        OBSPY_FORMATS = ['AH','ALSEP_PSE','ALSEP_WTH','ALSEP_WTN','CSS','DMX','GCF','GSE1','GSE2','KINEMETRICS_EVT','MSEED','NNSA_KB_CORE','PDAS','PICKLE','Q','REFTEK130','RG16','SAC','SACXY','SEG2','SEGY','SEISAN','SH_ASC','SLIST','SU','TSPAIR','WAV','WIN','Y']
         for file in input_data.iterdir():
             ext = file.suffix[1:]
             rawFormat = False
@@ -6334,7 +6327,7 @@ def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=Fa
                 if float(ext) >= 0 and float(ext) < 367:
                     rawFormat=True
             
-            if ext.upper() in obspyFormats or rawFormat:
+            if ext.upper() in OBSPY_FORMATS or rawFormat:
                 filesinfolder = True
                 folderPathList.append(input_data)
                 fileList.append(file.name)
@@ -7537,7 +7530,7 @@ def _dfa(x, hvsr_data=None, verbose=False):#, equal_interval_energy, median_dail
     
     """
     # Use equal energy for daily PSDs to give small 'events' a chance to contribute
-    # the same as large ones, so that P1+P2+P3=1
+    # the same as large ones, so that pH1List+pH2List+P3=1
     hvsr_tSteps = []
     
     if verbose:
@@ -7574,9 +7567,9 @@ def _dfa(x, hvsr_data=None, verbose=False):#, equal_interval_energy, median_dail
         hvsr_data['dfa']['time_int_psd']['N'][time_int] = hvsr_data['hvsr_windows_df'].loc[tiIndDF,'psd_values_N']
 
         # Each PSD for the time_int (there is only one in SpRIT)
-        Pz = list()
-        P1 = list()
-        P2 = list()
+        pZList = list()
+        pH1List = list()
+        pH2List = list()
         sum_pz = 0
         sum_p1 = 0
         sum_p2 = 0
@@ -7584,24 +7577,24 @@ def _dfa(x, hvsr_data=None, verbose=False):#, equal_interval_energy, median_dail
         # Each sample of the PSD , convert to power
         for j in range(len(x) - 1):
             pz = __get_power([hvsr_data['dfa']['time_int_psd']['Z'][time_int][j][()], hvsr_data['dfa']['time_int_psd']['Z'][time_int][j + 1][()]], [x[j], x[j + 1]])
-            Pz.append(pz)
+            pZList.append(pz)
             sum_pz += pz
 
             p1 = __get_power([hvsr_data['dfa']['time_int_psd']['E'][time_int][j][()], hvsr_data['dfa']['time_int_psd']['E'][time_int][j + 1][()]], [x[j], x[j + 1]])
-            P1.append(p1)
+            pH1List.append(p1)
             sum_p1 += p1
 
             p2 = __get_power([hvsr_data['dfa']['time_int_psd']['N'][time_int][j][()], hvsr_data['dfa']['time_int_psd']['N'][time_int][j + 1][()]], [x[j], x[j + 1]])
-            P2.append(p2)
+            pH2List.append(p2)
             sum_p2 += p2
         
         sum_power = sum_pz + sum_p1 + sum_p2  # total power
 
         # Mormalized power
         for j in range(len(x) - 1):
-            sum_z_power.append(Pz[j] / sum_power)
-            sum_ew_power.append(P1[j] / sum_power)
-            sum_ns_power.append(P2[j] / sum_power)
+            sum_z_power.append(pZList[j] / sum_power)
+            sum_ew_power.append(pH1List[j] / sum_power)
+            sum_ns_power.append(pH2List[j] / sum_power)
             
         # Average the normalized time interval power
         for j in range(len(x) - 1):
