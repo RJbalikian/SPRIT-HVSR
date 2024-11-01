@@ -7580,6 +7580,58 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
 
     return hvsr_data
 
+# Helper functions for generate_ppsds()
+# Generate psds from raw data (no response removed)
+def __psd_from_raw_data(hvsr_data, show_psd_plot=False):
+    import scipy
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import obspy
+
+    zdata = hvsr_data.stream.select(component='Z').merge()
+    edata = hvsr_data.stream.select(component='E').merge()
+    ndata = hvsr_data.stream.select(component='N').merge()
+
+    sample_rate = zdata[0].stats.sampling_rate
+    sample_space = zdata[0].stats.delta
+    zdata = zdata.split()
+
+    # parameters
+    psd_window_length = 30
+    overlap = 0.5
+
+    # transform
+    psd_window_samples = int(psd_window_length * sample_rate)
+    overlap_samples = overlap * psd_window_samples
+
+    for curr_component in [zdata, edata, ndata]:
+        if isinstance(curr_component, obspy.Trace):
+            st = obspy.Stream([curr_component])
+        else:
+            st = curr_component
+
+        x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
+        psds = []
+        freqs = []
+        final_psds = []
+        for tr in st:
+            if len(tr) < 2*psd_window_samples:
+                psd_window_samples = len(tr)
+                overlap_samples = psd_window_samples-1     
+            f, pxx = scipy.signal.welch(tr.data, fs=tr.stats.sampling_rate, window='hann', nperseg=psd_window_samples, 
+                                    noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
+                                    scaling='density', axis=-1, average='mean')
+            freqs.append(f)
+            psds.append(pxx)
+            final_psds.append(np.interp(x_freqs, f, pxx, left=None, right=None, period=None))
+        psds = np.mean(np.array(final_psds), axis=0)
+        
+        if show_psd_plot:
+            plt.plot(x_freqs, psds, linewidth=0.5, c='k')
+            plt.semilogx()
+            plt.semilogy()
+
+    return 
 
 # Helper functions for process_hvsr()
 # Get diffuse field assumption data
