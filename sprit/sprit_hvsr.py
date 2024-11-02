@@ -7555,8 +7555,7 @@ def __single_psd_from_raw_data(hvsr_data, show_psd_plot=False):
 
     return 
 
-
-def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann'):
+def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann', verbose=False):
     """Function to generate power spectral density (PSD) data for windowed data.
     This function has been pieced together from parts of the scipy.signal and scipy.fft modules.
     It generates PSDs for each window.
@@ -7721,7 +7720,7 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
                 raise ValueError('nperseg must be a positive integer')
 
         # parse window; if array like, then set nperseg = win.shape
-        win, nperseg = __triage_segments(window, nperseg, input_length=x.shape[-1])
+        win, nperseg = __triage_segments(window, nperseg, input_length=x.shape[-1], verbose=verbose)
 
         if nfft is None:
             nfft = nperseg
@@ -7734,8 +7733,10 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
             noverlap = nperseg//2
         else:
             noverlap = int(noverlap)
+        
         if noverlap >= nperseg:
-            raise ValueError('noverlap must be less than nperseg.')
+            noverlap = 0
+        #    raise ValueError('noverlap must be less than nperseg.')
         nstep = nperseg - noverlap
 
         # Padding occurs after boundary extension, so that the extended signal ends
@@ -7791,6 +7792,7 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
             scale = np.sqrt(scale)
 
         if return_onesided:
+
             if np.iscomplexobj(x):
                 sides = 'twosided'
                 warnings.warn('Input data is complex, switching to return_onesided=False',
@@ -7891,14 +7893,16 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
         # Perform the fft. Acts on last axis by default. Zero-pads automatically
         if sides == 'twosided':
             func = scipy.fft.fft
+            print('2side')
         else:
             result = result.real
             func = scipy.fft.rfft
-        result = func(result, n=nfft)
+    
+        result = func(result, n=nfft).real
 
         return result
 
-    def __triage_segments(window, nperseg, input_length):
+    def __triage_segments(window, nperseg, input_length, verbose):
         """
         Parses window and nperseg arguments for spectrogram and _spectral_helper.
         This is a helper function, not meant to be called externally.
@@ -7937,10 +7941,12 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
             if nperseg is None:
                 nperseg = 256  # then change to default
             if nperseg > input_length:
-                warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
+                if verbose:
+                    warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
                             f' = {input_length:d}, using nperseg = {input_length:d}',
                             stacklevel=3)
                 nperseg = input_length
+                noverlap = nperseg
             win = scipy.signal.windows.get_window(window, nperseg)
         else:
             win = np.asarray(window)
@@ -7957,17 +7963,36 @@ def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_b
         return win, nperseg
 
     x = np.logspace(np.log10(hvsr_data['hvsr_band'][0]),np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
-    y = hvsr_data.stream.split()[1].data
+    
+    streamSplit = {'Z': hvsr_data.stream.select(component='Z').split(),
+               'E': hvsr_data.stream.select(component='E').split(),
+               'N': hvsr_data.stream.select(component='N').split()}
+    
+    psd_raw = {}
+    win_start_dict = {}
+    for component, component_stream in streamSplit.items():
+        #freqList = []
+        startTimeList = []
+        resultList = []
+        for tr in component_stream:
+            y = tr.data
 
-    sample_rate = hvsr_data.stream[1].stats.sampling_rate
-    delta = hvsr_data.stream[1].stats.delta
+            sample_rate = tr.stats.sampling_rate
+            #delta = tr.stats.delta
 
-    window_length_samples = window_length * sample_rate
-    noverlap = window_length_samples * overlap_pct
+            window_length_samples = window_length * sample_rate
+            noverlap = window_length_samples * overlap_pct
 
-    freqs, win_start_samples, result = __spectral_helper(x, y, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
-
-    return freqs, win_start_samples, result.T
+            freqs, t, result = __spectral_helper(x, y, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
+            for r in result.T.real:
+                r_update = np.interp(x, freqs, r)
+            resultList.append(r_update)
+            startTimeList.append(t)
+            #freqList.append(x)
+        psd_raw[component] = np.array(resultList)
+        win_start_dict[component] = startTimeList
+    
+    return x, win_start_dict, psd_raw
 
 # Remove noisy windows from df
 def __remove_windows_from_df(hvsr_data, verbose=False):
