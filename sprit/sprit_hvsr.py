@@ -7555,7 +7555,84 @@ def __single_psd_from_raw_data(hvsr_data, show_psd_plot=False):
 
     return 
 
-def _ppsd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann', verbose=False):
+# Generate windows "manually"
+def _create_windows(hvsr_data, window=30, overlap=0.5, window_method='length', verbose=False):
+    """Function to create time windows based on input stream.
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData object, Obspy.Stream, or Obspy.Trace
+        Input object with stream data
+    window : float or int, optional
+        Windowing parameter. If window_method='length', this is the length of each window in seconds.
+        If window_method='number', this must be int or be able to be converted to int, and is the number of windows, by default 30
+    overlap : float, optional
+        Window overlap in percentage. If >=1, it will be interpreted as a percentage out of 100, by default 0.5
+    window_method : str, optional
+        Which windowing method to use, "length", which creates windows of a specified length, or 
+        "number", which creates a specified number of windows, by default 'length'
+    verbose : bool, optional
+        Whether to print information about the process to terminal, by default False
+
+    Returns
+    -------
+    np.array
+        2D Numpy array containing, the size of the first dimension is the number of windows, size of second dimension is 2 (start and end) 
+    """
+
+    length_list = ['window_length', 'window length', 
+                   'length', 'len', 'l', 'size', 's']
+    
+    winNum_list = ['number of windows', 'window_number', 'window number', 
+                   'number', 'num', 'winnum', 'window_num', 'amount']
+    st = hvsr_data.stream.merge()
+    for i, tr in enumerate(st):
+        if i==0:
+            maxStart = tr.stats.starttime
+            minEnd = tr.stats.endtime
+        else:
+            if tr.stats.starttime > maxStart:
+                maxStart = tr.stats.starttime
+            if tr.stats.endtime < minEnd:
+                minEnd = tr.stats.endtime
+
+    while overlap > 1:
+        overlap = round((overlap / 100), 3)
+    
+    timeRange = minEnd - maxStart
+
+    if window_method.lower() in length_list:
+        stride = window * (1-overlap)
+        winLength = window
+    elif window_method.lower() in winNum_list:
+        stride = timeRange // window
+        winLength = stride / overlap
+    else:
+        if verbose:
+            print(f"\twindow_method={window_method} is not a valid entry.")
+            print(f"\t  Use any of the following to create windows using a specific size: {length_list}")
+            print(f"\t  Use any of the following to create a specific number of windows : {winNum_list}")
+            print(f"\t  By default, using a window length of 30 seconds and overlap of 0.5")
+        # Default of overlap=0.5, window_length=30
+        stride = 15
+        winLength = 30
+        overlap = 0.5
+
+    windowStarts = np.arange(maxStart, minEnd, stride)
+    windowEnds = windowStarts + winLength
+    windows = np.array(list(zip(windowStarts, windowEnds)))
+    if verbose:
+        verboseStatement = ["\tUsing the following windowing parameters"]
+        verboseStatement.append(f"\t Number of windows: {windows.shape[0]}")
+        verboseStatement.append(f"\t Window Size: {winLength}")
+        verboseStatement.append(f"\t Window Overlap: {overlap}")
+
+        for l in verboseStatement:
+            print(l)
+    return windows
+
+# Generate psds "manually" (with help from scipy)
+def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann', verbose=False):
     """Function to generate power spectral density (PSD) data for windowed data.
     This function has been pieced together from parts of the scipy.signal and scipy.fft modules.
     It generates PSDs for each window.
