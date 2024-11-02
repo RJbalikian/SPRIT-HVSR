@@ -7580,12 +7580,22 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_method='length', v
         2D Numpy array containing, the size of the first dimension is the number of windows, size of second dimension is 2 (start and end) 
     """
 
+
     length_list = ['window_length', 'window length', 
                    'length', 'len', 'l', 'size', 's']
     
     winNum_list = ['number of windows', 'window_number', 'window number', 
                    'number', 'num', 'winnum', 'window_num', 'amount']
-    st = hvsr_data.stream.merge()
+
+    if isinstance(hvsr_data, HVSRData):
+        st = hvsr_data.stream.merge()
+    elif isinstance(hvsr_data, obspy.Stream):
+        st = hvsr_data
+    elif isinstance(hvsr_data, obspy.Trace):
+        st = obspy.Stream([hvsr_data])
+    else:
+        raise RuntimeError("hvsr_data parameter of _create_windows() must be sprit.HVSRData, obspy.Stream, or obspy.Trace")
+
     for i, tr in enumerate(st):
         if i==0:
             maxStart = tr.stats.starttime
