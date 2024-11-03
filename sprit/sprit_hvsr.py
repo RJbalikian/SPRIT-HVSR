@@ -3120,8 +3120,8 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                     if k.lower() in ['z', 'e', 'n']:
                         colList.append(str(tk)+'_'+k)
                         currTStepList.append(time_data[tk][i][currTStep[i]])
-
         dfList.append(currTStepList)
+
     hvsrDF = pd.DataFrame(dfList, columns=colList)
     if verbose:
         print(f"\t\thvsr_windows_df created with columns: {', '.join(hvsrDF.columns)}")
@@ -7555,6 +7555,59 @@ def __single_psd_from_raw_data(hvsr_data, show_psd_plot=False):
 
     return 
 
+
+# Get the fft manually
+def _get_psd_dict(hvsr_data, window, overlap, window_method, verbose=False):
+    """Helper function to get PSDs "manually" from windowed data
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData or obspy.Stream
+        HVSR data object to perform analysis on
+    window : float or int
+        Size of the window in seconds
+    overlap : float or int
+        Percent overlap between windows. Should be percentage between 0-1.
+    window_method : str
+        Windowing method, 'length' or 'number', 'length' recommended.
+    verbose : bool, optional
+        Whether to print information to termianl, by default False
+
+    Returns
+    -------
+    dict
+        Dictionary with keys "Z", "E", "N", 
+        which are dictionaries with keys that are string UTCDateTimes of window start
+    """
+    
+    windows = _create_windows(hvsr_data, window=window, overlap=overlap, window_method=window_method, verbose=verbose)
+
+    psdZDict = {}
+    psdEDict = {}
+    psdNDict = {}
+    for win in windows:
+        st = hvsr_data.stream.copy()
+        st.trim(starttime=win[0], endtime=win[1])
+
+        f, w, psd = _psd_from_raw_data(hvsr_data=st, window_length=window, overlap_pct=1, num_freq_bins=500, window_type='hann')
+        
+        if not psd['Z'].shape==(0,):
+            psdZDict[str(win[0])] = psd['Z']
+        if not psd['E'].shape==(0,):
+            psdEDict[str(win[0])] = psd['E']
+        if not psd['N'].shape==(0,):
+            psdNDict[str(win[0])] = psd['N']
+        
+
+    common_times = list(set(list(psdZDict.keys())).intersection(list(psdEDict.keys()), list(psdNDict.keys())))
+    psdDict = {'Z':{}, 'E':{}, 'N':{}}
+    for ct in common_times:
+        psdDict['Z'][ct] = psdZDict[ct]
+        psdDict['E'][ct] = psdEDict[ct]
+        psdDict['N'][ct] = psdNDict[ct]
+    
+    return psdDict
+
 # Generate windows "manually"
 def _create_windows(hvsr_data, window=30, overlap=0.5, window_method='length', verbose=False):
     """Function to create time windows based on input stream.
@@ -8049,19 +8102,35 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
                                     " from length of window")
         return win, nperseg
 
-    x = np.logspace(np.log10(hvsr_data['hvsr_band'][0]),np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
+    if hasattr(hvsr_data, 'hvsr_band'):
+        x = np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
+    else:
+        x = np.logspace(np.log10(0.4), np.log10(40), num_freq_bins)
     
-    streamSplit = {'Z': hvsr_data.stream.select(component='Z').split(),
-               'E': hvsr_data.stream.select(component='E').split(),
-               'N': hvsr_data.stream.select(component='N').split()}
-    
+    if isinstance(hvsr_data, HVSRData):
+        streamCompDict = {'Z': hvsr_data.stream.select(component='Z'),
+               'E': hvsr_data.stream.select(component='E'),
+               'N': hvsr_data.stream.select(component='N')}
+    elif isinstance(hvsr_data, obspy.Stream):
+        streamCompDict = {'Z': hvsr_data.select(component='Z'),
+                       'E': hvsr_data.select(component='E'),
+                       'N': hvsr_data.select(component='N')}        
+    else:
+        raise RuntimeError("hvsr_data must be of type HVSRData or obspy.Stream")
+
+
     psd_raw = {}
     win_start_dict = {}
-    for component, component_stream in streamSplit.items():
+    for component, component_stream in streamCompDict.items():
         #freqList = []
         startTimeList = []
         resultList = []
+        print('is this working?')
         for tr in component_stream:
+            print(np.ma.count_masked(tr.data))
+            print(type(tr.data))
+            if isinstance(tr.data, np.ma.masked_array):
+                continue
             y = tr.data
 
             sample_rate = tr.stats.sampling_rate
@@ -8071,6 +8140,9 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
             noverlap = window_length_samples * overlap_pct
 
             freqs, t, result = __spectral_helper(x, y, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
+            print('freqs', freqs)
+            print('t', t)
+            print('result', result.shape)
             for r in result.T.real:
                 r_update = np.interp(x, freqs, r)
             resultList.append(r_update)
