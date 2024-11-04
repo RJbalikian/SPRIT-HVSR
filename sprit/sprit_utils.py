@@ -325,6 +325,16 @@ def get_char(in_char):
     return out_char.decode('utf-8')
 
 
+# Get default dictionary with keys=parameter names and values=default values
+def get_default_args(func):
+    signature = inspect.signature(func)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+        }
+    
+
 # Get fuller traceback information on errors
 def _get_error_from_exception(exception=None):
     if exception is not None:
