@@ -2870,7 +2870,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 # Generate PSDs for each channel
 def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5, 
                    window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=500, 
-                   obspy_ppsds=True, azimuthal_ppsds=False, verbose=False, **obspy_ppsd_kwargs):
+                   obspy_ppsds=True, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -3238,47 +3238,55 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
                             currTStepList.append(time_data[tk][i][currTStep[i]])
             dfList.append(currTStepList)
     else:
-        x_freqs, common_times, psdDict = _get_psd_dict(hvsr_data=hvsr_data, window=window_length, overlap=overlap_pct, 
-                                                       num_freq_bins=num_freq_bins, 
-                                                       window_length_method=window_length_method, window_type=window_type, verbose=verbose)
-        hvsr_data['ppsds'] = {}
-        hvsr_data['ppsds']['psd_values'] = psdDict
-        for key in psdDict.keys():
-            hvsr_data['ppsds']['channel'] = ''
-        #channel
-        #current_times_used
-        #delta
-        #get_mean
-        #get_mode
-        #id
-        #location
-        #metadata
-        #network
-        #nfft
-        #nlap
-        #overlap
-        #period_bin_centers
-        #period_bin_left_edges
-        #period_bin_right_edges
-        #period_xedges
-        #ppsd_length
-        #psd_frequencies
-        #psd_periods
-        #sampling_rate
-        #skip_on_gaps
-        #station
-        #step
-        #times_data
-        #times_gaps
-        #times_processed
+        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, overlap=overlap_pct, show_psd_plot=False)
 
+        #x_freqs, common_times, psdDict = _get_psd_dict(hvsr_data=hvsr_data, window=window_length, overlap=overlap_pct, 
+        #                                               num_freq_bins=num_freq_bins, 
+        #                                               window_length_method=window_length_method, window_type=window_type, verbose=verbose)
+        x_freqs = np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
+        
+        hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
+        for key, item in psdDict.items():
+            currSt = hvsr_data.stream.select(component=key).merge()
+
+            hvsr_data['ppsds'][key]['channel'] = currSt[0].stats.channel
+            hvsr_data['ppsds'][key]['current_times_used'] = common_times
+            hvsr_data['ppsds'][key]['delta'] = float(currSt[0].stats.delta)
+            #hvsr_data['ppsds'][key]['get_mean'] = np.nanmean(item)
+            #hvsr_data['ppsds'][key]['mean'] = np.nanmean(item)
+            #hvsr_data['ppsds'][key]['get_mode'] = scipy.stats.mode(item)
+            #hvsr_data['ppsds'][key]['mode'] = scipy.stats.mode(item)
+            hvsr_data['ppsds'][key]['id'] = currSt[0].id
+            hvsr_data['ppsds'][key]['len'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['location'] = currSt[0].stats.location
+            hvsr_data['ppsds'][key]['metadata'] = [currSt[0].stats.response if hasattr(currSt[0].stats, 'response') else None][0]
+            hvsr_data['ppsds'][key]['network'] = currSt[0].stats.network
+            hvsr_data['ppsds'][key]['nfft'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['nlap'] = int(overlap_pct*window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['overlap'] = overlap_pct
+            hvsr_data['ppsds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
+            hvsr_data['ppsds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
+            hvsr_data['ppsds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
+            hvsr_data['ppsds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
+            hvsr_data['ppsds'][key]['period_xedges'] = 1/x_freqs
+            hvsr_data['ppsds'][key]['ppsd_length'] = window_length
+            hvsr_data['ppsds'][key]['psd_length'] = window_length
+            hvsr_data['ppsds'][key]['psd_frequencies'] = x_freqs
+            hvsr_data['ppsds'][key]['psd_periods'] = 1/x_freqs
+            hvsr_data['ppsds'][key]['psd_values'] = psdDict
+            hvsr_data['ppsds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
+            hvsr_data['ppsds'][key]['skip_on_gaps'] = skip_on_gaps
+            hvsr_data['ppsds'][key]['station'] = currSt[0].stats.station
+            hvsr_data['ppsds'][key]['step'] = window_length * (1-overlap_pct)
+            hvsr_data['ppsds'][key]['times_data'] = common_times
+            hvsr_data['ppsds'][key]['times_gaps'] = [[None, None]]
+            hvsr_data['ppsds'][key]['times_processed'] = [[None, None]]
+            
+        hvsr_data['ppsds_obspy'] = {}
         dfList = []
-        for ws in common_times:
-            dfList.append([True, psdDict['Z'][str(ws)], psdDict['E'][str(ws)], psdDict['N'][str(ws)]])
-
-        print('x', x_freqs.shape)
-        print('windowstarts', len(common_times))
-        print('psddict', len(list(psdDict['Z'].keys())), psdDict['Z'][list(psdDict['Z'].keys())[0]].shape)
+        for w in common_times:
+            ws = str(w)
+            dfList.append([True, psdDict['Z'][ws], psdDict['E'][ws], psdDict['N'][ws]])
 
         colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
         # dfList: list of np.arrays, fitting the above column
@@ -3314,7 +3322,6 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
     hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
     hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (obspy_ppsd_kwargs['ppsd_length']/86400)
     
-    print(hvsrDF)
     # Take care of existing time gaps, in case not taken care of previously
     if obspy_ppsds:
         for gap in hvsr_data['ppsds']['Z']['times_gaps']:
@@ -3335,7 +3342,6 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
         #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
         #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
         
-
     # Create dict entry to keep track of how many outlier hvsr curves are removed 
     # This is a (2-item list with [0]=current number, [1]=original number of curves)
     hvsr_data['tsteps_used'] = [int(hvsrDF['Use'].sum()), hvsrDF['Use'].shape[0]]
@@ -3353,6 +3359,16 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
     
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    
+    #for ind, row in hvsrDF.iterrows():
+    #    print(row['psd_values_Z'].shape)
+    if plot_psds:
+        for i, r in hvsrDF.iterrows():
+            plt.plot(r['psd_values_Z'], c='k', linewidth=0.5)
+            plt.plot(r['psd_values_E'], c='b', linewidth=0.5)
+            plt.plot(r['psd_values_N'], c='r', linewidth=0.5)
+        plt.show()
+
     return hvsr_data
 
 
@@ -3741,24 +3757,20 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 plot_hvsr_kwargs.pop('plot_engine')
 
             fig = plot_hvsr(hvsr_results, plot_type=plot_type, plot_engine=plot_engine, show_plot=show_plot_report, return_fig=True)
-
-            if plot_engine.lower() not in ['plotly', 'plty', 'p']:
-                expFigAx = fig
-            else:
-                expFigAx = fig
+            expFigAx = fig
             
             if 'plot' in report_export_format:
                 export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format='plot')
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
-                print('\nPlot of data report:')
                 
                 if not verbose:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         fig.show()
                 else:
+                    print('\nPlot of data report:')
                     fig.show()
             else:
                 if verbose:
@@ -5042,10 +5054,9 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             tStepDict = {}
             for k in hvsr_out['psd_raw']:
                 tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            
             hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, horizontal_method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
             
-            hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+            hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
             for k, v in hvsr_az_tstep.items():
                 if tStep == 0:
                     hvsr_tSteps_az[k] = [np.float32(v)]
@@ -7675,11 +7686,7 @@ s
 
 # Helper functions for generate_ppsds()
 # Generate psds from raw data (no response removed)
-def __single_psd_from_raw_data(hvsr_data, show_psd_plot=False):
-    import scipy
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import obspy
+def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False):
 
     zdata = hvsr_data.stream.select(component='Z').merge()
     edata = hvsr_data.stream.select(component='E').merge()
@@ -7689,42 +7696,59 @@ def __single_psd_from_raw_data(hvsr_data, show_psd_plot=False):
     sample_space = zdata[0].stats.delta
     zdata = zdata.split()
 
-    # parameters
-    psd_window_length = 30
-    overlap = 0.5
-
     # transform
-    psd_window_samples = int(psd_window_length * sample_rate)
+    psd_window_samples = int(window_length * sample_rate)
     overlap_samples = overlap * psd_window_samples
 
-    for curr_component in [zdata, edata, ndata]:
+    psdDict = {'Z':{}, 'E':{}, 'N':{}}
+    for key, curr_component in {'Z':zdata, 'E':edata, 'N':ndata}.items():
         if isinstance(curr_component, obspy.Trace):
-            st = obspy.Stream([curr_component])
+            st = obspy.Stream([curr_component]).merge()
         else:
-            st = curr_component
+            st = curr_component.merge()
+        
+        tr = st[0]
 
         x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
         psds = []
         freqs = []
         final_psds = []
-        for tr in st:
-            if len(tr) < 2*psd_window_samples:
-                psd_window_samples = len(tr)
-                overlap_samples = psd_window_samples-1     
-            f, pxx = scipy.signal.welch(tr.data, fs=tr.stats.sampling_rate, window='hann', nperseg=psd_window_samples, 
+
+        windows = _create_windows(hvsr_data=hvsr_data, window=window_length, overlap=overlap, window_length_method='length', verbose=False)
+        for stime, etime in windows:
+            window_trace = tr.copy()
+            window_trace.trim(starttime=stime, endtime=etime)
+
+            window_st = window_trace.split()
+            longest_trace = window_st[0]
+            if len(window_st) > 1:
+                for tr in window_st:
+                    if len(tr) > len(longest_trace):
+                        longest_trace = tr
+            window_trace = longest_trace
+
+            if len(window_trace) < (1+overlap)*psd_window_samples:
+                psd_window_samples = len(window_trace)
+                overlap_samples = psd_window_samples-1
+            
+            f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, window='hann', nperseg=psd_window_samples, 
                                     noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
                                     scaling='density', axis=-1, average='mean')
             freqs.append(f)
-            psds.append(pxx)
-            final_psds.append(np.interp(x_freqs, f, pxx, left=None, right=None, period=None))
-        psds = np.mean(np.array(final_psds), axis=0)
-        
+            psds.append(np.flip(pxx))
+            interpPSD = np.interp(x_freqs, f, pxx, left=None, right=None, period=None)
+            interpPSD_dB = 10*np.log10(interpPSD)
+            psdDict[key][str(stime)] = interpPSD_dB
+            final_psds.append(interpPSD_dB)
+        #psds = np.mean(np.array(final_psds), axis=0)
+        #psdDict[key][str(stime)] = np.array(final_psds)
+
         if show_psd_plot:
             plt.plot(x_freqs, psds, linewidth=0.5, c='k')
             plt.semilogx()
             plt.semilogy()
 
-    return 
+    return psdDict, windows.T[0]
 
 
 # Get the fft manually
@@ -7775,6 +7799,13 @@ def _get_psd_dict(hvsr_data, window=30.0, overlap=0.5, num_freq_bins=500,
     
     psdDict = {'Z':{}, 'E':{}, 'N':{}}
     for ct in times_in_common:
+        # "Flatten" so only one dimension
+        psdZDict[ct] = np.nanmedian(psdZDict[ct], axis=0)
+        psdEDict[ct] = np.nanmedian(psdEDict[ct], axis=0)
+        psdNDict[ct] = np.nanmedian(psdNDict[ct], axis=0)
+
+
+
         psdDict['Z'][ct] = psdZDict[ct]
         psdDict['E'][ct] = psdEDict[ct]
         psdDict['N'][ct] = psdNDict[ct]
@@ -7901,7 +7932,7 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
 
     """
 
-    def __spectral_helper(x, y, fs=1.0, window=window_type, nperseg=None, noverlap=None, nfft=None, padded=False):
+    def __spectral_helper(x, fs=1.0, window=window_type, nperseg=None, noverlap=None, nfft=None, padded=False):
         """Calculate windowed FFTs for PSD
 
         This is taken largely from the _spectral_helper() function in the scipy.signal module.
@@ -7992,26 +8023,25 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
 
         # Ensure we have np.arrays, get outdtype
         x = np.asarray(x)
-        y = np.asarray(y)
-        outdtype = np.result_type(x, y, np.complex64)
-
+        #y = np.asarray(y)
+        outdtype = np.complex64  #np.result_type(x, y, np.complex64)
 
         #if not same_data:
         # Check if we can broadcast the outer axes together
-        xouter = list(x.shape)
-        youter = list(y.shape)
-        xouter.pop(axis)
-        youter.pop(axis)
-        try:
-            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError as e:
-            raise ValueError('x and y cannot be broadcast together.') from e
+        #xouter = list(x.shape)
+        #youter = list(y.shape)
+        #xouter.pop(axis)
+        #youter.pop(axis)
+        #try:
+        #    outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
+        #except ValueError as e:
+        #    raise ValueError('x and y cannot be broadcast together.') from e
 
         #if same_data:
-        #    if x.size == 0:
-        #        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
+        if x.size == 0:
+            return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
         #else:
-        if x.size == 0 or y.size == 0:
+        #if x.size == 0:# or y.size == 0:
             outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
             emptyout = np.moveaxis(np.empty(outshape), -1, axis)
             return emptyout, emptyout, emptyout
@@ -8024,15 +8054,15 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
 
         # Check if x and y are the same length, zero-pad if necessary
         #if not same_data:
-        if x.shape[-1] != y.shape[-1]:
-            if x.shape[-1] < y.shape[-1]:
-                pad_shape = list(x.shape)
-                pad_shape[-1] = y.shape[-1] - x.shape[-1]
-                x = np.concatenate((x, np.zeros(pad_shape)), -1)
-            else:
-                pad_shape = list(y.shape)
-                pad_shape[-1] = x.shape[-1] - y.shape[-1]
-                y = np.concatenate((y, np.zeros(pad_shape)), -1)
+        #if x.shape[-1] != y.shape[-1]:
+        #    if x.shape[-1] < y.shape[-1]:
+        #        pad_shape = list(x.shape)
+        #        pad_shape[-1] = y.shape[-1] - x.shape[-1]
+        #        x = np.concatenate((x, np.zeros(pad_shape)), -1)
+        #    else:
+        #        pad_shape = list(y.shape)
+        #        pad_shape[-1] = x.shape[-1] - y.shape[-1]
+        #        y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
         if nperseg is not None:  # if specified by user
             nperseg = int(nperseg)
@@ -8098,8 +8128,8 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
         else:
             detrend_func = detrend
 
-        if np.result_type(win, np.complex64) != outdtype:
-            win = win.astype(outdtype)
+        #if np.result_type(win, np.complex64) != outdtype:
+        win = win.astype(np.float64)
 
         if scaling == 'density':
             scale = 1.0 / (fs * (win*win).sum())
@@ -8112,7 +8142,6 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
             scale = np.sqrt(scale)
 
         if return_onesided:
-
             if np.iscomplexobj(x):
                 sides = 'twosided'
                 warnings.warn('Input data is complex, switching to return_onesided=False',
@@ -8120,11 +8149,11 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
             else:
                 sides = 'onesided'
                 #if not same_data:
-                if np.iscomplexobj(y):
-                    sides = 'twosided'
-                    warnings.warn('Input data is complex, switching to '
-                                    'return_onesided=False',
-                                    stacklevel=3)
+                #if np.iscomplexobj(y):
+                #    sides = 'twosided'
+                #    warnings.warn('Input data is complex, switching to '
+                #                    'return_onesided=False',
+                #                    stacklevel=3)
         else:
             sides = 'twosided'
 
@@ -8138,8 +8167,8 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
 
         #if not same_data:
         # All the same operations on the y data
-        result_y = __fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, sides)
-        result = np.conjugate(result) * result_y
+        #result_y = __fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, sides)
+        #result = np.conjugate(result) * result_y
         #elif mode == 'psd':
         result = np.conjugate(result) * result
 
@@ -8160,7 +8189,7 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
 
         # All imaginary parts are zero anyways
         #if same_data and mode != 'stft':
-        #    result = result.real
+        result = result.real
 
         # Output is going to have new last axis for time/window index, so a
         # negative axis index shifts down one
@@ -8310,7 +8339,6 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
         for tr in component_stream:
             #if isinstance(tr.data, np.ma.masked_array):
             #    continue
-            y = tr.data
 
             sample_rate = tr.stats.sampling_rate
             #delta = tr.stats.delta
@@ -8318,10 +8346,11 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
             window_length_samples = window_length * sample_rate
             noverlap = window_length_samples * overlap_pct
             
-            freqs, t, result = __spectral_helper(x, y, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
+            freqs, t, result = __spectral_helper(tr.data, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
 
-            for r in result.T.real:
-                r_update = np.interp(x, freqs, r)
+            for r in result.T:
+                r_update = 20*np.log10(np.interp(x, freqs, r))
+
             resultList.append(r_update)
             startTimeList.append(t)
             #freqList.append(x)
@@ -10343,7 +10372,7 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
     anyKey = list(hvsr_data['ppsds'].keys())[0]#Doesn't matter which channel we use as key
 
     delta = hvsr_data['ppsds'][anyKey]['delta']
-    window_len = (hvsr_data['ppsds'][anyKey]['len'] * delta) #Window length in seconds
+    window_len = hvsr_data['ppsds'][anyKey]['ppsd_length'] #Window length in seconds
     window_num = np.array(hvsr_data['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
@@ -10516,6 +10545,9 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     # First check below
     # Initialize list
     _found_m = list()
+    #print('peak', _peak)
+    #print('peakm', _peakm)
+    #SSprint('peakp', _peakp)
     for _i in range(len(_peak)):
         _dx = 1000000.
         # Initialize test as not passing for this frequency
@@ -10530,6 +10562,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                 _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.check_mark()}"
                 _found_m[_i] = True
                 break
+        
         if _peak[_i]['Report']['P-'] == sprit_utils.x_mark():
             _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.x_mark()}"
 
