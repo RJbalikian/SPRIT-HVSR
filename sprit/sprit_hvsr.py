@@ -3245,10 +3245,11 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
         #                                               window_length_method=window_length_method, window_type=window_type, verbose=verbose)
         x_freqs = np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
         
+
         hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
         for key, item in psdDict.items():
             currSt = hvsr_data.stream.select(component=key).merge()
-
+                      
             hvsr_data['ppsds'][key]['channel'] = currSt[0].stats.channel
             hvsr_data['ppsds'][key]['current_times_used'] = common_times
             hvsr_data['ppsds'][key]['delta'] = float(currSt[0].stats.delta)
@@ -3273,7 +3274,7 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             hvsr_data['ppsds'][key]['psd_length'] = window_length
             hvsr_data['ppsds'][key]['psd_frequencies'] = x_freqs
             hvsr_data['ppsds'][key]['psd_periods'] = 1/x_freqs
-            hvsr_data['ppsds'][key]['psd_values'] = psdDict
+            hvsr_data['ppsds'][key]['psd_values'] = np.array([list(np.flip(arr)) for arr in item.values()])
             hvsr_data['ppsds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
             hvsr_data['ppsds'][key]['skip_on_gaps'] = skip_on_gaps
             hvsr_data['ppsds'][key]['station'] = currSt[0].stats.station
@@ -7117,6 +7118,7 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
 
     return outStream
 
+
 # Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
                          do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
@@ -7736,6 +7738,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
                                     scaling='density', axis=-1, average='mean')
             freqs.append(f)
             psds.append(np.flip(pxx))
+
             interpPSD = np.interp(x_freqs, f, pxx, left=None, right=None, period=None)
             interpPSD_dB = 10*np.log10(interpPSD)
             psdDict[key][str(stime)] = interpPSD_dB
@@ -7800,11 +7803,9 @@ def _get_psd_dict(hvsr_data, window=30.0, overlap=0.5, num_freq_bins=500,
     psdDict = {'Z':{}, 'E':{}, 'N':{}}
     for ct in times_in_common:
         # "Flatten" so only one dimension
-        psdZDict[ct] = np.nanmedian(psdZDict[ct], axis=0)
-        psdEDict[ct] = np.nanmedian(psdEDict[ct], axis=0)
-        psdNDict[ct] = np.nanmedian(psdNDict[ct], axis=0)
-
-
+        psdZDict[ct] = np.flip(np.nanmedian(psdZDict[ct], axis=0))
+        psdEDict[ct] = np.flip(np.nanmedian(psdEDict[ct], axis=0))
+        psdNDict[ct] = np.flip(np.nanmedian(psdNDict[ct], axis=0))
 
         psdDict['Z'][ct] = psdZDict[ct]
         psdDict['E'][ct] = psdEDict[ct]
@@ -7813,6 +7814,7 @@ def _get_psd_dict(hvsr_data, window=30.0, overlap=0.5, num_freq_bins=500,
     common_times = [obspy.UTCDateTime(strUTCDatetime) for strUTCDatetime in times_in_common]
 
     return freqs, common_times, psdDict
+
 
 # Generate windows "manually"
 def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='length', verbose=False):
@@ -7899,6 +7901,7 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='len
         for l in verboseStatement:
             print(l)
     return windows
+
 
 # Generate psds "manually" (with help from scipy)
 def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann', verbose=False):
@@ -8358,6 +8361,7 @@ def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bi
         win_start_dict[component] = startTimeList
     
     return x, win_start_dict, psd_raw
+
 
 # Remove noisy windows from df
 def __remove_windows_from_df(hvsr_data, verbose=False):
