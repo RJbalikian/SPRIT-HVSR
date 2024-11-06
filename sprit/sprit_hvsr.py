@@ -50,7 +50,7 @@ except Exception:  # For testing
 
 # Constants, etc
 NOWTIME = datetime.datetime.now()
-DEF_PLOT_STRING = "HVSR p ann COMP+ p ann SPEC p ann"
+DEFAULT_PLOT_STR = "HVSR p ann COMP+ p ann SPEC p ann"
 OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 # Resources directory path, and the other paths as well
@@ -3243,8 +3243,11 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
         #x_freqs, common_times, psdDict = _get_psd_dict(hvsr_data=hvsr_data, window=window_length, overlap=overlap_pct, 
         #                                               num_freq_bins=num_freq_bins, 
         #                                               window_length_method=window_length_method, window_type=window_type, verbose=verbose)
-        x_freqs = np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
-        
+        x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
+        psdDictUpdate = {"Z":np.array([list(np.flip(arr)) for time, arr in psdDict['Z'].items()]),
+                         "E":np.array([list(np.flip(arr)) for time, arr in psdDict['E'].items()]),
+                         "N":np.array([list(np.flip(arr)) for time, arr in psdDict['N'].items()]),
+                         }
 
         hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
         for key, item in psdDict.items():
@@ -3274,7 +3277,7 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             hvsr_data['ppsds'][key]['psd_length'] = window_length
             hvsr_data['ppsds'][key]['psd_frequencies'] = x_freqs
             hvsr_data['ppsds'][key]['psd_periods'] = 1/x_freqs
-            hvsr_data['ppsds'][key]['psd_values'] = np.array([list(np.flip(arr)) for arr in item.values()])
+            hvsr_data['ppsds'][key]['psd_values'] = psdDictUpdate[key]
             hvsr_data['ppsds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
             hvsr_data['ppsds'][key]['skip_on_gaps'] = skip_on_gaps
             hvsr_data['ppsds'][key]['station'] = currSt[0].stats.station
@@ -3285,10 +3288,9 @@ def generate_ppsds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             
         hvsr_data['ppsds_obspy'] = {}
         dfList = []
-        for w in common_times:
+        for i, w in enumerate(common_times):
             ws = str(w)
-            dfList.append([True, psdDict['Z'][ws], psdDict['E'][ws], psdDict['N'][ws]])
-
+            dfList.append([True, psdDictUpdate['Z'][i], psdDictUpdate['E'][i], psdDictUpdate['N'][i]])
         colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
         # dfList: list of np.arrays, fitting the above column
         # common_times: times in common between all, should be length of 1 psd dimension above
@@ -3485,7 +3487,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
-               plot_type=DEF_PLOT_STRING, plot_engine='matplotlib', 
+               plot_type=DEFAULT_PLOT_STR, plot_engine='matplotlib', 
                show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
@@ -4335,7 +4337,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -4541,6 +4543,19 @@ def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=T
             elif p == 'comp':
                 plotComponents[0] = plotComponents[0][:-1]
                 kwargs['subplot'] = p
+                minY = 99999 # Start high
+                maxY = -99999 # Start low
+                
+                for key in hvsr_data.psd_raw.keys():
+                    if min(hvsr_data.ppsd_std_vals_m[key]) < minY:
+                        minY = min(hvsr_data.ppsd_std_vals_m[key])
+                    if max(hvsr_data.ppsd_std_vals_m[key]) > maxY:
+                        maxY = max(hvsr_data.ppsd_std_vals_m[key])
+                yRange = maxY - minY
+                compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
+                compYlim.reverse()
+                compKwargs = {'ylim':compYlim}
+                compKwargs.update(kwargs)
                 fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p == 'spec':
                 plottypeKwargs = {}
@@ -9438,7 +9453,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     notused = ~hvsrDF['Use'].astype(bool)     
     
     for k in plot_type:
-        
         # Show peak(s)
         # Show f0 peak (and annotate if indicated)
         if k=='p' and 'all' not in plot_type:
@@ -9758,16 +9772,19 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             keyList.sort()
             hvsrDF = hvsr_data.hvsr_windows_df
             for key in keyList:
-                minY.append(hvsr_data['psd_values_tavg'][key].min())
-                maxY.append(hvsr_data['psd_values_tavg'][key].max())
-                #maxY.append(np.stack(hvsr_data.hvsr_windows_df['Use']['psd_values_'+key]))
+                #hvsr_data['ppsds'][key]['psd_values']                
+                minY.append(hvsr_data['ppsd_std_vals_m'][key].min())
+                maxY.append(hvsr_data['ppsd_std_vals_p'][key].max())
+                #minY.append(np.min(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
+                #maxY.append(np.max(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
             minY = min(minY)
             maxY = max(maxY)
-            if maxY > 20:
-                maxY = max(hvsr_data['hvsr_curve']) * 1.15
+            #if maxY > 20:
+            #    maxY = max(hvsr_data['hvsr_curve']) * 1.15
             rng = maxY-minY
             pad = abs(rng * 0.15)
-            ylim = [minY-pad, maxY+pad+pad]
+            ylim = [float(minY-pad), float(maxY+pad+pad)]
+
             compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
@@ -9786,7 +9803,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             azsLabeled = False
             y={}
             psdKeys = list(hvsr_data['psd_values_tavg'])
-            psdKeys.sort()
+            psdKeys.sort()  # Put Z last so it plots on top
             for key in psdKeys:
                 if key.upper() == 'Z':
                     pltColor = 'k'
