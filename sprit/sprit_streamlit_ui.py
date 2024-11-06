@@ -79,7 +79,7 @@ if verbose:
 
 # Get default values
 sigList = [[sprit_hvsr.input_params, ip_kwargs], [sprit_hvsr.fetch_data, fd_kwargs], [sprit_hvsr.calculate_azimuth, ca_kwargs],
-            [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_ppsds, gppsd_kwargs], [PPSD, gppsd_kwargs],
+            [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_psds, gppsd_kwargs], [PPSD, gppsd_kwargs],
             [sprit_hvsr.process_hvsr, phvsr_kwargs], [sprit_hvsr.remove_outlier_curves, roc_kwargs],
             [sprit_hvsr.check_peaks, cp_kwargs], [sprit_hvsr.get_report, gr_kwargs]]
 

@@ -477,7 +477,7 @@ class SPRIT_App:
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
 
             update_progress_bars(prog_percent=15)
-            self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
+            self.hvsr_data = sprit_hvsr.generate_psds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(),
                                                 outlier_std=self.outlier_std.get(),
                                                 ppsd_length=self.ppsd_length.get(),
@@ -2117,14 +2117,14 @@ class SPRIT_App:
 
 
         #PPSD Function Call
-        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit_hvsr.generate_ppsds() and obspy PPSD() call')#.pack(fill='both') 
+        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit_hvsr.generate_psds() and obspy PPSD() call')#.pack(fill='both') 
        
         self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
                   .format('stats', 'metadata', ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
         self.ppsd_call.pack(side='bottom', anchor='w', padx=(25,0), pady=(10,10))
 
-        self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+        self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text='generate_psds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
                   .format('hvsr_data', self.remove_outliers.get(), self.outlier_std.get(), 
                           ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
@@ -2136,7 +2136,7 @@ class SPRIT_App:
                                                                                                     overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
 
-            self.generate_ppsd_call.configure(text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+            self.generate_ppsd_call.configure(text='generate_psds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
                             .format('hvsr_data', self.remove_outliers.get(), self.outlier_std.get(), 
                                     ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                                     dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))

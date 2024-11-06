@@ -313,7 +313,7 @@ def create_jupyter_ui():
     
     excluded_params = ['hvsr_data', 'params', 'hvsr_results']
     funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
-                sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr,
+                sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
                 sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
                 sprit_hvsr.get_report]
 
@@ -800,7 +800,7 @@ def create_jupyter_ui():
         progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
-        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+        hvsr_data = sprit_hvsr.generate_psds(hvsr_data, **generate_ppsd_kwargs)
         progress_bar.value = 0.5
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
         
@@ -1559,12 +1559,12 @@ def create_jupyter_ui():
                                             style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     #remove_noise call
-    generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_ppsds' + '</p>', 
+    generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_psds' + '</p>', 
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
     generate_ppsd_call = widgets.HTML(value='()')
     generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_ppsd_call])
 
-    # Update generate_ppsds() call
+    # Update generate_psds() call
     def update_generate_ppsd_call():
         gppsdkwargs = get_generate_ppsd_kwargs()
         gppsd_text = f"""(hvsr_data=hvsr_data, 
@@ -1671,7 +1671,7 @@ def create_jupyter_ui():
     rmse_pctile_slider.observe(on_update_rmse_pctile_slider)
     rmse_thresh.observe(on_update_rmse_thresh)
 
-    use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_ppsds() step)', layout=widgets.Layout(height='auto', width='80%'))
+    use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_psds() step)', layout=widgets.Layout(height='auto', width='80%'))
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     update_outlier_plot_button = widgets.Button(description='Remove Outliers', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
@@ -2177,7 +2177,7 @@ def create_jupyter_ui():
             'min_win_size': noisy_window_length,
             'remove_raw_noise': raw_data_remove_check,
             'verbose': verbose_check},
-        'generate_ppsds': 
+        'generate_psds': 
             {'verbose': verbose_check,
              'skip_on_gaps':skip_on_gaps, 
              'db_bins':[db_bins_min, db_bins_max, db_bins_step],

@@ -468,7 +468,7 @@ def _run_docstring():
     dsReturns = ('    Returns'+sprit_hvsr.run.__doc__.split('Returns')[1])
     
     functionList = [sprit_hvsr.input_params, sprit_hvsr.fetch_data, sprit_hvsr.calculate_azimuth,
-                    sprit_hvsr.remove_noise, sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr, 
+                    sprit_hvsr.remove_noise, sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr, 
                     sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks, 
                     sprit_hvsr.get_report, sprit_hvsr.export_data]
 
