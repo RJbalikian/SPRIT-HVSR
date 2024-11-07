@@ -800,7 +800,11 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
 
         # Fetch Data
         try:
-            fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())} 
+            fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
+            if 'obspy_ppsds' in kwargs:
+                fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
+            else:
+                fetch_data_kwargs['obspy_ppsds'] = False
             hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
@@ -2666,7 +2670,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
     except Exception as e:
-        raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
+        raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\n\ntCheck your input parameters or the data file.')
 
     # Get and update metadata
     params = get_metadata(params, update_metadata=update_metadata, source=source)
@@ -2783,81 +2787,88 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 
     # Attach response data to stream and get paz (for PPSD later)
     # Check if response can be attached
-    params['stream'].attach_response(params['inv'])
-
-    responseMatch = {}
-    for trace in params['stream']:
-        k = trace.stats.component
-        responseMatch[k] = False
-
-        for sta in params['inv'].networks[0].stations: # Assumes only one network per inst
-            hasCha = False
-            hasLoc = False
-            hasSta = False
-            isStarted= False
-            notEnded = False
-            
-            # Check station
-            if sta.code == params['stream'][0].stats.station:
-                hasSta = True
-            else:
-                continue
-
-            # Check Channel
-            for cha in sta:
-                if cha.code==trace.stats.channel:
-                    hasCha = True
-
-                # Check location
-                if cha.location_code == trace.stats.location:
-                    hasLoc = True
-
-
-                # Check time
-                if (cha.start_date is None or cha.start_date <= tr.stats.starttime):
-                    isStarted = True
-
-                if (cha.end_date is None or cha.end_date >= tr.stats.endtime):
-                    notEnded = True
-
-                
-                if all([hasSta, hasCha, hasLoc, isStarted, notEnded]):
-                    responseMatch[k] = True
-
-        if responseMatch[k] is not True:
-            responseMatch[k] = {'Station':  (hasSta,[sta.code for sta in params['inv'].networks[0].stations]),
-                                'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
-
-    metadataMatchError = False
-    for comp, matchItems in responseMatch.items():
-        if matchItems is not True:
-            metadataMatchError = True
-            errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
-            for matchType, match in matchItems.items():
-                if match[0] is False:
-                    errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
-
-    if metadataMatchError:
-        print(errorMsg)
-        raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
-
     try:
-        params['stream'].attach_response(params['inv'])
-        for tr in params['stream']:
-            cmpnt = tr.stats.component
+        responseMatch = {}
+        for trace in params['stream']:
+            k = trace.stats.component
+            responseMatch[k] = False
 
-            params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
-            params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
-            params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
-            params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
-    except Exception:
-        raise ValueError("Metadata missing, incomplete, or incorrect")
+            for sta in params['inv'].networks[0].stations: # Assumes only one network per inst
+                hasCha = False
+                hasLoc = False
+                hasSta = False
+                isStarted= False
+                notEnded = False
+                
+                # Check station
+                if sta.code == params['stream'][0].stats.station:
+                    hasSta = True
+                else:
+                    continue
+
+                # Check Channel
+                for cha in sta:
+                    if cha.code==trace.stats.channel:
+                        hasCha = True
+
+                    # Check location
+                    if cha.location_code == trace.stats.location:
+                        hasLoc = True
+
+
+                    # Check time
+                    if (cha.start_date is None or cha.start_date <= tr.stats.starttime):
+                        isStarted = True
+
+                    if (cha.end_date is None or cha.end_date >= tr.stats.endtime):
+                        notEnded = True
+
+                    
+                    if all([hasSta, hasCha, hasLoc, isStarted, notEnded]):
+                        responseMatch[k] = True
+
+            if responseMatch[k] is not True:
+                responseMatch[k] = {'Station':  (hasSta,[sta.code for sta in params['inv'].networks[0].stations]),
+                                    'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
+
+        metadataMatchError = False
+        for comp, matchItems in responseMatch.items():
+            if matchItems is not True:
+                metadataMatchError = True
+                errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
+                for matchType, match in matchItems.items():
+                    if match[0] is False:
+                        errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
+
+        if metadataMatchError:
+            if verbose:
+                print(errorMsg)
+            raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
+        else:
+            params['stream'].attach_response(params['inv'])
+            for tr in params['stream']:
+                cmpnt = tr.stats.component
+
+                params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
+                params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
+                params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
+                params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
+    except Exception as e:
+        if 'obspy_ppsds' in kwargs and kwargs['obspy_ppsds']:
+            errMsg = "Metadata missing, incomplete, or incorrect. Instrument response cannot be removed."
+            errMsg += "if metadata cannot be matched, use obspy_ppsds=False to perform analysis on raw data (without instrument response removed)"
+            raise ValueError(errMsg)
+        else:
+            if verbose:
+                print("\tMetadata/instrument response does not match data.")
+                print("\t  Raw data (without the instrument response removed) will be used for processing.")
     
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
+        print('\n')
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
             print('\t\t', line)
