@@ -7598,7 +7598,30 @@ s
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
 def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, verbose=False):
+    """Helper function to get psds from raw trace streams (no response information is needed in this case)
 
+    Parameters
+    ----------
+    hvsr_data : HVSRData object
+        HVSRData object containing data to be processed
+    window_length : float, optional
+        Length of FFT processing window for in seconds, by default 30.0
+    overlap : float, optional
+        Percent overlap between windows (0-1), by default 0.5.
+        A percentage value between 1-100 will be accepted, but will be divided by 100 to convert to 0-1.
+        If the value is over 100, the modulus of 100 will be calculated, then divided by 100; i.e., (overlap%100)/100.
+    show_psd_plot : bool, optional
+        Whether to show a plot of the psds, by default False
+    verbose : bool, optional
+        Whether to print information about the PSD processing to terminal, by default False
+
+    Returns
+    -------
+    Tuple (dict, np.array)
+        Tuple with index 0 being a dictionary with keys of components ("Z", "E", "N").
+        Values are numpy array containing the PSDs for that component at each time step.
+        Index 1 of tuple contains a numpy array with the start and end times of each time window used for FFT processing.
+    """
     zdata = hvsr_data.stream.select(component='Z').merge()
     edata = hvsr_data.stream.select(component='E').merge()
     ndata = hvsr_data.stream.select(component='N').merge()
@@ -7607,59 +7630,99 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
     sample_space = zdata[0].stats.delta
     zdata = zdata.split()
 
-    # transform
+    # Transform overlap to proper formatting (% b/w 0-1)
+    if overlap > 100:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  Since it is over 100, the modulus of 100 (overlap%100)/100=({overlap%100}) will be used")
+        overlap = (overlap % 100)/100
+    elif overlap > 1:
+        overlap = overlap / 100
+    elif overlap >= 0:
+        overlap = overlap
+    else:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  This has been updated to the default value of overlap=0.5")
+        overlap = 0.5 #just set it default otherwise
+
+    # Get number of samples instead of seconds/percentage
     psd_window_samples = int(window_length * sample_rate)
     overlap_samples = overlap * psd_window_samples
 
+        
+    # Generated x values to which data will be interpolated later
+    #  This maintains consistency in array size across all FFT windows
+    x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
+
+    # For each component, create the time windows and do FFT analysis
     psdDict = {'Z':{}, 'E':{}, 'N':{}}
     for key, curr_component in {'Z':zdata, 'E':edata, 'N':ndata}.items():
+        # Get all data in same format (obspy.Stream, traces will be extracted later)
         if isinstance(curr_component, obspy.Trace):
             st = obspy.Stream([curr_component]).merge()
         else:
             st = curr_component.merge()
         tr = st[0]
-        
-        x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
+
+        # Initialize for intermediate outputs
         psds = []
         freqs = []
         final_psds = []
 
+        # Get all possible windows and initialize output window list for windows that are actually used
+        #  This will likely be the same if there are no gaps in the data
         windows = _create_windows(hvsr_data=hvsr_data, window=window_length, overlap=overlap, window_length_method='length', verbose=False)
         windows_out = []
 
+        # Iterate through each window to trim data trace and perform fft analysis
         for i, (stime, etime) in enumerate(windows):
-            nsamplesperwin = psd_window_samples
+            # Trim trace to just window time (copy so doesn't overwrite main trace)
             window_trace = tr.copy()
-            window_trace.trim(starttime=stime, endtime=etime)
-            window_st = window_trace.split()
-            longest_trace = window_st[0]
+            window_trace.trim(starttime=stime, endtime=etime) 
+            
+            # Handle gaps in data 
+            # Only process longest continous data section in each window, if gaps exist
+            window_st = window_trace.split()  # Split into continuous data sections
+            longest_trace = window_st[0] # Initialize longest as first trace
 
-            if len(window_st) > 1:
+            if len(window_st) > 1: # if more than one trace comes out of .split()
+                # Get the longest trace and used that for analysis for this window
                 for shorttr in window_st:
                     if len(shorttr) > len(longest_trace):
                         longest_trace = shorttr
             window_trace = longest_trace
 
+            # If the data being processed ends up being shorter than window time
+            #    Reset inputs to scipy.signal.welch to match new "window" length
+            nsamplesperwin = psd_window_samples
             if len(window_trace) < nsamplesperwin:
                 nsamplesperwin = len(window_trace.data)
                 overlap_samples = nsamplesperwin - 1
 
+            # PERFORM FFT analysis using Welch method if length of window is > 1 sample
+            # If time window used, the start time will be recorded in window_out list
+                # and PSD will be stored in psdDict[key][str(starttime)] as numpy array.
             if nsamplesperwin > 1:
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
+                    warnings.simplefilter('ignore') # Sometimes unnecessary warnings arise
                     f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, window='hann', nperseg=nsamplesperwin, 
                                         noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
                                         scaling='density', axis=-1, average='mean')
                 
+                # Only add successful psds to psdDict (and the window starttime to window_out)
                 if pxx.size > 0 and f.size > 0:
                     freqs.append(f)
                     psds.append(np.flip(pxx))
                     interpPSD = np.interp(x_freqs, f, pxx, left=None, right=None, period=None)
-                    interpPSD_dB = 10*np.log10(interpPSD)
+                    interpPSD_dB = 10*np.log10(interpPSD) # Convert to decibels
                     psdDict[key][str(stime)] = interpPSD_dB
                     final_psds.append(interpPSD_dB)
                 
                     windows_out.append(stime)
+                else:
+                    if verbose:
+                        print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
             else:
                 if verbose:
                     print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
@@ -7672,68 +7735,6 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
             plt.semilogy()
 
     return psdDict, np.array(windows_out)
-
-
-# Get the fft manually
-def _get_psd_dict(hvsr_data, window=30.0, overlap=0.5, num_freq_bins=500, 
-                    window_length_method='length', window_type='hann', verbose=False):
-    """Helper function to get PSDs "manually" from windowed data
-
-    Parameters
-    ----------
-    hvsr_data : HVSRData or obspy.Stream
-        HVSR data object to perform analysis on
-    window : float or int
-        Size of the window in seconds
-    overlap : float or int
-        Percent overlap between windows. Should be percentage between 0-1.
-    window_length_method : str
-        Windowing method, 'length' or 'number', 'length' recommended.
-    verbose : bool, optional
-        Whether to print information to termianl, by default False
-
-    Returns
-    -------
-    dict
-        Dictionary with keys "Z", "E", "N", 
-        which are dictionaries with keys that are string UTCDateTimes of window start
-    """
-    
-    windows = _create_windows(hvsr_data, window=window, overlap=overlap, window_length_method=window_length_method, verbose=verbose)
-
-    psdZDict = {}
-    psdEDict = {}
-    psdNDict = {}
-    for win in windows:
-        st = hvsr_data.stream.copy()
-        st.trim(starttime=win[0], endtime=win[1])
-
-        freqs, w, psd = _psd_from_raw_data(hvsr_data=st, window_length=window, overlap_pct=1, num_freq_bins=num_freq_bins, window_type=window_type, verbose=verbose)
-        
-        if not psd['Z'].shape==(0,):
-            psdZDict[str(win[0])] = psd['Z']
-        if not psd['E'].shape==(0,):
-            psdEDict[str(win[0])] = psd['E']
-        if not psd['N'].shape==(0,):
-            psdNDict[str(win[0])] = psd['N']
-        
-
-    times_in_common = list(set(list(psdZDict.keys())).intersection(list(psdEDict.keys()), list(psdNDict.keys())))
-    
-    psdDict = {'Z':{}, 'E':{}, 'N':{}}
-    for ct in times_in_common:
-        # "Flatten" so only one dimension
-        psdZDict[ct] = np.flip(np.nanmedian(psdZDict[ct], axis=0))
-        psdEDict[ct] = np.flip(np.nanmedian(psdEDict[ct], axis=0))
-        psdNDict[ct] = np.flip(np.nanmedian(psdNDict[ct], axis=0))
-
-        psdDict['Z'][ct] = psdZDict[ct]
-        psdDict['E'][ct] = psdEDict[ct]
-        psdDict['N'][ct] = psdNDict[ct]
-
-    common_times = [obspy.UTCDateTime(strUTCDatetime) for strUTCDatetime in times_in_common]
-
-    return freqs, common_times, psdDict
 
 
 # Generate windows "manually"
@@ -7761,22 +7762,23 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='len
         2D Numpy array containing, the size of the first dimension is the number of windows, size of second dimension is 2 (start and end) 
     """
 
-
     length_list = ['window_length', 'window length', 
                    'length', 'len', 'l', 'size', 's']
     
     winNum_list = ['number of windows', 'window_number', 'window number', 
                    'number', 'num', 'winnum', 'window_num', 'amount']
 
+    # Get input data as obspy.Stream
     if isinstance(hvsr_data, HVSRData):
         st = hvsr_data.stream.merge()
     elif isinstance(hvsr_data, obspy.Stream):
-        st = hvsr_data
+        st = hvsr_data.merge()
     elif isinstance(hvsr_data, obspy.Trace):
-        st = obspy.Stream([hvsr_data])
+        st = obspy.Stream([hvsr_data]).merge()
     else:
         raise RuntimeError("hvsr_data parameter of _create_windows() must be sprit.HVSRData, obspy.Stream, or obspy.Trace")
 
+    # Get largest starttime and smallest endtime (to ensure all data is used)
     for i, tr in enumerate(st):
         if i==0:
             maxStart = tr.stats.starttime
@@ -7786,12 +7788,26 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='len
                 maxStart = tr.stats.starttime
             if tr.stats.endtime < minEnd:
                 minEnd = tr.stats.endtime
-
-    while overlap > 1:
-        overlap = round((overlap / 100), 3)
-    
+    # Calculate time between end and start
     timeRange = minEnd - maxStart
 
+    # Transform overlap to proper formatting (% b/w 0-1)
+    if overlap > 100:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  Since it is over 100, the modulus of 100 (overlap%100)/100=({overlap%100}) will be used")
+        overlap = (overlap % 100)/100
+    elif overlap > 1:
+        overlap = overlap / 100
+    elif overlap >= 0:
+        overlap = overlap
+    else:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  This has been updated to the default value of overlap=0.5")
+        overlap = 0.5 #just set it default otherwise
+
+    # Calculate "stride" (time between start of each window) and window length
     if window_length_method.lower() in length_list:
         stride = window * (1-overlap)
         winLength = window
@@ -7809,9 +7825,12 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='len
         winLength = 30
         overlap = 0.5
 
+    # Get start and end of each window, and format appropriately (2d Numpy array)
     windowStarts = np.arange(maxStart, minEnd, stride)
     windowEnds = windowStarts + winLength
     windows = np.array(list(zip(windowStarts, windowEnds)))
+    
+    # print information if verbose specified
     if verbose:
         verboseStatement = ["\tUsing the following windowing parameters"]
         verboseStatement.append(f"\t Number of windows: {windows.shape[0]}")
@@ -7820,467 +7839,8 @@ def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='len
 
         for l in verboseStatement:
             print(l)
+    
     return windows
-
-
-# Generate psds "manually" (with help from scipy)
-def _psd_from_raw_data(hvsr_data, window_length=20, overlap_pct=0.5, num_freq_bins=500, window_type='hann', verbose=False):
-    """Function to generate power spectral density (PSD) data for windowed data.
-    This function has been pieced together from parts of the scipy.signal and scipy.fft modules.
-    It generates PSDs for each window.
-
-    Parameters
-    ----------
-    hvsr_data : HVSRData
-        HVSRData object with all information about site to be processed
-    window_length : int, float, optional
-        Length of window segments, in seconds.
-        This will be converted to the nearest integer sample number for later processing.
-    overlap_pct : float, optional
-        Percent overlap between windows/segments.
-        Values between 0-1 should be used. If > 1, it will be assumed to be out of 100 and converted.
-        This will be converted to the number of overlapping samples for later processing.
-    num_freq_bins : int
-        The number of frequency values at which PSD values are calculated.
-        This are generated using `np.logspace()` with the start being the lower value of hvsr_band parameter,
-        the end being the higher value of the hvsr_band parameter, and num being set to num_freq_bins.
-    window_type : str, float, or tuple, optional
-        Value passed to scipy.signal.get_window() to determine how the windows are created/tapered.
-        By default, 'hann'. See scipy.signal.get_window() for possible window types.
-
-    Returns
-    -------
-    tuple
-        x, win_start_dict, psd_raw
-
-    """
-
-    def __spectral_helper(x, fs=1.0, window=window_type, nperseg=None, noverlap=None, nfft=None, padded=False):
-        """Calculate windowed FFTs for PSD
-
-        This is taken largely from the _spectral_helper() function in the scipy.signal module.
-        It is not designed to be called externally. 
-        The windows are not averaged over, as is done with scipy.signal.welch.
-        The result from each window is returned in two dimensional with sizes equivalent to the number of windows and the length of PSD in each window.
-
-        Parameters
-        ----------
-        x : array_like
-            Array or sequence containing the data to be analyzed.
-        y : array_like
-            Array or sequence containing the data to be analyzed. If this is
-            the same object in memory as `x` (i.e. ``_spectral_helper(x,
-            x, ...)``), the extra computations are spared.
-        fs : float, optional
-            Sampling frequency of the time series. Defaults to 1.0.
-        window : str or tuple or array_like, optional
-            Desired window to use. If `window` is a string or tuple, it is
-            passed to `scipy.get_window` to generate the window values, which are
-            DFT-even by default. See `get_window` for a list of windows and
-            required parameters. If `window` is array_like it will be used
-            directly as the window and its length must be nperseg. Defaults
-            to a Hann window.
-        nperseg : int, optional
-            Length of each segment. Defaults to None, but if window is str or
-            tuple, is set to 256, and if window is array_like, is set to the
-            length of the window.
-        noverlap : int, optional
-            Number of points to overlap between segments. If `None`,
-            ``noverlap = nperseg // 2``. Defaults to `None`.
-
-
-        Returns
-        -------
-        freqs : ndarray
-            Array of sample frequencies.
-        t : ndarray
-            Array of times corresponding to each data segment
-        result : ndarray
-            Array of output data, contents dependent on *mode* kwarg.
-
-        Notes
-        -----
-        Adapted from scipy, which is adapted from matplotlib.mlab.
-
-        The following parameters in the original function are hard-coded in sprit and not changeable:
-        * nfft (set to None, which defaults to nperseg (number of samples per segment/window))
-        * scaling (set to 'density', rather than 'spectrum')
-        * mode (set to 'psd', rather than 'stft')
-        * detrend (set to 'linear', instead of 'constant')
-        * return_onesided (set to True (real numbers only))
-        * axis (set to -1, or last axis)
-        * boundary: removed from code
-        * padded: removed from code
-
-
-        """
-
-        # Hard coded parameters from scipy package parameters
-        scaling = 'density'
-        mode = 'psd'
-        detrend = 'linear'
-        return_onesided = True
-        axis = -1
-
-        if mode not in ['psd', 'stft']:
-            raise ValueError("Unknown value for mode %s, must be one of: "
-                            "{'psd', 'stft'}" % mode)
-
-        #boundary_funcs = {'even': even_ext,
-        #                  'odd': odd_ext,
-        #                  'constant': const_ext,
-        #                  'zeros': zero_ext,
-        #                  None: None}
-
-        #if boundary not in boundary_funcs:
-        #    raise ValueError("Unknown boundary option '{}', must be one of: {}"
-        #                     .format(boundary, list(boundary_funcs.keys())))
-
-        # If x and y are the same object we can save ourselves some computation.
-        #same_data = y is x
-
-        #if not same_data and mode != 'psd':
-        #    raise ValueError("x and y must be equal if mode is 'stft'")
-
-        axis = int(axis)
-
-        # Ensure we have np.arrays, get outdtype
-        x = np.asarray(x)
-        #y = np.asarray(y)
-        outdtype = np.complex64  #np.result_type(x, y, np.complex64)
-
-        #if not same_data:
-        # Check if we can broadcast the outer axes together
-        #xouter = list(x.shape)
-        #youter = list(y.shape)
-        #xouter.pop(axis)
-        #youter.pop(axis)
-        #try:
-        #    outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        #except ValueError as e:
-        #    raise ValueError('x and y cannot be broadcast together.') from e
-
-        #if same_data:
-        if x.size == 0:
-            return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
-        #else:
-        #if x.size == 0:# or y.size == 0:
-            outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
-            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
-            return emptyout, emptyout, emptyout
-
-        if x.ndim > 1:
-            if axis != -1:
-                x = np.moveaxis(x, axis, -1)
-                #if not same_data and y.ndim > 1:
-                #    y = np.moveaxis(y, axis, -1)
-
-        # Check if x and y are the same length, zero-pad if necessary
-        #if not same_data:
-        #if x.shape[-1] != y.shape[-1]:
-        #    if x.shape[-1] < y.shape[-1]:
-        #        pad_shape = list(x.shape)
-        #        pad_shape[-1] = y.shape[-1] - x.shape[-1]
-        #        x = np.concatenate((x, np.zeros(pad_shape)), -1)
-        #    else:
-        #        pad_shape = list(y.shape)
-        #        pad_shape[-1] = x.shape[-1] - y.shape[-1]
-        #        y = np.concatenate((y, np.zeros(pad_shape)), -1)
-
-        if nperseg is not None:  # if specified by user
-            nperseg = int(nperseg)
-            if nperseg < 1:
-                raise ValueError('nperseg must be a positive integer')
-
-        # parse window; if array like, then set nperseg = win.shape
-        win, nperseg = __triage_segments(window, nperseg, input_length=x.shape[-1], verbose=verbose)
-
-        if nfft is None:
-            nfft = nperseg
-        elif nfft < nperseg:
-            raise ValueError('nfft must be greater than or equal to nperseg.')
-        else:
-            nfft = int(nfft)
-
-        if noverlap is None:
-            noverlap = nperseg//2
-        else:
-            noverlap = int(noverlap)
-        
-        if noverlap >= nperseg:
-            noverlap = 0
-        #    raise ValueError('noverlap must be less than nperseg.')
-        nstep = nperseg - noverlap
-
-        # Padding occurs after boundary extension, so that the extended signal ends
-        # in zeros, instead of introducing an impulse at the end.
-        # I.e. if x = [..., 3, 2]
-        # extend then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
-        # pad then extend -> [..., 3, 2, 0, 0, 0, 2, 3]
-
-        #if boundary is not None:
-        #    ext_func = boundary_funcs[boundary]
-        #    x = ext_func(x, nperseg//2, axis=-1)
-        #    #if not same_data:
-        #    y = ext_func(y, nperseg//2, axis=-1)
-
-        if padded:
-            # Pad to integer number of windowed segments
-            # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-            nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
-            zeros_shape = list(x.shape[:-1]) + [nadd]
-            x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
-            #if not same_data:
-            zeros_shape = list(y.shape[:-1]) + [nadd]
-            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
-
-        # Handle detrending and window functions
-        if not detrend:
-            def detrend_func(d):
-                return d
-        elif not hasattr(detrend, '__call__'):
-            def detrend_func(d):
-                return scipy.signal.detrend(d, type=detrend, axis=-1)
-        #elif axis != -1:
-            # Wrap this function so that it receives a shape that it could
-            # reasonably expect to receive.
-            #def detrend_func(d):
-            #    d = np.moveaxis(d, -1, axis)
-            #    d = detrend(d)
-            #    return np.moveaxis(d, axis, -1)
-        else:
-            detrend_func = detrend
-
-        #if np.result_type(win, np.complex64) != outdtype:
-        win = win.astype(np.float64)
-
-        if scaling == 'density':
-            scale = 1.0 / (fs * (win*win).sum())
-        elif scaling == 'spectrum':
-            scale = 1.0 / win.sum()**2
-        else:
-            raise ValueError('Unknown scaling: %r' % scaling)
-
-        if mode == 'stft':
-            scale = np.sqrt(scale)
-
-        if return_onesided:
-            if np.iscomplexobj(x):
-                sides = 'twosided'
-                warnings.warn('Input data is complex, switching to return_onesided=False',
-                            stacklevel=3)
-            else:
-                sides = 'onesided'
-                #if not same_data:
-                #if np.iscomplexobj(y):
-                #    sides = 'twosided'
-                #    warnings.warn('Input data is complex, switching to '
-                #                    'return_onesided=False',
-                #                    stacklevel=3)
-        else:
-            sides = 'twosided'
-
-        #if sides == 'twosided':
-        #    freqs = sp_fft.fftfreq(nfft, 1/fs)
-        #elif sides == 'onesided':
-        freqs = scipy.fft.rfftfreq(nfft, 1/fs)
-
-        # Perform the windowed FFTs
-        result = __fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
-
-        #if not same_data:
-        # All the same operations on the y data
-        #result_y = __fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, sides)
-        #result = np.conjugate(result) * result_y
-        #elif mode == 'psd':
-        result = np.conjugate(result) * result
-
-        result *= scale
-        if sides == 'onesided' and mode == 'psd':
-            if nfft % 2:
-                result[..., 1:] *= 2
-            else:
-                # Last point is unpaired Nyquist freq point, don't double
-                result[..., 1:-1] *= 2
-
-        time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
-                        nperseg - noverlap)/float(fs)
-        #if boundary is not None:
-        #    time -= (nperseg/2) / fs
-
-        result = result.astype(outdtype)
-
-        # All imaginary parts are zero anyways
-        #if same_data and mode != 'stft':
-        result = result.real
-
-        # Output is going to have new last axis for time/window index, so a
-        # negative axis index shifts down one
-        if axis < 0:
-            axis -= 1
-
-        # Roll frequency axis back to axis where the data came from
-        result = np.moveaxis(result, -1, axis)
-
-        return freqs, time, result
-
-    def __fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
-        """
-        Calculate windowed FFT, for internal use by
-        `scipy.signal._spectral_helper`.
-
-        This is a helper function that does the main FFT calculation for
-        `_spectral helper`. All input validation is performed there, and the
-        data axis is assumed to be the last axis of x. It is not designed to
-        be called externally. The windows are not averaged over; the result
-        from each window is returned.
-
-        Returns
-        -------
-        result : ndarray
-            Array of FFT data
-
-        Notes
-        -----
-        Adapted from matplotlib.mlab
-
-        .. versionadded:: 0.16.0
-        """
-        # Created sliding window view of array
-        if nperseg == 1 and noverlap == 0:
-            result = x[..., np.newaxis]
-        else:
-            step = nperseg - noverlap
-            result = np.lib.stride_tricks.sliding_window_view(
-                x, window_shape=nperseg, axis=-1, writeable=True
-            )
-            result = result[..., 0::step, :]
-
-        # Detrend each data segment individually
-        result = detrend_func(result)
-
-        # Apply window by multiplication
-        result = win * result
-
-        # Perform the fft. Acts on last axis by default. Zero-pads automatically
-        if sides == 'twosided':
-            func = scipy.fft.fft
-            print('2side')
-        else:
-            result = result.real
-            func = scipy.fft.rfft
-    
-        result = func(result, n=nfft).real
-
-        return result
-
-    def __triage_segments(window, nperseg, input_length, verbose):
-        """
-        Parses window and nperseg arguments for spectrogram and _spectral_helper.
-        This is a helper function, not meant to be called externally.
-
-        Parameters
-        ----------
-        window : string, tuple, or ndarray
-            If window is specified by a string or tuple and nperseg is not
-            specified, nperseg is set to the default of 256 and returns a window of
-            that length.
-            If instead the window is array_like and nperseg is not specified, then
-            nperseg is set to the length of the window. A ValueError is raised if
-            the user supplies both an array_like window and a value for nperseg but
-            nperseg does not equal the length of the window.
-
-        nperseg : int
-            Length of each segment
-
-        input_length: int
-            Length of input signal, i.e. x.shape[-1]. Used to test for errors.
-
-        Returns
-        -------
-        win : ndarray
-            window. If function was called with string or tuple than this will hold
-            the actual array used as a window.
-
-        nperseg : int
-            Length of each segment. If window is str or tuple, nperseg is set to
-            256. If window is array_like, nperseg is set to the length of the
-            window.
-        """
-        # parse window; if array like, then set nperseg = win.shape
-        if isinstance(window, str) or isinstance(window, tuple):
-            # if nperseg not specified
-            if nperseg is None:
-                nperseg = 256  # then change to default
-            if nperseg > input_length:
-                if verbose:
-                    warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
-                            f' = {input_length:d}, using nperseg = {input_length:d}',
-                            stacklevel=3)
-                nperseg = input_length
-                noverlap = nperseg
-            win = scipy.signal.windows.get_window(window, nperseg)
-        else:
-            win = np.asarray(window)
-            if len(win.shape) != 1:
-                raise ValueError('window must be 1-D')
-            if input_length < win.shape[-1]:
-                raise ValueError('window is longer than input signal')
-            if nperseg is None:
-                nperseg = win.shape[0]
-            elif nperseg is not None:
-                if nperseg != win.shape[0]:
-                    raise ValueError("value specified for nperseg is different"
-                                    " from length of window")
-        return win, nperseg
-
-    if hasattr(hvsr_data, 'hvsr_band'):
-        x = np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins)
-    else:
-        x = np.logspace(np.log10(0.4), np.log10(40), num_freq_bins)
-    
-    if isinstance(hvsr_data, HVSRData):
-        streamCompDict = {'Z': hvsr_data.stream.select(component='Z'),
-               'E': hvsr_data.stream.select(component='E'),
-               'N': hvsr_data.stream.select(component='N')}
-    elif isinstance(hvsr_data, obspy.Stream):
-        streamCompDict = {'Z': hvsr_data.select(component='Z'),
-                       'E': hvsr_data.select(component='E'),
-                       'N': hvsr_data.select(component='N')}        
-    else:
-        raise RuntimeError("hvsr_data must be of type HVSRData or obspy.Stream")
-
-
-    psd_raw = {}
-    win_start_dict = {}
-    for component, component_stream in streamCompDict.items():
-        #freqList = []
-        startTimeList = []
-        resultList = []
-
-        component_stream = component_stream.split()
-        for tr in component_stream:
-            #if isinstance(tr.data, np.ma.masked_array):
-            #    continue
-
-            sample_rate = tr.stats.sampling_rate
-            #delta = tr.stats.delta
-
-            window_length_samples = window_length * sample_rate
-            noverlap = window_length_samples * overlap_pct
-            
-            freqs, t, result = __spectral_helper(tr.data, fs=sample_rate, window=window_type, nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)
-
-            for r in result.T:
-                r_update = 20*np.log10(np.interp(x, freqs, r))
-
-            resultList.append(r_update)
-            startTimeList.append(t)
-            #freqList.append(x)
-        psd_raw[component] = np.array(resultList)
-        win_start_dict[component] = startTimeList
-    
-    return x, win_start_dict, psd_raw
 
 
 # Remove noisy windows from df
@@ -10728,527 +10288,3 @@ def __get_stdf(x_values, indexList, hvsrPeaks):
         # Contains std of frequencies of the peaks from each time window H/V curve that are closest to the main H/V peak
         stdf.append(np.std(v))
     return stdf
-
-def __temp_holding_zone():
-
-        # Raw build
-    def __psd_from_raw_data(hvsr_data, psd_window_length=30, overlap=0.5, freq_bins=500, time_average_method='median', show_individual_psds_plot=False, show_hv_plot=False):
-        import scipy
-        import numpy as np
-        import matplotlib.pyplot as plt
-        import obspy
-
-        zdata = hvsr_data.stream.select(component='Z').split()
-        edata = hvsr_data.stream.select(component='E').split()
-        ndata = hvsr_data.stream.select(component='N').split()
-
-        sample_rate = zdata[0].stats.sampling_rate
-        sample_space = zdata[0].stats.delta
-
-
-        # Get window/overlap samples from seconds
-        psd_window_samples = int(psd_window_length * sample_rate)
-        overlap_samples = overlap * psd_window_samples
-
-        # Initialize frequency steps
-        x_freqs = np.logspace(np.log10(hvsr_data.hvsr_band[0]), np.log10(hvsr_data.hvsr_band[1]), freq_bins)
-        x_freqs_OUT = np.logspace(np.log10(hvsr_data.hvsr_band[0]), np.log10(hvsr_data.hvsr_band[1]), freq_bins-1)
-
-        # Initialize dictionaries
-        psd_values_raw = {}
-        psd_freqs_raw = {}
-        psd_freq_aligned = {}
-        for component, component_data in {'Z':zdata, 'E':edata, 'N':ndata}.items():
-            # Make sure the data we're getting is a st, not trace
-            if isinstance(component_data, obspy.Trace):
-                st = obspy.Stream([component_data])
-            else:
-                st = component_data
-
-            psds = []
-            freqs = []
-            freq_aligned_psds = []
-            # Iterate through all traces, get psds via welch's method
-            for tr in st:
-                # if trace < 2x the specified window size (e.g., split masked arrays), use whole trace as a single window
-                if len(tr) < 2 * psd_window_samples:
-                    psd_window_samples = len(tr)
-                    overlap_samples = psd_window_samples-1
-                f, pxx = scipy.signal.welch(tr.data, fs=tr.stats.sampling_rate, window='hann', nperseg=psd_window_samples, 
-                                        noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
-                                        scaling='density', axis=-1, average='mean')
-                # Different welch instances will have different frequency bins
-                freqs.append(f)
-                psds.append(pxx)
-
-                # Interpolate them to the specified bins above
-                freq_aligned_psds.append(np.interp(x_freqs, f, pxx, left=None, right=None, period=None))
-            
-            # Save values to dicts
-            get_average = {'median':np.nanmedian,
-                        'mean':np.nanmean}
-            
-            psd_values_raw[component] = psds
-            psd_freqs_raw[component] = freqs
-            psd_freq_aligned[component] = 10*np.log10(get_average[time_average_method](freq_aligned_psds, axis=0))
-            #psds = np.mean(np.array(freq_aligned_psds), axis=0)
-            if show_individual_psds_plot:
-                plt.plot(x_freqs, psds, linewidth=0.5, c='k')
-                plt.semilogx()
-                plt.semilogy()
-
-        # Calculate H/v
-        hvsr_curve = []
-
-
-        for j in range(len(x_freqs)-1):
-            psdZ = [psd_freq_aligned['Z'][j], psd_freq_aligned['Z'][j + 1]]
-            psdH1 = [psd_freq_aligned['E'][j], psd_freq_aligned['E'][j + 1]]
-            psdH2 = [psd_freq_aligned['N'][j], psd_freq_aligned['N'][j + 1]]
-            f =    [x_freqs[j], x_freqs[j + 1]]
-
-            hvratio = sprit.sprit_hvsr.__get_hvsr(psdZ, psdH1, psdH2, f, azimuth=None, use_method=2)
-            hvsr_curve.append(hvratio)
-
-        hvsr_curve = np.array(hvsr_curve)
-
-        if show_hv_plot:
-            plt.plot(x_freqs, hvsr_curve)
-            plt.semilogx()
-            
-        return x_freqs_OUT, hvsr_curve
-
-    x_freqs, hv_curve = __psd_from_raw_data(hvsrData, psd_window_length=30, overlap=0.5, freq_bins=500, show_individual_psds_plot=False, show_hv_plot=True)    
-
-    import obspy
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    hvsr_curve_smooth = obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing(np.array(hv_curve), x_freqs, bandwidth=40, count=1, normalize=True)
-
-    plt.plot(x_freqs, hv_curve)
-    plt.plot(x_freqs, hvsr_curve_smooth)
-    plt.semilogx()
-            
-
-    # Piece toegher scipy
-    import scipy
-    import warnings
-    import numpy as np
-
-    def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None, padded=False):
-        """Calculate various forms of windowed FFTs for PSD, CSD, etc.
-
-        This is a helper function that implements the commonality between
-        the stft, psd, csd, and spectrogram functions. It is not designed to
-        be called externally. The windows are not averaged over; the result
-        from each window is returned.
-
-        Parameters
-        ----------
-        x : array_like
-            Array or sequence containing the data to be analyzed.
-        y : array_like
-            Array or sequence containing the data to be analyzed. If this is
-            the same object in memory as `x` (i.e. ``_spectral_helper(x,
-            x, ...)``), the extra computations are spared.
-        fs : float, optional
-            Sampling frequency of the time series. Defaults to 1.0.
-        window : str or tuple or array_like, optional
-            Desired window to use. If `window` is a string or tuple, it is
-            passed to `get_window` to generate the window values, which are
-            DFT-even by default. See `get_window` for a list of windows and
-            required parameters. If `window` is array_like it will be used
-            directly as the window and its length must be nperseg. Defaults
-            to a Hann window.
-        nperseg : int, optional
-            Length of each segment. Defaults to None, but if window is str or
-            tuple, is set to 256, and if window is array_like, is set to the
-            length of the window.
-        noverlap : int, optional
-            Number of points to overlap between segments. If `None`,
-            ``noverlap = nperseg // 2``. Defaults to `None`.
-        nfft : int, optional
-            Length of the FFT used, if a zero padded FFT is desired. If
-            `None`, the FFT length is `nperseg`. Defaults to `None`.
-        detrend : str or function or `False`, optional
-            Specifies how to detrend each segment. If `detrend` is a
-            string, it is passed as the `type` argument to the `detrend`
-            function. If it is a function, it takes a segment and returns a
-            detrended segment. If `detrend` is `False`, no detrending is
-            done. Defaults to 'constant'.
-        return_onesided : bool, optional
-            If `True`, return a one-sided spectrum for real data. If
-            `False` return a two-sided spectrum. Defaults to `True`, but for
-            complex data, a two-sided spectrum is always returned.
-        scaling : { 'density', 'spectrum' }, optional
-            Selects between computing the cross spectral density ('density')
-            where `Pxy` has units of V**2/Hz and computing the cross
-            spectrum ('spectrum') where `Pxy` has units of V**2, if `x`
-            and `y` are measured in V and `fs` is measured in Hz.
-            Defaults to 'density'
-        axis : int, optional
-            Axis along which the FFTs are computed; the default is over the
-            last axis (i.e. ``axis=-1``).
-        mode: str {'psd', 'stft'}, optional
-            Defines what kind of return values are expected. Defaults to
-            'psd'.
-        boundary : str or None, optional
-            Specifies whether the input signal is extended at both ends, and
-            how to generate the new values, in order to center the first
-            windowed segment on the first input point. This has the benefit
-            of enabling reconstruction of the first input point when the
-            employed window function starts at zero. Valid options are
-            ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
-            `None`.
-        padded : bool, optional
-            Specifies whether the input signal is zero-padded at the end to
-            make the signal fit exactly into an integer number of window
-            segments, so that all of the signal is included in the output.
-            Defaults to `False`. Padding occurs after boundary extension, if
-            `boundary` is not `None`, and `padded` is `True`.
-
-        Returns
-        -------
-        freqs : ndarray
-            Array of sample frequencies.
-        t : ndarray
-            Array of times corresponding to each data segment
-        result : ndarray
-            Array of output data, contents dependent on *mode* kwarg.
-
-        Notes
-        -----
-        Adapted from matplotlib.mlab
-
-        .. versionadded:: 0.16.0
-        """
-        scaling = 'density'
-        mode = 'psd'
-        detrend = 'linear'
-        return_onesided = True
-        axis = -1
-
-        if mode not in ['psd', 'stft']:
-            raise ValueError("Unknown value for mode %s, must be one of: "
-                            "{'psd', 'stft'}" % mode)
-
-        #boundary_funcs = {'even': even_ext,
-        #                  'odd': odd_ext,
-        #                  'constant': const_ext,
-        #                  'zeros': zero_ext,
-        #                  None: None}
-
-        #if boundary not in boundary_funcs:
-        #    raise ValueError("Unknown boundary option '{}', must be one of: {}"
-        #                     .format(boundary, list(boundary_funcs.keys())))
-
-        # If x and y are the same object we can save ourselves some computation.
-        #same_data = y is x
-
-        #if not same_data and mode != 'psd':
-        #    raise ValueError("x and y must be equal if mode is 'stft'")
-
-        axis = int(axis)
-
-        # Ensure we have np.arrays, get outdtype
-        x = np.asarray(x)
-        y = np.asarray(y)
-        outdtype = np.result_type(x, y, np.complex64)
-
-
-        #if not same_data:
-        # Check if we can broadcast the outer axes together
-        xouter = list(x.shape)
-        youter = list(y.shape)
-        xouter.pop(axis)
-        youter.pop(axis)
-        try:
-            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError as e:
-            raise ValueError('x and y cannot be broadcast together.') from e
-
-        #if same_data:
-        #    if x.size == 0:
-        #        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
-        #else:
-        if x.size == 0 or y.size == 0:
-            outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
-            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
-            return emptyout, emptyout, emptyout
-
-        if x.ndim > 1:
-            if axis != -1:
-                x = np.moveaxis(x, axis, -1)
-                #if not same_data and y.ndim > 1:
-                #    y = np.moveaxis(y, axis, -1)
-
-        # Check if x and y are the same length, zero-pad if necessary
-        #if not same_data:
-        if x.shape[-1] != y.shape[-1]:
-            if x.shape[-1] < y.shape[-1]:
-                pad_shape = list(x.shape)
-                pad_shape[-1] = y.shape[-1] - x.shape[-1]
-                x = np.concatenate((x, np.zeros(pad_shape)), -1)
-            else:
-                pad_shape = list(y.shape)
-                pad_shape[-1] = x.shape[-1] - y.shape[-1]
-                y = np.concatenate((y, np.zeros(pad_shape)), -1)
-
-        if nperseg is not None:  # if specified by user
-            nperseg = int(nperseg)
-            if nperseg < 1:
-                raise ValueError('nperseg must be a positive integer')
-
-        # parse window; if array like, then set nperseg = win.shape
-        win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[-1])
-
-        if nfft is None:
-            nfft = nperseg
-        elif nfft < nperseg:
-            raise ValueError('nfft must be greater than or equal to nperseg.')
-        else:
-            nfft = int(nfft)
-
-        if noverlap is None:
-            noverlap = nperseg//2
-        else:
-            noverlap = int(noverlap)
-        if noverlap >= nperseg:
-            raise ValueError('noverlap must be less than nperseg.')
-        nstep = nperseg - noverlap
-
-        # Padding occurs after boundary extension, so that the extended signal ends
-        # in zeros, instead of introducing an impulse at the end.
-        # I.e. if x = [..., 3, 2]
-        # extend then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
-        # pad then extend -> [..., 3, 2, 0, 0, 0, 2, 3]
-
-        #if boundary is not None:
-        #    ext_func = boundary_funcs[boundary]
-        #    x = ext_func(x, nperseg//2, axis=-1)
-        #    #if not same_data:
-        #    y = ext_func(y, nperseg//2, axis=-1)
-
-        if padded:
-            # Pad to integer number of windowed segments
-            # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-            nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
-            zeros_shape = list(x.shape[:-1]) + [nadd]
-            x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
-            #if not same_data:
-            zeros_shape = list(y.shape[:-1]) + [nadd]
-            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
-
-        # Handle detrending and window functions
-        if not detrend:
-            def detrend_func(d):
-                return d
-        elif not hasattr(detrend, '__call__'):
-            def detrend_func(d):
-                return scipy.signal.detrend(d, type=detrend, axis=-1)
-        elif axis != -1:
-            # Wrap this function so that it receives a shape that it could
-            # reasonably expect to receive.
-            def detrend_func(d):
-                d = np.moveaxis(d, -1, axis)
-                d = detrend(d)
-                return np.moveaxis(d, axis, -1)
-        else:
-            detrend_func = detrend
-
-        if np.result_type(win, np.complex64) != outdtype:
-            win = win.astype(outdtype)
-
-        if scaling == 'density':
-            scale = 1.0 / (fs * (win*win).sum())
-        elif scaling == 'spectrum':
-            scale = 1.0 / win.sum()**2
-        else:
-            raise ValueError('Unknown scaling: %r' % scaling)
-
-        if mode == 'stft':
-            scale = np.sqrt(scale)
-
-        if return_onesided:
-            if np.iscomplexobj(x):
-                sides = 'twosided'
-                warnings.warn('Input data is complex, switching to return_onesided=False',
-                            stacklevel=3)
-            else:
-                sides = 'onesided'
-                #if not same_data:
-                if np.iscomplexobj(y):
-                    sides = 'twosided'
-                    warnings.warn('Input data is complex, switching to '
-                                    'return_onesided=False',
-                                    stacklevel=3)
-        else:
-            sides = 'twosided'
-
-        #if sides == 'twosided':
-        #    freqs = sp_fft.fftfreq(nfft, 1/fs)
-        #elif sides == 'onesided':
-        freqs = scipy.fft.rfftfreq(nfft, 1/fs)
-
-        # Perform the windowed FFTs
-        result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
-
-        #if not same_data:
-        # All the same operations on the y data
-        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft, sides)
-        result = np.conjugate(result) * result_y
-        #elif mode == 'psd':
-        result = np.conjugate(result) * result
-
-        result *= scale
-        if sides == 'onesided' and mode == 'psd':
-            if nfft % 2:
-                result[..., 1:] *= 2
-            else:
-                # Last point is unpaired Nyquist freq point, don't double
-                result[..., 1:-1] *= 2
-
-        time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
-                        nperseg - noverlap)/float(fs)
-        #if boundary is not None:
-        #    time -= (nperseg/2) / fs
-
-        result = result.astype(outdtype)
-
-        # All imaginary parts are zero anyways
-        #if same_data and mode != 'stft':
-        #    result = result.real
-
-        # Output is going to have new last axis for time/window index, so a
-        # negative axis index shifts down one
-        if axis < 0:
-            axis -= 1
-
-        # Roll frequency axis back to axis where the data came from
-        result = np.moveaxis(result, -1, axis)
-
-        return freqs, time, result
-
-
-    def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
-        """
-        Calculate windowed FFT, for internal use by
-        `scipy.signal._spectral_helper`.
-
-        This is a helper function that does the main FFT calculation for
-        `_spectral helper`. All input validation is performed there, and the
-        data axis is assumed to be the last axis of x. It is not designed to
-        be called externally. The windows are not averaged over; the result
-        from each window is returned.
-
-        Returns
-        -------
-        result : ndarray
-            Array of FFT data
-
-        Notes
-        -----
-        Adapted from matplotlib.mlab
-
-        .. versionadded:: 0.16.0
-        """
-        # Created sliding window view of array
-        if nperseg == 1 and noverlap == 0:
-            result = x[..., np.newaxis]
-        else:
-            step = nperseg - noverlap
-            result = np.lib.stride_tricks.sliding_window_view(
-                x, window_shape=nperseg, axis=-1, writeable=True
-            )
-            result = result[..., 0::step, :]
-
-        # Detrend each data segment individually
-        result = detrend_func(result)
-
-        # Apply window by multiplication
-        result = win * result
-
-        # Perform the fft. Acts on last axis by default. Zero-pads automatically
-        if sides == 'twosided':
-            func = scipy.fft.fft
-        else:
-            result = result.real
-            func = scipy.fft.rfft
-        result = func(result, n=nfft)
-
-        return result
-
-    def _triage_segments(window, nperseg, input_length):
-        """
-        Parses window and nperseg arguments for spectrogram and _spectral_helper.
-        This is a helper function, not meant to be called externally.
-
-        Parameters
-        ----------
-        window : string, tuple, or ndarray
-            If window is specified by a string or tuple and nperseg is not
-            specified, nperseg is set to the default of 256 and returns a window of
-            that length.
-            If instead the window is array_like and nperseg is not specified, then
-            nperseg is set to the length of the window. A ValueError is raised if
-            the user supplies both an array_like window and a value for nperseg but
-            nperseg does not equal the length of the window.
-
-        nperseg : int
-            Length of each segment
-
-        input_length: int
-            Length of input signal, i.e. x.shape[-1]. Used to test for errors.
-
-        Returns
-        -------
-        win : ndarray
-            window. If function was called with string or tuple than this will hold
-            the actual array used as a window.
-
-        nperseg : int
-            Length of each segment. If window is str or tuple, nperseg is set to
-            256. If window is array_like, nperseg is set to the length of the
-            window.
-        """
-        # parse window; if array like, then set nperseg = win.shape
-        if isinstance(window, str) or isinstance(window, tuple):
-            # if nperseg not specified
-            if nperseg is None:
-                nperseg = 256  # then change to default
-            if nperseg > input_length:
-                warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
-                            f' = {input_length:d}, using nperseg = {input_length:d}',
-                            stacklevel=3)
-                nperseg = input_length
-            win = scipy.signal.windows.get_window(window, nperseg)
-        else:
-            win = np.asarray(window)
-            if len(win.shape) != 1:
-                raise ValueError('window must be 1-D')
-            if input_length < win.shape[-1]:
-                raise ValueError('window is longer than input signal')
-            if nperseg is None:
-                nperseg = win.shape[0]
-            elif nperseg is not None:
-                if nperseg != win.shape[0]:
-                    raise ValueError("value specified for nperseg is different"
-                                    " from length of window")
-        return win, nperseg
-
-    x = np.logspace(0.4,40,500)
-    y = hvsrData.stream.split()[0].data
-
-    sample_rate = hvsrData.stream[0].stats.sampling_rate
-    delta = hvsrData.stream[0].stats.delta
-    overlap_pct = 0.5
-    window_length = 30
-
-    window_length_samples = window_length * sample_rate
-    noverlap = window_length_samples * overlap_pct
-    print(window_length_samples)
-    print(noverlap)
-    freqs, win_start_samples, result = _spectral_helper(x, y, fs=delta, window='hann', nperseg=window_length_samples, noverlap=noverlap, nfft=None, padded=False)    
-
-    return
