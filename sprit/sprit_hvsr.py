@@ -963,7 +963,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             #If it wasn't originally HVSRBatch, make it HVSRData object again
             if not psd_data[site_name]['batch']:
                 psd_data = psd_data[site_name]
-    
+
     # Remove Outlier Curves
     data_curvesRemoved = psd_data
     try:
@@ -3249,7 +3249,6 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
     hvsr_data['processing_parameters']['generate_psds'] = {}
     for key, value in orig_args.items():
         hvsr_data['processing_parameters']['generate_psds'][key] = value
-
     
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
@@ -4395,7 +4394,9 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
         plotTypeOrder.pop()
         plotIndOrder[-1] = len(kList)
         
-        # Get 
+        # set up subplots
+        figLayout = 'constrained'
+        
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -4417,7 +4418,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
                 perSubPDict = {}
                 if 'az' in plotTypeOrder:
                     perSubPDict['az'] = {'projection':'polar'}
-                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout=figLayout)
                 axis = ax[p]
             elif use_subplots:
                 with warnings.catch_warnings():
@@ -4461,10 +4462,12 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
         windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
-        fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
+        winText = fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
+        winText.set_in_layout(False)
         
-        matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
+        if len(plotTypeOrder)>1:
+            matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
         #if use_subplots:
         #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
         if show_plot:
@@ -5054,7 +5057,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
-    hvsr_out['processing_parameters']['generate_psds'] = {}
+    hvsr_out['processing_parameters']['process_hvsr'] = {}
     for key, value in orig_args.items():
         hvsr_out['processing_parameters']['generate_psds'][key] = value
     
@@ -9270,10 +9273,13 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     return hvsr_results
 
+
 # Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
+    
+    # Get kwargs all straightened out
     if 'kwargs' in kwargs.keys():
         kwargs = kwargs['kwargs']
 
@@ -9286,7 +9292,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.05]
+
+        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.1]
         if ylim[1] > 25:
             ylim = [0, max(hvsr_data['hvsr_curve']+1)]
     else:
@@ -9295,6 +9302,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     if 'grid' in kwargs.keys():
         plt.grid(which=kwargs['grid'], alpha=0.25)
 
+    # Get x y data (for main hvsr plot esp.)
     hvsrDF = hvsr_data.hvsr_windows_df
 
     freqList = ['x_freqs', 'freqs', 'freq', 'hz', 'f', 'frequency']
@@ -9312,9 +9320,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     x = hvsr_data[xtype][anyKey][:-1]
     y = hvsr_data['hvsr_curve']
     
+    # Set up plot viz and export
     plotSuff = ''
     legendLoc = 'upper left'
     
+    # Plot HVSR curve first
     plotHVSR = False
     for item in plot_type:
         if item.lower()=='hvsr':
@@ -9328,7 +9338,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             else:
                 plotSuff = plotSuff+'noStdDev_'
             break
-
+    
+    # Plot parameters
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
@@ -9337,6 +9348,13 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.tick_params(axis='y', labelsize=5)
     plt.suptitle(hvsr_data['input_params']['site'])
 
+    if 'processing_parameters' in hvsr_data.keys() and 'generate_psds' in hvsr_data['processing_parameters'].keys():
+        if hvsr_data['processing_parameters']['generate_psds']['obspy_ppsds']:
+            compLabel = 'COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]'
+        else:
+            compLabel = 'COMPONENTS\n PSDs'
+
+    # Get peak parameters (if exist, otherwise, get dummy ones)
     if "BestPeak" in hvsr_data.keys():
         f0 = hvsr_data['BestPeak'][azimuth]['f0']
         a0 = hvsr_data['BestPeak'][azimuth]['A0']
@@ -9354,6 +9372,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     used = hvsrDF['Use'].astype(bool)
     notused = ~hvsrDF['Use'].astype(bool)     
     
+    # Go through each "token" in plot_type str and plot as specified
     for k in plot_type:
         # Show peak(s)
         # Show f0 peak (and annotate if indicated)
@@ -9651,20 +9670,25 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
-            if 'c' not in plot_type[0]:#This is part of the hvsr axis
-                #fig.tight_layout()
-                axis2 = ax.twinx()
-                compAxis = axis2
+            if 'c' not in plot_type[0]:
+                #This section is if comps plotted in hvsr axis
+                
+                compAxis = ax.twinx()
+                plt.sca(compAxis)
                 #axis2 = plt.gca()
                 #fig = plt.gcf()
-                compAxis.set_ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+                compAxis.set_ylabel(compLabel, rotation=270, labelpad=20)
+                #plt.sca(compAxis)
+                #plt.ylabel(compLabel, rotate=180)
                 compAxis.set_facecolor([0,0,0,0])
-                legendLoc2 = 'upper left'
+                legendLoc2 = 'upper right'
             else:
+                # This section is for if they are plotted on different plots
                 ax.set_title('') #Remove title
                 ax.sharex(kwargs['axes']['hvsr'])
                 compAxis = ax
                 legendLoc2 = 'upper right'
+                compAxis.set_ylabel(compLabel)
                 
             minY = []
             maxY = []
@@ -9687,12 +9711,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             pad = abs(rng * 0.15)
             ylim = [float(minY-pad), float(maxY+pad+pad)]
 
-            compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
-            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+            xlab = ax.text(x=xlim[0], y=yLoc, s=xlabel, 
                         fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
                         bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+            xlab.set_in_layout(False)
             #Modify based on whether there are multiple charts
             if plotHVSR:
                 linalpha = 0.2
@@ -9735,8 +9759,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                         if '-s' not in plot_type:
                             compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
-                if plot_type[0] != 'c':
-                    compAxis.legend(loc=legendLoc2)
+                if 'c' not in plot_type[0].lower():
+                    if not kwargs['show_legend'] == False:
+                        compAxis.legend(loc=legendLoc2)
             else:
                 ax.legend(loc=legendLoc, ncols = len(psdKeys), 
                         borderaxespad=0.1, columnspacing=1,markerfirst=False, reverse=True, borderpad=0.2)
