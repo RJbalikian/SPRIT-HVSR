@@ -2237,7 +2237,11 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
+def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', 
+               detrend='spline', detrend_options=2, filter='bandpass', filter_options=None,
+               update_metadata=True, 
+               plot_input_stream=False, plot_engine='matplotlib', show_plot=True, 
+               verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -2260,7 +2264,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     detrend : str or bool, default='spline'
         If False, data is not detrended.
         Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
-    detrend_order : int, default=2
+    detrend_options : int, default=2
         If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
     update_metadata : bool, default=True
         Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
@@ -2302,7 +2306,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     data_export_path=orig_args['data_export_path']
     data_export_format=orig_args['data_export_format']
     detrend=orig_args['detrend']
-    detrend_order=orig_args['detrend_order']
+    detrend_options=orig_args['detrend_options']
+    filter=orig_args['filter']
+    filter_options=orig_args['filter_options']
     update_metadata=orig_args['update_metadata']
     plot_input_stream=orig_args['plot_input_stream']
     plot_engine=orig_args['plot_engine']
@@ -2465,7 +2471,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                         currParams['input_data'] = f
 
                         curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                    data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                                    data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_options=detrend_options, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
@@ -2698,7 +2704,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     if isinstance(params, HVSRBatch):
         pass
     else:
-        dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
+        dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_options=detrend_options, verbose=verbose, source=source)
 
     # Remerge data
     dataIN = dataIN.merge(method=1)
@@ -6320,7 +6326,7 @@ def _trim_data(input, stream=None, export_dir=None, data_export_format=None, sou
 
 
 # Helper function to detrend data
-def __detrend_data(input, detrend, detrend_order, verbose, source):
+def __detrend_data(input, detrend, detrend_options, verbose, source):
     """Helper function to detrend data, specifically formatted for the HVSRData and HVSRBatch objects"""
     if source != 'batch':
         input = {'SITENAME': {'stream':input}} #Make same structure as batch
@@ -6332,7 +6338,7 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         elif detrend==True:
             #By default, do a spline removal
             for tr in dataIN:
-                tr.detrend(type='spline', order=detrend_order, dspline=1000)        
+                tr.detrend(type='spline', order=detrend_options, dspline=1000)        
         else:
             data_undetrended = dataIN.copy()
             try:
@@ -6347,10 +6353,10 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
                         tr.detrend(type=detrend)                
                 if str(detrend).lower()=='polynomial':
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=detrend_order)   
+                        tr.detrend(type=detrend, order=detrend_options)   
                 if str(detrend).lower()=='spline':
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=int(detrend_order), dspline=1000)       
+                        tr.detrend(type=detrend, order=int(detrend_options), dspline=1000)       
             except:
                 dataIN = data_undetrended
                 if verbose:

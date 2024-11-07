@@ -289,8 +289,8 @@ def create_jupyter_ui():
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
                             description='Detrend Type:',  layout=widgets.Layout(width='auto'))
-    detrend_order = widgets.FloatText(description='Order:', tooltip='detrend_order', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_order'), 
-                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_order'),layout=widgets.Layout(width='auto'))
+    detrend_options = widgets.FloatText(description='Order:', tooltip='detrend_options', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_options'), 
+                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_options'),layout=widgets.Layout(width='auto'))
 
     # A text to specify the trim directory
     trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
@@ -370,7 +370,7 @@ def create_jupyter_ui():
     ioparam_grid[2,:5] = hvsr_band_hbox
     ioparam_grid[3,:5] = peak_freq_range_hbox
     ioparam_grid[4,:1] = detrend_type_dropdown
-    ioparam_grid[4,1] = detrend_order
+    ioparam_grid[4,1] = detrend_options
     ioparam_grid[5,:6] = trim_directory
     ioparam_grid[5, 6:8] = trim_export_dropdown
     ioparam_grid[5, 8] = trim_directory_upload
@@ -519,7 +519,7 @@ def create_jupyter_ui():
     # Update fetch_data call
     def update_fetch_data_call():
         fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
-                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_order={detrend_order.value}, verbose={verbose_check.value})"""
+                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, verbose={verbose_check.value})"""
         fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
     update_fetch_data_call()
 
@@ -575,7 +575,7 @@ def create_jupyter_ui():
             'trim_dir':trim_directory.value,
             'export_format':data_format_dropdown.value,
             'detrend':detrend_type_dropdown.value,
-            'detrend_order':detrend_order.value}
+            'detrend_options':detrend_options.value}
         if str(fetch_data_kwargs['detrend']).lower() == 'none':
             fetch_data_kwargs['detrend'] = None
         
@@ -2163,7 +2163,7 @@ def create_jupyter_ui():
             'trim_dir': trim_directory,
             'export_format': trim_export_dropdown,
             'detrend': detrend_type_dropdown,
-            'detrend_order': detrend_order,
+            'detrend_options': detrend_options,
             'verbose': verbose_check},
         'remove_noise': 
             {

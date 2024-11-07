@@ -156,7 +156,7 @@ def setup_session_state():
         #        st.session_state[arg] = valList
         #        run_kwargs[arg] = st.session_state[arg]
 
-        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_order', 'horizontal_method']
+        strItems = ['channels', 'xcoord', 'ycoord', 'elevation', 'detrend_options', 'horizontal_method']
         # Convert lists and numbers to strings
         for arg, value in st.session_state.items():
             if arg in strItems:
@@ -420,7 +420,7 @@ with st.sidebar:
                 st.text_input('Trim Directory', help='Directory for saving trimmed data', key='trim_dir')
                 st.selectbox('Data format', options=OBSPYFORMATS, index=11, key='data_export_format')
                 st.selectbox('Detrend horizontal_method', options=['None', 'Simple', 'Linear', 'Constant/Demean', 'Polynomial', 'Spline'], index=5, help='Detrend horizontal_method use by `type` parameter of obspy.trace.Trace.detrend()', key='detrend')
-                st.text_input('Detrend options', value='detrend_order=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_order')
+                st.text_input('Detrend options', value='detrend_options=2', help="Comma separated values with equal sign between key/value of arguments to pass to the **options argument of obspy.trace.Trace.detrend()", key='detrend_options')
                 if verbose:
                     print_param(param2print)
 
