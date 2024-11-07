@@ -2238,7 +2238,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 # Reads in traces to obspy stream
 def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', 
-               detrend='spline', detrend_options=2, filter='bandpass', filter_options=None,
+               detrend='spline', detrend_options=2, filter_type=None, filter_options={},
                update_metadata=True, 
                plot_input_stream=False, plot_engine='matplotlib', show_plot=True, 
                verbose=False, **kwargs):
@@ -2266,6 +2266,18 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
     detrend_options : int, default=2
         If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
+    filter_type : None, str
+        Type of filter to use on raw data.
+        This should either be None or any of {'bandpass', 'bandstop', 'lowpass', 'highpass', 'lowpass_cheby_2', 'lowpass_fir', 'remez_fir'}.
+        This passes `filter_type` to the `type` parameter and `**filter_options` to the `**options` parameter of the obspy.Stream filter() method.
+        See here for more information: https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html
+        If None, no filtering is done on the input seismic data.
+    filter_options : dict
+        Dictionary that will be unpacked into the `**options` parameter of the filter() method of the obspy.Stream class.
+        This should fit the parameters of whichever filter type is specifed by filter_type.
+        Example options for the 'bandpass' filter_type might be: `filter_options={'freqmin': 0.4, 'freqmax':40, 'df':100, 'corners':4, 'zerophase':True}`.
+        See here for more information: https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html
+
     update_metadata : bool, default=True
         Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
     plot_input_stream : bool, default=False
@@ -2307,7 +2319,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     data_export_format=orig_args['data_export_format']
     detrend=orig_args['detrend']
     detrend_options=orig_args['detrend_options']
-    filter=orig_args['filter']
+    filter_type=orig_args['filter_type']
     filter_options=orig_args['filter_options']
     update_metadata=orig_args['update_metadata']
     plot_input_stream=orig_args['plot_input_stream']
@@ -2705,6 +2717,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         pass
     else:
         dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_options=detrend_options, verbose=verbose, source=source)
+
+    # Filter data
+    if isinstance(params, HVSRBatch):
+        pass
+    elif filter_type is None:
+        pass
+    else:
+        dataIN.filter_type(type=filter_type, **filter_options)
 
     # Remerge data
     dataIN = dataIN.merge(method=1)
