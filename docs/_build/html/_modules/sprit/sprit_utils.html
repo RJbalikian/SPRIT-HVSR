@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_utils &mdash; sprit 1.4.3 documentation</title>
+  <title>sprit.sprit_utils &mdash; sprit 2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=a68a9277"></script>
+        <script src="../../_static/documentation_options.js?v=60dbed4a"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -422,6 +422,19 @@
 
 
 
+<span class="c1"># Get default dictionary with keys=parameter names and values=default values</span>
+<div class="viewcode-block" id="get_default_args">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.get_default_args">[docs]</a>
+<span class="k">def</span> <span class="nf">get_default_args</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">default</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+        <span class="p">}</span></div>
+
+    
+
 <span class="c1"># Get fuller traceback information on errors</span>
 <span class="k">def</span> <span class="nf">_get_error_from_exception</span><span class="p">(</span><span class="n">exception</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -564,7 +577,7 @@
     <span class="n">dsReturns</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;    Returns&#39;</span><span class="o">+</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;Returns&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
     
     <span class="n">functionList</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">,</span>
-                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_ppsds</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span> 
+                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span> 
                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span> 
                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">export_data</span><span class="p">]</span>
 
