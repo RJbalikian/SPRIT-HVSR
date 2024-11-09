@@ -325,6 +325,16 @@ def get_char(in_char):
     return out_char.decode('utf-8')
 
 
+# Get default dictionary with keys=parameter names and values=default values
+def get_default_args(func):
+    signature = inspect.signature(func)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+        }
+    
+
 # Get fuller traceback information on errors
 def _get_error_from_exception(exception=None):
     if exception is not None:
@@ -458,7 +468,7 @@ def _run_docstring():
     dsReturns = ('    Returns'+sprit_hvsr.run.__doc__.split('Returns')[1])
     
     functionList = [sprit_hvsr.input_params, sprit_hvsr.fetch_data, sprit_hvsr.calculate_azimuth,
-                    sprit_hvsr.remove_noise, sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr, 
+                    sprit_hvsr.remove_noise, sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr, 
                     sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks, 
                     sprit_hvsr.get_report, sprit_hvsr.export_data]
 

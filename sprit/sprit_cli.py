@@ -38,7 +38,7 @@ def main():
     hvsrFunctions = [sprit.input_params,
                      sprit.fetch_data,
                      sprit.remove_noise,
-                     sprit.generate_ppsds,
+                     sprit.generate_psds,
                      sprit.process_hvsr,
                      sprit.remove_outlier_curves,
                      sprit.check_peaks,

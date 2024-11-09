@@ -289,8 +289,8 @@ def create_jupyter_ui():
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
                             description='Detrend Type:',  layout=widgets.Layout(width='auto'))
-    detrend_order = widgets.FloatText(description='Order:', tooltip='detrend_order', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_order'), 
-                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_order'),layout=widgets.Layout(width='auto'))
+    detrend_options = widgets.FloatText(description='Order:', tooltip='detrend_options', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_options'), 
+                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_options'),layout=widgets.Layout(width='auto'))
 
     # A text to specify the trim directory
     trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
@@ -313,7 +313,7 @@ def create_jupyter_ui():
     
     excluded_params = ['hvsr_data', 'params', 'hvsr_results']
     funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
-                sprit_hvsr.generate_ppsds, sprit_hvsr.process_hvsr,
+                sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
                 sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
                 sprit_hvsr.get_report]
 
@@ -370,7 +370,7 @@ def create_jupyter_ui():
     ioparam_grid[2,:5] = hvsr_band_hbox
     ioparam_grid[3,:5] = peak_freq_range_hbox
     ioparam_grid[4,:1] = detrend_type_dropdown
-    ioparam_grid[4,1] = detrend_order
+    ioparam_grid[4,1] = detrend_options
     ioparam_grid[5,:6] = trim_directory
     ioparam_grid[5, 6:8] = trim_export_dropdown
     ioparam_grid[5, 8] = trim_directory_upload
@@ -519,7 +519,7 @@ def create_jupyter_ui():
     # Update fetch_data call
     def update_fetch_data_call():
         fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
-                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_order={detrend_order.value}, verbose={verbose_check.value})"""
+                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, verbose={verbose_check.value})"""
         fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
     update_fetch_data_call()
 
@@ -575,7 +575,7 @@ def create_jupyter_ui():
             'trim_dir':trim_directory.value,
             'export_format':data_format_dropdown.value,
             'detrend':detrend_type_dropdown.value,
-            'detrend_order':detrend_order.value}
+            'detrend_options':detrend_options.value}
         if str(fetch_data_kwargs['detrend']).lower() == 'none':
             fetch_data_kwargs['detrend'] = None
         
@@ -800,7 +800,7 @@ def create_jupyter_ui():
         progress_bar.value = 0.3
 
         generate_ppsd_kwargs = get_generate_ppsd_kwargs()
-        hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+        hvsr_data = sprit_hvsr.generate_psds(hvsr_data, **generate_ppsd_kwargs)
         progress_bar.value = 0.5
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
         
@@ -1559,12 +1559,12 @@ def create_jupyter_ui():
                                             style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     #remove_noise call
-    generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_ppsds' + '</p>', 
+    generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_psds' + '</p>', 
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
     generate_ppsd_call = widgets.HTML(value='()')
     generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_ppsd_call])
 
-    # Update generate_ppsds() call
+    # Update generate_psds() call
     def update_generate_ppsd_call():
         gppsdkwargs = get_generate_ppsd_kwargs()
         gppsd_text = f"""(hvsr_data=hvsr_data, 
@@ -1671,7 +1671,7 @@ def create_jupyter_ui():
     rmse_pctile_slider.observe(on_update_rmse_pctile_slider)
     rmse_thresh.observe(on_update_rmse_thresh)
 
-    use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_ppsds() step)', layout=widgets.Layout(height='auto', width='80%'))
+    use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_psds() step)', layout=widgets.Layout(height='auto', width='80%'))
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     update_outlier_plot_button = widgets.Button(description='Remove Outliers', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
@@ -2163,7 +2163,7 @@ def create_jupyter_ui():
             'trim_dir': trim_directory,
             'export_format': trim_export_dropdown,
             'detrend': detrend_type_dropdown,
-            'detrend_order': detrend_order,
+            'detrend_options': detrend_options,
             'verbose': verbose_check},
         'remove_noise': 
             {
@@ -2177,7 +2177,7 @@ def create_jupyter_ui():
             'min_win_size': noisy_window_length,
             'remove_raw_noise': raw_data_remove_check,
             'verbose': verbose_check},
-        'generate_ppsds': 
+        'generate_psds': 
             {'verbose': verbose_check,
              'skip_on_gaps':skip_on_gaps, 
              'db_bins':[db_bins_min, db_bins_max, db_bins_step],

@@ -235,7 +235,7 @@ def process_data(button):
     progress_bar.value = 0.3
 
     generate_ppsd_kwargs = get_generate_ppsd_kwargs()
-    hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data, **generate_ppsd_kwargs)
+    hvsr_data = sprit_hvsr.generate_psds(hvsr_data, **generate_ppsd_kwargs)
     progress_bar.value = 0.5
     log_textArea.value += f"\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}"
     

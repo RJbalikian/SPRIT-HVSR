@@ -308,7 +308,7 @@ class SPRIT_App:
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
-                                            detrend_order=self.detrend_order.get())
+                                            detrend_options=self.detrend_options.get())
                 
                 update_progress_bars(prog_percent=10)                                
                 self.site_options = self.hvsr_data.sites
@@ -369,7 +369,7 @@ class SPRIT_App:
                                             trim_dir=trimDir, 
                                             export_format=self.export_format.get(), 
                                             detrend=self.detrend.get(), 
-                                            detrend_order=self.detrend_order.get())
+                                            detrend_options=self.detrend_options.get())
                 except:
                     traceback.print_exc()
 
@@ -477,7 +477,7 @@ class SPRIT_App:
             self.hvsr_data = plot_noise_windows(self.hvsr_data)
 
             update_progress_bars(prog_percent=15)
-            self.hvsr_data = sprit_hvsr.generate_ppsds(hvsr_data=self.hvsr_data, 
+            self.hvsr_data = sprit_hvsr.generate_psds(hvsr_data=self.hvsr_data, 
                                                 remove_outliers=self.remove_outliers.get(),
                                                 outlier_std=self.outlier_std.get(),
                                                 ppsd_length=self.ppsd_length.get(),
@@ -1081,8 +1081,8 @@ class SPRIT_App:
             else:
                 trim_dir = self.trim_dir.get()
             self.data_read = False #New file will not have been read, set to False
-            self.fetch_data_call.configure(text="fetch_data(params, source='{}', trim_dir={}, export_format='{}', detrend='{}', detrend_order={})"
-                                            .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
+            self.fetch_data_call.configure(text="fetch_data(params, source='{}', trim_dir={}, export_format='{}', detrend='{}', detrend_options={})"
+                                            .format(self.file_source.get(), trim_dir, self.export_format.get(), self.detrend.get(), self.detrend_options.get()))
             
             newCall = self.input_params_call.cget('text')
             if prevCall==newCall:
@@ -1121,20 +1121,20 @@ class SPRIT_App:
         ttk.Radiobutton(master=detrendFrame, text='Polynomial', variable=self.detrend, value='polynomial', command=on_detrend_select).grid(row=0, column=1, sticky='w', padx=(5, 10))
         ttk.Radiobutton(master=detrendFrame, text='None', variable=self.detrend, value='none', command=on_detrend_select).grid(row=0, column=2, sticky='w', padx=(5, 10))
 
-        #detrend_order=2
+        #detrend_options=2
         
         def on_detrend_order():
             try:
-                int(self.detrend_order.get())
+                int(self.detrend_options.get())
                 update_fetch_call()
                 return True
             except ValueError:
                 return False
                      
         ttk.Label(hvsrFrame,text="Detrend Order [int]").grid(row=14,column=5, sticky='e', padx=5, pady=10)
-        self.detrend_order = tk.IntVar()
-        self.detrend_order.set(2)
-        self.detrend_order_entry = ttk.Entry(hvsrFrame, textvariable=self.detrend_order, validate='focusout', validatecommand=on_detrend_order)
+        self.detrend_options = tk.IntVar()
+        self.detrend_options.set(2)
+        self.detrend_order_entry = ttk.Entry(hvsrFrame, textvariable=self.detrend_options, validate='focusout', validatecommand=on_detrend_order)
         self.detrend_order_entry.grid(row=14,column=6, sticky='w', padx=0)
         
         #trim_dir=False
@@ -1176,8 +1176,8 @@ class SPRIT_App:
 
         #fetch_data() call
         fetch_data_LF = ttk.LabelFrame(master=self.input_tab, text='fetch_data() call')
-        self.fetch_data_call = ttk.Label(master=fetch_data_LF, text="fetch_data(params, source={}, trim_dir={}, export_format={}, detrend={}, detrend_order={})"
-                                                                .format(self.file_source.get(), None, self.export_format.get(), self.detrend.get(), self.detrend_order.get()))
+        self.fetch_data_call = ttk.Label(master=fetch_data_LF, text="fetch_data(params, source={}, trim_dir={}, export_format={}, detrend={}, detrend_options={})"
+                                                                .format(self.file_source.get(), None, self.export_format.get(), self.detrend.get(), self.detrend_options.get()))
         self.fetch_data_call.pack(anchor='w', expand=True, padx=20)
 
         #Set up frame for reading and running
@@ -2117,14 +2117,14 @@ class SPRIT_App:
 
 
         #PPSD Function Call
-        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit_hvsr.generate_ppsds() and obspy PPSD() call')#.pack(fill='both') 
+        ppsdCallFrame = ttk.LabelFrame(ppsd_settings_tab, text='sprit_hvsr.generate_psds() and obspy PPSD() call')#.pack(fill='both') 
        
         self.ppsd_call = ttk.Label(master=ppsdCallFrame, text='obspy...PPSD({}, {}, {}, {}, {}, {}, \n\t{}, {}, {}, {})'
                   .format('stats', 'metadata', ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
         self.ppsd_call.pack(side='bottom', anchor='w', padx=(25,0), pady=(10,10))
 
-        self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+        self.generate_ppsd_call = ttk.Label(master=ppsdCallFrame, text='generate_psds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
                   .format('hvsr_data', self.remove_outliers.get(), self.outlier_std.get(), 
                           ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
@@ -2136,7 +2136,7 @@ class SPRIT_App:
                                                                                                     overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                           dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))
 
-            self.generate_ppsd_call.configure(text='generate_ppsds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
+            self.generate_ppsd_call.configure(text='generate_psds({}, remove_outliers={}, outlier_std={},...\n\t{}, {}, {}, {}, {}, \n\t{}, {}, {})'
                             .format('hvsr_data', self.remove_outliers.get(), self.outlier_std.get(), 
                                     ppsdLenLabel.cget('text'), overlapLabel.cget('text'), pStepOctLabel.cget('text'), sogLabel.cget('text'), 
                                     dbbinsLabel.cget('text'), perLimsLabel.cget('text'), pSmoothWidthLabel.cget('text'), specialHandlingLabel.cget('text')))

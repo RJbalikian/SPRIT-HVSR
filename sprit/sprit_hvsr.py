@@ -50,7 +50,7 @@ except Exception:  # For testing
 
 # Constants, etc
 NOWTIME = datetime.datetime.now()
-DEF_PLOT_STRING = "HVSR p ann COMP+ p ann SPEC p ann"
+DEFAULT_PLOT_STR = "HVSR p ann COMP+ p ann SPEC p ann"
 OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 # Resources directory path, and the other paths as well
@@ -564,14 +564,14 @@ class HVSRData:
         Returns
         -------
         dict
-            Dictionary copy of the PPSD information from generate_ppsds()
+            Dictionary copy of the PPSD information from generate_psds()
         """
         return self._ppsds
 
     @ppsds.setter
     def ppsds(self, value):
         if not isinstance(value, dict):
-            raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_ppsds())")                  
+            raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_psds())")                  
         self._ppsds=value
 
 
@@ -714,7 +714,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     - input_params(): The input_data parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
     - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from input_data and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
     - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
-    - generate_ppsds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+    - generate_psds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
     - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
     - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
     - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
@@ -757,7 +757,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     RuntimeError
         If the data is not read/fetched correctly using fetch_data(), an error will be raised. This is raised if the fetch_data() function fails. This raises an error since no other data processing steps will be able to carried out correctly.
     RuntimeError
-        If the data being processed is a single file, an error will be raised if generate_ppsds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
+        If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
    
     orig_args = locals().copy()  # Get the initial arguments
@@ -800,7 +800,11 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
 
         # Fetch Data
         try:
-            fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())} 
+            fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
+            if 'obspy_ppsds' in kwargs:
+                fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
+            else:
+                fetch_data_kwargs['obspy_ppsds'] = False
             hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
@@ -873,7 +877,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             else:
                 errMsg = e
             
-            print(f"Error during generate_ppsds() for {hvsr_az.site}: \n{errMsg}")            
+            print(f"Error during generate_psds() for {hvsr_az.site}: \n{errMsg}")            
 
             if isinstance(hvsr_az, HVSRBatch):
                 for site_name in hvsr_az.keys():
@@ -933,39 +937,39 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             else:
                 errMsg = e
             if not ('batch' in data_noiseRemoved.keys() and data_noiseRemoved['batch']):
-                raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+                raise RuntimeError(f"generate_psds() error: {errMsg}")
     
     # Generate PPSDs
-    ppsd_data = data_noiseRemoved
+    psd_data = data_noiseRemoved
     try:
-        generate_ppsds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_ppsds).parameters.keys())}
+        generate_psds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_psds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
-        generate_ppsds_kwargs.update(PPSDkwargs)
-        ppsd_data = generate_ppsds(hvsr_data=ppsd_data, verbose=verbose, **generate_ppsds_kwargs)
+        generate_psds_kwargs.update(PPSDkwargs)
+        psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
     except Exception as e:
         if hasattr(e, 'message'):
             errMsg = e.message
         else:
             errMsg = e
         
-        print(f"Error during generate_ppsds() for {site_name}: \n{errMsg}")
+        print(f"Error during generate_psds() for {site_name}: \n{errMsg}")
         if source == 'file' or source == 'raw':
-            raise RuntimeError(f"generate_ppsds() error: {errMsg}")
+            raise RuntimeError(f"generate_psds() error: {errMsg}")
 
         # Reformat data so HVSRData and HVSRBatch data both work here
-        if isinstance(ppsd_data, HVSRData):
-            ppsd_data = {ppsd_data['site']: ppsd_data}
+        if isinstance(psd_data, HVSRData):
+            psd_data = {psd_data['site']: psd_data}
             
-        for site_name in ppsd_data.keys():  # This should work more or less the same for batch and regular data now
-            ppsd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-            ppsd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+        for site_name in psd_data.keys():  # This should work more or less the same for batch and regular data now
+            psd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
+            psd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
     
             #If it wasn't originally HVSRBatch, make it HVSRData object again
-            if not ppsd_data[site_name]['batch']:
-                ppsd_data = ppsd_data[site_name]
-    
+            if not psd_data[site_name]['batch']:
+                psd_data = psd_data[site_name]
+
     # Remove Outlier Curves
-    data_curvesRemoved = ppsd_data
+    data_curvesRemoved = psd_data
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
 
@@ -1006,7 +1010,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     hvsr_results = data_curvesRemoved
     try:
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
-        hvsr_results = process_hvsr(hvsr_data=ppsd_data, verbose=verbose, **process_hvsr_kwargs)
+        hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -1177,7 +1181,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     fetch_data_params = inspect.signature(fetch_data).parameters
     calculate_azimuth_params = inspect.signature(calculate_azimuth).parameters
     remove_noise_params = inspect.signature(remove_noise).parameters
-    generate_ppsds_params = inspect.signature(generate_ppsds).parameters
+    generate_ppsds_params = inspect.signature(generate_psds).parameters
     remove_outlier_curves_params = inspect.signature(remove_outlier_curves).parameters
     process_hvsr_params = inspect.signature(process_hvsr).parameters
     check_peaks_params = inspect.signature(check_peaks).parameters
@@ -1197,7 +1201,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     # Get a list of all functions (for which paramters are used) in sprit.run()
     run_functions_list = [input_params, fetch_data, 
                           get_metadata, calculate_azimuth, 
-                          remove_noise, generate_ppsds, remove_outlier_curves, 
+                          remove_noise, generate_psds, remove_outlier_curves, 
                           process_hvsr, check_peaks, 
                           get_report, export_data]
 
@@ -2136,7 +2140,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
     #Get settings values
     instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
     inst_location_keys = ['xcoord', 'ycoord', 'elevation', 'elev_unit', 'input_crs']
-    procFuncs = [fetch_data, remove_noise, generate_ppsds, process_hvsr, check_peaks, get_report]
+    procFuncs = [fetch_data, remove_noise, generate_psds, process_hvsr, check_peaks, get_report]
 
     instrument_settings_dict = {}
     processing_settings_dict = {}
@@ -2233,7 +2237,11 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', detrend='spline', detrend_order=2, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs):
+def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', 
+               detrend='spline', detrend_options=2, filter_type=None, filter_options={},
+               update_metadata=True, 
+               plot_input_stream=False, plot_engine='matplotlib', show_plot=True, 
+               verbose=False, **kwargs):
     """Fetch ambient seismic data from a source to read into obspy stream
     
     Parameters
@@ -2256,8 +2264,20 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     detrend : str or bool, default='spline'
         If False, data is not detrended.
         Otherwise, this should be a string accepted by the type parameter of the obspy.core.trace.Trace.detrend method: https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.detrend.html
-    detrend_order : int, default=2
+    detrend_options : int, default=2
         If detrend parameter is 'spline' or 'polynomial', this is passed directly to the order parameter of obspy.core.trace.Trace.detrend method.
+    filter_type : None, str
+        Type of filter to use on raw data.
+        This should either be None or any of {'bandpass', 'bandstop', 'lowpass', 'highpass', 'lowpass_cheby_2', 'lowpass_fir', 'remez_fir'}.
+        This passes `filter_type` to the `type` parameter and `**filter_options` to the `**options` parameter of the obspy.Stream filter() method.
+        See here for more information: https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html
+        If None, no filtering is done on the input seismic data.
+    filter_options : dict
+        Dictionary that will be unpacked into the `**options` parameter of the filter() method of the obspy.Stream class.
+        This should fit the parameters of whichever filter type is specifed by filter_type.
+        Example options for the 'bandpass' filter_type might be: `filter_options={'freqmin': 0.4, 'freqmax':40, 'df':100, 'corners':4, 'zerophase':True}`.
+        See here for more information: https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html
+
     update_metadata : bool, default=True
         Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.
     plot_input_stream : bool, default=False
@@ -2298,7 +2318,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     data_export_path=orig_args['data_export_path']
     data_export_format=orig_args['data_export_format']
     detrend=orig_args['detrend']
-    detrend_order=orig_args['detrend_order']
+    detrend_options=orig_args['detrend_options']
+    filter_type=orig_args['filter_type']
+    filter_options=orig_args['filter_options']
     update_metadata=orig_args['update_metadata']
     plot_input_stream=orig_args['plot_input_stream']
     plot_engine=orig_args['plot_engine']
@@ -2461,7 +2483,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                         currParams['input_data'] = f
 
                         curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
-                                    data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_order=detrend_order, update_metadata=update_metadata, verbose=verbose, **kwargs)
+                                    data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_options=detrend_options, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
@@ -2666,7 +2688,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
     except Exception as e:
-        raise RuntimeError(f'Data not fetched. \n{e}.\n\ntCheck your input parameters or the data file.')
+        raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\n\ntCheck your input parameters or the data file.')
 
     # Get and update metadata
     params = get_metadata(params, update_metadata=update_metadata, source=source)
@@ -2694,7 +2716,15 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     if isinstance(params, HVSRBatch):
         pass
     else:
-        dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_order=detrend_order, verbose=verbose, source=source)
+        dataIN =  __detrend_data(input=dataIN, detrend=detrend, detrend_options=detrend_options, verbose=verbose, source=source)
+
+    # Filter data
+    if isinstance(params, HVSRBatch):
+        pass
+    elif filter_type is None:
+        pass
+    else:
+        dataIN.filter_type(type=filter_type, **filter_options)
 
     # Remerge data
     dataIN = dataIN.merge(method=1)
@@ -2783,81 +2813,88 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 
     # Attach response data to stream and get paz (for PPSD later)
     # Check if response can be attached
-    params['stream'].attach_response(params['inv'])
-
-    responseMatch = {}
-    for trace in params['stream']:
-        k = trace.stats.component
-        responseMatch[k] = False
-
-        for sta in params['inv'].networks[0].stations: # Assumes only one network per inst
-            hasCha = False
-            hasLoc = False
-            hasSta = False
-            isStarted= False
-            notEnded = False
-            
-            # Check station
-            if sta.code == params['stream'][0].stats.station:
-                hasSta = True
-            else:
-                continue
-
-            # Check Channel
-            for cha in sta:
-                if cha.code==trace.stats.channel:
-                    hasCha = True
-
-                # Check location
-                if cha.location_code == trace.stats.location:
-                    hasLoc = True
-
-
-                # Check time
-                if (cha.start_date is None or cha.start_date <= tr.stats.starttime):
-                    isStarted = True
-
-                if (cha.end_date is None or cha.end_date >= tr.stats.endtime):
-                    notEnded = True
-
-                
-                if all([hasSta, hasCha, hasLoc, isStarted, notEnded]):
-                    responseMatch[k] = True
-
-        if responseMatch[k] is not True:
-            responseMatch[k] = {'Station':  (hasSta,[sta.code for sta in params['inv'].networks[0].stations]),
-                                'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
-
-    metadataMatchError = False
-    for comp, matchItems in responseMatch.items():
-        if matchItems is not True:
-            metadataMatchError = True
-            errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
-            for matchType, match in matchItems.items():
-                if match[0] is False:
-                    errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
-
-    if metadataMatchError:
-        print(errorMsg)
-        raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
-
     try:
-        params['stream'].attach_response(params['inv'])
-        for tr in params['stream']:
-            cmpnt = tr.stats.component
+        responseMatch = {}
+        for trace in params['stream']:
+            k = trace.stats.component
+            responseMatch[k] = False
 
-            params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
-            params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
-            params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
-            params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
-    except Exception:
-        raise ValueError("Metadata missing, incomplete, or incorrect")
+            for sta in params['inv'].networks[0].stations: # Assumes only one network per inst
+                hasCha = False
+                hasLoc = False
+                hasSta = False
+                isStarted= False
+                notEnded = False
+                
+                # Check station
+                if sta.code == params['stream'][0].stats.station:
+                    hasSta = True
+                else:
+                    continue
+
+                # Check Channel
+                for cha in sta:
+                    if cha.code==trace.stats.channel:
+                        hasCha = True
+
+                    # Check location
+                    if cha.location_code == trace.stats.location:
+                        hasLoc = True
+
+
+                    # Check time
+                    if (cha.start_date is None or cha.start_date <= tr.stats.starttime):
+                        isStarted = True
+
+                    if (cha.end_date is None or cha.end_date >= tr.stats.endtime):
+                        notEnded = True
+
+                    
+                    if all([hasSta, hasCha, hasLoc, isStarted, notEnded]):
+                        responseMatch[k] = True
+
+            if responseMatch[k] is not True:
+                responseMatch[k] = {'Station':  (hasSta,[sta.code for sta in params['inv'].networks[0].stations]),
+                                    'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
+                                    'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
+
+        metadataMatchError = False
+        for comp, matchItems in responseMatch.items():
+            if matchItems is not True:
+                metadataMatchError = True
+                errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
+                for matchType, match in matchItems.items():
+                    if match[0] is False:
+                        errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
+
+        if metadataMatchError:
+            if verbose:
+                print(errorMsg)
+            raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
+        else:
+            params['stream'].attach_response(params['inv'])
+            for tr in params['stream']:
+                cmpnt = tr.stats.component
+
+                params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
+                params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
+                params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
+                params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
+    except Exception as e:
+        if 'obspy_ppsds' in kwargs and kwargs['obspy_ppsds']:
+            errMsg = "Metadata missing, incomplete, or incorrect. Instrument response cannot be removed."
+            errMsg += "if metadata cannot be matched, use obspy_ppsds=False to perform analysis on raw data (without instrument response removed)"
+            raise ValueError(errMsg)
+        else:
+            if verbose:
+                print("\tMetadata/instrument response does not match data.")
+                print("\t  Raw data (without the instrument response removed) will be used for processing.")
     
     params['ProcessingStatus']['FetchDataStatus'] = True
     if verbose and not isinstance(params, HVSRBatch):
+        print('\n')
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
             print('\t\t', line)
@@ -2867,8 +2904,18 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     return params
 
 
-# Generate PPSDs for each channel
-def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwargs):
+# For backwards compatibility (now generate_psds()
+def generate_ppsds(hvsr_data, **gen_psds_kwargs):
+    """This function is to maintain backwards compatibility with previous version"""
+    warnings.warn("generate_ppsds() is now deprecated, use generate_psds()", DeprecationWarning)
+    hvsrData = generate_psds(hvsr_data, **gen_psds_kwargs)
+    return hvsrData
+
+
+# Generate PSDs for each channel
+def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, 
+                   window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=500, 
+                   obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     """Generates PPSDs for each channel
 
         Channels need to be in Z, N, E order
@@ -2882,7 +2929,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
             Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
-        **ppsd_kwargs : dict
+        **obspy_ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
             If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:
                 - ppsd_length defaults to 30 (seconds) here instead of 3600
@@ -2899,57 +2946,47 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
     orig_args = locals().copy()  # Get the initial arguments
     start_time = datetime.datetime.now()
 
-    ppsd_kwargs_sprit_defaults = ppsd_kwargs.copy()
+    obspy_ppsd_kwargs_sprit_defaults = obspy_ppsd_kwargs.copy()
     #Set defaults here that are different than obspy defaults
-    if 'ppsd_length' not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults['ppsd_length'] = 30.0
-    if 'skip_on_gaps' not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults['skip_on_gaps'] = True
-    if 'period_step_octaves' not in ppsd_kwargs.keys():
-        ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
-    if 'period_limits' not in ppsd_kwargs.keys():
+    if 'ppsd_length' not in obspy_ppsd_kwargs.keys():
+        obspy_ppsd_kwargs_sprit_defaults['ppsd_length'] = 30.0      
+    if 'period_step_octaves' not in obspy_ppsd_kwargs.keys():
+        obspy_ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
+    if 'period_limits' not in obspy_ppsd_kwargs.keys():
         if 'hvsr_band' in hvsr_data.keys():
-            ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
         elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
-                ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
+                obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
         else:
-            ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
     else:
         if verbose:
-            print(f"\t\tUpdating hvsr_band to band specified by period_limits={ppsd_kwargs['period_limits']}")
+            print(f"\t\tUpdating hvsr_band to band specified by period_limits={obspy_ppsd_kwargs['period_limits']}")
         
         if 'hvsr_band' in hvsr_data.keys():
-            if ppsd_kwargs['period_limits'] is None:
-                ppsd_kwargs['period_limits'] = np.round([1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]], 3).tolist()
+            if obspy_ppsd_kwargs['period_limits'] is None:
+                obspy_ppsd_kwargs['period_limits'] = np.round([1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]], 3).tolist()
             else:
-                hvsr_data['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
+                hvsr_data['hvsr_band'] = np.round([1/obspy_ppsd_kwargs['period_limits'][1], 1/obspy_ppsd_kwargs['period_limits'][0]], 2).tolist()
         
         if 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
-            hvsr_data['input_params']['hvsr_band'] = np.round([1/ppsd_kwargs['period_limits'][1], 1/ppsd_kwargs['period_limits'][0]], 2).tolist()
+            hvsr_data['input_params']['hvsr_band'] = np.round([1/obspy_ppsd_kwargs['period_limits'][1], 1/obspy_ppsd_kwargs['period_limits'][0]], 2).tolist()
             
         
     #Get Probablistic power spectral densities (PPSDs)
     #Get default args for function
-    def get_default_args(func):
-        signature = inspect.signature(func)
-        return {
-            k: v.default
-            for k, v in signature.parameters.items()
-            if v.default is not inspect.Parameter.empty
-            }
-    
-    ppsd_kwargs = get_default_args(PPSD)
-    ppsd_kwargs.update(ppsd_kwargs_sprit_defaults)  # Update with sprit defaults, or user input
-    orig_args['ppsd_kwargs'] = ppsd_kwargs
+    obspy_ppsd_kwargs = sprit_utils.get_default_args(PPSD)
+    obspy_ppsd_kwargs.update(obspy_ppsd_kwargs_sprit_defaults)  # Update with sprit defaults, or user input
+    orig_args['obspy_ppsd_kwargs'] = obspy_ppsd_kwargs
 
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
-        if 'generate_ppsds' in hvsr_data['processing_parameters'].keys():
-            defaultVDict = dict(zip(inspect.getfullargspec(generate_ppsds).args[1:], 
-                                    inspect.getfullargspec(generate_ppsds).defaults))
-            defaultVDict['ppsd_kwargs'] = ppsd_kwargs
+        if 'generate_psds' in hvsr_data['processing_parameters'].keys():
+            defaultVDict = dict(zip(inspect.getfullargspec(generate_psds).args[1:], 
+                                    inspect.getfullargspec(generate_psds).defaults))
+            defaultVDict['obspy_ppsd_kwargs'] = obspy_ppsd_kwargs
             update_msg = []
-            for k, v in hvsr_data['processing_parameters']['generate_ppsds'].items():
+            for k, v in hvsr_data['processing_parameters']['generate_psds'].items():
                 # Manual input to function overrides the imported parameter values
                 if not isinstance(v, (HVSRData, HVSRBatch)) and (k in orig_args.keys()) and (orig_args[k] == defaultVDict[k]):
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
@@ -2957,11 +2994,11 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
 
     azimuthal_ppsds = orig_args['azimuthal_ppsds']
     verbose = orig_args['verbose']
-    ppsd_kwargs = orig_args['ppsd_kwargs']
+    obspy_ppsd_kwargs = orig_args['obspy_ppsd_kwargs']
 
     # if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
     if verbose:
-        print('\nGenerating Probabilistic Power Spectral Densities (generate_ppsds())')
+        print('\nGenerating Probabilistic Power Spectral Densities (generate_psds())')
         print('\tUsing the following parameters:')
         for key, value in orig_args.items():
             if key == 'hvsr_data':
@@ -2970,7 +3007,7 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 print('\t  {}={}'.format(key, value))
         print()
 
-        if 'processing_parameters' in hvsr_data.keys() and 'generate_ppsds' in hvsr_data['processing_parameters'].keys():
+        if 'processing_parameters' in hvsr_data.keys() and 'generate_psds' in hvsr_data['processing_parameters'].keys():
             if update_msg != []:
                 update_msg.insert(0, '\tThe following parameters were updated using the processing_parameters attribute:')
                 for msg_line in update_msg:
@@ -3001,159 +3038,231 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
                 #print(e)
         return hvsr_data
     
-    paz = hvsr_data['paz']
-    stream = hvsr_data['stream']
+    def _get_obspy_ppsds(hvsr_data,**obspy_ppsd_kwargs):
+        paz = hvsr_data['paz']
+        stream = hvsr_data['stream']
 
-    # Get ppsds of e component
-    eStream = stream.select(component='E')
-    estats = eStream.traces[0].stats
-    ppsdE = PPSD(estats, paz['E'],  **ppsd_kwargs)
-    ppsdE.add(eStream)
+        # Get ppsds of e component
+        eStream = stream.select(component='E')
+        estats = eStream.traces[0].stats
+        ppsdE = PPSD(estats, paz['E'],  **obspy_ppsd_kwargs)
+        ppsdE.add(eStream)
 
-    # Get ppsds of n component
-    nStream = stream.select(component='N')
-    nstats = nStream.traces[0].stats
-    ppsdN = PPSD(nstats, paz['N'], **ppsd_kwargs)
-    ppsdN.add(nStream)
+        # Get ppsds of n component
+        nStream = stream.select(component='N')
+        nstats = nStream.traces[0].stats
+        ppsdN = PPSD(nstats, paz['N'], **obspy_ppsd_kwargs)
+        ppsdN.add(nStream)
 
-    # Get ppsds of z component
-    zStream = stream.select(component='Z')
-    zstats = zStream.traces[0].stats
-    ppsdZ = PPSD(zstats, paz['Z'], **ppsd_kwargs)
-    ppsdZ.add(zStream)
+        # Get ppsds of z component
+        zStream = stream.select(component='Z')
+        zstats = zStream.traces[0].stats
+        ppsdZ = PPSD(zstats, paz['Z'], **obspy_ppsd_kwargs)
+        ppsdZ.add(zStream)
 
-    # Get ppsds of R components (azimuthal data)
-    has_az = False
-    ppsds = {'Z':ppsdZ, 'E':ppsdE, 'N':ppsdN}
-    rStream = stream.select(component='R')
-    for curr_trace in stream:
-        if 'R' in curr_trace.stats.channel:
-            curr_stats = curr_trace.stats
-            ppsd_curr = PPSD(curr_stats, paz['E'], **ppsd_kwargs)        
-            has_az = True
-            ppsdName = curr_trace.stats.location
-            ppsd_curr.add(rStream)
-            ppsds[ppsdName] = ppsd_curr
-    
-    # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
-    hvsr_data['ppsds_obspy'] = ppsds
-    hvsr_data['ppsds'] = {}
-    anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
-    
-    # Get ppsd class members
-    members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
-    for k in ppsds.keys():
-        hvsr_data['ppsds'][k] = {}
-    
-    #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
-    listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
-    timeKeys= ['times_processed','current_times_used','psd_values']
-    timeDiffWarn = True
-    dfList = []
-    time_data = {}
-    time_dict = {}
-    for m in members:
-        for k in hvsr_data['ppsds'].keys():
-            hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
-            if m in listList:
-                hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
+        # Get ppsds of R components (azimuthal data)
+        has_az = False
+        ppsds = {'Z':ppsdZ, 'E':ppsdE, 'N':ppsdN}
+        rStream = stream.select(component='R')
+        for curr_trace in stream:
+            if 'R' in curr_trace.stats.channel:
+                curr_stats = curr_trace.stats
+                ppsd_curr = PPSD(curr_stats, paz['E'], **obspy_ppsd_kwargs)        
+                has_az = True
+                ppsdName = curr_trace.stats.location
+                ppsd_curr.add(rStream)
+                ppsds[ppsdName] = ppsd_curr
         
-        if str(m)=='times_processed':
-            unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
-                                                hvsr_data['ppsds']['E'][m],
-                                                hvsr_data['ppsds']['N'][m]]))
+        # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
+        hvsr_data['ppsds_obspy'] = ppsds
+        hvsr_data['ppsds'] = {}
+        anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
+        
+        # Get ppsd class members
+        members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
+        for k in ppsds.keys():
+            hvsr_data['ppsds'][k] = {}
+        
+        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+        listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
+        timeKeys= ['times_processed','current_times_used','psd_values']
+        timeDiffWarn = True
+        dfList = []
+        time_data = {}
+        time_dict = {}
+        for m in members:
+            for k in hvsr_data['ppsds'].keys():
+                hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
+                if m in listList:
+                    hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
+            
+            if str(m)=='times_processed':
+                unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
+                                                    hvsr_data['ppsds']['E'][m],
+                                                    hvsr_data['ppsds']['N'][m]]))
 
-            common_times = []
-            for currTime in unique_times:
-                if currTime in hvsr_data['ppsds']['Z'][m]:
-                    if currTime in hvsr_data['ppsds']['E'][m]:
-                        if currTime in hvsr_data['ppsds']['N'][m]:
-                            common_times.append(currTime)
+                common_times = []
+                for currTime in unique_times:
+                    if currTime in hvsr_data['ppsds']['Z'][m]:
+                        if currTime in hvsr_data['ppsds']['E'][m]:
+                            if currTime in hvsr_data['ppsds']['N'][m]:
+                                common_times.append(currTime)
 
-            cTimeIndList = []
-            for cTime in common_times:
-                ZArr = hvsr_data['ppsds']['Z'][m]
-                EArr = hvsr_data['ppsds']['E'][m]
-                NArr = hvsr_data['ppsds']['N'][m]
+                cTimeIndList = []
+                for cTime in common_times:
+                    ZArr = hvsr_data['ppsds']['Z'][m]
+                    EArr = hvsr_data['ppsds']['E'][m]
+                    NArr = hvsr_data['ppsds']['N'][m]
 
-                cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
-                                    int(np.where(EArr == cTime)[0][0]),
-                                    int(np.where(NArr == cTime)[0][0])])
-                
-        # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
-        if m in timeKeys:
-            if str(m) != 'times_processed':
-                time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
+                    cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
+                                        int(np.where(EArr == cTime)[0][0]),
+                                        int(np.where(NArr == cTime)[0][0])])
+                    
+            # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
+            if m in timeKeys:
+                if str(m) != 'times_processed':
+                    time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
 
-            tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
+                tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
 
-            if not tSteps_same:
-                shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
+                if not tSteps_same:
+                    shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
 
-                maxPctDiff = 0
-                for comp in hvsr_data['ppsds'].keys():
-                    currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
-                    timeLengthDiff = currCompTimeLength - shortestTimeLength
-                    percentageDiff = timeLengthDiff / currCompTimeLength
-                    if percentageDiff > maxPctDiff:
-                        maxPctDiff = percentageDiff
+                    maxPctDiff = 0
+                    for comp in hvsr_data['ppsds'].keys():
+                        currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
+                        timeLengthDiff = currCompTimeLength - shortestTimeLength
+                        percentageDiff = timeLengthDiff / currCompTimeLength
+                        if percentageDiff > maxPctDiff:
+                            maxPctDiff = percentageDiff
 
-                for comp in hvsr_data['ppsds'].keys():
-                    while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
-                        hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
-                
-                
-                if maxPctDiff > 0.05 and timeDiffWarn:
-                    warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
-                elif verbose  and timeDiffWarn:
-                    print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
-                timeDiffWarn = False #So we only do this warning once, even though there may be multiple arrays that need to be trimmed
+                    for comp in hvsr_data['ppsds'].keys():
+                        while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
+                            hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
+                    
+                    
+                    if maxPctDiff > 0.05 and timeDiffWarn:
+                        warnings.warn(f"\t  Number of ppsd time windows between different components is significantly different: {round(maxPctDiff*100,2)}% > 5%. Last windows will be trimmed.")
+                    elif verbose  and timeDiffWarn:
+                        print(f"\t  Number of ppsd time windows between different components is different by {round(maxPctDiff*100,2)}%. Last window(s) of components with larger number of ppsd windows will be trimmed.")
+                    timeDiffWarn = False #So we only do this warning once, even though there may be multiple arrays that need to be trimmed
 
-    for i, currTStep in enumerate(cTimeIndList):
-        colList = []
-        currTStepList = []
-        colList.append('Use')
-        currTStepList.append(np.ones_like(common_times[i]).astype(bool))
-        for tk in time_data.keys():
-            if 'current_times_used' not in tk:
-                for i, k in enumerate(hvsr_data['ppsds'].keys()):
-                    if k.lower() in ['z', 'e', 'n']:
-                        colList.append(str(tk)+'_'+k)
-                        currTStepList.append(time_data[tk][i][currTStep[i]])
+        for i, currTStep in enumerate(cTimeIndList):
+            colList = []
+            currTStepList = []
+            colList.append('Use')
+            currTStepList.append(np.ones_like(common_times[i]).astype(bool))
+            for tk in time_data.keys():
+                if 'current_times_used' not in tk:
+                    for i, k in enumerate(hvsr_data['ppsds'].keys()):
+                        if k.lower() in ['z', 'e', 'n']:
+                            colList.append(str(tk)+'_'+k)
+                            currTStepList.append(time_data[tk][i][currTStep[i]])
+            dfList.append(currTStepList)
 
-        dfList.append(currTStepList)
+        return hvsr_data, dfList, colList, common_times
+
+    if obspy_ppsds:
+        hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data,**obspy_ppsd_kwargs)
+    else:
+        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, overlap=overlap_pct, show_psd_plot=False)
+
+        #x_freqs, common_times, psdDict = _get_psd_dict(hvsr_data=hvsr_data, window=window_length, overlap=overlap_pct, 
+        #                                               num_freq_bins=num_freq_bins, 
+        #                                               window_length_method=window_length_method, window_type=window_type, verbose=verbose)
+        x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
+        psdDictUpdate = {"Z":np.array([list(np.flip(arr)) for time, arr in psdDict['Z'].items()]),
+                         "E":np.array([list(np.flip(arr)) for time, arr in psdDict['E'].items()]),
+                         "N":np.array([list(np.flip(arr)) for time, arr in psdDict['N'].items()]),
+                         }
+
+        hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
+        for key, item in psdDict.items():
+            currSt = hvsr_data.stream.select(component=key).merge()
+                      
+            hvsr_data['ppsds'][key]['channel'] = currSt[0].stats.channel
+            hvsr_data['ppsds'][key]['current_times_used'] = common_times
+            hvsr_data['ppsds'][key]['delta'] = float(currSt[0].stats.delta)
+            #hvsr_data['ppsds'][key]['get_mean'] = np.nanmean(item)
+            #hvsr_data['ppsds'][key]['mean'] = np.nanmean(item)
+            #hvsr_data['ppsds'][key]['get_mode'] = scipy.stats.mode(item)
+            #hvsr_data['ppsds'][key]['mode'] = scipy.stats.mode(item)
+            hvsr_data['ppsds'][key]['id'] = currSt[0].id
+            hvsr_data['ppsds'][key]['len'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['location'] = currSt[0].stats.location
+            hvsr_data['ppsds'][key]['metadata'] = [currSt[0].stats.response if hasattr(currSt[0].stats, 'response') else None][0]
+            hvsr_data['ppsds'][key]['network'] = currSt[0].stats.network
+            hvsr_data['ppsds'][key]['nfft'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['nlap'] = int(overlap_pct*window_length / hvsr_data['ppsds'][key]['delta'])
+            hvsr_data['ppsds'][key]['overlap'] = overlap_pct
+            hvsr_data['ppsds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
+            hvsr_data['ppsds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
+            hvsr_data['ppsds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
+            hvsr_data['ppsds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
+            hvsr_data['ppsds'][key]['period_xedges'] = 1/x_freqs
+            hvsr_data['ppsds'][key]['ppsd_length'] = window_length
+            hvsr_data['ppsds'][key]['psd_length'] = window_length
+            hvsr_data['ppsds'][key]['psd_frequencies'] = x_freqs
+            hvsr_data['ppsds'][key]['psd_periods'] = 1/x_freqs
+            hvsr_data['ppsds'][key]['psd_values'] = psdDictUpdate[key]
+            hvsr_data['ppsds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
+            hvsr_data['ppsds'][key]['skip_on_gaps'] = skip_on_gaps
+            hvsr_data['ppsds'][key]['station'] = currSt[0].stats.station
+            hvsr_data['ppsds'][key]['step'] = window_length * (1-overlap_pct)
+            hvsr_data['ppsds'][key]['times_data'] = common_times
+            hvsr_data['ppsds'][key]['times_gaps'] = [[None, None]]
+            hvsr_data['ppsds'][key]['times_processed'] = [[None, None]]
+            
+        hvsr_data['ppsds_obspy'] = {}
+        dfList = []
+        for i, w in enumerate(common_times):
+            ws = str(w)
+            dfList.append([True, psdDictUpdate['Z'][i], psdDictUpdate['E'][i], psdDictUpdate['N'][i]])
+        colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
+        # dfList: list of np.arrays, fitting the above column
+        # common_times: times in common between all, should be length of 1 psd dimension above
+        # hvsr_data['ppsds']['Z']['times_gaps']: list of two-item lists with UTCDatetimes for gaps
+        
+        # #Maybe not needed hvsr_data['ppsds']['Z']['current_times_used']
+
+
     hvsrDF = pd.DataFrame(dfList, columns=colList)
     if verbose:
-        print(f"\t\thvsr_windows_df created with columns: {', '.join(hvsrDF.columns)}")
-    hvsrDF['Use'].astype(bool)
+        print(f"\t\t{hvsrDF.shape[0]} processing windows generated and psd values stored in hvsr_windows_df with columns: {', '.join(hvsrDF.columns)}")
+    hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
     # Add azimuthal ppsds values
     for k in hvsr_data['ppsds'].keys():
         if k.upper() not in ['Z', 'E', 'N']:
             hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
 
     hvsrDF['TimesProcessed_Obspy'] = common_times
-    hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + ppsd_kwargs['ppsd_length']
+    hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + obspy_ppsd_kwargs['ppsd_length']
     #    colList.append('TimesProcessed_Obspy')
     #    currTStepList.append(common_times[i])            
     # Add other times (for start times)
+    
+    # Create functions to be used in pandas .apply() for datetime conversions
     def convert_to_datetime(obspyUTCDateTime):
         return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
-
     def convert_to_mpl_dates(obspyUTCDateTime):
         return obspyUTCDateTime.matplotlib_date
 
     hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)
-    hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=ppsd_kwargs['ppsd_length'])
+    
+    hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=obspy_ppsd_kwargs['ppsd_length'])
     hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
-    hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (ppsd_kwargs['ppsd_length']/86400)
+    hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (obspy_ppsd_kwargs['ppsd_length']/86400)
     
     # Take care of existing time gaps, in case not taken care of previously
-    for gap in hvsr_data['ppsds']['Z']['times_gaps']:
-        hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
+    if obspy_ppsds:
+        for gap in hvsr_data['ppsds']['Z']['times_gaps']:
+            hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
                         (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
+    
     hvsrDF.set_index('TimesProcessed', inplace=True)
     hvsr_data['hvsr_windows_df'] = hvsrDF
     
+    # Remove data set for removal during remove_noise()
     if 'x_windows_out' in hvsr_data.keys():
         if verbose:
             print("\t\tRemoving Noisy windows from hvsr_windows_df.")
@@ -3164,24 +3273,32 @@ def generate_ppsds(hvsr_data, azimuthal_ppsds=False, verbose=False, **ppsd_kwarg
         #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
         #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
         
-
-    # Create dict entry to keep track of how many outlier hvsr curves are removed (2-item list with [0]=current number, [1]=original number of curves)
-    hvsr_data['tsteps_used'] = [hvsrDF['Use'].sum(), hvsrDF['Use'].shape[0]]
+    # Create dict entry to keep track of how many outlier hvsr curves are removed 
+    # This is a (2-item list with [0]=current number, [1]=original number of curves)
+    hvsr_data['tsteps_used'] = [int(hvsrDF['Use'].sum()), hvsrDF['Use'].shape[0]]
     #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
-    
-    hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
+    #hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
     
     hvsr_data = sprit_utils.make_it_classy(hvsr_data)
 
     if 'processing_parameters' not in hvsr_data.keys():
         hvsr_data['processing_parameters'] = {}
-    hvsr_data['processing_parameters']['generate_ppsds'] = {}
+    hvsr_data['processing_parameters']['generate_psds'] = {}
     for key, value in orig_args.items():
-        hvsr_data['processing_parameters']['generate_ppsds'][key] = value
-
+        hvsr_data['processing_parameters']['generate_psds'][key] = value
     
     hvsr_data['ProcessingStatus']['PPSDStatus'] = True
     hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    
+    #for ind, row in hvsrDF.iterrows():
+    #    print(row['psd_values_Z'].shape)
+    if plot_psds:
+        for i, r in hvsrDF.iterrows():
+            plt.plot(r['psd_values_Z'], c='k', linewidth=0.5)
+            plt.plot(r['psd_values_E'], c='b', linewidth=0.5)
+            plt.plot(r['psd_values_N'], c='r', linewidth=0.5)
+        plt.show()
+
     return hvsr_data
 
 
@@ -3297,7 +3414,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
-               plot_type=DEF_PLOT_STRING, plot_engine='matplotlib', 
+               plot_type=DEFAULT_PLOT_STR, plot_engine='matplotlib', 
                show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
@@ -3471,13 +3588,13 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
         peakPass = peakTestsPassed >= 5
     except Exception as e:
-        errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.'
+        errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.'
         print(errMsg)
         print(e)
         plotString_noBestPeak = 'HVSR t all C+ t SPEC'
         hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, return_fig=True)
         return hvsr_results
-        #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_ppsds(). Otherwise, data may not be usable for HVSR.')
+        #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.')
 
     # Figure out which reports will be used, and format them correctly
     if isinstance(report_formats, (list, tuple)):
@@ -3570,24 +3687,20 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 plot_hvsr_kwargs.pop('plot_engine')
 
             fig = plot_hvsr(hvsr_results, plot_type=plot_type, plot_engine=plot_engine, show_plot=show_plot_report, return_fig=True)
-
-            if plot_engine.lower() not in ['plotly', 'plty', 'p']:
-                expFigAx = fig
-            else:
-                expFigAx = fig
+            expFigAx = fig
             
             if 'plot' in report_export_format:
                 export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format='plot')
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
-                print('\nPlot of data report:')
                 
                 if not verbose:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         fig.show()
                 else:
+                    print('\nPlot of data report:')
                     fig.show()
             else:
                 if verbose:
@@ -3759,7 +3872,7 @@ def input_params(input_data,
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
     processing_parameters={} : dict or filepath, default={}
         If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
-        Note that this only applies to parameters for the functions: 'fetch_data', 'remove_noise', 'generate_ppsds', 'process_hvsr', 'check_peaks', and 'get_report.'
+        Note that this only applies to parameters for the functions: 'fetch_data', 'remove_noise', 'generate_psds', 'process_hvsr', 'check_peaks', and 'get_report.'
         If dictionary, dictionary containing nested dictionaries of function names as they key, and the parameter names/values as key/value pairs for each key. 
         If a function name is not present, or if a parameter name is not present, default values will be used.
         For example: 
@@ -3981,7 +4094,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
     Parameters
     ----------
     hvsr_data : HVSRData or HVSRBatch
-        HVSRData that has gone through at least the sprit.fetch_data() step, and before sprit.generate_ppsds()
+        HVSRData that has gone through at least the sprit.fetch_data() step, and before sprit.generate_psds()
     show_azimuth_peaks : bool, optional
         Whether to display the peak value at each azimuth calculated on the chart, by default False
     interpolate_azimuths : bool, optional
@@ -4151,7 +4264,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -4318,7 +4431,9 @@ def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=T
         plotTypeOrder.pop()
         plotIndOrder[-1] = len(kList)
         
-        # Get 
+        # set up subplots
+        figLayout = 'constrained'
+        
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -4340,7 +4455,7 @@ def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=T
                 perSubPDict = {}
                 if 'az' in plotTypeOrder:
                     perSubPDict['az'] = {'projection':'polar'}
-                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout='constrained')
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout=figLayout)
                 axis = ax[p]
             elif use_subplots:
                 with warnings.catch_warnings():
@@ -4357,6 +4472,19 @@ def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=T
             elif p == 'comp':
                 plotComponents[0] = plotComponents[0][:-1]
                 kwargs['subplot'] = p
+                minY = 99999 # Start high
+                maxY = -99999 # Start low
+                
+                for key in hvsr_data.psd_raw.keys():
+                    if min(hvsr_data.ppsd_std_vals_m[key]) < minY:
+                        minY = min(hvsr_data.ppsd_std_vals_m[key])
+                    if max(hvsr_data.ppsd_std_vals_m[key]) > maxY:
+                        maxY = max(hvsr_data.ppsd_std_vals_m[key])
+                yRange = maxY - minY
+                compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
+                compYlim.reverse()
+                compKwargs = {'ylim':compYlim}
+                compKwargs.update(kwargs)
                 fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
             elif p == 'spec':
                 plottypeKwargs = {}
@@ -4371,10 +4499,12 @@ def plot_hvsr(hvsr_data, plot_type=DEF_PLOT_STRING, azimuth='HV', use_subplots=T
                 warnings.warn('Plot type {p} not recognized', UserWarning)   
 
         windowsUsedStr = f"{hvsr_data['hvsr_windows_df']['Use'].astype(bool).sum()}/{hvsr_data['hvsr_windows_df'].shape[0]} windows used"
-        fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
+        winText = fig.text(x=1, y=0.0, s=windowsUsedStr, ha='right', va='bottom', fontsize='xx-small',
                 bbox=dict(facecolor='w', edgecolor=None, linewidth=0, alpha=1, pad=-1))
+        winText.set_in_layout(False)
         
-        matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
+        if len(plotTypeOrder)>1:
+            matplotlib.rcParams["figure.constrained_layout.h_pad"] = 0.075
         #if use_subplots:
         #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
         if show_plot:
@@ -4533,7 +4663,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     Parameters
     ----------
     hvsr_data  : HVSRData or HVSRBatch
-        Data object containing all the parameters input and generated by the user (usually, during sprit.input_params(), sprit.fetch_data(), sprit.generate_ppsds() and/or sprit.remove_noise()).
+        Data object containing all the parameters input and generated by the user (usually, during sprit.input_params(), sprit.fetch_data(), sprit.generate_psds() and/or sprit.remove_noise()).
     horizontal_method  : int or str, default=3
         Method to use for combining the horizontal components. Default is 3) Geometric Mean
             0) (not used) 
@@ -4817,18 +4947,18 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         for k in hvsr_out['psd_raw']:
             colName = f'psd_values_{k}'
 
-            ppsd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
-            ppsd_data = hvsr_out['psd_raw'][k]
+            psd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
+            psd_data = hvsr_out['psd_raw'][k]
 
 
             freqs = hvsr_out['x_freqs'][k]
             padding_length = int(f_smooth_width)
 
-            padding_value_R = np.nanmean(ppsd_data[:,-1*padding_length:])
-            padding_value_L = np.nanmean(ppsd_data[:,:padding_length])
+            padding_value_R = np.nanmean(psd_data[:,-1*padding_length:])
+            padding_value_L = np.nanmean(psd_data[:,:padding_length])
 
             # Pad the data to prevent boundary anamolies
-            padded_ppsd_data = np.pad(ppsd_data, ((0, 0), (padding_length, padding_length)), 
+            padded_ppsd_data = np.pad(psd_data, ((0, 0), (padding_length, padding_length)), 
                                         'constant', constant_values=(padding_value_L, padding_value_R))
 
             # Pad the frequencies
@@ -4871,10 +5001,9 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             tStepDict = {}
             for k in hvsr_out['psd_raw']:
                 tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            
             hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, horizontal_method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
             
-            hvsr_tSteps.append(np.float32(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+            hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
             for k, v in hvsr_az_tstep.items():
                 if tStep == 0:
                     hvsr_tSteps_az[k] = [np.float32(v)]
@@ -4965,9 +5094,9 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
-    hvsr_out['processing_parameters']['generate_ppsds'] = {}
+    hvsr_out['processing_parameters']['process_hvsr'] = {}
     for key, value in orig_args.items():
-        hvsr_out['processing_parameters']['generate_ppsds'][key] = value
+        hvsr_out['processing_parameters']['generate_psds'][key] = value
     
     if str(horizontal_method) == '8' or horizontal_method.lower() == 'single azimuth':
         if azimuth is None:
@@ -5407,7 +5536,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
     
     Some abberant curves often occur due to the remove_noise() function, so this should be run some time after remove_noise(). 
-    In general, the recommended workflow is to run this immediately following the generate_ppsds() function.
+    In general, the recommended workflow is to run this immediately following the generate_psds() function.
 
     Parameters
     ----------
@@ -5666,15 +5795,15 @@ def __check_peaks_batch(**check_peaks_kwargs):
 
 
 # Support function for running batch
-def __generate_ppsds_batch(**generate_ppsds_kwargs):
+def __generate_ppsds_batch(**generate_psds_kwargs):
     try:
-        params = generate_ppsds(**generate_ppsds_kwargs)
-        if generate_ppsds_kwargs['verbose']:
-            print('\t{} successfully completed generate_ppsds()'.format(params['site']))
+        params = generate_psds(**generate_psds_kwargs)
+        if generate_psds_kwargs['verbose']:
+            print('\t{} successfully completed generate_psds()'.format(params['site']))
     except Exception as e:
         print(e)
-        warnings.warn(f"Error in generate_ppsds({generate_ppsds_kwargs['params']['site']}, **generate_ppsds_kwargs)", RuntimeWarning)
-        params = generate_ppsds_kwargs['params']
+        warnings.warn(f"Error in generate_psds({generate_psds_kwargs['params']['site']}, **generate_psds_kwargs)", RuntimeWarning)
+        params = generate_psds_kwargs['params']
         
     return params
 
@@ -6217,7 +6346,7 @@ def _trim_data(input, stream=None, export_dir=None, data_export_format=None, sou
 
 
 # Helper function to detrend data
-def __detrend_data(input, detrend, detrend_order, verbose, source):
+def __detrend_data(input, detrend, detrend_options, verbose, source):
     """Helper function to detrend data, specifically formatted for the HVSRData and HVSRBatch objects"""
     if source != 'batch':
         input = {'SITENAME': {'stream':input}} #Make same structure as batch
@@ -6229,7 +6358,7 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
         elif detrend==True:
             #By default, do a spline removal
             for tr in dataIN:
-                tr.detrend(type='spline', order=detrend_order, dspline=1000)        
+                tr.detrend(type='spline', order=detrend_options, dspline=1000)        
         else:
             data_undetrended = dataIN.copy()
             try:
@@ -6244,10 +6373,10 @@ def __detrend_data(input, detrend, detrend_order, verbose, source):
                         tr.detrend(type=detrend)                
                 if str(detrend).lower()=='polynomial':
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=detrend_order)   
+                        tr.detrend(type=detrend, order=detrend_options)   
                 if str(detrend).lower()=='spline':
                     for tr in dataIN:
-                        tr.detrend(type=detrend, order=int(detrend_order), dspline=1000)       
+                        tr.detrend(type=detrend, order=int(detrend_options), dspline=1000)       
             except:
                 dataIN = data_undetrended
                 if verbose:
@@ -6935,6 +7064,7 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
 
     return outStream
 
+
 # Plot noise windows
 def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps=None,
                          do_stalta=False, sta=5, lta=30, stalta_thresh=[0.5,5], 
@@ -7500,6 +7630,254 @@ s
             outStream = outStream + newSt.trim(starttime=st[0].stats.starttime - gap, pad=True, fill_value=None)       
     outStream.merge()
     return outStream
+
+
+# Helper functions for generate_psds()
+# Generate psds from raw data (no response removed)
+def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, verbose=False):
+    """Helper function to get psds from raw trace streams (no response information is needed in this case)
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData object
+        HVSRData object containing data to be processed
+    window_length : float, optional
+        Length of FFT processing window for in seconds, by default 30.0
+    overlap : float, optional
+        Percent overlap between windows (0-1), by default 0.5.
+        A percentage value between 1-100 will be accepted, but will be divided by 100 to convert to 0-1.
+        If the value is over 100, the modulus of 100 will be calculated, then divided by 100; i.e., (overlap%100)/100.
+    show_psd_plot : bool, optional
+        Whether to show a plot of the psds, by default False
+    verbose : bool, optional
+        Whether to print information about the PSD processing to terminal, by default False
+
+    Returns
+    -------
+    Tuple (dict, np.array)
+        Tuple with index 0 being a dictionary with keys of components ("Z", "E", "N").
+        Values are numpy array containing the PSDs for that component at each time step.
+        Index 1 of tuple contains a numpy array with the start and end times of each time window used for FFT processing.
+    """
+    zdata = hvsr_data.stream.select(component='Z').merge()
+    edata = hvsr_data.stream.select(component='E').merge()
+    ndata = hvsr_data.stream.select(component='N').merge()
+
+    sample_rate = zdata[0].stats.sampling_rate
+    sample_space = zdata[0].stats.delta
+    zdata = zdata.split()
+
+    # Transform overlap to proper formatting (% b/w 0-1)
+    if overlap > 100:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  Since it is over 100, the modulus of 100 (overlap%100)/100=({overlap%100}) will be used")
+        overlap = (overlap % 100)/100
+    elif overlap > 1:
+        overlap = overlap / 100
+    elif overlap >= 0:
+        overlap = overlap
+    else:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  This has been updated to the default value of overlap=0.5")
+        overlap = 0.5 #just set it default otherwise
+
+    # Get number of samples instead of seconds/percentage
+    psd_window_samples = int(window_length * sample_rate)
+    overlap_samples = overlap * psd_window_samples
+
+        
+    # Generated x values to which data will be interpolated later
+    #  This maintains consistency in array size across all FFT windows
+    x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
+
+    # For each component, create the time windows and do FFT analysis
+    psdDict = {'Z':{}, 'E':{}, 'N':{}}
+    for key, curr_component in {'Z':zdata, 'E':edata, 'N':ndata}.items():
+        # Get all data in same format (obspy.Stream, traces will be extracted later)
+        if isinstance(curr_component, obspy.Trace):
+            st = obspy.Stream([curr_component]).merge()
+        else:
+            st = curr_component.merge()
+        tr = st[0]
+
+        # Initialize for intermediate outputs
+        psds = []
+        freqs = []
+        final_psds = []
+
+        # Get all possible windows and initialize output window list for windows that are actually used
+        #  This will likely be the same if there are no gaps in the data
+        windows = _create_windows(hvsr_data=hvsr_data, window=window_length, overlap=overlap, window_length_method='length', verbose=False)
+        windows_out = []
+
+        # Iterate through each window to trim data trace and perform fft analysis
+        for i, (stime, etime) in enumerate(windows):
+            # Trim trace to just window time (copy so doesn't overwrite main trace)
+            window_trace = tr.copy()
+            window_trace.trim(starttime=stime, endtime=etime) 
+            
+            # Handle gaps in data 
+            # Only process longest continous data section in each window, if gaps exist
+            window_st = window_trace.split()  # Split into continuous data sections
+            longest_trace = window_st[0] # Initialize longest as first trace
+
+            if len(window_st) > 1: # if more than one trace comes out of .split()
+                # Get the longest trace and used that for analysis for this window
+                for shorttr in window_st:
+                    if len(shorttr) > len(longest_trace):
+                        longest_trace = shorttr
+            window_trace = longest_trace
+
+            # If the data being processed ends up being shorter than window time
+            #    Reset inputs to scipy.signal.welch to match new "window" length
+            nsamplesperwin = psd_window_samples
+            if len(window_trace) < nsamplesperwin:
+                nsamplesperwin = len(window_trace.data)
+                overlap_samples = nsamplesperwin - 1
+
+            # PERFORM FFT analysis using Welch method if length of window is > 1 sample
+            # If time window used, the start time will be recorded in window_out list
+                # and PSD will be stored in psdDict[key][str(starttime)] as numpy array.
+            if nsamplesperwin > 1:
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore') # Sometimes unnecessary warnings arise
+                    f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, window='hann', nperseg=nsamplesperwin, 
+                                        noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
+                                        scaling='density', axis=-1, average='mean')
+                
+                # Only add successful psds to psdDict (and the window starttime to window_out)
+                if pxx.size > 0 and f.size > 0:
+                    freqs.append(f)
+                    psds.append(np.flip(pxx))
+                    interpPSD = np.interp(x_freqs, f, pxx, left=None, right=None, period=None)
+                    interpPSD_dB = 10*np.log10(interpPSD) # Convert to decibels
+                    psdDict[key][str(stime)] = interpPSD_dB
+                    final_psds.append(interpPSD_dB)
+                
+                    windows_out.append(stime)
+                else:
+                    if verbose:
+                        print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
+            else:
+                if verbose:
+                    print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
+        #psds = np.mean(np.array(final_psds), axis=0)
+        #psdDict[key][str(stime)] = np.array(final_psds)
+
+        if show_psd_plot:
+            plt.plot(x_freqs, psds, linewidth=0.5, c='k')
+            plt.semilogx()
+            plt.semilogy()
+
+    return psdDict, np.array(windows_out)
+
+
+# Generate windows "manually"
+def _create_windows(hvsr_data, window=30, overlap=0.5, window_length_method='length', verbose=False):
+    """Function to create time windows based on input stream.
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData object, Obspy.Stream, or Obspy.Trace
+        Input object with stream data
+    window : float or int, optional
+        Windowing parameter. If window_length_method='length', this is the length of each window in seconds.
+        If window_length_method='number', this must be int or be able to be converted to int, and is the number of windows, by default 30
+    overlap : float, optional
+        Window overlap in percentage. If >=1, it will be interpreted as a percentage out of 100, by default 0.5
+    window_length_method : str, optional
+        Which windowing method to use, "length", which creates windows of a specified length, or 
+        "number", which creates a specified number of windows, by default 'length'
+    verbose : bool, optional
+        Whether to print information about the process to terminal, by default False
+
+    Returns
+    -------
+    np.array
+        2D Numpy array containing, the size of the first dimension is the number of windows, size of second dimension is 2 (start and end) 
+    """
+
+    length_list = ['window_length', 'window length', 
+                   'length', 'len', 'l', 'size', 's']
+    
+    winNum_list = ['number of windows', 'window_number', 'window number', 
+                   'number', 'num', 'winnum', 'window_num', 'amount']
+
+    # Get input data as obspy.Stream
+    if isinstance(hvsr_data, HVSRData):
+        st = hvsr_data.stream.merge()
+    elif isinstance(hvsr_data, obspy.Stream):
+        st = hvsr_data.merge()
+    elif isinstance(hvsr_data, obspy.Trace):
+        st = obspy.Stream([hvsr_data]).merge()
+    else:
+        raise RuntimeError("hvsr_data parameter of _create_windows() must be sprit.HVSRData, obspy.Stream, or obspy.Trace")
+
+    # Get largest starttime and smallest endtime (to ensure all data is used)
+    for i, tr in enumerate(st):
+        if i==0:
+            maxStart = tr.stats.starttime
+            minEnd = tr.stats.endtime
+        else:
+            if tr.stats.starttime > maxStart:
+                maxStart = tr.stats.starttime
+            if tr.stats.endtime < minEnd:
+                minEnd = tr.stats.endtime
+    # Calculate time between end and start
+    timeRange = minEnd - maxStart
+
+    # Transform overlap to proper formatting (% b/w 0-1)
+    if overlap > 100:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  Since it is over 100, the modulus of 100 (overlap%100)/100=({overlap%100}) will be used")
+        overlap = (overlap % 100)/100
+    elif overlap > 1:
+        overlap = overlap / 100
+    elif overlap >= 0:
+        overlap = overlap
+    else:
+        if verbose:
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  This has been updated to the default value of overlap=0.5")
+        overlap = 0.5 #just set it default otherwise
+
+    # Calculate "stride" (time between start of each window) and window length
+    if window_length_method.lower() in length_list:
+        stride = window * (1-overlap)
+        winLength = window
+    elif window_length_method.lower() in winNum_list:
+        stride = timeRange // window
+        winLength = stride / overlap
+    else:
+        if verbose:
+            print(f"\twindow_method={window_length_method} is not a valid entry.")
+            print(f"\t  Use any of the following to create windows using a specific size: {length_list}")
+            print(f"\t  Use any of the following to create a specific number of windows : {winNum_list}")
+            print(f"\t  By default, using a window length of 30 seconds and overlap of 0.5")
+        # Default of overlap=0.5, window_length=30
+        stride = 15
+        winLength = 30
+        overlap = 0.5
+
+    # Get start and end of each window, and format appropriately (2d Numpy array)
+    windowStarts = np.arange(maxStart, minEnd, stride)
+    windowEnds = windowStarts + winLength
+    windows = np.array(list(zip(windowStarts, windowEnds)))
+    
+    # print information if verbose specified
+    if verbose:
+        verboseStatement = ["\tUsing the following windowing parameters"]
+        verboseStatement.append(f"\t Number of windows: {windows.shape[0]}")
+        verboseStatement.append(f"\t Window Size: {winLength}")
+        verboseStatement.append(f"\t Window Overlap: {overlap}")
+
+        for l in verboseStatement:
+            print(l)
+    
+    return windows
 
 
 # Remove noisy windows from df
@@ -8492,10 +8870,13 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     return hvsr_results
 
+
 # Plot hvsr curve, private supporting function for plot_hvsr
 def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', show_plot=True, **kwargs):
     """Private function for plotting hvsr curve (or curves with components)
     """
+    
+    # Get kwargs all straightened out
     if 'kwargs' in kwargs.keys():
         kwargs = kwargs['kwargs']
 
@@ -8508,7 +8889,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.05]
+
+        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.1]
         if ylim[1] > 25:
             ylim = [0, max(hvsr_data['hvsr_curve']+1)]
     else:
@@ -8517,6 +8899,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     if 'grid' in kwargs.keys():
         plt.grid(which=kwargs['grid'], alpha=0.25)
 
+    # Get x y data (for main hvsr plot esp.)
     hvsrDF = hvsr_data.hvsr_windows_df
 
     freqList = ['x_freqs', 'freqs', 'freq', 'hz', 'f', 'frequency']
@@ -8534,9 +8917,11 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     x = hvsr_data[xtype][anyKey][:-1]
     y = hvsr_data['hvsr_curve']
     
+    # Set up plot viz and export
     plotSuff = ''
     legendLoc = 'upper left'
     
+    # Plot HVSR curve first
     plotHVSR = False
     for item in plot_type:
         if item.lower()=='hvsr':
@@ -8550,7 +8935,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             else:
                 plotSuff = plotSuff+'noStdDev_'
             break
-
+    
+    # Plot parameters
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
@@ -8559,6 +8945,13 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.tick_params(axis='y', labelsize=5)
     plt.suptitle(hvsr_data['input_params']['site'])
 
+    if 'processing_parameters' in hvsr_data.keys() and 'generate_psds' in hvsr_data['processing_parameters'].keys():
+        if hvsr_data['processing_parameters']['generate_psds']['obspy_ppsds']:
+            compLabel = 'COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]'
+        else:
+            compLabel = 'COMPONENTS\n PSDs'
+
+    # Get peak parameters (if exist, otherwise, get dummy ones)
     if "BestPeak" in hvsr_data.keys():
         f0 = hvsr_data['BestPeak'][azimuth]['f0']
         a0 = hvsr_data['BestPeak'][azimuth]['A0']
@@ -8576,8 +8969,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     used = hvsrDF['Use'].astype(bool)
     notused = ~hvsrDF['Use'].astype(bool)     
     
+    # Go through each "token" in plot_type str and plot as specified
     for k in plot_type:
-        
         # Show peak(s)
         # Show f0 peak (and annotate if indicated)
         if k=='p' and 'all' not in plot_type:
@@ -8874,20 +9267,25 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
-            if 'c' not in plot_type[0]:#This is part of the hvsr axis
-                #fig.tight_layout()
-                axis2 = ax.twinx()
-                compAxis = axis2
+            if 'c' not in plot_type[0]:
+                #This section is if comps plotted in hvsr axis
+                
+                compAxis = ax.twinx()
+                plt.sca(compAxis)
                 #axis2 = plt.gca()
                 #fig = plt.gcf()
-                compAxis.set_ylabel('Amplitude'+'\n[m2/s4/Hz] [dB]')
+                compAxis.set_ylabel(compLabel, rotation=270, labelpad=20)
+                #plt.sca(compAxis)
+                #plt.ylabel(compLabel, rotate=180)
                 compAxis.set_facecolor([0,0,0,0])
-                legendLoc2 = 'upper left'
+                legendLoc2 = 'upper right'
             else:
+                # This section is for if they are plotted on different plots
                 ax.set_title('') #Remove title
                 ax.sharex(kwargs['axes']['hvsr'])
                 compAxis = ax
                 legendLoc2 = 'upper right'
+                compAxis.set_ylabel(compLabel)
                 
             minY = []
             maxY = []
@@ -8897,22 +9295,25 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             keyList.sort()
             hvsrDF = hvsr_data.hvsr_windows_df
             for key in keyList:
-                minY.append(hvsr_data['psd_values_tavg'][key].min())
-                maxY.append(hvsr_data['psd_values_tavg'][key].max())
-                #maxY.append(np.stack(hvsr_data.hvsr_windows_df['Use']['psd_values_'+key]))
+                #hvsr_data['ppsds'][key]['psd_values']                
+                minY.append(hvsr_data['ppsd_std_vals_m'][key].min())
+                maxY.append(hvsr_data['ppsd_std_vals_p'][key].max())
+                #minY.append(np.min(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
+                #maxY.append(np.max(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
             minY = min(minY)
             maxY = max(maxY)
-            if maxY > 20:
-                maxY = max(hvsr_data['hvsr_curve']) * 1.15
+            #if maxY > 20:
+            #    maxY = max(hvsr_data['hvsr_curve']) * 1.15
             rng = maxY-minY
             pad = abs(rng * 0.15)
-            ylim = [minY-pad, maxY+pad+pad]
-            compAxis.set_ylabel('COMPONENTS\nAmplitude\n[m2/s4/Hz] [dB]')
+            ylim = [float(minY-pad), float(maxY+pad+pad)]
+
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
-            ax.text(x=xlim[0], y=yLoc, s=xlabel, 
+            xlab = ax.text(x=xlim[0], y=yLoc, s=xlabel, 
                         fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
                         bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
+            xlab.set_in_layout(False)
             #Modify based on whether there are multiple charts
             if plotHVSR:
                 linalpha = 0.2
@@ -8925,7 +9326,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             azsLabeled = False
             y={}
             psdKeys = list(hvsr_data['psd_values_tavg'])
-            psdKeys.sort()
+            psdKeys.sort()  # Put Z last so it plots on top
             for key in psdKeys:
                 if key.upper() == 'Z':
                     pltColor = 'k'
@@ -8955,8 +9356,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                         if '-s' not in plot_type:
                             compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
-                if plot_type[0] != 'c':
-                    compAxis.legend(loc=legendLoc2)
+                if 'c' not in plot_type[0].lower():
+                    if not kwargs['show_legend'] == False:
+                        compAxis.legend(loc=legendLoc2)
             else:
                 ax.legend(loc=legendLoc, ncols = len(psdKeys), 
                         borderaxespad=0.1, columnspacing=1,markerfirst=False, reverse=True, borderpad=0.2)
@@ -9490,7 +9892,7 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
             f0 = peak frequency [Hz]
             Lw = window length [seconds]
         2) Number of significant cycles (Nc) is greater than 200 (Nc(f0) > 200)
-            Nc = Lw * Nw * f0
+                Nc = Lw * Nw * f0
                 Lw = window length [sec]
                 Nw = Number of windows used in analysis
                 f0 = peak frequency [Hz]
@@ -9515,7 +9917,7 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
     anyKey = list(hvsr_data['ppsds'].keys())[0]#Doesn't matter which channel we use as key
 
     delta = hvsr_data['ppsds'][anyKey]['delta']
-    window_len = (hvsr_data['ppsds'][anyKey]['len'] * delta) #Window length in seconds
+    window_len = hvsr_data['ppsds'][anyKey]['ppsd_length'] #Window length in seconds
     window_num = np.array(hvsr_data['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
@@ -9688,6 +10090,9 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     # First check below
     # Initialize list
     _found_m = list()
+    #print('peak', _peak)
+    #print('peakm', _peakm)
+    #SSprint('peakp', _peakp)
     for _i in range(len(_peak)):
         _dx = 1000000.
         # Initialize test as not passing for this frequency
@@ -9702,6 +10107,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                 _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.check_mark()}"
                 _found_m[_i] = True
                 break
+        
         if _peak[_i]['Report']['P-'] == sprit_utils.x_mark():
             _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils.x_mark()}"
 
