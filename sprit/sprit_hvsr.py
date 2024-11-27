@@ -1374,7 +1374,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     # Get a uniformly formatted input DataFrame
     input_df_uniformatted = pd.DataFrame(param_dict_list)   
     
-     
     # Do batch fun of input_params() and fetch_data() (these are skipped in run() if batch mode is used)
     hvsr_batchDict = {}
     zfillDigs = len(str(len(param_dict_list)))  # Get number of digits of length of param_dict_list
@@ -1396,6 +1395,8 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
             params = input_params(**input_params_kwargs)
         except Exception as e:
+            params = input_params_kwargs
+            params['ProcessingStatus'] = {}
             params['ProcessingStatus']['InputParamsStatus'] = False
             params['ProcessingStatus']['OverallStatus'] = False 
             verboseStatement.append(f"\t{e}")
@@ -1415,6 +1416,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 
             hvsrData = fetch_data(params=params, **fetch_data_kwargs)
         except Exception as e:
+            hvsrData = params
             hvsrData['ProcessingStatus']['FetchDataStatus'] = False
             hvsrData['ProcessingStatus']['OverallStatus'] = False
             verboseStatement.append(f"\t{e}")
