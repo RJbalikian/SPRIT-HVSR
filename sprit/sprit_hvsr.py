@@ -861,6 +861,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 hvsrBatchDict[site_name] = run(**run_kwargs)
                 run_kwargs_for_df.append(run_kwargs)
             except Exception as e:
+                hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name]['Error_Message'] = sprit_utils._get_error_from_exception(e,
                                                                                                   print_error_message=False,
                                                                                                   return_error_message=True)
@@ -869,7 +870,6 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                     
                 print(f"Error processing site {site_name}. Continuing processing of remaining sites.")
                 
-                hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name]['ProcessingStatus']['PPSDStatus'] = False
                 hvsrBatchDict[site_name]['ProcessingStatus']['OverallStatus'] = False         
         
@@ -985,8 +985,9 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         else:
             errMsg = e
         
-        print(f"Error during generate_psds() for {site_name}: \n{errMsg}")
-        if source == 'file' or source == 'raw':
+        if verbose:
+            print(f"Error during generate_psds() for {site_name}: \n{errMsg}")
+        if (source == 'file' or source == 'raw') and verbose:
             raise RuntimeError(f"generate_psds() error: {errMsg}")
 
         # Reformat data so HVSRData and HVSRBatch data both work here
@@ -1045,17 +1046,12 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
-        traceback.print_exception(sys.exc_info()[1])
-        exc_type, exc_obj, tb = sys.exc_info()
-        f = tb.tb_frame
-        lineno = tb.tb_lineno
-        filename = f.f_code.co_filename
-        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
-        error_category = type(e).__name__.title().replace('error', 'Error')
-        error_message = f"{e} ({errLineNo})"
-        print(f"{error_category} ({errLineNo}): {error_message}")
-        print(lineno, filename, f)
+        print_error = False
+        if verbose:
+            print_error = True
 
+        #sprit_utils._get_error_from_exception(e,
+        #                                      print_error_message=print_error)
         if isinstance(hvsr_results, HVSRData):
             hvsr_results = {hvsr_results['site']: hvsr_results}
             
