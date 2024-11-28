@@ -878,7 +878,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 else:
                     table_reports = pd.concat([table_reports, hvsrBatchData[site].Table_Report])
             else:
-                table_reports = pd.DataFrame()
+                if s == 0:
+                    table_reports = pd.DataFrame()
                 
         hvsrBatchData['Table_Report'] = pd.merge(left=hvsrBatchData.input_df, right=table_reports,
                                                  how='outer',
