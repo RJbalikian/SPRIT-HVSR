@@ -864,7 +864,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 sprit_utils._get_error_from_exception(e)
                 
                 hvsrBatchDict[site_name] = site_data
-                hvsrBatchDict[site_name]['ProcessingStatus']['PPSDStatus']=False
+                hvsrBatchDict[site_name]['ProcessingStatus']['PPSDStatus'] = False
                 hvsrBatchDict[site_name]['ProcessingStatus']['OverallStatus'] = False         
         
         # Create batch object
@@ -872,11 +872,14 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         
         # Use batch object to get Output Table with all data, including results and inputs
         for s, site in enumerate(hvsrBatchData):
-            if s == 0:
-                table_reports = hvsrBatchData[site].Table_Report
+            if hasattr(hvsrBatchData[site], 'Table_Report'):
+                if s == 0:
+                    table_reports = hvsrBatchData[site].Table_Report
+                else:
+                    table_reports = pd.concat([table_reports, hvsrBatchData[site].Table_Report])
             else:
-                table_reports = pd.concat([table_reports, hvsrBatchData[site].Table_Report])
-
+                table_reports = pd.DataFrame()
+                
         hvsrBatchData['Table_Report'] = pd.merge(left=hvsrBatchData.input_df, right=table_reports,
                                                  how='outer',
                                                  left_on='site', right_on='Site Name')
