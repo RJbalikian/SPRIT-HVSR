@@ -861,7 +861,13 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 hvsrBatchDict[site_name] = run(**run_kwargs)
                 run_kwargs_for_df.append(run_kwargs)
             except Exception as e:
-                sprit_utils._get_error_from_exception(e)
+                hvsrBatchDict[site_name]['Error_Message'] = sprit_utils._get_error_from_exception(e,
+                                                                                                  print_error_message=False,
+                                                                                                  return_error_message=True)
+                if verbose:
+                    sprit_utils._get_error_from_exception(e)
+                    
+                print(f"Error processing site {site_name}. Continuing processing of remaining sites.")
                 
                 hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name]['ProcessingStatus']['PPSDStatus'] = False
@@ -1473,7 +1479,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     hvsrBatch = HVSRBatch(hvsr_batchDict, df_as_read=input_df_uniformatted)
 
     print()
-    print('Finished reading input data in preparation of batch processing')
+    print('Finished reading input data in preparation for batch processing')
     return hvsrBatch
 
 
