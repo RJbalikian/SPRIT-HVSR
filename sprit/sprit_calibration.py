@@ -78,7 +78,7 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     unit="m",
                     freq_col="Peak",
                     calculate_elevation=True,
-                    elevation_col="BedrockElevation",
+                    elevation_data="BedrockElevation",
                     depth_col="BedrockDepth",
                     verbose=False,    # if verbose is True, display warnings otherwise not
                     export_path=None,
@@ -86,6 +86,56 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
                     decimal_places=3,
                     #group_by = "County", -> make a kwarg
                     **kwargs):
+    """Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth model (usually a power law relationship).
+
+    Parameters
+    ----------
+    freq_input : HVSRData, HVSRBatch, float, or filepath, optional
+        Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}
+    model : str, tuple, list, or dict, optional
+        Model describing a relationship between frequency and depth, by default "ISGS_All"
+    site : str, optional
+        Site name (this is provided directly from a HVSRData object or HVSRBatch object), by default "HVSRSite"
+    unit : str, optional
+        Which depth unit to use, by default "m"
+    freq_col : str, optional
+        Name of the column containing the frequency information of the peak, by default "Peak" (per HVSRData.Table_Report output)
+    calculate_elevation : bool, optional
+        Whether or not to calculate elevation, by default True
+    elevation_data : str, optional
+        The data pertaining to the surface elevation of the point, for calculating elevation.
+        This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default "BedrockElevation"
+    depth_col : str, optional
+        _description_, by default "BedrockDepth"
+    verbose : bool, optional
+        Whether or not to print information about the processing to the terminal, by default False
+    export_path : _type_, optional
+        _description_, by default None
+    Vs : float, optional
+        Shear wave velocity to use for depth calculations, if using this method, by default 563.0
+    decimal_places : int, optional
+        _description_, by default 3
+
+    Returns
+    -------
+    _type_
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    """
     a = 0
     b = 0
     params = None
