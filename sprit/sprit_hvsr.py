@@ -6964,7 +6964,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.semilogx()
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
-    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['method']+']', fontsize='small',)
+    ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['horizontal_method']+']', fontsize='small',)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=5)
     plt.suptitle(hvsr_data['input_params']['site'])

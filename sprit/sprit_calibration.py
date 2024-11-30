@@ -73,74 +73,134 @@ def power_law(f, a, b):
     return a*(f**-b)
 
 def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
-                    model = "ISGS_All",
-                    site = "HVSRSite", 
-                    unit = "m",
-                    freq_col = "PeakFrequency", 
-                    calculate_elevation = True, 
-                    elevation_col = "BedrockElevation", 
-                    depth_col = "BedrockDepth", 
-                    verbose = False,    #if verbose is True, display warnings otherwise not
-                    export_path = None,
-                    Vs = 563.0,
-                    decimal_places = 3,
+                    model="ISGS_All",
+                    site="HVSRSite",
+                    unit="m",
+                    freq_col="Peak",
+                    calculate_elevation=True,
+                    elevation_col="BedrockElevation",
+                    depth_col="BedrockDepth",
+                    verbose=False,    # if verbose is True, display warnings otherwise not
+                    export_path=None,
+                    Vs=563.0,
+                    decimal_places=3,
                     #group_by = "County", -> make a kwarg
                     **kwargs):
     a = 0
     b = 0
     params = None
 
-    #Fetching model parameters
-    try:
-        if isinstance(model,(tuple, list, dict)):  
-            (a,b) = model  
-            if b >= a:                     #b should always be less than a
+    # Fetching model parameters
+    if isinstance(model, (tuple, list, dict)):  
+        (a, b) = model
+        if b >= a:                     #b should always be less than a
+            if verbose:
+                warn("Second parameter greater than the first, inverting values")
+            (b, a) = model
+        elif a == 0 or b == 0:
+            raise ValueError("Parameters cannot be zero, check model inputs.")
+
+    elif isinstance(model, str): 
+
+        if model.casefold() in model_list:
+            
+            for k,v in model_parameters.items():
+
+                if model.casefold() == k.casefold():   
+                    (a, b) = model_parameters[k]
+                    break
+
+        elif model.casefold() in swave:
+            params = model.casefold()
+
+        elif model.casefold() == "all":
+            params = model.casefold()
+
+        else:   # parameters a and b could be passed in as a parsable string
+            params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
+            (a, b) = params
+            if a == 0 or b == 0:         
+                raise ValueError("Parameters cannot be zero, check model inputs")
+            elif b >= a:                     #b should always be less than a
                 if verbose:
                     warn("Second parameter greater than the first, inverting values")
-                (b,a) = model
-            elif a == 0 or b == 0:         
-                raise ValueError("Parameters cannot be zero, check model inputs")
+                (b,a) = params               
 
-        elif isinstance(model, str): 
 
-            if model.casefold() in model_list:
+    # Checking if freq_input is HVSRData object
+    if isinstance(freq_input, sprit_hvsr.HVSRData):
+        try:
+            tableReport = freq_input.Table_Report
+        except Exception:
+            warn("Passed HVSRData Object has no attribute Table_Report, attempting to generate one.")
+            tableReport = sprit_hvsr.get_report(freq_input, report_format='csv')
+        
+        pf_values = tableReport[freq_col].values
+
+        calib_data = np.array((pf_values, np.ones(len(pf_values))))
+
+        calib_data = calib_data.T
+      
+        for each in range(calib_data.shape[0]):
+
+            try:
+                if params in swave:
+                    calib_data[each, 1] = Vs/(4*calib_data[each, 0])
+                elif params == "all":
+                    print("do something")
+                else:
+                    calib_data[each, 1] = a*(calib_data[each, 0]**-b)
+            except Exception:
+                raise ValueError("Error in calculating depth, check HVSRData object for empty values or missing columns")
+        
+        if unit.casefold() in {"ft", "feet"}:
+            depth_col = depth_col + "_ft"
+            try:
+                tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+            except Exception:
+                if verbose:
+                    warn("Failed to round depth values")
+                tableReport[depth_col] = calib_data[:, 1]
+        else:
+            depth_col = depth_col + "_m"
+            try:
+                tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+            except Exception:
+                if verbose:
+                    warn("Failed to round depth values")
+                tableReport[depth_col] = calib_data[:, 1]
+        
+
+        if export_path is not None and os.path.exists(export_path):
+            if export_path == freq_input:
+                tableReport.to_csv(freq_input)
+                if verbose:
+                    print("Saving data in the original file")
+
+            else:
+                if "/" in export_path:
+                    temp = os.path.join(export_path+ "/"+ site + ".csv")
+                    tableReport.to_csv(temp)
                 
-                for k,v in model_parameters.items():
+                else:
+                    temp = os.path.join(export_path+"\\"+ site + ".csv")
+                    tableReport.to_csv(temp)
 
-                    if model.casefold() == k.casefold():   
-                        (a, b) = model_parameters[k]
-                        break
-
-            elif model.casefold() in swave:
-                params = model.casefold()
-
-            elif model.casefold() == "all":
-                params = model.casefold()
-
-            else:   #parameters a and b could be passed in as a parsable string
-                params = [int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", model)]  #figure this out later for floating points; works for integers
-                (a,b) = params
-                if a == 0 or b == 0:         
-                    raise ValueError("Parameters cannot be zero, check model inputs")
-                elif b >= a:                     #b should always be less than a
-                    if verbose:
-                        warn("Second parameter greater than the first, inverting values")
-                    (b,a) = params
-                
-    except Exception:
-        if (a,b) == (0, 0):
-
-            raise ValueError( "Model not found: check inputs")
-
+                if verbose:
+                    print("Saving data to the path specified")
+            
+        freq_input.Table_Report = tableReport
+        return freq_input.Table_Report
+    
     #Checking if freq_input is a filepath
-    try:
-        if os.path.exists(freq_input):
-            data = pd.read_csv(freq_input,
+    elif os.path.exists(freq_input):
+        try:
+            tableReport = pd.read_csv(freq_input,
                                 skipinitialspace= True,
                                 index_col=False,
                                 on_bad_lines= "error")
             
-            pf_values= data[freq_col].values
+            pf_values= tableReport[freq_col].values
             calib_data = np.array((pf_values, np.ones(len(pf_values))))
             calib_data = calib_data.T
                 
@@ -159,137 +219,65 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
                 try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                    tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
                 except Exception:
                     if verbose:
                         warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
+                    tableReport[depth_col] = calib_data[:, 1]
             else:
                 depth_col = depth_col + "_m"
                 try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                    tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
                 except Exception:
                     if verbose:
                         warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
+                    tableReport[depth_col] = calib_data[:, 1]
             
 
             if export_path is not None and os.path.exists(export_path):
                 if export_path == freq_input:
-                    data.to_csv(freq_input)
+                    tableReport.to_csv(freq_input)
                     if verbose:
                         print("Saving data in the original file")
 
                 else:
                     if "/" in export_path:
                         temp = os.path.join(export_path+ "/"+ site + ".csv")
-                        data.to_csv(temp)
+                        tableReport.to_csv(temp)
                     
                     else:
                         temp = os.path.join(export_path+"\\"+ site + ".csv")
-                        data.to_csv(temp)
+                        tableReport.to_csv(temp)
 
                     if verbose:
                         print("Saving data to the path specified")
                         
-            plt.scatter(data[freq_col], data[depth_col])
+            plt.scatter(tableReport[freq_col], tableReport[depth_col])
             plt.xlabel("Peak Frequency (Hz)")
             if unit.casefold() in {"ft", "feet"}:
                 plt.ylabel("Bedrock Depth (ft)")
             else:
                 plt.ylabel("Bedrock Depth (m)")
-            return data
-    except Exception as e:
-        print(e)
-        if verbose:
-            print("freq_input not a filepath, checking other types")
-        
-    
-    #Checking if freq_input is HVSRData object
-    try:
-        if isinstance(freq_input, sprit_hvsr.HVSRData):
-            try:
-                data = freq_input.CSV_Report
-            except Exception:
-                warn("Passed HVSRData Object has no attribute CSV_Report, generating one")
-                data = sprit_hvsr.get_report(freq_input,report_format = 'csv')
+            return tableReport
+        except Exception as e:
+            print(e)
+            if verbose:
+                print("freq_input not a filepath, checking other types")
             
-            pf_values= data[freq_col].values
-
-            calib_data = np.array((pf_values, np.ones(len(pf_values))))
-
-            calib_data = calib_data.T
-
-                
-            for each in range(calib_data.shape[0]):
-
-                try:
-                    if params in swave:
-                        calib_data[each, 1] = Vs/(4*calib_data[each, 0])
-                    elif params == "all":
-                        print("do something")
-                    else:
-                        calib_data[each, 1] = a*(calib_data[each, 0]**-b)
-                except Exception:
-                    raise ValueError("Error in calculating depth, check HVSRData object for empty values or missing columns")
-            
-            if unit.casefold() in {"ft", "feet"}:
-                depth_col = depth_col + "_ft"
-                try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
-                except Exception:
-                    if verbose:
-                        warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
-            else:
-                depth_col = depth_col + "_m"
-                try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
-                except Exception:
-                    if verbose:
-                        warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
-            
-
-            if export_path is not None and os.path.exists(export_path):
-                if export_path == freq_input:
-                    data.to_csv(freq_input)
-                    if verbose:
-                        print("Saving data in the original file")
-
-                else:
-                    if "/" in export_path:
-                        temp = os.path.join(export_path+ "/"+ site + ".csv")
-                        data.to_csv(temp)
-                    
-                    else:
-                        temp = os.path.join(export_path+"\\"+ site + ".csv")
-                        data.to_csv(temp)
-
-                    if verbose:
-                        print("Saving data to the path specified")
-                
-            freq_input.CSV_Report = data
-            return freq_input.CSV_Report
-        
-    except Exception: 
-        if verbose:
-            print("freq_input not an HVSRData object, checking other types")
-
     #Checking if freq_input is a singular floating point value
-    try:
-        if isinstance(freq_input, float):
+    elif isinstance(freq_input, float):
+        try:
             if freq_input <=0:
                 raise ValueError("Peak Frequency cannot be zero or negative")
             
-            data = pd.DataFrame(columns = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation',
+            tableReport = pd.DataFrame(columns = ['Site Name', 'Acq_Date', 'Longitude', 'Latitude', 'Elevation',
        freq_col, 'WindowLengthFreq.', 'SignificantCycles',
        'LowCurveStDevOverTime', 'PeakProminenceBelow', 'PeakProminenceAbove',
        'PeakAmpClarity', 'FreqStability', 'PeakStability_FreqStD',
        'PeakStability_AmpStD', 'PeakPasses'])
-            data.loc[0] = {freq_col: freq_input, 'Site Name': site}
+            tableReport.loc[0] = {freq_col: freq_input, 'Site Name': site}
 
-            pf_values= data[freq_col].values
+            pf_values= tableReport[freq_col].values
 
             calib_data = np.array((pf_values, np.ones(len(pf_values))))
 
@@ -312,38 +300,37 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
             if unit.casefold() in {"ft", "feet"}:
                 depth_col = depth_col + "_ft"
                 try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                    tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
                 except Exception:
                     if verbose:
                         warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
+                    tableReport[depth_col] = calib_data[:, 1]
             else:
                 depth_col = depth_col + "_m"
                 try:
-                    data[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
+                    tableReport[depth_col] = np.around(calib_data[:, 1]*3.281, decimals=decimal_places)
                 except Exception:
                     if verbose:
                         warn("Failed to round depth values")
-                    data[depth_col] = calib_data[:, 1]
+                    tableReport[depth_col] = calib_data[:, 1]
 
             if export_path is not None and os.path.exists(export_path):
      
                 if "/" in export_path:
                     temp = os.path.join(export_path+ "/"+ site + ".csv")
-                    data.to_csv(temp)
+                    tableReport.to_csv(temp)
                 
                 else:
                     temp = os.path.join(export_path+"\\"+ site + ".csv")
-                    data.to_csv(temp)
+                    tableReport.to_csv(temp)
 
                 if verbose:
                     print("Saving data to the path specified")
-            return data
-        
-    except Exception as e:
-        print(e) 
-        if verbose:
-            print("freq_input not a floating point value, checking other types")
+            return tableReport  
+        except Exception as e:
+            print(e)
+            if verbose:
+                print("freq_input not a floating point value, checking other types")
 
 
 
