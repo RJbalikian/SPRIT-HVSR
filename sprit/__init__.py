@@ -66,7 +66,8 @@ from sprit.sprit_jupyter_UI import(
 
 from sprit.sprit_calibration import(
     calculate_depth,
-    calibrate
+    calibrate,
+    plot_depth_curve
 )
 
 
@@ -119,6 +120,7 @@ __all__ =('sprit_hvsr',
         'sprit_calibration',
             'calculate_depth',
             'calibrate',
+            'plot_depth_curve',
             )
 
 
