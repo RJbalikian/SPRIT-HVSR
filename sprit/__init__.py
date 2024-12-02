@@ -7,13 +7,15 @@ try:
     import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
-    import sprit.sprit_plot as sprit_plot
-except:
+    import sprit.sprit_plot as sprit_plot    
+    import sprit.sprit_calibration as sprit_calibration
+except Exception as e:
     import sprit_utils
     import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit_hvsr
     import sprit_jupyter_UI
     import sprit_plot
+    import sprit_calibration
 
 from sprit.sprit_hvsr import(
     run,
@@ -71,6 +73,12 @@ from sprit.sprit_plot import(
     plot_outlier_curves,
     parse_plot_string
     )
+from sprit.sprit_calibration import(
+    calculate_depth,
+    calibrate,
+    plot_depth_curve
+)
+
 
 __all__ =('sprit_hvsr',
             'run',
@@ -124,7 +132,12 @@ __all__ =('sprit_hvsr',
             'plot_results',
             'plot_outlier_curves',
             'parse_plot_string'
+        'sprit_calibration',
+            'calculate_depth',
+            'calibrate',
+            'plot_depth_curve',
             )
+
 
 run.__doc__ = sprit_utils._run_docstring()
 __author__ = 'Riley Balikian'

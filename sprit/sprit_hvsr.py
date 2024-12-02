@@ -1121,7 +1121,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
         if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
-    get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+
+    hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if 'report_formats' in get_report_kwargs.keys():
