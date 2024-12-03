@@ -16,7 +16,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
-from scipy import signal
+from scipy import signal, interpolate
 import shapely
 
 try:
@@ -1307,6 +1307,8 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     else:
         if verbose:
             print(f"Value for orientation={orientation} is not recognized. Using West-East orientation.")
+        order = 'ascending'
+        ordercoord='longitude'
 
     # Get data in correct order, as specified by orientation parameter
     reverseit = (order == 'descending')
@@ -1315,7 +1317,10 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
 
     # Get cross section profile
     shapelyPoints = []
+    interpData = []
+    interpCoords = {'longitude':[], 'latitude':[], 'elevation':[]}
     for i, hvData in enumerate(hvDataSorted):
+        print(hvData['longitude'], hvData['latitude'])
         # Create shapely Point objects at each profile location
         x = hvData['longitude']
         y = hvData['latitude']
@@ -1323,9 +1328,16 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
 
         shapelyPoints.append(shapely.Point(x, y, z))
 
+        #Points arranged for interpolation
+        interpData.extend(list(hvData.hvsr_curve))
+        for i, pt in enumerate(hvData.hvsr_curve):
+            interpCoords['longitude'].append(x)
+            interpCoords['latitude'].append(y)
+            interpCoords['elevation'].append(hvData['x_elev_m']['Z'][i])
+
         #Since already doing loop, ensure hvData has all depth/elev info it needs
         if not hasattr(hvData, 'x_elev_m'):
-            calc_depth_kwargs = {k: v for k, v in kwargs.items() 
+            calc_depth_kwargs = {k: v for k, v in kwargs.items()
                                       if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
             if 'calculate_depth_in_feet' not in calc_depth_kwargs:
                 calc_depth_kwargs['calculate_depth_in_feet'] = True
@@ -1360,8 +1372,8 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
 
     cellWSize = xSectionLength/cellWNumber
     
-    max_surf_elev = max(hvDataSorted, key=lambda hvd: hvd.elevation)
-    min_br_elev = min(hvDataSorted, key=lambda hvd: hvd.Table_Report['Peak'][0])
+    max_surf_elev = max([hvd.elevation for hvd in hvDataSorted])
+    min_br_elev = min([hvd.Table_Report['Peak'][0] for hvd in hvDataSorted])
     elev_range = max_surf_elev - min_br_elev
 
     max_grid_elev = math.ceil(max_surf_elev)
@@ -1383,21 +1395,18 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     gridXDists = np.linspace(0, xSectionProfile.length, cellWNumber)
     gridXcoords = []
     for xdist in gridXDists:
-        gridXcoords.append(xSectionProfile.interpolate(xdist))
+        x, _ = xSectionProfile.interpolate(xdist).xy
+        gridXcoords.append(x[0])
     gridXcoords = np.array(gridXcoords)
-    plt.scatter(gridXcoords)
 
+    print('x', len(interpCoords['longitude']))
+    print('y', len(interpCoords['latitude']))
+    print('z', len(interpCoords['elevation']))
+    print('interp', np.array(interpData).shape)
+
+    interp = interpolate.CloughTocher2DInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
     xx, zz = np.meshgrid(gridXcoords, gridZcoords)
+    interpData = interp(xx, zz)
 
-    
-
-    minProfileVal = minX
-    maxProfileVal = maxX
-    if ordercoord == 'latitude':
-        minProfileVal = minY
-        maxProfileVal = maxY
-
-
-
-
+    plt.pcolormesh(xx, zz, interpData, shading='auto', cmap='jet')
     #mask = (elevations >= min_grid_elev) & (elevations <= max_grid_elev)
