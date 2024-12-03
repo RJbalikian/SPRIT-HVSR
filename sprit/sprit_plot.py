@@ -1292,16 +1292,16 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     weList = ['we', "west-east", 'westeast', 'east', 'e']
     ewList = ['ew', "east-west", 'eastwest', 'west', 'w']
 
-    if orientation in nsList:
+    if str(orientation).lower() in nsList:
         ordercoord = 'latitude'
         order = 'descending'
-    elif orientation in snList:
+    elif str(orientation).lower() in snList:
         ordercoord = 'latitude'
         order = 'ascending'
-    elif orientation in weList:
+    elif str(orientation).lower() in weList:
         ordercoord = 'longitude'
         order = 'ascending'
-    elif orientation in ewList:
+    elif str(orientation).lower() in ewList:
         ordercoord = 'longitude'
         order = 'descending'
     else:
