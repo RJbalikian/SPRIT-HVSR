@@ -1,5 +1,7 @@
 import datetime
 import inspect
+import math
+import numbers
 import os
 import pathlib
 import webbrowser
@@ -15,11 +17,14 @@ import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
 from scipy import signal
+import shapely
 
 try:
     import sprit_hvsr
+    import sprit_calibration
 except:
     import sprit.sprit_hvsr as sprit_hvsr
+    import sprit.sprit_calibration as sprit_calibration
 
 def read_data(button):
     progress_bar.value = 0
@@ -1271,8 +1276,128 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     if show_depth_curve:
         plt.show()
     
-    hvsr_results['Depth_Curve'] = fig
+    hvsr_results['Depth_Plot'] = fig
     return hvsr_results
 
-def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_unit='m', grid_size='auto', orientation='WE'):
-    pass
+def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_unit='m', 
+                       grid_size='auto', orientation='WE', surface_elevations=None,
+                       depth_limit=250, minimum_elevation=None,
+                       verbose=False,
+                       **kwargs):
+    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data)
+    
+    # Get orientation/order of data
+    nsList = ['ns', "north-south", 'northsouth', 'south', 's']
+    snList = ['sn', "south-north", 'southnorth', 'north', 'n']
+    weList = ['we', "west-east", 'westeast', 'east', 'e']
+    ewList = ['ew', "east-west", 'eastwest', 'west', 'w']
+
+    if orientation in nsList:
+        ordercoord = 'latitude'
+        order = 'descending'
+    elif orientation in snList:
+        ordercoord = 'latitude'
+        order = 'ascending'
+    elif orientation in weList:
+        ordercoord = 'longitude'
+        order = 'ascending'
+    elif orientation in ewList:
+        ordercoord = 'longitude'
+        order = 'descending'
+    else:
+        if verbose:
+            print(f"Value for orientation={orientation} is not recognized. Using West-East orientation.")
+
+    # Get data in correct order, as specified by orientation parameter
+    reverseit = (order == 'descending')
+    sorted_sites = sorted(hvDataBatch, key=lambda site: hvDataBatch[site][ordercoord], reverse=reverseit)
+    hvDataSorted = [hvDataBatch[h] for h in sorted_sites]
+
+    # Get cross section profile
+    shapelyPoints = []
+    for i, hvData in enumerate(hvDataSorted):
+        # Create shapely Point objects at each profile location
+        x = hvData['longitude']
+        y = hvData['latitude']
+        z = hvData['elevation']
+
+        shapelyPoints.append(shapely.Point(x, y, z))
+
+        #Since already doing loop, ensure hvData has all depth/elev info it needs
+        if not hasattr(hvData, 'x_elev_m'):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items() 
+                                      if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            if 'calculate_depth_in_feet' not in calc_depth_kwargs:
+                calc_depth_kwargs['calculate_depth_in_feet'] = True
+            hvDataSorted[i] = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+
+    xSectionProfile = shapely.LineString(shapelyPoints)
+    profileXs, profileYs = xSectionProfile.xy
+    minX = min(profileXs)
+    minY = min(profileYs)
+    maxX = max(profileXs)
+    maxY = max(profileYs)
+
+    # Generate grid
+    xSectionLength = xSectionProfile.length
+    if grid_size == 'auto':
+        grid_size=(500, 1000)
+
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+
+    elif isinstance(grid_size, (list, tuple)):
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+    else:
+        grid_size=(500, 1000)
+
+        cellHNumber = 500
+        cellWNumber = xSectionLength/1000
+
+        if verbose:
+            print(f'grid_size value ({grid_size} not recognized, using grid 1000 cells wide and 500 cells high: grid_size=(500, 1000))')
+
+    cellWSize = xSectionLength/cellWNumber
+    
+    max_surf_elev = max(hvDataSorted, key=lambda hvd: hvd.elevation)
+    min_br_elev = min(hvDataSorted, key=lambda hvd: hvd.Table_Report['Peak'][0])
+    elev_range = max_surf_elev - min_br_elev
+
+    max_grid_elev = math.ceil(max_surf_elev)
+
+    # Minimum grid elevation is determined by depth_limit and minimum_elevation
+    if str(minimum_elevation).lower() == 'auto':
+        min_grid_elev = min_br_elev - (elev_range) * 0.1
+    elif isinstance(minimum_elevation, numbers.Number):
+        min_grid_elev = minimum_elevation
+    elif minimum_elevation is None:
+        min_grid_elev = max_grid_elev - depth_limit
+    
+    xSectionDepth = max_grid_elev - min_grid_elev
+    cellHSize = xSectionDepth/cellHNumber
+
+    # Get grid coordinates
+    gridZcoords = np.linspace(min_grid_elev, max_grid_elev, cellHNumber)
+
+    gridXDists = np.linspace(0, xSectionProfile.length, cellWNumber)
+    gridXcoords = []
+    for xdist in gridXDists:
+        gridXcoords.append(xSectionProfile.interpolate(xdist))
+    gridXcoords = np.array(gridXcoords)
+    plt.scatter(gridXcoords)
+
+    xx, zz = np.meshgrid(gridXcoords, gridZcoords)
+
+
+
+    minProfileVal = minX
+    maxProfileVal = maxX
+    if ordercoord == 'latitude':
+        minProfileVal = minY
+        maxProfileVal = maxY
+
+
+
+
+    #mask = (elevations >= min_grid_elev) & (elevations <= max_grid_elev)

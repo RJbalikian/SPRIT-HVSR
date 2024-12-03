@@ -171,17 +171,17 @@ class HVSRBatch:
                 else:
                     sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
                 
-                batch_dict[sitename] = hvdata
+                self.batch_dict[sitename] = hvdata
         elif isinstance(batch_input, dict):
-            batch_dict = batch_input
+            self.batch_dict = batch_input
         elif isinstance(batch_input, HVSRData):
-            batch_dict[batch_input['site']] = batch_input
+            self.batch_dict[batch_input['site']] = batch_input
         else:
             raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
 
         self._batch_dict = self.batch_dict
-        for sitename, hvsrdata in batch_input.items():
+        for sitename, hvsrdata in self.batch_dict.items():
             setattr(self, sitename, hvsrdata)
             self[sitename]['batch'] = True
         self.sites = list(self.batch_dict.keys())

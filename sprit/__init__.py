@@ -73,6 +73,7 @@ from sprit.sprit_plot import(
     plot_outlier_curves,
     parse_plot_string,
     plot_depth_curve,
+    plot_cross_section,
     )
 from sprit.sprit_calibration import(
     calculate_depth,
@@ -133,6 +134,7 @@ __all__ =('sprit_hvsr',
             'plot_outlier_curves',
             'parse_plot_string',
             'plot_depth_curve',
+            'plot_cross_section',
         'sprit_calibration',
             'calculate_depth',
             'calibrate',

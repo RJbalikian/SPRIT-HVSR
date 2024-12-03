@@ -4,6 +4,7 @@ pandas
 obspy
 scipy
 pyproj
+shapely
 PyQt5-sip
 sphinx-rtd-theme
 numpydoc
