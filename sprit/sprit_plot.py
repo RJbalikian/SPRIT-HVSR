@@ -1389,7 +1389,7 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
 
     xx, zz = np.meshgrid(gridXcoords, gridZcoords)
 
-
+    
 
     minProfileVal = minX
     maxProfileVal = maxX
