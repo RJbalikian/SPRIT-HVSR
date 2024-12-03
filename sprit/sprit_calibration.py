@@ -16,7 +16,7 @@ import pandas as pd
 
 try:  # For distribution
     from sprit import sprit_hvsr
-except Exception:  # For testing
+except Exception as e:  # For testing
     import sprit_hvsr
 
 """
@@ -49,10 +49,12 @@ resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources
 sample_data_dir = resource_dir.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
 
-ip_params = inspect.signature(sprit_hvsr.input_params).parameters
-fd_params = inspect.signature(sprit_hvsr.fetch_data).parameters
+def __get_ip_df_params():
+    ip_params = inspect.signature(sprit_hvsr.input_params).parameters
+    fd_params = inspect.signature(sprit_hvsr.fetch_data).parameters
+    return ip_params, fd_params
 
-models = ["ISGS_All", "ISGS_North", "ISGS_Central", "ISGS_Southeast", "ISGS_Southwest", 
+models = ["ISGS_All", "ISGS_North", "ISGS_Central", "ISGS_Southeast", "ISGS_Southwest",
                     "ISGS_North_Central", "ISGS_SW_SE", "Minnesota_All", 
                     "Minnesota_Twin_Cities", "Minnesota_South_Central", 
                     "Minnesota_River_Valleys", "Rhine_Graben",
@@ -65,7 +67,7 @@ swave = ["shear", "swave", "shearwave", "rayleigh", "rayleighwave", "vs"]
 
 model_list = list(map(lambda x : x.casefold(), models))
 
-model_parameters = {"ISGS_All" : (141.81, 1.582), "ISGS_North" : (142.95,1.312), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (67.973,1.166), 
+model_parameters = {"ISGS_All" : (141.81, 1.582), "ISGS_North" : (142.95,1.312), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (67.973,1.166),
                     "ISGS_Southwest": (61.238,1.003), "ISGS_North_Central" : (117.44, 1.095), "ISGS_SW_SE" : (62.62, 1.039),
                     "Minnesota_All" : (121, 1.323), "Minnesota_Twin_Cities" : (129, 1.295), "Minnesota_South_Central" : (135, 1.248),
                     "Minnesota_River_Valleys" : (83, 1.232), "Rhine_Graben" : (96, 1.388), 
@@ -74,10 +76,12 @@ model_parameters = {"ISGS_All" : (141.81, 1.582), "ISGS_North" : (142.95,1.312),
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
 
+
 def power_law(f, a, b):
     return a*(f**-b)
 
-def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike},  
+
+def calculate_depth(freq_input,
                     depth_model="ISGS_All",
                     freq_col="Peak",
                     calculate_depth_in_feet=False,
@@ -127,7 +131,8 @@ def calculate_depth(freq_input = {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, flo
 
     """
     orig_args = locals()
-    
+    ip_params, fd_params = __get_ip_df_params()
+
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
         outputList = []

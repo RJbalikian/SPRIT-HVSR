@@ -55,7 +55,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF
 
 
 # Resources directory path, and the other paths as well
-RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+RESOURCE_DIR = pathlib.PurePath(pkg_resources.resource_filename(__name__, 'resources'))
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
@@ -3836,7 +3836,8 @@ def import_data(import_filepath, data_format='pickle'):
     
     sample_list = ['sample', 'sampledata', 's']
     if import_filepath in sample_list:
-        import_filepath = RESOURCE_DIR.joinpath(r'sample_data\SampleHVSRSite01.hvsr')
+        import_filepath = RESOURCE_DIR.joinpath(r'sample_data')
+        import_filepath = import_filepath.joinpath(r'SampleHVSRSite01.hvsr')
 
     if data_format == 'pickle':
         with open(import_filepath, 'rb') as f:
