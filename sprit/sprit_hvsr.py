@@ -108,7 +108,6 @@ sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     'batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'sample_batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
 
-
 # CLASSES
 # Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
