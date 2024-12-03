@@ -1273,3 +1273,6 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     
     hvsr_results['Depth_Curve'] = fig
     return hvsr_results
+
+def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_unit='m', grid_size='auto', orientation='WE'):
+    

@@ -138,27 +138,53 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_dict, df_as_read=None):
+    def __init__(self, batch_input, df_as_read=None):
         """HVSR Batch initializer
 
         Parameters
         ----------
-        batch_dict : dict
+        batch_input : dict, list, or tuple
             Dictionary containing Key value pairs with {sitename: HVSRData object}
         """
-        self._batch_dict = batch_dict
-        self.batch_dict = self._batch_dict
+        if isinstance(batch_input, HVSRBatch):
+            return batch_input
         
+        self._batch_input = batch_input
+        self.batch_input = self._batch_input
+        
+        self._batch_dict = self.batch_dict = {}
+
         self._input_df = df_as_read
         self.input_df = self._input_df
         
         self.batch = True
         
+        if isinstance(batch_input, (list, tuple,)):
+            siteNo = 0
+            zfilldigs = len(str(len(batch_input)))
+            
+            for hvdata in batch_input:
+                if hasattr(hvdata, 'site'):
+                    sitename = hvdata.site
+                elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
+                    sitename = hvdata.Table_Report['Site Name'][0]
+                else:
+                    sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
                 
-        for sitename, hvsrdata in batch_dict.items():
+                batch_dict[sitename] = hvdata
+        elif isinstance(batch_input, dict):
+            batch_dict = batch_input
+        elif isinstance(batch_input, HVSRData):
+            batch_dict[batch_input['site']] = batch_input
+        else:
+            raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
+
+
+        self._batch_dict = self.batch_dict
+        for sitename, hvsrdata in batch_input.items():
             setattr(self, sitename, hvsrdata)
             self[sitename]['batch'] = True
-        self.sites = list(self._batch_dict.keys())
+        self.sites = list(self.batch_dict.keys())
 
 
     # METHODS
@@ -2503,7 +2529,6 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     elif isinstance(params['input_data'], HVSRData):
         rawDataIN = params['input_data']['stream']
     else:
-        print('sourcey', source)
         if source=='raw':
             try:
                 if inst.lower() in raspShakeInstNameList:
