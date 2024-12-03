@@ -1153,16 +1153,17 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
 
     return outlier_fig
 
-def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, depth_limit=250,
-                     annotate=True,
+def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
+                     depth_limit=250, max_elev=None, min_elev=None,
+                     annotate=True, 
                      fig=None, ax=None, show_depth_curve=True):
     
     if fig is None and ax is None:
         fig, ax = plt.subplots(layout='constrained')
+        fig.set_size_inches(3, 5)
+        fig.suptitle(hvsr_results['site'])
+        ax.set_title('Calibrated Depth to Interface', size='small')
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
-    fig.set_size_inches(3, 5)
-    fig.suptitle(hvsr_results['site'])
-    ax.set_title('Calibrated Depth to Interface', size='small')
     
     surfElev = hvsr_results.Table_Report['Elevation'][0]
     bedrockElev = hvsr_results.Table_Report['BedrockElevation'][0]
