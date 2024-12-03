@@ -8,6 +8,7 @@ from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -1195,16 +1196,18 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
                     va='bottom',
                     size='x-small')
 
-            ax.text(x=(xBase+xCap)/2,
-                    y=bedrockVal,
-                    s=str(round(bedrockElev, 2))+'m\nelevation',
-                    ha='center',
-                    va='bottom',
+            # Annotate bedrock elevation
+            ax.text(x=xBase,
+                    y=bedrockElev,
+                    s=' ' + str(round(bedrockElev, 2))+'m\n elevation',
+                    ha='left',
+                    va='center',
                     size='x-small')
             
+            # Annotate bedrock depth
             ax.text(x=xBase,
-                    y=(yLims[1]+bedrockDepth)/2,
-                    s=str(round(bedrockDepth, 2))+'m deep',
+                    y=max(yLims),
+                    s=str(round(bedrockDepth, 2))+'m deep ',
                     ha='right',
                     va='top',
                     size='x-small',
@@ -1224,16 +1227,16 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
                     size='x-small')
             
             # Annotate Bedrock elevation
-            ax.text(x=(xBase+xCap)/2,
+            ax.text(x=xBase,
                     y=bedrockVal,
                     s=str(round(bedrockElev, 2))+'m\nelevation',
                     ha='center',
                     va='center',
                     size='x-small')
 
-            # Annotate Bedrock depth            
+            # Annotate Bedrock depth
             ax.text(x=xBase,
-                    y=(yLims[1]+bedrockDepth)/2,
+                    y=(min(yLims)+bedrockDepth)/2,
                     s=str(round(bedrockDepth, 2))+'m deep',
                     ha='right',
                     va='top',
