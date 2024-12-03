@@ -105,7 +105,6 @@ sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     'sample_9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
                     'sample_10': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
                     
-                    'sample': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'sample_batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
 
@@ -2505,6 +2504,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     elif isinstance(params['input_data'], HVSRData):
         rawDataIN = params['input_data']['stream']
     else:
+        print('sourcey', source)
         if source=='raw':
             try:
                 if inst.lower() in raspShakeInstNameList:
@@ -2588,6 +2588,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 params['input_data'] = str(params['input_data']).lower()
                 
                 if params['input_data'].lower() in sampleFileKeyMap.keys():
+                    if params['input_data'].lower() == 'sample':
+                        params['input_data'] = sampleFileKeyMap
+                        
                     params['input_data'] = sampleFileKeyMap[params['input_data'].lower()]
                 else:
                     params['input_data'] = SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
@@ -3806,9 +3809,16 @@ def import_data(import_filepath, data_format='pickle'):
     -------
     HVSRData or HVSRBatch object
     """
-    if data_format=='pickle':
+    
+    sample_list = ['sample', 'sampledata', 's']
+    if import_filepath in sample_list:
+        import_filepath = RESOURCE_DIR.joinpath(r'sample_data\SampleHVSRSite01.hvsr')
+
+    if data_format == 'pickle':
         with open(import_filepath, 'rb') as f:
             dataIN = pickle.load(f)
+    elif data_format.lower() == 'dataframe':
+        dataIN = pd.read_csv(import_filepath)
     else:
         dataIN = import_filepath
     return dataIN

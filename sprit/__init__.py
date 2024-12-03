@@ -71,12 +71,12 @@ from sprit.sprit_plot import(
     plot_preview,
     plot_results,
     plot_outlier_curves,
-    parse_plot_string
+    parse_plot_string,
+    plot_depth_curve,
     )
 from sprit.sprit_calibration import(
     calculate_depth,
     calibrate,
-    plot_depth_curve
 )
 
 
@@ -131,11 +131,11 @@ __all__ =('sprit_hvsr',
             'plot_preview',
             'plot_results',
             'plot_outlier_curves',
-            'parse_plot_string'
+            'parse_plot_string',
+            'plot_depth_curve',
         'sprit_calibration',
             'calculate_depth',
             'calibrate',
-            'plot_depth_curve',
             )
 
 
