@@ -31,7 +31,7 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 - Pypi repository [here](https://pypi.org/project/sprit/)
 
 # Web App
-An experimental, browser based web app is available for use via Streamlit. you can find this at (sprithvsr.streamlit.app)[https://sprithvsr.streamlit.app]
+An experimental, browser based web app is available for use via Streamlit. you can find this at [sprithvsr.streamlit.app](https://sprithvsr.streamlit.app)
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
