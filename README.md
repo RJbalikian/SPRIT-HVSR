@@ -29,7 +29,10 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 - API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
 - See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
 - Pypi repository [here](https://pypi.org/project/sprit/)
-  
+
+# Web App
+An experimental, browser based web app is available for use via Streamlit. you can find this at (sprithvsr.streamlit.app)[https://sprithvsr.streamlit.app]
+
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
 
@@ -42,12 +45,17 @@ Aside from the modules in the python standard library, the following package dep
 - [plotly](https://plotly.com/python/): Open Source Graphing Library for Python that makes interactive, publication-quality graphs.
 
 ## Dependencies specifically for GUIs
+### TKinter GUI
 - [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
+- tkinter (may not be installed with python on linux systems)
+
+### Jupyter Widget GUI
 - ipython
 - ipywidgets
 - nbformat
+
+### Streamlit GUI (browser based)
 - streamlit
-- tkinter (may not be installed with python on linux systems)
 
 # References
 - <a id="1">[1]</a> <http://sesame.geopsy.org/Delivrables/SESAME-Finalreport_april05.pdf>
