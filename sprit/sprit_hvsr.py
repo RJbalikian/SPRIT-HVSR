@@ -629,7 +629,7 @@ def gui(kind='browser'):
     """
     browserList = ['browser', 'remi', 'default', 'd']
     windowList = ['windowed', 'window', 'qt', 'tkinter', 'tk']
-    widgetList = ['widget', 'jupyter', 'notebook', 'w', 'nb']
+    widgetList = ['widget', 'jupyter', 'notebook', 'nb']
     liteList = ['lite', 'light', 'basic', 'l', 'b']
 
     if kind.lower() in browserList:

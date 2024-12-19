@@ -1280,6 +1280,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     return hvsr_results
 
 def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_unit='m', 
+                       show_curves=True,
                        grid_size='auto', orientation='WE', surface_elevations=None,
                        depth_limit=250, minimum_elevation=None,
                        verbose=False,
@@ -1320,7 +1321,7 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     interpData = []
     interpCoords = {'longitude':[], 'latitude':[], 'elevation':[]}
     for i, hvData in enumerate(hvDataSorted):
-        print(hvData['longitude'], hvData['latitude'])
+        #print(hvData['longitude'], hvData['latitude'])
         # Create shapely Point objects at each profile location
         x = hvData['longitude']
         y = hvData['latitude']
@@ -1345,6 +1346,11 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
 
     xSectionProfile = shapely.LineString(shapelyPoints)
     profileXs, profileYs = xSectionProfile.xy
+    
+    orderCoordValues = profileXs
+    if ordercoord == 'latitude':
+        orderCoordValues = profileYs
+
     minX = min(profileXs)
     minY = min(profileYs)
     maxX = max(profileXs)
@@ -1389,24 +1395,44 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     xSectionDepth = max_grid_elev - min_grid_elev
     cellHSize = xSectionDepth/cellHNumber
 
-    # Get grid coordinates
+    # Get grid coordinates (all coords in z direction (depth/elev))
     gridZcoords = np.linspace(min_grid_elev, max_grid_elev, cellHNumber)
 
     gridXDists = np.linspace(0, xSectionProfile.length, cellWNumber)
-    gridXcoords = []
+    gridXcoords = [] # All coords in the "x" direction (along profile)
     for xdist in gridXDists:
         x, _ = xSectionProfile.interpolate(xdist).xy
         gridXcoords.append(x[0])
     gridXcoords = np.array(gridXcoords)
 
-    print('x', len(interpCoords['longitude']))
-    print('y', len(interpCoords['latitude']))
-    print('z', len(interpCoords['elevation']))
-    print('interp', np.array(interpData).shape)
+    #print('x', len(interpCoords['longitude']))
+    #print('y', len(interpCoords['latitude']))
+    #print('z', len(interpCoords['elevation']))
+    #print('interp', np.array(interpData).shape)
 
     interp = interpolate.CloughTocher2DInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
     xx, zz = np.meshgrid(gridXcoords, gridZcoords)
     interpData = interp(xx, zz)
 
     plt.pcolormesh(xx, zz, interpData, shading='auto', cmap='jet')
+    
+    if show_curves:
+        normal_factor = np.nanmedian(np.diff(orderCoordValues)) / 4
+
+        zAttr = 'x_depth_m'
+        if use_elevation:
+            zAttr = 'x_elev_m'
+
+        for site in hvsr_data:
+            hvData = hvsr_data[site]
+            print(type(hvData))
+            print(hvData)
+            hvData['Normalized_HVCurve'] = (hvData['hvsr_curve'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
+            locatedCurve = hvData['Normalized_HVCurve'] + hvData[ordercoord]
+            if max(locatedCurve) > max(gridXcoords):
+                locatedCurve = locatedCurve - (max(locatedCurve) -max(gridXcoords))
+            if min(locatedCurve) < min(gridXcoords):
+                locatedCurve = locatedCurve + min(gridXcoords)
+            plt.plot(locatedCurve, hvData[zAttr]['Z'][:-1])
+
     #mask = (elevations >= min_grid_elev) & (elevations <= max_grid_elev)
