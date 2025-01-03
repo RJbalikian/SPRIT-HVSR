@@ -1160,7 +1160,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
 
 def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
                      depth_limit=250, max_elev=None, min_elev=None,
-                     annotate=True, 
+                     annotate=True, depth_plot_export_path=None, 
                      fig=None, ax=None, show_depth_curve=True):
     
     if fig is None and ax is None:
@@ -1275,6 +1275,12 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     
     if show_depth_curve:
         plt.show()
+    
+    if depth_plot_export_path is not None:
+        if isinstance(depth_plot_export_path, os.PathLike):
+            fig.savefig(depth_plot_export_path)
+        else:
+            print(f'Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}')
     
     hvsr_results['Depth_Plot'] = fig
     return hvsr_results
