@@ -1286,11 +1286,26 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     return hvsr_results
 
 def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_unit='m', 
-                       show_curves=True,
+                       show_curves=True, fig=None, ax=None,
                        grid_size='auto', orientation='WE', surface_elevations=None,
                        depth_limit=250, minimum_elevation=None,
                        verbose=False,
                        **kwargs):
+    
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    elif ax is None and fig is not None:
+        fig = fig
+        ax = fig.get_axes()[0]
+    elif fig is None and ax is not None:
+        ax = ax
+        fig = plt.figure()
+        fig.axes.append(ax)
+    else:
+        fig = fig
+        ax = ax
+    plt.sca(ax)
+    
     hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data)
     
     # Get orientation/order of data
@@ -1327,6 +1342,10 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     interpData = []
     interpCoords = {'longitude':[], 'latitude':[], 'elevation':[]}
     for i, hvData in enumerate(hvDataSorted):
+        if not hasattr(hvData, 'x_elev_m'):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            hvData = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+        
         #print(hvData['longitude'], hvData['latitude'])
         # Create shapely Point objects at each profile location
         x = hvData['longitude']
@@ -1420,7 +1439,7 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
     xx, zz = np.meshgrid(gridXcoords, gridZcoords)
     interpData = interp(xx, zz)
 
-    plt.pcolormesh(xx, zz, interpData, shading='auto', cmap='jet')
+    ax.pcolormesh(xx, zz, interpData, shading='auto', cmap='jet')
     
     if show_curves:
         normal_factor = np.nanmedian(np.diff(orderCoordValues)) / 4
@@ -1429,16 +1448,36 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
         if use_elevation:
             zAttr = 'x_elev_m'
 
-        for site in hvsr_data:
-            hvData = hvsr_data[site]
-            print(type(hvData))
-            print(hvData)
+        for hvData in hvDataSorted:
             hvData['Normalized_HVCurve'] = (hvData['hvsr_curve'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
             locatedCurve = hvData['Normalized_HVCurve'] + hvData[ordercoord]
             if max(locatedCurve) > max(gridXcoords):
                 locatedCurve = locatedCurve - (max(locatedCurve) -max(gridXcoords))
             if min(locatedCurve) < min(gridXcoords):
                 locatedCurve = locatedCurve + min(gridXcoords)
-            plt.plot(locatedCurve, hvData[zAttr]['Z'][:-1])
+            ax.plot(locatedCurve, hvData[zAttr]['Z'][:-1], c='k', linewidth=0.5)
 
+        plt.ylim([min_grid_elev, max_grid_elev])
+
+    if surface_elevations is None:
+        surfPts_shapely = []
+        surfPtsX = []
+        surfPtsZ = []
+        
+        surface_elevations = shapely.LineString([shapely.Point(hvData['longitude'], 
+                                                               hvData["latitude"], 
+                                                               hvData["elevation"]) 
+                                                 for hvData in hvDataSorted])
+    
+    xPts = []
+    zPts = []
+    for surf_pt in surface_elevations.coords:
+        surfPtDict = {'longitude':surf_pt[0], 
+                      'latitude': surf_pt[1],
+                      'elevation': surf_pt[2]}
+        xPts.append(surfPtDict[ordercoord])
+        zPts.append(surfPtDict['elevation'])
+    
+    zMaxPts = list(np.array(zPts) * 0 + max_grid_elev)
+    ax.fill_between(xPts, zPts, zMaxPts, facecolor='k')
     #mask = (elevations >= min_grid_elev) & (elevations <= max_grid_elev)
