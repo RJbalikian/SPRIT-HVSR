@@ -1306,8 +1306,12 @@ def plot_cross_section(hvsr_data, use_elevation=True, show_feet=False, primary_u
         ax = ax
     plt.sca(ax)
     
-    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data)
-    
+    batchExt = None
+    if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+        batchExt = 'hvsr'
+    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+    print(f'Plotting {len(hvDataBatch.sites)} sites')
+    [print(f"\t{site}") for site in hvDataBatch.sites]
     # Get orientation/order of data
     nsList = ['ns', "north-south", 'northsouth', 'south', 's']
     snList = ['sn', "south-north", 'southnorth', 'north', 'n']

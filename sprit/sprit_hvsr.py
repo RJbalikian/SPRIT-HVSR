@@ -138,7 +138,7 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_input, df_as_read=None):
+    def __init__(self, batch_input, batch_ext=None, df_as_read=None):
         """HVSR Batch initializer
 
         Parameters
@@ -176,6 +176,28 @@ class HVSRBatch:
             self.batch_dict = batch_input
         elif isinstance(batch_input, HVSRData):
             self.batch_dict[batch_input['site']] = batch_input
+        elif pathlib.Path(batch_input).exists():
+            if pathlib.Path(batch_input).is_dir():
+                if batch_ext is not None:
+                    batchfileglob = pathlib.Path(batch_input).glob("*"+batch_ext)
+                    batchfiledict = {}
+                    if 'hvsr' in batch_ext:
+                        for hvfile in batchfileglob:
+                            currhvfile = import_data(hvfile)
+                            batchfiledict[currhvfile['site']] = currhvfile
+                        self.batch_dict = self._batch_dict = batchfiledict
+                else:
+                    batchfileglob = []
+                    batchfiledict = {}
+                    for ftype in OBSPY_FORMATS:
+                        batchfileglob.extend(pathlib.Path(batch_input).glob("*"+ftype))
+                    for hvfile in batchfileglob:
+                        currhvfile = import_data(hvfile)
+                        batchfiledict[currhvfile['site']] = currhvfile
+                    self.batch_dict = self._batch_dict = batchfiledict           
+            else:
+                # Read the batch file in and return it
+                return import_data(batch_input)
         else:
             raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
@@ -2438,7 +2460,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             params['input_data'][i] = sprit_utils.checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)
         dPath = params['input_data']
     elif isinstance(params['input_data'], (obspy.Stream, obspy.Trace)):
-        pass
+        dPath = pathlib.Path() #params['input_data']
     elif isinstance(params['input_data'], HVSRData):
         dPath = pathlib.Path(params['input_data']['input_data'])
         if not isinstance(params['input_data']['stream'], (obspy.Stream, obspy.Trace)):
@@ -2581,7 +2603,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                             rawDataIN = obspy.Stream(stream) #Just in case
                         else:
                             rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-                elif str(dPath)[:6].lower()=='sample':
+                elif str(dPath)[:6].lower() == 'sample':
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
