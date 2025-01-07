@@ -17,6 +17,7 @@ import os
 import pathlib
 import pickle
 import pkg_resources
+import re
 import struct
 import sys
 import tempfile
@@ -3841,7 +3842,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
 
 # Import data
-def import_data(import_filepath, data_format='pickle'):
+def import_data(import_filepath, data_format='pickle', show_data=False):
     """Function to import .hvsr (or other extension) data exported using export_data() function
 
     Parameters
@@ -3868,6 +3869,10 @@ def import_data(import_filepath, data_format='pickle'):
         dataIN = pd.read_csv(import_filepath)
     else:
         dataIN = import_filepath
+    
+    if show_data is False:
+        plt.close()
+    
     return dataIN
 
 
@@ -5199,7 +5204,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         hvsr_out['processing_parameters'] = {}
     hvsr_out['processing_parameters']['process_hvsr'] = {}
     for key, value in orig_args.items():
-        hvsr_out['processing_parameters']['generate_psds'][key] = value
+        hvsr_out['processing_parameters']['process_hvsr'][key] = value
     
     if str(horizontal_method) == '8' or horizontal_method.lower() == 'single azimuth':
         if azimuth is None:
@@ -5882,6 +5887,122 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
 def test_function():
     print('is this working?')
 
+
+# Update all elevation-related attriutes
+def update_elevation(hvsr_data, updated_surface_elevation, updated_elevation_unit):
+    """Function to quickly update all attributes associated with elevation of an HVSRData object
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData or HVSRBatch
+        HVSRData or HVSRBatch object containing attributes related to elevation.
+        If HVSRBatch, updated_surface_elevation should be list or tuple and 
+        updated_elevation_unit may either be str or  list/tuple of strings.        
+    updated_surface_elevation : numbers.Number
+        Number (float or int) with the updated elevation.
+        Meters is the preferred unit. If feet are used instead, it will be converted to meters.
+    updated_elevation_unit : str
+        Unit used for updated_surface_elevation. If 'feet', it will be converted to meters.
+
+    Returns
+    -------
+    HVSRData
+        HVSRData object with all attributes related to elevation updated
+    """
+    
+    # Break out for HVSRBatch
+    if isinstance(hvsr_data, HVSRBatch):
+        if len(updated_surface_elevation) != len(hvsr_data.sites):
+            warnings.warn(f'Elevations for HVSRBatch object could not be updated. \
+                Length of updated_surface_elevation ({len(updated_surface_elevation)}) must equal\
+                the number of sites ({len(hvsr_data.sites)}) in hvsr_data')
+            return hvsr_data
+        
+        if isinstance(updated_elevation_unit, (list, tuple)):
+            if len(updated_elevation_unit) != len(hvsr_data.sites):
+                warnings.warn(f'Elevations for HVSRBatch object could not be updated. \
+                    Length of updated_elevation_unit ({len(updated_elevation_unit)}) must equal\
+                    the number of sites ({len(hvsr_data.sites)}) in hvsr_data')
+            return hvsr_data
+        
+        elif type(updated_elevation_unit) is str:
+            updated_elevation_unit = [updated_elevation_unit] * len(hvsr_data.sites)
+        else:
+            warnings.warn(f"updated_elevation_unit must be list, tuple, or str, not {type(updated_elevation_unit)}")
+        
+        for i, sitename in enumerate( hvsr_data):
+            hvsr_data[sitename] = update_elevation(hvsr_data[sitename], 
+                                                   updated_surface_elevation[i],
+                                                   updated_elevation_unit[i])
+        return hvsr_data
+    
+    #elevation_attrs = ['elevation', 'x_elev_m', 'x_elev_ft']
+    if hasattr(hvsr_data, 'elevation'):
+        elev_diff = hvsr_data['elevation'] - updated_surface_elevation
+    else:
+        elev_diff = -1 * updated_surface_elevation
+        
+
+    mList = ['meters', 'm', 'standard', 'metric', 'si', 'metres', 'metre', 'meter']
+    fList = ['feet', 'ft', 'f', 'foot', 'american', 'imperial', 'imp']
+    
+    # Update parameters with elevations in them
+    if str(updated_elevation_unit).lower() in fList:
+        updated_surface_elevation = updated_surface_elevation * 0.3048
+    hvsr_data['elevation'] = updated_surface_elevation
+        
+    hvsr_data['elev_unit'] = 'meters'
+    
+    if hasattr(hvsr_data, 'x_elev_m'):
+        hvsr_data['x_elev_m']['Z'] = hvsr_data['x_elev_m']['Z'] - elev_diff
+        hvsr_data['x_elev_m']['E'] = hvsr_data['x_elev_m']['E'] - elev_diff
+        hvsr_data['x_elev_m']['N'] = hvsr_data['x_elev_m']['N'] - elev_diff
+        
+        hvsr_data['x_elev_ft']['Z'] = hvsr_data['x_elev_m']['Z'] / 0.3048
+        hvsr_data['x_elev_ft']['E'] = hvsr_data['x_elev_m']['E'] / 0.3048
+        hvsr_data['x_elev_ft']['N'] = hvsr_data['x_elev_m']['N'] / 0.3048
+    
+    # Update elevations in Table_Report
+    table_report_cols = ['Elevation', 'BedrockElevation']
+    if hasattr(hvsr_data, 'Table_Report'):
+        hvsr_data.Table_Report['Elevation'] = updated_surface_elevation
+        if 'BedrockDepth' in hvsr_data.Table_Report.columns:
+            hvsr_data.Table_Report['BedrockElevation'] = updated_surface_elevation - hvsr_data.Table_Report['BedrockDepth']
+
+    # Update elevations in Print_Report
+    if hasattr(hvsr_data, "Print_Report"):
+        hvsr_data['Print_Report'] = re.sub(r"Elevation:\s*[\d.]+", 
+                                            f"Elevation: {updated_surface_elevation}", 
+                                            hvsr_data['Print_Report'])
+
+    # Update elevations in HTML_Report
+    if hasattr(hvsr_data, "HTML_Report"):
+        hvsr_data['HTML_Report'] = re.sub(r"Elevation:\s*[\d.]+", 
+                                            f"Elevation: {updated_surface_elevation}", 
+                                            hvsr_data['HTML_Report'])
+    
+    # Update elevations in PeakReport attributes
+    azList = ['HV']
+    azList.extend(list(hvsr_data.hvsr_az.keys()))
+    for az in azList:
+        for peakReport in hvsr_data.PeakReport[az]:
+            if 'Table_Report' in peakReport['Report']: #This is a dict
+                peakReport['Report']['Table_Report']['Elevation'] = updated_surface_elevation
+                if 'BedrockDepth' in peakReport['Report']['Table_Report'].columns:
+                    peakReport['Report']['Table_Report']['BedrockElevation'] = updated_surface_elevation - peakReport['Report']['Table_Report']['BedrockDepth']
+            
+            if 'Print_Report' in peakReport['Report']: #This is a dict
+                peakReport['Report']['Print_Report'] = re.sub(r"Elevation:\s*[\d.]+", 
+                                                              f"Elevation: {updated_surface_elevation}", 
+                                                              peakReport['Report']['Print_Report'])
+                
+    # Update processing_parameters to reflect new elevations
+    hvsr_data['processing_parameters']['fetch_data']['params']['elevation'] = updated_surface_elevation
+    hvsr_data['processing_parameters']['fetch_data']['params']['elev_unit'] = 'meters'
+    hvsr_data['processing_parameters']['fetch_data']['params']['params']['elevation'] = updated_surface_elevation
+    hvsr_data['processing_parameters']['fetch_data']['params']['params']['elev_unit'] = 'meters'
+    
+    return hvsr_data
 
 # BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data
 # Helper function for batch processing of check_peaks
