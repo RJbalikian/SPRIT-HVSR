@@ -1584,8 +1584,6 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     ax.set_xlim([min(gridXcoords), max(gridXcoords)])
     ax.set_ylim([min_grid_elev, max_grid_elev])
     
-    if 'north' in profile_direction[:5] or 'east' in profile_direction[:5]:
-        ax.invert_xaxis()
     
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
     ax.set_xlabel(str(ordercoord).title())
@@ -1602,58 +1600,67 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if profile_angle < 0:
         profile_angle += 360
 
+    if verbose:
+        print(f"Calculated profile angle to be {profile_angle:.3f} degrees.")
     # Calculate nomencalture
     if profile_angle < -11.25 + 22.5 * 1:
-        profileStart = 'N'
-        profileEnd = 'S'
-    elif profile_angle < -11.25 + 22.5 * 2:
-        profileStart = 'NNE'
-        profileEnd = 'SSW'        
-    elif profile_angle < -11.25 + 22.5 * 3:
-        profileStart = 'NE'
-        profileEnd = 'SW'
-    elif profile_angle < -11.25 + 22.5 * 4:
-        profileStart = 'ENE'
-        profileEnd = 'WSW'        
-    elif profile_angle < -11.25 + 22.5 * 5:
-        profileStart = 'E'
-        profileEnd = 'W'        
-    elif profile_angle < -11.25 + 22.5 * 6:
-        profileStart = 'ESE'
-        profileEnd = 'WNW'
-    elif profile_angle < -11.25 + 22.5 * 7:
-        profileStart = 'SE'
-        profileEnd = 'NW'
-    elif profile_angle < -11.25 + 22.5 * 8:
-        profileStart = 'SSE'
-        profileEnd = 'NNW'
-    elif profile_angle < -11.25 + 22.5 * 9:
         profileStart = 'S'
         profileEnd = 'N'
-    elif profile_angle < -11.25 + 22.5 * 10:
-        profileStart = 'SSW'
-        profileEnd = 'NNE'        
-    elif profile_angle < -11.25 + 22.5 * 11:
-        profileStart = 'SW'
+    elif profile_angle < -11.25 + 22.5 * 2:
+        profileEnd = 'NNE'
+        profileStart = 'SSW'        
+    elif profile_angle < -11.25 + 22.5 * 3:
         profileEnd = 'NE'
-    elif profile_angle < -11.25 + 22.5 * 12:
-        profileStart = 'WSW'
+        profileStart = 'SW'
+    elif profile_angle < -11.25 + 22.5 * 4:
         profileEnd = 'ENE'
-    elif profile_angle < -11.25 + 22.5 * 13:
-        profileStart = 'W'
+        profileStart = 'WSW'        
+    elif profile_angle < -11.25 + 22.5 * 5:
         profileEnd = 'E'
-    elif profile_angle < -11.25 + 22.5 * 14:
-        profileStart = 'WNW'
+        profileStart = 'W'        
+    elif profile_angle < -11.25 + 22.5 * 6:
         profileEnd = 'ESE'
-    elif profile_angle < -11.25 + 22.5 * 15:
-        profileStart = 'NW'
+        profileStart = 'WNW'
+    elif profile_angle < -11.25 + 22.5 * 7:
         profileEnd = 'SE'
-    elif profile_angle < -11.25 + 22.5 * 16:
-        profileStart = 'NNW'
+        profileStart = 'NW'
+    elif profile_angle < -11.25 + 22.5 * 8:
         profileEnd = 'SSE'
-    elif profile_angle <= 360:
-        profileStart = 'N'
+        profileStart = 'NNW'
+    elif profile_angle < -11.25 + 22.5 * 9:
         profileEnd = 'S'
+        profileStart = 'N'
+    elif profile_angle < -11.25 + 22.5 * 10:
+        profileEnd = 'SSW'
+        profileStart = 'NNE'        
+    elif profile_angle < -11.25 + 22.5 * 11:
+        profileEnd = 'SW'
+        profileStart = 'NE'
+    elif profile_angle < -11.25 + 22.5 * 12:
+        profileEnd = 'WSW'
+        profileStart = 'ENE'
+    elif profile_angle < -11.25 + 22.5 * 13:
+        profileEnd = 'W'
+        profileStart = 'E'
+    elif profile_angle < -11.25 + 22.5 * 14:
+        profileEnd = 'WNW'
+        profileStart = 'ESE'
+    elif profile_angle < -11.25 + 22.5 * 15:
+        profileEnd = 'NW'
+        profileStart = 'SE'
+    elif profile_angle < -11.25 + 22.5 * 16:
+        profileEnd = 'NNW'
+        profileStart = 'SSE'
+    elif profile_angle <= 360:
+        profileEnd = 'N'
+        profileStart = 'S'
+
+    if 'north' in profile_direction[:5] or 'east' in profile_direction[:5]:
+        ax.invert_xaxis()
+        #print('inverting')
+        #profileInt = profileEnd
+        #profileEnd = profileStart
+        #profileStart = profileInt
 
     plt.sca(ax)
     plt.figtext(0.1,0.95, s=profileStart)
