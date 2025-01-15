@@ -1881,7 +1881,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 peak_freq_range = hvsr_data['peak_freq_range']
 
                 # Do for hvsr
-                peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range)
+                peak = __init_peaks(x, y, index_list, hvsr_band, peak_freq_range, _min_peak_amp=0.5)
 
                 peak = __check_curve_reliability(hvsr_data, peak, col_id)
                 peak = __check_clarity(x, y, peak, do_rank=True)
@@ -1893,7 +1893,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 else:
                     index_p = list()
 
-                peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range)
+                peakp = __init_peaks(x, hvsrp, index_p, hvsr_band, peak_freq_range, _min_peak_amp=1)
                 peakp = __check_clarity(x, hvsrp, peakp, do_rank=True)
 
                 # Do for hvsrm
@@ -1903,12 +1903,12 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 else:
                     index_m = list()
 
-                peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range)
+                peakm = __init_peaks(x, hvsrm, index_m, hvsr_band, peak_freq_range, _min_peak_amp=0)
                 peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
                 # Get standard deviation of time peaks
                 stdf = __get_stdf(x, index_list, hvsrPeaks)
-
+                
                 peak = __check_freq_stability(peak, peakm, peakp)
                 peak = __check_stability(stdf, peak, hvsr_log_std, rank=True)
 
@@ -9224,8 +9224,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
 
             # Annotate all peaks
             if 'ann' in plot_type:
-                for i, p in enumerate(hvsr_data['hvsr_peak_freqs']):
-                    y = hvsr_data['hvsr_curve'][hvsr_data['hvsr_peak_indices'][i]]
+                for i, p in enumerate(hvsr_data['hvsr_peak_freqs'][azimuth]):
+                    y = hvsr_data['hvsr_curve'][hvsr_data['hvsr_peak_indices'][azimuth][i]]
                     ax.annotate('Peak at '+str(round(p,2))+'Hz', (p, 0.1), xycoords='data', 
                                     horizontalalignment='center', verticalalignment='bottom', 
                                     bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
@@ -10069,7 +10069,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
 
 # HELPER functions for checking peaks
 # Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=1):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=0):
     """ Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
