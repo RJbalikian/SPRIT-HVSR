@@ -1273,9 +1273,19 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     ax.set_ylim(yLims)
     ax.set_xlim(xLims)
     
+    xlabel = "H/V Ratio"
+    if normalize_curve:
+        xlabel += '\n(Normalized)' 
+    ax.set_xlabel('H/V Ratio')
+    ax.xaxis.set_label_position('top')
+    ax.set_title(hvsr_results['site'])
+
+    plt.sca(ax)
     if show_depth_curve:
         plt.show()
-    
+    else:
+        plt.close()
+        
     if depth_plot_export_path is not None:
         if isinstance(depth_plot_export_path, os.PathLike):
             fig.savefig(depth_plot_export_path)
@@ -1288,8 +1298,8 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',
                        grid_size='auto', orientation='WE', interpolation_type='cloughtocher',
-                       surface_elevations=None, show_peak_points=True, smooth_peak_points=False,
-                       depth_limit=150, minimum_elevation=None, 
+                       surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
+                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
                        return_data_batch=True, show_cross_section=True, verbose=False,
                        **kwargs):
     
@@ -1313,8 +1323,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if verbose:
         print("Getting data batch for cross section plot")
     batchExt = None
-    if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
-        batchExt = 'hvsr'
+    if not isinstance(hvsr_data, sprit_hvsr.HVSRBatch) :
+        if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+            batchExt = 'hvsr'
     hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
     
     if verbose:
@@ -1484,7 +1495,18 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if verbose:
         print('Data interpolated')
         print('Plotting colormesh')
-    ax.pcolormesh(xx, zz, interpDataflat, shading='flat', cmap='jet', zorder=0)
+    
+    
+    # kwargs-defined pcolormesh kwargs
+    pcolormeshKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plt.pcolormesh).parameters.keys())}
+    
+    # Set defaults for cmap and shading (if not overriden in kwargs)
+    if 'cmap' not in pcolormeshKwargs:
+        pcolormeshKwargs['cmap'] = 'nipy_spectral'
+    if 'shading' not in pcolormeshKwargs:
+        pcolormeshKwargs['shading'] = 'flat'
+                
+    ax.pcolormesh(xx, zz, interpDataflat, zorder=0, **pcolormeshKwargs)
     
     if show_curves:
         if verbose:
@@ -1501,6 +1523,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
             hvData['Normalized_HVCurve'] = (hvData['hvsr_curve'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
             locatedCurve = hvData['Normalized_HVCurve'] + hvData[ordercoord]
             if curve_alignment.lower() == 'peak':
+                normal_peak_factor = (hvData["BestPeak"]['HV']['A0'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
+                locatedCurve = locatedCurve  - normal_peak_factor
+            elif curve_alignment.lower() == 'max':
                 locatedCurve = locatedCurve  - normal_factor
             
             if max(locatedCurve) > max(gridXcoords):
@@ -1518,20 +1543,21 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
                 sitename = hvData.site
             ax.text(hvData[ordercoord], y=min_grid_elev, s=sitename, ha='right', va='bottom', rotation='vertical')
     
-    if smooth_peak_points:
-        show_peak_points = True
+    if smooth_bedrock_surface:
+        show_bedrock_surface = True
 
-    if show_peak_points:
+    if show_peak_points or show_bedrock_surface:
         brX = []
         brZ = []
         for hvData in hvDataSorted:
             if 'BedrockElevation' in hvData['Table_Report'].columns:
                 brX.append(hvData[ordercoord])
                 brZ.append(hvData['Table_Report'].loc[0,'BedrockElevation'][()])
-        ax.scatter(brX, brZ, zorder=5, c='k', marker='v')
+        if show_peak_points:
+            ax.scatter(brX, brZ, zorder=5, c='k', marker='v')
 
         
-        if smooth_peak_points:
+        if smooth_bedrock_surface:
             #brSurfZ = scipy.signal.savgol(brZ, window_length=len(brZ))
             if brX[0] > brX[-1]:
                 brX = np.flip(brX)
@@ -1548,8 +1574,10 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
             brSurfZ = brZ
         
         zMinPts = list(np.array(brSurfZ) * 0 + min(gridZcoords))
-        ax.fill_between(brSurfX, brSurfZ, zMinPts,facecolor='w', alpha=0.5, zorder=1)
-        ax.plot(brSurfX, brSurfZ, c='k', zorder=2)
+        
+        if show_bedrock_surface:
+            ax.fill_between(brSurfX, brSurfZ, zMinPts,facecolor='w', alpha=0.5, zorder=1)
+            ax.plot(brSurfX, brSurfZ, c='k', zorder=2)
         
     
     # Plot surfaces
