@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.0 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.1-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=60dbed4a"></script>
+        <script src="../../_static/documentation_options.js?v=6fddfc0f"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -73,6 +73,8 @@
   <h1>Source code for sprit.sprit_plot</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">import</span> <span class="nn">webbrowser</span>
@@ -81,17 +83,21 @@
 
 <span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
 <span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
 <span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">subplots</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span><span class="p">,</span> <span class="n">interpolate</span>
+<span class="kn">import</span> <span class="nn">shapely</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span> <span class="nn">sprit_calibration</span>
 <span class="k">except</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">sprit.sprit_hvsr</span> <span class="k">as</span> <span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span> <span class="nn">sprit.sprit_calibration</span> <span class="k">as</span> <span class="nn">sprit_calibration</span>
 
 <div class="viewcode-block" id="read_data">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.read_data">[docs]</a>
@@ -1268,6 +1274,561 @@
         <span class="n">outlier_fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">outlier_fig</span></div>
+
+
+<div class="viewcode-block" id="plot_depth_curve">
+<a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_depth_curve">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                     <span class="n">depth_limit</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">max_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">depth_plot_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                     <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">layout</span><span class="o">=</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Calibrated Depth to Interface&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s1">&#39;small&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labeltop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">surfElev</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;Elevation&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">bedrockElev</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;BedrockElevation&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">bedrockDepth</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;BedrockDepth&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">curveRange</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
+        <span class="n">curvePlot</span> <span class="o">=</span> <span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">))</span> <span class="o">/</span> <span class="n">curveRange</span>
+        <span class="n">xBase</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">xCap</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">xLims</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">curvePlot</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span>
+        <span class="n">xBase</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
+        <span class="n">xCap</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
+        <span class="n">xLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">xBase</span><span class="o">-</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">),</span> <span class="n">xCap</span><span class="o">+</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">)]</span>
+ 
+    <span class="k">if</span> <span class="n">use_elevation</span><span class="p">:</span>
+        <span class="n">yLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">depth_limit</span><span class="p">,</span>
+              <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">yVals</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [m]&#39;</span><span class="p">)</span>
+        <span class="n">bedrockVal</span> <span class="o">=</span> <span class="n">bedrockElev</span>
+        <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
+            <span class="c1">#Annotate surface elevation</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">surfElev</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">surfElev</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Annotate bedrock elevation</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">bedrockElev</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bedrockElev</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m</span><span class="se">\n</span><span class="s1"> elevation&#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Annotate bedrock depth</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">yLims</span><span class="p">),</span>
+                    <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m deep &#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">,</span>
+                    <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">yLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">depth_limit</span><span class="p">,</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_depth_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">yVals</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_depth_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [m]&#39;</span><span class="p">)</span>
+        <span class="n">bedrockVal</span> <span class="o">=</span> <span class="n">bedrockDepth</span>
+        <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
+            <span class="c1"># Annotate surface elevation</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">surfElev</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Annotate Bedrock elevation</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bedrockElev</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m</span><span class="se">\n</span><span class="s1">elevation&#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Annotate Bedrock depth</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">yLims</span><span class="p">)</span><span class="o">+</span><span class="n">bedrockDepth</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m deep&#39;</span><span class="p">,</span>
+                    <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">,</span>
+                    <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Plot curve</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_betweenx</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">yVals</span><span class="p">,</span> <span class="n">x1</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">show_feet</span><span class="p">:</span>
+        <span class="n">ax_ft</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+        <span class="n">ax_ft</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">yLims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">)</span>
+        <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [ft]&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_elevation</span><span class="p">:</span>
+            <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [ft]&#39;</span><span class="p">)</span>
+        
+    <span class="c1"># Plot peak location</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
+               <span class="n">xmin</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xCap</span><span class="p">,</span>
+               <span class="n">linestyles</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xBase</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xCap</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1"># Plot &quot;base&quot; line</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLims</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xLims</span><span class="p">)</span>
+    
+    <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;H/V Ratio&quot;</span>
+    <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
+        <span class="n">xlabel</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Normalized)&#39;</span> 
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;H/V Ratio&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">])</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">show_depth_curve</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+    <span class="k">if</span> <span class="n">depth_plot_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_plot_export_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">):</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">depth_plot_export_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Please specify a valid path for depth_plot_export_path, not </span><span class="si">{</span><span class="n">depth_plot_export_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Depth_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+    <span class="k">return</span> <span class="n">hvsr_results</span></div>
+
+
+<div class="viewcode-block" id="plot_cross_section">
+<a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_cross_section">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_cross_section</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">primary_unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> 
+                       <span class="n">show_curves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">annotate_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">curve_alignment</span><span class="o">=</span><span class="s1">&#39;peak&#39;</span><span class="p">,</span>
+                       <span class="n">grid_size</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;WE&#39;</span><span class="p">,</span> <span class="n">interpolation_type</span><span class="o">=</span><span class="s1">&#39;cloughtocher&#39;</span><span class="p">,</span>
+                       <span class="n">surface_elevations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_peak_points</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smooth_bedrock_surface</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">depth_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">minimum_elevation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_bedrock_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">return_data_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_cross_section</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting cross section plot configuration&quot;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">fig</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">get_axes</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">fig</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting data batch for cross section plot&quot;</span><span class="p">)</span>
+    <span class="n">batchExt</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">)</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="n">batchExt</span> <span class="o">=</span> <span class="s1">&#39;hvsr&#39;</span>
+    <span class="n">hvDataBatch</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">batch_ext</span><span class="o">=</span><span class="n">batchExt</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorting and Orienting data&quot;</span><span class="p">)</span>
+    <span class="c1"># Get orientation/order of data</span>
+    <span class="n">nsList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ns&#39;</span><span class="p">,</span> <span class="s2">&quot;north-south&quot;</span><span class="p">,</span> <span class="s1">&#39;northsouth&#39;</span><span class="p">,</span> <span class="s1">&#39;south&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
+    <span class="n">snList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sn&#39;</span><span class="p">,</span> <span class="s2">&quot;south-north&quot;</span><span class="p">,</span> <span class="s1">&#39;southnorth&#39;</span><span class="p">,</span> <span class="s1">&#39;north&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]</span>
+    <span class="n">weList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;we&#39;</span><span class="p">,</span> <span class="s2">&quot;west-east&quot;</span><span class="p">,</span> <span class="s1">&#39;westeast&#39;</span><span class="p">,</span> <span class="s1">&#39;east&#39;</span><span class="p">,</span> <span class="s1">&#39;e&#39;</span><span class="p">]</span>
+    <span class="n">ewList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ew&#39;</span><span class="p">,</span> <span class="s2">&quot;east-west&quot;</span><span class="p">,</span> <span class="s1">&#39;eastwest&#39;</span><span class="p">,</span> <span class="s1">&#39;west&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">orientation</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">nsList</span><span class="p">:</span>
+        <span class="n">ordercoord</span> <span class="o">=</span> <span class="s1">&#39;latitude&#39;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s1">&#39;descending&#39;</span>
+        <span class="n">profile_direction</span> <span class="o">=</span> <span class="s1">&#39;north-south&#39;</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">orientation</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">snList</span><span class="p">:</span>
+        <span class="n">ordercoord</span> <span class="o">=</span> <span class="s1">&#39;latitude&#39;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s1">&#39;ascending&#39;</span>
+        <span class="n">profile_direction</span>  <span class="o">=</span> <span class="s1">&#39;south-north&#39;</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">orientation</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">weList</span><span class="p">:</span>
+        <span class="n">ordercoord</span> <span class="o">=</span> <span class="s1">&#39;longitude&#39;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s1">&#39;ascending&#39;</span>
+        <span class="n">profile_direction</span> <span class="o">=</span> <span class="s1">&#39;west-east&#39;</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">orientation</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ewList</span><span class="p">:</span>
+        <span class="n">ordercoord</span> <span class="o">=</span> <span class="s1">&#39;longitude&#39;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s1">&#39;descending&#39;</span>
+        <span class="n">profile_direction</span> <span class="o">=</span> <span class="s1">&#39;east-west&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for orientation=</span><span class="si">{</span><span class="n">orientation</span><span class="si">}</span><span class="s2"> is not recognized. Using West-East orientation.&quot;</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s1">&#39;ascending&#39;</span>
+        <span class="n">ordercoord</span><span class="o">=</span><span class="s1">&#39;longitude&#39;</span>
+        <span class="n">profile_direction</span> <span class="o">=</span> <span class="s1">&#39;west-east (default)&#39;</span>
+
+    <span class="c1"># Get data in correct order, as specified by orientation parameter</span>
+    <span class="n">reverseit</span> <span class="o">=</span> <span class="p">(</span><span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;descending&#39;</span><span class="p">)</span>
+    <span class="n">sorted_sites</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">hvDataBatch</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">site</span><span class="p">:</span> <span class="n">hvDataBatch</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverseit</span><span class="p">)</span>
+    <span class="n">hvDataSorted</span> <span class="o">=</span> <span class="p">[</span><span class="n">hvDataBatch</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">sorted_sites</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plotting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hvDataBatch</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span><span class="si">}</span><span class="s1"> sites, </span><span class="si">{</span><span class="n">profile_direction</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="p">[</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">hvdata</span><span class="o">.</span><span class="n">site</span><span class="p">[:</span><span class="mi">12</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;12</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">hvdata</span><span class="o">.</span><span class="n">longitude</span><span class="si">:</span><span class="s2">&gt;8.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hvdata</span><span class="o">.</span><span class="n">latitude</span><span class="si">:</span><span class="s2">&gt;8.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hvdata</span><span class="o">.</span><span class="n">elevation</span><span class="si">:</span><span class="s2">&lt;6.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">hvdata</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">]</span>
+
+    <span class="c1"># Get cross section profile</span>
+    <span class="n">shapelyPoints</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">interpData</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">interpCoords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;longitude&#39;</span><span class="p">:[],</span> <span class="s1">&#39;latitude&#39;</span><span class="p">:[],</span> <span class="s1">&#39;elevation&#39;</span><span class="p">:[]}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hvData</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvDataSorted</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="s1">&#39;x_elev_m&#39;</span><span class="p">):</span>
+            <span class="n">calc_depth_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+            <span class="n">hvData</span> <span class="o">=</span> <span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="o">**</span><span class="n">calc_depth_kwargs</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        
+        <span class="c1">#print(hvData[&#39;longitude&#39;], hvData[&#39;latitude&#39;])</span>
+        <span class="c1"># Create shapely Point objects at each profile location</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span>
+
+        <span class="n">shapelyPoints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shapely</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+
+        <span class="c1">#Points arranged for interpolation</span>
+        <span class="n">interpData</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">hvData</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvData</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">):</span>
+            <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1">#Since already doing loop, ensure hvData has all depth/elev info it needs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="s1">&#39;x_elev_m&#39;</span><span class="p">):</span>
+            <span class="n">calc_depth_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                      <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+            <span class="k">if</span> <span class="s1">&#39;calculate_depth_in_feet&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">calc_depth_kwargs</span><span class="p">:</span>
+                <span class="n">calc_depth_kwargs</span><span class="p">[</span><span class="s1">&#39;calculate_depth_in_feet&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">hvDataSorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="o">**</span><span class="n">calc_depth_kwargs</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="n">xSectionProfile</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">LineString</span><span class="p">(</span><span class="n">shapelyPoints</span><span class="p">)</span>
+    <span class="n">profileXs</span><span class="p">,</span> <span class="n">profileYs</span> <span class="o">=</span> <span class="n">xSectionProfile</span><span class="o">.</span><span class="n">xy</span>
+    
+    <span class="n">orderCoordValues</span> <span class="o">=</span> <span class="n">profileXs</span>
+    <span class="k">if</span> <span class="n">ordercoord</span> <span class="o">==</span> <span class="s1">&#39;latitude&#39;</span><span class="p">:</span>
+        <span class="n">orderCoordValues</span> <span class="o">=</span> <span class="n">profileYs</span>
+
+    <span class="n">minX</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">profileXs</span><span class="p">)</span>
+    <span class="n">minY</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">profileYs</span><span class="p">)</span>
+    <span class="n">maxX</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">profileXs</span><span class="p">)</span>
+    <span class="n">maxY</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">profileYs</span><span class="p">)</span>
+
+    <span class="c1"># Generate grid</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating Grid: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">xSectionLength</span> <span class="o">=</span> <span class="n">xSectionProfile</span><span class="o">.</span><span class="n">length</span>
+    <span class="k">if</span> <span class="n">grid_size</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+        <span class="n">grid_size</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">cellHNumber</span> <span class="o">=</span> <span class="n">grid_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cellWNumber</span> <span class="o">=</span> <span class="n">grid_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid_size</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">cellHNumber</span> <span class="o">=</span> <span class="n">grid_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cellWNumber</span> <span class="o">=</span> <span class="n">grid_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">grid_size</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">cellHNumber</span> <span class="o">=</span> <span class="n">grid_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cellWNumber</span> <span class="o">=</span> <span class="n">xSectionLength</span><span class="o">/</span><span class="n">grid_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;grid_size value (</span><span class="si">{</span><span class="n">grid_size</span><span class="si">}</span><span class="s1"> not recognized, using grid 100 cells wide and 50 cells high: grid_size=(50, 100))&#39;</span><span class="p">)</span>
+
+    <span class="n">cellWSize</span> <span class="o">=</span> <span class="n">xSectionLength</span><span class="o">/</span><span class="n">cellWNumber</span>
+    
+    <span class="n">max_surf_elev</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">hvd</span><span class="o">.</span><span class="n">elevation</span> <span class="k">for</span> <span class="n">hvd</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">])</span>
+    <span class="n">min_br_elev</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">hvd</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;Peak&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">hvd</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">])</span>
+    <span class="n">elev_range</span> <span class="o">=</span> <span class="n">max_surf_elev</span> <span class="o">-</span> <span class="n">min_br_elev</span>
+
+    <span class="n">max_grid_elev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">max_surf_elev</span><span class="p">)</span>
+
+    <span class="c1"># Minimum grid elevation is determined by depth_limit and minimum_elevation</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">minimum_elevation</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+        <span class="n">min_grid_elev</span> <span class="o">=</span> <span class="n">min_br_elev</span> <span class="o">-</span> <span class="p">(</span><span class="n">elev_range</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minimum_elevation</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
+        <span class="n">min_grid_elev</span> <span class="o">=</span> <span class="n">minimum_elevation</span>
+    <span class="k">elif</span> <span class="n">minimum_elevation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">min_grid_elev</span> <span class="o">=</span> <span class="n">max_grid_elev</span> <span class="o">-</span> <span class="n">depth_limit</span>
+    
+    <span class="n">xSectionDepth</span> <span class="o">=</span> <span class="n">max_grid_elev</span> <span class="o">-</span> <span class="n">min_grid_elev</span>
+    <span class="n">cellHSize</span> <span class="o">=</span> <span class="n">xSectionDepth</span><span class="o">/</span><span class="n">cellHNumber</span>
+
+    <span class="c1"># Get grid coordinates (all coords in z direction (depth/elev))</span>
+    <span class="n">gridZcoords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_grid_elev</span><span class="p">,</span> <span class="n">max_grid_elev</span><span class="p">,</span> <span class="n">cellHNumber</span><span class="p">)</span>
+
+    <span class="n">gridXDists</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xSectionProfile</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">cellWNumber</span><span class="p">)</span>
+    <span class="n">gridXcoords</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># All coords in the &quot;x&quot; direction (along profile)</span>
+    <span class="k">for</span> <span class="n">xdist</span> <span class="ow">in</span> <span class="n">gridXDists</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">xSectionProfile</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">xdist</span><span class="p">)</span><span class="o">.</span><span class="n">xy</span>
+        <span class="k">if</span> <span class="s1">&#39;east&#39;</span> <span class="ow">in</span> <span class="n">profile_direction</span><span class="p">:</span>
+            <span class="n">gridXcoords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gridXcoords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">gridXcoords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grid generated (</span><span class="si">{</span><span class="n">cellWNumber</span><span class="o">*</span><span class="n">cellHNumber</span><span class="si">}</span><span class="s1"> cells)</span><span class="se">\n\t</span><span class="s1">x-range: </span><span class="si">{</span><span class="n">xSectionLength</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">cellWNumber</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1"> cells, each </span><span class="si">{</span><span class="n">cellWSize</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> units in size)</span><span class="se">\n\t</span><span class="s1">z-range: </span><span class="si">{</span><span class="n">xSectionDepth</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">cellHNumber</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1"> cells, each </span><span class="si">{</span><span class="n">cellHSize</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> units in size)&#39;</span><span class="p">)</span>
+
+    <span class="c1">#print(&#39;x&#39;, len(interpCoords[&#39;longitude&#39;]))</span>
+    <span class="c1">#print(&#39;y&#39;, len(interpCoords[&#39;latitude&#39;]))</span>
+    <span class="c1">#print(&#39;z&#39;, len(interpCoords[&#39;elevation&#39;]))</span>
+    <span class="c1">#print(&#39;interp&#39;, np.array(interpData).shape)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Beginning interpolation (</span><span class="si">{</span><span class="n">interpolation_type</span><span class="si">}</span><span class="s1">)... &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="n">ctList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cloughtocher2dinterpolator&#39;</span><span class="p">,</span> <span class="s1">&#39;cloughtocher&#39;</span><span class="p">,</span> <span class="s1">&#39;ct&#39;</span><span class="p">,</span> <span class="s1">&#39;clough-tocher&#39;</span><span class="p">,</span> <span class="s1">&#39;clough tocher&#39;</span><span class="p">,</span> <span class="s1">&#39;cubic&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
+    <span class="n">nearList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nearestnd&#39;</span><span class="p">,</span> <span class="s1">&#39;nearest&#39;</span><span class="p">,</span> <span class="s1">&#39;near&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]</span>
+    <span class="n">linList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;linearnd&#39;</span><span class="p">,</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;lin&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">]</span>
+    <span class="n">rbfList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;radial basis function&#39;</span><span class="p">,</span> <span class="s1">&#39;rbf&#39;</span><span class="p">,</span> <span class="s1">&#39;rbfinterpolator&#39;</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpolation_type</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ctList</span><span class="p">:</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">CloughTocher2DInterpolator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">interpCoords</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">])),</span> <span class="n">interpData</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpolation_type</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">nearList</span><span class="p">:</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">NearestNDInterpolator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">interpCoords</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">])),</span> <span class="n">interpData</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpolation_type</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">rbfList</span><span class="p">:</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RBFInterpolator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">interpCoords</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">])),</span> <span class="n">interpData</span><span class="p">)</span>        
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpolation_type</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">linList</span><span class="p">:</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">LinearNDInterpolator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">interpCoords</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">interpCoords</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">])),</span> <span class="n">interpData</span><span class="p">)</span>
+        
+    <span class="n">xx</span><span class="p">,</span> <span class="n">zz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">,</span> <span class="n">gridZcoords</span><span class="p">)</span>
+    <span class="n">interpData</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">zz</span><span class="p">)</span>
+    <span class="n">interpDataflat</span> <span class="o">=</span> <span class="n">interpData</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Data interpolated&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plotting colormesh&#39;</span><span class="p">)</span>
+    
+    
+    <span class="c1"># kwargs-defined pcolormesh kwargs</span>
+    <span class="n">pcolormeshKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+    
+    <span class="c1"># Set defaults for cmap and shading (if not overriden in kwargs)</span>
+    <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
+        <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;nipy_spectral&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;shading&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
+        <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;shading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;flat&#39;</span>
+                
+    <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">zz</span><span class="p">,</span> <span class="n">interpDataflat</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">pcolormeshKwargs</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">show_curves</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plotting curves&#39;</span><span class="p">)</span>
+        <span class="n">norm_div</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">normal_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">orderCoordValues</span><span class="p">)</span>
+        <span class="n">normal_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">normal_factor</span><span class="p">[</span><span class="n">normal_factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">norm_div</span>
+        
+        <span class="n">zAttr</span> <span class="o">=</span> <span class="s1">&#39;x_depth_m&#39;</span>
+        <span class="k">if</span> <span class="n">use_elevation</span><span class="p">:</span>
+            <span class="n">zAttr</span> <span class="o">=</span> <span class="s1">&#39;x_elev_m&#39;</span>
+
+        <span class="k">for</span> <span class="n">hvData</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">:</span>
+            <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Normalized_HVCurve&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">]))</span> <span class="o">*</span> <span class="n">normal_factor</span>
+            <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Normalized_HVCurve&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">hvData</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">curve_alignment</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;peak&#39;</span><span class="p">:</span>
+                <span class="n">normal_peak_factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s2">&quot;BestPeak&quot;</span><span class="p">][</span><span class="s1">&#39;HV&#39;</span><span class="p">][</span><span class="s1">&#39;A0&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">]))</span> <span class="o">*</span> <span class="n">normal_factor</span>
+                <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span>  <span class="o">-</span> <span class="n">normal_peak_factor</span>
+            <span class="k">elif</span> <span class="n">curve_alignment</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
+                <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span>  <span class="o">-</span> <span class="n">normal_factor</span>
+            
+            <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">):</span>
+                <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span> <span class="o">-</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">)</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">):</span>
+                <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span> <span class="o">+</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">))</span>
+                
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">,</span> <span class="n">hvData</span><span class="p">[</span><span class="n">zAttr</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">annotate_curves</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">hvData</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">sitename</span> <span class="o">=</span> <span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="o">+</span> <span class="s1">&#39;...&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sitename</span> <span class="o">=</span> <span class="n">hvData</span><span class="o">.</span><span class="n">site</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">min_grid_elev</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">sitename</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">smooth_bedrock_surface</span><span class="p">:</span>
+        <span class="n">show_bedrock_surface</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">show_peak_points</span> <span class="ow">or</span> <span class="n">show_bedrock_surface</span><span class="p">:</span>
+        <span class="n">brX</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">brZ</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">hvData</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;BedrockElevation&#39;</span> <span class="ow">in</span> <span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">brX</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">])</span>
+                <span class="n">brZ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;BedrockElevation&#39;</span><span class="p">][()])</span>
+        <span class="k">if</span> <span class="n">show_peak_points</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">brX</span><span class="p">,</span> <span class="n">brZ</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;v&#39;</span><span class="p">)</span>
+
+        
+        <span class="k">if</span> <span class="n">smooth_bedrock_surface</span><span class="p">:</span>
+            <span class="c1">#brSurfZ = scipy.signal.savgol(brZ, window_length=len(brZ))</span>
+            <span class="k">if</span> <span class="n">brX</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">brX</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">brX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">brX</span><span class="p">)</span>
+                <span class="n">brZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">brZ</span><span class="p">)</span>
+                <span class="n">doFlip</span><span class="o">=</span><span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">doFlip</span><span class="o">=</span><span class="kc">False</span>
+                
+            <span class="n">newX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">)</span>
+            <span class="n">brSurfZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">newX</span><span class="p">,</span> <span class="n">brX</span><span class="p">,</span> <span class="n">brZ</span><span class="p">)</span>
+            <span class="n">brSurfX</span> <span class="o">=</span> <span class="n">newX</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">brSurfX</span> <span class="o">=</span> <span class="n">brX</span>
+            <span class="n">brSurfZ</span> <span class="o">=</span> <span class="n">brZ</span>
+        
+        <span class="n">zMinPts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">brSurfZ</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">gridZcoords</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">show_bedrock_surface</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">brSurfX</span><span class="p">,</span> <span class="n">brSurfZ</span><span class="p">,</span> <span class="n">zMinPts</span><span class="p">,</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">brSurfX</span><span class="p">,</span> <span class="n">brSurfZ</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        
+    
+    <span class="c1"># Plot surfaces</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plotting surfaces&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">surface_elevations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">surfPts_shapely</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">surfPtsX</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">surfPtsZ</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="n">surface_elevations</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">LineString</span><span class="p">([</span><span class="n">shapely</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">],</span> 
+                                                               <span class="n">hvData</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">],</span> 
+                                                               <span class="n">hvData</span><span class="p">[</span><span class="s2">&quot;elevation&quot;</span><span class="p">])</span> 
+                                                 <span class="k">for</span> <span class="n">hvData</span> <span class="ow">in</span> <span class="n">hvDataSorted</span><span class="p">])</span>
+    
+    <span class="n">xPts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">zPts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">surf_pt</span> <span class="ow">in</span> <span class="n">surface_elevations</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+        <span class="n">surfPtDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;longitude&#39;</span><span class="p">:</span><span class="n">surf_pt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                      <span class="s1">&#39;latitude&#39;</span><span class="p">:</span> <span class="n">surf_pt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                      <span class="s1">&#39;elevation&#39;</span><span class="p">:</span> <span class="n">surf_pt</span><span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
+        <span class="n">xPts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surfPtDict</span><span class="p">[</span><span class="n">ordercoord</span><span class="p">])</span>
+        <span class="n">zPts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surfPtDict</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">])</span>
+    
+    <span class="n">zMaxPts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">zPts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span> <span class="o">+</span> <span class="n">max_grid_elev</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">xPts</span><span class="p">,</span> <span class="n">zPts</span><span class="p">,</span> <span class="n">zMaxPts</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xPts</span><span class="p">,</span> <span class="n">zPts</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1001</span><span class="p">)</span>
+
+    <span class="c1"># Plot configuration</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Configuring plot&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="nb">min</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">)])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="n">min_grid_elev</span><span class="p">,</span> <span class="n">max_grid_elev</span><span class="p">])</span>
+    
+    
+    <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labeltop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ordercoord</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [Meters]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;HVSR Cross Section Profile&#39;</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate angle</span>
+    <span class="n">profile_angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">shapelyPoints</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">shapelyPoints</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">shapelyPoints</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">shapelyPoints</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+    <span class="c1">#Convert angle to geographic coordinates</span>
+    <span class="n">profile_angle</span> <span class="o">=</span> <span class="p">(</span><span class="n">profile_angle</span><span class="o">*-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">90</span>
+    <span class="k">if</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">profile_angle</span> <span class="o">+=</span> <span class="mi">360</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calculated profile angle to be </span><span class="si">{</span><span class="n">profile_angle</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> degrees.&quot;</span><span class="p">)</span>
+    <span class="c1"># Calculate nomencalture</span>
+    <span class="k">if</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;NNE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;SSW&#39;</span>        
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;NE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;SW&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;ENE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;WSW&#39;</span>        
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;E&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;W&#39;</span>        
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;ESE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;WNW&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;SE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;NW&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;SSE&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;NNW&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">9</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;SSW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;NNE&#39;</span>        
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">11</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;SW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;NE&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">12</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;WSW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;ENE&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">13</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;W&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;E&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">14</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;WNW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;ESE&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">15</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;NW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;SE&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">11.25</span> <span class="o">+</span> <span class="mf">22.5</span> <span class="o">*</span> <span class="mi">16</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;NNW&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;SSE&#39;</span>
+    <span class="k">elif</span> <span class="n">profile_angle</span> <span class="o">&lt;=</span> <span class="mi">360</span><span class="p">:</span>
+        <span class="n">profileEnd</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+        <span class="n">profileStart</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;north&#39;</span> <span class="ow">in</span> <span class="n">profile_direction</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;east&#39;</span> <span class="ow">in</span> <span class="n">profile_direction</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">invert_xaxis</span><span class="p">()</span>
+        <span class="c1">#print(&#39;inverting&#39;)</span>
+        <span class="c1">#profileInt = profileEnd</span>
+        <span class="c1">#profileEnd = profileStart</span>
+        <span class="c1">#profileStart = profileInt</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">profileStart</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">profileEnd</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">show_cross_section</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Displaying plot&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        
+    <span class="k">if</span> <span class="n">return_data_batch</span><span class="p">:</span>
+        <span class="n">hvBatch</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvDataSorted</span><span class="p">)</span>
+        <span class="n">hvBatch</span><span class="p">[</span><span class="s1">&#39;Cross_Section_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+        <span class="k">return</span> <span class="n">hvBatch</span>
+            
+    <span class="k">return</span> <span class="n">fig</span></div>
 
 </pre></div>
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 2.0 documentation</title>
+  <title>sprit.sprit_hvsr module &mdash; sprit 2.1-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=60dbed4a"></script>
+        <script src="_static/documentation_options.js?v=6fddfc0f"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -50,6 +50,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.assert_check"><code class="docutils literal notranslate"><span class="pre">assert_check()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calculate_azimuth"><code class="docutils literal notranslate"><span class="pre">calculate_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calculate_depth"><code class="docutils literal notranslate"><span class="pre">calculate_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calibrate"><code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.check_gui_requirements"><code class="docutils literal notranslate"><span class="pre">check_gui_requirements()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
@@ -75,6 +77,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.make_it_classy"><code class="docutils literal notranslate"><span class="pre">make_it_classy()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_azimuth"><code class="docutils literal notranslate"><span class="pre">plot_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_depth_curve"><code class="docutils literal notranslate"><span class="pre">plot_depth_curve()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_hvsr"><code class="docutils literal notranslate"><span class="pre">plot_hvsr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
@@ -86,8 +90,10 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.x_mark"><code class="docutils literal notranslate"><span class="pre">x_mark()</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">sprit.sprit_hvsr module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch"><code class="docutils literal notranslate"><span class="pre">HVSRBatch</span></code></a></li>
@@ -118,6 +124,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.test_function"><code class="docutils literal notranslate"><span class="pre">test_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
@@ -183,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.test_function"><code class="docutils literal notranslate"><span class="pre">test_function()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
@@ -1081,7 +1089,7 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.import_data">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">import_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pickle'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#import_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.import_data" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">import_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pickle'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#import_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.import_data" title="Link to this definition">¶</a></dt>
 <dd><p>Function to import .hvsr (or other extension) data exported using export_data() function</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1107,7 +1115,7 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.input_params">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2024-11-09'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">11,</span> <span class="pre">9,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">11,</span> <span class="pre">9,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.input_params" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2025-01-15'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">1,</span> <span class="pre">15,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">1,</span> <span class="pre">15,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.input_params" title="Link to this definition">¶</a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1603,11 +1611,11 @@ See API documentation: [input_params()](<a class="reference external" href="http
 </dd>
 <dt><strong>channels: any, default = [‘EHZ’, ‘EHN’, ‘EHE’]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>acq_date: any, default = ‘2024-11-09’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>acq_date: any, default = ‘2025-01-15’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>starttime: any, default = 2024-11-09T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>starttime: any, default = 2025-01-15T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>endtime: any, default = 2024-11-09T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>endtime: any, default = 2025-01-15T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>tzone: any, default = ‘UTC’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
@@ -1886,6 +1894,33 @@ See API documentation: [export_data()](<a class="reference external" href="https
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.test_function">
 <span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">test_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#test_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.test_function" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.update_elevation">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">update_elevation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_surface_elevation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_elevation_unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#update_elevation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.update_elevation" title="Link to this definition">¶</a></dt>
+<dd><p>Function to quickly update all attributes associated with elevation of an HVSRData object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hvsr_data</strong><span class="classifier">HVSRData or HVSRBatch</span></dt><dd><p>HVSRData or HVSRBatch object containing attributes related to elevation.
+If HVSRBatch, updated_surface_elevation should be list or tuple and 
+updated_elevation_unit may either be str or  list/tuple of strings.</p>
+</dd>
+<dt><strong>updated_surface_elevation</strong><span class="classifier">numbers.Number</span></dt><dd><p>Number (float or int) with the updated elevation.
+Meters is the preferred unit. If feet are used instead, it will be converted to meters.</p>
+</dd>
+<dt><strong>updated_elevation_unit</strong><span class="classifier">str</span></dt><dd><p>Unit used for updated_surface_elevation. If ‘feet’, it will be converted to meters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRData</dt><dd><p>HVSRData object with all attributes related to elevation updated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

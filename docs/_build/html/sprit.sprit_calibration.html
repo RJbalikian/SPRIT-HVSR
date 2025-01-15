@@ -4,23 +4,23 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_tkinter_ui module &mdash; sprit 2.1-dev documentation</title>
-      <link rel="stylesheet" type="text/css" href="pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="theme.css?v=19f00094" />
+  <title>sprit.sprit_calibration module &mdash; sprit 2.1-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
-    <script src="html5shiv.min.js"></script>
+    <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="documentation_options.js?v=6fddfc0f"></script>
-        <script src="doctools.js?v=9a2dae69"></script>
-        <script src="sphinx_highlight.js?v=dc90522c"></script>
-    <script src="theme.js"></script>
+        <script src="_static/documentation_options.js?v=6fddfc0f"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="sprit.sprit_utils module" href="sprit.sprit_utils.html" />
-    <link rel="prev" title="sprit.sprit_streamlit_ui module" href="sprit.sprit_streamlit_ui.html" /> 
+    <link rel="next" title="sprit.sprit_cli module" href="sprit.sprit_cli.html" />
+    <link rel="prev" title="sprit package" href="sprit.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -93,19 +93,18 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.x_mark"><code class="docutils literal notranslate"><span class="pre">x_mark()</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">sprit.sprit_calibration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_calibration.calculate_depth"><code class="docutils literal notranslate"><span class="pre">calculate_depth()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_calibration.calibrate"><code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_calibration.power_law"><code class="docutils literal notranslate"><span class="pre">power_law()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_plot.html">sprit.sprit_plot module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">sprit.sprit_tkinter_ui module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_tkinter_ui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_tkinter_ui.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_tkinter_ui.on_closing"><code class="docutils literal notranslate"><span class="pre">on_closing()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_tkinter_ui.reboot_app"><code class="docutils literal notranslate"><span class="pre">reboot_app()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
 </ul>
 </li>
@@ -130,9 +129,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="sprit.html">sprit package</a></li>
-      <li class="breadcrumb-item active">sprit.sprit_tkinter_ui module</li>
+      <li class="breadcrumb-item active">sprit.sprit_calibration module</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/sprit.sprit_tkinter_ui.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/sprit.sprit_calibration.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -140,73 +139,63 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-sprit.sprit_tkinter_ui">
-<span id="sprit-sprit-tkinter-ui-module"></span><h1>sprit.sprit_tkinter_ui module<a class="headerlink" href="#module-sprit.sprit_tkinter_ui" title="Link to this heading">¶</a></h1>
-<p>This script contains all the functions, classes, etc. to create a tkinter app for graphical user interface.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.SPRIT_App">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.sprit_tkinter_ui.</span></span><span class="sig-name descname"><span class="pre">SPRIT_App</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#SPRIT_App"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.SPRIT_App" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_tkinter_ui.SPRIT_App.log_errorMsg" title="sprit.sprit_tkinter_ui.SPRIT_App.log_errorMsg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_errorMsg</span></code></a>(logMsg)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_tkinter_ui.SPRIT_App.manual_label_update" title="sprit.sprit_tkinter_ui.SPRIT_App.manual_label_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">manual_label_update</span></code></a>()</p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
-<table class="docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><strong>create_menubar</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>create_tabs</strong></p></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<dl class="py method">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.SPRIT_App.create_menubar">
-<span class="sig-name descname"><span class="pre">create_menubar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#SPRIT_App.create_menubar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.SPRIT_App.create_menubar" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.SPRIT_App.create_tabs">
-<span class="sig-name descname"><span class="pre">create_tabs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#SPRIT_App.create_tabs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.SPRIT_App.create_tabs" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.SPRIT_App.log_errorMsg">
-<span class="sig-name descname"><span class="pre">log_errorMsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logMsg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#SPRIT_App.log_errorMsg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.SPRIT_App.log_errorMsg" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.SPRIT_App.manual_label_update">
-<span class="sig-name descname"><span class="pre">manual_label_update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#SPRIT_App.manual_label_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.SPRIT_App.manual_label_update" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
+  <section id="module-sprit.sprit_calibration">
+<span id="sprit-sprit-calibration-module"></span><h1>sprit.sprit_calibration module<a class="headerlink" href="#module-sprit.sprit_calibration" title="Link to this heading">¶</a></h1>
+<p>This module will be used for calibration of the ambient HVSR data acquired near wells 
+to derive a relation between the resonant frequency and the depth to bedrock beneath the subsurface.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_calibration.calculate_depth">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_calibration.</span></span><span class="sig-name descname"><span class="pre">calculate_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ISGS_All'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Peak'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_depth_in_feet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_depth_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_elevation_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Elevation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_elevation_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BedrockElevation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BedrockDepth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swave_velocity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">563.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimal_places</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_model_in_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calculate_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_calibration.calculate_depth" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>freq_input</strong><span class="classifier">HVSRData, HVSRBatch, float, or filepath, optional</span></dt><dd><p>Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}</p>
+</dd>
+<dt><strong>depth_model</strong><span class="classifier">str, tuple, list, or dict, optional</span></dt><dd><p>Model describing a relationship between frequency and depth, by default “ISGS_All”</p>
+</dd>
+<dt><strong>calculate_depth_in_feet</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate depth in feet (in addition to meters, which is done by default)</p>
+</dd>
+<dt><strong>freq_col</strong><span class="classifier">str, optional</span></dt><dd><p>Name of the column containing the frequency information of the peak, by default “Peak” (per HVSRData.Table_Report output)</p>
+</dd>
+<dt><strong>calculate_elevation</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether or not to calculate elevation, by default True</p>
+</dd>
+<dt><strong>surface_elevation_data</strong><span class="classifier">str or numeric, optional</span></dt><dd><p>The name of the column or a manually specified numeric value to use for the surface elevation value, by default “Elevation”</p>
+</dd>
+<dt><strong>bedrock_elevation_column</strong><span class="classifier">str, optional</span></dt><dd><p>The name of the column in the TableReport for the bedrock elevation of the point.
+This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default “BedrockElevation”</p>
+</dd>
+<dt><strong>depth_column</strong><span class="classifier">str, optional</span></dt><dd><p>_description_, by default “BedrockDepth”</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether or not to print information about the processing to the terminal, by default False</p>
+</dd>
+<dt><strong>export_path</strong><span class="classifier">_type_, optional</span></dt><dd><p>_description_, by default None</p>
+</dd>
+<dt><strong>swave_velocity</strong><span class="classifier">float, optional</span></dt><dd><p>Shear wave velocity to use for depth calculations in meters/second, 
+if using the quarter wavelength shear wave velocity method, by default 563.0</p>
+</dd>
+<dt><strong>decimal_places</strong><span class="classifier">int, optional</span></dt><dd><p>Number of decimal places to round depth results, by default 3</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRBatch or list if those are input; otherwise, HVSRData object</dt><dd><p>The returns are the same type as freq_input, except filepath which returns pandas.DataFrame</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.catch_errors">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_tkinter_ui.</span></span><span class="sig-name descname"><span class="pre">catch_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#catch_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.catch_errors" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="sprit.sprit_calibration.calibrate">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_calibration.</span></span><span class="sig-name descname"><span class="pre">calibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calib_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'power'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PeakFrequency'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bed_depth_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Bedrock_Depth'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_calibration.calibrate" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.on_closing">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_tkinter_ui.</span></span><span class="sig-name descname"><span class="pre">on_closing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#on_closing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.on_closing" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="sprit.sprit_calibration.power_law">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_calibration.</span></span><span class="sig-name descname"><span class="pre">power_law</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#power_law"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_calibration.power_law" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="sprit.sprit_tkinter_ui.reboot_app">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_tkinter_ui.</span></span><span class="sig-name descname"><span class="pre">reboot_app</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_tkinter_ui.html#reboot_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_tkinter_ui.reboot_app" title="Link to this definition">¶</a></dt>
-<dd><p>Restarts the current program.
-Note: this function does not return. Any cleanup action (like
-saving data) must be done before calling this function.</p>
-</dd></dl>
 
 </section>
 
@@ -214,8 +203,8 @@ saving data) must be done before calling this function.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="sprit.sprit_streamlit_ui.html" class="btn btn-neutral float-left" title="sprit.sprit_streamlit_ui module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="sprit.sprit_utils.html" class="btn btn-neutral float-right" title="sprit.sprit_utils module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="sprit.html" class="btn btn-neutral float-left" title="sprit package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sprit.sprit_cli.html" class="btn btn-neutral float-right" title="sprit.sprit_cli module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

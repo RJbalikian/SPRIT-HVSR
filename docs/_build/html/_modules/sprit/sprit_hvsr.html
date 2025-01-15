@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.0 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.1-dev documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=60dbed4a"></script>
+        <script src="../../_static/documentation_options.js?v=6fddfc0f"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -90,6 +90,7 @@
 <span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">pkg_resources</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">struct</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
@@ -126,8 +127,9 @@
 <span class="n">DEFAULT_PLOT_STR</span> <span class="o">=</span> <span class="s2">&quot;HVSR p ann COMP+ p ann SPEC p ann&quot;</span>
 <span class="n">OBSPY_FORMATS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_PSE&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTN&#39;</span><span class="p">,</span> <span class="s1">&#39;CSS&#39;</span><span class="p">,</span> <span class="s1">&#39;DMX&#39;</span><span class="p">,</span> <span class="s1">&#39;GCF&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE1&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE2&#39;</span><span class="p">,</span> <span class="s1">&#39;KINEMETRICS_EVT&#39;</span><span class="p">,</span> <span class="s1">&#39;KNET&#39;</span><span class="p">,</span> <span class="s1">&#39;MSEED&#39;</span><span class="p">,</span> <span class="s1">&#39;NNSA_KB_CORE&#39;</span><span class="p">,</span> <span class="s1">&#39;PDAS&#39;</span><span class="p">,</span> <span class="s1">&#39;PICKLE&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;REFTEK130&#39;</span><span class="p">,</span> <span class="s1">&#39;RG16&#39;</span><span class="p">,</span> <span class="s1">&#39;SAC&#39;</span><span class="p">,</span> <span class="s1">&#39;SACXY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEG2&#39;</span><span class="p">,</span> <span class="s1">&#39;SEGY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEISAN&#39;</span><span class="p">,</span> <span class="s1">&#39;SH_ASC&#39;</span><span class="p">,</span> <span class="s1">&#39;SLIST&#39;</span><span class="p">,</span> <span class="s1">&#39;SU&#39;</span><span class="p">,</span> <span class="s1">&#39;TSPAIR&#39;</span><span class="p">,</span> <span class="s1">&#39;WAV&#39;</span><span class="p">,</span> <span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">]</span>
 
+
 <span class="c1"># Resources directory path, and the other paths as well</span>
-<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/&#39;</span><span class="p">))</span>
+<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources&#39;</span><span class="p">))</span>
 <span class="n">SAMPLE_DATA_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;sample_data&#39;</span><span class="p">)</span>
 <span class="n">SETTINGS_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;settings&#39;</span><span class="p">)</span>
 
@@ -175,10 +177,10 @@
                     <span class="s1">&#39;sample_7&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;sample_8&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;sample_9&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_10&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;sample_10&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED&#39;</span><span class="p">),</span>
                     
-                    <span class="s1">&#39;batch&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)}</span>
-
+                    <span class="s1">&#39;batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;sample_batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)}</span>
 
 <span class="c1"># CLASSES</span>
 <span class="c1"># Check if the data is already the right class</span>
@@ -215,25 +217,78 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nd">@check_instance</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_input</span><span class="p">,</span> <span class="n">batch_ext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;HVSR Batch initializer</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        batch_dict : dict</span>
+<span class="sd">        batch_input : dict, list, or tuple</span>
 <span class="sd">            Dictionary containing Key value pairs with {sitename: HVSRData object}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span> <span class="o">=</span> <span class="n">batch_dict</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_input</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">batch_input</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_input</span> <span class="o">=</span> <span class="n">batch_input</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_input</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_df</span> <span class="o">=</span> <span class="n">df_as_read</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_df</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="kc">True</span>
         
-        <span class="k">for</span> <span class="n">sitename</span><span class="p">,</span> <span class="n">hvsrdata</span> <span class="ow">in</span> <span class="n">batch_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_input</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,)):</span>
+            <span class="n">siteNo</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">zfilldigs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)))</span>
+            
+            <span class="k">for</span> <span class="n">hvdata</span> <span class="ow">in</span> <span class="n">batch_input</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvdata</span><span class="p">,</span> <span class="s1">&#39;site&#39;</span><span class="p">):</span>
+                    <span class="n">sitename</span> <span class="o">=</span> <span class="n">hvdata</span><span class="o">.</span><span class="n">site</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvdata</span><span class="p">,</span> <span class="s1">&#39;Table_Report&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;Site Name&#39;</span> <span class="ow">in</span> <span class="n">hvdata</span><span class="o">.</span><span class="n">Table_Report</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">sitename</span> <span class="o">=</span> <span class="n">hvdata</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;Site Name&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sitename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;HVSRSite</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">siteNo</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">zfilldigs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span><span class="p">[</span><span class="n">sitename</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvdata</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_input</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span> <span class="o">=</span> <span class="n">batch_input</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_input</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span><span class="p">[</span><span class="n">batch_input</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">batch_input</span>
+        <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">batch_ext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">batchfileglob</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="o">+</span><span class="n">batch_ext</span><span class="p">)</span>
+                    <span class="n">batchfiledict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">if</span> <span class="s1">&#39;hvsr&#39;</span> <span class="ow">in</span> <span class="n">batch_ext</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">hvfile</span> <span class="ow">in</span> <span class="n">batchfileglob</span><span class="p">:</span>
+                            <span class="n">currhvfile</span> <span class="o">=</span> <span class="n">import_data</span><span class="p">(</span><span class="n">hvfile</span><span class="p">)</span>
+                            <span class="n">batchfiledict</span><span class="p">[</span><span class="n">currhvfile</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">currhvfile</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span> <span class="o">=</span> <span class="n">batchfiledict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">batchfileglob</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">batchfiledict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">ftype</span> <span class="ow">in</span> <span class="n">OBSPY_FORMATS</span><span class="p">:</span>
+                        <span class="n">batchfileglob</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="o">+</span><span class="n">ftype</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">hvfile</span> <span class="ow">in</span> <span class="n">batchfileglob</span><span class="p">:</span>
+                        <span class="n">currhvfile</span> <span class="o">=</span> <span class="n">import_data</span><span class="p">(</span><span class="n">hvfile</span><span class="p">)</span>
+                        <span class="n">batchfiledict</span><span class="p">[</span><span class="n">currhvfile</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">currhvfile</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span> <span class="o">=</span> <span class="n">batchfiledict</span>           
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Read the batch file in and return it</span>
+                <span class="k">return</span> <span class="n">import_data</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">batch_input</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span>
+        <span class="k">for</span> <span class="n">sitename</span><span class="p">,</span> <span class="n">hvsrdata</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sitename</span><span class="p">,</span> <span class="n">hvsrdata</span><span class="p">)</span>
-            <span class="bp">self</span><span class="p">[</span><span class="n">sitename</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>  
-        <span class="bp">self</span><span class="o">.</span><span class="n">sites</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">sitename</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sites</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
 
-    <span class="c1">#METHODS</span>
+    <span class="c1"># METHODS</span>
     <span class="k">def</span> <span class="nf">__to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not yet implemented, but may allow import/export to json files in the future, rather than just .hvsr pickles</span>
 
@@ -300,9 +355,9 @@
 <span class="sd">    </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;deep&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span><span class="p">),</span> <span class="n">df_as_read</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_df</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span><span class="p">))</span></div>
+            <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch_dict</span><span class="p">),</span> <span class="n">df_as_read</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_df</span><span class="p">)</span></div>
 
 
     <span class="c1">#Method wrapper of sprit.plot_hvsr function</span>
@@ -732,7 +787,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">browserList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;browser&#39;</span><span class="p">,</span> <span class="s1">&#39;remi&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">]</span>
     <span class="n">windowList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;windowed&#39;</span><span class="p">,</span> <span class="s1">&#39;window&#39;</span><span class="p">,</span> <span class="s1">&#39;qt&#39;</span><span class="p">,</span> <span class="s1">&#39;tkinter&#39;</span><span class="p">,</span> <span class="s1">&#39;tk&#39;</span><span class="p">]</span>
-    <span class="n">widgetList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;widget&#39;</span><span class="p">,</span> <span class="s1">&#39;jupyter&#39;</span><span class="p">,</span> <span class="s1">&#39;notebook&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;nb&#39;</span><span class="p">]</span>
+    <span class="n">widgetList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;widget&#39;</span><span class="p">,</span> <span class="s1">&#39;jupyter&#39;</span><span class="p">,</span> <span class="s1">&#39;notebook&#39;</span><span class="p">,</span> <span class="s1">&#39;nb&#39;</span><span class="p">]</span>
     <span class="n">liteList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;lite&#39;</span><span class="p">,</span> <span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="s1">&#39;basic&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">browserList</span><span class="p">:</span>
@@ -955,6 +1010,7 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Data not read correctly, see sprit.fetch_data() function and parameters for more details.&#39;</span><span class="p">)</span>
     
     <span class="c1"># BREAK OUT FOR BATCH PROCESSING</span>
+    <span class="n">run_kwargs_for_df</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsrDataIN</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
         
         <span class="c1"># Create dictionary that will be used to create HVSRBatch object</span>
@@ -962,7 +1018,7 @@
         
         <span class="c1"># Loop through each site and run sprit.run() for each HVSRData object</span>
         <span class="k">for</span> <span class="n">site_name</span><span class="p">,</span> <span class="n">site_data</span> <span class="ow">in</span> <span class="n">hvsrDataIN</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">run_kwargs</span> <span class="o">=</span> <span class="p">{}</span><span class="c1">#orig_args.copy()  # Make a copy so we don&#39;t accidentally overwrite</span>
+            <span class="n">run_kwargs</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#orig_args.copy()  # Make a copy so we don&#39;t accidentally overwrite</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">**PROCESSING DATA FOR SITE </span><span class="si">{</span><span class="n">site_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">**</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="n">run_kwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">site_data</span>
             
@@ -988,14 +1044,38 @@
                                    
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">run_kwargs</span><span class="p">)</span>
+                <span class="n">run_kwargs_for_df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_kwargs</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_get_error_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-                
                 <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">site_data</span>
-                <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;PPSDStatus&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;Error_Message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_get_error_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span>
+                                                                                                  <span class="n">print_error_message</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                                                  <span class="n">return_error_message</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_get_error_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing site </span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">. Continuing processing of remaining sites.&quot;</span><span class="p">)</span>
+                
+                <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;PPSDStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">hvsrBatchDict</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>         
-            
-        <span class="k">return</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsrBatchDict</span><span class="p">)</span>
+        
+        <span class="c1"># Create batch object</span>
+        <span class="n">hvsrBatchData</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsrBatchDict</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">run_kwargs_for_df</span><span class="p">))</span>
+        
+        <span class="c1"># Use batch object to get Output Table with all data, including results and inputs</span>
+        <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvsrBatchData</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsrBatchData</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="s1">&#39;Table_Report&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">table_reports</span> <span class="o">=</span> <span class="n">hvsrBatchData</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">Table_Report</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">table_reports</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">table_reports</span><span class="p">,</span> <span class="n">hvsrBatchData</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">table_reports</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+                
+        <span class="n">hvsrBatchData</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">hvsrBatchData</span><span class="o">.</span><span class="n">input_df</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">table_reports</span><span class="p">,</span>
+                                                 <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">,</span>
+                                                 <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;site&#39;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;Site Name&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hvsrBatchData</span>
 
     <span class="c1"># Calculate azimuths</span>
     <span class="n">hvsr_az</span> <span class="o">=</span> <span class="n">hvsrDataIN</span>
@@ -1090,8 +1170,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">errMsg</span> <span class="o">=</span> <span class="n">e</span>
         
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during generate_psds() for </span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="si">{</span><span class="n">errMsg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span> <span class="ow">or</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during generate_psds() for </span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="si">{</span><span class="n">errMsg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span> <span class="ow">or</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;raw&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;generate_psds() error: </span><span class="si">{</span><span class="n">errMsg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Reformat data so HVSRData and HVSRBatch data both work here</span>
@@ -1150,17 +1231,12 @@
         <span class="n">process_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">process_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
         <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">psd_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">process_hvsr_kwargs</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_obj</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_frame</span>
-        <span class="n">lineno</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_lineno</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_filename</span>
-        <span class="n">errLineNo</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">extract_tb</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">2</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
-        <span class="n">error_category</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Error&#39;</span><span class="p">)</span>
-        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_category</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">print_error</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">print_error</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1">#sprit_utils._get_error_from_exception(e,</span>
+        <span class="c1">#                                      print_error_message=print_error)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
             <span class="n">hvsr_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]:</span> <span class="n">hvsr_results</span><span class="p">}</span>
             
@@ -1230,7 +1306,8 @@
         <span class="c1"># Add azimuth as a requested plot if azimuthal data exists but not requested in plot</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">az_requested</span> <span class="ow">and</span> <span class="n">hasAz</span> <span class="ow">and</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">horizontal_method</span> <span class="o">!=</span> <span class="s1">&#39;Single Azimuth&#39;</span><span class="p">:</span>
             <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_report_kwargs</span><span class="p">[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; az&#39;</span>
-    <span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">get_report_kwargs</span><span class="p">)</span>
+
+    <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">get_report_kwargs</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="k">if</span> <span class="s1">&#39;report_formats&#39;</span> <span class="ow">in</span> <span class="n">get_report_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1338,22 +1415,25 @@
                       <span class="s1">&#39;process_hvsr_params&#39;</span><span class="p">:</span> <span class="n">process_hvsr_params</span><span class="p">,</span>
                       <span class="s1">&#39;check_peaks_params&#39;</span><span class="p">:</span> <span class="n">check_peaks_params</span><span class="p">,</span>
                       <span class="s1">&#39;get_report_params&#39;</span><span class="p">:</span> <span class="n">get_report_params</span><span class="p">}</span>
-
-    <span class="c1"># Get a list of all functions (for which paramters are used) in sprit.run()</span>
-    <span class="n">run_functions_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_params</span><span class="p">,</span> <span class="n">fetch_data</span><span class="p">,</span> 
-                          <span class="n">get_metadata</span><span class="p">,</span> <span class="n">calculate_azimuth</span><span class="p">,</span> 
-                          <span class="n">remove_noise</span><span class="p">,</span> <span class="n">generate_psds</span><span class="p">,</span> <span class="n">remove_outlier_curves</span><span class="p">,</span> 
-                          <span class="n">process_hvsr</span><span class="p">,</span> <span class="n">check_peaks</span><span class="p">,</span> 
-                          <span class="n">get_report</span><span class="p">,</span> <span class="n">export_data</span><span class="p">]</span>
-
+    
+    <span class="k">def</span> <span class="nf">__get_run_functions</span><span class="p">():</span>
+        <span class="c1"># Get a list of all functions (for which paramters are used) in sprit.run()</span>
+        <span class="n">run_functions_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_params</span><span class="p">,</span> <span class="n">fetch_data</span><span class="p">,</span> <span class="n">batch_data_read</span><span class="p">,</span>
+                            <span class="n">get_metadata</span><span class="p">,</span> <span class="n">calculate_azimuth</span><span class="p">,</span> 
+                            <span class="n">remove_noise</span><span class="p">,</span> <span class="n">generate_psds</span><span class="p">,</span> <span class="n">remove_outlier_curves</span><span class="p">,</span> 
+                            <span class="n">process_hvsr</span><span class="p">,</span> <span class="n">check_peaks</span><span class="p">,</span> 
+                            <span class="n">get_report</span><span class="p">,</span> <span class="n">export_data</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">run_functions_list</span>
+    <span class="n">SPRIT_RUN_FUNCTIONS</span> <span class="o">=</span> <span class="n">__get_run_functions</span><span class="p">()</span>
     <span class="c1"># Get default values of all functions in a dict</span>
     <span class="n">default_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fun</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">run_functions_list</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fun</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">SPRIT_RUN_FUNCTIONS</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_info</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">param_info</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">_empty</span><span class="p">:</span>
                 <span class="n">default_dict</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_info</span><span class="o">.</span><span class="n">default</span>
-                    
-    <span class="k">if</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span><span class="p">:</span>
+    
+    <span class="k">if</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span> <span class="ow">or</span> <span class="n">batch_data</span> <span class="ow">in</span> <span class="n">sampleFileKeyMap</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">sample_data</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">batch_type</span> <span class="o">=</span> <span class="s1">&#39;table&#39;</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1363,22 +1443,23 @@
     <span class="n">stream_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">batch_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="c1"># If this is sample data, we need to create absolute paths to the filepaths</span>
+        <span class="k">if</span> <span class="n">sample_data</span><span class="p">:</span>
+            <span class="c1">#SAMPLE_DATA_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, &#39;resources/sample_data/&#39;))</span>
+            <span class="n">dataReadInfoDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">sampleFileKeyMap</span><span class="p">[</span><span class="s1">&#39;sample_batch&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="n">dataReadInfoDF</span> <span class="o">=</span> <span class="n">batch_data</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="c1"># For params input</span>
+            <span class="n">dataReadInfoDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># Read csv</span>
             <span class="n">read_csv_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">locals</span><span class="p">()[</span><span class="s1">&#39;readcsv_getMeta_fetch_kwargs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
             <span class="n">dataReadInfoDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">batch_data</span><span class="p">,</span> <span class="o">**</span><span class="n">read_csv_kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="s1">&#39;input_data&#39;</span> <span class="ow">in</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataReadInfoDF</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
-
-        <span class="c1"># If this is sample data, we need to create absolute paths to the filepaths</span>
-        <span class="k">if</span> <span class="n">sample_data</span><span class="p">:</span>
-            <span class="n">SAMPLE_DATA_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/sample_data/&#39;</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-                <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
 
         <span class="c1"># Generate site names if they don&#39;t exist already           </span>
         <span class="k">if</span> <span class="s1">&#39;site&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -1427,6 +1508,8 @@
 
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Fetching the following files:&#39;</span><span class="p">)</span>
             
+        <span class="c1"># Get processing parameters, either from column param_col or from individual columns</span>
+        <span class="c1"># If param_col, format is string of format: &quot;param_name=param_val, param_name2=param_val2&quot;</span>
         <span class="n">param_dict_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">verboseStatement</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">param_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Not a single parameter column, each col=parameter</span>
@@ -1434,7 +1517,7 @@
                 <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">verboseStatement</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
                 <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">fun</span> <span class="ow">in</span> <span class="n">run_functions_list</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">fun</span> <span class="ow">in</span> <span class="n">SPRIT_RUN_FUNCTIONS</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
                             <span class="n">currParam</span> <span class="o">=</span> <span class="n">dataReadInfoDF</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row_ind</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
                             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">currParam</span><span class="p">)</span> <span class="ow">or</span> <span class="n">currParam</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
@@ -1468,6 +1551,7 @@
         <span class="k">if</span> <span class="n">batch_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">batch_params</span> <span class="o">=</span> <span class="p">[{}]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
         
+        <span class="c1"># Get batch_parameters</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_params</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_params</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;If batch_params is list, it must be the same length as batch_data. len(batch_params)=</span><span class="si">{}</span><span class="s1"> != len(batch_data)=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_params</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)))</span>
@@ -1481,17 +1565,21 @@
         <span class="c1"># Read and process each MiniSEED file</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">batch_data</span><span class="p">):</span>
             <span class="n">param_dict_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span>
-
-    <span class="n">hvsr_metaDict</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c1"># Get a uniformly formatted input DataFrame</span>
+    <span class="n">input_df_uniformatted</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">param_dict_list</span><span class="p">)</span>   
+    
+    <span class="c1"># Do batch fun of input_params() and fetch_data() (these are skipped in run() if batch mode is used)</span>
+    <span class="n">hvsr_batchDict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">zfillDigs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">param_dict_list</span><span class="p">)))</span>  <span class="c1"># Get number of digits of length of param_dict_list</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param_dict</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">param_dict_list</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param_dict</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">param_dict_list</span><span class="p">):</span>       
         <span class="c1"># Read the data file into a Stream object</span>
         <span class="n">input_params_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">locals</span><span class="p">()[</span><span class="s1">&#39;readcsv_getMeta_fetch_kwargs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
         <span class="n">input_params_kwargs2</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">param_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
         <span class="n">input_params_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_params_kwargs2</span><span class="p">)</span>
 
-        <span class="c1"># Run input_params</span>
+        <span class="c1"># Run input_params()</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">ipverboseString</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">input_params: &lt;No parameters specified&gt;, &#39;</span>
             <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">input_params_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1502,10 +1590,13 @@
 
             <span class="n">params</span> <span class="o">=</span> <span class="n">input_params</span><span class="p">(</span><span class="o">**</span><span class="n">input_params_kwargs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">input_params_kwargs</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;InputParamsStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> 
             <span class="n">verboseStatement</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Run fetch_data()</span>
         <span class="n">fetch_data_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">locals</span><span class="p">()[</span><span class="s1">&#39;readcsv_getMeta_fetch_kwargs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fetch_data</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
         <span class="n">fetch_data_kwargs2</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">param_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fetch_data</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
         <span class="n">fetch_data_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fetch_data_kwargs2</span><span class="p">)</span>
@@ -1520,6 +1611,7 @@
                 
             <span class="n">hvsrData</span> <span class="o">=</span> <span class="n">fetch_data</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">fetch_data_kwargs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">hvsrData</span> <span class="o">=</span> <span class="n">params</span>
             <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;FetchDataStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">verboseStatement</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1556,22 +1648,23 @@
         <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">in</span> <span class="n">hvsrData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">processing_parameters</span> <span class="o">=</span> <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">processing_parameters</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#&quot;input_params&quot;: input_params_kwargs, &quot;fetch_data&quot;: fetch_data_kwargs}</span>
+            <span class="n">processing_parameters</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># &quot;input_params&quot;: input_params_kwargs, &quot;fetch_data&quot;: fetch_data_kwargs}</span>
 
-        <span class="k">for</span> <span class="n">fun</span> <span class="ow">in</span> <span class="n">run_functions_list</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">fun</span> <span class="ow">in</span> <span class="n">SPRIT_RUN_FUNCTIONS</span><span class="p">:</span>
             <span class="n">specified_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">param_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">}</span>
             <span class="n">processing_parameters</span><span class="p">[</span><span class="n">fun</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">specified_params</span>
 
+        <span class="c1"># Assume source is &#39;file&#39; if not specified</span>
         <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">processing_parameters</span>
         <span class="k">if</span> <span class="s1">&#39;source&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;file&#39;</span>
         
-        <span class="n">hvsr_metaDict</span><span class="p">[</span><span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">hvsrData</span>
+        <span class="n">hvsr_batchDict</span><span class="p">[</span><span class="n">hvsrData</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">hvsrData</span>
 
-    <span class="n">hvsrBatch</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_metaDict</span><span class="p">)</span>
+    <span class="n">hvsrBatch</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_batchDict</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">input_df_uniformatted</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished reading input data in preparation of batch processing&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished reading input data in preparation for batch processing&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">hvsrBatch</span></div>
 
 
@@ -1650,7 +1743,7 @@
                     <span class="nb">print</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
-        <span class="c1">#If running batch, we&#39;ll loop through each site</span>
+        <span class="c1"># If running batch, we&#39;ll loop through each site</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">args</span> <span class="o">=</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1">#Make a copy so we don&#39;t accidentally overwrite</span>
@@ -1668,7 +1761,7 @@
                 <span class="n">hvsr_data</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">hvsr_data</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="p">(</span><span class="n">HVSRData</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">)):</span>
 
@@ -1881,7 +1974,7 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">: check_peaks() unsuccessful. Peaks not checked.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
                 
-        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">)</span>
+        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">HVColIDList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">col_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">:])</span> <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;Log&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_name</span><span class="p">]</span>
         <span class="n">HVColIDList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HV&#39;</span>
@@ -1935,7 +2028,7 @@
                 <span class="n">peak_freq_range</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span>
 
                 <span class="c1"># Do for hvsr</span>
-                <span class="n">peak</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">index_list</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">)</span>
+                <span class="n">peak</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">index_list</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">,</span> <span class="n">_min_peak_amp</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
                 <span class="n">peak</span> <span class="o">=</span> <span class="n">__check_curve_reliability</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">col_id</span><span class="p">)</span>
                 <span class="n">peak</span> <span class="o">=</span> <span class="n">__check_clarity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">do_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1947,7 +2040,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">index_p</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-                <span class="n">peakp</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrp</span><span class="p">,</span> <span class="n">index_p</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">)</span>
+                <span class="n">peakp</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrp</span><span class="p">,</span> <span class="n">index_p</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">,</span> <span class="n">_min_peak_amp</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">peakp</span> <span class="o">=</span> <span class="n">__check_clarity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrp</span><span class="p">,</span> <span class="n">peakp</span><span class="p">,</span> <span class="n">do_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
                 <span class="c1"># Do for hvsrm</span>
@@ -1957,12 +2050,12 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">index_m</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-                <span class="n">peakm</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrm</span><span class="p">,</span> <span class="n">index_m</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">)</span>
+                <span class="n">peakm</span> <span class="o">=</span> <span class="n">__init_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrm</span><span class="p">,</span> <span class="n">index_m</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="p">,</span> <span class="n">_min_peak_amp</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">peakm</span> <span class="o">=</span> <span class="n">__check_clarity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hvsrm</span><span class="p">,</span> <span class="n">peakm</span><span class="p">,</span> <span class="n">do_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
                 <span class="c1"># Get standard deviation of time peaks</span>
                 <span class="n">stdf</span> <span class="o">=</span> <span class="n">__get_stdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">index_list</span><span class="p">,</span> <span class="n">hvsrPeaks</span><span class="p">)</span>
-
+                
                 <span class="n">peak</span> <span class="o">=</span> <span class="n">__check_freq_stability</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">peakm</span><span class="p">,</span> <span class="n">peakp</span><span class="p">)</span>
                 <span class="n">peak</span> <span class="o">=</span> <span class="n">__check_stability</span><span class="p">(</span><span class="n">stdf</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">hvsr_log_std</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -2527,7 +2620,7 @@
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">checkifpath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">sample_list</span><span class="o">=</span><span class="n">SAMPLE_LIST</span><span class="p">)</span>
         <span class="n">dPath</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
-        <span class="k">pass</span>
+        <span class="n">dPath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">()</span> <span class="c1">#params[&#39;input_data&#39;]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">HVSRData</span><span class="p">):</span>
         <span class="n">dPath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">][</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
@@ -2670,7 +2763,7 @@
                             <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span> <span class="c1">#Just in case</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">rawDataIN</span> <span class="o">+</span> <span class="n">stream</span> <span class="c1">#This adds a stream/trace to the current stream object</span>
-                <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">dPath</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;sample&#39;</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">dPath</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span><span class="p">:</span>
                     <span class="k">pass</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="o">**</span><span class="n">obspyReadKwargs</span><span class="p">)</span><span class="c1">#, starttime=obspy.core.UTCDateTime(params[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(params[&#39;endtime&#39;]), nearest_sample =True)</span>
@@ -2683,24 +2776,27 @@
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Fetching data (fetch_data())&#39;</span><span class="p">)</span>
             <span class="n">batch_data_read_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">batch_data_read</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
             <span class="n">params</span> <span class="o">=</span> <span class="n">batch_data_read</span><span class="p">(</span><span class="n">batch_data</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">batch_data_read_kwargs</span><span class="p">)</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">params</span>
         <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">SAMPLE_LIST</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;sample</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">SAMPLE_LIST</span><span class="p">:</span>
             <span class="n">SAMPLE_DATA_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/sample_data/&#39;</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;batch&#39;</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)</span>
                 <span class="n">params</span> <span class="o">=</span> <span class="n">batch_data_read</span><span class="p">(</span><span class="n">batch_data</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">batch_type</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-                <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">params</span>
             <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;dir&#39;</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)</span>
                 <span class="n">params</span> <span class="o">=</span> <span class="n">batch_data_read</span><span class="p">(</span><span class="n">batch_data</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">batch_type</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-                <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">params</span>
             <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;file&#39;</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                 
                 <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">sampleFileKeyMap</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span><span class="p">:</span>
+                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampleFileKeyMap</span>
+                        
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampleFileKeyMap</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;</span><span class="p">)</span>
@@ -3920,7 +4016,7 @@
 <span class="c1"># Import data</span>
 <div class="viewcode-block" id="import_data">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.import_data">[docs]</a>
-<span class="k">def</span> <span class="nf">import_data</span><span class="p">(</span><span class="n">import_filepath</span><span class="p">,</span> <span class="n">data_format</span><span class="o">=</span><span class="s1">&#39;pickle&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">import_data</span><span class="p">(</span><span class="n">import_filepath</span><span class="p">,</span> <span class="n">data_format</span><span class="o">=</span><span class="s1">&#39;pickle&#39;</span><span class="p">,</span> <span class="n">show_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to import .hvsr (or other extension) data exported using export_data() function</span>
 
 <span class="sd">    Parameters</span>
@@ -3934,11 +4030,23 @@
 <span class="sd">    -------</span>
 <span class="sd">    HVSRData or HVSRBatch object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">data_format</span><span class="o">==</span><span class="s1">&#39;pickle&#39;</span><span class="p">:</span>
+    
+    <span class="n">sample_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;sampledata&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">import_filepath</span> <span class="ow">in</span> <span class="n">sample_list</span><span class="p">:</span>
+        <span class="n">import_filepath</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;sample_data&#39;</span><span class="p">)</span>
+        <span class="n">import_filepath</span> <span class="o">=</span> <span class="n">import_filepath</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;SampleHVSRSite01.hvsr&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data_format</span> <span class="o">==</span> <span class="s1">&#39;pickle&#39;</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">import_filepath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">dataIN</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data_format</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dataframe&#39;</span><span class="p">:</span>
+        <span class="n">dataIN</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">import_filepath</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">dataIN</span> <span class="o">=</span> <span class="n">import_filepath</span>
+    
+    <span class="k">if</span> <span class="n">show_data</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
     <span class="k">return</span> <span class="n">dataIN</span></div>
 
 
@@ -4962,7 +5070,7 @@
                 <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">hvsr_data</span>
                 <span class="n">hvsr_out</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;HVStatus&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
                 <span class="n">hvsr_out</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">)</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">_check_processing_status</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">hvsr_out</span>
     
@@ -5288,7 +5396,7 @@
         <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;process_hvsr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;generate_psds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;process_hvsr&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
     
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">horizontal_method</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;8&#39;</span> <span class="ow">or</span> <span class="n">horizontal_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;single azimuth&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">azimuth</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -5540,7 +5648,7 @@
                 <span class="n">hvsr_data</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
                 <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">hvsr_data</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span>
     
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="p">(</span><span class="n">HVSRData</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
@@ -5825,7 +5933,7 @@
                 <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">hvsr_data</span>
                 <span class="n">hvsr_out</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;RemoveOutlierCurves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">hvsr_out</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;OverallStatus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">)</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">_check_processing_status</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">hvsr_out</span>
 
@@ -5983,6 +6091,125 @@
 <span class="k">def</span> <span class="nf">test_function</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;is this working?&#39;</span><span class="p">)</span></div>
 
+
+
+<span class="c1"># Update all elevation-related attriutes</span>
+<div class="viewcode-block" id="update_elevation">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.update_elevation">[docs]</a>
+<span class="k">def</span> <span class="nf">update_elevation</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">updated_surface_elevation</span><span class="p">,</span> <span class="n">updated_elevation_unit</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to quickly update all attributes associated with elevation of an HVSRData object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : HVSRData or HVSRBatch</span>
+<span class="sd">        HVSRData or HVSRBatch object containing attributes related to elevation.</span>
+<span class="sd">        If HVSRBatch, updated_surface_elevation should be list or tuple and </span>
+<span class="sd">        updated_elevation_unit may either be str or  list/tuple of strings.        </span>
+<span class="sd">    updated_surface_elevation : numbers.Number</span>
+<span class="sd">        Number (float or int) with the updated elevation.</span>
+<span class="sd">        Meters is the preferred unit. If feet are used instead, it will be converted to meters.</span>
+<span class="sd">    updated_elevation_unit : str</span>
+<span class="sd">        Unit used for updated_surface_elevation. If &#39;feet&#39;, it will be converted to meters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    HVSRData</span>
+<span class="sd">        HVSRData object with all attributes related to elevation updated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Break out for HVSRBatch</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">updated_surface_elevation</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">sites</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Elevations for HVSRBatch object could not be updated. </span><span class="se">\</span>
+<span class="s1">                Length of updated_surface_elevation (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">updated_surface_elevation</span><span class="p">)</span><span class="si">}</span><span class="s1">) must equal</span><span class="se">\</span>
+<span class="s1">                the number of sites (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span><span class="si">}</span><span class="s1">) in hvsr_data&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hvsr_data</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">sites</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Elevations for HVSRBatch object could not be updated. </span><span class="se">\</span>
+<span class="s1">                    Length of updated_elevation_unit (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">)</span><span class="si">}</span><span class="s1">) must equal</span><span class="se">\</span>
+<span class="s1">                    the number of sites (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span><span class="si">}</span><span class="s1">) in hvsr_data&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hvsr_data</span>
+        
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">updated_elevation_unit</span> <span class="o">=</span> <span class="p">[</span><span class="n">updated_elevation_unit</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;updated_elevation_unit must be list, tuple, or str, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sitename</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span> <span class="n">hvsr_data</span><span class="p">):</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="n">sitename</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_elevation</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="n">sitename</span><span class="p">],</span> 
+                                                   <span class="n">updated_surface_elevation</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                                   <span class="n">updated_elevation_unit</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">hvsr_data</span>
+    
+    <span class="c1">#elevation_attrs = [&#39;elevation&#39;, &#39;x_elev_m&#39;, &#39;x_elev_ft&#39;]</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;elevation&#39;</span><span class="p">):</span>
+        <span class="n">elev_diff</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">updated_surface_elevation</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">elev_diff</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">updated_surface_elevation</span>
+        
+
+    <span class="n">mList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;meters&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;standard&#39;</span><span class="p">,</span> <span class="s1">&#39;metric&#39;</span><span class="p">,</span> <span class="s1">&#39;si&#39;</span><span class="p">,</span> <span class="s1">&#39;metres&#39;</span><span class="p">,</span> <span class="s1">&#39;metre&#39;</span><span class="p">,</span> <span class="s1">&#39;meter&#39;</span><span class="p">]</span>
+    <span class="n">fList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;feet&#39;</span><span class="p">,</span> <span class="s1">&#39;ft&#39;</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="s1">&#39;foot&#39;</span><span class="p">,</span> <span class="s1">&#39;american&#39;</span><span class="p">,</span> <span class="s1">&#39;imperial&#39;</span><span class="p">,</span> <span class="s1">&#39;imp&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Update parameters with elevations in them</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">updated_elevation_unit</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">fList</span><span class="p">:</span>
+        <span class="n">updated_surface_elevation</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span> <span class="o">*</span> <span class="mf">0.3048</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
+        
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span>
+    
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;x_elev_m&#39;</span><span class="p">):</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">elev_diff</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">elev_diff</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">elev_diff</span>
+        
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_ft&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">0.3048</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_ft&#39;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">0.3048</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_ft&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">0.3048</span>
+    
+    <span class="c1"># Update elevations in Table_Report</span>
+    <span class="n">table_report_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Elevation&#39;</span><span class="p">,</span> <span class="s1">&#39;BedrockElevation&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;Table_Report&#39;</span><span class="p">):</span>
+        <span class="n">hvsr_data</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;Elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
+        <span class="k">if</span> <span class="s1">&#39;BedrockDepth&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">Table_Report</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">hvsr_data</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;BedrockElevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span> <span class="o">-</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;BedrockDepth&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Update elevations in Print_Report</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s2">&quot;Print_Report&quot;</span><span class="p">):</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Elevation:\s*[\d.]+&quot;</span><span class="p">,</span> 
+                                            <span class="sa">f</span><span class="s2">&quot;Elevation: </span><span class="si">{</span><span class="n">updated_surface_elevation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> 
+                                            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Update elevations in HTML_Report</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s2">&quot;HTML_Report&quot;</span><span class="p">):</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;HTML_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Elevation:\s*[\d.]+&quot;</span><span class="p">,</span> 
+                                            <span class="sa">f</span><span class="s2">&quot;Elevation: </span><span class="si">{</span><span class="n">updated_surface_elevation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> 
+                                            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;HTML_Report&#39;</span><span class="p">])</span>
+    
+    <span class="c1"># Update elevations in PeakReport attributes</span>
+    <span class="n">azList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HV&#39;</span><span class="p">]</span>
+    <span class="n">azList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_az</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="k">for</span> <span class="n">az</span> <span class="ow">in</span> <span class="n">azList</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">peakReport</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">PeakReport</span><span class="p">[</span><span class="n">az</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;Table_Report&#39;</span> <span class="ow">in</span> <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">]:</span> <span class="c1">#This is a dict</span>
+                <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">][</span><span class="s1">&#39;Elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
+                <span class="k">if</span> <span class="s1">&#39;BedrockDepth&#39;</span> <span class="ow">in</span> <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">][</span><span class="s1">&#39;BedrockElevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span> <span class="o">-</span> <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">][</span><span class="s1">&#39;BedrockDepth&#39;</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="s1">&#39;Print_Report&#39;</span> <span class="ow">in</span> <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">]:</span> <span class="c1">#This is a dict</span>
+                <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Elevation:\s*[\d.]+&quot;</span><span class="p">,</span> 
+                                                              <span class="sa">f</span><span class="s2">&quot;Elevation: </span><span class="si">{</span><span class="n">updated_surface_elevation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> 
+                                                              <span class="n">peakReport</span><span class="p">[</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">])</span>
+                
+    <span class="c1"># Update processing_parameters to reflect new elevations</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span>
+    
+    <span class="k">return</span> <span class="n">hvsr_data</span></div>
 
 
 <span class="c1"># BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data</span>
@@ -9205,8 +9432,8 @@
 
             <span class="c1"># Annotate all peaks</span>
             <span class="k">if</span> <span class="s1">&#39;ann&#39;</span> <span class="ow">in</span> <span class="n">plot_type</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_freqs&#39;</span><span class="p">]):</span>
-                    <span class="n">y</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">][</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_indices&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_freqs&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">]):</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">][</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_indices&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span>
                     <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s1">&#39;Peak at &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;Hz&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">xycoords</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> 
                                     <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> 
                                     <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
@@ -10050,7 +10277,7 @@
 
 <span class="c1"># HELPER functions for checking peaks</span>
 <span class="c1"># Initialize peaks</span>
-<span class="k">def</span> <span class="nf">__init_peaks</span><span class="p">(</span><span class="n">_x</span><span class="p">,</span> <span class="n">_y</span><span class="p">,</span> <span class="n">_index_list</span><span class="p">,</span> <span class="n">_hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span> <span class="n">_min_peak_amp</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__init_peaks</span><span class="p">(</span><span class="n">_x</span><span class="p">,</span> <span class="n">_y</span><span class="p">,</span> <span class="n">_index_list</span><span class="p">,</span> <span class="n">_hvsr_band</span><span class="p">,</span> <span class="n">peak_freq_range</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mi">40</span><span class="p">],</span> <span class="n">_min_peak_amp</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Initialize peaks.</span>
 <span class="sd">        </span>
 <span class="sd">        Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)</span>
