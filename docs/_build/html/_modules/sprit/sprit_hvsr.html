@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.1.1-dev documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=e9ab92de"></script>
+        <script src="../../_static/documentation_options.js?v=f35be339"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -952,11 +952,26 @@
 <span class="sd">    RuntimeError</span>
 <span class="sd">        If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-   
+      
     <span class="n">orig_args</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># Get the initial arguments</span>
     <span class="k">global</span> <span class="n">do_run</span>
     <span class="n">do_run</span> <span class="o">=</span> <span class="kc">True</span>
 
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Using sprit.run() with the following parameters:&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">input_data = </span><span class="si">{</span><span class="n">input_data</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">azimuth_calculation = </span><span class="si">{</span><span class="n">azimuth_calculation</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">noise_removal = </span><span class="si">{</span><span class="n">noise_removal</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">outlier_curves_removal = </span><span class="si">{</span><span class="n">outlier_curves_removal</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">With the following kwargs: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="p">{}:</span>
+            <span class="nb">print</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{None}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+    
     <span class="k">if</span> <span class="s1">&#39;hvsr_band&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
     <span class="k">if</span> <span class="s1">&#39;peak_freq_range&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1102,6 +1117,7 @@
                     <span class="n">hvsr_az</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;Azimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">hvsr_az</span><span class="p">[</span><span class="s1">&#39;ProcessingStatus&#39;</span><span class="p">][</span><span class="s1">&#39;Azimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+     
      
     <span class="c1"># Remove Noise</span>
     <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">hvsr_az</span>
