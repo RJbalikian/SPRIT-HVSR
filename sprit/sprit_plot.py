@@ -1323,7 +1323,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if verbose:
         print("Getting data batch for cross section plot")
     batchExt = None
-    if not isinstance(hvsr_data, sprit_hvsr.HVSRBatch) :
+    if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
         if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
             batchExt = 'hvsr'
     hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
