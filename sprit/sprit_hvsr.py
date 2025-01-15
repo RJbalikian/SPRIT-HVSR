@@ -814,11 +814,26 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
-   
+      
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
     do_run = True
 
+    if verbose:
+        print('Using sprit.run() with the following parameters:')
+        print(f'\tinput_data = {input_data}')
+        print(f'\tazimuth_calculation = {azimuth_calculation}')
+        print(f'\tnoise_removal = {noise_removal}')
+        print(f'\toutlier_curves_removal = {outlier_curves_removal}')
+        print("\tWith the following kwargs: ", end='')
+        if kwargs is not {}:
+            print()
+            for k, v in kwargs.items():
+                print(f"\t\t{k} = {v}")
+        else:
+            print("{None}")
+        print()
+    
     if 'hvsr_band' not in kwargs.keys():
         kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
     if 'peak_freq_range' not in kwargs.keys():
@@ -964,6 +979,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                     hvsr_az[site_name]['ProcessingStatus']['Azimuth'] = False
             else:
                 hvsr_az['ProcessingStatus']['Azimuth'] = False
+     
      
     # Remove Noise
     data_noiseRemoved = hvsr_az
