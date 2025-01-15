@@ -17,8 +17,10 @@ import pandas as pd
 
 try:  # For distribution
     from sprit import sprit_hvsr
+    from sprit import sprit_plot
 except Exception as e:  # For testing
     import sprit_hvsr
+    import sprit_plot
 
 """
 Attempt 1: Regression equations: 
@@ -85,8 +87,9 @@ def power_law(f, a, b):
 def calculate_depth(freq_input,
                     depth_model="ISGS_All",
                     freq_col="Peak",
-                    show_depth_in_feet=False,
+                    calculate_depth_in_feet=False,
                     calculate_elevation=True,
+                    show_depth_curve=True,
                     surface_elevation_data='Elevation',
                     bedrock_elevation_column="BedrockElevation",
                     depth_column="BedrockDepth",
@@ -95,6 +98,8 @@ def calculate_depth(freq_input,
                     swave_velocity=563.0,
                     decimal_places=3,
                     depth_model_in_latex=False,
+                    fig=None,
+                    ax=None,
                     #group_by = "County", -> make a kwarg
                     **kwargs):
     """Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
@@ -233,6 +238,23 @@ def calculate_depth(freq_input,
                 freq_input = sprit_hvsr.HVSRData(paramDict)
             # Otherwise, assume it is a file to read in
             else:
+                if pathlib.Path(freq_input).is_dir():
+                    filepathGlob = pathlib.Path(freq_input).glob('*.hvsr')
+                    batchList = []
+                    for hvsrfile in filepathGlob:
+                        batchList.append(sprit_hvsr.import_data(hvsrfile))
+                    
+                    batchArgs = orig_args.copy()
+                    try:
+                        del batchArgs['freq_input']
+                    except KeyError:
+                        pass
+                    
+                    hvDataOutList = []
+                    for hvData in batchList:
+                        hvDataOutList.append(calculate_depth(freq_input=hvData,
+                                                             **batchArgs))
+                    return sprit_hvsr.HVSRBatch(hvDataOutList)
                 # First, check if it is a filepath
                 freqDataPath = pathlib.Path(freq_input)
                 if not freqDataPath.exists():
@@ -352,7 +374,7 @@ def calculate_depth(freq_input,
                                           'E': np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input["x_depth_m"]['E']], decimal_places),
                                           'N': np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input["x_depth_m"]['N']], decimal_places)}
         
-        if show_depth_in_feet:
+        if calculate_depth_in_feet:
             tableReport[depth_column+'_ft'] = np.around(calib_data*3.281,
                                                      decimals=decimal_places)
             if calculate_elevation and surface_elevation_data in tableReport.columns:
@@ -367,6 +389,26 @@ def calculate_depth(freq_input,
         tableReport["DepthModel"] = depthModelList
         tableReport["DepthModelType"] = depthModelTypeList
 
+        # Do plotting work
+        if fig is None and ax is None:
+            fig, ax = plt.subplots()
+        elif fig is not None:
+            ax = fig.get_axes()
+            if len(ax) == 1:
+                ax = ax[0]
+        
+        pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+        freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                 show_depth_curve=show_depth_curve,
+                                                 fig=fig, ax=ax, **pdc_kwargs)
+        
+        plt.sca(ax)
+        if show_depth_curve:
+            plt.show()
+        else:
+            plt.close()
+        
+        # Export as specified
         if export_path is not None and os.path.exists(export_path):
             if export_path == freq_input:
                 tableReport.to_csv(freq_input)
