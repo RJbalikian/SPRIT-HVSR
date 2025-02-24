@@ -7,13 +7,13 @@ import inspect
 import numbers
 import os
 import pathlib
-import pkg_resources
-import re
 from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pkg_resources
+from scipy.optimize import curve_fit
 
 try:  # For distribution
     from sprit import sprit_hvsr
@@ -433,72 +433,8 @@ def calculate_depth(freq_input,
         raise RuntimeError(f"The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None,peak_freq_col = "PeakFrequency",
-              bed_depth_col = "Bedrock_Depth", **kwargs):    
+def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None, peak_freq_col = "PeakFrequency",
+              bed_depth_col="Bedrock_Depth", **kwargs):    
 
     calib_data = None
 
@@ -506,7 +442,7 @@ def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedroc
 
     calib_type_list = list(map(lambda x : x.casefold(), calib_types))
     
-    power_list = ["Power", "power", "pw", "POWER"]
+    power_list = ["power", 'power law', 'powerlaw', 'power-law', "pow", "pw", 'p']
 
     Vs_list = ["vs", "VS", "v_s", "V_s", "V_S"]
 
@@ -517,11 +453,25 @@ def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedroc
                      "sedimentary", "igneous", "metamorphic"]
     
    
-    
-
     freq_columns_names = ["PeakFrequency", "ResonanceFrequency", "peak_freq", "res_freq", "Peakfrequency", "Resonancefrequency", "PF", "RF", "pf", "rf"]
 
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth", "depth_bedrock", "depthtobedrock", "bedrockdepth"]
+
+    if calib_type.lower() in power_list:
+
+        depthDataDF = pd.read_csv(calib_filepath)
+
+        depths = depthDataDF[bed_depth_col]
+        freqs = depthDataDF[peak_freq_col]
+
+        def hvsrPowerLaw(f0, a, b):
+            return a*f0**b
+
+        popt, pcov = curve_fit(hvsrPowerLaw, freqs, depths)
+
+        plt.scatter(freqs, depths)
+        plt.plot(freqs, hvsrPowerLaw(freqs, *popt), linestyle='dashed')
+
 
     # if calib_type.casefold() in calib_type_list: 
         
