@@ -432,9 +432,8 @@ def calculate_depth(freq_input,
     else:
         raise RuntimeError(f"The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}")
 
-
 def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedrock_type = None, peak_freq_col = "PeakFrequency",
-              bed_depth_col="Bedrock_Depth", **kwargs):    
+              calib_depth_col="Bedrock_Depth", show_calibration_plot=True, **kwargs):    
 
     calib_data = None
 
@@ -461,7 +460,7 @@ def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedroc
 
         depthDataDF = pd.read_csv(calib_filepath)
 
-        depths = depthDataDF[bed_depth_col]
+        depths = depthDataDF[calib_depth_col]
         freqs = depthDataDF[peak_freq_col]
 
         def hvsrPowerLaw(f0, a, b):
@@ -469,80 +468,45 @@ def calibrate(calib_filepath, calib_type = "power",outlier_radius = None, bedroc
 
         popt, pcov = curve_fit(hvsrPowerLaw, freqs, depths)
 
-        plt.scatter(freqs, depths)
-        plt.plot(freqs, hvsrPowerLaw(freqs, *popt), linestyle='dashed')
+        if show_calibration_plot:
+            print(sorted(hvsrPowerLaw(freqs, popt[0], popt[1])))
+            plt.plot(sorted(freqs), sorted(hvsrPowerLaw(freqs, popt[0], popt[1]), reverse=True), 
+                     linestyle='dotted', linewidth=0.5,
+                     label=f"${popt[0]:.2f} * f_0 ^{{{popt[1]:0.3f}}}$")
+            plt.scatter(freqs, depths, label=f"a = {popt[0]:0.2f}\nb = {popt[1]:0.3f}", zorder=100)
+            ax = plt.gca()
+
+            plt.semilogx()
+            plt.semilogy()
+            plt.legend()
+            plt.title(f'Frequency-Depth Calibration')
+            plt.xlabel('Frequency\n[Hz]')
+            plt.ylabel('Depth [m]')
+            tickList = [0.01, 0.1,1,10,100,1000]
+
+            
+            for i, t in enumerate(tickList):
+                if min(freqs) > t and min(freqs) <= tickList[i+1]:
+                    minX = t
+                if i!=0 and max(freqs) > tickList[i-1] and max(freqs) <= t:
+                    maxX = t                
+            
+            for i, t in enumerate(tickList):
+                if min(depths) > t and min(depths) <= tickList[i+1]:
+                    minY = t
+                if i!=0 and max(depths) > tickList[i-1] and max(depths) <= t:
+                    maxY = t               
+
+            plt.grid(True, which='minor', axis='both', linewidth=0.5, zorder=-1)
+            plt.grid(True, which='major',axis='both', c='k', linewidth=1, zorder=-1)
+            
+            ax.set_xticks([minX, maxX])
+            ax.set_yticks([minY, maxY])
 
 
-    # if calib_type.casefold() in calib_type_list: 
+            plt.show()
         
-       
-    #     if calib_type.casefold() in power_list:
+        calibration_vals=tuple(popt)
 
 
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-                         
-
-                           
-                           
-                        
-                  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return calibration_vals
