@@ -10,7 +10,7 @@ import sys
 import markdown
 
 
-RELEASE_VERSION = "2.2"
+RELEASE_VERSION = "2.3"
 
 VERBOSE = True
 

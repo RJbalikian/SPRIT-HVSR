@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_plot &mdash; sprit 2.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=f35be339"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=57236720"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -71,37 +69,37 @@
            <div itemprop="articleBody">
              
   <h1>Source code for sprit.sprit_plot</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">webbrowser</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">webbrowser</span>
 
-<span class="kn">from</span> <span class="nn">zoneinfo</span> <span class="kn">import</span> <span class="n">available_timezones</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">zoneinfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">available_timezones</span>
 
-<span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
-<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">subplots</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span><span class="p">,</span> <span class="n">interpolate</span>
-<span class="kn">import</span> <span class="nn">shapely</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ipywidgets</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">widgets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">subplots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span><span class="p">,</span> <span class="n">interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shapely</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
-    <span class="kn">import</span> <span class="nn">sprit_calibration</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_calibration</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit.sprit_hvsr</span> <span class="k">as</span> <span class="nn">sprit_hvsr</span>
-    <span class="kn">import</span> <span class="nn">sprit.sprit_calibration</span> <span class="k">as</span> <span class="nn">sprit_calibration</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_hvsr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_calibration</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_calibration</span>
 
 <div class="viewcode-block" id="read_data">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.read_data">[docs]</a>
-<span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
     <span class="n">progress_bar</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">READING DATA [</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">]&quot;</span>
 
@@ -133,8 +131,8 @@
 
 <div class="viewcode-block" id="get_remove_noise_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_remove_noise_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_remove_noise_kwargs</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">get_remove_method</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_remove_noise_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_remove_method</span><span class="p">():</span>
         <span class="n">remove_method_list</span><span class="o">=</span><span class="p">[]</span>
         <span class="n">do_stalta</span> <span class="o">=</span> <span class="n">stalta_check</span><span class="o">.</span><span class="n">value</span>
         <span class="n">do_sat_pct</span> <span class="o">=</span> <span class="n">max_saturation_check</span><span class="o">.</span><span class="n">value</span>
@@ -173,7 +171,7 @@
 
 <div class="viewcode-block" id="get_generate_ppsd_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_generate_ppsd_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_generate_ppsd_kwargs</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_generate_ppsd_kwargs</span><span class="p">():</span>
     <span class="n">ppsd_kwargs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;skip_on_gaps&#39;</span><span class="p">:</span><span class="n">skip_on_gaps</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
         <span class="s1">&#39;db_bins&#39;</span><span class="p">:[</span><span class="n">db_bins_min</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">db_bins_max</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">db_bins_step</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
@@ -193,7 +191,7 @@
 
 <div class="viewcode-block" id="get_remove_outlier_curve_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_remove_outlier_curve_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_remove_outlier_curve_kwargs</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_remove_outlier_curve_kwargs</span><span class="p">():</span>
     <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;use_percentile&#39;</span><span class="p">:</span><span class="n">rmse_pctile_check</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="s1">&#39;rmse_thresh&#39;</span><span class="p">:</span><span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -205,7 +203,7 @@
 
 <div class="viewcode-block" id="get_process_hvsr_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_process_hvsr_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_process_hvsr_kwargs</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_process_hvsr_kwargs</span><span class="p">():</span>
     <span class="k">if</span> <span class="n">smooth_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
         <span class="n">smooth_value</span> <span class="o">=</span> <span class="n">smooth_hv_curve</span><span class="o">.</span><span class="n">value</span>
     <span class="k">else</span><span class="p">:</span>
@@ -228,7 +226,7 @@
 
 <div class="viewcode-block" id="get_check_peaks_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_check_peaks_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_check_peaks_kwargs</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_check_peaks_kwargs</span><span class="p">():</span>
     <span class="n">cp_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">:[</span><span class="n">hvsr_band_min_box</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">hvsr_band_max_box</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
                 <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:[</span><span class="n">peak_freq_range_min_box</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">peak_freq_range_max_box</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
                 <span class="s1">&#39;peak_selection&#39;</span><span class="p">:</span><span class="n">peak_selection_type</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -238,8 +236,8 @@
 
 <div class="viewcode-block" id="get_get_report_kwargs">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.get_get_report_kwargs">[docs]</a>
-<span class="k">def</span> <span class="nf">get_get_report_kwargs</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">get_formatted_plot_str</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_get_report_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_formatted_plot_str</span><span class="p">():</span>
         <span class="c1"># Initialize plot string</span>
         <span class="n">hvsr_plot_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="n">comp_plot_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -321,7 +319,7 @@
 
 <div class="viewcode-block" id="process_data">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.process_data">[docs]</a>
-<span class="k">def</span> <span class="nf">process_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
     <span class="n">startProc</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
     <span class="n">progress_bar</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">PROCESSING DATA [</span><span class="si">{</span><span class="n">startProc</span><span class="si">}</span><span class="s2">]&quot;</span>
@@ -361,7 +359,7 @@
     <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="o">=</span><span class="kc">False</span>
     <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">disabled</span><span class="o">=</span><span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">get_rmse_range</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rmse_range</span><span class="p">():</span>
         <span class="n">minRMSE</span> <span class="o">=</span> <span class="mi">10000</span>
         <span class="n">maxRMSE</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">if</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]:</span>
@@ -412,7 +410,7 @@
     
 <div class="viewcode-block" id="parse_plot_string">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_plot_string">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
     <span class="n">plot_list</span> <span class="o">=</span> <span class="n">plot_string</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
     <span class="n">hvsrList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;hv&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">]</span>
@@ -475,7 +473,7 @@
 
 <div class="viewcode-block" id="parse_hv_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_hv_plot_list">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
     <span class="n">hv_plot_list</span> <span class="o">=</span> <span class="n">hvsr_plot_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">x_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span>
@@ -612,7 +610,7 @@
 
 <div class="viewcode-block" id="parse_comp_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_comp_plot_list">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">plot_with_hv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">plot_with_hv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
     
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
     <span class="k">if</span> <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -777,7 +775,7 @@
 
 <div class="viewcode-block" id="parse_spec_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_spec_plot_list">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
 
     <span class="k">if</span> <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -861,7 +859,7 @@
 
 <div class="viewcode-block" id="plot_results">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_results">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">results_graph_widget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">results_graph_widget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="k">if</span>  <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">results_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">FigureWidget</span><span class="p">()</span>
 
@@ -1033,7 +1031,7 @@
 
 <div class="viewcode-block" id="plot_preview">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_preview">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_preview</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preview_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_preview</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preview_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">preview_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">preview_subp</span> <span class="o">=</span> <span class="n">subplots</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">row_heights</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
         <span class="c1">#preview_fig = go.FigureWidget(preview_subp)</span>
@@ -1128,7 +1126,7 @@
 
 <div class="viewcode-block" id="plot_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_outlier_curves">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">hv_data</span> <span class="o">=</span> <span class="n">hvsr_data</span>
     <span class="c1">#outlier_fig = go.FigureWidget()</span>
     <span class="n">outlier_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
@@ -1186,7 +1184,7 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">):</span>
             <span class="n">rowDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
             <span class="n">showTLabelsDict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-            <span class="k">def</span> <span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
                 <span class="n">compstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
                 <span class="k">if</span> <span class="n">comp</span><span class="o">==</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span>
                     <span class="n">compstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;rgba(0, 0, 0, </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">)&#39;</span>
@@ -1278,7 +1276,7 @@
 
 <div class="viewcode-block" id="plot_depth_curve">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_depth_curve">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
                      <span class="n">depth_limit</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">max_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">depth_plot_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                      <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1418,7 +1416,7 @@
 
 <div class="viewcode-block" id="plot_cross_section">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_cross_section">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_cross_section</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">primary_unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_cross_section</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">primary_unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> 
                        <span class="n">show_curves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">annotate_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">curve_alignment</span><span class="o">=</span><span class="s1">&#39;peak&#39;</span><span class="p">,</span>
                        <span class="n">grid_size</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;WE&#39;</span><span class="p">,</span> <span class="n">interpolation_type</span><span class="o">=</span><span class="s1">&#39;cloughtocher&#39;</span><span class="p">,</span>
                        <span class="n">surface_elevations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_peak_points</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smooth_bedrock_surface</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>

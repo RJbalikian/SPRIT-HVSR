@@ -1,21 +1,19 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration module &mdash; sprit 2.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="theme.css?v=19f00094" />
+  <title>sprit.sprit_calibration module &mdash; sprit 2.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="documentation_options.js?v=f35be339"></script>
-        <script src="doctools.js?v=9a2dae69"></script>
-        <script src="sphinx_highlight.js?v=dc90522c"></script>
+      <script src="documentation_options.js?v=57236720"></script>
+      <script src="doctools.js?v=9bcbadda"></script>
+      <script src="sphinx_highlight.js?v=dc90522c"></script>
     <script src="theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -189,8 +187,38 @@ if using the quarter wavelength shear wave velocity method, by default 563.0</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_calibration.calibrate">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_calibration.</span></span><span class="sig-name descname"><span class="pre">calibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calib_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'power'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PeakFrequency'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bed_depth_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Bedrock_Depth'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_calibration.calibrate" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_calibration.</span></span><span class="sig-name descname"><span class="pre">calibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calib_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'power'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PeakFrequency'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_depth_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Bedrock_Depth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xcoord'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ycoord'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_calibration_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_calibration.calibrate" title="Link to this definition">¶</a></dt>
+<dd><p>The calibrate function allows input of table with f0 and known depths to generate a power-law regression relationship.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>calib_filepath</strong><span class="classifier">pathlike object</span></dt><dd><p>Path to file readable by pandas.read_csv() with a column for frequencies
+and a column for depths.</p>
+</dd>
+<dt><strong>calib_type</strong><span class="classifier">str, optional</span></dt><dd><p>Which calibration to use. Currently only power-law is supported, by default “power”</p>
+</dd>
+<dt><strong>outlier_radius</strong><span class="classifier">None or float, optional</span></dt><dd><p>Radius (in CRS of coordinates) within which to use the points for calibration, by default None.
+Not currently supported.</p>
+</dd>
+<dt><strong>bedrock_type</strong><span class="classifier">str or None, optional</span></dt><dd><p>Bedrock type by which to select which points to use for calibration, by default None.
+Not currently supported.</p>
+</dd>
+<dt><strong>peak_freq_col</strong><span class="classifier">str, optional</span></dt><dd><p>Which column in calib_filepath to use for fundamental frequency values, by default “PeakFrequency”</p>
+</dd>
+<dt><strong>calib_depth_col</strong><span class="classifier">str, optional</span></dt><dd><p>Which column in calib_filepath to use for depth values, by default “Bedrock_Depth”</p>
+</dd>
+<dt><strong>show_calibration_plot</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to show the calibration plot, by default True</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>tuple</dt><dd><p>Tuple (a, b) containing the parameters used for calibration regression.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_calibration.power_law">
