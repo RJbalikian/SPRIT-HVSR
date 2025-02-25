@@ -10,6 +10,7 @@ import pathlib
 from warnings import warn
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import LogLocator
 import numpy as np
 import pandas as pd
 import pkg_resources
