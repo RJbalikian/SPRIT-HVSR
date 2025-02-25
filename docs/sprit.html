@@ -1,25 +1,23 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="theme.css?v=19f00094" />
+  <title>sprit package &mdash; sprit 2.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="documentation_options.js?v=60dbed4a"></script>
-        <script src="doctools.js?v=9a2dae69"></script>
-        <script src="sphinx_highlight.js?v=dc90522c"></script>
+      <script src="documentation_options.js?v=57236720"></script>
+      <script src="doctools.js?v=9bcbadda"></script>
+      <script src="sphinx_highlight.js?v=dc90522c"></script>
     <script src="theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="sprit.sprit_cli module" href="sprit.sprit_cli.html" />
+    <link rel="next" title="sprit.sprit_calibration module" href="sprit.sprit_calibration.html" />
     <link rel="prev" title="&lt;no title&gt;" href="index.html" /> 
 </head>
 
@@ -75,6 +73,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.assert_check"><code class="docutils literal notranslate"><span class="pre">assert_check()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.calculate_azimuth"><code class="docutils literal notranslate"><span class="pre">calculate_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.calculate_depth"><code class="docutils literal notranslate"><span class="pre">calculate_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.calibrate"><code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.check_gui_requirements"><code class="docutils literal notranslate"><span class="pre">check_gui_requirements()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
@@ -100,6 +100,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.make_it_classy"><code class="docutils literal notranslate"><span class="pre">make_it_classy()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.plot_azimuth"><code class="docutils literal notranslate"><span class="pre">plot_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.plot_depth_curve"><code class="docutils literal notranslate"><span class="pre">plot_depth_curve()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.plot_hvsr"><code class="docutils literal notranslate"><span class="pre">plot_hvsr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
@@ -111,8 +113,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.x_mark"><code class="docutils literal notranslate"><span class="pre">x_mark()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
@@ -157,7 +161,7 @@
 <p>This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="sprit.HVSRBatch">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">HVSRBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">HVSRBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>HVSRBatch is the data container used for batch processing. 
 It contains several HVSRData objects (one for each site). 
@@ -342,7 +346,7 @@ For return_fig, returns it to the ‘Plot_Report’ attribute of each HVSRData o
 
 <dl class="py class">
 <dt class="sig sig-object py" id="sprit.HVSRData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">HVSRData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">HVSRData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>HVSRData is the basic data class of the sprit package. 
 It contains all the processed data, input parameters, and reports.</p>
@@ -395,7 +399,7 @@ It contains all the processed data, input parameters, and reports.</p>
 </table>
 <dl class="py property">
 <dt class="sig sig-object py" id="sprit.HVSRData.batch">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch</span></span><a class="headerlink" href="#sprit.HVSRData.batch" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch</span></span><a class="headerlink" href="#sprit.HVSRData.batch" title="Link to this definition">¶</a></dt>
 <dd><p>Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -423,7 +427,7 @@ It contains all the processed data, input parameters, and reports.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="sprit.HVSRData.datastream">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datastream</span></span><a class="headerlink" href="#sprit.HVSRData.datastream" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datastream</span></span><a class="headerlink" href="#sprit.HVSRData.datastream" title="Link to this definition">¶</a></dt>
 <dd><p>A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -523,7 +527,7 @@ If True, it will first try to save each file to the same directory as input_data
 
 <dl class="py property">
 <dt class="sig sig-object py" id="sprit.HVSRData.params">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#sprit.HVSRData.params" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#sprit.HVSRData.params" title="Link to this definition">¶</a></dt>
 <dd><p>Dictionary containing the parameters used to process the data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -557,7 +561,7 @@ If True, it will first try to save each file to the same directory as input_data
 
 <dl class="py property">
 <dt class="sig sig-object py" id="sprit.HVSRData.ppsds">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ppsds</span></span><a class="headerlink" href="#sprit.HVSRData.ppsds" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ppsds</span></span><a class="headerlink" href="#sprit.HVSRData.ppsds" title="Link to this definition">¶</a></dt>
 <dd><p>Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -571,7 +575,7 @@ If True, it will first try to save each file to the same directory as input_data
 
 <dl class="py property">
 <dt class="sig sig-object py" id="sprit.HVSRData.ppsds_obspy">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ppsds_obspy</span></span><a class="headerlink" href="#sprit.HVSRData.ppsds_obspy" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ppsds_obspy</span></span><a class="headerlink" href="#sprit.HVSRData.ppsds_obspy" title="Link to this definition">¶</a></dt>
 <dd><p>The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed.</p>
 </dd></dl>
 
@@ -662,6 +666,85 @@ If ‘radians’ (or {‘rad’, ‘r’}), will use radians.</p>
 <dd class="field-even"><dl class="simple">
 <dt>HVSRData</dt><dd><p>Updated HVSRData object specified in hvsr_data with hvsr_data[‘stream’] attribute containing additional components (EHR-<strong>*),
 with *</strong> being zero-padded (3 digits) azimuth angle in degrees.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.calculate_depth">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">calculate_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ISGS_All'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Peak'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_depth_in_feet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_depth_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_elevation_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Elevation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_elevation_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BedrockElevation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BedrockDepth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swave_velocity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">563.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimal_places</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_model_in_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calculate_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.calculate_depth" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>freq_input</strong><span class="classifier">HVSRData, HVSRBatch, float, or filepath, optional</span></dt><dd><p>Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}</p>
+</dd>
+<dt><strong>depth_model</strong><span class="classifier">str, tuple, list, or dict, optional</span></dt><dd><p>Model describing a relationship between frequency and depth, by default “ISGS_All”</p>
+</dd>
+<dt><strong>calculate_depth_in_feet</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate depth in feet (in addition to meters, which is done by default)</p>
+</dd>
+<dt><strong>freq_col</strong><span class="classifier">str, optional</span></dt><dd><p>Name of the column containing the frequency information of the peak, by default “Peak” (per HVSRData.Table_Report output)</p>
+</dd>
+<dt><strong>calculate_elevation</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether or not to calculate elevation, by default True</p>
+</dd>
+<dt><strong>surface_elevation_data</strong><span class="classifier">str or numeric, optional</span></dt><dd><p>The name of the column or a manually specified numeric value to use for the surface elevation value, by default “Elevation”</p>
+</dd>
+<dt><strong>bedrock_elevation_column</strong><span class="classifier">str, optional</span></dt><dd><p>The name of the column in the TableReport for the bedrock elevation of the point.
+This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default “BedrockElevation”</p>
+</dd>
+<dt><strong>depth_column</strong><span class="classifier">str, optional</span></dt><dd><p>_description_, by default “BedrockDepth”</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether or not to print information about the processing to the terminal, by default False</p>
+</dd>
+<dt><strong>export_path</strong><span class="classifier">_type_, optional</span></dt><dd><p>_description_, by default None</p>
+</dd>
+<dt><strong>swave_velocity</strong><span class="classifier">float, optional</span></dt><dd><p>Shear wave velocity to use for depth calculations in meters/second, 
+if using the quarter wavelength shear wave velocity method, by default 563.0</p>
+</dd>
+<dt><strong>decimal_places</strong><span class="classifier">int, optional</span></dt><dd><p>Number of decimal places to round depth results, by default 3</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRBatch or list if those are input; otherwise, HVSRData object</dt><dd><p>The returns are the same type as freq_input, except filepath which returns pandas.DataFrame</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.calibrate">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">calibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calib_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'power'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PeakFrequency'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calib_depth_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Bedrock_Depth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xcoord'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ycoord'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bedrock_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_calibration_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_calibration.html#calibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.calibrate" title="Link to this definition">¶</a></dt>
+<dd><p>The calibrate function allows input of table with f0 and known depths to generate a power-law regression relationship.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>calib_filepath</strong><span class="classifier">pathlike object</span></dt><dd><p>Path to file readable by pandas.read_csv() with a column for frequencies
+and a column for depths.</p>
+</dd>
+<dt><strong>calib_type</strong><span class="classifier">str, optional</span></dt><dd><p>Which calibration to use. Currently only power-law is supported, by default “power”</p>
+</dd>
+<dt><strong>outlier_radius</strong><span class="classifier">None or float, optional</span></dt><dd><p>Radius (in CRS of coordinates) within which to use the points for calibration, by default None.
+Not currently supported.</p>
+</dd>
+<dt><strong>bedrock_type</strong><span class="classifier">str or None, optional</span></dt><dd><p>Bedrock type by which to select which points to use for calibration, by default None.
+Not currently supported.</p>
+</dd>
+<dt><strong>peak_freq_col</strong><span class="classifier">str, optional</span></dt><dd><p>Which column in calib_filepath to use for fundamental frequency values, by default “PeakFrequency”</p>
+</dd>
+<dt><strong>calib_depth_col</strong><span class="classifier">str, optional</span></dt><dd><p>Which column in calib_filepath to use for depth values, by default “Bedrock_Depth”</p>
+</dd>
+<dt><strong>show_calibration_plot</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to show the calibration plot, by default True</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>tuple</dt><dd><p>Tuple (a, b) containing the parameters used for calibration regression.</p>
 </dd>
 </dl>
 </dd>
@@ -1061,7 +1144,7 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.import_data">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">import_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pickle'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#import_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.import_data" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">import_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pickle'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#import_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.import_data" title="Link to this definition">¶</a></dt>
 <dd><p>Function to import .hvsr (or other extension) data exported using export_data() function</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1087,7 +1170,7 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.input_params">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2024-11-09'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">11,</span> <span class="pre">9,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2024,</span> <span class="pre">11,</span> <span class="pre">9,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2025-02-25'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">2,</span> <span class="pre">25,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">2,</span> <span class="pre">25,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1200,6 +1283,16 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.plot_cross_section">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_feet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primary_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotate_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curve_alignment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'peak'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'WE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cloughtocher'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_elevations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_peak_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_bedrock_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">150</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_bedrock_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_data_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_cross_section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_cross_section"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_cross_section" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.plot_depth_curve">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_depth_curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_feet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">250</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_elev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_elev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_plot_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_depth_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_depth_curve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_depth_curve" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.plot_hvsr">
@@ -1580,11 +1673,11 @@ See API documentation: [input_params()](<a class="reference external" href="http
 </dd>
 <dt><strong>channels: any, default = [‘EHZ’, ‘EHN’, ‘EHE’]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>acq_date: any, default = ‘2024-11-09’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>acq_date: any, default = ‘2025-02-25’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>starttime: any, default = 2024-11-09T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>starttime: any, default = 2025-02-25T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>endtime: any, default = 2024-11-09T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>endtime: any, default = 2025-02-25T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>tzone: any, default = ‘UTC’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
@@ -1866,6 +1959,33 @@ See API documentation: [export_data()](<a class="reference external" href="https
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="sprit.update_elevation">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">update_elevation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_surface_elevation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_elevation_unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#update_elevation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.update_elevation" title="Link to this definition">¶</a></dt>
+<dd><p>Function to quickly update all attributes associated with elevation of an HVSRData object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hvsr_data</strong><span class="classifier">HVSRData or HVSRBatch</span></dt><dd><p>HVSRData or HVSRBatch object containing attributes related to elevation.
+If HVSRBatch, updated_surface_elevation should be list or tuple and 
+updated_elevation_unit may either be str or  list/tuple of strings.</p>
+</dd>
+<dt><strong>updated_surface_elevation</strong><span class="classifier">numbers.Number</span></dt><dd><p>Number (float or int) with the updated elevation.
+Meters is the preferred unit. If feet are used instead, it will be converted to meters.</p>
+</dd>
+<dt><strong>updated_elevation_unit</strong><span class="classifier">str</span></dt><dd><p>Unit used for updated_surface_elevation. If ‘feet’, it will be converted to meters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRData</dt><dd><p>HVSRData object with all attributes related to elevation updated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="sprit.x_mark">
 <span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">x_mark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">incolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inTerminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_utils.html#x_mark"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.x_mark" title="Link to this definition">¶</a></dt>
 <dd><p>The default Windows terminal is not able to display the check mark character correctly.
@@ -1876,6 +1996,12 @@ This function returns another displayable character if platform is Windows</p>
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_calibration.html#sprit.sprit_calibration.calculate_depth"><code class="docutils literal notranslate"><span class="pre">calculate_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_calibration.html#sprit.sprit_calibration.calibrate"><code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_calibration.html#sprit.sprit_calibration.power_law"><code class="docutils literal notranslate"><span class="pre">power_law()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_cli.html#sprit.sprit_cli.get_param_docstring"><code class="docutils literal notranslate"><span class="pre">get_param_docstring()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_cli.html#sprit.sprit_cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
@@ -1935,6 +2061,7 @@ This function returns another displayable character if platform is Windows</p>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.test_function"><code class="docutils literal notranslate"><span class="pre">test_function()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a><ul>
@@ -1953,6 +2080,8 @@ This function returns another displayable character if platform is Windows</p>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_hv_plot_list"><code class="docutils literal notranslate"><span class="pre">parse_hv_plot_list()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.parse_spec_plot_list"><code class="docutils literal notranslate"><span class="pre">parse_spec_plot_list()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_depth_curve"><code class="docutils literal notranslate"><span class="pre">plot_depth_curve()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.plot_results"><code class="docutils literal notranslate"><span class="pre">plot_results()</span></code></a></li>
@@ -1960,7 +2089,16 @@ This function returns another displayable character if platform is Windows</p>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.read_data"><code class="docutils literal notranslate"><span class="pre">read_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.check_if_default"><code class="docutils literal notranslate"><span class="pre">check_if_default()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_file_upload"><code class="docutils literal notranslate"><span class="pre">on_file_upload()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_run_data"><code class="docutils literal notranslate"><span class="pre">on_run_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.print_param"><code class="docutils literal notranslate"><span class="pre">print_param()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.setup_session_state"><code class="docutils literal notranslate"><span class="pre">setup_session_state()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.text_change"><code class="docutils literal notranslate"><span class="pre">text_change()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.write_to_info_tab"><code class="docutils literal notranslate"><span class="pre">write_to_info_tab()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.create_menubar"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.create_menubar()</span></code></a></li>
@@ -2001,7 +2139,7 @@ This function returns another displayable character if platform is Windows</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="sprit.sprit_cli.html" class="btn btn-neutral float-right" title="sprit.sprit_cli module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="sprit.sprit_calibration.html" class="btn btn-neutral float-right" title="sprit.sprit_calibration module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

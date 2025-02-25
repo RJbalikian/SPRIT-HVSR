@@ -3,8 +3,8 @@ sprit package
 
 .. automodule:: sprit
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Submodules
 ----------
@@ -12,6 +12,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   sprit.sprit_calibration
    sprit.sprit_cli
    sprit.sprit_hvsr
    sprit.sprit_jupyter_UI

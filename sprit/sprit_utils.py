@@ -336,7 +336,7 @@ def get_default_args(func):
     
 
 # Get fuller traceback information on errors
-def _get_error_from_exception(exception=None):
+def _get_error_from_exception(exception=None, print_error_message=True, return_error_message=False):
     if exception is not None:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -346,8 +346,13 @@ def _get_error_from_exception(exception=None):
         errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
         error_category = type(exception).__name__.title().replace('error', 'Error')
         error_message = f"{exception} ({errLineNo})"
-        print(f"{error_category} ({errLineNo}): {error_message}")
-        print(lineno, filename, f)
+        
+        if print_error_message:
+            print(f"{error_category} ({errLineNo}): {error_message}")
+            print(lineno, filename, f)
+        
+        if return_error_message:
+            return f"{error_category} ({errLineNo}): {error_message}\n\n{lineno} {filename} {f}"
 
 
 #Check that input strema has Z, E, N channels

@@ -4,6 +4,7 @@ pandas
 obspy
 scipy
 pyproj
+shapely
 PyQt5-sip
 sphinx-rtd-theme
 numpydoc
@@ -11,4 +12,4 @@ sphinx
 markdown
 pytest
 flake8
-sprit==2.0
+sprit==2.3

@@ -1,21 +1,19 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui module &mdash; sprit 2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_streamlit_ui module &mdash; sprit 2.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/documentation_options.js?v=60dbed4a"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/documentation_options.js?v=57236720"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -50,6 +48,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.assert_check"><code class="docutils literal notranslate"><span class="pre">assert_check()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calculate_azimuth"><code class="docutils literal notranslate"><span class="pre">calculate_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calculate_depth"><code class="docutils literal notranslate"><span class="pre">calculate_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.calibrate"><code class="docutils literal notranslate"><span class="pre">calibrate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.catch_errors"><code class="docutils literal notranslate"><span class="pre">catch_errors()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.check_gui_requirements"><code class="docutils literal notranslate"><span class="pre">check_gui_requirements()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.check_mark"><code class="docutils literal notranslate"><span class="pre">check_mark()</span></code></a></li>
@@ -75,6 +75,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.make_it_classy"><code class="docutils literal notranslate"><span class="pre">make_it_classy()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.parse_plot_string"><code class="docutils literal notranslate"><span class="pre">parse_plot_string()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_azimuth"><code class="docutils literal notranslate"><span class="pre">plot_azimuth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_depth_curve"><code class="docutils literal notranslate"><span class="pre">plot_depth_curve()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_hvsr"><code class="docutils literal notranslate"><span class="pre">plot_hvsr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_outlier_curves"><code class="docutils literal notranslate"><span class="pre">plot_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.plot_preview"><code class="docutils literal notranslate"><span class="pre">plot_preview()</span></code></a></li>
@@ -86,13 +88,24 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.time_it"><code class="docutils literal notranslate"><span class="pre">time_it()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.x_mark"><code class="docutils literal notranslate"><span class="pre">x_mark()</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html">sprit.sprit_hvsr module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_plot.html">sprit.sprit_plot module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">sprit.sprit_streamlit_ui module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">sprit.sprit_streamlit_ui module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.check_if_default"><code class="docutils literal notranslate"><span class="pre">check_if_default()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.on_file_upload"><code class="docutils literal notranslate"><span class="pre">on_file_upload()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.on_run_data"><code class="docutils literal notranslate"><span class="pre">on_run_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.print_param"><code class="docutils literal notranslate"><span class="pre">print_param()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.setup_session_state"><code class="docutils literal notranslate"><span class="pre">setup_session_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.text_change"><code class="docutils literal notranslate"><span class="pre">text_change()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_streamlit_ui.write_to_info_tab"><code class="docutils literal notranslate"><span class="pre">write_to_info_tab()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
 </ul>
@@ -128,8 +141,43 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="sprit-sprit-streamlit-ui-module">
-<h1>sprit.sprit_streamlit_ui module<a class="headerlink" href="#sprit-sprit-streamlit-ui-module" title="Link to this heading">¶</a></h1>
+  <section id="module-sprit.sprit_streamlit_ui">
+<span id="sprit-sprit-streamlit-ui-module"></span><h1>sprit.sprit_streamlit_ui module<a class="headerlink" href="#module-sprit.sprit_streamlit_ui" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.check_if_default">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">check_if_default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#check_if_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.check_if_default" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.on_file_upload">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">on_file_upload</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#on_file_upload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.on_file_upload" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.on_run_data">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">on_run_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#on_run_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.on_run_data" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.print_param">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">print_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#print_param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.print_param" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.setup_session_state">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">setup_session_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#setup_session_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.setup_session_state" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.text_change">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">text_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#text_change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.text_change" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_streamlit_ui.write_to_info_tab">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_streamlit_ui.</span></span><span class="sig-name descname"><span class="pre">write_to_info_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">info_tab</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_streamlit_ui.html#write_to_info_tab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_streamlit_ui.write_to_info_tab" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </section>
 
 

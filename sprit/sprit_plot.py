@@ -1,5 +1,7 @@
 import datetime
 import inspect
+import math
+import numbers
 import os
 import pathlib
 import webbrowser
@@ -8,17 +10,21 @@ from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import plotly.subplots as subplots
-from scipy import signal
+from scipy import signal, interpolate
+import shapely
 
 try:
     import sprit_hvsr
+    import sprit_calibration
 except:
     import sprit.sprit_hvsr as sprit_hvsr
+    import sprit.sprit_calibration as sprit_calibration
 
 def read_data(button):
     progress_bar.value = 0
@@ -1151,3 +1157,552 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
         outlier_fig.show()
 
     return outlier_fig
+
+def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
+                     depth_limit=250, max_elev=None, min_elev=None,
+                     annotate=True, depth_plot_export_path=None, 
+                     fig=None, ax=None, show_depth_curve=True):
+    
+    if fig is None and ax is None:
+        fig, ax = plt.subplots(layout='constrained')
+        fig.set_size_inches(3, 5)
+        fig.suptitle(hvsr_results['site'])
+        ax.set_title('Calibrated Depth to Interface', size='small')
+    ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+    
+    surfElev = hvsr_results.Table_Report['Elevation'][0]
+    bedrockElev = hvsr_results.Table_Report['BedrockElevation'][0]
+    bedrockDepth = hvsr_results.Table_Report['BedrockDepth'][0]
+    curveRange = max(hvsr_results.hvsr_curve) - min(hvsr_results.hvsr_curve)
+
+    if normalize_curve:
+        curvePlot = (hvsr_results.hvsr_curve - min(hvsr_results.hvsr_curve)) / curveRange
+        xBase = 0
+        xCap = 1
+        xLims = [-0.25, 1.25]
+        ax.set_xticks([0, 1])
+    else:
+        curvePlot = hvsr_results.hvsr_curve
+        xBase = min(hvsr_results.hvsr_curve)
+        xCap = max(hvsr_results.hvsr_curve)
+        xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
+ 
+    if use_elevation:
+        yLims = [hvsr_results.x_elev_m['Z'][0] - depth_limit,
+              hvsr_results.x_elev_m['Z'][0]]
+        yVals = hvsr_results.x_elev_m['Z'][:-1]
+        ax.set_ylabel('Elevation [m]')
+        bedrockVal = bedrockElev
+        if annotate:
+            #Annotate surface elevation
+            ax.text(x=xLims[0],
+                    y=surfElev,
+                    s=str(round(surfElev, 2))+'m',
+                    ha='right',
+                    va='bottom',
+                    size='x-small')
+
+            # Annotate bedrock elevation
+            ax.text(x=xBase,
+                    y=bedrockElev,
+                    s=' ' + str(round(bedrockElev, 2))+'m\n elevation',
+                    ha='left',
+                    va='center',
+                    size='x-small')
+            
+            # Annotate bedrock depth
+            ax.text(x=xBase,
+                    y=max(yLims),
+                    s=str(round(bedrockDepth, 2))+'m deep ',
+                    ha='right',
+                    va='top',
+                    size='x-small',
+                    rotation='vertical')
+    else:
+        yLims = [depth_limit, hvsr_results.x_depth_m['Z'][0]]
+        yVals = hvsr_results.x_depth_m['Z'][:-1]
+        ax.set_ylabel('Depth [m]')
+        bedrockVal = bedrockDepth
+        if annotate:
+            # Annotate surface elevation
+            ax.text(x=xLims[0],
+                    y=0,
+                    s=str(round(surfElev, 2))+'m',
+                    ha='right',
+                    va='bottom',
+                    size='x-small')
+            
+            # Annotate Bedrock elevation
+            ax.text(x=xBase,
+                    y=bedrockVal,
+                    s=str(round(bedrockElev, 2))+'m\nelevation',
+                    ha='center',
+                    va='center',
+                    size='x-small')
+
+            # Annotate Bedrock depth
+            ax.text(x=xBase,
+                    y=(min(yLims)+bedrockDepth)/2,
+                    s=str(round(bedrockDepth, 2))+'m deep',
+                    ha='right',
+                    va='top',
+                    size='x-small',
+                    rotation='vertical')
+
+    # Plot curve
+    ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot, alpha=0.2, facecolor='k')
+    ax.plot(curvePlot, yVals, c='k', linewidth=0.5)
+    if show_feet:
+        ax_ft = ax.twinx()
+        ax_ft.plot(curvePlot, yVals*3.281, alpha=0)
+        ax_ft.set_ylim(yLims[0]*3.281, yLims[1]*3.281)
+        ax_ft.set_ylabel('Elevation [ft]')
+        if not use_elevation:
+            ax_ft.set_ylabel('Depth [ft]')
+        
+    # Plot peak location
+    ax.hlines(y=bedrockVal,
+               xmin=xBase, xmax=xCap,
+               linestyles='dotted', colors='k', linewidths=0.5)
+    ax.scatter(xBase, y=bedrockVal, c='k', s=0.5)
+    ax.scatter(xCap, y=bedrockVal, c='k', s=0.5)
+    
+    # Plot "base" line
+    ax.axvline(x=xBase, linestyle='dotted', c='k', linewidth=0.5)
+
+    ax.set_ylim(yLims)
+    ax.set_xlim(xLims)
+    
+    xlabel = "H/V Ratio"
+    if normalize_curve:
+        xlabel += '\n(Normalized)' 
+    ax.set_xlabel('H/V Ratio')
+    ax.xaxis.set_label_position('top')
+    ax.set_title(hvsr_results['site'])
+
+    plt.sca(ax)
+    if show_depth_curve:
+        plt.show()
+    else:
+        plt.close()
+        
+    if depth_plot_export_path is not None:
+        if isinstance(depth_plot_export_path, os.PathLike):
+            fig.savefig(depth_plot_export_path)
+        else:
+            print(f'Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}')
+    
+    hvsr_results['Depth_Plot'] = fig
+    return hvsr_results
+
+def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
+                       show_curves=True, annotate_curves=False, curve_alignment='peak',
+                       grid_size='auto', orientation='WE', interpolation_type='cloughtocher',
+                       surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
+                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
+                       return_data_batch=True, show_cross_section=True, verbose=False,
+                       **kwargs):
+    
+    if verbose:
+        print("Getting cross section plot configuration")
+        
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    elif ax is None and fig is not None:
+        fig = fig
+        ax = fig.get_axes()[0]
+    elif fig is None and ax is not None:
+        ax = ax
+        fig = plt.figure()
+        fig.axes.append(ax)
+    else:
+        fig = fig
+        ax = ax
+    plt.sca(ax)
+    
+    if verbose:
+        print("Getting data batch for cross section plot")
+    batchExt = None
+    if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
+        if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+            batchExt = 'hvsr'
+    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+    
+    if verbose:
+        print("Sorting and Orienting data")
+    # Get orientation/order of data
+    nsList = ['ns', "north-south", 'northsouth', 'south', 's']
+    snList = ['sn', "south-north", 'southnorth', 'north', 'n']
+    weList = ['we', "west-east", 'westeast', 'east', 'e']
+    ewList = ['ew', "east-west", 'eastwest', 'west', 'w']
+
+    if str(orientation).lower() in nsList:
+        ordercoord = 'latitude'
+        order = 'descending'
+        profile_direction = 'north-south'
+    elif str(orientation).lower() in snList:
+        ordercoord = 'latitude'
+        order = 'ascending'
+        profile_direction  = 'south-north'
+    elif str(orientation).lower() in weList:
+        ordercoord = 'longitude'
+        order = 'ascending'
+        profile_direction = 'west-east'
+    elif str(orientation).lower() in ewList:
+        ordercoord = 'longitude'
+        order = 'descending'
+        profile_direction = 'east-west'
+    else:
+        if verbose:
+            print(f"Value for orientation={orientation} is not recognized. Using West-East orientation.")
+        order = 'ascending'
+        ordercoord='longitude'
+        profile_direction = 'west-east (default)'
+
+    # Get data in correct order, as specified by orientation parameter
+    reverseit = (order == 'descending')
+    sorted_sites = sorted(hvDataBatch, key=lambda site: hvDataBatch[site][ordercoord], reverse=reverseit)
+    hvDataSorted = [hvDataBatch[h] for h in sorted_sites]
+
+    if verbose:
+        print(f'Plotting {len(hvDataBatch.sites)} sites, {profile_direction}.')
+        [print(f"\t{hvdata.site[:12]:<12}: {hvdata.longitude:>8.4f}, {hvdata.latitude:>8.4f}, {hvdata.elevation:<6.1f}") for hvdata in hvDataSorted]
+
+    # Get cross section profile
+    shapelyPoints = []
+    interpData = []
+    interpCoords = {'longitude':[], 'latitude':[], 'elevation':[]}
+    for i, hvData in enumerate(hvDataSorted):
+        if not hasattr(hvData, 'x_elev_m'):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            hvData = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+        
+        #print(hvData['longitude'], hvData['latitude'])
+        # Create shapely Point objects at each profile location
+        x = hvData['longitude']
+        y = hvData['latitude']
+        z = hvData['elevation']
+
+        shapelyPoints.append(shapely.Point(x, y, z))
+
+        #Points arranged for interpolation
+        interpData.extend(list(hvData.hvsr_curve))
+        for i, pt in enumerate(hvData.hvsr_curve):
+            interpCoords['longitude'].append(x)
+            interpCoords['latitude'].append(y)
+            interpCoords['elevation'].append(hvData['x_elev_m']['Z'][i])
+
+        #Since already doing loop, ensure hvData has all depth/elev info it needs
+        if not hasattr(hvData, 'x_elev_m'):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items()
+                                      if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            if 'calculate_depth_in_feet' not in calc_depth_kwargs:
+                calc_depth_kwargs['calculate_depth_in_feet'] = True
+            hvDataSorted[i] = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+
+    xSectionProfile = shapely.LineString(shapelyPoints)
+    profileXs, profileYs = xSectionProfile.xy
+    
+    orderCoordValues = profileXs
+    if ordercoord == 'latitude':
+        orderCoordValues = profileYs
+
+    minX = min(profileXs)
+    minY = min(profileYs)
+    maxX = max(profileXs)
+    maxY = max(profileYs)
+
+    # Generate grid
+    if verbose:
+        print("Generating Grid: ", end='')
+    xSectionLength = xSectionProfile.length
+    if grid_size == 'auto':
+        grid_size=(50, 100)
+
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+
+    elif isinstance(grid_size, (list, tuple)):
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+    else:
+        grid_size=(50, 100)
+
+        cellHNumber = grid_size[0]
+        cellWNumber = xSectionLength/grid_size[1]
+
+        if verbose:
+            print(f'grid_size value ({grid_size} not recognized, using grid 100 cells wide and 50 cells high: grid_size=(50, 100))')
+
+    cellWSize = xSectionLength/cellWNumber
+    
+    max_surf_elev = max([hvd.elevation for hvd in hvDataSorted])
+    min_br_elev = min([hvd.Table_Report['Peak'][0] for hvd in hvDataSorted])
+    elev_range = max_surf_elev - min_br_elev
+
+    max_grid_elev = math.ceil(max_surf_elev)
+
+    # Minimum grid elevation is determined by depth_limit and minimum_elevation
+    if str(minimum_elevation).lower() == 'auto':
+        min_grid_elev = min_br_elev - (elev_range) * 0.1
+    elif isinstance(minimum_elevation, numbers.Number):
+        min_grid_elev = minimum_elevation
+    elif minimum_elevation is None:
+        min_grid_elev = max_grid_elev - depth_limit
+    
+    xSectionDepth = max_grid_elev - min_grid_elev
+    cellHSize = xSectionDepth/cellHNumber
+
+    # Get grid coordinates (all coords in z direction (depth/elev))
+    gridZcoords = np.linspace(min_grid_elev, max_grid_elev, cellHNumber)
+
+    gridXDists = np.linspace(0, xSectionProfile.length, cellWNumber)
+    gridXcoords = [] # All coords in the "x" direction (along profile)
+    for xdist in gridXDists:
+        x, y = xSectionProfile.interpolate(xdist).xy
+        if 'east' in profile_direction:
+            gridXcoords.append(x[0])
+        else:
+            gridXcoords.append(y[0])
+    gridXcoords = np.array(gridXcoords)
+    if verbose:
+        print(f'Grid generated ({cellWNumber*cellHNumber} cells)\n\tx-range: {xSectionLength:.5f} ({cellWNumber:d} cells, each {cellWSize:.5f} units in size)\n\tz-range: {xSectionDepth:.2f} ({cellHNumber:d} cells, each {cellHSize:.5f} units in size)')
+
+    #print('x', len(interpCoords['longitude']))
+    #print('y', len(interpCoords['latitude']))
+    #print('z', len(interpCoords['elevation']))
+    #print('interp', np.array(interpData).shape)
+    if verbose:
+        print(f'Beginning interpolation ({interpolation_type})... ', end='')
+    
+    ctList = ['cloughtocher2dinterpolator', 'cloughtocher', 'ct', 'clough-tocher', 'clough tocher', 'cubic', 'c']
+    nearList = ['nearestnd', 'nearest', 'near', 'n']
+    linList = ['linearnd', 'linear', 'lin', 'l']
+    rbfList = ['radial basis function', 'rbf', 'rbfinterpolator']
+    
+    if str(interpolation_type).lower() in ctList:
+        interp = interpolate.CloughTocher2DInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
+    elif str(interpolation_type).lower() in nearList:
+        interp = interpolate.NearestNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
+    elif str(interpolation_type).lower() in rbfList:
+        interp = interpolate.RBFInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)        
+    elif str(interpolation_type).lower() in linList:
+        interp = interpolate.LinearNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
+        
+    xx, zz = np.meshgrid(gridXcoords, gridZcoords)
+    interpData = interp(xx, zz)
+    interpDataflat = interpData[:-1, :-1]
+    if verbose:
+        print('Data interpolated')
+        print('Plotting colormesh')
+    
+    
+    # kwargs-defined pcolormesh kwargs
+    pcolormeshKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plt.pcolormesh).parameters.keys())}
+    
+    # Set defaults for cmap and shading (if not overriden in kwargs)
+    if 'cmap' not in pcolormeshKwargs:
+        pcolormeshKwargs['cmap'] = 'nipy_spectral'
+    if 'shading' not in pcolormeshKwargs:
+        pcolormeshKwargs['shading'] = 'flat'
+                
+    ax.pcolormesh(xx, zz, interpDataflat, zorder=0, **pcolormeshKwargs)
+    
+    if show_curves:
+        if verbose:
+            print('Plotting curves')
+        norm_div = 1
+        normal_factor = np.diff(orderCoordValues)
+        normal_factor = np.nanmedian(normal_factor[normal_factor != 0]) / norm_div
+        
+        zAttr = 'x_depth_m'
+        if use_elevation:
+            zAttr = 'x_elev_m'
+
+        for hvData in hvDataSorted:
+            hvData['Normalized_HVCurve'] = (hvData['hvsr_curve'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
+            locatedCurve = hvData['Normalized_HVCurve'] + hvData[ordercoord]
+            if curve_alignment.lower() == 'peak':
+                normal_peak_factor = (hvData["BestPeak"]['HV']['A0'] / np.nanmax(hvData['hvsr_curve'])) * normal_factor
+                locatedCurve = locatedCurve  - normal_peak_factor
+            elif curve_alignment.lower() == 'max':
+                locatedCurve = locatedCurve  - normal_factor
+            
+            if max(locatedCurve) > max(gridXcoords):
+                locatedCurve = locatedCurve - (max(locatedCurve) - max(gridXcoords))
+            if min(locatedCurve) < min(gridXcoords):
+                locatedCurve = locatedCurve + (min(gridXcoords) - min(locatedCurve))
+                
+            ax.plot(locatedCurve, hvData[zAttr]['Z'][:-1], c='k', linewidth=0.5, zorder=3)
+
+    if annotate_curves:
+        for hvData in hvDataSorted:
+            if len(hvData.site) > 10:
+                sitename = hvData.site[:8]+ '...'
+            else:
+                sitename = hvData.site
+            ax.text(hvData[ordercoord], y=min_grid_elev, s=sitename, ha='right', va='bottom', rotation='vertical')
+    
+    if smooth_bedrock_surface:
+        show_bedrock_surface = True
+
+    if show_peak_points or show_bedrock_surface:
+        brX = []
+        brZ = []
+        for hvData in hvDataSorted:
+            if 'BedrockElevation' in hvData['Table_Report'].columns:
+                brX.append(hvData[ordercoord])
+                brZ.append(hvData['Table_Report'].loc[0,'BedrockElevation'][()])
+        if show_peak_points:
+            ax.scatter(brX, brZ, zorder=5, c='k', marker='v')
+
+        
+        if smooth_bedrock_surface:
+            #brSurfZ = scipy.signal.savgol(brZ, window_length=len(brZ))
+            if brX[0] > brX[-1]:
+                brX = np.flip(brX)
+                brZ = np.flip(brZ)
+                doFlip=True
+            else:
+                doFlip=False
+                
+            newX = np.sort(gridXcoords)
+            brSurfZ = np.interp(newX, brX, brZ)
+            brSurfX = newX
+        else:
+            brSurfX = brX
+            brSurfZ = brZ
+        
+        zMinPts = list(np.array(brSurfZ) * 0 + min(gridZcoords))
+        
+        if show_bedrock_surface:
+            ax.fill_between(brSurfX, brSurfZ, zMinPts,facecolor='w', alpha=0.5, zorder=1)
+            ax.plot(brSurfX, brSurfZ, c='k', zorder=2)
+        
+    
+    # Plot surfaces
+    if verbose:
+        print('Plotting surfaces')
+    if surface_elevations is None:
+        surfPts_shapely = []
+        surfPtsX = []
+        surfPtsZ = []
+        
+        surface_elevations = shapely.LineString([shapely.Point(hvData['longitude'], 
+                                                               hvData["latitude"], 
+                                                               hvData["elevation"]) 
+                                                 for hvData in hvDataSorted])
+    
+    xPts = []
+    zPts = []
+    for surf_pt in surface_elevations.coords:
+        surfPtDict = {'longitude':surf_pt[0], 
+                      'latitude': surf_pt[1],
+                      'elevation': surf_pt[2]}
+        xPts.append(surfPtDict[ordercoord])
+        zPts.append(surfPtDict['elevation'])
+    
+    zMaxPts = list(np.array(zPts) * 0 + max_grid_elev)
+    ax.fill_between(xPts, zPts, zMaxPts, facecolor='w', zorder=1000)
+    ax.plot(xPts, zPts, c='g', linewidth=1.5, zorder=1001)
+
+    # Plot configuration
+    if verbose:
+        print('Configuring plot')
+    ax.set_xlim([min(gridXcoords), max(gridXcoords)])
+    ax.set_ylim([min_grid_elev, max_grid_elev])
+    
+    
+    ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+    ax.set_xlabel(str(ordercoord).title())
+    ax.xaxis.set_label_position('top')
+    ax.set_ylabel('Elevation [Meters]')
+    if title is None:
+        title = 'HVSR Cross Section Profile'
+    ax.set_title(title)
+    
+    # Calculate angle
+    profile_angle = math.degrees(math.atan2(shapelyPoints[-1].y - shapelyPoints[0].y, shapelyPoints[-1].x - shapelyPoints[0].x))
+    #Convert angle to geographic coordinates
+    profile_angle = (profile_angle*-1) + 90
+    if profile_angle < 0:
+        profile_angle += 360
+
+    if verbose:
+        print(f"Calculated profile angle to be {profile_angle:.3f} degrees.")
+    # Calculate nomencalture
+    if profile_angle < -11.25 + 22.5 * 1:
+        profileStart = 'S'
+        profileEnd = 'N'
+    elif profile_angle < -11.25 + 22.5 * 2:
+        profileEnd = 'NNE'
+        profileStart = 'SSW'        
+    elif profile_angle < -11.25 + 22.5 * 3:
+        profileEnd = 'NE'
+        profileStart = 'SW'
+    elif profile_angle < -11.25 + 22.5 * 4:
+        profileEnd = 'ENE'
+        profileStart = 'WSW'        
+    elif profile_angle < -11.25 + 22.5 * 5:
+        profileEnd = 'E'
+        profileStart = 'W'        
+    elif profile_angle < -11.25 + 22.5 * 6:
+        profileEnd = 'ESE'
+        profileStart = 'WNW'
+    elif profile_angle < -11.25 + 22.5 * 7:
+        profileEnd = 'SE'
+        profileStart = 'NW'
+    elif profile_angle < -11.25 + 22.5 * 8:
+        profileEnd = 'SSE'
+        profileStart = 'NNW'
+    elif profile_angle < -11.25 + 22.5 * 9:
+        profileEnd = 'S'
+        profileStart = 'N'
+    elif profile_angle < -11.25 + 22.5 * 10:
+        profileEnd = 'SSW'
+        profileStart = 'NNE'        
+    elif profile_angle < -11.25 + 22.5 * 11:
+        profileEnd = 'SW'
+        profileStart = 'NE'
+    elif profile_angle < -11.25 + 22.5 * 12:
+        profileEnd = 'WSW'
+        profileStart = 'ENE'
+    elif profile_angle < -11.25 + 22.5 * 13:
+        profileEnd = 'W'
+        profileStart = 'E'
+    elif profile_angle < -11.25 + 22.5 * 14:
+        profileEnd = 'WNW'
+        profileStart = 'ESE'
+    elif profile_angle < -11.25 + 22.5 * 15:
+        profileEnd = 'NW'
+        profileStart = 'SE'
+    elif profile_angle < -11.25 + 22.5 * 16:
+        profileEnd = 'NNW'
+        profileStart = 'SSE'
+    elif profile_angle <= 360:
+        profileEnd = 'N'
+        profileStart = 'S'
+
+    if 'north' in profile_direction[:5] or 'east' in profile_direction[:5]:
+        ax.invert_xaxis()
+        #print('inverting')
+        #profileInt = profileEnd
+        #profileEnd = profileStart
+        #profileStart = profileInt
+
+    plt.sca(ax)
+    plt.figtext(0.1,0.95, s=profileStart)
+    plt.figtext(0.9,0.95, s=profileEnd)
+
+    if show_cross_section:
+        if verbose:
+            print('Displaying plot')
+        plt.sca(ax)
+        plt.show()
+        
+    if return_data_batch:
+        hvBatch = sprit_hvsr.HVSRBatch(hvDataSorted)
+        hvBatch['Cross_Section_Plot'] = fig
+        return hvBatch
+            
+    return fig

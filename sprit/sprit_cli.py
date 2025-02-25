@@ -35,8 +35,10 @@ def get_param_docstring(func, param_name):
 def main():
     parser = argparse.ArgumentParser(description='CLI for SPRIT HVSR package (specifically the sprit.run() function)')
     
-    hvsrFunctions = [sprit.input_params,
+    hvsrFunctions = [sprit.run,
+                    sprit.input_params,
                      sprit.fetch_data,
+                     sprit.calculate_azimuth,
                      sprit.remove_noise,
                      sprit.generate_psds,
                      sprit.process_hvsr,
@@ -45,11 +47,26 @@ def main():
                      sprit.get_report]#,
                      #sprit.plot_hvsr]
 
-    #Get default parameters from main functions
+    hvsrFunDict = {sprit.run: inspect.signature(sprit.run).parameters,
+                    sprit.input_params: inspect.signature(sprit.input_params).parameters,
+                     sprit.fetch_data: inspect.signature(sprit.fetch_data).parameters,
+                     sprit.calculate_azimuth: inspect.signature(sprit.calculate_azimuth).parameters,
+                     sprit.remove_noise: inspect.signature(sprit.remove_noise).parameters,
+                     sprit.generate_psds: inspect.signature(sprit.generate_psds).parameters,
+                     sprit.process_hvsr: inspect.signature(sprit.process_hvsr).parameters,
+                     sprit.remove_outlier_curves: inspect.signature(sprit.remove_outlier_curves).parameters,
+                     sprit.check_peaks: inspect.signature(sprit.check_peaks).parameters,
+                     sprit.get_report: inspect.signature(sprit.get_report).parameters     
+                    }
+
+    # Get default parameters from main functions
     parameters = []
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
-    #Add argument and options to the parser
+    #for f, p in hvsrFunDict.items():
+        
+    
+    # Add argument and options to the parser
     intermediate_params_list = ['params', 'input', 'hvsr_data', 'hvsr_results']
     paramNamesList = []
     for i, param in enumerate(parameters):
@@ -65,37 +82,49 @@ def main():
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
                     parser.add_argument(F'--{name}', help=helpStr, default=parameter.default)
-    
+
     # Add more arguments/options as needed
     args = parser.parse_args()
-    
+
     # Map command-line arguments/options to kwargs
     kwargs = {}
-    for arg_name, arg_value in vars(args).items():
+    for arg_name, arg_value in vars(args).items():      
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
 
-            if arg_value.lower()=='true':
+            if arg_value.lower() == 'true':
                 arg_value = True
-            elif arg_value.lower()=='false':
+            elif arg_value.lower() == 'false':
                 arg_value = False
             elif arg_value.lower() == 'none':
                 arg_value = None
             elif "[" in arg_value:
-                arg_value = arg_value.replace('[', '').replace(']','')
+                arg_value = arg_value.replace('[', '').replace(']', '')
                 arg_value = arg_value.split(',')
             elif "," in arg_value:
                 arg_value = arg_value.split(',')
-        kwargs[arg_name] = arg_value
-    
+        
+        is_default = False    
+        for k, v in hvsrFunDict.items():
+            for param in v:
+                if param == arg_name and arg_value == v[arg_name].default:
+                    is_default = True
+                    continue
+                    
+            if is_default:
+                continue
+            
+        if not is_default:
+            kwargs[arg_name] = arg_value
+        
     # Call the sprit.run function with the generated kwargs
-    kwargs['input_data'] = kwargs['input_data'].replace("'", "") #Remove single quotes to reduce errors
-    if str(kwargs['input_data']).lower()=='gui':
+    kwargs['input_data'] = kwargs['input_data'].replace("'", "")  # Remove single quotes to reduce errors
+    if str(kwargs['input_data']).lower() == 'gui':
         sprit.gui()
     else:
         #Print a summary if not verbose
-        if not kwargs['verbose']:
+        if 'verbose' not in kwargs or not kwargs['verbose']:
             print("Running sprit.run() with the following arguments (use --verbose for more information):")
             print("sprit.run(", end='')
             for key, value in kwargs.items():
@@ -103,12 +132,16 @@ def main():
                     pass
                 else:
                     if type(value) is str:
-                        print(f"{key}='{value}'",end=', ')
+                        print(f"{key}='{value}'", end=', ')
                     else:
-                        print(f"{key}={value}",end=', ')
+                        print(f"{key}={value}", end=', ')
             print('**ppsd_kwargs, **kwargs', end='')
             print(')')
-    
+
+        print('Non-default kwargs:')
+        [print(f"\t {k} = {v}") for k, v in kwargs.items()]
+        print()
+        
         sprit.run(**kwargs)
             
 if __name__ == '__main__':
