@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration &mdash; sprit 2.3.1 documentation</title>
+  <title>sprit.sprit_calibration &mdash; sprit 2.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=67b02a41"></script>
+      <script src="../../_static/documentation_options.js?v=5048a02b"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -245,11 +245,10 @@
     <span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Fetch parameters for frequency-depth model</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>  
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
         <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">depth_model</span>
         <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model parameters (a, b)=</span><span class="si">{</span><span class="n">depth_model</span><span class="si">}</span><span class="s2"> cannot be zero, check model inputs.&quot;</span><span class="p">)</span>
-
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">casefold</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">)):</span>
@@ -271,6 +270,9 @@
             <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">params</span>
             <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameters cannot be zero, check model inputs&quot;</span><span class="p">)</span>            
+
+    <span class="k">if</span> <span class="n">b</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
 
     <span class="c1"># Get frequency input</span>
     <span class="c1"># Checking if freq_input is HVSRData object</span>
