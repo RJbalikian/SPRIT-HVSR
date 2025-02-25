@@ -169,11 +169,10 @@ def calculate_depth(freq_input,
     params = None
 
     # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list, dict)):  
+    if isinstance(depth_model, (tuple, list, dict)):
         (a, b) = depth_model
         if a == 0 or b == 0:
             raise ValueError(f"Model parameters (a, b)={depth_model} cannot be zero, check model inputs.")
-
     elif isinstance(depth_model, str):
 
         if depth_model.casefold() in list(map(str.casefold, model_parameters)):
@@ -195,6 +194,9 @@ def calculate_depth(freq_input,
             (a, b) = params
             if a == 0 or b == 0:
                 raise ValueError("Parameters cannot be zero, check model inputs")            
+
+    if b < 0:
+        b = b * -1
 
     # Get frequency input
     # Checking if freq_input is HVSRData object
