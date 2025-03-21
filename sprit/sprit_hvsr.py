@@ -5233,7 +5233,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Read data from Tromino
-def read_tromino_files(input_data, params, struct_format='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(input_data, struct_format='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
@@ -5280,11 +5280,26 @@ def read_tromino_files(input_data, params, struct_format='H', sampling_rate=128,
     if 'start_byte' in kwargs.keys():
         start_byte = kwargs['start_byte']
 
+    station = 'Tromino'
+    if 'station' in kwargs:
+        station = kwargs['station']
+
+    acq_date = datetime.date.today()
+    if 'acq_date' in kwargs:
+        acq_date = kwargs['acq_date']
+
+    starttime = datetime.time(0, 0)
+    if 'starttime' in kwargs:
+        starttime = kwargs['starttime']
+
     startByte = start_byte
     comp1 = dataArr[startByte::3] - medVal
     comp2 = dataArr[startByte+1::3] - medVal
     comp3 = dataArr[startByte+2::3] - medVal
     headerBytes = dataArr[:startByte]
+
+    if 'diagnose' in kwargs and kwargs['diagnose']:
+        print("Total file bytes: ", len(dataArr))
 
     #fig, ax = plt.subplots(3, sharex=True, sharey=True)
     #ax[0].plot(comp1, linewidth=0.1, c='k')
