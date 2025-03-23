@@ -5233,7 +5233,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Read data from Tromino
-def read_tromino_files(input_data, struct_format='H', sampling_rate=128, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(input_data, struct_format='e', sampling_rate=128, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
@@ -6646,6 +6646,82 @@ def __detrend_data(input, detrend, detrend_options, verbose, source):
         #Return a stream otherwise
         output = input[key]['stream']
     return output
+
+
+def __read_tromino_headers(input_data):
+
+    def swap_bytes_in_file(input_file):
+        """
+        Read a binary file and write a new file with all bytes swapped in pairs.
+        This handles odd-length files correctly.
+        """
+        with open(input_file, 'rb') as f:
+            data = f.read()
+        
+        # Create new byte array for swapped data
+        swapped = bytearray(len(data))
+        
+        # Swap bytes in pairs
+        for i in range(0, len(data) - 1, 2):
+            swapped[i] = data[i + 1]
+            swapped[i + 1] = data[i]
+        
+        # Handle odd length
+        if len(data) % 2 == 1:
+            swapped[-1] = data[-1]
+        
+        # Make this a memory file
+        mem_file = 'output_file'
+        with open(mem_file, 'wb') as f:
+            f.write(swapped)
+        
+        return True
+
+    # First, swap the bytes
+    swap_bytes_in_file(input_data)
+
+    # Then read the swapped file with your normal code
+    structFormat = 'c'
+    structSize = struct.calcsize(structFormat)
+
+    dataList = []
+    with open(mem_file, 'rb') as f:
+        while True:
+            data = f.read(structSize)
+            if not data:
+                break
+            value = struct.unpack(structFormat, data)[0]  
+            dataList.append(value)
+
+    # Now decode without the character switching function
+
+    encoding = 'ascii'
+
+    #print('\n')
+    #print(f"Trying encoding: {encoding}")
+    outString = ''
+    try:
+        # Assuming np_char_array is a numpy array of byte values, convert to bytes
+        # Example: np_char_array = np.array([...], dtype='S1')  # byte values
+        for i, b in enumerate(np.array(dataList)[:505344]):
+            # Append decoded bytes to the output string, handling errors as needed
+            outString += b.decode(encoding, errors='backslashreplace')
+        
+        # Apply the rearrange function
+        newString = outString#rearrange_str(outString)
+
+        # Print length and the first 512 characters for a quick check
+        #print(newString[97:525])
+
+        # Save the output to a file
+        with open(outpathDir.joinpath(f"{encoding}.txt").as_posix(), 'w', encoding='utf-8') as f:
+            print(newString, file=f)
+        
+        working_codecs.append(encoding)
+
+    except Exception as e:
+        print(f"Failed with encoding {encoding}: {e}")
+        pass
 
 
 # Read data from raspberry shake
@@ -8923,6 +8999,7 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
         plotEngine = hvsr_results.processing_parameters['get_report']['plot_engine'].lower()
         
     if plotEngine not in ['plotly', 'plty', 'p']:
+        plt.rcParams['figure.figsize'] = (5, 6)
         # Create a byte stream from the image
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
