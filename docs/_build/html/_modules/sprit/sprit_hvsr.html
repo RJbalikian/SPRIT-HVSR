@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.3.2 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.3.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=5048a02b"></script>
+      <script src="../../_static/documentation_options.js?v=f4302432"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -2608,13 +2608,14 @@
                 <span class="nb">print</span><span class="p">()</span>
 
     <span class="n">raspShakeInstNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;raspberry shake&#39;</span><span class="p">,</span> <span class="s1">&#39;shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspberry&#39;</span><span class="p">,</span> <span class="s1">&#39;rs&#39;</span><span class="p">,</span> <span class="s1">&#39;rs3d&#39;</span><span class="p">,</span> <span class="s1">&#39;rasp. shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspshake&#39;</span><span class="p">]</span>
-    <span class="n">trominoNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tromino&#39;</span><span class="p">,</span> <span class="s1">&#39;trom&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g+&#39;</span><span class="p">,</span> <span class="s1">&#39;tr&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">]</span>
+    <span class="n">trominoNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tromino&#39;</span><span class="p">,</span> <span class="s1">&#39;trom&#39;</span><span class="p">,</span><span class="s1">&#39;tromino blue&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino blu&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino 3g+&#39;</span><span class="p">,</span> <span class="s1">&#39;tr&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">]</span>
 
     <span class="c1"># Check if data is from tromino, and adjust parameters accordingly</span>
     <span class="k">if</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s1">&#39;instrument&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trominoNameList</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Data from tromino detected. Changing instrument from </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> to &#39;Tromino&#39;&quot;</span><span class="p">)</span>
-        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;tromino&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
 
     <span class="c1"># Get metadata (inventory/response information)</span>
     <span class="n">params</span> <span class="o">=</span> <span class="n">get_metadata</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">update_metadata</span><span class="o">=</span><span class="n">update_metadata</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
@@ -2731,10 +2732,14 @@
                     <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">__read_RS_file_struct</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">doy</span><span class="p">,</span> <span class="n">inv</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span><span class="p">:</span>
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
-                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>                    
-                    <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data not fetched for </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">. Check input parameters or the data file.&quot;</span><span class="p">)</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
+
+                    <span class="n">trominoKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">read_tromino_files</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+                    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="n">trominoKwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+                    <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">trominoKwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data not fetched for </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">. Check input parameters or the data file.</span><span class="se">\n\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;stream&#39;</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
             <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">elif</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;dir&#39;</span><span class="p">:</span>
@@ -2759,8 +2764,20 @@
             <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span> <span class="ow">or</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">dPath</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
+
+                <span class="k">if</span> <span class="s1">&#39;blu&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino Blue&#39;</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino Blue&#39;</span>
+
                 <span class="k">if</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">dPath</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
-                    <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">trominoKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">read_tromino_files</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+                    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="n">trominoKwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;input_data&#39;</span> <span class="ow">in</span> <span class="n">trominoKwargs</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">trominoKwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s1">&#39;tromino_model&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trominoKwargs</span><span class="p">:</span>
+                        <span class="n">trominoKwargs</span><span class="p">[</span><span class="s1">&#39;tromino_model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span>
+                    <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">dPath</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">trominoKwargs</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">)</span>
@@ -2827,6 +2844,10 @@
                 <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;source=</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s1"> not recognized, and input_data cannot be read using obspy.read()&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Data as read in initially:&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">rawDataIN</span><span class="p">)</span>
 
     <span class="c1">#Get metadata from the data itself, if not reading raw data</span>
     <span class="k">try</span><span class="p">:</span>
@@ -2942,6 +2963,19 @@
                     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">Endtime updated to </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;endtime&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Latitude, Longitude, Elevation</span>
+            <span class="c1"># Maybe make this more comprehensive, like for all input_params</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;latitude&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;elevation&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;elev_unit&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;input_crs&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_crs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;input_crs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;input_crs&#39;</span><span class="p">]</span>
+
             <span class="c1"># HVSR_ID (derived)</span>
             <span class="n">project</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;project&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2957,7 +2991,7 @@
             <span class="n">dataIN</span> <span class="o">=</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">],</span> <span class="n">endtime</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;endtime&#39;</span><span class="p">])</span>
             <span class="n">dataIN</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data as read by obspy does not contain the proper metadata. </span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">.</span><span class="se">\n\n</span><span class="s1">tCheck your input parameters or the data file.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data as read by obspy does not contain the proper metadata. </span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1">Check your input parameters or the data file.&#39;</span><span class="p">)</span>
 
     <span class="c1"># Get and update metadata</span>
     <span class="n">params</span> <span class="o">=</span> <span class="n">get_metadata</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">update_metadata</span><span class="o">=</span><span class="n">update_metadata</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
@@ -5426,7 +5460,8 @@
 <span class="c1"># Read data from Tromino</span>
 <div class="viewcode-block" id="read_tromino_files">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.read_tromino_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_record_duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines</span>
 
 <span class="sd">    Parameters</span>
@@ -5444,6 +5479,17 @@
 <span class="sd">        An obspy.Stream object containing the trace data from the Tromino instrument</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dPath</span> <span class="o">=</span> <span class="n">input_data</span>
+
+    <span class="n">blueModelList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;blu&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino blu&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino blue&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">tromino_model</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">blueModelList</span><span class="p">:</span>
+        <span class="n">tBlueKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">__read_tromino_data_blue</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+        <span class="k">if</span> <span class="s1">&#39;sampling_rate&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tBlueKwargs</span><span class="p">:</span>
+            <span class="n">tBlueKwargs</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampling_rate</span>
+            <span class="k">return</span> <span class="n">__read_tromino_data_blue</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">tBlueKwargs</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">sampling_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">128</span> <span class="c1"># default value</span>
 
     <span class="n">strucSizes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
                 <span class="s1">&#39;h&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;H&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;e&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
@@ -5473,11 +5519,26 @@
     <span class="k">if</span> <span class="s1">&#39;start_byte&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">start_byte</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;start_byte&#39;</span><span class="p">]</span>
 
+    <span class="n">station</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;station&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">station</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;station&#39;</span><span class="p">]</span>
+
+    <span class="n">acq_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;acq_date&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">acq_date</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;acq_date&#39;</span><span class="p">]</span>
+
+    <span class="n">starttime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;starttime&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">starttime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span>
+
     <span class="n">startByte</span> <span class="o">=</span> <span class="n">start_byte</span>
     <span class="n">comp1</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
     <span class="n">comp2</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="o">+</span><span class="mi">1</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
     <span class="n">comp3</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="o">+</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
     <span class="n">headerBytes</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[:</span><span class="n">startByte</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s1">&#39;diagnose&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;diagnose&#39;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total file bytes: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataArr</span><span class="p">))</span>
 
     <span class="c1">#fig, ax = plt.subplots(3, sharex=True, sharey=True)</span>
     <span class="c1">#ax[0].plot(comp1, linewidth=0.1, c=&#39;k&#39;)</span>
@@ -6838,6 +6899,268 @@
         <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">output</span>
 
+
+<span class="c1"># Helper function to read data from Tromino Blue instruments</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__read_tromino_data_blue</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                            <span class="n">channel_map</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">},</span> <span class="n">data_start_buffer</span><span class="o">=</span><span class="mi">113</span><span class="p">,</span>
+                            <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    
+    <span class="c1"># Reconfigure data for some of the analysis</span>
+    <span class="n">swapped</span> <span class="o">=</span> <span class="n">__swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span> 
+
+    <span class="c1"># Initialize a result dictionary</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s1">&#39;gps_data&#39;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s1">&#39;seismometer_data&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># Will be replaced with a (7, n) numpy array</span>
+        <span class="s1">&#39;stream&#39;</span><span class="p">:</span> <span class="kc">None</span> 
+        <span class="p">}</span>
+    
+    <span class="c1"># Extract header information (text sections)</span>
+    <span class="n">header_text</span> <span class="o">=</span> <span class="n">__extract_text_sections</span><span class="p">(</span><span class="n">swapped</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">header_text</span><span class="p">:</span>
+        <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39;NAKAGRILLA FLASHCARD HEADER&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">][</span><span class="s1">&#39;file_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Add more header parsing as needed</span>
+    
+    <span class="c1"># Extract GPS NMEA sentences</span>
+    <span class="n">gps_data</span> <span class="o">=</span> <span class="n">__extract_gps_data</span><span class="p">(</span><span class="n">swapped</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">gps_data</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sentence</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;$GPGGA&#39;</span><span class="p">):</span>
+            <span class="c1"># Parse GPGGA sentence (position data)</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">sentence</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">lat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">][:</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">60</span> <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="n">lat_dir</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                    <span class="n">lon</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">][:</span><span class="mi">3</span><span class="p">])</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">3</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">60</span> <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="n">lon_dir</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+                    
+                    <span class="k">if</span> <span class="n">lat_dir</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                        <span class="n">lat</span> <span class="o">=</span> <span class="o">-</span><span class="n">lat</span>
+                    <span class="k">if</span> <span class="n">lon_dir</span> <span class="o">==</span> <span class="s1">&#39;W&#39;</span><span class="p">:</span>
+                        <span class="n">lon</span> <span class="o">=</span> <span class="o">-</span><span class="n">lon</span>
+                        
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;gps_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;GPGGA&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+                        <span class="s1">&#39;latitude&#39;</span><span class="p">:</span> <span class="n">lat</span><span class="p">,</span>
+                        <span class="s1">&#39;longitude&#39;</span><span class="p">:</span> <span class="n">lon</span><span class="p">,</span>
+                        <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">sentence</span>
+                    <span class="p">})</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;gps_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;GPGGA&#39;</span><span class="p">,</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">sentence</span><span class="p">,</span> <span class="s1">&#39;parse_error&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+        
+        <span class="k">elif</span> <span class="n">sentence</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;$GPZDA&#39;</span><span class="p">):</span>
+            <span class="c1"># Parse GPZDA sentence (date &amp; time)</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">sentence</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="n">month</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+                    
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;gps_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;GPZDA&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">timestamp</span><span class="p">,</span>
+                        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">month</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">sentence</span>
+                    <span class="p">})</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;gps_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;GPZDA&#39;</span><span class="p">,</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">sentence</span><span class="p">,</span> <span class="s1">&#39;parse_error&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+    
+    <span class="c1"># Extract seismometer data</span>
+    <span class="c1"># Find the start of seismometer data section (after GPS data)</span>
+    <span class="n">seis_data_start</span> <span class="o">=</span> <span class="n">__locate_data_start_blue</span><span class="p">(</span><span class="n">swapped</span><span class="p">)</span>
+    
+    <span class="c1"># Get seismic starting buffer</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">header_text</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;FIRST DATA&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">data_buffer</span> <span class="o">=</span> <span class="n">data_start_buffer</span> <span class="c1">#137#int(str(item).split(&#39;-&#39;)[2].split(&quot;ADDRES &quot;)[1].split(&#39;.&#39;)[0])</span>
+
+    <span class="c1"># Get sampling rate</span>
+    <span class="k">if</span> <span class="n">sampling_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">header_text</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;PER SECOND&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="n">sampling_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;BYTE &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;PER&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">Sampling rate detected as:&#39;</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">)</span>
+
+    <span class="c1"># Read the file as simple bytes</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="c1">#data_start_byte SHOULD NOT BE HARDCODED! (will eventually determine)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">seis_data_start</span> <span class="o">+</span> <span class="n">data_buffer</span><span class="p">)</span>
+        <span class="c1"># Read the rest of the file</span>
+        <span class="n">raw_bytes</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="c1">#raw_bytes = swapped[seis_data_start + data_buffer:]</span>
+
+    <span class="c1"># Assign variables for reading data</span>
+    <span class="n">bytes_per_sample</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># 16-bit</span>
+    <span class="n">num_channels</span> <span class="o">=</span> <span class="mi">7</span> <span class="c1">#3x accel, 3x seism, 1x trigger</span>
+    <span class="n">total_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_bytes</span><span class="p">)</span> <span class="o">//</span> <span class="n">bytes_per_sample</span>
+
+    <span class="c1"># Decode all samples</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_samples</span><span class="p">):</span>
+        <span class="n">start_byte</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">bytes_per_sample</span>
+        <span class="n">sample_bytes</span> <span class="o">=</span> <span class="n">raw_bytes</span><span class="p">[</span><span class="n">start_byte</span><span class="p">:</span><span class="n">start_byte</span> <span class="o">+</span> <span class="n">bytes_per_sample</span><span class="p">]</span>
+        
+        <span class="c1"># Try little-endian first</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">sample_bytes</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;little&#39;</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># Convert to numpy array</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="c1"># Ensure we have complete sets of channel data</span>
+    <span class="n">usable_samples</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="n">num_channels</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_channels</span>
+    <span class="n">channel_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">usable_samples</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="c1"># Analyze the data</span>
+        <span class="n">zero_percent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">channel_data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">channel_data</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Zero percentage: </span><span class="si">{</span><span class="n">zero_percent</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check zeros by channel</span>
+        <span class="n">zeros_by_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">channel_data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">samples_per_channel</span> <span class="o">=</span> <span class="n">channel_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Zero percentage by channel:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="n">channel_zero_percent</span> <span class="o">=</span> <span class="n">zeros_by_channel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">samples_per_channel</span> <span class="o">*</span> <span class="mi">100</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Channel </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">channel_zero_percent</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot the first 1000 samples of each channel</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">num_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">channel_data</span><span class="p">[:</span><span class="mi">1000</span><span class="p">,</span> <span class="n">i</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Channel </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+    <span class="c1"># Extract data from GPS strings</span>
+    <span class="n">acq_date</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">()</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">sTime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">latPts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lonPts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">elevPts</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">gpsPt</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;gps_data&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s1">&#39;ZDA&#39;</span> <span class="ow">in</span> <span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;timestamp&#39;</span> <span class="ow">in</span> <span class="n">gpsPt</span><span class="p">:</span>
+                <span class="n">sTime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">][:</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="s1">&#39;date&#39;</span> <span class="ow">in</span> <span class="n">gpsPt</span><span class="p">:</span>
+                <span class="n">acq_date</span><span class="o">=</span><span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s1">&#39;GGA&#39;</span> <span class="ow">in</span> <span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]:</span>
+            <span class="n">latPts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">])</span>
+            <span class="n">lonPts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">])</span>
+            <span class="n">elevPts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">gpsPt</span><span class="p">[</span><span class="s1">&#39;raw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">9</span><span class="p">]))</span>
+        
+    <span class="n">acq_date</span> <span class="o">=</span> <span class="n">acq_date</span> <span class="o">+</span> <span class="p">(</span><span class="n">sTime</span><span class="o">.</span><span class="n">hour</span><span class="o">*</span> <span class="mi">60</span><span class="o">*</span><span class="mi">60</span> <span class="o">+</span> <span class="n">sTime</span><span class="o">.</span><span class="n">minute</span><span class="o">*</span><span class="mi">60</span> <span class="o">+</span> <span class="n">sTime</span><span class="o">.</span><span class="n">second</span><span class="p">)</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="s1">&#39;TR&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;station&#39;</span><span class="p">:</span><span class="s1">&#39;BLUE&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sampling_rate&#39;</span><span class="p">:</span><span class="n">sampling_rate</span><span class="p">,</span>
+            <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">acq_date</span><span class="p">,</span>
+            <span class="s1">&#39;longitude&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">lonPts</span><span class="p">)),</span> <span class="mi">7</span><span class="p">),</span>
+            <span class="s1">&#39;latitude&#39;</span><span class="p">:</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">latPts</span><span class="p">)),</span> <span class="mi">7</span><span class="p">),</span>
+            <span class="s1">&#39;input_crs&#39;</span><span class="p">:</span><span class="s1">&#39;EPSG:4326&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;elevation&#39;</span><span class="p">:</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">elevPts</span><span class="p">)),</span> <span class="mi">7</span><span class="p">),</span>
+            <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;instrument&#39;</span><span class="p">:</span> <span class="s1">&#39;Tromino Blue&#39;</span>
+            <span class="p">}</span>
+    
+    <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EHN&#39;</span>
+    <span class="n">nTrace</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">channel_data</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">channel_map</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]],</span> <span class="n">header</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
+    <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EHE&#39;</span>
+    <span class="n">eTrace</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">channel_data</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">channel_map</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]],</span> <span class="n">header</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
+    <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EHZ&#39;</span>
+    <span class="n">zTrace</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">channel_data</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">channel_map</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]],</span> <span class="n">header</span><span class="o">=</span><span class="n">stats</span><span class="p">)</span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">zTrace</span><span class="p">,</span> <span class="n">eTrace</span><span class="p">,</span> <span class="n">nTrace</span><span class="p">])</span>
+
+    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
+
+    <span class="k">if</span> <span class="n">return_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">st</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__extract_text_sections</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract text sections from binary data&quot;&quot;&quot;</span>
+    <span class="c1"># Find blocks of ASCII text (simple approach)</span>
+    <span class="n">text_sections</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Look for consecutive printable ASCII characters</span>
+    <span class="n">ascii_chunks</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;[A-Za-z0-9 </span><span class="se">\t\r\n</span><span class="s1">\.,_\-\+\*\/\$]{6,}&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">ascii_chunks</span><span class="p">:</span>
+        <span class="n">text_sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">text_sections</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__extract_gps_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract GPS NMEA sentences from binary data&quot;&quot;&quot;</span>
+    <span class="c1"># NMEA sentences start with $ and end with \r\n</span>
+    <span class="n">data_str</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Look for NMEA sentences</span>
+    <span class="n">gps_sentences</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nmea_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\$(GP[A-Z]</span><span class="si">{3}</span><span class="s1">,.+?)\r\n&#39;</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">nmea_pattern</span><span class="p">,</span> <span class="n">data_str</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="n">gps_sentences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">gps_sentences</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__locate_data_start_blue</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function looks after the last GPS point for an intitial, likely starting position of seismometer data&quot;&quot;&quot;</span>
+    
+    <span class="c1"># Look for the last NMEA sentence and start from there (small skip ahead</span>
+    <span class="n">data_str</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+    <span class="n">last_nmea_pos</span> <span class="o">=</span> <span class="n">data_str</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;$GP&#39;</span><span class="p">)</span>
+
+    
+    <span class="c1"># Assuming we find GPS data, find the spot after that indicating a new line</span>
+    <span class="k">if</span> <span class="n">last_nmea_pos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Find the end of this sentence</span>
+        <span class="n">end_GPS_marker</span> <span class="o">=</span> <span class="n">data_str</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">last_nmea_pos</span><span class="p">)</span>
+        <span class="c1">#end_marker = data_str.find(&#39;[&#39;, last_nmea_pos)</span>
+
+        <span class="k">if</span> <span class="n">end_GPS_marker</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Skip a bit further to be safe</span>
+            <span class="k">return</span> <span class="n">end_GPS_marker</span> <span class="o">+</span> <span class="mi">8</span>
+    
+    <span class="k">return</span> <span class="n">end_GPS_marker</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__swap_bytes</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function (not meant to be called except by internal functions) </span>
+<span class="sd">    to read a binary file and return a bytearray with all bytes swapped in pairs.</span>
+<span class="sd">    This handles odd-length files correctly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Open binary file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    
+    <span class="c1"># Create new byte array for the swapped data</span>
+    <span class="n">swapped</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    
+    <span class="c1"># Swap bytes in pairs</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    
+    <span class="c1"># Handle odd length</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">swapped</span>
 
 <span class="c1"># Read data from raspberry shake</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__read_RS_file_struct</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">doy</span><span class="p">,</span> <span class="n">inv</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -9114,6 +9437,7 @@
         <span class="n">plotEngine</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">processing_parameters</span><span class="p">[</span><span class="s1">&#39;get_report&#39;</span><span class="p">][</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         
     <span class="k">if</span> <span class="n">plotEngine</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
         <span class="c1"># Create a byte stream from the image</span>
         <span class="n">buf</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">)</span>
