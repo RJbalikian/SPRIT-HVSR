@@ -6724,6 +6724,79 @@ def __read_tromino_headers(input_data):
         pass
 
 
+def __read_tromino_data_BLUE(trc_file, data_start_byte=200004, show_analysis=False):
+    # THIS WORKS!!!! (But not 100%)
+    # Read the file as simple bytes
+    with open(trc_file, 'rb') as f:
+        
+        #data_start_byte SHOULD NOT BE HARDCODED!
+        f.seek(data_start_byte)
+        # Read the rest of the file
+        raw_bytes = f.read()
+
+    # Try with 7 channels now
+    bytes_per_sample = 2  # 16-bit
+    num_channels = 7 #3x accel, 3x seism, 1x trigger
+    total_samples = len(raw_bytes) // bytes_per_sample
+
+    # Decode all samples
+    values = []
+    for i in range(total_samples):
+        start_byte = i * bytes_per_sample
+        sample_bytes = raw_bytes[start_byte:start_byte + bytes_per_sample]
+        
+        # Try little-endian first
+        value = int.from_bytes(sample_bytes, byteorder='little', signed=True)
+        values.append(value)
+
+    # Convert to numpy array
+    data = np.array(values, dtype=np.int32)
+
+    # Ensure we have complete sets of channel data
+    usable_samples = (len(data) // num_channels) * num_channels
+    channel_data = data[:usable_samples].reshape(-1, num_channels)
+
+    if show_analysis:
+        # Analyze the data
+        zero_percent = np.sum(channel_data == 0) / channel_data.size * 100
+        print(f"Zero percentage: {zero_percent:.2f}%")
+
+        # Check zeros by channel
+        zeros_by_channel = np.sum(channel_data == 0, axis=0)
+        samples_per_channel = channel_data.shape[0]
+        print("Zero percentage by channel:")
+        for i in range(num_channels):
+            channel_zero_percent = zeros_by_channel[i] / samples_per_channel * 100
+            print(f"Channel {i+1}: {channel_zero_percent:.2f}%")
+
+        # Plot the first 1000 samples of each channel
+        plt.figure(figsize=(15, 12))
+        for i in range(num_channels):
+            plt.subplot(num_channels, 1, i+1)
+            plt.plot(channel_data[:1000, i])
+            plt.title(f"Channel {i+1}")
+            plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+
+    stats = {'network':'TR',
+            'station':'TBlu',
+            'channel':'EHN',
+            'sampling_rate':128
+            }
+
+
+    nTrace = obspy.Trace(data=channel_data.T[1], header=stats)
+    stats['channel'] = 'EHE'
+    eTrace = obspy.Trace(data=channel_data.T[3], header=stats)
+    stats['channel'] = 'EHZ'
+    zTrace = obspy.Trace(data=channel_data.T[5], header=stats)
+
+    st = obspy.Stream([zTrace, eTrace, nTrace])
+
+    return st
+
 # Read data from raspberry shake
 def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=False):
     """"Private function used by fetch_data() to read in Raspberry Shake data"""
