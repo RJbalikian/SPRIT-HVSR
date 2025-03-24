@@ -2451,13 +2451,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 print()
 
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
-    trominoNameList = ['tromino', 'trom', 'tromino 3g', 'tromino 3g+', 'tr', 't']
+    trominoNameList = ['tromino', 'trom','tromino blue', 'tromino blu', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
     # Check if data is from tromino, and adjust parameters accordingly
     if 'trc' in pathlib.Path(str(params['input_data'])).suffix:
         if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
             print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
-        params['instrument'] = 'Tromino'
+        if 'tromino' not in str(params['instrument']).lower():
+            params['instrument'] = 'Tromino'
 
     # Get metadata (inventory/response information)
     params = get_metadata(params, update_metadata=update_metadata, source=source)
@@ -2574,10 +2575,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
                 elif inst.lower() in trominoNameList:
                     params['instrument'] = 'Tromino'
-                    params['params']['instrument'] = 'Tromino'                    
-                    rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
-            except:
-                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.")
+                    params['params']['instrument'] = 'Tromino'
+
+                    trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
+                    paramDict = {k:v for k, v in params.items()}
+                    trominoKwargs.update(paramDict)
+                    rawDataIN = read_tromino_files(dPath, verbose=verbose, **trominoKwargs)
+            except Exception as e:
+                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.\n\n{e}")
         elif source=='stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
             rawDataIN = params['input_data'].copy()
         elif source=='dir':
@@ -2602,8 +2607,20 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
                 params['params']['instrument'] = 'Tromino'
+
+                if 'blu' in str(inst).lower():
+                    params['instrument'] = 'Tromino Blue'
+                    params['params']['instrument'] = 'Tromino Blue'
+
                 if 'trc' in dPath.suffix:
-                    rawDataIN = read_tromino_files(dPath, params, verbose=verbose, **kwargs)
+                    trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
+                    paramDict = {k:v for k, v in params.items()}
+                    trominoKwargs.update(paramDict)
+                    if 'input_data' in trominoKwargs:
+                        del trominoKwargs['input_data']
+                    if 'tromino_model' not in trominoKwargs:
+                        trominoKwargs['tromino_model'] = params['instrument']
+                    rawDataIN = read_tromino_files(input_data=dPath, verbose=verbose, **trominoKwargs)
                 else:
                     try:
                         rawDataIN = obspy.read(dPath)
@@ -2670,6 +2687,10 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 rawDataIN = obspy.read(dPath)
             except:
                 RuntimeError(f'source={source} not recognized, and input_data cannot be read using obspy.read()')
+
+    if verbose:
+        print('\t Data as read in initially:')
+        print(rawDataIN)
 
     #Get metadata from the data itself, if not reading raw data
     try:
@@ -2785,6 +2806,19 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     if verbose:
                         print(f"\t\tEndtime updated to {params['endtime']}")
 
+            # Latitude, Longitude, Elevation
+            # Maybe make this more comprehensive, like for all input_params
+            if hasattr(dataIN[0].stats, 'latitude'):
+                params['latitude'] = params['params']['latitude'] = dataIN[0].stats['latitude']
+            if hasattr(dataIN[0].stats, 'longitude'):
+                params['longitude'] = params['params']['longitude'] = dataIN[0].stats['longitude']
+            if hasattr(dataIN[0].stats, 'elevation'):
+                params['elevation']  = params['params']['elevation'] = dataIN[0].stats['elevation']
+            if hasattr(dataIN[0].stats, 'elev_unit'):
+                params['elev_unit'] = params['params']['elev_unit'] = dataIN[0].stats['elev_unit']
+            if hasattr(dataIN[0].stats, 'input_crs'):
+                params['input_crs'] = params['params']['input_crs'] = dataIN[0].stats['input_crs']
+
             # HVSR_ID (derived)
             project = params['project']
             if project is None:
@@ -2800,7 +2834,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
             dataIN.merge()
     except Exception as e:
-        raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\n\ntCheck your input parameters or the data file.')
+        raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\nCheck your input parameters or the data file.')
 
     # Get and update metadata
     params = get_metadata(params, update_metadata=update_metadata, source=source)
@@ -5233,7 +5267,8 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Read data from Tromino
-def read_tromino_files(input_data, struct_format='e', sampling_rate=128, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
+def read_tromino_files(input_data, struct_format='e', tromino_model=None,
+    sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
     Parameters
@@ -5251,6 +5286,17 @@ def read_tromino_files(input_data, struct_format='e', sampling_rate=128, set_rec
         An obspy.Stream object containing the trace data from the Tromino instrument
     """
     dPath = input_data
+
+    blueModelList = ['blue', 'blu', 'tromino blu', 'tromino blue']
+
+    if str(tromino_model).lower() in blueModelList:
+        tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
+        if 'sampling_rate' not in tBlueKwargs:
+            tBlueKwargs['sampling_rate'] = sampling_rate
+            return __read_tromino_data_blue(input_data, verbose=False, **tBlueKwargs)
+            
+    if sampling_rate is None:
+        sampling_rate = 128 # default value
 
     strucSizes = {'c':1, 'b':1,'B':1, '?':1,
                 'h':2,'H':2,'e':2,
@@ -6648,93 +6694,103 @@ def __detrend_data(input, detrend, detrend_options, verbose, source):
     return output
 
 
-def __read_tromino_headers(input_data):
+# Helper function to read data from Tromino Blue instruments
+def __read_tromino_data_blue(input_data, sampling_rate=None, 
+                            channel_map={'Z':6, 'E':4, 'N':2}, data_start_buffer=113,
+                            return_dict=False, verbose=False):
+    
+    # Reconfigure data for some of the analysis
+    swapped = __swap_bytes(input_data) 
 
-    def swap_bytes_in_file(input_file):
-        """
-        Read a binary file and write a new file with all bytes swapped in pairs.
-        This handles odd-length files correctly.
-        """
-        with open(input_file, 'rb') as f:
-            data = f.read()
+    # Initialize a result dictionary
+    result = {
+        'header': {},
+        'gps_data': [],
+        'seismometer_data': None, # Will be replaced with a (7, n) numpy array
+        'stream': None 
+        }
+    
+    # Extract header information (text sections)
+    header_text = __extract_text_sections(swapped)
+    for text in header_text:
+        if b'NAKAGRILLA FLASHCARD HEADER' in text:
+            result['header']['file_type'] = text.decode('ascii', errors='ignore').strip('\x00')
+        # Add more header parsing as needed
+    
+    # Extract GPS NMEA sentences
+    gps_data = __extract_gps_data(swapped)
+    for sentence in gps_data:
+        if sentence.startswith('$GPGGA'):
+            # Parse GPGGA sentence (position data)
+            parts = sentence.split(',')
+            if len(parts) >= 15:
+                try:
+                    timestamp = parts[1]
+                    lat = float(parts[2][:2]) + float(parts[2][2:]) / 60 if parts[2] else None
+                    lat_dir = parts[3]
+                    lon = float(parts[4][:3]) + float(parts[4][3:]) / 60 if parts[4] else None
+                    lon_dir = parts[5]
+                    
+                    if lat_dir == 'S':
+                        lat = -lat
+                    if lon_dir == 'W':
+                        lon = -lon
+                        
+                    result['gps_data'].append({
+                        'type': 'GPGGA',
+                        'timestamp': timestamp,
+                        'latitude': lat,
+                        'longitude': lon,
+                        'raw': sentence
+                    })
+                except (ValueError, IndexError):
+                    result['gps_data'].append({'type': 'GPGGA', 'raw': sentence, 'parse_error': True})
         
-        # Create new byte array for swapped data
-        swapped = bytearray(len(data))
-        
-        # Swap bytes in pairs
-        for i in range(0, len(data) - 1, 2):
-            swapped[i] = data[i + 1]
-            swapped[i + 1] = data[i]
-        
-        # Handle odd length
-        if len(data) % 2 == 1:
-            swapped[-1] = data[-1]
-        
-        # Make this a memory file
-        mem_file = 'output_file'
-        with open(mem_file, 'wb') as f:
-            f.write(swapped)
-        
-        return True
+        elif sentence.startswith('$GPZDA'):
+            # Parse GPZDA sentence (date & time)
+            parts = sentence.split(',')
+            if len(parts) >= 5:
+                try:
+                    timestamp = parts[1]
+                    day = parts[2]
+                    month = parts[3]
+                    year = parts[4]
+                    
+                    result['gps_data'].append({
+                        'type': 'GPZDA',
+                        'timestamp': timestamp,
+                        'date': f"{year}-{month}-{day}",
+                        'raw': sentence
+                    })
+                except (ValueError, IndexError):
+                    result['gps_data'].append({'type': 'GPZDA', 'raw': sentence, 'parse_error': True})
+    
+    # Extract seismometer data
+    # Find the start of seismometer data section (after GPS data)
+    seis_data_start = __locate_data_start_blue(swapped)
+    
+    # Get seismic starting buffer
+    for item in header_text:
+        if "FIRST DATA" in str(item):
+            data_buffer = data_start_buffer #137#int(str(item).split('-')[2].split("ADDRES ")[1].split('.')[0])
 
-    # First, swap the bytes
-    swap_bytes_in_file(input_data)
+    # Get sampling rate
+    if sampling_rate is None:
+        for item in header_text:
+            if "PER SECOND" in str(item):
+                sampling_rate = int(str(item).split('-')[1].split("BYTE ")[1].split('PER')[0])
+        if verbose:
+            print('\tSampling rate detected as:', sampling_rate)
 
-    # Then read the swapped file with your normal code
-    structFormat = 'c'
-    structSize = struct.calcsize(structFormat)
-
-    dataList = []
-    with open(mem_file, 'rb') as f:
-        while True:
-            data = f.read(structSize)
-            if not data:
-                break
-            value = struct.unpack(structFormat, data)[0]  
-            dataList.append(value)
-
-    # Now decode without the character switching function
-
-    encoding = 'ascii'
-
-    #print('\n')
-    #print(f"Trying encoding: {encoding}")
-    outString = ''
-    try:
-        # Assuming np_char_array is a numpy array of byte values, convert to bytes
-        # Example: np_char_array = np.array([...], dtype='S1')  # byte values
-        for i, b in enumerate(np.array(dataList)[:505344]):
-            # Append decoded bytes to the output string, handling errors as needed
-            outString += b.decode(encoding, errors='backslashreplace')
-        
-        # Apply the rearrange function
-        newString = outString#rearrange_str(outString)
-
-        # Print length and the first 512 characters for a quick check
-        #print(newString[97:525])
-
-        # Save the output to a file
-        with open(outpathDir.joinpath(f"{encoding}.txt").as_posix(), 'w', encoding='utf-8') as f:
-            print(newString, file=f)
-        
-        working_codecs.append(encoding)
-
-    except Exception as e:
-        print(f"Failed with encoding {encoding}: {e}")
-        pass
-
-
-def __read_tromino_data_BLUE(trc_file, data_start_byte=200004, show_analysis=False):
-    # THIS WORKS!!!! (But not 100%)
     # Read the file as simple bytes
-    with open(trc_file, 'rb') as f:
-        
-        #data_start_byte SHOULD NOT BE HARDCODED!
-        f.seek(data_start_byte)
+    with open(input_data, 'rb') as f:
+        #data_start_byte SHOULD NOT BE HARDCODED! (will eventually determine)
+        f.seek(seis_data_start + data_buffer)
         # Read the rest of the file
         raw_bytes = f.read()
+    #raw_bytes = swapped[seis_data_start + data_buffer:]
 
-    # Try with 7 channels now
+    # Assign variables for reading data
     bytes_per_sample = 2  # 16-bit
     num_channels = 7 #3x accel, 3x seism, 1x trigger
     total_samples = len(raw_bytes) // bytes_per_sample
@@ -6756,7 +6812,7 @@ def __read_tromino_data_BLUE(trc_file, data_start_byte=200004, show_analysis=Fal
     usable_samples = (len(data) // num_channels) * num_channels
     channel_data = data[:usable_samples].reshape(-1, num_channels)
 
-    if show_analysis:
+    if verbose:
         # Analyze the data
         zero_percent = np.sum(channel_data == 0) / channel_data.size * 100
         print(f"Zero percentage: {zero_percent:.2f}%")
@@ -6774,28 +6830,131 @@ def __read_tromino_data_BLUE(trc_file, data_start_byte=200004, show_analysis=Fal
         for i in range(num_channels):
             plt.subplot(num_channels, 1, i+1)
             plt.plot(channel_data[:1000, i])
-            plt.title(f"Channel {i+1}")
+            plt.title(f"Channel {i}")
             plt.grid(True)
         plt.tight_layout()
         plt.show()
 
 
+    # Extract data from GPS strings
+    acq_date = obspy.UTCDateTime().now()
+    sTime = datetime.time()
+    latPts = []
+    lonPts = []
+    elevPts = []
+
+    for gpsPt in result['gps_data']:
+        if 'ZDA' in gpsPt['type']:
+            if 'timestamp' in gpsPt:
+                sTime = datetime.time(int(gpsPt['timestamp'][:2]), int(gpsPt['timestamp'][2:4]), int(gpsPt['timestamp'][4:6]))
+            if 'date' in gpsPt:
+                acq_date=obspy.UTCDateTime(gpsPt['date'])
+
+        if 'GGA' in gpsPt['type']:
+            latPts.append(gpsPt['latitude'])
+            lonPts.append(gpsPt['longitude'])
+            elevPts.append(float(gpsPt['raw'].split(',')[9]))
+        
+    acq_date = acq_date + (sTime.hour* 60*60 + sTime.minute*60 + sTime.second)
     stats = {'network':'TR',
-            'station':'TBlu',
-            'channel':'EHN',
-            'sampling_rate':128
+            'station':'BLUE',
+            'sampling_rate':sampling_rate,
+            'starttime':acq_date,
+            'longitude': round(float(np.nanmedian(lonPts)), 7),
+            'latitude':round(float(np.nanmedian(latPts)), 7),
+            'input_crs':'EPSG:4326',
+            'elevation':round(float(np.nanmedian(elevPts)), 7),
+            'elev_unit':'m',
+            'instrument': 'Tromino Blue'
             }
-
-
-    nTrace = obspy.Trace(data=channel_data.T[1], header=stats)
+    
+    stats['channel'] = 'EHN'
+    nTrace = obspy.Trace(data=channel_data.T[channel_map['N']], header=stats)
     stats['channel'] = 'EHE'
-    eTrace = obspy.Trace(data=channel_data.T[3], header=stats)
+    eTrace = obspy.Trace(data=channel_data.T[channel_map['E']], header=stats)
     stats['channel'] = 'EHZ'
-    zTrace = obspy.Trace(data=channel_data.T[5], header=stats)
+    zTrace = obspy.Trace(data=channel_data.T[channel_map['Z']], header=stats)
 
     st = obspy.Stream([zTrace, eTrace, nTrace])
 
+    result['stream'] = st
+
+    if return_dict:
+        return result
+
     return st
+
+def __extract_text_sections(data):
+    """Extract text sections from binary data"""
+    # Find blocks of ASCII text (simple approach)
+    text_sections = []
+    
+    # Look for consecutive printable ASCII characters
+    ascii_chunks = re.finditer(b'[A-Za-z0-9 \t\r\n\.,_\-\+\*\/\$]{6,}', data)
+    for match in ascii_chunks:
+        text_sections.append(match.group(0))
+    
+    return text_sections
+
+def __extract_gps_data(data):
+    """Extract GPS NMEA sentences from binary data"""
+    # NMEA sentences start with $ and end with \r\n
+    data_str = data.decode('ascii', errors='ignore')
+    
+    # Look for NMEA sentences
+    gps_sentences = []
+    nmea_pattern = r'\$(GP[A-Z]{3},.+?)\r\n'
+    matches = re.finditer(nmea_pattern, data_str)
+    
+    for match in matches:
+        gps_sentences.append(match.group(0))
+    
+    return gps_sentences
+
+def __locate_data_start_blue(data):
+    """This function looks after the last GPS point for an intitial, likely starting position of seismometer data"""
+    
+    # Look for the last NMEA sentence and start from there (small skip ahead
+    data_str = data.decode('ascii', errors='ignore')
+    last_nmea_pos = data_str.rfind('$GP')
+
+    
+    # Assuming we find GPS data, find the spot after that indicating a new line
+    if last_nmea_pos > 0:
+        # Find the end of this sentence
+        end_GPS_marker = data_str.find('\r\n', last_nmea_pos)
+        #end_marker = data_str.find('[', last_nmea_pos)
+
+        if end_GPS_marker > 0:
+            # Skip a bit further to be safe
+            return end_GPS_marker + 8
+    
+    return end_GPS_marker
+
+def __swap_bytes(input_file):
+    """
+    Private function (not meant to be called except by internal functions) 
+    to read a binary file and return a bytearray with all bytes swapped in pairs.
+    This handles odd-length files correctly.
+    """
+
+    # Open binary file
+    with open(input_file, 'rb') as f:
+        data = f.read()
+    
+    # Create new byte array for the swapped data
+    swapped = bytearray(len(data))
+    
+    # Swap bytes in pairs
+    for i in range(0, len(data) - 1, 2):
+        swapped[i] = data[i + 1]
+        swapped[i + 1] = data[i]
+    
+    # Handle odd length
+    if len(data) % 2 == 1:
+        swapped[-1] = data[-1]
+    
+    return swapped
 
 # Read data from raspberry shake
 def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=False):
