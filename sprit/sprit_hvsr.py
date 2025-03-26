@@ -6890,7 +6890,7 @@ def __extract_text_sections(data):
     text_sections = []
     
     # Look for consecutive printable ASCII characters
-    ascii_chunks = re.finditer(b'[A-Za-z0-9 \t\r\n\.,_\-\+\*\/\$]{6,}', data)
+    ascii_chunks = re.finditer(rb'[A-Za-z0-9 \t\r\n\.,_\-\+\*\/\$]{6,}', data)
     for match in ascii_chunks:
         text_sections.append(match.group(0))
     
