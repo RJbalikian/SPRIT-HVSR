@@ -1,7 +1,11 @@
 #__init__.py
 """
-This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
+This module analyses ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
+
+__version__ = "2.3.3"
+
+
 try:
     import sprit.sprit_utils as sprit_utils
     import sprit.sprit_tkinter_ui as sprit_tkinter_ui

@@ -9,7 +9,7 @@ import sys
 
 import markdown
 
-RELEASE_VERSION = "2.3.3"
+RELEASE_VERSION = "2.3.4"
 
 VERBOSE = True
 
@@ -95,6 +95,9 @@ for cFile in confFilePaths:
             REL_VER = RELEASE_VERSION
         NEWVERTEXT = r'sprit==' + REL_VER
         cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
+
+        cFileText = re.sub(VERTEXT, NEWVERTEXT, cFileText, flags=re.DOTALL)
+
 
         with open(cFile.as_posix(), mode='w', encoding='utf-8') as f:
             f.write(cFileText)
