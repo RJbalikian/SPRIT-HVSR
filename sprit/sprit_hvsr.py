@@ -403,6 +403,12 @@ class HVSRData:
     def __getitem__(self, key):
         return getattr(self, key)
 
+    def __str__(self):
+        attrsToUse = ['project', 'site', 
+            'network', 'station', 'location', 'channels']
+        titleInfoStr = f""
+
+
     def __to_json(self, filepath):
         """Not yet supported, will export HVSRData object to json"""
         # open the file with the given filepath
@@ -2726,13 +2732,13 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 if verbose:
                     print(f"\t\tStation name updated to {params['sta']}")
 
-            # loc
-            loc_default = inspect.signature(input_params).parameters['loc'].default
-            if params['loc'] == loc_default and params['loc'] != dataIN[0].stats.location:
-                params['loc'] = dataIN[0].stats.location
-                params['params']['loc'] = dataIN[0].stats.location
+            # location
+            loc_default = inspect.signature(input_params).parameters['location'].default
+            if params['location'] == loc_default and params['location'] != dataIN[0].stats.location:
+                params['location'] = dataIN[0].stats.location
+                params['params']['location'] = dataIN[0].stats.location
                 if verbose:
-                    print(f"\t\tLocation updated to {params['loc']}")
+                    print(f"\t\tLocation updated to {params['location']}")
 
             # channels
             channelList = []
@@ -3505,16 +3511,16 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
 
         # Update location code to match partition
         if type(params['station']) is int or str(params['station']).isdigit():
-            params['loc'] = str(params['station'])
+            params['location'] = str(params['station'])
 
         # Create channel objects to be used in inventory                
-        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=params['loc'], latitude=params['params']['latitude'], 
+        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=params['location'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=params['loc'], latitude=params['params']['latitude'], 
+        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=params['location'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=params['loc'], latitude=params['params']['latitude'], 
+        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=params['location'], latitude=params['params']['latitude'], 
                                                 longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
                                                 azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
         
@@ -3951,27 +3957,27 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
 
 # Define input parameters
 def input_params(input_data,
-                site='HVSR Site',
+                site='HVSRSite',
                 project=None,
                 network='AM', 
-                station='RAC84', 
-                loc='00', 
+                station='NONE', 
+                location='00', 
                 channels=['EHZ', 'EHN', 'EHE'],
-                acq_date=str(datetime.datetime.now().date()),
-                starttime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0),
-                endtime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999),
+                acq_date = None,
+                starttime = None,
+                endtime = None,
                 tzone = 'UTC',
-                xcoord = -88.2290526,
-                ycoord =  40.1012122,
-                elevation = 755,
-                input_crs = None, #'EPSG:4326',#4269 is NAD83, defaults to WGS (4326)
+                xcoord = -88.229,
+                ycoord =  40.101,
+                elevation = 225,
+                input_crs = 'EPSG:4326', #Default is WGS84,#4269 is NAD83
                 output_crs = None,
                 elev_unit = 'meters',
                 depth = 0,
-                instrument = 'Raspberry Shake',
+                instrument = "Seismometer",
                 metapath = None,
-                hvsr_band = [0.4, 40],
-                peak_freq_range=[0.4, 40],
+                hvsr_band = [0.1, 50],
+                peak_freq_range = [0.1, 50],
                 processing_parameters={},
                 verbose=False
                 ):
@@ -3992,7 +3998,7 @@ def input_params(input_data,
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
     station : str, default='RAC84'
         The station name of the seismometer. This is necessary for data from Raspberry Shakes.
-    loc : str, default='00'
+    location : str, default='00'
         Location information of the seismometer.
     channels : list, default=['EHZ', 'EHN', 'EHE']
         The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary
@@ -4045,13 +4051,17 @@ def input_params(input_data,
 
     """
     orig_args = locals().copy() #Get the initial arguments
+    # Record starting time for this function run
     start_time = datetime.datetime.now()
 
     # Record any updates that are made to input_params based
     update_msg = []
     
     # Reformat times
-    if type(acq_date) is datetime.datetime:
+    # Date will come out of this block as a string of datetime.date
+    if acq_date is None:
+        date = str(datetime.datetime.now().date())
+    elif type(acq_date) is datetime.datetime:
         date = str(acq_date.date())
     elif type(acq_date) is datetime.date:
         date=str(acq_date)
@@ -4098,7 +4108,11 @@ def input_params(input_data,
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
 
-    if type(starttime) is str:
+    # Starttime will be standardized as string, then converted to UTCDateTime
+    # If not specified, will be set to 00:00 of current UTC date
+    if starttime is None:
+        starttime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0)
+    elif type(starttime) is str:
         if 'T' in starttime:
             #date=starttime.split('T')[0]
             starttime = starttime.split('T')[1]
@@ -4119,8 +4133,11 @@ def input_params(input_data,
     if not isinstance(orig_args['starttime'], obspy.UTCDateTime) or starttime != orig_args['starttime']:
         update_msg.append(f"\t\tstarttime was updated from {orig_args['starttime']} to {starttime}")
 
-    
-    if type(endtime) is str:
+    # endtime will be standardized as string, then converted to UTCDateTime
+    # If not specified, will be set to 23:59:59.999999 of current UTC date
+    if endtime is None:
+        endtime = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
+    elif type(endtime) is str:
         if 'T' in endtime:
             date=endtime.split('T')[0]
             endtime = endtime.split('T')[1]
@@ -4151,15 +4168,16 @@ def input_params(input_data,
     
     if output_crs is None:
         if verbose:
-            update_msg.append(f"\t\tNo value specified for output_crs, using same coordinate system is input_crs (default is EPSG:4326)")
+            update_msg.append(f"\t\tNo value specified for output_crs, using same coordinate system is input_crs: ({input_crs})")
         output_crs = input_crs
 
     # Get CRS Objects
     input_crs = CRS.from_user_input(input_crs)
     output_crs = CRS.from_user_input(output_crs)
-    wgs84_crs = CRS.from_user_input('EPSG:4326')
 
+    # We always need latitude and longitude, so specify this regadless of in/output crs
     # Get WGS84 coordinates (needed for inventory)
+    wgs84_crs = CRS.from_user_input('EPSG:4326')
     wgs84_transformer = Transformer.from_crs(input_crs, wgs84_crs, always_xy=True)
     xcoord_wgs84, ycoord_wgs84 = wgs84_transformer.transform(xcoord, ycoord)
 
@@ -4196,8 +4214,8 @@ def input_params(input_data,
     update_msg.append(f"\t\thvsr_id generated from input parameters: {hvsr_id}")
 
     #Add key/values to input parameter dictionary for use throughout the rest of the package
-    inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':loc, 'channels':channels,
-                      'net':network,'sta':station, 'loc':loc, 'cha':channels, 'instrument':instrument,
+    inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
+                      'net':network,'sta':station, 'loc':location, 'cha':channels, 'instrument':instrument,
                       'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                       'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
                       'elevation':elevation, 'elev_unit':elev_unit, 'input_crs':input_crs, 'output_crs':output_crs,
