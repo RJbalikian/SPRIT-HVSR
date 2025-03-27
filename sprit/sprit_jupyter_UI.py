@@ -62,8 +62,8 @@ def create_jupyter_ui():
                                     value=get_default(sprit_hvsr.input_params, 'station'))
 
     location_textbox = widgets.Text(description='Location:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'loc'),
-                                    value=get_default(sprit_hvsr.input_params, 'loc'))
+                                    placeholder=get_default(sprit_hvsr.input_params, 'location'),
+                                    value=get_default(sprit_hvsr.input_params, 'location'))
 
     z_channel_textbox = widgets.Text(description='Z Channel:',
                                     placeholder=get_default(sprit_hvsr.input_params, 'channels')[0],
@@ -118,8 +118,8 @@ def create_jupyter_ui():
                 if 'sta' in inst_settings.keys():
                     station_textbox.value = inst_settings['sta']
 
-                if 'loc' in inst_settings.keys():
-                    location_textbox.value = inst_settings['loc']
+                if 'location' in inst_settings.keys():
+                    location_textbox.value = inst_settings['location']
 
                 if 'cha' in inst_settings.keys():
                     for c in inst_settings['cha']:
@@ -507,7 +507,7 @@ def create_jupyter_ui():
     # Update input_param call
     def update_input_param_call():
         input_param_text = f"""(input_data='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
-                    station='{station_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
+                    station='{station_textbox.value}', location='{location_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
                     input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elevation_unit_textbox.value}',
@@ -556,7 +556,7 @@ def create_jupyter_ui():
             'metapath':metadata_filepath.value,
             'site':site_name.value,
             'instrument':instrument_dropdown.value,
-            'network':network_textbox.value, 'station':station_textbox.value, 'loc':location_textbox.value, 
+            'network':network_textbox.value, 'station':station_textbox.value, 'location':location_textbox.value, 
             'channels':[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value],
             'starttime':start_time_picker.value,
             'endtime':end_time_picker.value,

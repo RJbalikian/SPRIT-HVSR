@@ -395,7 +395,7 @@ with st.sidebar:
                 #with st.expander('Instrument settings'):
                 st.text_input("Network", placeholder='AM', key='network')
                 st.text_input("Station", placeholder='RAC84', key='station')
-                st.text_input("Location", placeholder='00', key='loc')
+                st.text_input("Location", placeholder='00', key='location')
                 st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
 
                 #with st.expander('Location settings'):
