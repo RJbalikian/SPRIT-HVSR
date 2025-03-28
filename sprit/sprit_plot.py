@@ -872,7 +872,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
         results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
 
     # Final figure updating
-    resultsFigWidth=800
+    resultsFigWidth=650
 
     components_HV_on_same_plot = (plot_list[1]==[] or '+' not in plot_list[1][0])
     if components_HV_on_same_plot:
@@ -904,7 +904,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     # Update entire figure
     results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
-                            showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.8,
+                            showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.7,
                             title=f"{hvsr_data['site']} Results")
     
     # Reset results_graph_widget and display 
@@ -1041,10 +1041,13 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
             #outlier_fig = go.FigureWidget(outlier_subp)
             outlier_fig = go.Figure(outlier_subp)
 
-            x_data = hvsr_data['x_freqs']
+            x_data = hvsr_data['x_freqs']['Z']
             curve_traces = []
-            for hv in hvsr_data.hvsr_windows_df['HV_Curves'].iterrows():
-                curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
+            for ind, (i, hv) in enumerate(hvsr_data.hvsr_windows_df.iterrows()):
+                nameLabel = f"Window starting at {i.strftime('%H:%M:%S')}<br>Window #{ind}"
+                curve_traces.append(go.Scatter(x=x_data, y=hv['HV_Curves'], 
+                            hovertemplate=nameLabel, line=dict(color='rgba(0,0,0,0.1)', width=0.75),
+                            showlegend=False))
             outlier_fig.add_traces(curve_traces)
             
             # Calculate a median curve, and reshape so same size as original
@@ -1294,6 +1297,102 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     
     hvsr_results['Depth_Plot'] = fig
     return hvsr_results
+
+def __plotly_express_preview(hvDataIN):
+    """
+    Create a multi-plot visualization of seismic data using Plotly Express.
+    
+    Parameters:
+    -----------
+    hvDataIN : dict
+        Dictionary containing seismic stream data
+    times : numpy.ndarray
+        Time values for x-axis
+    
+    Returns:
+    --------
+    plotly.graph_objs.Figure
+        Configured figure with spectrogram and line plots
+    """
+    # Extract data for different components
+    z_data = hvDataIN['stream'].select(component='Z')[0].data
+    e_data = hvDataIN['stream'].select(component='E')[0].data
+    n_data = hvDataIN['stream'].select(component='N')[0].data
+    
+    times = hvDataIN.stream[0].times()
+
+    # Create DataFrame for plotting
+    df_z = pd.DataFrame({
+        'Time': times,
+        'Amplitude': z_data,
+        'Color': 'black'
+    })
+    
+    df_e = pd.DataFrame({
+        'Time': times,
+        'Amplitude': e_data,
+        'Color': 'blue'
+    })
+    
+    df_n = pd.DataFrame({
+        'Time': times,
+        'Amplitude': n_data,
+        'Color': ['r']*n_data.shape[0]
+    })
+    
+    # Combine DataFrames
+    df_combined = pd.concat([df_z, df_e, df_n])
+    
+    cdm = {'r':'red', 'black':'black', 'blue':'blue'}
+    # Create line plot
+    figZ = px.line(
+        df_z, 
+        x='Time', 
+        y='Amplitude', 
+        color='Color',
+        title='Z Component Data',
+        color_discrete_map=cdm
+    )
+    
+    # Create line plot
+    figE = px.line(
+        df_e, 
+        x='Time', 
+        y='Amplitude', 
+        color='Color',
+        title='E Component Data',
+        color_discrete_map=cdm
+    )
+
+    # Create line plot
+    figN= px.line(
+        df_n, 
+        x='Time', 
+        y='Amplitude', 
+        color='Color',
+        title='N Component Data',
+        color_discrete_map=cdm
+    )
+
+    # Generate spectrogram using scipy (more accurate and efficient)
+    f, t, Sxx = signal.spectrogram(z_data, fs=100, nperseg=1000, noverlap=0.5, mode='magnitude')
+    
+    # Create spectrogram figure directly from NumPy arrays
+    fig_spectrogram = px.imshow(
+        Sxx,  # Use the spectrogram magnitude directly
+        labels=dict(x='Time', y='Frequency', color='Magnitude'),
+        title='Spectrogram',
+        color_continuous_scale='Viridis',
+        aspect='auto',
+        origin='lower',
+        zmin=np.percentile(Sxx, 2), zmax=np.percentile(Sxx, 98)
+    )
+    
+    # Modify spectrogram y-axis to be logarithmic
+    fig_spectrogram.update_yaxes(type='log')
+    
+
+    return fig_spectrogram, (figZ, figE, figN)
 
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',

@@ -1704,7 +1704,8 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
 
 # Function to generate azimuthal readings from the horizontal components
-def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
+def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', 
+                      show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
     """Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
 
     Parameters
@@ -1797,7 +1798,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
         return output
     elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream)):
 
-        degList = ['degrees', 'deg', 'd']
+        degList = ['degrees', 'deg', 'd', '°']
         radList = ['radians', 'rad', 'r']
         if azimuth_unit.lower() in degList:
             az_angle_rad = np.deg2rad(azimuth_angle)
@@ -1834,8 +1835,8 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
         if verbose:
             print(f' degrees --> {az_angle_deg} degrees.')
 
-        multAzList = ['multiple', 'multi', 'mult', 'm']
-        singleAzList = ['single', 'sing', 's']
+        multAzList = ['multiple azimuths', 'multiple', 'multi', 'mult', 'm']
+        singleAzList = ['single azimuth', 'single', 'sing', 's']
         if azimuth_type.lower() in multAzList:
             azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
             azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
@@ -5811,10 +5812,8 @@ def remove_noise(hvsr_data, remove_method=None,
                 else:
                     RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
-                outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size, verbose=verbose)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
-                outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time, verbose=verbose)
                 # Break for-loop, since all the rest are already done as part of auto
                 break
             elif rem_kind.lower() in antitrigger:
