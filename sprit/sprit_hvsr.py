@@ -5469,7 +5469,7 @@ def read_tromino_files(input_data, struct_format='e', tromino_model=None,
 
     blueModelList = ['blue', 'blu', 'tromino blu', 'tromino blue']
 
-    if str(tromino_model).lower() in blueModelList:
+    if str(tromino_model).lower() in blueModelList or 'blue' in str(tromino_model).lower():
         tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
         if 'sampling_rate' not in tBlueKwargs:
             tBlueKwargs['sampling_rate'] = sampling_rate
