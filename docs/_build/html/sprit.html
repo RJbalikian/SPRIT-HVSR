@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 2.3.3 documentation</title>
+  <title>sprit package &mdash; sprit 2.3.5 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=f4302432"></script>
+      <script src="_static/documentation_options.js?v=9bc130e6"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -158,7 +158,7 @@
              
   <section id="module-sprit">
 <span id="sprit-package"></span><h1>sprit package<a class="headerlink" href="#module-sprit" title="Link to this heading">¶</a></h1>
-<p>This module analysis ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique</p>
+<p>This module analyses ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="sprit.HVSRBatch">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">HVSRBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch" title="Link to this definition">¶</a></dt>
@@ -1170,7 +1170,7 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.input_params">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RAC84'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2025-03-24'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">3,</span> <span class="pre">24,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">UTCDateTime(2025,</span> <span class="pre">3,</span> <span class="pre">24,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.2290526</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.1012122</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">755</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Raspberry</span> <span class="pre">Shake'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSRSite'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NONE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.229</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.101</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">225</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Seismometer'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.input_params" title="Link to this definition">¶</a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1188,7 +1188,7 @@ f”{project}-{acq_date.strftime(“%Y%m%d”)}-{starttime.strftime(“%H%M”)}
 </dd>
 <dt><strong>station</strong><span class="classifier">str, default=’RAC84’</span></dt><dd><p>The station name of the seismometer. This is necessary for data from Raspberry Shakes.</p>
 </dd>
-<dt><strong>loc</strong><span class="classifier">str, default=’00’</span></dt><dd><p>Location information of the seismometer.</p>
+<dt><strong>location</strong><span class="classifier">str, default=’00’</span></dt><dd><p>Location information of the seismometer.</p>
 </dd>
 <dt><strong>channels</strong><span class="classifier">list, default=[‘EHZ’, ‘EHN’, ‘EHE’]</span></dt><dd><p>The three channels used in this analysis, as a list of strings. Preferred that Z component is first, but not necessary</p>
 </dd>
@@ -1661,33 +1661,33 @@ See API documentation: [input_params()](<a class="reference external" href="http
 </dd>
 <dt><strong>input_data: any, default = ‘&lt;no default&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>site: any, default = ‘HVSR Site’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>site: any, default = ‘HVSRSite’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>project: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>network: any, default = ‘AM’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>station: any, default = ‘RAC84’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>station: any, default = ‘NONE’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>loc: any, default = ‘00’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>location: any, default = ‘00’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>channels: any, default = [‘EHZ’, ‘EHN’, ‘EHE’]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>acq_date: any, default = ‘2025-03-24’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>acq_date: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>starttime: any, default = 2025-03-24T00:00:00.000000Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>starttime: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>endtime: any, default = 2025-03-24T23:59:59.999999Z</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>endtime: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>tzone: any, default = ‘UTC’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>xcoord: any, default = -88.2290526</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>xcoord: any, default = -88.229</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>ycoord: any, default = 40.1012122</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>ycoord: any, default = 40.101</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>elevation: any, default = 755</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>elevation: any, default = 225</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>input_crs: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>input_crs: any, default = ‘EPSG:4326’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>output_crs: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
@@ -1695,13 +1695,13 @@ See API documentation: [input_params()](<a class="reference external" href="http
 </dd>
 <dt><strong>depth: any, default = 0</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>instrument: any, default = ‘Raspberry Shake’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
+<dt><strong>instrument: any, default = ‘Seismometer’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>metapath: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>hvsr_band: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>hvsr_band: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>peak_freq_range: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>peak_freq_range: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>processing_parameters: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
@@ -2089,16 +2089,7 @@ This function returns another displayable character if platform is Windows</p>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_plot.html#sprit.sprit_plot.read_data"><code class="docutils literal notranslate"><span class="pre">read_data()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.check_if_default"><code class="docutils literal notranslate"><span class="pre">check_if_default()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_file_upload"><code class="docutils literal notranslate"><span class="pre">on_file_upload()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.on_run_data"><code class="docutils literal notranslate"><span class="pre">on_run_data()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.print_param"><code class="docutils literal notranslate"><span class="pre">print_param()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.setup_session_state"><code class="docutils literal notranslate"><span class="pre">setup_session_state()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.text_change"><code class="docutils literal notranslate"><span class="pre">text_change()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.write_to_info_tab"><code class="docutils literal notranslate"><span class="pre">write_to_info_tab()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.create_menubar"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.create_menubar()</span></code></a></li>
