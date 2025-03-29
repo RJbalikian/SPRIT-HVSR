@@ -1151,6 +1151,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
 
 
     outlier_fig.update_xaxes(type='log')
+    outlier_fig.update_layout(paper_bgcolor='white')
     #with outlier_graph_widget:
     #    clear_output(wait=True)
     #    display(outlier_fig)
