@@ -26,6 +26,7 @@ import warnings
 import xml.etree.ElementTree as ET
 import zoneinfo
 
+import kaleido
 import matplotlib
 from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
@@ -1388,7 +1389,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     if 'show_plot' in kwargs:
         if not kwargs['show_plot']:
             plt.close()
-    
+
     return hvsr_results
 
 
@@ -4006,11 +4007,10 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
-                
                 if not verbose:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        fig.show()
+                    fig.show()
                 else:
                     print('\nPlot of data report:')
                     fig.show()
@@ -9421,10 +9421,13 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
         # Embed the image in the html document
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
     else:
-
-        img = plotly.io.to_image(hvsr_results.HV_Plot, format='png', engine='auto')
+        print('html')
+        #htmlstring = plotly.io.to_html(hvsr_results.HV_Plot, include_plotlyjs=False)
+        #print(type(htmlstring))
+        img = plotly.io.to_image(hvsr_results.HV_Plot, format='png', engine='kaleido')
         hvplot_base64 = base64.b64encode(img).decode('utf8')
 
+        print('Putting it in html text')
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
 
     # Update formatting for print report for html

@@ -15,13 +15,12 @@ import inspect
 import io
 import pathlib
 import pickle
-import sys
 import tempfile
 import zoneinfo
 
+import matplotlib
 import numpy as np
 import streamlit as st
-import obspy
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 
@@ -379,7 +378,7 @@ def display_results(hvsr_data):
 
     # Plot
     img = io.BytesIO()
-    if st.session_state.plot_engine == 'Matplotlib':
+    if isinstance(hvData['HV_Plot'], matplotlib.figure.Figure):
         hvData['HV_Plot'].savefig(img, format='png')
     else:
         img = hvData['HV_Plot'].to_image(format='png')

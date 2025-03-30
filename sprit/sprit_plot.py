@@ -10,6 +10,7 @@ from zoneinfo import available_timezones
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import kaleido
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -750,7 +751,11 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
 
     return results_fig
 
-def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=None, results_graph_widget=None, return_fig=False, show_results_plot=True):
+def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
+                results_fig=None, results_graph_widget=None,
+                return_fig=False, show_results_plot=True,
+                verbose=False,):
+    
     if  results_fig is None:
         results_fig = go.FigureWidget()
 
@@ -767,7 +772,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     plot_list = parse_plot_string(plot_string)
 
-    combinedComp=False
+    combinedComp = False
     # By default there 3 subplots
     noSubplots = 3
     # Remove any subplots that are not indicated by plot_type parameter
@@ -862,11 +867,12 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
 
     # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
     results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list, results_fig=results_fig)
-    
+
     # Will always plot the HV Curve
     results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
                         line={'color':'black', 'width':1.5}, marker=None, name='HVSR Curve'),
                         row=1, col='all')
+
     # SPEC plot
     if plot_list[2] != []:
         results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
@@ -914,7 +920,8 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=No
             display(results_fig)
 
     if show_results_plot:
-        results_fig.show()
+        results_fig.write_html(titleString + 'plot.html', auto_open=True)
+        #results_fig.show()
     
     if return_fig:
         return results_fig

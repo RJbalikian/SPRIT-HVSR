@@ -11,7 +11,7 @@ version="2.3.6"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
-dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyproj", "shapely", 'ipython', 'ipywidgets', 'plotly', 'nbformat', 'PyQt5-sip', 'streamlit', 'xhtml2pdf']
+dependencies =  ["obspy", "scipy", "matplotlib", "pandas", "numpy", "pyproj", "shapely", 'ipython', 'ipywidgets', 'plotly', 'kaleido==0.1.0.post1', 'nbformat', 'PyQt5-sip', 'streamlit', 'xhtml2pdf']
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Science/Research",
