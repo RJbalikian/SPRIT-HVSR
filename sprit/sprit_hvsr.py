@@ -2181,6 +2181,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
         _hvsr_export(hvsr_data, hvsr_export_path, ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
+    
     return
 
 
@@ -9499,7 +9500,7 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
 
 
 # Private/Helper function to generate pdf report
-def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report=False, show_html_report=False, verbose=False):
+def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report=False, show_html_report=False, return_pdf_path=False, verbose=False):
     """Private/helper function to generate pdf report from HTML report, intended to be used by get_report() function
 
     Parameters
@@ -9533,6 +9534,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         # Now, open the file again for writing
         with open(pdf_export_path, 'wb') as temp_file:
             pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
             fname = f"REPORT_{hvsr_results['site']}_{hvsr_results['hvsr_id']}.pdf"
@@ -9609,6 +9611,9 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
                 _display_html_report(hvsr_results['HTML_Report'])
             except Exception as e:
                 print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
+
+    if return_pdf_path:
+        return pdf_export_path
 
     return hvsr_results
 

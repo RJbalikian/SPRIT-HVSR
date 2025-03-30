@@ -1014,7 +1014,6 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
     hv_data = hvsr_data
     #outlier_fig = go.FigureWidget()
-    outlier_fig = go.Figure()
 
     roc_kwargs = {'rmse_thresh':rmse_thresh,
                     'use_percentile':True,
@@ -1023,6 +1022,14 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
                     'plot_engine':'None',
                     'verbose':verbose
                     }
+
+    titleText = 'Outlier Curve Plot'
+    if use_hv_curve:
+        titleText += ' (H/V Curves)'
+    else:
+        titleText += ' PSD Curves'
+    outlier_fig = go.Figure()
+        
     if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
         #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n'{roc_kwargs}"    
         #hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
@@ -1151,7 +1158,10 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
 
 
     outlier_fig.update_xaxes(type='log')
-    outlier_fig.update_layout(paper_bgcolor='white')
+    outlier_fig.update_layout(paper_bgcolor='white', plot_bgcolor='white',
+                              font_color='black', 
+                              title=dict(font_color='black',
+                              text=titleText))
     #with outlier_graph_widget:
     #    clear_output(wait=True)
     #    display(outlier_fig)
