@@ -9,13 +9,13 @@ import sys
 
 import markdown
 
-RELEASE_VERSION = "2.3.5"
+RELEASE_VERSION = "2.3.6"
 
 VERBOSE = True
 
 # Whether to CONVERT_MD using markdown (True), or github (False)
 RTD_DOCS = True
-GITHUB_PAGES = False  # Don't think I  need this anymore, and it still works
+GITHUB_PAGES = True  # Don't think I  need this anymore, and it still works
 
 CONVERT_MD = True
 RTD_THEME = False  # Not currently working, for github pages
@@ -155,6 +155,9 @@ if RTD_DOCS:
     copyList = ['documentation_options', 'doctools',
                 'sphinx_highlight', 'theme', 'pygments']
 
+    if not htmlDir.exists():
+        os.mkdir(htmlDir)
+    
     for f in htmlDir.iterdir():
         if f.name[0] != '_':
             shutil.copy(f, docsDir.joinpath(f.name))
@@ -234,12 +237,20 @@ if GITHUB_PAGES:
                     else:
                         for f in file.iterdir():
                             destFilePath = trg_path.joinpath(f.name)
-                            if destFilePath.exists():
+                            if destFilePath.exists() and destFilePath.is_file():
                                 os.remove(destFilePath)
-                            f = f.rename(destFilePath)
+                            try:
+                                f = f.rename(destFilePath)
+                            except:
+                                pass
                             keepList.append(destFilePath.name)  # Already deleted and replaced, want to keep it now
                     if file.name not in keepList and file.parent.name != 'wiki':
-                        os.rmdir(file)
+                        if file.is_dir() and file.exists():
+                            try:
+                                os.rmdir(file)
+                            except:
+                                pass
+
                 else:
                     destFilePath = trg_path.joinpath(file.name)
                     if destFilePath.is_file() and file.name not in keepList and file.parent.name != 'wiki':
@@ -252,10 +263,16 @@ if GITHUB_PAGES:
                             os.remove(mainhtmlFPath)
                         file.rename(mainhtmlFPath)
             if t.name not in keepList:
-                os.rmdir(t)
+                try:
+                    os.rmdir(t)
+                except:
+                    pass
         else:
             if t.name not in keepList:
-                os.remove(t)
+                try:
+                    os.remove(t)
+                except:
+                    pass
 
     # Update html files
     readmePath = repoDir.joinpath('README.md')

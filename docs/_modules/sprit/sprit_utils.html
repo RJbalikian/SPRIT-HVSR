@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_utils &mdash; sprit 1.4 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_utils &mdash; sprit 2.3.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=0ed52906"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=ac39ba8c"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -71,24 +69,24 @@
            <div itemprop="articleBody">
              
   <h1>Source code for sprit.sprit_utils</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">functools</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">traceback</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">import</span> <span class="nn">zoneinfo</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zoneinfo</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">obspy.core.utcdatetime</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">obspy.core.utcdatetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTCDateTime</span>
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="c1">#For testing</span>
-    <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
     <span class="k">pass</span>
 
 <span class="n">greek_chars</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03C3</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;epsilon&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B5</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;teta&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u03B8</span><span class="s1">&#39;</span><span class="p">}</span>
@@ -96,7 +94,7 @@
 
 <div class="viewcode-block" id="assert_check">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.assert_check">[docs]</a>
-<span class="k">def</span> <span class="nf">assert_check</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">cond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">var_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s1">&#39;Output not valid&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assert_check</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">cond</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">var_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="s1">&#39;Output not valid&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">var_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">var_type</span><span class="p">),</span> <span class="n">error_message</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -115,7 +113,7 @@
 
 <div class="viewcode-block" id="check_gui_requirements">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_gui_requirements">[docs]</a>
-<span class="k">def</span> <span class="nf">check_gui_requirements</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_gui_requirements</span><span class="p">():</span>
     <span class="c1">#First, check requirements</span>
     <span class="c1"># Define a command that tries to open a window</span>
     <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;python -c </span><span class="se">\&quot;</span><span class="s2">import tkinter; tkinter.Tk()</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
@@ -147,7 +145,7 @@
 <span class="c1">#Get check mark</span>
 <div class="viewcode-block" id="check_mark">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_mark">[docs]</a>
-<span class="k">def</span> <span class="nf">check_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The default Windows terminal is not able to display the check mark character correctly.</span>
 <span class="sd">       This function returns another displayable character if platform is Windows&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">incolor</span><span class="p">:</span>
@@ -166,7 +164,7 @@
 <span class="c1">#Converts filepaths to pathlib paths, if not already</span>
 <div class="viewcode-block" id="checkifpath">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.checkifpath">[docs]</a>
-<span class="k">def</span> <span class="nf">checkifpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">sample_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raise_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">checkifpath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">sample_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raise_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Support function to check if a filepath is a pathlib.Path object and tries to convert if not</span>
 
 <span class="sd">    Parameters</span>
@@ -205,7 +203,7 @@
 <span class="c1">#Check to make the number of time-steps are the same for each channel</span>
 <div class="viewcode-block" id="check_tsteps">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_tsteps">[docs]</a>
-<span class="k">def</span> <span class="nf">check_tsteps</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_tsteps</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check time steps of PPSDS to make sure they are all the same length&quot;&quot;&quot;</span>
     <span class="n">ppsds</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">]</span>
     <span class="n">tSteps</span> <span class="o">=</span> <span class="p">[]</span>
@@ -223,7 +221,7 @@
 <span class="c1">#Check the x-values for each channel, to make sure they are all the same length</span>
 <div class="viewcode-block" id="check_xvalues">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_xvalues">[docs]</a>
-<span class="k">def</span> <span class="nf">check_xvalues</span><span class="p">(</span><span class="n">ppsds</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_xvalues</span><span class="p">(</span><span class="n">ppsds</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check x_values of PPSDS to make sure they are all the same length&quot;&quot;&quot;</span>
     <span class="n">xLengths</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ppsds</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -239,7 +237,7 @@
 <span class="c1">#Formats time into desired output</span>
 <div class="viewcode-block" id="format_time">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.format_time">[docs]</a>
-<span class="k">def</span> <span class="nf">format_time</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="s1">&#39;UTC&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_time</span><span class="p">(</span><span class="n">inputDT</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="s1">&#39;UTC&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function to format time, used in other functions</span>
 
 <span class="sd">    Formats input time to datetime objects in utc</span>
@@ -412,7 +410,7 @@
 <span class="c1">#Get character for printing</span>
 <div class="viewcode-block" id="get_char">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.get_char">[docs]</a>
-<span class="k">def</span> <span class="nf">get_char</span><span class="p">(</span><span class="n">in_char</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_char</span><span class="p">(</span><span class="n">in_char</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Outputs character with proper encoding/decoding&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">in_char</span> <span class="ow">in</span> <span class="n">greek_chars</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">out_char</span> <span class="o">=</span> <span class="n">greek_chars</span><span class="p">[</span><span class="n">in_char</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
@@ -422,8 +420,21 @@
 
 
 
+<span class="c1"># Get default dictionary with keys=parameter names and values=default values</span>
+<div class="viewcode-block" id="get_default_args">
+<a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.get_default_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_default_args</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">default</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+        <span class="p">}</span></div>
+
+    
+
 <span class="c1"># Get fuller traceback information on errors</span>
-<span class="k">def</span> <span class="nf">_get_error_from_exception</span><span class="p">(</span><span class="n">exception</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_error_from_exception</span><span class="p">(</span><span class="n">exception</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">print_error_message</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_error_message</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_obj</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
@@ -433,14 +444,19 @@
         <span class="n">errLineNo</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">extract_tb</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">2</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
         <span class="n">error_category</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Error&#39;</span><span class="p">)</span>
         <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exception</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_category</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">print_error_message</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_category</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">return_error_message</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_category</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">lineno</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
 
 
 <span class="c1">#Check that input strema has Z, E, N channels</span>
 <div class="viewcode-block" id="has_required_channels">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.has_required_channels">[docs]</a>
-<span class="k">def</span> <span class="nf">has_required_channels</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_required_channels</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
     <span class="n">channel_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     
     <span class="c1"># Extract the channel codes from the traces in the stream</span>
@@ -454,7 +470,7 @@
 <span class="c1">#Make input data (dict) into sprit_hvsr class</span>
 <div class="viewcode-block" id="make_it_classy">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.make_it_classy">[docs]</a>
-<span class="k">def</span> <span class="nf">make_it_classy</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_it_classy</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">)):</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s1">&#39;input_params&#39;</span><span class="p">:</span>
@@ -476,7 +492,7 @@
 <span class="c1">#Read data directly from Raspberry Shake</span>
 <div class="viewcode-block" id="read_from_RS">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.read_from_RS">[docs]</a>
-<span class="k">def</span> <span class="nf">read_from_RS</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="s1">&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="s1">&#39;az&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;myshake&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;shakeme&#39;</span><span class="p">,</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;rs.local&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="s1">&#39;2023&#39;</span><span class="p">,</span> <span class="n">sta</span><span class="o">=</span><span class="s1">&#39;RAC84&#39;</span><span class="p">,</span><span class="n">sleep_time</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;scp&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_from_RS</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="s1">&#39;SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="s1">&#39;az&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;myshake&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;shakeme&#39;</span><span class="p">,</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;rs.local&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="s1">&#39;2023&#39;</span><span class="p">,</span> <span class="n">sta</span><span class="o">=</span><span class="s1">&#39;RAC84&#39;</span><span class="p">,</span><span class="n">sleep_time</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;scp&#39;</span><span class="p">):</span>
     <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;SHAKENAME&#39;</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
     <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;SHAKENAME&#39;</span><span class="p">,</span> <span class="n">hostname</span><span class="p">)</span>
     <span class="n">src</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;YEAR&#39;</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
@@ -485,10 +501,10 @@
     <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;src&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This does not work from within a virtual environment!!!!&quot;&quot;&quot;</span>
         <span class="c1">#import pexpect</span>
-        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
         <span class="c1">#from pexpect import popen_spawn</span>
-        <span class="kn">import</span> <span class="nn">time</span>
-        <span class="kn">import</span> <span class="nn">wexpect</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">wexpect</span>
 
         <span class="n">scp_command</span> <span class="o">=</span> <span class="s1">&#39;scp -r </span><span class="si">{}</span><span class="s1"> &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
 
@@ -511,7 +527,7 @@
         <span class="c1">#subprocess.run([&quot;rsync&quot;, &quot;-&quot;+opts, src, dest])</span>
         <span class="c1">#subprocess.run([&quot;rsync&quot;, &quot;-&quot;+opts, src, dest])</span>
 
-        <span class="kn">import</span> <span class="nn">pty</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pty</span>
         <span class="c1">#Test, from https://stackoverflow.com/questions/13041732/ssh-password-through-python-subprocess</span>
         <span class="n">command</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s1">&#39;rsync&#39;</span><span class="p">,</span>
@@ -550,7 +566,7 @@
     <span class="k">return</span> <span class="n">dest</span></div>
 
 
-<span class="k">def</span> <span class="nf">_run_docstring</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_docstring</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This function updates the docstring the sprit.run() function, for documentation or help(sprit.run()) purposes</span>
 
 <span class="sd">    Returns</span>
@@ -564,7 +580,7 @@
     <span class="n">dsReturns</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;    Returns&#39;</span><span class="o">+</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;Returns&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
     
     <span class="n">functionList</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">,</span>
-                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_ppsds</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span> 
+                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span> 
                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span> 
                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">export_data</span><span class="p">]</span>
 
@@ -611,7 +627,7 @@
 <span class="c1">#Time functions, for timing how long a process takes</span>
 <div class="viewcode-block" id="time_it">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.time_it">[docs]</a>
-<span class="k">def</span> <span class="nf">time_it</span><span class="p">(</span><span class="n">_t</span><span class="p">,</span> <span class="n">proc_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">time_it</span><span class="p">(</span><span class="n">_t</span><span class="p">,</span> <span class="n">proc_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes elapsed time since the last call.&quot;&quot;&quot;</span>
     <span class="n">t1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">_t</span>
@@ -626,7 +642,7 @@
 <span class="c1">#Get x mark (for negative test results)</span>
 <div class="viewcode-block" id="x_mark">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.x_mark">[docs]</a>
-<span class="k">def</span> <span class="nf">x_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inTerminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">x_mark</span><span class="p">(</span><span class="n">incolor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inTerminal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The default Windows terminal is not able to display the check mark character correctly.</span>
 <span class="sd">       This function returns another displayable character if platform is Windows&quot;&quot;&quot;</span>
     

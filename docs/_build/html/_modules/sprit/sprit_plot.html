@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.3.5 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.3.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=9bc130e6"></script>
+      <script src="../../_static/documentation_options.js?v=ac39ba8c"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1129,7 +1129,6 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">hv_data</span> <span class="o">=</span> <span class="n">hvsr_data</span>
     <span class="c1">#outlier_fig = go.FigureWidget()</span>
-    <span class="n">outlier_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
 
     <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">:</span><span class="n">rmse_thresh</span><span class="p">,</span>
                     <span class="s1">&#39;use_percentile&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
@@ -1138,6 +1137,14 @@
                     <span class="s1">&#39;plot_engine&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose</span>
                     <span class="p">}</span>
+
+    <span class="n">titleText</span> <span class="o">=</span> <span class="s1">&#39;Outlier Curve Plot&#39;</span>
+    <span class="k">if</span> <span class="n">use_hv_curve</span><span class="p">:</span>
+        <span class="n">titleText</span> <span class="o">+=</span> <span class="s1">&#39; (H/V Curves)&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">titleText</span> <span class="o">+=</span> <span class="s1">&#39; PSD Curves&#39;</span>
+    <span class="n">outlier_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        
     <span class="k">if</span> <span class="s1">&#39;PPSDStatus&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">ProcessingStatus</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">ProcessingStatus</span><span class="p">[</span><span class="s1">&#39;PPSDStatus&#39;</span><span class="p">]:</span>
         <span class="c1">#log_textArea.value += f&quot;\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n&#39;{roc_kwargs}&quot;    </span>
         <span class="c1">#hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)</span>
@@ -1266,6 +1273,10 @@
 
 
     <span class="n">outlier_fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">outlier_fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">paper_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
+                              <span class="n">font_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> 
+                              <span class="n">title</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">font_color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+                              <span class="n">text</span><span class="o">=</span><span class="n">titleText</span><span class="p">))</span>
     <span class="c1">#with outlier_graph_widget:</span>
     <span class="c1">#    clear_output(wait=True)</span>
     <span class="c1">#    display(outlier_fig)</span>

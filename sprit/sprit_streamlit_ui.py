@@ -77,6 +77,7 @@ bandVals=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,6
 if VERBOSE:
     print('Start setting up kwargs dicts, session state length: ', len(st.session_state.keys()))
 
+run_kwargs = {}
 ip_kwargs = {}
 fd_kwargs = {}
 ca_kwargs = {}
@@ -93,7 +94,7 @@ if VERBOSE:
     print_param(PARAM2PRINT)
 
 # Get default values
-funList = [[sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
+funList = [[sprit.run, run_kwargs], [sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
             [sprit.remove_noise, rn_kwargs], [sprit.generate_psds, gpsd_kwargs], [PPSD, gpsd_kwargs],
             [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
             [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
@@ -709,10 +710,13 @@ with st.sidebar:
             if VERBOSE:
                 print('Setting up az tab, session state length: ', len(st.session_state.keys()))
 
-            st.toggle("Calculate Azimuths", value=False, 
-                        help='Whether to calculate azimuths for data.', key='azimuth_calculation')
-
-            az_disabled = not st.session_state.azimuth_calculation
+            st.toggle("Calculate Azimuths", value=False,
+                      help='Whether to calculate azimuths for data.',
+                      key='azimuth_calculation')
+            
+            az_disabled = True
+            if hasattr(st.session_state, 'azimuth_calculation'):
+                az_disabled = not st.session_state.azimuth_calculation
         
             st.selectbox('Azimuth type', disabled=az_disabled, options=['Multiple', 'Single'], index=0, key='azimuth_type')
 
