@@ -1011,11 +1011,18 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
     if return_fig:
         return preview_fig
 
-def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
+def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
+    
+    orig_args = locals().copy()    
+    
     hv_data = hvsr_data
     #outlier_fig = go.FigureWidget()
+    pxList = ['px', 'express', 'exp', 'plotly express', 'plotlyexpress']
+    if str(plotly_module).lower() in pxList:
+        return __plotly_outlier_curves_px(**orig_args)
+    
     outlier_fig = go.Figure()
-
+    
     roc_kwargs = {'rmse_thresh':rmse_thresh,
                     'use_percentile':True,
                     'use_hv_curve':use_hv_curve,
@@ -1157,6 +1164,51 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', rmse_thresh=0.98, use_p
         outlier_fig.show()
 
     return outlier_fig
+
+
+def __plotly_outlier_curves_px(**input_args):
+    """Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API
+
+    Returns
+    -------
+    plotly.express figure
+    """
+    #input_args: hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False
+    hvData = input_args['hvsr_data']
+    x_data = hvsr_data['x_freqs']
+   
+    
+    if input_args['use_hv_curve']:
+        no_subplots = 1
+        outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
+                                            shared_xaxes=True, horizontal_spacing=0.01,
+                                            vertical_spacing=0.1)
+        scatterFig = px.scatter()
+        scatter_traces = []
+        line_traces = []
+        for row, hv_data in enumerate(hvsr_data.hvsr_windows_df['HV_Curves']):
+            scatterArray = np.array(list(hv_data)[::10])
+            x_data_Scatter = np.array(list(x_data)[::10])
+            scatter_traces.append(px.scatter(x=x_data_Scatter, y=scatterArray))
+            line_traces.append(px.line(x=x_data, y=hv_data))
+
+
+        for tr in scatter_traces:
+            for trace in tr.data:
+                outlierFig.add_traces(trace, rows=1, cols=1)
+                
+        for tr in line_traces:
+            for trace in tr.data:
+                outlierFig.add_traces(trace, rows=1, cols=1)
+                #pass
+
+        outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
+        outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
+    
+    else:
+        subplots = 3
+    
+    return outlierFig
 
 def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
                      depth_limit=250, max_elev=None, min_elev=None,
