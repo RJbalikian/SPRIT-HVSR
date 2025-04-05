@@ -56,7 +56,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF
 
 
 # Resources directory path, and the other paths as well
-RESOURCE_DIR = pathlib.PurePath(pkg_resources.resource_filename(__name__, 'resources'))
+RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 

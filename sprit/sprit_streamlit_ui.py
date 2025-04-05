@@ -301,7 +301,7 @@ def on_run_data():
         st.balloons()
         
         inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+        outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
         plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
         csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
         strReportTab.text(st.session_state.hvsr_data['Print_Report'])
@@ -322,6 +322,8 @@ def write_to_info_tab(info_tab):
             with st.expander(f"{fun.__name__}"):
                 st.write(funMD, unsafe_allow_html=True)
 
+def write_to_outlierTab(outlier_tab):
+    pass
 
 # DEFINE SIDEBAR
 if verbose:
