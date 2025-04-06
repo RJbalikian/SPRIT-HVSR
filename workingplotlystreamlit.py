@@ -42,26 +42,38 @@ for row, hv_data in enumerate(hvDF['HV_Curves']):
     if hvDF.loc[currInd, 'Use']:  
         scatterArray = np.array(list(hv_data)[::10])
         x_data_Scatter = np.array(list(x_data)[::10])
-        scatter_traces.append(px.scatter(x=x_data_Scatter, y=scatterArray,
-                                color_discrete_sequence=['black']))
-        line_traces.append(px.line(x=x_data, y=hv_data,
-                                color_discrete_sequence=['black']))
+        currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
+                                color_discrete_sequence=['black'])
+        currFig.update_traces(mode='markers+lines',
+                        marker=dict(size=20),
+                        line=dict(width=2, color='black'),
+                        selector=dict(mode='markers'))
+         
+        scatter_traces.append(currFig)
+        #line_traces.append(px.line(x=x_data, y=hv_data,
+        #                        color_discrete_sequence=['black']))
     else:
         scatterArray = np.array(list(hv_data)[::10])
         x_data_Scatter = np.array(list(x_data)[::10])
-        scatter_traces.append(px.scatter(x=x_data_Scatter, y=scatterArray,
-                                color_discrete_sequence=['red']))
-        line_traces.append(px.line(x=x_data, y=hv_data,
-                                color_discrete_sequence=['red']))
+        currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
+                                color_discrete_sequence=['red'], size=[1]*len(scatterArray))
+        currFig.update_traces(mode='markers+lines',
+                              marker=dict(size=12),
+                              line=dict(width=2, color='red'),
+                              selector=dict(mode='markers'))
+        scatter_traces.append(currFig)
+        #line_traces.append(px.line(x=x_data, y=hv_data,
+        #                        color_discrete_sequence=['red']))
 
 for tr in scatter_traces:
     for trace in tr.data:
         outlierFig.add_traces(trace, rows=1, cols=1)
-        
-
-for tr in line_traces:
-    for trace in tr.data:
-        outlierFig.add_traces(trace, rows=1, cols=1)
+                         #line=dict(width=3),
+                         #marker=dict(size=20, ),
+                         #opacity=0.7)
+#for tr in line_traces:
+#    for trace in tr.data:
+#        outlierFig.add_traces(trace, rows=1, cols=1)
         #pass
 
 outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
