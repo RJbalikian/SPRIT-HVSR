@@ -5,8 +5,16 @@ from plotly import subplots
 import streamlit as st
 import numpy as np
 
-if not hasattr(st.session_state, 'outlier_curves'):
-    st.session_state.outlier_curves = []
+if not hasattr(st.session_state, 'outliers_updated'):
+    st.session_state.outliers_updated = False
+
+if not hasattr(st.session_state, 'outlierrunCount'):
+    st.session_state.outlierrunCount = 0
+
+st.write(st.session_state.outliers_updated)
+if not hasattr(st.session_state, 'outlier_curves_to_remove'):
+    st.session_state.outlier_curves_to_remove = []
+st.session_state.outliers_updated = False
 
 @st.cache_data
 def run_data():
@@ -20,14 +28,12 @@ if not hasattr(st.session_state, 'hv_data'):
 hvDF = st.session_state.hv_data['hvsr_windows_df']
 x_data = hvsr_data['x_freqs']['Z'][:-1]
 
-for remCurve in st.session_state.outlier_curves:
-    print('remCurve', remCurve)
+for remCurve in st.session_state.outlier_curves_to_remove:
     currInd = hvDF.iloc[remCurve].name
-    print(currInd)
     hvDF.loc[currInd, "Use"] = False
 
-if len(st.session_state.outlier_curves) > 0:
-    st.session_state.outlier_curves = []
+if len(st.session_state.outlier_curves_to_remove) > 0:
+    st.session_state.outlier_curves_to_remove = []
 
 no_subplots = 1
 outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
@@ -40,30 +46,38 @@ line_traces = []
 for row, hv_data in enumerate(hvDF['HV_Curves']):
     currInd = hvDF.iloc[row].name
     if hvDF.loc[currInd, 'Use']:  
-        scatterArray = np.array(list(hv_data)[::10])
-        x_data_Scatter = np.array(list(x_data)[::10])
-        currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
-                                color_discrete_sequence=['black'])
+        scatterArray = np.array(list(hv_data)[::5])
+        x_data_Scatter = np.array(list(x_data)[::5])
+        currFig = px.scatter(x=x_data_Scatter, y=scatterArray)
         currFig.update_traces(mode='markers+lines',
-                        marker=dict(size=20),
-                        line=dict(width=2, color='black'),
+                        marker=dict(size=1, color='rgba(0,0,0,0.1)'),
+                        line=dict(width=1, color='rgba(0,0,0,0.1)'),
                         selector=dict(mode='markers'))
          
         scatter_traces.append(currFig)
         #line_traces.append(px.line(x=x_data, y=hv_data,
         #                        color_discrete_sequence=['black']))
     else:
-        scatterArray = np.array(list(hv_data)[::10])
-        x_data_Scatter = np.array(list(x_data)[::10])
+        scatterArray = np.array(list(hv_data)[::5])
+        x_data_Scatter = np.array(list(x_data)[::5])
         currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
-                                color_discrete_sequence=['red'], size=[1]*len(scatterArray))
+                             opacity=0.5)
         currFig.update_traces(mode='markers+lines',
-                              marker=dict(size=12),
-                              line=dict(width=2, color='red'),
+                              marker=dict(size=1, color='rgba(195,87,0,0.5)'),
+                              line=dict(width=1, color='rgba(195,87,0,0.5)'),
                               selector=dict(mode='markers'))
         scatter_traces.append(currFig)
         #line_traces.append(px.line(x=x_data, y=hv_data,
         #                        color_discrete_sequence=['red']))
+
+# Add median line
+medArr = np.nanmedian(np.stack(hvDF['HV_Curves'][hvDF['Use']]), axis=0)
+scatterArray = np.array(list(medArr)[::10])
+x_data_Scatter = np.array(list(x_data)[::10])
+currFig = px.line(x=x_data_Scatter, y=scatterArray,
+                  color_discrete_sequence=['red'])
+currFig.update_traces(line=dict(width=3, color='black'))
+scatter_traces.append(currFig)
 
 for tr in scatter_traces:
     for trace in tr.data:
@@ -71,6 +85,8 @@ for tr in scatter_traces:
                          #line=dict(width=3),
                          #marker=dict(size=20, ),
                          #opacity=0.7)
+
+
 #for tr in line_traces:
 #    for trace in tr.data:
 #        outlierFig.add_traces(trace, rows=1, cols=1)
@@ -80,8 +96,11 @@ outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
 outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
 
 def update_outlier():
+    st.write('update outliers run')
+    st.session_state.outlierrunCount += 1
     curves2Remove = np.unique([p['curve_number'] for p in event['selection']['points']])    
-    st.session_state.outlier_curves = list(curves2Remove)
+    st.session_state.outlier_curves_to_remove = list(curves2Remove)
+    if len(st.session_state.outlier_curves_to_remove)>0:
+        st.session_state.outliers_updated = True
 
 event = st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
-
