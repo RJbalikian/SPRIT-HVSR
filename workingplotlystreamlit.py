@@ -5,32 +5,39 @@ from plotly import subplots
 import streamlit as st
 import numpy as np
 
+print('start')
 if not hasattr(st.session_state, 'outliers_updated'):
     st.session_state.outliers_updated = False
+
+if not hasattr(st.session_state, 'outlier_chart_event'):
+    st.session_state.outlier_chart_event = {'selection':{'points':[]}}
+
+print("0 outlier event", st.session_state.outlier_chart_event['selection']['points'])
+
+print("1 outlier event", st.session_state.outlier_chart_event['selection']['points'])
 
 if not hasattr(st.session_state, 'outlierrunCount'):
     st.session_state.outlierrunCount = 0
 
-st.write(st.session_state.outliers_updated)
+print("Outliers updated", st.session_state.outliers_updated)
 if not hasattr(st.session_state, 'outlier_curves_to_remove'):
     st.session_state.outlier_curves_to_remove = []
 st.session_state.outliers_updated = False
 
+print("2 outlier event", st.session_state.outlier_chart_event['selection']['points'])
 @st.cache_data
 def run_data():
     hvsr_data = sprit.run('sample', suppress_report_outputs=True)
+    print('hvsrun')
     return hvsr_data
 hvsr_data = run_data()
 
 if not hasattr(st.session_state, 'hv_data'):
     st.session_state.hv_data = hvsr_data
 
+print("3 outlier event", st.session_state.outlier_chart_event['selection']['points'])
 hvDF = st.session_state.hv_data['hvsr_windows_df']
 x_data = hvsr_data['x_freqs']['Z'][:-1]
-
-for remCurve in st.session_state.outlier_curves_to_remove:
-    currInd = hvDF.iloc[remCurve].name
-    hvDF.loc[currInd, "Use"] = False
 
 if len(st.session_state.outlier_curves_to_remove) > 0:
     st.session_state.outlier_curves_to_remove = []
@@ -95,12 +102,38 @@ for tr in scatter_traces:
 outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
 outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
 
+print("4 outlier event", st.session_state.outlier_chart_event['selection']['points'])
+
+
 def update_outlier():
-    st.write('update outliers run')
+    st.write('update outliers run', st.session_state.outlierrunCount)
     st.session_state.outlierrunCount += 1
-    curves2Remove = np.unique([p['curve_number'] for p in event['selection']['points']])    
+    st.session_state.outlier_chart_event = st.session_state.outlier_plot
+    curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
     st.session_state.outlier_curves_to_remove = list(curves2Remove)
+    
     if len(st.session_state.outlier_curves_to_remove)>0:
         st.session_state.outliers_updated = True
 
-event = st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+        for remCurve in st.session_state.outlier_curves_to_remove:
+            currInd = hvDF.iloc[remCurve].name
+            print('Supposedly removing')
+            st.session_state.hv_data['hvsr_windows_df'].loc[currInd, "Use"] = False
+
+if len(st.session_state.outlier_chart_event['selection']['points']) > 0:
+    print("We got something here a")
+    update_outlier()
+
+print("5 outlier event", st.session_state.outlier_chart_event['selection']['points'])
+plot_spot = st.empty()
+
+with plot_spot:
+    st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+print("6 outlier event", st.session_state.outlier_chart_event['selection']['points'])
+
+if len(st.session_state.outlier_chart_event['selection']['points']) > 0:
+    print("We got something here b")
+    update_outlier()
+    #st.session_state.outlier_chart_event = st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+
+print('Done\n')
