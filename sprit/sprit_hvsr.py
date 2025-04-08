@@ -434,29 +434,6 @@ class HVSRData:
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     # METHODS (many reflect dictionary methods)
-    def keys(self):
-        """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
-
-        Returns
-        -------
-        dict_keys
-            A dict_keys object of the HVSRData objects attributes, parameters, etc.
-        """        
-        keyList = []
-        for k in dir(self):
-            if not k.startswith('_'):
-                keyList.append(k)
-        return keyList
-
-    def items(self):
-        """Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
-
-        Returns
-        -------
-        dict_items
-            A dict_items object of the HVSRData objects attributes, parameters, etc.
-        """                
-        return self.params.items()
 
     def copy(self, type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
@@ -471,6 +448,62 @@ class HVSRData:
             return HVSRData(copy.deepcopy(self.params))
         else:
             return HVSRData(copy.copy(self.params))
+
+    def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
+        """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        export_settings_path : str, optional
+            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
+        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
+            They type of settings to save, by default 'all'
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        """
+        export_settings(hvsr_data=self, 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
+
+    def get_report(self, **kwargs):
+        """Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+
+        See Also
+        --------
+        get_report
+        """
+        report_return = get_report(self, **kwargs)
+        return report_return
+
+    def items(self):
+        """Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        dict_items
+            A dict_items object of the HVSRData objects attributes, parameters, etc.
+        """                
+        return self.params.items()
+
+    def keys(self):
+        """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object of the HVSRData objects attributes, parameters, etc.
+        """        
+        keyList = []
+        for k in dir(self):
+            if not k.startswith('_'):
+                keyList.append(k)
+        return keyList   
         
     def plot(self, **kwargs):
         """Method to plot data, wrapper of sprit.plot_hvsr()
@@ -489,21 +522,6 @@ class HVSRData:
         plot_return = plot_hvsr(self, **kwargs)
         plt.show()
         return plot_return
-        
-    def get_report(self, **kwargs):
-        """Method to get report from processed data, in print, graphical, or tabular format.
-
-        Returns
-        -------
-        Variable
-            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
-
-        See Also
-        --------
-        get_report
-        """
-        report_return = get_report(self, **kwargs)
-        return report_return
 
     def report(self, **kwargs):
         """Wrapper of get_report()
@@ -514,26 +532,15 @@ class HVSRData:
         """
         report_return = get_report(self, **kwargs)
         return report_return
-
-    def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
-        """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
-
-        Parameters
-        ----------
-        export_settings_path : str, optional
-            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
-        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
-            They type of settings to save, by default 'all'
-        include_location : bool, optional
-            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
-        verbose : bool, optional
-            Whether to print output (filepath and settings) to terminal, by default True
-        """
-        export_settings(hvsr_data=self, 
-                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
     
-    #ATTRIBUTES
-    #params
+    def select(self, **kwargs):
+        """Wrapper for obspy select method on the stream"""
+        if hasattr(self, 'stream'):
+            stream = self['stream'].select(**kwargs)
+
+        return stream
+
+    # ATTRIBUTES
     @property
     def params(self):
         """Dictionary containing the parameters used to process the data
@@ -551,7 +558,6 @@ class HVSRData:
             raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
         self._params = value
     
-    #datastream
     @property
     def datastream(self):
         """A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
@@ -875,6 +881,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
                 fetch_data_kwargs['obspy_ppsds'] = False
+            print(type(params), params)
             hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
@@ -4110,7 +4117,7 @@ def input_params(input_data,
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
     # If no CRS specified, assume WGS84
-    if input_crs is None:
+    if input_crs is None or input_crs == '':
         if verbose:
             update_msg.append(f"\t\tNo value specified for input_crs, assuming WGS84 (EPSG:4326)")
         input_crs = 'EPSG:4326'
@@ -4119,6 +4126,12 @@ def input_params(input_data,
         if verbose:
             update_msg.append(f"\t\tNo value specified for output_crs, using same coordinate system is input_crs (default is EPSG:4326)")
         output_crs = input_crs
+
+    if xcoord == '':
+        xcoord = None
+
+    if ycoord == '':
+        ycoord = None
 
     # Get CRS Objects
     input_crs = CRS.from_user_input(input_crs)
