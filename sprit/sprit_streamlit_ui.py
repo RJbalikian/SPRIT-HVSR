@@ -258,6 +258,15 @@ def on_run_data():
     inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
     plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
 
+    st.session_state.outlier_tab = outlierTab
+    st.session_state.info_tab = infoTab
+    st.session_state.input_tab = inputTab
+    st.session_state.results_tab = resultsTab
+
+    st.session_state.plot_report_tab = plotReportTab
+    st.session_state.csv_report_tab = csvReportTab
+    st.session_state.string_report_tab = strReportTab
+
     if st.session_state.input_data!='':
         srun = {}
         for key, value in st.session_state.items():
@@ -297,17 +306,21 @@ def on_run_data():
             if nonDefaultParams:
                 spinnerText = spinnerText.replace('default', 'the following non-default')
             with st.spinner(spinnerText):
+                print('srun', srun)
                 st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
         
-        write_to_info_tab(infoTab)
         st.balloons()
-        
-        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlier_plot_in_tab()
-        #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-        plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-        csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
-        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+        display_results()
+
+def display_results():
+    write_to_info_tab(st.session_state.info_tab)
+
+    st.session_state.input_tab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    outlier_plot_in_tab()
+    #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+    st.session_state.plot_report_tab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+    st.session_state.csv_report_tab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+    st.session_state.string_report_tab.text(st.session_state.hvsr_data['Print_Report'])
 
     st.session_state.prev_datapath=st.session_state.input_data
     
@@ -383,19 +396,20 @@ def outlier_plot_in_tab():
         st.session_state.outlier_chart_event = st.session_state.outlier_plot
         curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
         st.session_state.outlier_curves_to_remove = list(curves2Remove)
-        st.toast(f'Removing curve(s) specified as an outlier')
+        st.session_state.outlier_tab.toast('Removing curve(s) specified as an outlier')
 
-        if len(st.session_state.outlier_curves_to_remove)>0:
-            #st.session_state.outliers_updated = True
-
-            st.write(f'Removing curve(s) specified as an outlier:')
+        if len(st.session_state.outlier_curves_to_remove) > 0:
+            outlierMsg = 'Removing curve(s) specified as an outlier:<br />'
+            outlierTab = st.session_state.outlier_tab
             for remCurve in st.session_state.outlier_curves_to_remove:
                 currInd = hvDF.iloc[remCurve].name
-                st.write("Curve ", remCurve, ' starting at ', currInd)
+                outlierMsg += "Curve " + str(remCurve) + ' starting at ' + str(currInd) + '<br />'
                 st.session_state.hvsr_data['hvsr_windows_df'].loc[currInd, "Use"] = False
+            st.session_state.outlier_tab.write(outlierMsg)
+        display_results()        
 
-    st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
-    st.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (see the top right of chart) to remove it from the results statistics and analysis.")
+    st.session_state.outlier_tab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+    st.session_state.outlier_tab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (see the top right of chart) to remove it from the results statistics and analysis.")
 
     def update_from_outlier_selection():
         prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
@@ -406,15 +420,15 @@ def outlier_plot_in_tab():
         st.session_state.hvsr_data = sprit.check_peaks(hvsr_results=st.session_state.hvsr_data, **checkPeaks_kwargs)
         st.session_state.hvsr_data = sprit.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
 
-        write_to_info_tab(infoTab)
+        #write_to_info_tab(infoTab)
         
-        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+        st.session_state.input_tab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
         outlier_plot_in_tab()
-        plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
-        csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
-        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+        st.session_state.plot_report_tab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+        st.session_state.csv_report_tab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+        st.session_state.string_report_tab.text(st.session_state.hvsr_data['Print_Report'])
 
-        st.write('Go to the Results tab to see updated results')
+        st.session_state.outlier_tab.write('Navigate to the Results tab to see updated results')
 
 
 
