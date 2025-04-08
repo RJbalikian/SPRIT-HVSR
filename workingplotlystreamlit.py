@@ -1,4 +1,5 @@
 import sprit.sprit_hvsr as sprit
+import inspect
 
 import plotly.express as px
 from plotly import subplots
@@ -12,10 +13,10 @@ def run_data():
     return hvsr_data
 hvsr_data = run_data()
 
-if not hasattr(st.session_state, 'hv_data'):
-    st.session_state.hv_data = hvsr_data
+if not hasattr(st.session_state, 'hvsr_data'):
+    st.session_state.hvsr_data = hvsr_data
 
-hvDF = st.session_state.hv_data['hvsr_windows_df']
+hvDF = st.session_state.hvsr_data['hvsr_windows_df']
 x_data = hvsr_data['x_freqs']['Z'][:-1]
 
 no_subplots = 1
@@ -26,10 +27,10 @@ outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
 scatterFig = px.scatter()
 scatter_traces = []
 line_traces = []
-for row, hv_data in enumerate(hvDF['HV_Curves']):
+for row, hvsr_data in enumerate(hvDF['HV_Curves']):
     currInd = hvDF.iloc[row].name
     if hvDF.loc[currInd, 'Use']:  
-        scatterArray = np.array(list(hv_data)[::5])
+        scatterArray = np.array(list(hvsr_data)[::5])
         x_data_Scatter = np.array(list(x_data)[::5])
         currFig = px.scatter(x=x_data_Scatter, y=scatterArray)
         currFig.update_traces(mode='markers+lines',
@@ -40,7 +41,7 @@ for row, hv_data in enumerate(hvDF['HV_Curves']):
         scatter_traces.append(currFig)
 
     else:
-        scatterArray = np.array(list(hv_data)[::5])
+        scatterArray = np.array(list(hvsr_data)[::5])
         x_data_Scatter = np.array(list(x_data)[::5])
         currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
                              opacity=0.5)
@@ -66,8 +67,7 @@ for tr in scatter_traces:
 
 outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
 outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
-
-
+outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
 
 def update_outlier():
     st.session_state.outlier_chart_event = st.session_state.outlier_plot
@@ -82,6 +82,27 @@ def update_outlier():
         for remCurve in st.session_state.outlier_curves_to_remove:
             currInd = hvDF.iloc[remCurve].name
             st.write("Curve ", remCurve, ' starting at ', currInd)
-            st.session_state.hv_data['hvsr_windows_df'].loc[currInd, "Use"] = False
+            st.session_state.hvsr_data['hvsr_windows_df'].loc[currInd, "Use"] = False
 
 st.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+st.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (see the top right of chart) to remove it from the results statistics and analysis.")
+
+def update_from_outlier_selection():
+    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
+    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
+    getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
+
+    st.session_state.hvsr_data = sprit.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
+    st.session_state.hvsr_data = sprit.check_peaks(hvsr_results=st.session_state.hvsr_data, **checkPeaks_kwargs)
+    st.session_state.hvsr_data = sprit.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
+
+    write_to_info_tab(infoTab)
+    
+    inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+    plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+    csvReportTab.dataframe(data=st.session_state.hvsr_data['CSV_Report'])
+    strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+
+
+st.button('Update H/V Curve Analysis', key='update_from_outliers', type='primary', icon=":material/update:")
