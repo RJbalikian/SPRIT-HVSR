@@ -3616,7 +3616,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     report_export_format = orig_args['report_export_format']
     report_export_path = orig_args['report_export_path']
     csv_handling = orig_args['csv_handling']
-    suppress_report_outputs = orig_args['suppress_report_outputs']
     verbose = orig_args['verbose']
     kwargs = orig_args['kwargs']
 
