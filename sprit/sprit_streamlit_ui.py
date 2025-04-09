@@ -6,6 +6,7 @@ import tempfile
 import zoneinfo
 
 import numpy as np
+import pandas as pd
 import plotly.express as px
 from plotly import subplots
 import streamlit as st
@@ -18,7 +19,7 @@ except Exception:
     try:
         import sprit_hvsr
     except Exception:
-        import sprit
+        import sprit as sprit_hvsr
 
 verbose = False
 
@@ -101,7 +102,6 @@ initial_setup_fun('mainContain_setup', False)
 def setup_session_state():
     if st.session_state.initial_setup:
         # "Splash screen" (only shows at initial startup)
-        print('initial setup')
 
         mainContainerInitText = """
         # SpRIT HVSR
@@ -267,7 +267,6 @@ def on_file_upload():
 
 # Set up main container
 def setup_main_container(do_setup_tabs=False):
-    print("Setting up main Container")
     mainContainer = st.container()
     st.session_state.mainContainer = mainContainer
     if do_setup_tabs:
@@ -280,7 +279,6 @@ if not st.session_state.initial_setup:
 
 # Set up tabs
 def setup_tabs(mainContainer):
-    print("   Setting up tabs")
     inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
     plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
     #tabs: st.session_state.inputTab, st.session_state.outlierTab, st.session_state.infoTab, st.session_state.resultsTab, plotReportTab, st.session_state.csvReportTab, st.session_state.strReportTab
@@ -297,7 +295,6 @@ def setup_tabs(mainContainer):
 
 
 def on_run_data():
-    print("Starting run data")
     # Runs sample data if nothing specified
     if st.session_state.input_data == '':
         st.session_state.input_data = 'sample'
@@ -358,23 +355,21 @@ def on_run_data():
         st.session_state.prev_datapath=st.session_state.input_data
         print(' finished running data')
 
+
 def display_results():
     # Set up container for output data
     setup_main_container(do_setup_tabs=True)
 
-    print('displaying results')
     write_to_info_tab(st.session_state.infoTab)
-    print('    done with info tab')
     st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-    outlier_plot_in_tab(st.session_state.outlierTab)
+    outlier_plot_in_tab()
     #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
     st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
     st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-    st.session_state.strReportTab.text(st.session_state.hvsr_data['Print_Report'])
-    print("finished display")
-    
+    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'])
+
+
 def write_to_info_tab(infoTab):
-    print('  Writing to info tab', type(infoTab))
     with infoTab:
         st.markdown("# Processing Parameters Used")
         for fun, kwargDict in sigList:
@@ -387,14 +382,65 @@ def write_to_info_tab(infoTab):
 
             with st.expander(f"{fun.__name__}"):
                 st.write(funMD, unsafe_allow_html=True)
-    print("finished writing to info tab")
 
-def outlier_plot_in_tab(outlierTab):
-    print('  show outlier plot')
+
+def update_from_outlier_selection():
+    """This is intended as a callback for updating the main results tab, etc. after updating outlier curves"""
+    
+    st.toast("Updating H/V Curve statistics")
+    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
+    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != 'hvsr_data'}
+    getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != 'hvsr_data'}
+
+    st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
+    st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
+    st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
+
+    display_results()
+    #write_to_info_tab(infoTab)
+    
+    #inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    #outlier_plot_in_tab()
+    #plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+    #csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+    #strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+
+    #st.session_state.outlierTab.write('Navigate to the Results tab to see updated results')
+
+
+def update_outlier():
+    hvDF = st.session_state.hvsr_data['hvsr_windows_df']
+    
+    st.session_state.outlier_chart_event = st.session_state.outlier_plot
+    curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
+    st.session_state.outlier_curves_to_remove = list(curves2Remove)
+
+    if len(st.session_state.outlier_curves_to_remove) > 0:
+        
+        outlierMsgList = []
+        outlierMsgCols = ['Window Number', "Window Start Time"]
+        for remCurve in st.session_state.outlier_curves_to_remove:
+            currInd = hvDF.iloc[remCurve].name
+            outlierMsgList.append([remCurve, currInd])
+            hvDF.loc[currInd, "Use"] = False
+
+        statusMsg = "Removing specified outlier curve"
+        if len(st.session_state.outlier_curves_to_remove) != 1:
+            statusMsg += 's'
+
+        #st.toast(statusMsg)
+        statusCol, updateCol = st.columns([0.8, 0.2])
+        with statusCol.status(statusMsg):
+            st.dataframe(pd.DataFrame(outlierMsgList, columns=outlierMsgCols))
+        updateCol.button("Rerun results statistics", on_click=update_from_outlier_selection,
+                         type='primary',icon=":material/update:")
+    display_results()
+
+
+def outlier_plot_in_tab():
     hvDF = st.session_state.hvsr_data['hvsr_windows_df']
     x_data = st.session_state.hvsr_data['x_freqs']['Z'][:-1]
     
-    print('   making outlier plot')
     no_subplots = 1
     outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
                                         shared_xaxes=True, horizontal_spacing=0.01,
@@ -431,7 +477,6 @@ def outlier_plot_in_tab(outlierTab):
 
 
     # Add median line
-    print('   outlier median line')
     medArr = np.nanmedian(np.stack(hvDF['HV_Curves'][hvDF['Use']]), axis=0)
     scatterArray = np.array(list(medArr)[::10])
     x_data_Scatter = np.array(list(x_data)[::10])
@@ -449,53 +494,13 @@ def outlier_plot_in_tab(outlierTab):
     outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
     outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
 
-    print('    defining update_outlier')
-    def update_outlier():
-        print("    Updating outliers")
-        st.session_state.outlier_chart_event = st.session_state.outlier_plot
-        curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
-        st.session_state.outlier_curves_to_remove = list(curves2Remove)
-        outlierTab.toast('Removing curve(s) specified as an outlier')
-
-        if len(st.session_state.outlier_curves_to_remove) > 0:
-            outlierMsg = 'Removing curve(s) specified as an outlier:<br />'
-            for remCurve in st.session_state.outlier_curves_to_remove:
-                currInd = hvDF.iloc[remCurve].name
-                outlierMsg += "Curve " + str(remCurve) + ' starting at ' + str(currInd) + '<br />'
-                st.session_state.hvsr_data['hvsr_windows_df'].loc[currInd, "Use"] = False
-            outlierTab.markdown(outlierMsg)
-        display_results()
-
-    print('    plotting')
-    outlierTab.plotly_chart(outlierFig, 
+    st.session_state.outlierTab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.")
+    # Output figure to correct tab
+    st.session_state.outlierTab.plotly_chart(outlierFig, 
                             on_select=update_outlier, 
                             key='outlier_plot', 
                             use_container_width=True, 
-                            theme='streamlit')
-    outlierTab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (see the top right of chart) to remove it from the results statistics and analysis.")
-    print('   finished outlier plot')
-
-    def update_from_outlier_selection():
-        """This is intended as a callback for updating the main results tab, etc. after updating outlier curves"""
-        st.write("Updating after outlier selection")
-        prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
-        checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
-        getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
-
-        st.session_state.hvsr_data = sprit.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
-        st.session_state.hvsr_data = sprit.check_peaks(hvsr_results=st.session_state.hvsr_data, **checkPeaks_kwargs)
-        st.session_state.hvsr_data = sprit.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
-
-        #write_to_info_tab(infoTab)
-        
-        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlier_plot_in_tab(st.session_state.outlierTab)
-        plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
-        csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-        strReportTab.text(st.session_state.hvsr_data['Print_Report'])
-
-        outlierTab.write('Navigate to the Results tab to see updated results')
-
+                            theme='streamlit') 
 
 def write_to_outlierTab():
     pass
@@ -512,7 +517,6 @@ if verbose:
 
 # Set up sidebar
 with st.sidebar:
-    print('setting up sidebar')
     if verbose:
         print('Start setting up sidebar, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
@@ -754,7 +758,6 @@ with st.sidebar:
         print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
         print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
         print_param(param2print)
-
 
 #if __name__ == "__main__":
 #    main()

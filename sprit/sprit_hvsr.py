@@ -1116,12 +1116,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
-        print_error = False
-        if verbose:
-            print_error = True
-
-        #sprit_utils._get_error_from_exception(e,
-        #                                      print_error_message=print_error)
+        sprit_utils._get_error_from_exception(e,
+                                              print_error_message=True)
         if isinstance(hvsr_results, HVSRData):
             hvsr_results = {hvsr_results['site']: hvsr_results}
             
@@ -1872,7 +1868,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                     y = hvsr_data['hvsr_az'][col_id]
                 
                 scorelist = ['score', 'scored', 'best', 's']
-                maxlist = ['max', 'highest', 'm']
+                maxlist = ['maximum', 'max', 'highest', 'm']
                 # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
                 try:
                     peak_val = float(peak_selection)
@@ -1881,7 +1877,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                     # If score method is being used, get index list for __init_peaks()
                     if peak_selection in scorelist:
                         index_list = hvsr_data['hvsr_peak_indices'][col_id] #Calculated based on hvsr_curve
-                    elif peak_selection in maxlist:
+                    else:# str(peak_selection).lower() in maxlist:
                         #Get max index as item in list for __init_peaks()
                         startInd = np.argmin(np.abs(x - peak_freq_range[0]))
                         endInd = np.argmin(np.abs(x - peak_freq_range[1]))
@@ -1899,7 +1895,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 hvsrm = hvsr_data['hvsrm'][col_id]  # Calculated based on "Use" column
                 
                 hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
-
+                
                 hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
                 peak_freq_range = hvsr_data['peak_freq_range']
 
@@ -1930,6 +1926,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
                 # Get standard deviation of time peaks
+                print(index_list, hvsrPeaks.shape)
                 stdf = __get_stdf(x, index_list, hvsrPeaks)
                 
                 peak = __check_freq_stability(peak, peakm, peakp)
@@ -3316,6 +3313,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             hvsr_data['ppsds'][key]['overlap'] = overlap_pct
             hvsr_data['ppsds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
             hvsr_data['ppsds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
+            hvsr_data['ppsds'][key]['period_bin_centers'] = np.array(hvsr_data['ppsds'][key]['period_bin_centers'])
             hvsr_data['ppsds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
             hvsr_data['ppsds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
             hvsr_data['ppsds'][key]['period_xedges'] = 1/x_freqs
@@ -4888,7 +4886,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 print()
             
     # PROCESSING STARTS HERE (SEPARATE LOOP FOR BATCH)
-    #Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
@@ -4939,7 +4936,12 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         y_smooth = np.convolve(y, box, mode='same') / sum(box)
         return y_smooth
 
+    resampleList = ['period_bin_centers', 'period_bin_left_edges', 'period_bin_right_edges', 'period_xedges',
+                    'psd_frequencies', 'psd_periods', 'psd_values']
+
     for k in ppsds.keys():
+        #for ppsdk, ppsdv in ppsds[k].items():
+            #print(ppsdk, isinstance(ppsdv, np.ndarray))
         #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
         input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
 
@@ -4949,17 +4951,14 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         xValMin_per = np.round(1/hvsr_data['hvsr_band'][1], 4)
         xValMax_per = np.round(1/hvsr_data['hvsr_band'][0], 4)
         
-        #if reasmpling has been selected
+        # If resampling has been selected...
         if resample is True or type(resample) is int or type(resample) is float:
             if resample is True:
                 resample = 1000 #Default smooth value
 
-            #xValMin_per = min(ppsds[k]['period_bin_centers'])
-            #xValMax_per = max(ppsds[k]['period_bin_centers'])
-
-            #Resample period bin values
-            #print('resample, prelogspace', x_periods[k].shape)
+            # Resample period bin values
             x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
+                
             if smooth or isinstance(smooth, (int, float)):
                 if smooth:
                     smooth = 51 #Default smoothing window
@@ -4970,7 +4969,8 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                     if padVal %2 == 0:
                         padVal += 1
 
-            #Resample raw ppsd values
+
+            # Resample raw ppsd values
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
@@ -4988,9 +4988,24 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                         padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
                         psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
 
+            # Resample other values
+            for keys in resampleList:
+                if keys == 'period_bin_centers':
+                    baseLength = len(ppsds[k][keys])
+                
+                if ppsds[k][keys].ndim == 1:
+                    if ppsds[k][keys].shape[-1] == baseLength:
+                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample)
+                    else:
+                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample-1)
+                else:
+                    arrList = []
+                    for arr in ppsds[k][keys]:
+                        arrList.append(np.logspace(np.log10(min(arr)), np.log10(max(arr)), num=resample))
+                    
+                    ppsds[k][keys] = np.array(arrList)
         else:
             #If no resampling desired
-            #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
             x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
 
             # Clean up edge freq. values
@@ -5204,7 +5219,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     
     indHVPeakIndsDF = pd.DataFrame(hvsr_out['ind_hvsr_peak_indices'], index=hvsr_out['hvsr_windows_df'].index)
     tStepPFDictDF = pd.DataFrame(tStepPFDict, index=hvsr_out['hvsr_windows_df'].index)
-    hvsr_out['hvsr_windows_df'] = pd.concat([hvsr_out['hvsr_windows_df'], indHVPeakIndsDF, tStepPFDictDF], axis=1)
+    for col in indHVPeakIndsDF.columns:
+        hvsr_out['hvsr_windows_df'][col] = indHVPeakIndsDF.loc[:, col]
+    for col in tStepPFDictDF.columns:
+        hvsr_out['hvsr_windows_df'][col] = tStepPFDictDF.loc[:, col]
 
     #Get peaks of main HV curve
     hvsr_out['hvsr_peak_indices'] = {}
@@ -8471,6 +8489,10 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
     def az_calc(az, h1, h2):
         if az is None:
             az = 90
+
+        if az == 'HV':
+            return math.sqrt(_h1 * _h2)
+
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
         
@@ -8480,10 +8502,13 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
             5: math.sqrt((_p1 + _p2) / 2.0), # Quadratic mean
             6: max(_h1, _h2), # Max horizontal value
             7: min(_h1, _h2), # Minimum horizontal value
-            8: az_calc(azimuth, _h1, _h2),
+            8: 'do_azimuth_calc',
             'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
-
-    _hvsr = _h[use_method] / _hz
+    
+    if _h[use_method] == 'do_azimuth_calc':
+        _hvsr = az_calc(azimuth, _h1, _h2) / _hz
+    else:
+        _hvsr = _h[use_method] / _hz
     return _hvsr
 
 
