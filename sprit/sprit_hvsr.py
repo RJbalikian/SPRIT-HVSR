@@ -57,7 +57,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF
 
 
 # Resources directory path, and the other paths as well
-RESOURCE_DIR = pathlib.PurePath(pkg_resources.resource_filename(__name__, 'resources'))
+RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
@@ -595,29 +595,6 @@ class HVSRData:
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     # METHODS (many reflect dictionary methods)
-    def keys(self):
-        """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
-
-        Returns
-        -------
-        dict_keys
-            A dict_keys object of the HVSRData objects attributes, parameters, etc.
-        """        
-        keyList = []
-        for k in dir(self):
-            if not k.startswith('_'):
-                keyList.append(k)
-        return keyList
-
-    def items(self):
-        """Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
-
-        Returns
-        -------
-        dict_items
-            A dict_items object of the HVSRData objects attributes, parameters, etc.
-        """                
-        return self.params.items()
 
     def copy(self, type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
@@ -632,6 +609,62 @@ class HVSRData:
             return HVSRData(copy.deepcopy(self.params))
         else:
             return HVSRData(copy.copy(self.params))
+
+    def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
+        """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
+
+        Parameters
+        ----------
+        export_settings_path : str, optional
+            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
+        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
+            They type of settings to save, by default 'all'
+        include_location : bool, optional
+            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
+        verbose : bool, optional
+            Whether to print output (filepath and settings) to terminal, by default True
+        """
+        export_settings(hvsr_data=self, 
+                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
+
+    def get_report(self, **kwargs):
+        """Method to get report from processed data, in print, graphical, or tabular format.
+
+        Returns
+        -------
+        Variable
+            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
+
+        See Also
+        --------
+        get_report
+        """
+        report_return = get_report(self, **kwargs)
+        return report_return
+
+    def items(self):
+        """Method to return the "items" of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().
+
+        Returns
+        -------
+        dict_items
+            A dict_items object of the HVSRData objects attributes, parameters, etc.
+        """                
+        return self.params.items()
+
+    def keys(self):
+        """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
+
+        Returns
+        -------
+        dict_keys
+            A dict_keys object of the HVSRData objects attributes, parameters, etc.
+        """        
+        keyList = []
+        for k in dir(self):
+            if not k.startswith('_'):
+                keyList.append(k)
+        return keyList   
         
     def plot(self, **kwargs):
         """Method to plot data, wrapper of sprit.plot_hvsr()
@@ -650,21 +683,6 @@ class HVSRData:
         plot_return = plot_hvsr(self, **kwargs)
         plt.show()
         return plot_return
-        
-    def get_report(self, **kwargs):
-        """Method to get report from processed data, in print, graphical, or tabular format.
-
-        Returns
-        -------
-        Variable
-            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.
-
-        See Also
-        --------
-        get_report
-        """
-        report_return = get_report(self, **kwargs)
-        return report_return
 
     def report(self, **kwargs):
         """Wrapper of get_report()
@@ -675,26 +693,15 @@ class HVSRData:
         """
         report_return = get_report(self, **kwargs)
         return report_return
-
-    def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
-        """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
-
-        Parameters
-        ----------
-        export_settings_path : str, optional
-            Filepath to output file. If left as 'default', will save as the default value in the resources directory. If that is not possible, will save to home directory, by default 'default'
-        export_settings_type : str, {'all', 'instrument', 'processing'}, optional
-            They type of settings to save, by default 'all'
-        include_location : bool, optional
-            Whether to include the location information in the instrument settings, if that settings type is selected, by default False
-        verbose : bool, optional
-            Whether to print output (filepath and settings) to terminal, by default True
-        """
-        export_settings(hvsr_data=self, 
-                        export_settings_path=export_settings_path, export_settings_type=export_settings_type, include_location=include_location, verbose=verbose)
     
-    #ATTRIBUTES
-    #params
+    def select(self, **kwargs):
+        """Wrapper for obspy select method on the stream"""
+        if hasattr(self, 'stream'):
+            stream = self['stream'].select(**kwargs)
+
+        return stream
+
+    # ATTRIBUTES
     @property
     def params(self):
         """Dictionary containing the parameters used to process the data
@@ -712,7 +719,6 @@ class HVSRData:
             raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
         self._params = value
     
-    #datastream
     @property
     def datastream(self):
         """A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
@@ -1036,6 +1042,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
                 fetch_data_kwargs['obspy_ppsds'] = False
+            print(type(params), params)
             hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
@@ -1270,12 +1277,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
-        print_error = False
-        if verbose:
-            print_error = True
-
-        #sprit_utils._get_error_from_exception(e,
-        #                                      print_error_message=print_error)
+        sprit_utils._get_error_from_exception(e,
+                                              print_error_message=True)
         if isinstance(hvsr_results, HVSRData):
             hvsr_results = {hvsr_results['site']: hvsr_results}
             
@@ -2027,7 +2030,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                     y = hvsr_data['hvsr_az'][col_id]
                 
                 scorelist = ['score', 'scored', 'best', 's']
-                maxlist = ['max', 'highest', 'm']
+                maxlist = ['maximum', 'max', 'highest', 'm']
                 # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
                 try:
                     peak_val = float(peak_selection)
@@ -2036,7 +2039,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                     # If score method is being used, get index list for __init_peaks()
                     if peak_selection in scorelist:
                         index_list = hvsr_data['hvsr_peak_indices'][col_id] #Calculated based on hvsr_curve
-                    elif peak_selection in maxlist:
+                    else:# str(peak_selection).lower() in maxlist:
                         #Get max index as item in list for __init_peaks()
                         startInd = np.argmin(np.abs(x - peak_freq_range[0]))
                         endInd = np.argmin(np.abs(x - peak_freq_range[1]))
@@ -2054,7 +2057,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 hvsrm = hvsr_data['hvsrm'][col_id]  # Calculated based on "Use" column
                 
                 hvsrPeaks = hvsr_data['hvsr_windows_df'][hvsr_data['hvsr_windows_df']['Use']]['CurvesPeakIndices_'+col_id]
-
+                
                 hvsr_log_std = hvsr_data['hvsr_log_std'][col_id]
                 peak_freq_range = hvsr_data['peak_freq_range']
 
@@ -2085,6 +2088,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
                 # Get standard deviation of time peaks
+                print(index_list, hvsrPeaks.shape)
                 stdf = __get_stdf(x, index_list, hvsrPeaks)
                 
                 peak = __check_freq_stability(peak, peakm, peakp)
@@ -3510,6 +3514,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             hvsr_data['ppsds'][key]['overlap'] = overlap_pct
             hvsr_data['ppsds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
             hvsr_data['ppsds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
+            hvsr_data['ppsds'][key]['period_bin_centers'] = np.array(hvsr_data['ppsds'][key]['period_bin_centers'])
             hvsr_data['ppsds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
             hvsr_data['ppsds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
             hvsr_data['ppsds'][key]['period_xedges'] = 1/x_freqs
@@ -3810,7 +3815,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     report_export_format = orig_args['report_export_format']
     report_export_path = orig_args['report_export_path']
     csv_handling = orig_args['csv_handling']
-    suppress_report_outputs = orig_args['suppress_report_outputs']
     verbose = orig_args['verbose']
     kwargs = orig_args['kwargs']
 
@@ -4321,7 +4325,7 @@ def input_params(input_data,
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     
     # If no CRS specified, assume WGS84
-    if input_crs is None:
+    if input_crs is None or input_crs == '':
         if verbose:
             update_msg.append(f"\t\tNo value specified for input_crs, assuming WGS84 (EPSG:4326)")
         input_crs = 'EPSG:4326'
@@ -4330,6 +4334,12 @@ def input_params(input_data,
         if verbose:
             update_msg.append(f"\t\tNo value specified for output_crs, using same coordinate system is input_crs: ({input_crs})")
         output_crs = input_crs
+
+    if xcoord == '':
+        xcoord = None
+
+    if ycoord == '':
+        ycoord = None
 
     # Get CRS Objects
     input_crs = CRS.from_user_input(input_crs)
@@ -5091,7 +5101,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 print()
             
     # PROCESSING STARTS HERE (SEPARATE LOOP FOR BATCH)
-    #Site is in the keys anytime it's not batch
     if isinstance(hvsr_data, HVSRBatch):
         #If running batch, we'll loop through each site
         hvsr_out = {}
@@ -5142,7 +5151,12 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         y_smooth = np.convolve(y, box, mode='same') / sum(box)
         return y_smooth
 
+    resampleList = ['period_bin_centers', 'period_bin_left_edges', 'period_bin_right_edges', 'period_xedges',
+                    'psd_frequencies', 'psd_periods', 'psd_values']
+
     for k in ppsds.keys():
+        #for ppsdk, ppsdv in ppsds[k].items():
+            #print(ppsdk, isinstance(ppsdv, np.ndarray))
         #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
         input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
 
@@ -5152,17 +5166,14 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         xValMin_per = np.round(1/hvsr_data['hvsr_band'][1], 4)
         xValMax_per = np.round(1/hvsr_data['hvsr_band'][0], 4)
         
-        #if reasmpling has been selected
+        # If resampling has been selected...
         if resample is True or type(resample) is int or type(resample) is float:
             if resample is True:
                 resample = 1000 #Default smooth value
 
-            #xValMin_per = min(ppsds[k]['period_bin_centers'])
-            #xValMax_per = max(ppsds[k]['period_bin_centers'])
-
-            #Resample period bin values
-            #print('resample, prelogspace', x_periods[k].shape)
+            # Resample period bin values
             x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
+                
             if smooth or isinstance(smooth, (int, float)):
                 if smooth:
                     smooth = 51 #Default smoothing window
@@ -5173,7 +5184,8 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                     if padVal %2 == 0:
                         padVal += 1
 
-            #Resample raw ppsd values
+
+            # Resample raw ppsd values
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
@@ -5191,9 +5203,24 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                         padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
                         psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
 
+            # Resample other values
+            for keys in resampleList:
+                if keys == 'period_bin_centers':
+                    baseLength = len(ppsds[k][keys])
+                
+                if ppsds[k][keys].ndim == 1:
+                    if ppsds[k][keys].shape[-1] == baseLength:
+                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample)
+                    else:
+                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample-1)
+                else:
+                    arrList = []
+                    for arr in ppsds[k][keys]:
+                        arrList.append(np.logspace(np.log10(min(arr)), np.log10(max(arr)), num=resample))
+                    
+                    ppsds[k][keys] = np.array(arrList)
         else:
             #If no resampling desired
-            #x_periods[k] = np.array(ppsds[k]['period_bin_centers'])
             x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
 
             # Clean up edge freq. values
@@ -5407,7 +5434,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     
     indHVPeakIndsDF = pd.DataFrame(hvsr_out['ind_hvsr_peak_indices'], index=hvsr_out['hvsr_windows_df'].index)
     tStepPFDictDF = pd.DataFrame(tStepPFDict, index=hvsr_out['hvsr_windows_df'].index)
-    hvsr_out['hvsr_windows_df'] = pd.concat([hvsr_out['hvsr_windows_df'], indHVPeakIndsDF, tStepPFDictDF], axis=1)
+    for col in indHVPeakIndsDF.columns:
+        hvsr_out['hvsr_windows_df'][col] = indHVPeakIndsDF.loc[:, col]
+    for col in tStepPFDictDF.columns:
+        hvsr_out['hvsr_windows_df'][col] = tStepPFDictDF.loc[:, col]
 
     #Get peaks of main HV curve
     hvsr_out['hvsr_peak_indices'] = {}
@@ -8961,6 +8991,10 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
     def az_calc(az, h1, h2):
         if az is None:
             az = 90
+
+        if az == 'HV':
+            return math.sqrt(_h1 * _h2)
+
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
         
@@ -8970,10 +9004,13 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
             5: math.sqrt((_p1 + _p2) / 2.0), # Quadratic mean
             6: max(_h1, _h2), # Max horizontal value
             7: min(_h1, _h2), # Minimum horizontal value
-            8: az_calc(azimuth, _h1, _h2),
+            8: 'do_azimuth_calc',
             'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
-
-    _hvsr = _h[use_method] / _hz
+    
+    if _h[use_method] == 'do_azimuth_calc':
+        _hvsr = az_calc(azimuth, _h1, _h2) / _hz
+    else:
+        _hvsr = _h[use_method] / _hz
     return _hvsr
 
 

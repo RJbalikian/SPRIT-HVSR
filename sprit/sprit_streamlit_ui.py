@@ -20,12 +20,22 @@ import zoneinfo
 
 import matplotlib
 import numpy as np
+import pandas as pd
+import plotly.express as px
+from plotly import subplots
 import streamlit as st
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 
+try:
+    from sprit import sprit_hvsr
+except Exception:
+    try:
+        import sprit_hvsr
+    except Exception:
+        import sprit as sprit_hvsr
 
-VERBOSE = False
+verbose = False
 
 if VERBOSE:
     print('Start of file, session state length: ', len(st.session_state.keys()))
@@ -99,9 +109,22 @@ funList = [[sprit.run, run_kwargs], [sprit.input_params, ip_kwargs], [sprit.fetc
             [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
 
 
+# Function to initialize session state variables
+def initial_setup_fun(session_state_key, initial_value, running_value='Do not use'):
+    if not hasattr(st.session_state, session_state_key):
+        st.session_state[session_state_key] = initial_value
+    elif running_value != "Do not use":
+        st.session_state[session_state_key] = running_value
+
+# Initialize variables
+initial_setup_fun('initial_setup', True, False)
+initial_setup_fun('tabs_setup', False)
+initial_setup_fun('mainContain_setup', False)
+
 def setup_session_state():
-    if "default_params" not in st.session_state.keys():
+    if st.session_state.initial_setup:
         # "Splash screen" (only shows at initial startup)
+
         mainContainerInitText = """
         # SpRIT HVSR
         ## About
@@ -258,16 +281,12 @@ def setup_session_state():
 
         st.session_state['NewSessionState'] = copy.copy(st.session_state)
 
-setup_session_state()
-
-
 def check_if_default():
     if len(st.session_state.keys()) > 0:
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
-        print_param(PARAM2PRINT)
+        print_param(param2print)
 
-
-if VERBOSE:
+if verbose:
     check_if_default()
 
 
@@ -287,132 +306,41 @@ def on_file_upload():
         print(file.name)
     st.session_state.input_data = path.as_posix()
 
-
-def display_results(hvsr_data):
+# Set up main container
+def setup_main_container(do_setup_tabs=False):
     mainContainer = st.container()
-    dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-    resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs(['Results', 'Input Data', 'Outliers', 'Info'])
-
-    write_to_info_tab(infoTab)
-
-    resultsTab.html(st.session_state.hvsr_data['HTML_Report'])
-    resultsTab.text("Use the table below for copy/pasting into excel or other spreadsheet software")
-    resultsTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-
-    # htmlReportTab.html(st.session_state.hvsr_data['HTML_Report'])
-    st.session_state.hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(st.session_state.hvsr_data, 
-                                            rmse_thresh=100, use_percentile=True,
-                                            use_hv_curve=st.session_state.use_hv_curve, from_roc=False, 
-                                            show_plot=False, verbose=False)
-
-    if st.session_state['plot_engine'].lower() == 'matplotlib':
-        inputTab.pyplot(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-    #    plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-    else: #if srun['plot_engine'].lower() == 'plotly':
-        inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
-        outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-    #    plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-
-    #csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-    #strReportTab.text(st.session_state.hvsr_data['Print_Report'])
-
-        #inputTab.write(st.session_state.hvsr_data['InputPlot'], use_container_width=True, unsafe_allow_html=True)
-
-
-    dlText.text("Download Results: ")
-
-    # Set up variables for download section
-    hvData = st.session_state.hvsr_data
-    hvID = ''
-    if hasattr(hvData, 'hvsr_id'):
-        hvID = hvData['hvsr_id']
-
-    nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    # PDF Report download
-    @st.cache_data
-    def convert_pdf_for_download(_hv_data):
-        pdfPath = sprit._generate_pdf_report(_hv_data, return_pdf_path=True)
-        with open(pdfPath, "rb") as pdf_file:
-            PDFbyte = pdf_file.read()
-        return PDFbyte
+    st.session_state.mainContainer = mainContainer
+    if do_setup_tabs:
+        setup_tabs(mainContainer)
     
-    pdf_byte = convert_pdf_for_download(hvData)
+    st.session_state.mainContain_setup = True
 
-    dlPDFReport.download_button(label="Report (.pdf)",
-                data=pdf_byte,
-                file_name=f"{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf",
-                mime='application/octet-stream',
-                icon=":material/summarize:")
+if not st.session_state.initial_setup:
+    setup_main_container(do_setup_tabs=False)
 
-    # Data Stream
-    strm = io.BytesIO()
-    @st.cache_data
-    def convert_stream_for_download(_stream):
-        _stream.write(strm, format='MSEED')
-        return strm.getvalue()
-    streamBytes = convert_stream_for_download(hvData.stream)
+# Set up tabs
+def setup_tabs(mainContainer):
+    inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
+    plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
+    #tabs: st.session_state.inputTab, st.session_state.outlierTab, st.session_state.infoTab, st.session_state.resultsTab, plotReportTab, st.session_state.csvReportTab, st.session_state.strReportTab
 
-    dlStream.download_button(
-        label='Data (.mseed)',
-        data=streamBytes,
-        file_name=f"{hvData.site}_DataStream_{hvID}_{nowTimeStr}.mseed",
-        icon=":material/graphic_eq:"
-    )
+    st.session_state.inputTab = inputTab
+    st.session_state.outlierTab = outlierTab
+    st.session_state.infoTab = infoTab
+    st.session_state.resultsTab = resultsTab
+    st.session_state.plotReportTab = plotReportTab
+    st.session_state.csvReportTab = csvReportTab
+    st.session_state.strReportTab = strReportTab
 
-    # Table download
-    @st.cache_data
-    def convert_table_for_download(df):
-        return df.to_csv().encode("utf-8")
+    st.session_state.tabs_setup = True
 
-    csv = convert_table_for_download(st.session_state.hvsr_data['Table_Report'])
-
-    dlTable.download_button(
-        label="Table (.csv)",
-        data=csv,
-        file_name=f"{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv",
-        mime="text/csv",
-        icon=":material/table:",
-    )
-
-    # Plot
-    img = io.BytesIO()
-    if isinstance(hvData['HV_Plot'], matplotlib.figure.Figure):
-        hvData['HV_Plot'].savefig(img, format='png')
-    else:
-        img = hvData['HV_Plot'].to_image(format='png')
-    
-    dlPlot.download_button(
-        label="Plot (.png)",
-        data=img,
-        file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
-        mime="image/png",
-        icon=":material/analytics:"
-        )
-
-
-    # HVSR File
-    try:
-        hvsrPickle = pickle.dumps(hvsr_data)
-
-        dlHVSR.download_button(
-            label="Pickled (.hvsr)",
-            data=hvsrPickle,
-            file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
-            icon=":material/database:")
-    except:
-        dlHVSR.text(".hvsr download not available")
 
 def on_run_data():
-    if 'run_button' not in st.session_state.keys() or not st.session_state.run_button:
-        return
-    mainContainer = st.container()
-    #resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs(['Results','Input Data', 'Outliers', 'Info'])
-
+    # Runs sample data if nothing specified
     if st.session_state.input_data == '':
         st.session_state.input_data = 'sample'
 
+    # Now run the data
     if st.session_state.input_data!='':
         srun = {}
         for key, value in st.session_state.items():
@@ -438,10 +366,12 @@ def on_run_data():
         
         if VERBOSE:
             print('SPRIT RUN', srun)
-        with mainContainer:
-            toastText = 'Processing with default parameters.'
-            spinnerText = "Data is processing with default parameters"
-            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'VERBOSE']
+        st.toast('Data is processing', icon="⌛")
+        
+        setup_main_container(do_setup_tabs=False)
+        with st.session_state.mainContainer:
+            spinnerText = 'Data is processing with default parameters.'
+            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
                                  'hvsr_band':(0.4, 40), 'use_hv_curve':True,
@@ -456,10 +386,16 @@ def on_run_data():
                                  'show_print_report':True,
                                  'show_plot_report':False,
                                  'elev_unit':'m',
-                                 'plot_type':'HVSR p ann C+ p ann Spec p'
+                                 'plot_type':'HVSR p ann C+ p ann Spec p',
+                                 'suppress_report_outputs':True
                                  }
             
             nonDefaultParams = False
+
+            srun['report_formats'] = ['print', 'table', 'plot', 'html', 'pdf']
+            srun['suppress_report_outputs'] = True
+
+            # Display non-default parameters, if applicable
             for key, value in srun.items():
 
                 if key not in excludedKeys:
@@ -470,70 +406,31 @@ def on_run_data():
                         spinnerText = spinnerText + f"\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})"
             if nonDefaultParams:
                 spinnerText = spinnerText.replace('default', 'the following non-default')
-                toastText = toastText.replace('default', 'customized')
-            st.toast(toastText, icon="⌛")
-            with st.spinner("Processing Data"):
-                st.session_state.hvsr_data = sprit.run(input_data=st.session_state.input_data, **srun)
-        st.balloons()
-
-    st.session_state.prev_datapath = st.session_state.input_data
-
-def on_read_data():
-    if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
-        return
-    mainContainer = st.container()
-    inputTab, infoTab  = mainContainer.tabs(['Raw Seismic Data', 'Info'])
-
-    if st.session_state.input_data!='':
-        srun = {}
-        for key, value in st.session_state.items():
-            if key in st.session_state.run_kws:
-                if value != st.session_state.default_params[key]:
-                    if str(value) != str(st.session_state.default_params[key]):
-                        srun[key] = value
-            
-            if key == 'plot_engine':
-                srun[key] = value
-    
-    ipKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.input_params).parameters.keys())}
-    fdKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.fetch_data).parameters.keys())}
-
-    #print(ipKwargs)
-    #sprint(fdKwargs)
-    fdKwargs['plot_input_stream'] = True
+            with st.spinner(spinnerText):
+                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
         
-    st.toast('Reading data', icon="⌛")
-    with st.spinner(f"Reading data: {ipKwargs['input_data']}"):
-        inParams = sprit.input_params(**ipKwargs)
-        st.session_state.hvDataIN = sprit.fetch_data(inParams, **fdKwargs)
+        st.balloons()
+        display_results()
 
-    def plotly_click(click):
-        print('plot clicked')
-        print(click)
-    # Output plot to Raw Seismic Data tab
-    if str(fdKwargs['plot_engine']).lower() in ['matplotlib', 'mpl', 'm']:
-        inputTab.pyplot(st.session_state.hvDataIN['InputPlot'])
-    else:
-        #event = inputTab.plotly_chart(sprit_plot.__plotly_express_preview(st.session_state.hvDataIN)[0],
-        event = inputTab.plotly_chart(st.session_state.hvDataIN['InputPlot'],
-                                use_container_width=True,
-                                on_select=plotly_click)
-
-    # Print information about the data to Info tab
-    infoTab.header("Information About Input Data")
-    infoTab.write(f"Acquisition Date: {st.session_state.hvDataIN['acq_date']}")
-
-    recLength = (UTCDateTime(st.session_state.hvDataIN['stream'][0].stats.endtime) - UTCDateTime(st.session_state.hvDataIN['stream'][0].stats.starttime))
-    infoTab.write(f"Record Length: {recLength/60:.2f} minutes ({recLength} seconds)")
-    
-
-def on_reset():
-    st.toast("Session state cleared")
-    st.session_state=st.session_state['NewSessionState']
+        st.session_state.prev_datapath=st.session_state.input_data
+        print(' finished running data')
 
 
-def write_to_info_tab(info_tab):
-    with info_tab:
+def display_results():
+    # Set up container for output data
+    setup_main_container(do_setup_tabs=True)
+
+    write_to_info_tab(st.session_state.infoTab)
+    st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    outlier_plot_in_tab()
+    #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+    st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+    st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'])
+
+
+def write_to_info_tab(infoTab):
+    with infoTab:
         st.markdown("# Processing Parameters Used")
         for fun, kwargDict in funList:
             funSig = inspect.signature(fun)
@@ -547,8 +444,130 @@ def write_to_info_tab(info_tab):
                 st.write(funMD, unsafe_allow_html=True)
 
 
-if hasattr(st.session_state, "hvsr_data") and hasattr(st.session_state.hvsr_data, "HTML_Report"):
-    display_results(st.session_state.hvsr_data)
+def update_from_outlier_selection():
+    """This is intended as a callback for updating the main results tab, etc. after updating outlier curves"""
+    
+    st.toast("Updating H/V Curve statistics")
+    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
+    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != 'hvsr_data'}
+    getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != 'hvsr_data'}
+
+    st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
+    st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
+    st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
+
+    display_results()
+    #write_to_info_tab(infoTab)
+    
+    #inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    #outlier_plot_in_tab()
+    #plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
+    #csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+    #strReportTab.text(st.session_state.hvsr_data['Print_Report'])
+
+    #st.session_state.outlierTab.write('Navigate to the Results tab to see updated results')
+
+
+def update_outlier():
+    hvDF = st.session_state.hvsr_data['hvsr_windows_df']
+    
+    st.session_state.outlier_chart_event = st.session_state.outlier_plot
+    curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
+    st.session_state.outlier_curves_to_remove = list(curves2Remove)
+
+    if len(st.session_state.outlier_curves_to_remove) > 0:
+        
+        outlierMsgList = []
+        outlierMsgCols = ['Window Number', "Window Start Time"]
+        for remCurve in st.session_state.outlier_curves_to_remove:
+            currInd = hvDF.iloc[remCurve].name
+            outlierMsgList.append([remCurve, currInd])
+            hvDF.loc[currInd, "Use"] = False
+
+        statusMsg = "Removing specified outlier curve"
+        if len(st.session_state.outlier_curves_to_remove) != 1:
+            statusMsg += 's'
+
+        #st.toast(statusMsg)
+        statusCol, updateCol = st.columns([0.8, 0.2])
+        with statusCol.status(statusMsg):
+            st.dataframe(pd.DataFrame(outlierMsgList, columns=outlierMsgCols))
+        updateCol.button("Rerun results statistics", on_click=update_from_outlier_selection,
+                         type='primary',icon=":material/update:")
+    display_results()
+
+
+def outlier_plot_in_tab():
+    hvDF = st.session_state.hvsr_data['hvsr_windows_df']
+    x_data = st.session_state.hvsr_data['x_freqs']['Z'][:-1]
+    
+    no_subplots = 1
+    outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
+                                        shared_xaxes=True, horizontal_spacing=0.01,
+                                        vertical_spacing=0.1)
+
+    scatterFig = px.scatter()
+    scatter_traces = []
+    line_traces = []
+
+
+    for row, hvsr_data in enumerate(hvDF['HV_Curves']):
+        currInd = hvDF.iloc[row].name
+        if hvDF.loc[currInd, 'Use']:  
+            scatterArray = np.array(list(hvsr_data)[::5])
+            x_data_Scatter = np.array(list(x_data)[::5])
+            currFig = px.scatter(x=x_data_Scatter, y=scatterArray)
+            currFig.update_traces(mode='markers+lines',
+                            marker=dict(size=1, color='rgba(0,0,0,0.1)'),
+                            line=dict(width=1, color='rgba(0,0,0,0.1)'),
+                            selector=dict(mode='markers'))
+            
+            scatter_traces.append(currFig)
+
+        else:
+            scatterArray = np.array(list(hvsr_data)[::5])
+            x_data_Scatter = np.array(list(x_data)[::5])
+            currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
+                                opacity=0.5)
+            currFig.update_traces(mode='markers+lines',
+                                marker=dict(size=1, color='rgba(195,87,0,0.4)'),
+                                line=dict(width=1, color='rgba(195,87,0,0.4)'),
+                                selector=dict(mode='markers'))
+            scatter_traces.append(currFig)
+
+
+    # Add median line
+    medArr = np.nanmedian(np.stack(hvDF['HV_Curves'][hvDF['Use']]), axis=0)
+    scatterArray = np.array(list(medArr)[::10])
+    x_data_Scatter = np.array(list(x_data)[::10])
+    currFig = px.line(x=x_data_Scatter, y=scatterArray,
+                    color_discrete_sequence=['red'])
+    currFig.update_traces(line=dict(width=3, color='black'))
+    scatter_traces.append(currFig)
+
+    for tr in scatter_traces:
+        for trace in tr.data:
+            outlierFig.add_traces(trace, rows=1, cols=1)
+
+
+    outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
+    outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
+    outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
+
+    st.session_state.outlierTab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.")
+    # Output figure to correct tab
+    st.session_state.outlierTab.plotly_chart(outlierFig, 
+                            on_select=update_outlier, 
+                            key='outlier_plot', 
+                            use_container_width=True, 
+                            theme='streamlit') 
+
+def write_to_outlierTab():
+    pass
+
+
+# Initial setup
+setup_session_state()
 
 
 # DEFINE SIDEBAR
@@ -556,6 +575,7 @@ if VERBOSE:
     print('About to start setting up sidebar, session state length: ', len(st.session_state.keys()))
     print_param(PARAM2PRINT)
 
+# Set up sidebar
 with st.sidebar:
     if VERBOSE:
         print('Start setting up sidebar, session state length: ', len(st.session_state.keys()))
@@ -578,9 +598,14 @@ with st.sidebar:
     # Create top menu
     with bottom_container:
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
-        resetCol.button('Reset', disabled=False, use_container_width=True, on_click=on_reset, key='reset_button')
-        readCol.button('Read', disabled=False, use_container_width=True, on_click=on_read_data, key='read_button')
-        runCol.button('Run', type='primary', use_container_width=True, on_click=on_run_data, key='run_button')
+
+        resetCol.button('Reset', disabled=True, use_container_width=True)
+        readCol.button('Read', use_container_width=True, args=((True, )))
+        
+        runLabel = 'Run'
+        if st.session_state.input_data == '':
+            runLabel = 'Demo Run'
+        runCol.button(runLabel, type='primary', use_container_width=True, on_click=on_run_data)
     
     if VERBOSE:
         print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
@@ -970,10 +995,10 @@ with st.sidebar:
             if VERBOSE:
                 print_param(PARAM2PRINT)
 
-if VERBOSE:
-    print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
-    print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
-    print_param(PARAM2PRINT)
+    if verbose:
+        print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
+        print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
+        print_param(param2print)
+
 #if __name__ == "__main__":
 #    main()
-
