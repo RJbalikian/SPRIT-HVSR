@@ -35,7 +35,7 @@ except Exception:
     except Exception:
         import sprit as sprit_hvsr
 
-verbose = False
+VERBOSE = False
 
 if VERBOSE:
     print('Start of file, session state length: ', len(st.session_state.keys()))
