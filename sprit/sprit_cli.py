@@ -125,8 +125,8 @@ def main():
     else:
         #Print a summary if not verbose
         if 'verbose' not in kwargs or not kwargs['verbose']:
-            print("Running sprit.run() with the following arguments (use --verbose for more information):")
-            print("sprit.run(", end='')
+            print("\nRunning sprit.run() with the following arguments (use --verbose for more information):\n")
+            print("\tsprit.run(", end='')
             for key, value in kwargs.items():
                 if 'kwargs' in str(key):
                     pass
@@ -138,8 +138,8 @@ def main():
             print('**ppsd_kwargs, **kwargs', end='')
             print(')')
 
-        print('Non-default kwargs:')
-        [print(f"\t {k} = {v}") for k, v in kwargs.items()]
+        print('\tNon-default kwargs:')
+        [print(f"\t\t {k} = {v}") for k, v in kwargs.items()]
         print()
         
         sprit.run(**kwargs)
