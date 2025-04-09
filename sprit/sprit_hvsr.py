@@ -498,8 +498,9 @@ class HVSRData:
         else:
             utcSTime = self.starttime
             utcETime = self.endtime
-        minDur = str((utcETime - utcSTime)/60).split('.')[0]
-        secDur = str(round((((utcETime - utcSTime)/60) - int(minDur)) * 60, 2))
+        
+        minDur = str((utcETime - utcSTime)//60).split('.')[0]
+        secDur = str(round((((utcETime - utcSTime)//60) - int(minDur)) * 60, 2))
 
         acqDurStr = f'Record duration: {minDur}:{secDur} ({utcETime-utcSTime} seconds)'
         if aDateStr == __get_ip_default('acq_date') and sTimeStr == __get_ip_default('starttime'):
@@ -1042,7 +1043,6 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
                 fetch_data_kwargs['obspy_ppsds'] = False
-            print(type(params), params)
             hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
@@ -2088,7 +2088,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
                 peakm = __check_clarity(x, hvsrm, peakm, do_rank=True)
 
                 # Get standard deviation of time peaks
-                print(index_list, hvsrPeaks.shape)
                 stdf = __get_stdf(x, index_list, hvsrPeaks)
                 
                 peak = __check_freq_stability(peak, peakm, peakp)
@@ -5152,7 +5151,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         return y_smooth
 
     resampleList = ['period_bin_centers', 'period_bin_left_edges', 'period_bin_right_edges', 'period_xedges',
-                    'psd_frequencies', 'psd_periods', 'psd_values']
+                    'psd_frequencies', 'psd_periods']
 
     for k in ppsds.keys():
         #for ppsdk, ppsdv in ppsds[k].items():
@@ -9458,13 +9457,11 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
         # Embed the image in the html document
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
     else:
-        print('html')
         #htmlstring = plotly.io.to_html(hvsr_results.HV_Plot, include_plotlyjs=False)
         #print(type(htmlstring))
         img = plotly.io.to_image(hvsr_results.HV_Plot, format='png', engine='kaleido')
         hvplot_base64 = base64.b64encode(img).decode('utf8')
 
-        print('Putting it in html text')
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
 
     # Update formatting for print report for html
@@ -10877,9 +10874,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
     # First check below
     # Initialize list
     _found_m = list()
-    #print('peak', _peak)
-    #print('peakm', _peakm)
-    #SSprint('peakp', _peakp)
+
     for _i in range(len(_peak)):
         _dx = 1000000.
         # Initialize test as not passing for this frequency
