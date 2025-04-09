@@ -286,7 +286,7 @@ def check_if_default():
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
 
-if verbose:
+if VERBOSE:
     check_if_default()
 
 
@@ -413,7 +413,6 @@ def on_run_data():
         display_results()
 
         st.session_state.prev_datapath=st.session_state.input_data
-        print(' finished running data')
 
 
 def display_results():
@@ -426,7 +425,7 @@ def display_results():
     #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
     st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
     st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'])
+    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
 
 
 def write_to_info_tab(infoTab):
@@ -974,7 +973,7 @@ with st.sidebar:
             if VERBOSE:
                 print('Setting up plot tab, session state length: ', len(st.session_state.keys()))
 
-            st.selectbox("Plot Engine", options=['Matplotlib', "Plotly"], key='plot_engine', disabled=False)
+            st.selectbox("Plot Engine", options=['Plotly', "Matplotlib"], key='plot_engine', disabled=True, help="Currently, only plotly is supported.")
             st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
             st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
                                             on_change=update_plot_string, key='plotPlotStr')
@@ -995,7 +994,7 @@ with st.sidebar:
             if VERBOSE:
                 print_param(PARAM2PRINT)
 
-    if verbose:
+    if VERBOSE:
         print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
         print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
         print_param(param2print)
