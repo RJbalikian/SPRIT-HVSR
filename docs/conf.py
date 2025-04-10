@@ -26,7 +26,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 project = 'sprit'
 copyright = '2024, Author'
 author = 'Riley Balikian'
-release = '2.4.0'
+release = '2.4.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
