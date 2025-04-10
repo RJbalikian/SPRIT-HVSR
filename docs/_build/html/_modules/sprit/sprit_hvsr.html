@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.3.6 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.3.7 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=ac39ba8c"></script>
+      <script src="../../_static/documentation_options.js?v=08413e95"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -97,6 +97,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">zoneinfo</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">kaleido</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backend_bases</span><span class="w"> </span><span class="kn">import</span> <span class="n">MouseButton</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mdates</span>
@@ -127,7 +128,7 @@
 
 
 <span class="c1"># Resources directory path, and the other paths as well</span>
-<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources&#39;</span><span class="p">))</span>
+<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources&#39;</span><span class="p">))</span>
 <span class="n">SAMPLE_DATA_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;sample_data&#39;</span><span class="p">)</span>
 <span class="n">SETTINGS_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;settings&#39;</span><span class="p">)</span>
 
@@ -600,8 +601,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">utcSTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starttime</span>
             <span class="n">utcETime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">endtime</span>
-        <span class="n">minDur</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">utcETime</span> <span class="o">-</span> <span class="n">utcSTime</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">secDur</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">((((</span><span class="n">utcETime</span> <span class="o">-</span> <span class="n">utcSTime</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">minDur</span><span class="p">))</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        
+        <span class="n">minDur</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">utcETime</span> <span class="o">-</span> <span class="n">utcSTime</span><span class="p">)</span><span class="o">//</span><span class="mi">60</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">secDur</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">((((</span><span class="n">utcETime</span> <span class="o">-</span> <span class="n">utcSTime</span><span class="p">)</span><span class="o">//</span><span class="mi">60</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">minDur</span><span class="p">))</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
         <span class="n">acqDurStr</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Record duration: </span><span class="si">{</span><span class="n">minDur</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">secDur</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">utcETime</span><span class="o">-</span><span class="n">utcSTime</span><span class="si">}</span><span class="s1"> seconds)&#39;</span>
         <span class="k">if</span> <span class="n">aDateStr</span> <span class="o">==</span> <span class="n">__get_ip_default</span><span class="p">(</span><span class="s1">&#39;acq_date&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sTimeStr</span> <span class="o">==</span> <span class="n">__get_ip_default</span><span class="p">(</span><span class="s1">&#39;starttime&#39;</span><span class="p">):</span>
@@ -700,35 +702,6 @@
 
 
     <span class="c1"># METHODS (many reflect dictionary methods)</span>
-<div class="viewcode-block" id="HVSRData.keys">
-<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.keys">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to return the &quot;keys&quot; of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict_keys</span>
-<span class="sd">            A dict_keys object of the HVSRData objects attributes, parameters, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>        
-        <span class="n">keyList</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
-                <span class="n">keyList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">keyList</span></div>
-
-
-<div class="viewcode-block" id="HVSRData.items">
-<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.items">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to return the &quot;items&quot; of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict_items</span>
-<span class="sd">            A dict_items object of the HVSRData objects attributes, parameters, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>                
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
-
 
 <div class="viewcode-block" id="HVSRData.copy">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.copy">[docs]</a>
@@ -745,6 +718,74 @@
             <span class="k">return</span> <span class="n">HVSRData</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">HVSRData</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="HVSRData.export_settings">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.export_settings">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">export_settings_path</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">export_settings_type</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">include_location</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        export_settings_path : str, optional</span>
+<span class="sd">            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;</span>
+<span class="sd">        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional</span>
+<span class="sd">            They type of settings to save, by default &#39;all&#39;</span>
+<span class="sd">        include_location : bool, optional</span>
+<span class="sd">            Whether to include the location information in the instrument settings, if that settings type is selected, by default False</span>
+<span class="sd">        verbose : bool, optional</span>
+<span class="sd">            Whether to print output (filepath and settings) to terminal, by default True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">export_settings</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> 
+                        <span class="n">export_settings_path</span><span class="o">=</span><span class="n">export_settings_path</span><span class="p">,</span> <span class="n">export_settings_type</span><span class="o">=</span><span class="n">export_settings_type</span><span class="p">,</span> <span class="n">include_location</span><span class="o">=</span><span class="n">include_location</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HVSRData.get_report">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.get_report">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to get report from processed data, in print, graphical, or tabular format.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Variable</span>
+<span class="sd">            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        get_report</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">report_return</span></div>
+
+
+<div class="viewcode-block" id="HVSRData.items">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.items">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to return the &quot;items&quot; of the HVSRData object. For HVSRData objects, this is a dict_items object with the keys and values in tuples. Functions similar to dict.items().</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict_items</span>
+<span class="sd">            A dict_items object of the HVSRData objects attributes, parameters, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>                
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="HVSRData.keys">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to return the &quot;keys&quot; of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict_keys</span>
+<span class="sd">            A dict_keys object of the HVSRData objects attributes, parameters, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">keyList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+                <span class="n">keyList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">keyList</span>   </div>
 
         
 <div class="viewcode-block" id="HVSRData.plot">
@@ -767,24 +808,6 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">plot_return</span></div>
 
-        
-<div class="viewcode-block" id="HVSRData.get_report">
-<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.get_report">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to get report from processed data, in print, graphical, or tabular format.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Variable</span>
-<span class="sd">            May return nothing, pandas.Dataframe, or pyplot Figure, depending on input.</span>
-
-<span class="sd">        See Also</span>
-<span class="sd">        --------</span>
-<span class="sd">        get_report</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">report_return</span></div>
-
 
 <div class="viewcode-block" id="HVSRData.report">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.report">[docs]</a>
@@ -798,29 +821,18 @@
         <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">report_return</span></div>
 
-
-<div class="viewcode-block" id="HVSRData.export_settings">
-<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.export_settings">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">export_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">export_settings_path</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">export_settings_type</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">include_location</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        export_settings_path : str, optional</span>
-<span class="sd">            Filepath to output file. If left as &#39;default&#39;, will save as the default value in the resources directory. If that is not possible, will save to home directory, by default &#39;default&#39;</span>
-<span class="sd">        export_settings_type : str, {&#39;all&#39;, &#39;instrument&#39;, &#39;processing&#39;}, optional</span>
-<span class="sd">            They type of settings to save, by default &#39;all&#39;</span>
-<span class="sd">        include_location : bool, optional</span>
-<span class="sd">            Whether to include the location information in the instrument settings, if that settings type is selected, by default False</span>
-<span class="sd">        verbose : bool, optional</span>
-<span class="sd">            Whether to print output (filepath and settings) to terminal, by default True</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">export_settings</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> 
-                        <span class="n">export_settings_path</span><span class="o">=</span><span class="n">export_settings_path</span><span class="p">,</span> <span class="n">export_settings_type</span><span class="o">=</span><span class="n">export_settings_type</span><span class="p">,</span> <span class="n">include_location</span><span class="o">=</span><span class="n">include_location</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
-
     
-    <span class="c1">#ATTRIBUTES</span>
-    <span class="c1">#params</span>
+<div class="viewcode-block" id="HVSRData.select">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.select">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper for obspy select method on the stream&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;stream&#39;</span><span class="p">):</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">stream</span></div>
+
+
+    <span class="c1"># ATTRIBUTES</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary containing the parameters used to process the data</span>
@@ -838,7 +850,6 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;params must be a dict type, currently passing </span><span class="si">{}</span><span class="s2"> type.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">value</span>
     
-    <span class="c1">#datastream</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">datastream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.</span>
@@ -1405,12 +1416,8 @@
         <span class="n">process_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">process_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
         <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">psd_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">process_hvsr_kwargs</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">print_error</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">print_error</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="c1">#sprit_utils._get_error_from_exception(e,</span>
-        <span class="c1">#                                      print_error_message=print_error)</span>
+        <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_get_error_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span>
+                                              <span class="n">print_error_message</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
             <span class="n">hvsr_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]:</span> <span class="n">hvsr_results</span><span class="p">}</span>
             
@@ -1524,7 +1531,7 @@
     <span class="k">if</span> <span class="s1">&#39;show_plot&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    
+
     <span class="k">return</span> <span class="n">hvsr_results</span></div>
 
 
@@ -2171,7 +2178,7 @@
                     <span class="n">y</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_az&#39;</span><span class="p">][</span><span class="n">col_id</span><span class="p">]</span>
                 
                 <span class="n">scorelist</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">,</span> <span class="s1">&#39;scored&#39;</span><span class="p">,</span> <span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
-                <span class="n">maxlist</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;highest&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">]</span>
+                <span class="n">maxlist</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;maximum&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;highest&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">]</span>
                 <span class="c1"># Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">peak_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">peak_selection</span><span class="p">)</span>
@@ -2180,7 +2187,7 @@
                     <span class="c1"># If score method is being used, get index list for __init_peaks()</span>
                     <span class="k">if</span> <span class="n">peak_selection</span> <span class="ow">in</span> <span class="n">scorelist</span><span class="p">:</span>
                         <span class="n">index_list</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_indices&#39;</span><span class="p">][</span><span class="n">col_id</span><span class="p">]</span> <span class="c1">#Calculated based on hvsr_curve</span>
-                    <span class="k">elif</span> <span class="n">peak_selection</span> <span class="ow">in</span> <span class="n">maxlist</span><span class="p">:</span>
+                    <span class="k">else</span><span class="p">:</span><span class="c1"># str(peak_selection).lower() in maxlist:</span>
                         <span class="c1">#Get max index as item in list for __init_peaks()</span>
                         <span class="n">startInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">peak_freq_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
                         <span class="n">endInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">peak_freq_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
@@ -2198,7 +2205,7 @@
                 <span class="n">hvsrm</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsrm&#39;</span><span class="p">][</span><span class="n">col_id</span><span class="p">]</span>  <span class="c1"># Calculated based on &quot;Use&quot; column</span>
                 
                 <span class="n">hvsrPeaks</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]][</span><span class="s1">&#39;CurvesPeakIndices_&#39;</span><span class="o">+</span><span class="n">col_id</span><span class="p">]</span>
-
+                
                 <span class="n">hvsr_log_std</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_log_std&#39;</span><span class="p">][</span><span class="n">col_id</span><span class="p">]</span>
                 <span class="n">peak_freq_range</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span>
 
@@ -3672,6 +3679,7 @@
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;overlap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">overlap_pct</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">x_freqs</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_freqs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">x_freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">)))</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">])</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_left_edges&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">x_freqs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_bin_right_edges&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">x_freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;period_xedges&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">x_freqs</span>
@@ -3978,7 +3986,6 @@
     <span class="n">report_export_format</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;report_export_format&#39;</span><span class="p">]</span>
     <span class="n">report_export_path</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;report_export_path&#39;</span><span class="p">]</span>
     <span class="n">csv_handling</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;csv_handling&#39;</span><span class="p">]</span>
-    <span class="n">suppress_report_outputs</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;suppress_report_outputs&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span>
 
@@ -4175,11 +4182,10 @@
             <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
 
             <span class="k">if</span> <span class="n">show_plot_report</span><span class="p">:</span><span class="c1">#&#39;show_plot&#39; in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs[&#39;show_plot&#39;] is False:</span>
-                
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
                         <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
-                        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Plot of data report:&#39;</span><span class="p">)</span>
                     <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -4499,7 +4505,7 @@
     <span class="n">raspShakeInstNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;raspberry shake&#39;</span><span class="p">,</span> <span class="s1">&#39;shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspberry&#39;</span><span class="p">,</span> <span class="s1">&#39;rs&#39;</span><span class="p">,</span> <span class="s1">&#39;rs3d&#39;</span><span class="p">,</span> <span class="s1">&#39;rasp. shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspshake&#39;</span><span class="p">]</span>
     
     <span class="c1"># If no CRS specified, assume WGS84</span>
-    <span class="k">if</span> <span class="n">input_crs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">input_crs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">input_crs</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">No value specified for input_crs, assuming WGS84 (EPSG:4326)&quot;</span><span class="p">)</span>
         <span class="n">input_crs</span> <span class="o">=</span> <span class="s1">&#39;EPSG:4326&#39;</span>
@@ -4508,6 +4514,12 @@
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">No value specified for output_crs, using same coordinate system is input_crs: (</span><span class="si">{</span><span class="n">input_crs</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="n">output_crs</span> <span class="o">=</span> <span class="n">input_crs</span>
+
+    <span class="k">if</span> <span class="n">xcoord</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">xcoord</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">ycoord</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">ycoord</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Get CRS Objects</span>
     <span class="n">input_crs</span> <span class="o">=</span> <span class="n">CRS</span><span class="o">.</span><span class="n">from_user_input</span><span class="p">(</span><span class="n">input_crs</span><span class="p">)</span>
@@ -5281,7 +5293,6 @@
                 <span class="nb">print</span><span class="p">()</span>
             
     <span class="c1"># PROCESSING STARTS HERE (SEPARATE LOOP FOR BATCH)</span>
-    <span class="c1">#Site is in the keys anytime it&#39;s not batch</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
         <span class="c1">#If running batch, we&#39;ll loop through each site</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="p">{}</span>
@@ -5332,7 +5343,12 @@
         <span class="n">y_smooth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">box</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">y_smooth</span>
 
+    <span class="n">resampleList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">,</span> <span class="s1">&#39;period_bin_left_edges&#39;</span><span class="p">,</span> <span class="s1">&#39;period_bin_right_edges&#39;</span><span class="p">,</span> <span class="s1">&#39;period_xedges&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;psd_frequencies&#39;</span><span class="p">,</span> <span class="s1">&#39;psd_periods&#39;</span><span class="p">]</span>
+
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ppsds</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1">#for ppsdk, ppsdv in ppsds[k].items():</span>
+            <span class="c1">#print(ppsdk, isinstance(ppsdv, np.ndarray))</span>
         <span class="c1">#input_ppsds = ppsds[k][&#39;psd_values&#39;] #original, not used anymore</span>
         <span class="n">input_ppsds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
@@ -5342,17 +5358,14 @@
         <span class="n">xValMin_per</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">xValMax_per</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
         
-        <span class="c1">#if reasmpling has been selected</span>
+        <span class="c1"># If resampling has been selected...</span>
         <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
                 <span class="n">resample</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1">#Default smooth value</span>
 
-            <span class="c1">#xValMin_per = min(ppsds[k][&#39;period_bin_centers&#39;])</span>
-            <span class="c1">#xValMax_per = max(ppsds[k][&#39;period_bin_centers&#39;])</span>
-
-            <span class="c1">#Resample period bin values</span>
-            <span class="c1">#print(&#39;resample, prelogspace&#39;, x_periods[k].shape)</span>
+            <span class="c1"># Resample period bin values</span>
             <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xValMin_per</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xValMax_per</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">resample</span><span class="p">)</span>
+                
             <span class="k">if</span> <span class="n">smooth</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
                     <span class="n">smooth</span> <span class="o">=</span> <span class="mi">51</span> <span class="c1">#Default smoothing window</span>
@@ -5363,7 +5376,8 @@
                     <span class="k">if</span> <span class="n">padVal</span> <span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">padVal</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="c1">#Resample raw ppsd values</span>
+
+            <span class="c1"># Resample raw ppsd values</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ppsd_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
                     <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">ppsd_t</span><span class="p">)</span>
@@ -5381,9 +5395,24 @@
                         <span class="n">padRawKiPadSmooth</span> <span class="o">=</span> <span class="n">move_avg</span><span class="p">(</span><span class="n">padRawKiPad</span><span class="p">,</span> <span class="n">smooth</span><span class="p">)</span>
                         <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">padRawKiPadSmooth</span><span class="p">[</span><span class="n">padVal</span><span class="p">:</span><span class="o">-</span><span class="n">padVal</span><span class="p">]</span>
 
+            <span class="c1"># Resample other values</span>
+            <span class="k">for</span> <span class="n">keys</span> <span class="ow">in</span> <span class="n">resampleList</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">keys</span> <span class="o">==</span> <span class="s1">&#39;period_bin_centers&#39;</span><span class="p">:</span>
+                    <span class="n">baseLength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">])</span>
+                
+                <span class="k">if</span> <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">baseLength</span><span class="p">:</span>
+                        <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">])),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">])),</span> <span class="n">num</span><span class="o">=</span><span class="n">resample</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">])),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">])),</span> <span class="n">num</span><span class="o">=</span><span class="n">resample</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">arrList</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]:</span>
+                        <span class="n">arrList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="n">num</span><span class="o">=</span><span class="n">resample</span><span class="p">))</span>
+                    
+                    <span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keys</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">arrList</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1">#If no resampling desired</span>
-            <span class="c1">#x_periods[k] = np.array(ppsds[k][&#39;period_bin_centers&#39;])</span>
             <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ppsds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">])</span><span class="c1">#[:-1]#np.round([1/p for p in hvsr_data[&#39;ppsds&#39;][k][&#39;period_xedges&#39;][:-1]], 3)</span>
 
             <span class="c1"># Clean up edge freq. values</span>
@@ -5597,7 +5626,10 @@
     
     <span class="n">indHVPeakIndsDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;ind_hvsr_peak_indices&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
     <span class="n">tStepPFDictDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tStepPFDict</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-    <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">],</span> <span class="n">indHVPeakIndsDF</span><span class="p">,</span> <span class="n">tStepPFDictDF</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">indHVPeakIndsDF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">indHVPeakIndsDF</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">tStepPFDictDF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">tStepPFDictDF</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span>
 
     <span class="c1">#Get peaks of main HV curve</span>
     <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_peak_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -9167,6 +9199,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">az_calc</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">az</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">az</span> <span class="o">=</span> <span class="mi">90</span>
+
+        <span class="k">if</span> <span class="n">az</span> <span class="o">==</span> <span class="s1">&#39;HV&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">_h1</span> <span class="o">*</span> <span class="n">_h2</span><span class="p">)</span>
+
         <span class="n">az_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">az</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">h2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">az_rad</span><span class="p">),</span> <span class="n">h1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">az_rad</span><span class="p">))</span>
         
@@ -9176,10 +9212,13 @@
             <span class="mi">5</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">_p1</span> <span class="o">+</span> <span class="n">_p2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="c1"># Quadratic mean</span>
             <span class="mi">6</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">_h1</span><span class="p">,</span> <span class="n">_h2</span><span class="p">),</span> <span class="c1"># Max horizontal value</span>
             <span class="mi">7</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">_h1</span><span class="p">,</span> <span class="n">_h2</span><span class="p">),</span> <span class="c1"># Minimum horizontal value</span>
-            <span class="mi">8</span><span class="p">:</span> <span class="n">az_calc</span><span class="p">(</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">_h1</span><span class="p">,</span> <span class="n">_h2</span><span class="p">),</span>
+            <span class="mi">8</span><span class="p">:</span> <span class="s1">&#39;do_azimuth_calc&#39;</span><span class="p">,</span>
             <span class="s1">&#39;az&#39;</span><span class="p">:</span> <span class="n">_h1</span><span class="p">}</span> <span class="c1"># If azimuth, horizontals are already combined, no _h2} </span>
-
-    <span class="n">_hvsr</span> <span class="o">=</span> <span class="n">_h</span><span class="p">[</span><span class="n">use_method</span><span class="p">]</span> <span class="o">/</span> <span class="n">_hz</span>
+    
+    <span class="k">if</span> <span class="n">_h</span><span class="p">[</span><span class="n">use_method</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;do_azimuth_calc&#39;</span><span class="p">:</span>
+        <span class="n">_hvsr</span> <span class="o">=</span> <span class="n">az_calc</span><span class="p">(</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">_h1</span><span class="p">,</span> <span class="n">_h2</span><span class="p">)</span> <span class="o">/</span> <span class="n">_hz</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_hvsr</span> <span class="o">=</span> <span class="n">_h</span><span class="p">[</span><span class="n">use_method</span><span class="p">]</span> <span class="o">/</span> <span class="n">_hz</span>
     <span class="k">return</span> <span class="n">_hvsr</span>
 
 
@@ -9627,8 +9666,9 @@
         <span class="c1"># Embed the image in the html document</span>
         <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-
-        <span class="n">img</span> <span class="o">=</span> <span class="n">plotly</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">HV_Plot</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+        <span class="c1">#htmlstring = plotly.io.to_html(hvsr_results.HV_Plot, include_plotlyjs=False)</span>
+        <span class="c1">#print(type(htmlstring))</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">plotly</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">HV_Plot</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;kaleido&#39;</span><span class="p">)</span>
         <span class="n">hvplot_base64</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
 
         <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -11043,9 +11083,7 @@
     <span class="c1"># First check below</span>
     <span class="c1"># Initialize list</span>
     <span class="n">_found_m</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-    <span class="c1">#print(&#39;peak&#39;, _peak)</span>
-    <span class="c1">#print(&#39;peakm&#39;, _peakm)</span>
-    <span class="c1">#SSprint(&#39;peakp&#39;, _peakp)</span>
+
     <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_peak</span><span class="p">)):</span>
         <span class="n">_dx</span> <span class="o">=</span> <span class="mf">1000000.</span>
         <span class="c1"># Initialize test as not passing for this frequency</span>

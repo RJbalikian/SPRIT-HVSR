@@ -6,15 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 2.3.6 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+  <title>sprit.sprit_hvsr module &mdash; sprit 2.3.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=ac39ba8c"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/js/theme.js"></script>
+      <script src="documentation_options.js?v=08413e95"></script>
+      <script src="doctools.js?v=9bcbadda"></script>
+      <script src="sphinx_highlight.js?v=dc90522c"></script>
+    <script src="theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="sprit.sprit_jupyter_UI module" href="sprit.sprit_jupyter_UI.html" />
@@ -160,6 +160,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.ppsds"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.report"><code class="docutils literal notranslate"><span class="pre">HVSRData.report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.select"><code class="docutils literal notranslate"><span class="pre">HVSRData.select()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
@@ -460,6 +461,9 @@ It contains all the processed data, input parameters, and reports.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.report" title="sprit.sprit_hvsr.HVSRData.report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">report</span></code></a>(**kwargs)</p></td>
 <td><p>Wrapper of get_report()</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.select" title="sprit.sprit_hvsr.HVSRData.select"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code></a>(**kwargs)</p></td>
+<td><p>Wrapper for obspy select method on the stream</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py property">
@@ -654,6 +658,12 @@ If True, it will first try to save each file to the same directory as input_data
 <dt><a class="reference internal" href="#sprit.sprit_hvsr.get_report" title="sprit.sprit_hvsr.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
 </dl>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRData.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.select" title="Link to this definition">¶</a></dt>
+<dd><p>Wrapper for obspy select method on the stream</p>
 </dd></dl>
 
 </dd></dl>

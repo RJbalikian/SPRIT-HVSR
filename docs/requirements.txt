@@ -12,4 +12,4 @@ sphinx
 markdown
 pytest
 flake8
-sprit==2.3.6
+sprit==2.3.7

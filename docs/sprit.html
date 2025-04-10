@@ -6,15 +6,15 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 2.3.6 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+  <title>sprit package &mdash; sprit 2.3.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=ac39ba8c"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/js/theme.js"></script>
+      <script src="documentation_options.js?v=08413e95"></script>
+      <script src="doctools.js?v=9bcbadda"></script>
+      <script src="sphinx_highlight.js?v=dc90522c"></script>
+    <script src="theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="sprit.sprit_calibration module" href="sprit.sprit_calibration.html" />
@@ -68,6 +68,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.ppsds"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.report"><code class="docutils literal notranslate"><span class="pre">HVSRData.report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.select"><code class="docutils literal notranslate"><span class="pre">HVSRData.select()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.assert_check"><code class="docutils literal notranslate"><span class="pre">assert_check()</span></code></a></li>
@@ -395,6 +396,9 @@ It contains all the processed data, input parameters, and reports.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#sprit.HVSRData.report" title="sprit.HVSRData.report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">report</span></code></a>(**kwargs)</p></td>
 <td><p>Wrapper of get_report()</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.HVSRData.select" title="sprit.HVSRData.select"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code></a>(**kwargs)</p></td>
+<td><p>Wrapper for obspy select method on the stream</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py property">
@@ -589,6 +593,12 @@ If True, it will first try to save each file to the same directory as input_data
 <dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
 </dl>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sprit.HVSRData.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData.select" title="Link to this definition">¶</a></dt>
+<dd><p>Wrapper for obspy select method on the stream</p>
 </dd></dl>
 
 </dd></dl>
@@ -1406,7 +1416,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.plot_outlier_curves">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmse_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_roc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_outlier_curves" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotly_module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'go'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmse_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_roc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_outlier_curves" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -1416,7 +1426,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.plot_results">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hv_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">p</span> <span class="pre">ann</span> <span class="pre">C+</span> <span class="pre">p</span> <span class="pre">SPEC</span> <span class="pre">ann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_graph_widget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_results_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_results" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">plot_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hv_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSR</span> <span class="pre">p</span> <span class="pre">ann</span> <span class="pre">C+</span> <span class="pre">p</span> <span class="pre">SPEC</span> <span class="pre">ann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_graph_widget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_results_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.plot_results" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -2033,6 +2043,7 @@ This function returns another displayable character if platform is Windows</p>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.ppsds"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.report"><code class="docutils literal notranslate"><span class="pre">HVSRData.report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.select"><code class="docutils literal notranslate"><span class="pre">HVSRData.select()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
