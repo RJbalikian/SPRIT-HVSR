@@ -106,3 +106,12 @@ def update_from_outlier_selection():
 
 
 st.button('Update H/V Curve Analysis', key='update_from_outliers', type='primary', icon=":material/update:")
+
+# plotly express functions: https://plotly.com/python-api-reference/plotly.express.html
+# This might be good for "spectrogram": https://plotly.com/python-api-reference/generated/plotly.express.imshow.html#plotly.express.imshow
+#import plotly.express as px
+#import sprit
+#hvsrData = sprit.run('sample', suppress_report_output=True)
+#hvdf = hvsrData.hvsr_windows_df
+#hvdf.columns
+#px.timeline(hvdf, pd.Series(hvdf.index), 'TimesProcessed_End', y=[0]*hvdf.shape[0], color='Use', color_discrete_map={True:'rgba(0,255,0,0.1)',False:'rgba(255,255,255,0.5)'})
