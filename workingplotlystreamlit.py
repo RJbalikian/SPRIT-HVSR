@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy import signal
 
+st.set_page_config(layout="wide")
 
 @st.cache_data
 def run_data():
@@ -120,6 +121,7 @@ sTime = zTrace.stats.starttime
 xTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
 
 f, t, psdArr = signal.spectrogram(x=specStreamDict[specKey].data, fs=specStreamDict[specKey].stats.sampling_rate, mode='magnitude')
+f[0] = f[1]/10 # Fix so bottom number is not 0
 
 timeWindowList = hvDF.index
 #spectroFig = px.imshow(psdArr,
@@ -127,13 +129,12 @@ timeWindowList = hvDF.index
 #                      x=timeWindowList,
 #                      color_continuous_scale='Viridis')
 
-print(f)
 hvsrBand = hvsr_data['hvsr_band']
 #f=hvsr_data.ppsds["Z"]['psd_frequencies']
 minz = np.percentile(psdArr, 1)
 maxz = np.percentile(psdArr, 99)
-st.write('SHAPE', psdArr.shape)
-f[0]=f[1]/2
+
+
 hmap = go.Heatmap(z=psdArr,
             x=timeWindowList,
             y=f,
@@ -200,8 +201,36 @@ inputFig.update_xaxes(type='date', range=[xTimes[0], xTimes[-1]])
 
 
 def update_data():
-    print('selected')
-    pass
+    st.session_state.data_chart_event = st.session_state.data_plot
+    # Still figuring stuff out
+    print("UPDATE DATA")
+    print(st.session_state.data_chart_event)
+    
+    # This seems to work well at the moment
+    windows=[]
+    if len(st.session_state.data_chart_event['selection']['box']) > 0:
+        esb = st.session_state.data_chart_event['selection']['box']
+        for b in esb:
+            print(b)
+            if b['x'][0] > b['x'][1]:
+                windows.append((b['x'][1], b['x'][0]))
+            else:
+                windows.append((b['x'][0], b['x'][1]))
+    
+
+
+    print('data_plot', st.session_state.data_plot['selection']['box'])
+    print("data_chart_event", st.session_state.data_chart_event['selection']['box'])
+
+    # Reset the variables (but which one(s)?)
+    st.session_state.data_chart_event = {"selection":{"points":[],
+                          "point_indices":[],
+                          'box':[],
+                          'lasso':[]}}
+
+    print(windows)
+    print('---')
+    
 #    st.session_state.outlier_chart_event = st.session_state.outlier_plot
 #    curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
 #    st.session_state.outlier_curves_to_remove = list(curves2Remove)
@@ -218,7 +247,7 @@ def update_data():
 
 event = st.plotly_chart(inputFig, on_select=update_data, key='data_plot', selection_mode='box', use_container_width=True, theme='streamlit')
 st.write("Select any time window with your cursor or the Box or Lasso Selectors (see the top right of chart) to remove it from the results statistics and analysis.")
-
+st.session_state.event = event
 #def update_from_outlier_selection():
 #    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
 #    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.process_hvsr).parameters.keys()) and k != 'hvsr_data'}
@@ -239,4 +268,3 @@ st.write("Select any time window with your cursor or the Box or Lasso Selectors 
 
 #st.button('Update H/V Curve Analysis', key='update_from_outliers', type='primary', icon=":material/update:")
 
-event
