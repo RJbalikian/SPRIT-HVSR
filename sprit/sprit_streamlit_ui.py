@@ -1,13 +1,12 @@
 try:
-    from sprit import sprit_hvsr as sprit
-    from sprit import sprit_plot
+    import sprit
 except Exception:
     try:
         import sprit_hvsr as sprit
         import sprit_plot
-
     except Exception:
-        import sprit
+        from sprit import sprit_hvsr as sprit
+        from sprit import sprit_plot
 
 import copy
 import datetime
