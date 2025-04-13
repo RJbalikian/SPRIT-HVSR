@@ -98,6 +98,10 @@ cp_kwargs = {}
 gr_kwargs = {}
 run_kwargs = {}
 
+spritLogoPath = pathlib.Path(r"C:\Users\riley\LocalData\Repos\SPRIT-HVSR\sprit\resources\icon\SpRITLogo.png")
+if spritLogoPath.exists():
+    st.logo(spritLogoPath)
+
 if VERBOSE:
     print('Start getting default values, session state length: ', len(st.session_state.keys()))
     print_param(PARAM2PRINT)
@@ -242,7 +246,7 @@ def setup_session_state():
         st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
         st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
         st.session_state.source = run_kwargs['source'] = st.session_state.source.title()
-        st.session_state.plot_engine = run_kwargs['plot_engine'] = st.session_state.plot_engine.title()
+        #st.session_state.plot_engine = run_kwargs['plot_engine'] = st.session_state.plot_engine.title()
                
         # Update Nones
         # Remove method
@@ -253,6 +257,7 @@ def setup_session_state():
 
         # Other updates
         st.session_state.azimuth_unit = run_kwargs['azimuth_unit'] = '°'
+        st.session_state.plot_engine = run_kwargs['plot_engine'] = "Plotly"
         
 
         # Horizontal_method
@@ -356,7 +361,7 @@ def on_run_data():
         #srun['plot_engine'] = 'matplotlib'
         srun['plot_input_stream'] = True
         srun['show_plot'] = False
-        srun['VERBOSE'] = False #True
+        srun['verbose'] = False #True
 
         # Update outputs
         srun['report_export_format'] = None
