@@ -185,7 +185,7 @@ class HVSRBatch:
         
         self.batch = True
         
-        if isinstance(batch_input, (list, tuple,))
+        if isinstance(batch_input, (list, tuple,)):
             # This is for a list/tuple with the following structure:
             # batch_input = [HVSRData, HVSRData, HVSRData]
             # or batch_input = ['/file/path1.hvsr', '/file/path2.hvsr']
@@ -272,7 +272,7 @@ class HVSRBatch:
                 if '.hvsr' in pathlib.Path(batch_input).suffix:
                     # In this case, assume this is alreayd a batch file and import/return it
                     return import_data(batch_input)
-                elif:
+                else:
                     # For reading in a csv and specifying column map
                     batch_df = pd.read_csv(batch_input)
 
@@ -297,7 +297,7 @@ class HVSRBatch:
                             pathCol = pa
                             break
 
-                    def _read_data_into_batch(batch_df_row, site_col, path_col)
+                    def _read_data_into_batch(batch_df_row, site_col, path_col):
                         if '.hvsr' in str(batch_df_row[path_col]):
                             dataObj = import_data(str(batch_df_row[path_col]))
                         elif pathlib.Path(batch_df_row[path_col]).suffix.upper()[1:] in OBSPY_FORMATS:
