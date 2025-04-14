@@ -790,7 +790,7 @@ class HVSRData:
         """
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
-    # METHODS (many reflect dictionary methods)
+    # METHODS (many reflect dictionary methods)    
     def copy(self, copy_type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
         
