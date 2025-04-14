@@ -1870,7 +1870,7 @@ def create_jupyter_ui():
 
     resample_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
     resample_hv_curve = widgets.IntText(description='Resample H/V Curve', style={'description_width': 'initial'},
-                                    placeholder=500, value=500, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+                                    placeholder=512, value=512, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
     smooth_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
     smooth_hv_curve = widgets.IntText(description='Smooth H/V Curve', style={'description_width': 'initial'},

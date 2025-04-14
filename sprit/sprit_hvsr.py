@@ -3230,7 +3230,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, 
-                   window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=500, 
+                   window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=512, 
                    obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     """Generates PPSDs for each channel
 
@@ -5178,9 +5178,9 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                     smooth = 51 #Default smoothing window
                     padVal = 25
                 elif smooth % 2==0:
-                    smooth +1 #Otherwise, needs to be odd
-                    padVal = smooth//2
-                    if padVal %2 == 0:
+                    smooth + 1 #Otherwise, needs to be odd
+                    padVal = smooth // 2
+                    if padVal % 2 == 0:
                         padVal += 1
 
 
@@ -5188,7 +5188,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
-                    if smooth is not False:
+                    if smooth is not False and smooth is not None:
                         padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
                         #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
                         padRawKPadSmooth = move_avg(padRawKPad, smooth)
@@ -5225,8 +5225,37 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             # Clean up edge freq. values
             x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
             x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
-            psdRaw[k] = np.array(input_ppsds)
+
+            # If simple curve smooothing desired
+            if smooth or isinstance(smooth, (int, float)):
+                if smooth:
+                    smooth = 51 #Default smoothing window
+                    padVal = 25
+                elif smooth % 2==0:
+                    smooth + 1 #Otherwise, needs to be odd
+                    padVal = smooth // 2
+                    if padVal % 2 == 0:
+                        padVal += 1
+
+                for i, ppsd_t in enumerate(input_ppsds):
+                    if i == 0:
+                        psdRaw[k] = ppsd_t
+                        padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
+                        #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
+                        padRawKPadSmooth = move_avg(padRawKPad, smooth)
+                        psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
+                    else:
+                        psdRaw[k] = np.vstack((psdRaw[k], ppsd_t))
+                        padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
+                        #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
+                        padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
+                        psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
+            else:
+                # If no simple curve smoothing
+                psdRaw[k] = np.array(input_ppsds)
         
+
+
         hvsrDF['psd_values_'+k] = list(psdRaw[k])
         use = hvsrDF['Use'].astype(bool)
 
@@ -5241,6 +5270,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
         #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
     
+    #print('XFREQS', x_freqs[k].shape)
+    #print('XPERs', x_periods[k].shape)
+    #print('PSDRAW', psdRaw[k].shape)
+
     # Get string of horizontal_method type
     # First, define default
     if horizontal_method is None:
@@ -8461,7 +8494,14 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
         
     # Generated x values to which data will be interpolated later
     #  This maintains consistency in array size across all FFT windows
-    x_freqs = np.logspace(np.log10(0.1), np.log10(50), 500)
+    if hasattr(hvsr_data, 'hvsr_band'):
+        low_freq = hvsr_data.hvsr_band[0]
+        hi_freq = hvsr_data.hvsr_band[1]
+    else:
+        low_freq = 0.1
+        hi_freq = 50
+
+    x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), 512)
 
     # For each component, create the time windows and do FFT analysis
     psdDict = {'Z':{}, 'E':{}, 'N':{}}
