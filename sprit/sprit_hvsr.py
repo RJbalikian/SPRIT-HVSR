@@ -144,13 +144,31 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_input, batch_ext=None, df_as_read=None, batch_use=None):
+    def __init__(self, batch_input, batch_ext=None, batch_use=None, df_as_read=None):
         """HVSR Batch initializer
 
         Parameters
         ----------
-        batch_input : dict, list, or tuple
-            Dictionary containing Key value pairs with {sitename: HVSRData object}
+        batch_input : dict, list, tuple, HVSRData, or filepath(s)
+            If:
+
+            * dict, dictionary containing Key value pairs with {sitename: HVSRData object}.
+            * list or tuple, assumed to be dicts, HVSRData objects, or filepaths to processed .hvsr files or seismic data to be processed.
+            * HVSRData object, will transform into HVSRBatch object with single HVSRData object. The add() or append() methods, or using square brackes can be used to add additional sites.
+            * filepaths, if:
+                * If directory, will use `batch_ext` as the input to a `glob()` function to get all files in that directory and add them to batch. Defaults to '.hvsr' files if `batch_ext` not specified.
+                * Filepath, will make a HVSRBatch object importing that single file, or if readable by pandas.read_csv() will use in conjunction with `batch_use` (see below)
+        batch_ext : str or None
+            Filepath extension to use in `glob()` function for filetypes to import, if batch_input is a filepath.
+        batch_use : {dict, list, tuple, None}
+            Intended to be used as dict with keys "site", "filepath", and "batch". 
+            In this case, should be {'site':"name_of_df_col_with_sitenames", 'filepath':"name_of_df_col_with_filepaths_to_data", 'batch':values_to_include}.
+            values_to_include can be a value (or list of values) in a column called "batch" to specify that that row should be included in the HVSRBatch object or
+            a dictionary where they keys are column names and the values are the values to look for in each column name for inclusion in HVSRBatch object.
+            If not specified, defaults to None and uses all rows in dataframe.
+
+        df_as_read : {None, pd.DataFrame}
+            Used in various sprit functions to allow original DataFrame used to create HVSRBatch object to be carried through.        
         """
 
         # Just return it as-is if it's already Batch object
@@ -167,7 +185,7 @@ class HVSRBatch:
         
         self.batch = True
         
-        if isinstance(batch_input, (list, tuple,)):
+        if isinstance(batch_input, (list, tuple,))
             # This is for a list/tuple with the following structure:
             # batch_input = [HVSRData, HVSRData, HVSRData]
             # or batch_input = ['/file/path1.hvsr', '/file/path2.hvsr']
@@ -183,7 +201,7 @@ class HVSRBatch:
                         sitename = hvdata.Table_Report['Site Name'][0]
                     else:
                         sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
-                    
+                        siteNo += 1
                     self.batch_dict[sitename] = hvdata
                 elif pathlib.Path(hvdata).exists():
                     def _get_sitename(proposed_sitename, batch_dict):
@@ -220,7 +238,6 @@ class HVSRBatch:
                         self.batch_dict[sitename] = run(pathlib.Path(hvdata).as_posix())
                     else:
                         print(f"Could not parse Batch input. Excluding from HVSRBatch object: {hvdata}")
-
         elif isinstance(batch_input, dict):
             # This is for a dictionary with the following structure:
             # batch_input = {"SiteName1":HVSRData, "Sitename2":HVSRData}
@@ -232,21 +249,24 @@ class HVSRBatch:
             # This is intended for filepaths
             if pathlib.Path(batch_input).is_dir():
                 if batch_ext is not None:
-                    batchfileglob = pathlib.Path(batch_input).glob("*"+batch_ext)
+                    batchfileglob = pathlib.Path(batch_input).glob("*."+batch_ext)
                     batchfiledict = {}
-                    if 'hvsr' in batch_ext:
-                        for hvfile in batchfileglob:
-                            currhvfile = import_data(hvfile)
-                            batchfiledict[currhvfile['site']] = currhvfile
-                        self.batch_dict = self._batch_dict = batchfiledict
-                else:
-                    batchfileglob = []
-                    batchfiledict = {}
-                    for ftype in OBSPY_FORMATS:
-                        batchfileglob.extend(pathlib.Path(batch_input).glob("*"+ftype))
+                    #if 'hvsr' in batch_ext:
                     for hvfile in batchfileglob:
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile['site']] = currhvfile
+                    self.batch_dict = self._batch_dict = batchfiledict
+
+                else:
+                    # Assume it is .hvsr file you wish to import
+                    batchfileglob = []
+                    batchfiledict = {}
+
+                    batchfileglob = pathlib.Path(batch_input).glob("*")
+                    for hvfile in batchfileglob:
+                        if hvfile.as_posix().lower().endswith('hvsr'):
+                            currhvfile = import_data(hvfile.as_posix())
+                            batchfiledict[currhvfile['site']] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict           
             else:
                 if '.hvsr' in pathlib.Path(batch_input).suffix:
@@ -254,87 +274,94 @@ class HVSRBatch:
                     return import_data(batch_input)
                 elif:
                     # For reading in a csv and specifying column map
-                    if batch_use is None:
-                        # Read all rows in 
-                    else:
-                        batch_df = pd.read_csv(batch_input)
+                    batch_df = pd.read_csv(batch_input)
 
-                        # Convert columns to lowercase
-                        batch_df.columns = [c.lower() for c in batch_df.columns]
+                    # Convert columns to lowercase
+                    batch_df.columns = [c.lower() for c in batch_df.columns]
 
-                        # This is for if dictionary mapping is not specified
-                        snList = ['site', 'sitename', 'sites', 'sitenames', 
-                                  'identifier', 'batch', 'profile', 'crosssection', 'group']
-                        pathList = ['hvsr_export_path', 'import_filepath', 'batch_input', 'input_data',
-                                    'path', 'filepath', 'filename', 'file', 'hvsrdata', 'hvsr', 'data']
+                    # This is for if dictionary mapping is not specified
+                    snList = ['site', 'sitename', 'sites', 'sitenames', 
+                                'identifier', 'batch', 'profile', 'crosssection', 'group']
+                    pathList = ['hvsr_export_path', 'import_filepath', 'batch_input', 'filepath', 'input_data',
+                                'path', 'filepath', 'filename', 'file', 'hvsrdata', 'hvsr', 'data']
 
-                        siteCol = batch_df.columns[0]
-                        for sn in snList:
-                            if sn in snList:
-                                siteCol = sn
-                                break
+                    siteCol = batch_df.columns[0]
+                    for sn in snList:
+                        if sn in snList:
+                            siteCol = sn
+                            break
 
-                        pathCol = batch_df.columns[1]
-                        for pa in pathList:
-                            if pa in pathList:
-                                pathCol = pa
-                                break
+                    pathCol = batch_df.columns[1]
+                    for pa in pathList:
+                        if pa in pathList:
+                            pathCol = pa
+                            break
 
-                        def _read_data_into_batch(batch_df_row, site_col, path_col)
-                            if '.hvsr' in str(batch_df_row[path_col]):
-                                dataObj = import_data(str(batch_df_row[path_col]))
-                            elif pathlib.Path(batch_df_row[path_col]).suffix.upper()[1:] in OBSPY_FORMATS:
-                                dataObj = run(pathlib.Path(batch_df_row[path_col]).as_posix())
-                            else:
-                                warnings.Warn(f"Batch input specified as site {batch_df_row[site_col]} cannot be read, skipping: {batch_df_row[path_col]}")
-                                dataObj = None
-                            
-                            return dataObj
-
-                        if isinstance(batch_use, dict):
-                            # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch':values_in_batch_col_to_include}
-                            siteColFound = False
-                            pathColFound = False
-
-                            siteCol = batch_use['site']
-                            pathCol = batch_use['filepath']
-                            batchCol = batch_use['batch']
-     
-                            # Get subset df with only rows that we want
-                            includeMe = batch_use[batchCol]
-                            if isinstance(includeMe, (list, tuple)):
-                                sites_df = batch_df[batch_df[batchCol].isin(includeMe)]
-                            elif isinstance(includeMe, dict):
-                                sitesDFList = []
-                                for batchCol, includeValue in includeMe.items():
-                                    sitesDFList.append(batch_df[batch_df[batchCol]==includeValue])
-                                sites_df = pd.concat(sitesDFList, ignore_index=True)
-                            else:
-                                sites_df = batch_df[batch_df[batchCol]==includeMe]
-
-                            # Import, process, or otherwise read data into batch object
-                            for i, row in sites_df.iterrows():
-                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
-                                if dataObj is not None:
-                                    self.batch_dict[str(row[siteCol])] = dataObj
-
-
-                        elif isinstance(batch_use, (list, tuple)):
-                            # This should be list/tuples of site names
-                            sites_df = batch_df[batch_df[siteCol].isin(batch_use)]
-                            for i, row in sites_df.iterrows():
-                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
-                                if dataObj is not None:
-                                    self.batch_dict[str(row[siteCol])] = dataObj
-                        
+                    def _read_data_into_batch(batch_df_row, site_col, path_col)
+                        if '.hvsr' in str(batch_df_row[path_col]):
+                            dataObj = import_data(str(batch_df_row[path_col]))
+                        elif pathlib.Path(batch_df_row[path_col]).suffix.upper()[1:] in OBSPY_FORMATS:
+                            dataObj = run(pathlib.Path(batch_df_row[path_col]).as_posix())
                         else:
-                            # Use all rows (as possible)
-                            print(f"**NOTE**: All data specified will be read into batch object, from: {batch_input}")
-                            for i, row in batch_df.iterrows():
-                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                            warnings.Warn(f"Batch input specified as site {batch_df_row[site_col]} cannot be read, skipping: {batch_df_row[path_col]}")
+                            dataObj = None
+                        
+                        return dataObj
 
-                                if dataObj is not None:
-                                    self.batch_dict[str(row[siteCol])] = dataObj
+                    if isinstance(batch_use, dict):
+                        # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch':values_in_batch_col_to_include}
+                        if len(list(batch_use.keys())) != 3:
+                            warnMsg = f"batch_use dict should have three keys called 'site', 'filepath', and 'batch' (not {len(list(batch_use.keys()))}: {list(batch_use.keys())}). \n\t'batch' may be changed to name of column you are using to specify inclusion in HVSRBatch object, or input DataFrame should have column called 'batch'"
+                            warnings.Warn(warnMsg)
+
+                        # Should be site and filepath, but just in case
+                        for k in batch_use.keys():
+                            if str(k).lower() in snList:
+                                siteCol = batch_use[k]
+                                siteKey = k
+
+                            if str(k).lower() in pathList:
+                                pathCol = batch_use[k]
+                                pathKey = k
+
+                            if str(k).lower() not in snList and str(k).lower() not in pathList:
+                                includeMe = batch_use[k]
+                                batchKey = k
+    
+                        # Get subset df with only rows that we want
+                        #includeMe = batchCol#batch_use[batchCol]
+                        if isinstance(includeMe, (list, tuple)):
+                            sites_df = batch_df[batch_df[batchKey].isin(includeMe)]
+                        elif isinstance(includeMe, dict):
+                            sitesDFList = []
+                            for batchCol, includeValue in includeMe.items():
+                                sitesDFList.append(batch_df[batch_df[batchCol]==includeValue])
+                            sites_df = pd.concat(sitesDFList, ignore_index=True)
+                        else:
+                            sites_df = batch_df[batch_df[batchKey]==includeMe]
+
+                        # Import, process, or otherwise read data into batch object
+                        for i, row in sites_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
+
+                    elif isinstance(batch_use, (list, tuple)):
+                        # This should be list/tuples of site names
+                        sites_df = batch_df[batch_df[siteCol].isin(batch_use)]
+                        for i, row in sites_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
+                    
+                    else:
+                        # Use all rows (as possible)
+                        print(f"**NOTE**: All data specified will be read into batch object, from: {batch_input}")
+                        for i, row in batch_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
 
         else:
             raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
@@ -361,6 +388,34 @@ class HVSRBatch:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
+    def add(self, hvsr_data):
+        """Function to add HVSRData objects to existing HVSRBatch objects"""
+        if isinstance(hvsr_data, (dict, HVSRData)):
+            hvsr_data = [hvsr_data]
+
+        if isinstance(hvsr_data, (list, tuple,)):
+            siteNo = 0
+            zfilldigs = len(str(len(hvsr_data)))
+
+            for hvdata in hvsr_data:
+                sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
+
+                if hasattr(hvdata, 'site'):
+                    sitename = hvdata.site
+                elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
+                    sitename = hvdata.Table_Report['Site Name'][0]
+                elif isinstance(hvdata, dict):
+                    if 'site' in hvdata.keys():
+                        sitename = hvdata['site']
+
+                self[sitename] = hvsr_data
+        
+
+    def append(self, hvsr_data):
+        """Alias of add()"""
+        add(self, hvsr_data)
+        
+
     def export(self, hvsr_export_path=True, ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
@@ -373,6 +428,7 @@ class HVSRBatch:
         """
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
+
     def keys(self):
         """Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
 
@@ -383,6 +439,7 @@ class HVSRBatch:
         """
         return self.batch_dict.keys()
 
+
     def items(self):
         """Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
 
@@ -392,6 +449,7 @@ class HVSRBatch:
             _description_
         """
         return self.batch_dict.items()
+
 
     def copy(self, type='shallow'):
         """Make a copy of the HVSRBatch object. Uses python copy module.
@@ -406,6 +464,7 @@ class HVSRBatch:
             return HVSRBatch(copy.deepcopy(self._batch_dict), df_as_read=self._input_df)
         else:
             return HVSRBatch(copy.copy(self._batch_dict), df_as_read=self._input_df)
+
 
     #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
