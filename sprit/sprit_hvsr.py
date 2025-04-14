@@ -53,7 +53,11 @@ except Exception:  # For testing
 # Constants, etc
 NOWTIME = datetime.datetime.now()
 DEFAULT_PLOT_STR = "HVSR p ann COMP+ p ann SPEC p ann"
-OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 
+                 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 
+                 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
+                 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
+                 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 
 # Resources directory path, and the other paths as well
@@ -140,7 +144,7 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_input, batch_ext=None, df_as_read=None):
+    def __init__(self, batch_input, batch_ext=None, df_as_read=None, batch_use=None):
         """HVSR Batch initializer
 
         Parameters
@@ -148,6 +152,8 @@ class HVSRBatch:
         batch_input : dict, list, or tuple
             Dictionary containing Key value pairs with {sitename: HVSRData object}
         """
+
+        # Just return it as-is if it's already Batch object
         if isinstance(batch_input, HVSRBatch):
             return batch_input
         
@@ -162,23 +168,68 @@ class HVSRBatch:
         self.batch = True
         
         if isinstance(batch_input, (list, tuple,)):
+            # This is for a list/tuple with the following structure:
+            # batch_input = [HVSRData, HVSRData, HVSRData]
+            # or batch_input = ['/file/path1.hvsr', '/file/path2.hvsr']
+            # Can also be mixed: [HVSRData, '/file/path3/.hvsr']
             siteNo = 0
             zfilldigs = len(str(len(batch_input)))
             
             for hvdata in batch_input:
-                if hasattr(hvdata, 'site'):
-                    sitename = hvdata.site
-                elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
-                    sitename = hvdata.Table_Report['Site Name'][0]
-                else:
-                    sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
-                
-                self.batch_dict[sitename] = hvdata
+                if isinstance(hvdata, (dict, HVSRData)):
+                    if hasattr(hvdata, 'site'):
+                        sitename = hvdata.site
+                    elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
+                        sitename = hvdata.Table_Report['Site Name'][0]
+                    else:
+                        sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
+                    
+                    self.batch_dict[sitename] = hvdata
+                elif pathlib.Path(hvdata).exists():
+                    def _get_sitename(proposed_sitename, batch_dict):
+                        # Get unique site name based on stem
+                        j = 0
+                        if proposed_sitename in batch_dict.keys():
+                            # 100 is limit
+                            for index in range(100):
+                                if len(proposed_sitename.split('_')) <= index:
+                                    if proposed_sitename.split('_')[-1].isdigit():
+                                        j = int(proposed_sitename.split('_')[-1]) + 1
+                                        sitenameList = proposed_sitename.split('_')
+                                        sitenameList[-1] = str(j)
+                                        proposed_sitename = '_'.join(sitenameList)
+                                        break
+                                    else:
+                                        proposed_sitename = proposed_sitename+'_'+str(j)
+                                        break
+                                    j += 1
+                                else:
+                                    proposed_sitename = '_'.join(proposed_sitename.split('_')[:index+1])
+                        return proposed_sitename
+
+                    if 'hvsr' in pathlib.Path(hvdata).suffix:
+                        sitename = pathlib.path(hvdata).stem
+                        sitename = _get_sitename(sitename, batch_dict)
+
+                        self.batch_dict[sitename] = hvdata
+                    elif pathlib.Path(hvdata).suffix.upper()[1:] in OBSPY_FORMATS:
+                        if verbose:
+                            print(f"Site specified for inclusion in HVSRBatch has not been processed. Processing. ({hvdata})")
+                        sitename = pathlib.Path(hvdata).stem
+                        sitename = _get_sitename(sitename, batch_dict)
+                        self.batch_dict[sitename] = run(pathlib.Path(hvdata).as_posix())
+                    else:
+                        print(f"Could not parse Batch input. Excluding from HVSRBatch object: {hvdata}")
+
         elif isinstance(batch_input, dict):
+            # This is for a dictionary with the following structure:
+            # batch_input = {"SiteName1":HVSRData, "Sitename2":HVSRData}
             self.batch_dict = batch_input
         elif isinstance(batch_input, HVSRData):
+            # If iniitializing HVSRBatch with single HVSRData
             self.batch_dict[batch_input['site']] = batch_input
         elif pathlib.Path(batch_input).exists():
+            # This is intended for filepaths
             if pathlib.Path(batch_input).is_dir():
                 if batch_ext is not None:
                     batchfileglob = pathlib.Path(batch_input).glob("*"+batch_ext)
@@ -198,10 +249,95 @@ class HVSRBatch:
                         batchfiledict[currhvfile['site']] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict           
             else:
-                # Read the batch file in and return it
-                return import_data(batch_input)
+                if '.hvsr' in pathlib.Path(batch_input).suffix:
+                    # In this case, assume this is alreayd a batch file and import/return it
+                    return import_data(batch_input)
+                elif:
+                    # For reading in a csv and specifying column map
+                    if batch_use is None:
+                        # Read all rows in 
+                    else:
+                        batch_df = pd.read_csv(batch_input)
+
+                        # Convert columns to lowercase
+                        batch_df.columns = [c.lower() for c in batch_df.columns]
+
+                        # This is for if dictionary mapping is not specified
+                        snList = ['site', 'sitename', 'sites', 'sitenames', 
+                                  'identifier', 'batch', 'profile', 'crosssection', 'group']
+                        pathList = ['hvsr_export_path', 'import_filepath', 'batch_input', 'input_data',
+                                    'path', 'filepath', 'filename', 'file', 'hvsrdata', 'hvsr', 'data']
+
+                        siteCol = batch_df.columns[0]
+                        for sn in snList:
+                            if sn in snList:
+                                siteCol = sn
+                                break
+
+                        pathCol = batch_df.columns[1]
+                        for pa in pathList:
+                            if pa in pathList:
+                                pathCol = pa
+                                break
+
+                        def _read_data_into_batch(batch_df_row, site_col, path_col)
+                            if '.hvsr' in str(batch_df_row[path_col]):
+                                dataObj = import_data(str(batch_df_row[path_col]))
+                            elif pathlib.Path(batch_df_row[path_col]).suffix.upper()[1:] in OBSPY_FORMATS:
+                                dataObj = run(pathlib.Path(batch_df_row[path_col]).as_posix())
+                            else:
+                                warnings.Warn(f"Batch input specified as site {batch_df_row[site_col]} cannot be read, skipping: {batch_df_row[path_col]}")
+                                dataObj = None
+                            
+                            return dataObj
+
+                        if isinstance(batch_use, dict):
+                            # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch':values_in_batch_col_to_include}
+                            siteColFound = False
+                            pathColFound = False
+
+                            siteCol = batch_use['site']
+                            pathCol = batch_use['filepath']
+                            batchCol = batch_use['batch']
+     
+                            # Get subset df with only rows that we want
+                            includeMe = batch_use[batchCol]
+                            if isinstance(includeMe, (list, tuple)):
+                                sites_df = batch_df[batch_df[batchCol].isin(includeMe)]
+                            elif isinstance(includeMe, dict):
+                                sitesDFList = []
+                                for batchCol, includeValue in includeMe.items():
+                                    sitesDFList.append(batch_df[batch_df[batchCol]==includeValue])
+                                sites_df = pd.concat(sitesDFList, ignore_index=True)
+                            else:
+                                sites_df = batch_df[batch_df[batchCol]==includeMe]
+
+                            # Import, process, or otherwise read data into batch object
+                            for i, row in sites_df.iterrows():
+                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                                if dataObj is not None:
+                                    self.batch_dict[str(row[siteCol])] = dataObj
+
+
+                        elif isinstance(batch_use, (list, tuple)):
+                            # This should be list/tuples of site names
+                            sites_df = batch_df[batch_df[siteCol].isin(batch_use)]
+                            for i, row in sites_df.iterrows():
+                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                                if dataObj is not None:
+                                    self.batch_dict[str(row[siteCol])] = dataObj
+                        
+                        else:
+                            # Use all rows (as possible)
+                            print(f"**NOTE**: All data specified will be read into batch object, from: {batch_input}")
+                            for i, row in batch_df.iterrows():
+                                dataObj = _read_data_into_batch(row, siteCol, pathCol)
+
+                                if dataObj is not None:
+                                    self.batch_dict[str(row[siteCol])] = dataObj
+
         else:
-            raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
+            raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
 
         self._batch_dict = self.batch_dict
@@ -596,17 +732,19 @@ class HVSRData:
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     # METHODS (many reflect dictionary methods)
-
-    def copy(self, type='shallow'):
+    def copy(self, copy_type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
         
         Parameters
         ----------
-        type : str {'shallow', 'deep'}
-            Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type='deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+        copy_type : str {'shallow', 'deep'}
+            Based on input, creates either a shallow or deep copy of the HVSRData object. 
+            Shallow is equivalent of copy.copy(). 
+            Input of copy_type='deep' is equivalent of copy.deepcopy() (still experimental). 
+            Defaults to shallow.
     
         """
-        if type.lower()=='deep':
+        if copy_type.lower() == 'deep':
             return HVSRData(copy.deepcopy(self.params))
         else:
             return HVSRData(copy.copy(self.params))
@@ -696,11 +834,14 @@ class HVSRData:
         return report_return
     
     def select(self, **kwargs):
-        """Wrapper for obspy select method on the stream"""
+        """Wrapper for obspy select method on 'stream' attribute of HVSRData object"""
+
         if hasattr(self, 'stream'):
             stream = self['stream'].select(**kwargs)
+            return stream
 
-        return stream
+        else:
+            warnings.Warn("HVSRData.select() method applied, but 'stream' attribute (obspy.Stream object) not found")
 
     # ATTRIBUTES
     @property
