@@ -21,9 +21,6 @@ hvsr_data = run_data()
 if not hasattr(st.session_state, 'hvsr_data'):
     st.session_state.hvsr_data = hvsr_data
 
-hvDF = st.session_state.hvsr_data['hvsr_windows_df']
-x_data = hvsr_data['x_freqs']['Z'][:-1]
-
 def make_input_fig():
     no_subplots = 5
     inputFig = subplots.make_subplots(rows=no_subplots, cols=1,
@@ -45,29 +42,33 @@ def make_input_fig():
                         'N':nTrace}
 
     sTime = zTrace.stats.starttime
-    xTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
+    xTraceTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
 
-    f, t, psdArr = signal.spectrogram(x=specStreamDict[specKey].data,
+    f, specTimes, psdArr = signal.spectrogram(x=specStreamDict[specKey].data,
                                     fs=specStreamDict[specKey].stats.sampling_rate,
                                     mode='magnitude')
-    f[0] = f[1]/10 # Fix so bottom number is not 0
+    if f[0] == 0:
+        f[0] = f[1]/10 # Fix so bottom number is not 0
 
-    timeWindowList = hvDF.index
-    #spectroFig = px.imshow(psdArr,
-    ##                       labels=dict(x="Time", y="Frequency [Hz]", color='PSD Value'),
-    #                      x=timeWindowList,
-    #                      color_continuous_scale='Viridis')
+    specTimes = list(specTimes)
+    specTimes.insert(0, 0)
+    timeWindowArr = np.array([np.datetime64((sTime + tT).datetime) for tT in specTimes])
 
+    #print('flength', f.shape)
+    #print('xlength', timeWindowArr.shape)
+    #print('tlength', specTimes.shape)
+    #print('psdarrshape', psdArr.shape)
+    
+    
     hvsrBand = hvsr_data['hvsr_band']
-    #f=hvsr_data.ppsds["Z"]['psd_frequencies']
+
     minz = np.percentile(psdArr, 1)
     maxz = np.percentile(psdArr, 99)
 
-
     hmap = go.Heatmap(z=psdArr,
-                x=timeWindowList,
+                x=timeWindowArr[:-1],
                 y=f,
-                colorscale='Turbo',
+                colorscale='Turbo', #opacity=0.8,
                 showlegend=False,
                 hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
                 zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram')
@@ -75,24 +76,71 @@ def make_input_fig():
     inputFig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
     inputFig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
 
-    #for sTrace in spectroFig.data:
-    #    inputFig.add_trace(sTrace, row=1, col=1)
 
+    if hasattr(hvsr_data, 'hvsr_windows_df'):
+        hvdf = hvsr_data.hvsr_windows_df
+        tps = pd.Series(hvdf.index.copy(), name='TimesProcessed_Start', index=hvdf.index)
+        hvdf["TimesProcessed_Start"] = tps
+        tileShape = f.shape[0]
+        
+    else:
+        useSeries = pd.Series([True]*(timeWindowArr.shape[0]-1), name='Use')
+        sTimeSeries = pd.Series(timeWindowArr[:-1], name='TimesProcessed')
+        eTimeSeries = pd.Series(timeWindowArr[1:], name='TimesProcessed_End')
 
-    hvdf = hvsr_data.hvsr_windows_df
+        hvdf = pd.DataFrame({'TimesProcessed':sTimeSeries,
+                             'TimesProcessed_End':eTimeSeries,
+                             'Use':useSeries})
+        hvdf.set_index('TimesProcessed', inplace=True, drop=True)
+        hvdf['TimesProcessed_Start'] = timeWindowArr[:-1]
+        
+        tileShape = psdArr.shape[0]
+        #useArrR = np.where(useArr is True, np.ones_like(useArr)*255, np.ones_like(useArr)*0)
+        #useArrG = np.where(useArr is True, np.ones_like(useArr)*255, np.ones_like(useArr)*0)
+        #useArrB = np.where(useArr is True, np.ones_like(useArr)*255, np.ones_like(useArr)*0)
+        #useArrA = np.where(useArr is True, np.ones_like(useArr)*0.05, np.ones_like(useArr)*0.5)
+        #useArr = np.transpose(np.stack([useArrR, useArrB, useArrG, useArrA]), (1,2,0))
+
+    useColInd = list(hvdf.columns).index('Use')
+    hvdf.iloc[22:55, useColInd] = False
+
+    useArr = np.tile(hvdf.Use, (tileShape,1))
+    useArr = np.where(useArr==True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
+
     timelineFig = px.timeline(data_frame=hvdf,
-                            x_start=timeWindowList,
+                            x_start='TimesProcessed_Start',
                             x_end='TimesProcessed_End',
-                            y=['Used']*hvdf.shape[0],
+                            y='Use',
                             #y="Use",#range_y=[-20, -10],
                             color='Use',
                             color_discrete_map={True: 'rgba(0,255,0,1)',
-                                                False: 'rgba(255,255,255,1)'})
+                                                False: 'rgba(255,0,0,1)'})
     for timelineTrace in timelineFig.data:
         inputFig.add_trace(timelineTrace, row=2, col=1)
 
+
+
+    #specOverlay = px.imshow(img=useArr,
+    #                         x=hvdf["TimesProcessed_Start"].astype('int64'),
+    #                         y=f)
+    
+    #for timelineTrace in specOverlay.data:
+    #    inputFig.add_trace(timelineTrace, row=1, col=1)
+    
+    specOverlay = go.Heatmap(z=useArr,
+                        x=hvdf['TimesProcessed_Start'],
+                        y=f,
+                        colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
+                        showlegend=False,
+                        #hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                        showscale=False, name=f'{specKey} Component Spectrogram')
+    inputFig.add_trace(specOverlay, row=1, col=1)
+    inputFig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+    inputFig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
+
+
     # Data traces
-    zDataFig = px.scatter(x=xTimes, y=zTrace.data)
+    zDataFig = px.scatter(x=xTraceTimes, y=zTrace.data)
     zDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,0,1)'),
                         line=dict(width=1, color='rgba(0,0,0,1)'),
@@ -101,7 +149,7 @@ def make_input_fig():
         inputFig.add_trace(zTrace, row=3, col=1)
 
 
-    eDataFig = px.scatter(x=xTimes, y=eTrace.data)
+    eDataFig = px.scatter(x=xTraceTimes, y=eTrace.data)
     eDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,255,1)'),
                         line=dict(width=1, color='rgba(0,0,255,1)'),
@@ -110,7 +158,7 @@ def make_input_fig():
         inputFig.add_trace(eTrace, row=4, col=1)
 
 
-    nDataFig = px.scatter(x=xTimes, y=nTrace.data)
+    nDataFig = px.scatter(x=xTraceTimes, y=nTrace.data)
     nDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(255,0,0,1)'),
                         line=dict(width=1, color='rgba(255,0,0,1)'),
@@ -126,7 +174,9 @@ def make_input_fig():
     inputFig.update_layout(title_text="Frequency and Data values over time", 
                         height=800)
 
-    inputFig.update_xaxes(type='date', range=[xTimes[0], xTimes[-1]])
+    inputFig.update_xaxes(type='date', range=[xTraceTimes[0], xTraceTimes[-1]])
+
+
 
 
     return inputFig
@@ -161,7 +211,26 @@ def update_data():
                           'box':[],
                           'lasso':[]}}
 
+    if 'x_windows_out' not in st.session_state.hvsr_data.keys():
+        st.session_state.hvsr_data['x_windows_out'] = []
+    
+    st.session_state.hvsr_data['x_windows_out'].append(windows)
 
+    winOverlaps = []
+    overlaps=False
+    win = windows
+    for j, winComp in enumerate(st.session_state.hvsr_data['x_windows_out'][:-1]):
+        if win[1] => winComp[0] and win[1] <= winComp[1]:
+            overlaps = True
+            winOverlaps.append(j)
+        elif win[0] => winComp[0] and win[0] <= winComp[1]:
+            overlaps = True
+            winOverlaps.append(j)
+        elif win[0] <= winComp[0] and win[1] => winComp[i]:
+            overlaps = True
+            winOverlaps.append(j)
+    
+    
 
     if len(windows) > 0:
         pass
