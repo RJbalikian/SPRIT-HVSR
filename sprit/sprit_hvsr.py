@@ -8010,7 +8010,6 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
     instream = stream
     allList = [':', 'all', 'everything']
 
-    print(stream[0].stats.starttime.year)
     year = stream[0].stats.starttime.year
     month = stream[0].stats.starttime.month
     day = stream[0].stats.starttime.day
