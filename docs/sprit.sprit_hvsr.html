@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 2.4.1 documentation</title>
+  <title>sprit.sprit_hvsr module &mdash; sprit 2.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=e9ebdb8f"></script>
+      <script src="_static/documentation_options.js?v=3c4615cf"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -136,6 +136,8 @@
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">sprit.sprit_hvsr module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch"><code class="docutils literal notranslate"><span class="pre">HVSRBatch</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.add"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.add()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.append"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.append()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.copy"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.copy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.export"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.export_settings"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export_settings()</span></code></a></li>
@@ -240,6 +242,12 @@ besides using it determine which sites are contained within it.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.add" title="sprit.sprit_hvsr.HVSRBatch.add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code></a>(hvsr_data)</p></td>
+<td><p>Function to add HVSRData objects to existing HVSRBatch objects</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.append" title="sprit.sprit_hvsr.HVSRBatch.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(hvsr_data)</p></td>
+<td><p>Alias of add()</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRBatch.copy" title="sprit.sprit_hvsr.HVSRBatch.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>([type])</p></td>
 <td><p>Make a copy of the HVSRBatch object.</p></td>
 </tr>
@@ -266,6 +274,18 @@ besides using it determine which sites are contained within it.</p>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRBatch.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRBatch.add" title="Link to this definition">¶</a></dt>
+<dd><p>Function to add HVSRData objects to existing HVSRBatch objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRBatch.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRBatch.append" title="Link to this definition">¶</a></dt>
+<dd><p>Alias of add()</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRBatch.copy">
 <span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'shallow'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRBatch.copy" title="Link to this definition">¶</a></dt>
@@ -437,7 +457,7 @@ It contains all the processed data, input parameters, and reports.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.copy" title="sprit.sprit_hvsr.HVSRData.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>([type])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.copy" title="sprit.sprit_hvsr.HVSRData.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>([copy_type])</p></td>
 <td><p>Make a copy of the HVSRData object.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.export" title="sprit.sprit_hvsr.HVSRData.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a>([hvsr_export_path, ext])</p></td>
@@ -462,7 +482,7 @@ It contains all the processed data, input parameters, and reports.</p>
 <td><p>Wrapper of get_report()</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.select" title="sprit.sprit_hvsr.HVSRData.select"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code></a>(**kwargs)</p></td>
-<td><p>Wrapper for obspy select method on the stream</p></td>
+<td><p>Wrapper for obspy select method on 'stream' attribute of HVSRData object</p></td>
 </tr>
 </tbody>
 </table>
@@ -482,12 +502,15 @@ It contains all the processed data, input parameters, and reports.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRData.copy">
-<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'shallow'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.copy" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">copy_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'shallow'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.copy" title="Link to this definition">¶</a></dt>
 <dd><p>Make a copy of the HVSRData object. Uses python copy module.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>type</strong><span class="classifier">str {‘shallow’, ‘deep’}</span></dt><dd><p>Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type=’deep’ is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.</p>
+<dt><strong>copy_type</strong><span class="classifier">str {‘shallow’, ‘deep’}</span></dt><dd><p>Based on input, creates either a shallow or deep copy of the HVSRData object. 
+Shallow is equivalent of copy.copy(). 
+Input of copy_type=’deep’ is equivalent of copy.deepcopy() (still experimental). 
+Defaults to shallow.</p>
 </dd>
 </dl>
 </dd>
@@ -663,7 +686,7 @@ If True, it will first try to save each file to the same directory as input_data
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRData.select">
 <span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.select" title="Link to this definition">¶</a></dt>
-<dd><p>Wrapper for obspy select method on the stream</p>
+<dd><p>Wrapper for obspy select method on ‘stream’ attribute of HVSRData object</p>
 </dd></dl>
 
 </dd></dl>
@@ -749,20 +772,20 @@ with *</strong> being zero-padded (3 digits) azimuth angle in degrees.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.check_peaks">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_selection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.check_peaks" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_selection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.check_peaks" title="Link to this definition">¶</a></dt>
 <dd><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>hvsr_data</strong><span class="classifier">dict</span></dt><dd><p>Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)</p>
 </dd>
-<dt><strong>hvsr_band</strong><span class="classifier">tuple or list, default=[0.4, 40]</span></dt><dd><p>2-item tuple or list with lower and upper limit of frequencies to analyze</p>
+<dt><strong>hvsr_band</strong><span class="classifier">tuple or list, default=[0.1, 50]</span></dt><dd><p>2-item tuple or list with lower and upper limit of frequencies to analyze</p>
 </dd>
 <dt><strong>peak_selection</strong><span class="classifier">str or numeric, default=’max’</span></dt><dd><p>How to select the “best” peak used in the analysis. For peak_selection=”max” (default value), the highest peak within peak_freq_range is used.
 For peak_selection=’scored’, an algorithm is used to select the peak based in part on which peak passes the most SESAME criteria.
 If a numeric value is used (e.g., int or float), this should be a frequency value to manually select as the peak of interest.</p>
 </dd>
-<dt><strong>peak_freq_range</strong><span class="classifier">tuple or list, default=[0.4, 40];</span></dt><dd><p>The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.</p>
+<dt><strong>peak_freq_range</strong><span class="classifier">tuple or list, default=[0.1, 50];</span></dt><dd><p>The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.</p>
 </dd>
 <dt><strong>verbose</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to print results and inputs to terminal.</p>
 </dd>
@@ -906,7 +929,7 @@ If None, no filtering is done on the input seismic data.</p>
 </dd>
 <dt><strong>filter_options</strong><span class="classifier">dict</span></dt><dd><p>Dictionary that will be unpacked into the <cite>**options</cite> parameter of the filter() method of the obspy.Stream class.
 This should fit the parameters of whichever filter type is specifed by filter_type.
-Example options for the ‘bandpass’ filter_type might be: <cite>filter_options={‘freqmin’: 0.4, ‘freqmax’:40, ‘df’:100, ‘corners’:4, ‘zerophase’:True}</cite>.
+Example options for the ‘bandpass’ filter_type might be: <cite>filter_options={‘freqmin’: 0.1, ‘freqmax’:50, ‘df’:100, ‘corners’:4, ‘zerophase’:True}</cite>.
 See here for more information: <a class="reference external" href="https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html">https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html</a></p>
 </dd>
 <dt><strong>update_metadata</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to update the metadata file, used primarily with Raspberry Shake data which uses a generic inventory file.</p>
@@ -938,7 +961,7 @@ See here for more information: <a class="reference external" href="https://docs.
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.generate_psds">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">generate_psds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_pct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_on_gaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freq_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obspy_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthal_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">obspy_ppsd_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#generate_psds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.generate_psds" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">generate_psds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_pct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_on_gaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freq_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obspy_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthal_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">obspy_ppsd_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#generate_psds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.generate_psds" title="Link to this definition">¶</a></dt>
 <dd><p>Generates PPSDs for each channel</p>
 <p>Channels need to be in Z, N, E order
 Info on PPSD creation here: <a class="reference external" href="https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html">https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html</a></p>
@@ -1173,9 +1196,9 @@ This is necessary for Raspberry Shake data in ‘raw’ format.</p>
 </dd>
 <dt><strong>metapath</strong><span class="classifier">str or pathlib.Path object, default=None</span></dt><dd><p>Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</p>
 </dd>
-<dt><strong>hvsr_band</strong><span class="classifier">list, default=[0.4, 40]</span></dt><dd><p>Two-element list containing low and high “corner” frequencies (in Hz) for processing. This can specified again later.</p>
+<dt><strong>hvsr_band</strong><span class="classifier">list, default=[0.1, 50]</span></dt><dd><p>Two-element list containing low and high “corner” frequencies (in Hz) for processing. This can specified again later.</p>
 </dd>
-<dt><strong>peak_freq_range</strong><span class="classifier">list or tuple, default=[0.4, 40]</span></dt><dd><p>Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.</p>
+<dt><strong>peak_freq_range</strong><span class="classifier">list or tuple, default=[0.1, 50]</span></dt><dd><p>Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.</p>
 </dd>
 <dt><strong>processing_parameters={}</strong><span class="classifier">dict or filepath, default={}</span></dt><dd><p>If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
 Note that this only applies to parameters for the functions: ‘fetch_data’, ‘remove_noise’, ‘generate_psds’, ‘process_hvsr’, ‘check_peaks’, and ‘get_report.’
@@ -1753,7 +1776,7 @@ See API documentation: [generate_psds()](<a class="reference external" href="htt
 </dd>
 <dt><strong>skip_on_gaps: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
-<dt><strong>num_freq_bins: any, default = 500</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
+<dt><strong>num_freq_bins: any, default = 512</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
 <dt><strong>obspy_ppsds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
@@ -1808,11 +1831,11 @@ See API documentation: [check_peaks()](<a class="reference external" href="https
 </dd>
 <dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>
-<dt><strong>hvsr_band: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+<dt><strong>hvsr_band: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
 </dd>
 <dt><strong>peak_selection: any, default = ‘max’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>
-<dt><strong>peak_freq_range: any, default = [0.4, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+<dt><strong>peak_freq_range: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
 </dd>
 <dt><strong>azimuth: any, default = ‘HV’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>

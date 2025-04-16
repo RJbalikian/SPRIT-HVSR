@@ -53,7 +53,11 @@ except Exception:  # For testing
 # Constants, etc
 NOWTIME = datetime.datetime.now()
 DEFAULT_PLOT_STR = "HVSR p ann COMP+ p ann SPEC p ann"
-OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 
+                 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 
+                 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
+                 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
+                 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 
 # Resources directory path, and the other paths as well
@@ -140,14 +144,34 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_input, batch_ext=None, df_as_read=None):
+    def __init__(self, batch_input, batch_ext=None, batch_use=None, df_as_read=None):
         """HVSR Batch initializer
 
         Parameters
         ----------
-        batch_input : dict, list, or tuple
-            Dictionary containing Key value pairs with {sitename: HVSRData object}
+        batch_input : dict, list, tuple, HVSRData, or filepath(s)
+            If:
+
+            * dict, dictionary containing Key value pairs with {sitename: HVSRData object}.
+            * list or tuple, assumed to be dicts, HVSRData objects, or filepaths to processed .hvsr files or seismic data to be processed.
+            * HVSRData object, will transform into HVSRBatch object with single HVSRData object. The add() or append() methods, or using square brackes can be used to add additional sites.
+            * filepaths, if:
+                * If directory, will use `batch_ext` as the input to a `glob()` function to get all files in that directory and add them to batch. Defaults to '.hvsr' files if `batch_ext` not specified.
+                * Filepath, will make a HVSRBatch object importing that single file, or if readable by pandas.read_csv() will use in conjunction with `batch_use` (see below)
+        batch_ext : str or None
+            Filepath extension to use in `glob()` function for filetypes to import, if batch_input is a filepath.
+        batch_use : {dict, list, tuple, None}
+            Intended to be used as dict with keys "site", "filepath", and "batch". 
+            In this case, should be {'site':"name_of_df_col_with_sitenames", 'filepath':"name_of_df_col_with_filepaths_to_data", 'batch':values_to_include}.
+            values_to_include can be a value (or list of values) in a column called "batch" to specify that that row should be included in the HVSRBatch object or
+            a dictionary where they keys are column names and the values are the values to look for in each column name for inclusion in HVSRBatch object.
+            If not specified, defaults to None and uses all rows in dataframe.
+
+        df_as_read : {None, pd.DataFrame}
+            Used in various sprit functions to allow original DataFrame used to create HVSRBatch object to be carried through.        
         """
+
+        # Just return it as-is if it's already Batch object
         if isinstance(batch_input, HVSRBatch):
             return batch_input
         
@@ -162,46 +186,185 @@ class HVSRBatch:
         self.batch = True
         
         if isinstance(batch_input, (list, tuple,)):
+            # This is for a list/tuple with the following structure:
+            # batch_input = [HVSRData, HVSRData, HVSRData]
+            # or batch_input = ['/file/path1.hvsr', '/file/path2.hvsr']
+            # Can also be mixed: [HVSRData, '/file/path3/.hvsr']
             siteNo = 0
             zfilldigs = len(str(len(batch_input)))
             
             for hvdata in batch_input:
-                if hasattr(hvdata, 'site'):
-                    sitename = hvdata.site
-                elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
-                    sitename = hvdata.Table_Report['Site Name'][0]
-                else:
-                    sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
-                
-                self.batch_dict[sitename] = hvdata
+                if isinstance(hvdata, (dict, HVSRData)):
+                    if hasattr(hvdata, 'site'):
+                        sitename = hvdata.site
+                    elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
+                        sitename = hvdata.Table_Report['Site Name'][0]
+                    else:
+                        sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
+                        siteNo += 1
+                    self.batch_dict[sitename] = hvdata
+                elif pathlib.Path(hvdata).exists():
+                    def _get_sitename(proposed_sitename, batch_dict):
+                        # Get unique site name based on stem
+                        j = 0
+                        if proposed_sitename in batch_dict.keys():
+                            # 100 is limit
+                            for index in range(100):
+                                if len(proposed_sitename.split('_')) <= index:
+                                    if proposed_sitename.split('_')[-1].isdigit():
+                                        j = int(proposed_sitename.split('_')[-1]) + 1
+                                        sitenameList = proposed_sitename.split('_')
+                                        sitenameList[-1] = str(j)
+                                        proposed_sitename = '_'.join(sitenameList)
+                                        break
+                                    else:
+                                        proposed_sitename = proposed_sitename+'_'+str(j)
+                                        break
+                                    j += 1
+                                else:
+                                    proposed_sitename = '_'.join(proposed_sitename.split('_')[:index+1])
+                        return proposed_sitename
+
+                    if 'hvsr' in pathlib.Path(hvdata).suffix:
+                        sitename = pathlib.path(hvdata).stem
+                        sitename = _get_sitename(sitename, batch_dict)
+
+                        self.batch_dict[sitename] = hvdata
+                    elif pathlib.Path(hvdata).suffix.upper()[1:] in OBSPY_FORMATS:
+                        if verbose:
+                            print(f"Site specified for inclusion in HVSRBatch has not been processed. Processing. ({hvdata})")
+                        sitename = pathlib.Path(hvdata).stem
+                        sitename = _get_sitename(sitename, batch_dict)
+                        self.batch_dict[sitename] = run(pathlib.Path(hvdata).as_posix())
+                    else:
+                        print(f"Could not parse Batch input. Excluding from HVSRBatch object: {hvdata}")
         elif isinstance(batch_input, dict):
+            # This is for a dictionary with the following structure:
+            # batch_input = {"SiteName1":HVSRData, "Sitename2":HVSRData}
             self.batch_dict = batch_input
         elif isinstance(batch_input, HVSRData):
+            # If iniitializing HVSRBatch with single HVSRData
             self.batch_dict[batch_input['site']] = batch_input
         elif pathlib.Path(batch_input).exists():
+            # This is intended for filepaths
             if pathlib.Path(batch_input).is_dir():
                 if batch_ext is not None:
-                    batchfileglob = pathlib.Path(batch_input).glob("*"+batch_ext)
+                    batchfileglob = pathlib.Path(batch_input).glob("*."+batch_ext)
                     batchfiledict = {}
-                    if 'hvsr' in batch_ext:
-                        for hvfile in batchfileglob:
-                            currhvfile = import_data(hvfile)
-                            batchfiledict[currhvfile['site']] = currhvfile
-                        self.batch_dict = self._batch_dict = batchfiledict
-                else:
-                    batchfileglob = []
-                    batchfiledict = {}
-                    for ftype in OBSPY_FORMATS:
-                        batchfileglob.extend(pathlib.Path(batch_input).glob("*"+ftype))
+                    #if 'hvsr' in batch_ext:
                     for hvfile in batchfileglob:
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile['site']] = currhvfile
+                    self.batch_dict = self._batch_dict = batchfiledict
+
+                else:
+                    # Assume it is .hvsr file you wish to import
+                    batchfileglob = []
+                    batchfiledict = {}
+
+                    batchfileglob = pathlib.Path(batch_input).glob("*")
+                    for hvfile in batchfileglob:
+                        if hvfile.as_posix().lower().endswith('hvsr'):
+                            currhvfile = import_data(hvfile.as_posix())
+                            batchfiledict[currhvfile['site']] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict           
             else:
-                # Read the batch file in and return it
-                return import_data(batch_input)
+                if '.hvsr' in pathlib.Path(batch_input).suffix:
+                    # In this case, assume this is alreayd a batch file and import/return it
+                    return import_data(batch_input)
+                else:
+                    # For reading in a csv and specifying column map
+                    batch_df = pd.read_csv(batch_input)
+
+                    # Convert columns to lowercase
+                    batch_df.columns = [c.lower() for c in batch_df.columns]
+
+                    # This is for if dictionary mapping is not specified
+                    snList = ['site', 'sitename', 'sites', 'sitenames', 
+                                'identifier', 'batch', 'profile', 'crosssection', 'group']
+                    pathList = ['hvsr_export_path', 'import_filepath', 'batch_input', 'filepath', 'input_data',
+                                'path', 'filepath', 'filename', 'file', 'hvsrdata', 'hvsr', 'data']
+
+                    siteCol = batch_df.columns[0]
+                    for sn in snList:
+                        if sn in snList:
+                            siteCol = sn
+                            break
+
+                    pathCol = batch_df.columns[1]
+                    for pa in pathList:
+                        if pa in pathList:
+                            pathCol = pa
+                            break
+
+                    def _read_data_into_batch(batch_df_row, site_col, path_col):
+                        if '.hvsr' in str(batch_df_row[path_col]):
+                            dataObj = import_data(str(batch_df_row[path_col]))
+                        elif pathlib.Path(batch_df_row[path_col]).suffix.upper()[1:] in OBSPY_FORMATS:
+                            dataObj = run(pathlib.Path(batch_df_row[path_col]).as_posix())
+                        else:
+                            warnings.Warn(f"Batch input specified as site {batch_df_row[site_col]} cannot be read, skipping: {batch_df_row[path_col]}")
+                            dataObj = None
+                        
+                        return dataObj
+
+                    if isinstance(batch_use, dict):
+                        # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch':values_in_batch_col_to_include}
+                        if len(list(batch_use.keys())) != 3:
+                            warnMsg = f"batch_use dict should have three keys called 'site', 'filepath', and 'batch' (not {len(list(batch_use.keys()))}: {list(batch_use.keys())}). \n\t'batch' may be changed to name of column you are using to specify inclusion in HVSRBatch object, or input DataFrame should have column called 'batch'"
+                            warnings.Warn(warnMsg)
+
+                        # Should be site and filepath, but just in case
+                        for k in batch_use.keys():
+                            if str(k).lower() in snList:
+                                siteCol = batch_use[k]
+                                siteKey = k
+
+                            if str(k).lower() in pathList:
+                                pathCol = batch_use[k]
+                                pathKey = k
+
+                            if str(k).lower() not in snList and str(k).lower() not in pathList:
+                                includeMe = batch_use[k]
+                                batchKey = k
+    
+                        # Get subset df with only rows that we want
+                        #includeMe = batchCol#batch_use[batchCol]
+                        if isinstance(includeMe, (list, tuple)):
+                            sites_df = batch_df[batch_df[batchKey].isin(includeMe)]
+                        elif isinstance(includeMe, dict):
+                            sitesDFList = []
+                            for batchCol, includeValue in includeMe.items():
+                                sitesDFList.append(batch_df[batch_df[batchCol]==includeValue])
+                            sites_df = pd.concat(sitesDFList, ignore_index=True)
+                        else:
+                            sites_df = batch_df[batch_df[batchKey]==includeMe]
+
+                        # Import, process, or otherwise read data into batch object
+                        for i, row in sites_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
+
+                    elif isinstance(batch_use, (list, tuple)):
+                        # This should be list/tuples of site names
+                        sites_df = batch_df[batch_df[siteCol].isin(batch_use)]
+                        for i, row in sites_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
+                    
+                    else:
+                        # Use all rows (as possible)
+                        print(f"**NOTE**: All data specified will be read into batch object, from: {batch_input}")
+                        for i, row in batch_df.iterrows():
+                            dataObj = _read_data_into_batch(row, siteCol, pathCol)
+
+                            if dataObj is not None:
+                                self.batch_dict[str(row[siteCol])] = dataObj
+
         else:
-            raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of paramteres, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
+            raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
 
         self._batch_dict = self.batch_dict
@@ -225,6 +388,34 @@ class HVSRBatch:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
+    def add(self, hvsr_data):
+        """Function to add HVSRData objects to existing HVSRBatch objects"""
+        if isinstance(hvsr_data, (dict, HVSRData)):
+            hvsr_data = [hvsr_data]
+
+        if isinstance(hvsr_data, (list, tuple,)):
+            siteNo = 0
+            zfilldigs = len(str(len(hvsr_data)))
+
+            for hvdata in hvsr_data:
+                sitename = f"HVSRSite{str(siteNo).zfill(zfilldigs)}"
+
+                if hasattr(hvdata, 'site'):
+                    sitename = hvdata.site
+                elif hasattr(hvdata, 'Table_Report') and 'Site Name' in hvdata.Table_Report.columns:
+                    sitename = hvdata.Table_Report['Site Name'][0]
+                elif isinstance(hvdata, dict):
+                    if 'site' in hvdata.keys():
+                        sitename = hvdata['site']
+
+                self[sitename] = hvsr_data
+        
+
+    def append(self, hvsr_data):
+        """Alias of add()"""
+        add(self, hvsr_data)
+        
+
     def export(self, hvsr_export_path=True, ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
@@ -237,6 +428,7 @@ class HVSRBatch:
         """
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
+
     def keys(self):
         """Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
 
@@ -247,6 +439,7 @@ class HVSRBatch:
         """
         return self.batch_dict.keys()
 
+
     def items(self):
         """Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
 
@@ -256,6 +449,7 @@ class HVSRBatch:
             _description_
         """
         return self.batch_dict.items()
+
 
     def copy(self, type='shallow'):
         """Make a copy of the HVSRBatch object. Uses python copy module.
@@ -270,6 +464,7 @@ class HVSRBatch:
             return HVSRBatch(copy.deepcopy(self._batch_dict), df_as_read=self._input_df)
         else:
             return HVSRBatch(copy.copy(self._batch_dict), df_as_read=self._input_df)
+
 
     #Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
@@ -595,18 +790,20 @@ class HVSRData:
         """
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
-    # METHODS (many reflect dictionary methods)
-
-    def copy(self, type='shallow'):
+    # METHODS (many reflect dictionary methods)    
+    def copy(self, copy_type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
         
         Parameters
         ----------
-        type : str {'shallow', 'deep'}
-            Based on input, creates either a shallow or deep copy of the HVSRData object. Shallow is equivalent of copy.copy(). Input of type='deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
+        copy_type : str {'shallow', 'deep'}
+            Based on input, creates either a shallow or deep copy of the HVSRData object. 
+            Shallow is equivalent of copy.copy(). 
+            Input of copy_type='deep' is equivalent of copy.deepcopy() (still experimental). 
+            Defaults to shallow.
     
         """
-        if type.lower()=='deep':
+        if copy_type.lower() == 'deep':
             return HVSRData(copy.deepcopy(self.params))
         else:
             return HVSRData(copy.copy(self.params))
@@ -696,11 +893,14 @@ class HVSRData:
         return report_return
     
     def select(self, **kwargs):
-        """Wrapper for obspy select method on the stream"""
+        """Wrapper for obspy select method on 'stream' attribute of HVSRData object"""
+
         if hasattr(self, 'stream'):
             stream = self['stream'].select(**kwargs)
+            return stream
 
-        return stream
+        else:
+            warnings.Warn("HVSRData.select() method applied, but 'stream' attribute (obspy.Stream object) not found")
 
     # ATTRIBUTES
     @property
@@ -1926,21 +2126,21 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
 
 
 # Quality checks, stability tests, clarity tests
-# def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.4, 40], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_range=[0.4, 40], azimuth='HV', verbose=False):
+# def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.1, 50], do_rank=False):
+def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_range=[0.1, 50], azimuth='HV', verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes quality checks
 
         Parameters
         ----------
         hvsr_data : dict
             Dictionary containing all the calculated information about the HVSR data (i.e., hvsr_out returned from process_hvsr)
-        hvsr_band : tuple or list, default=[0.4, 40]
+        hvsr_band : tuple or list, default=[0.1, 50]
             2-item tuple or list with lower and upper limit of frequencies to analyze
         peak_selection : str or numeric, default='max'
             How to select the "best" peak used in the analysis. For peak_selection="max" (default value), the highest peak within peak_freq_range is used.
             For peak_selection='scored', an algorithm is used to select the peak based in part on which peak passes the most SESAME criteria.
             If a numeric value is used (e.g., int or float), this should be a frequency value to manually select as the peak of interest.
-        peak_freq_range : tuple or list, default=[0.4, 40];
+        peak_freq_range : tuple or list, default=[0.1, 50];
             The frequency range within which to check for peaks. If there is an HVSR curve with multiple peaks, this allows the full range of data to be processed while limiting peak picks to likely range.
         verbose : bool, default=False
             Whether to print results and inputs to terminal.
@@ -2014,7 +2214,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.4, 40], peak_selection='max', peak_freq_
         HVColIDList[0] = 'HV'
         if hvsr_data['ProcessingStatus']['OverallStatus']:
             if not hvsr_band:
-                hvsr_band = [0.4, 40]
+                hvsr_band = [0.1, 50]
             
             hvsr_data['hvsr_band'] = hvsr_band
 
@@ -2550,7 +2750,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     filter_options : dict
         Dictionary that will be unpacked into the `**options` parameter of the filter() method of the obspy.Stream class.
         This should fit the parameters of whichever filter type is specifed by filter_type.
-        Example options for the 'bandpass' filter_type might be: `filter_options={'freqmin': 0.4, 'freqmax':40, 'df':100, 'corners':4, 'zerophase':True}`.
+        Example options for the 'bandpass' filter_type might be: `filter_options={'freqmin': 0.1, 'freqmax':50, 'df':100, 'corners':4, 'zerophase':True}`.
         See here for more information: https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.filter.html
 
     update_metadata : bool, default=True
@@ -3230,7 +3430,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, 
-                   window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=500, 
+                   window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=512, 
                    obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     """Generates PPSDs for each channel
 
@@ -3274,7 +3474,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
         elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
                 obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
         else:
-            obspy_ppsd_kwargs_sprit_defaults['period_limits'] =  [1/40, 1/0.4]
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] =  [1/50, 1/0.1]
     else:
         if verbose:
             print(f"\t\tUpdating hvsr_band to band specified by period_limits={obspy_ppsd_kwargs['period_limits']}")
@@ -4193,9 +4393,9 @@ def input_params(input_data,
         Instrument from which the data was acquired. 
     metapath : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
-    hvsr_band : list, default=[0.4, 40]
+    hvsr_band : list, default=[0.1, 50]
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
-    peak_freq_range : list or tuple, default=[0.4, 40]
+    peak_freq_range : list or tuple, default=[0.1, 50]
         Two-element list or tuple containing low and high frequencies (in Hz) that are used to check for HVSR Peaks. This can be a tigher range than hvsr_band, but if larger, it will still only use the hvsr_band range.
     processing_parameters={} : dict or filepath, default={}
         If filepath, should point to a .proc json file with processing parameters (i.e, an output from sprit.export_settings()). 
@@ -5178,9 +5378,9 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                     smooth = 51 #Default smoothing window
                     padVal = 25
                 elif smooth % 2==0:
-                    smooth +1 #Otherwise, needs to be odd
-                    padVal = smooth//2
-                    if padVal %2 == 0:
+                    smooth + 1 #Otherwise, needs to be odd
+                    padVal = smooth // 2
+                    if padVal % 2 == 0:
                         padVal += 1
 
 
@@ -5188,7 +5388,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
-                    if smooth is not False:
+                    if smooth is not False and smooth is not None:
                         padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
                         #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
                         padRawKPadSmooth = move_avg(padRawKPad, smooth)
@@ -5225,8 +5425,37 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             # Clean up edge freq. values
             x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
             x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
-            psdRaw[k] = np.array(input_ppsds)
+
+            # If simple curve smooothing desired
+            if smooth or isinstance(smooth, (int, float)):
+                if smooth:
+                    smooth = 51 #Default smoothing window
+                    padVal = 25
+                elif smooth % 2==0:
+                    smooth + 1 #Otherwise, needs to be odd
+                    padVal = smooth // 2
+                    if padVal % 2 == 0:
+                        padVal += 1
+
+                for i, ppsd_t in enumerate(input_ppsds):
+                    if i == 0:
+                        psdRaw[k] = ppsd_t
+                        padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
+                        #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
+                        padRawKPadSmooth = move_avg(padRawKPad, smooth)
+                        psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
+                    else:
+                        psdRaw[k] = np.vstack((psdRaw[k], ppsd_t))
+                        padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
+                        #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
+                        padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
+                        psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
+            else:
+                # If no simple curve smoothing
+                psdRaw[k] = np.array(input_ppsds)
         
+
+
         hvsrDF['psd_values_'+k] = list(psdRaw[k])
         use = hvsrDF['Use'].astype(bool)
 
@@ -5241,6 +5470,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
         #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
     
+    #print('XFREQS', x_freqs[k].shape)
+    #print('XPERs', x_periods[k].shape)
+    #print('PSDRAW', psdRaw[k].shape)
+
     # Get string of horizontal_method type
     # First, define default
     if horizontal_method is None:
@@ -7777,7 +8010,6 @@ def _keep_processing_windows(stream, processing_window=[":"], verbose=False):
     instream = stream
     allList = [':', 'all', 'everything']
 
-    print(stream[0].stats.starttime.year)
     year = stream[0].stats.starttime.year
     month = stream[0].stats.starttime.month
     day = stream[0].stats.starttime.day
@@ -8461,7 +8693,14 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
         
     # Generated x values to which data will be interpolated later
     #  This maintains consistency in array size across all FFT windows
-    x_freqs = np.logspace(np.log10(0.4), np.log10(40), 500)
+    if hasattr(hvsr_data, 'hvsr_band'):
+        low_freq = hvsr_data.hvsr_band[0]
+        hi_freq = hvsr_data.hvsr_band[1]
+    else:
+        low_freq = 0.1
+        hi_freq = 50
+
+    x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), 512)
 
     # For each component, create the time windows and do FFT analysis
     psdDict = {'Z':{}, 'E':{}, 'N':{}}
@@ -10400,7 +10639,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
     stream : obspy.core.stream.Stream object
         Stream for which to plot spectrogram
     params : dict, optional
-        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [0.4,40], by default None.
+        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [0.1,50], by default None.
     component : str or list, default='Z'
         If string, should be one character long component, by default 'Z.' If list, can contain 'E', 'N', 'Z', and will stack them per stack_type and stream.stack() method in obspy to make spectrogram.
     stack_type : str, default = 'linear'
@@ -10487,7 +10726,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
         cmap='turbo'
 
     if params is None:
-        hvsr_band = [0.4, 40]
+        hvsr_band = [0.1, 50]
     else:
         hvsr_band = params['hvsr_band']
     ymin = hvsr_band[0]
@@ -10629,7 +10868,7 @@ def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear
 
 # HELPER functions for checking peaks
 # Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.4, 40], _min_peak_amp=0):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.1, 50], _min_peak_amp=0):
     """ Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)
