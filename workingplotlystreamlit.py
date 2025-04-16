@@ -319,20 +319,6 @@ def update_data():
 def update_selection_type():
     st.session_state.input_selection_mode = st.session_state.input_selection_toggle
 
-#    st.session_state.outlier_chart_event = st.session_state.outlier_plot
-#    curves2Remove = np.unique([p['curve_number'] for p in st.session_state.outlier_chart_event['selection']['points']])
-#    st.session_state.outlier_curves_to_remove = list(curves2Remove)
-#    st.toast(f'Removing curve(s) specified as an outlier')
-
-#    if len(st.session_state.outlier_curves_to_remove)>0:
-#        #st.session_state.outliers_updated = True
-
-#        st.write(f'Removing curve(s) specified as an outlier:')
-#        for remCurve in st.session_state.outlier_curves_to_remove:
-#            currInd = hvDF.iloc[remCurve].name
-#            st.write("Curve ", remCurve, ' starting at ', currInd)
-#            st.session_state.hvsr_data['hvsr_windows_df'].loc[currInd, "Use"] = False
-
 inputFig = make_input_fig()
 event = st.plotly_chart(inputFig, on_select=update_data, key='data_plot', selection_mode='box', use_container_width=True, theme='streamlit')
 st.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")

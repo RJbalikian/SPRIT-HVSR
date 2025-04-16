@@ -3,7 +3,7 @@
 This module analyses ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique
 """
 
-__version__ = "2.4.1"
+__version__ = "2.5.0"
 
 
 try:
