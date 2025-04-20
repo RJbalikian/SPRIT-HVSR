@@ -18,7 +18,6 @@ import pkg_resources
 import tempfile
 import zoneinfo
 
-import matplotlib
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -30,6 +29,7 @@ from obspy.signal.spectral_estimation import PPSD
 from scipy import signal
 
 try:
+    import sprit
     from sprit import sprit_hvsr
 except Exception:
     try:
@@ -48,6 +48,8 @@ spritLogoPath = RESOURCE_DIR.joinpath("icon").joinpath("SpRITLogo.png")
 if VERBOSE:
     print('Start of file, session state length: ', len(st.session_state.keys()))
 PARAM2PRINT = None
+
+
 def print_param(key=PARAM2PRINT, write_key=False):
     if key is None:
         pass
@@ -55,9 +57,11 @@ def print_param(key=PARAM2PRINT, write_key=False):
         print(key, st.session_state[key], 'type:', type(st.session_state[key]))
         if write_key:
             st.write(key, st.session_state[key], 'type:', type(st.session_state[key]))
+
+
 print_param(PARAM2PRINT)
 
-icon=":material/electric_bolt:"
+icon = ":material/electric_bolt:"
 if hasattr(sprit, '__version__'):
     spritversion = sprit.__version__
 else:
@@ -87,8 +91,16 @@ st.set_page_config('SpRIT HVSR',
 
 if VERBOSE:
     print('Start setting up constants/variables, session state length: ', len(st.session_state.keys()))
-OBSPYFORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TRC', 'TSPAIR', 'WAV', 'WIN', 'Y']
-bandVals=[0.05,0.06,0.07,0.08,0.09,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
+OBSPYFORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
+                'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED',
+                'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16',
+                'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST',
+                'SU', 'TRC',
+                'TSPAIR', 'WAV', 'WIN', 'Y']
+bandVals = [0.05, 0.06, 0.07, 0.08, 0.09,
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+            1, 2, 3, 4, 5, 6, 7, 8, 9,
+            10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 # SETUP KWARGS
 if VERBOSE:
@@ -115,10 +127,12 @@ if VERBOSE:
     print_param(PARAM2PRINT)
 
 # Get default values
-funList = [[sprit.run, run_kwargs], [sprit.input_params, ip_kwargs], [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
-            [sprit.remove_noise, rn_kwargs], [sprit.generate_psds, gpsd_kwargs], [PPSD, gpsd_kwargs],
-            [sprit.process_hvsr, phvsr_kwargs], [sprit.remove_outlier_curves, roc_kwargs],
-            [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
+funList = [[sprit.run, run_kwargs], [sprit.input_params, ip_kwargs],
+           [sprit.fetch_data, fd_kwargs], [sprit.calculate_azimuth, ca_kwargs],
+           [sprit.remove_noise, rn_kwargs], [sprit.generate_psds, gpsd_kwargs],
+           [PPSD, gpsd_kwargs], [sprit.process_hvsr, phvsr_kwargs],
+           [sprit.remove_outlier_curves, roc_kwargs],
+           [sprit.check_peaks, cp_kwargs], [sprit.get_report, gr_kwargs]]
 
 
 # Function to initialize session state variables
@@ -132,6 +146,7 @@ def initial_setup_fun(session_state_key, initial_value, running_value='Do not us
 initial_setup_fun('initial_setup', True, False)
 initial_setup_fun('tabs_setup', False)
 initial_setup_fun('mainContain_setup', False)
+
 
 def setup_session_state():
     if st.session_state.initial_setup:
@@ -294,10 +309,12 @@ def setup_session_state():
 
         st.session_state['NewSessionState'] = copy.copy(st.session_state)
 
+
 def check_if_default():
     if len(st.session_state.keys()) > 0:
         print('Checking defaults, session state length: ', len(st.session_state.keys()))
         print_param(param2print)
+
 
 if VERBOSE:
     check_if_default()
@@ -319,6 +336,7 @@ def on_file_upload():
         print(file.name)
     st.session_state.input_data = path.as_posix()
 
+
 # Set up main container
 def setup_main_container(do_setup_tabs=False):
     mainContainer = st.container()
@@ -337,8 +355,10 @@ def setup_main_container(do_setup_tabs=False):
     
     st.session_state.mainContain_setup = True
 
+
 if not st.session_state.initial_setup:
     setup_main_container(do_setup_tabs=False)
+
 
 # Set up tabs
 def setup_tabs(mainContainer):
@@ -417,6 +437,8 @@ def on_run_data():
 
             srun['report_formats'] = ['print', 'table', 'plot', 'html', 'pdf']
             srun['suppress_report_outputs'] = True
+            if 'input_data' in srun:
+                del srun['input_data']
 
             # Display non-default parameters, if applicable
             for key, value in srun.items():
@@ -445,6 +467,10 @@ def on_read_data():
     if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
         return
 
+
+    if st.session_state.input_data == '' or st.session_state.input_data is None:
+        st.session_state.input_data = 'sample'
+
     st.session_state.mainContainer = st.container()
     st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info'])
 
@@ -462,13 +488,27 @@ def on_read_data():
     ipKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.input_params).parameters.keys())}
     fdKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.fetch_data).parameters.keys())}
 
-    #fdKwargs['plot_input_stream'] = True
         
     st.toast('Reading data', icon="⌛")
     with st.spinner(f"Reading data: {ipKwargs['input_data']}"):
         inParams = sprit.input_params(**ipKwargs)
-        st.session_state.hvDataIN = sprit.fetch_data(inParams, **fdKwargs)
+        st.session_state.hvsr_data = sprit.fetch_data(inParams, **fdKwargs)
+    st.session_state.stream = st.session_state.hvsr_data.stream
+    if hasattr(st.session_state.hvsr_data, 'stream_edited'):
+        st.session_state.stream_edited = st.session_state.hvsr_data.stream_edited
+    else:
+        st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
 
+    display_read_data(do_setup_tabs=False)
+
+
+def display_read_data(do_setup_tabs=False):
+    print("DISPLAYING READ DATA")
+    
+    if do_setup_tabs:
+        st.session_state.mainContainer = st.container()
+        st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info'])
+    
     st.session_state.input_fig = make_input_fig()
     st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
                                         on_select=update_data, key='data_plot', 
@@ -476,15 +516,17 @@ def on_read_data():
 
     st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
     st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle', 
-                                                 default='Add', on_change=update_selection_type, disabled=True, 
-                                                 help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+                                                default='Add', on_change=update_selection_type, disabled=True, 
+                                                help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
 
     # Print information about the data to Info tab
-    infoTab.header("Information About Input Data")
-    infoTab.write(f"Acquisition Date: {st.session_state.hvDataIN['acq_date']}")
+    st.session_state.infoTab.header("Information About Input Data")
+    st.session_state.infoTab.write(f"Acquisition Date: {st.session_state.hvsr_data['acq_date']}")
 
-    recLength = (UTCDateTime(st.session_state.hvDataIN['stream'][0].stats.endtime) - UTCDateTime(st.session_state.hvDataIN['stream'][0].stats.starttime))
-    infoTab.write(f"Record Length: {recLength/60:.2f} minutes ({recLength} seconds)")
+    recLength = (UTCDateTime(st.session_state.hvsr_data['stream'][0].stats.endtime) - UTCDateTime(st.session_state.hvsr_data['stream'][0].stats.starttime))
+    st.session_state.infoTab.write(f"Record Length: {recLength/60:.2f} minutes ({recLength} seconds)")
+    st.session_state.infoTab.write("---")
+    st.session_state.infoTab.code(str(st.session_state.hvsr_data))
 
 
 def on_reset():
@@ -524,7 +566,7 @@ def _get_use_array(hvsr_data, f=None, timeWindowArr=None, psdArr=None):
 
     gapList = [[np.datetime64(gTimeUTC.datetime) for gTimeUTC in gap] for gap in gapListUTC]
 
-    if hasattr(hvsr_data, 'BLARB'):
+    if hasattr(hvsr_data, 'hvsr_windows_df'):
         hvdf = hvsr_data.hvsr_windows_df
         tps = pd.Series(hvdf.index.copy(), name='TimesProcessed_Start', index=hvdf.index)
         hvdf["TimesProcessed_Start"] = tps
@@ -707,7 +749,7 @@ def make_input_fig():
 def update_from_data_selection():
     st.toast("Updating H/V Curve statistics")
 
-    if 'PPSDStatus' in st.session_state.hvsr_data.ProcessingStatus and st.session_state.hvsr_data.ProcessingStatus['PPSDStatus']:
+    if 'PPSDStatus' in st.session_state.hvsr_data.processing_status and st.session_state.hvsr_data.processing_status['PPSDStatus']:
         gpsd_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.generate_psds).parameters.keys()) and k != 'hvsr_data'}
         st.session_state.hvsr_data = sprit_hvsr.generate_psds(hvsr_data=st.session_state.hvsr_data, **gpsd_kwargs)
         
@@ -748,34 +790,34 @@ def update_data():
     if 'x_windows_out' not in st.session_state.hvsr_data.keys():
         st.session_state.hvsr_data['x_windows_out'] = []
     
-    st.session_state.hvsr_data['x_windows_out'].append(windows)
-
     # Convert times to obspy.UTCDateTime
     utcdtWin = []
     for currWin in windows:
+        currUTCWin = []
+
+        # Get 
+        stream1 = st.session_state.stream_edited.copy()
+        stream2 = st.session_state.stream_edited.copy()
+
+        stream1 = stream1.merge()
+        stream2 = stream2.merge()
+        
         for pdtimestamp in currWin:
-            utcdtWin.append(UTCDateTime(pdtimestamp))
-    
-    # Get 
-    stream1 = st.session_state.stream_edited.copy()
-    stream2 = st.session_state.stream_edited.copy()
+            currUTCWin.append(UTCDateTime(pdtimestamp))
+        utcdtWin.append(currUTCWin)
+        st.session_state.hvsr_data['x_windows_out'].append(currUTCWin)
 
-    stream1 = stream1.merge()
-    stream2 = stream2.merge()
-    
-    # Trim data
-    if st.session_state.input_selection_mode == 'Add':
-        stream1.trim(starttime=stream1[0].stats.starttime, endtime=utcdtWin[0])
-        stream2.trim(starttime=utcdtWin[1], endtime=stream2[0].stats.endtime)
+        # Trim data with gap in the middle where we remvoed data
+        if st.session_state.input_selection_mode == 'Add':
+            stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
+            stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
 
-    # Merge data back
-    newStream = (stream1 + stream2).merge()
-    st.session_state.hvsr_data['stream_edited'] = newStream
-    st.session_state.stream_edited = newStream
+        # Merge data back
+        newStream = (stream1 + stream2).merge()
+        st.session_state.hvsr_data['stream_edited'] = newStream
+        st.session_state.stream_edited = newStream
 
     # Use edited data to update location of bars
-
-
     # Update useArr
     hvdf, useArrShape = _get_use_array(hvsr_data=st.session_state.hvsr_data,
                                        f=st.session_state.stream_spec_freqs,
@@ -799,7 +841,23 @@ def update_data():
     st.session_state.input_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
     st.session_state.input_fig.update_layout(showlegend=False)
 
-    display_results()
+    def has_attributes(obj, *attributes):
+        return all(hasattr(obj, attr) for attr in attributes)
+
+    procCond1 = st.session_state.hvsr_data['processing_status']['process_hvsr_status']
+    procCond2 = st.session_state.hvsr_data['processing_status']['overall_status']
+    procCond3 = has_attributes(st.session_state.hvsr_data, "HV_Plot", "Print_Report", "Table_Report")
+
+    readCond1 = st.session_state.hvsr_data['processing_status']['input_params_status']
+    readCond2 = st.session_state.hvsr_data['processing_status']['fetch_data_status']
+
+    if procCond1 and procCond2 and procCond3:
+        display_results()
+    elif readCond1 and readCond2:
+        display_read_data(do_setup_tabs=True)
+    else:
+        # For dat that did not process correctly
+        st.session_state.mainContainer.warning('Data not read or processed correctly')
 
 
 def update_selection_type():
@@ -1055,6 +1113,7 @@ def outlier_plot_in_tab():
                             use_container_width=True, 
                             theme='streamlit') 
 
+
 def write_to_outlierTab():
     pass
 
@@ -1082,7 +1141,6 @@ with st.sidebar:
     sourceCol.selectbox('Source', options=['File', 'Raw', 'Directory', "Batch"], index=0, key='source',
                         help='File: a single file for analysis. All the rest are experimental in the web app. Raw is used with Raspberry Shake data to read native file structure. Directory gets all relevant files in a directory. Batch is for loading a .csv file for batch analysis.')
 
-    #st.file_uploader('Upload data file(s)', type=OBSPYFORMATS, accept_multiple_files=True, key='datapath_uploader', on_change=on_file_upload)
     with st.expander("Click to access data uploader"):
         st.file_uploader("Upload data file(s)", type=OBSPYFORMATS, accept_multiple_files=False, key='datapath_uploader', on_change=on_file_upload)
 
@@ -1092,18 +1150,17 @@ with st.sidebar:
     with bottom_container:
         resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
 
-        #resetCol.button('Reset', disabled=True, use_container_width=True)
-        #readCol.button('Read', use_container_width=True, args=((True, )))
-        
         runLabel = 'Run'
-        if st.session_state.input_data == '':
+        readLabel = 'Read'
+        if st.session_state.input_data == '' or st.session_state.input_data is None:
             runLabel = 'Demo Run'
+            readLabel = 'Demo Read'
 
         resetCol.button('Reset', disabled=False, use_container_width=True,
                          on_click=on_reset, key='reset_button')
-        readCol.button('Read', disabled=False, use_container_width=True,
-                        on_click=on_read_data, key='read_button')
-        runCol.button('Run', type='primary', use_container_width=True,
+        readCol.button(readLabel, disabled=False, use_container_width=True,
+                       on_click=on_read_data, key='read_button')
+        runCol.button(runLabel, type='primary', use_container_width=True,
                        on_click=on_run_data, key='run_button')
     
 
