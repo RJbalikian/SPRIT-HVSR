@@ -589,9 +589,19 @@ class HVSRData:
 
         for key, value in params.items():
             setattr(self, key, value)
-            if key=='input_params':
+            if key == 'input_params':
                 for k, v in params[key].items():
                     setattr(self, k, v)
+
+        self.processing_status = {'input_params_status': None,
+                                  'fetch_data_status': None,
+                                  'calculate_azimuths_status': None,
+                                  'remove_noise_status': None,
+                                  'generate_psds_status': None,
+                                  'process_hvsr_status': None,
+                                  'remove_outlier_curves_status': None,
+                                  'overall_status': False}
+
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
@@ -605,8 +615,8 @@ class HVSRData:
             'acq_date', 'starttime', 'endtime',
             'xcoord', 'ycoord', 'input_crs', 'elevation', 'elev_unit',
             ]
-        
-        if "ProcessingStatus" not in self.keys() or not self.ProcessingStatus['InputParamsStatus']:
+
+        if not all([atu in self.keys() for atu in attrsToUse]):
             return 'String representation cannot be generated. Object not instatianted correctly using sprit.input_params()'
 
         def __get_ip_default(parameter):
@@ -1126,10 +1136,10 @@ def gui(kind='browser'):
 
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(input_data, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
+def run(input_data=None, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
-    The input_data parameter of sprit.run() is the only required parameter. This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
+    The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
     
     Notes
     -----
@@ -1182,7 +1192,17 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
-      
+    
+    if input_data is None or input_data == '':
+        print("*** PROCESSING SAMPLE DATA ***")
+        print("To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')")
+        print("See SpRIT Wiki or API documentation for more information:")
+        print("\t Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki")
+        print("\t API Documentation: https://sprit.readthedocs.io/en/latest/#")
+        print("******************************")
+        print()
+        input_data = 'sample'
+    
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
     do_run = True
@@ -1232,7 +1252,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
             # If input_params fails, initialize params as an HVSRDATA
-            #params = {'ProcessingStatus':{'InputParamsStatus':False, 'OverallStatus':False}}
+            #params = {'processing_status':{'input_params_status':False, 'overall_status':False}}
             #params.update(input_params_kwargs)
             #params = sprit_utils.make_it_classy(params)
 
@@ -1300,8 +1320,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                     
                 print(f"Error processing site {site_name}. Continuing processing of remaining sites.")
                 
-                hvsrBatchDict[site_name]['ProcessingStatus']['PPSDStatus'] = False
-                hvsrBatchDict[site_name]['ProcessingStatus']['OverallStatus'] = False         
+                hvsrBatchDict[site_name]['processing_status']['generate_psds_status'] = False
+                hvsrBatchDict[site_name]['processing_status']['overall_status'] = False         
         
         # Create batch object
         hvsrBatchData = HVSRBatch(hvsrBatchDict, df_as_read=pd.DataFrame(run_kwargs_for_df))
@@ -1344,9 +1364,9 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
 
             if isinstance(hvsr_az, HVSRBatch):
                 for site_name in hvsr_az.keys():
-                    hvsr_az[site_name]['ProcessingStatus']['Azimuth'] = False
+                    hvsr_az[site_name]['processing_status']['calculate_azimuths_status'] = False
             else:
-                hvsr_az['ProcessingStatus']['Azimuth'] = False
+                hvsr_az['processing_status']['calculate_azimuths_status'] = False
      
      
     # Remove Noise
@@ -1372,12 +1392,12 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
                     data_noiseRemoved = {data_noiseRemoved.site: data_noiseRemoved}
                     
                 for site_name in data_noiseRemoved.keys():
-                    data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = False
+                    data_noiseRemoved[site_name]['processing_status']['remove_noise_status'] = False
                     # Since noise removal is not required for data processing, check others first
-                    if data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus']:
-                        data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = True        
+                    if data_noiseRemoved[site_name]['processing_status']['overall_status']:
+                        data_noiseRemoved[site_name]['processing_status']['overall_status'] = True        
                     else:
-                        data_noiseRemoved[site_name]['ProcessingStatus']['OverallStatus'] = False
+                        data_noiseRemoved[site_name]['processing_status']['overall_status'] = False
 
                     # If it wasn't originally HVSRBatch, make it HVSRData object again
                     if not data_noiseRemoved[site_name]['batch']:
@@ -1389,7 +1409,7 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             for site_name in data_noiseRemoved.keys():  # This should work more or less the same for batch and regular data now
                 data_noiseRemoved[site_name]['stream_edited'] = data_noiseRemoved[site_name]['stream']
                 
-                data_noiseRemoved[site_name]['ProcessingStatus']['RemoveNoiseStatus'] = None
+                data_noiseRemoved[site_name]['processing_status']['remove_noise_status'] = None
         
                 # If it wasn't originally HVSRBatch, make it HVSRData object again
                 #if not data_noiseRemoved[site_name]['batch']:
@@ -1426,8 +1446,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             psd_data = {psd_data['site']: psd_data}
             
         for site_name in psd_data.keys():  # This should work more or less the same for batch and regular data now
-            psd_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-            psd_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+            psd_data[site_name]['processing_status']['generate_psds_status'] = False
+            psd_data[site_name]['processing_status']['overall_status'] = False
     
             #If it wasn't originally HVSRBatch, make it HVSRData object again
             if not psd_data[site_name]['batch']:
@@ -1463,8 +1483,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             data_curvesRemoved_interim = data_curvesRemoved
         
         for site_name in data_curvesRemoved_interim.keys():  # This should work more or less the same for batch and regular data now
-            data_curvesRemoved_interim[site_name]['ProcessingStatus']['RemoveOutlierCurvesStatus'] = False
-            data_curvesRemoved_interim[site_name]['ProcessingStatus']['OverallStatus'] = False
+            data_curvesRemoved_interim[site_name]['processing_status']['remove_outlier_curves_status'] = False
+            data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
     
             #If it wasn't originally HVSRBatch, make it HVSRData object again
             if not data_curvesRemoved_interim[site_name]['batch']:
@@ -1484,8 +1504,8 @@ def run(input_data, source='file', azimuth_calculation=False, noise_removal=Fals
             
         for site_name in hvsr_results.keys():  # This should work more or less the same for batch and regular data now
         
-            hvsr_results[site_name]['ProcessingStatus']['HVStatus']=False
-            hvsr_results[site_name]['ProcessingStatus']['OverallStatus'] = False
+            hvsr_results[site_name]['processing_status']['process_hvsr_status']=False
+            hvsr_results[site_name]['processing_status']['overall_status'] = False
             
             # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not hvsr_results[site_name]['batch']:
@@ -1830,9 +1850,9 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             params = input_params(**input_params_kwargs)
         except Exception as e:
             params = input_params_kwargs
-            params['ProcessingStatus'] = {}
-            params['ProcessingStatus']['InputParamsStatus'] = False
-            params['ProcessingStatus']['OverallStatus'] = False 
+            params['processing_status'] = {}
+            params['processing_status']['input_params_status'] = False
+            params['processing_status']['overall_status'] = False 
             verboseStatement.append(f"\t{e}")
 
         # Run fetch_data()
@@ -1851,18 +1871,18 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             hvsrData = fetch_data(params=params, **fetch_data_kwargs)
         except Exception as e:
             hvsrData = params
-            hvsrData['ProcessingStatus']['FetchDataStatus'] = False
-            hvsrData['ProcessingStatus']['OverallStatus'] = False
+            hvsrData['processing_status']['fetch_data_status'] = False
+            hvsrData['processing_status']['overall_status'] = False
             verboseStatement.append(f"\t{e}")
     
-        if verbose and hvsrData['ProcessingStatus']['OverallStatus']:
+        if verbose and hvsrData['processing_status']['overall_status']:
             print(f"  {hvsrData['site']}")
             print(ipverboseString)
             print(fdverboseString)
             if verboseStatement != []:
                 for item in verboseStatement[i]:
                     print(item)
-        elif verbose and not hvsrData['ProcessingStatus']['OverallStatus']:
+        elif verbose and not hvsrData['processing_status']['overall_status']:
             if 'site' in param_dict.keys():
                 sitename = param_dict['site']
             else:
@@ -1985,17 +2005,17 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                    hvsr_out[site_name] = __azimuth_batch(**args) #Call another function, that lets us run this function again
                 except Exception as e:
-                    hvsr_out[site_name]['ProcessingStatus']['Azimuth'] = False
-                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
+                    hvsr_out[site_name]['processing_status']['calculate_azimuths_status'] = False
+                    hvsr_out[site_name]['processing_status']['overall_status'] = False
                     if verbose:
                         print(e)
             else:
-                hvsr_data[site_name]['ProcessingStatus']['Azimuth'] = False
-                hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False
+                hvsr_data[site_name]['processing_status']['calculate_azimuths_status'] = False
+                hvsr_data[site_name]['processing_status']['overall_status'] = False
                 hvsr_out = hvsr_data
 
         output = HVSRBatch(hvsr_out, df_as_read=hvsr_data.input_df)
@@ -2119,8 +2139,8 @@ def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azim
     if show_az_plot:
         hvsr_data['Azimuth_Fig'] = plot_azimuth(hvsr_data=hvsr_data, **plot_azimuth_kwargs)
 
-    hvsr_data['ProcessingStatus']['CalculateAzimuth'] = True
-    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    hvsr_data['processing_status']['calculate_azimuths_status'] = True
+    hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return hvsr_data
 
@@ -2184,7 +2204,6 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
         print()
 
         if 'processing_parameters' in hvsr_data.keys() and 'check_peaks' in hvsr_data['processing_parameters'].keys():
-
             if update_msg != []:
                 update_msg.insert(0, '\tThe following parameters were updated using the processing_parameters attribute:')
                 for msg_line in update_msg:
@@ -2199,7 +2218,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] =  hvsr_data[site_name] #Get what would normally be the "params" variable for each site
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_data[site_name] = __check_peaks_batch(**args) #Call another function, that lets us run this function again
                 except:
@@ -2212,7 +2231,8 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
     else:
         HVColIDList = ['_'.join(col_name.split('_')[2:]) for col_name in hvsr_data['hvsr_windows_df'].columns if col_name.startswith('HV_Curves') and 'Log' not in col_name]
         HVColIDList[0] = 'HV'
-        if hvsr_data['ProcessingStatus']['OverallStatus']:
+        
+        if hvsr_data['processing_status']['overall_status']:
             if not hvsr_band:
                 hvsr_band = [0.1, 50]
             
@@ -3408,14 +3428,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 print("\tMetadata/instrument response does not match data.")
                 print("\t  Raw data (without the instrument response removed) will be used for processing.")
     
-    params['ProcessingStatus']['FetchDataStatus'] = True
+    params['processing_status']['fetch_data_status'] = True
     if verbose and not isinstance(params, HVSRBatch):
         print('\n')
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
             print('\t\t', line)
     
-    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    params = sprit_utils._check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return params
 
@@ -3537,15 +3557,15 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
             individual_params = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
             args['hvsr_data'] = individual_params #reset the hvsr_data parameter we originally read in to an individual site hvsr_data
             #args['hvsr_data']['batch'] = False #Set to false, since only running this time
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_data[site_name] = __generate_ppsds_batch(**args) #Call another function, that lets us run this function again
                 except:
-                    hvsr_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-                    hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                     
+                    hvsr_data[site_name]['processing_status']['generate_psds_status']=False
+                    hvsr_data[site_name]['processing_status']['overall_status'] = False                     
             else:
-                hvsr_data[site_name]['ProcessingStatus']['PPSDStatus']=False
-                hvsr_data[site_name]['ProcessingStatus']['OverallStatus'] = False                
+                hvsr_data[site_name]['processing_status']['generate_psds_status']=False
+                hvsr_data[site_name]['processing_status']['overall_status'] = False                
             
             try:
                 sprit_tkinter_ui.update_progress_bars(prog_percent=5)
@@ -3804,8 +3824,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
     for key, value in orig_args.items():
         hvsr_data['processing_parameters']['generate_psds'][key] = value
     
-    hvsr_data['ProcessingStatus']['PPSDStatus'] = True
-    hvsr_data = _check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    hvsr_data['processing_status']['generate_psds_status'] = True
+    hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     
     #for ind, row in hvsrDF.iterrows():
     #    print(row['psd_values_Z'].shape)
@@ -4051,7 +4071,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_results[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            if hvsr_results[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_results[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_results[site_name] = __get_report_batch(**args) #Call another function, that lets us run this function again
                 except:
@@ -4114,14 +4134,14 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
     # Figure out which reports will be used, and format them correctly
     if isinstance(report_formats, (list, tuple)):
-        pass
+        report_formats = [str(rf).lower() for rf in report_formats]
     else:
         #We will use a loop later even if it's just one report type, so reformat to prepare for for loop
         allList = [':', 'all']
         if report_formats.lower() in allList:
             report_formats = ['print', 'table', 'plot', 'html', 'pdf']
         else:
-            report_formats = [report_formats]   
+            report_formats = [str(report_formats).lower()]   
 
     # Format the export formats correctly
     if isinstance(report_export_format, (list, tuple)):
@@ -4135,6 +4155,12 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             report_export_format = ['print', 'table', 'plot', 'html', 'pdf']
         else:
             report_export_format = [report_export_format]   
+
+    # Put print first to get results immediatley while plots and others are created
+    if 'print' in report_formats and report_formats[0] != 'print':
+        report_formats = ['table', 'plot', 'print', 'html', 'pdf']
+        report_formats.pop(report_formats.index('print'))
+        report_formats.insert(0, 'print')
 
     for i, rep_form in enumerate(report_formats):
         if isinstance(report_export_path, (list, tuple)):
@@ -4534,12 +4560,15 @@ def input_params(input_data,
             update_msg.append(f"\t\tNo value specified for output_crs, using same coordinate system is input_crs: ({input_crs})")
         output_crs = input_crs
 
-    if xcoord == '':
-        xcoord = None
-
-    if ycoord == '':
-        ycoord = None
-
+    if xcoord is None or xcoord == '':
+        xcoord = 0.0
+    else:
+        xcoord = float(xcoord)
+    
+    if ycoord is None or ycoord == '':
+        ycoord = 0.0
+    else:
+        ycoord = float(ycoord)
     # Get CRS Objects
     input_crs = CRS.from_user_input(input_crs)
     output_crs = CRS.from_user_input(output_crs)
@@ -4591,7 +4620,7 @@ def input_params(input_data,
                       'xcoord_input':xcoordIN, 'ycoord_input': ycoordIN ,'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
                       'elevation':elevation, 'elev_unit':elev_unit, 'input_crs':input_crs, 'output_crs':output_crs,
                       'depth':depth, 'input_data': input_data, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
-                      'processing_parameters':processing_parameters, 'ProcessingStatus':{'InputParamsStatus':True, 'OverallStatus':True}
+                      'processing_parameters':processing_parameters, 'processing_status':{'input_params_status':True, 'overall_status':True}
                       }
     
 
@@ -4630,8 +4659,8 @@ def input_params(input_data,
         
     #Format everything nicely
     params = sprit_utils.make_it_classy(inputParamDict)
-    params['ProcessingStatus']['InputParamsStatus'] = True
-    params = _check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    params['processing_status']['input_params_status'] = True
+    params = sprit_utils._check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     return params
 
 
@@ -4665,7 +4694,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_data'] = individual_params #reset the params parameter we originally read in to an individual site params
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_data['Azimuth_Fig'] = __plot_azimuth_batch(**args) #Call another function, that lets us run this function again
                 except:
@@ -4888,7 +4917,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
             args['hvsr_results'] = individual_params #reset the params parameter we originally read in to an individual site params
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     __hvsr_plot_batch(**args) #Call another function, that lets us run this function again
                 except:
@@ -5306,19 +5335,19 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_out[site_name] = __process_hvsr_batch(**args) #Call another function, that lets us run this function again
                 except:
                     hvsr_out = hvsr_data
-                    hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
-                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False                    
+                    hvsr_out[site_name]['processing_status']['process_hvsr_status']=False
+                    hvsr_out[site_name]['processing_status']['overall_status'] = False                    
             else:
                 hvsr_out = hvsr_data
-                hvsr_out[site_name]['ProcessingStatus']['HVStatus']=False
-                hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
+                hvsr_out[site_name]['processing_status']['process_hvsr_status']=False
+                hvsr_out[site_name]['processing_status']['overall_status'] = False
         hvsr_out = HVSRBatch(hvsr_out, df_as_read=hvsr_data.input_df)
-        hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
         return hvsr_out
     
     ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
@@ -5691,7 +5720,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     #Include the original obspy stream in the output
     hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
     hvsr_out = sprit_utils.make_it_classy(hvsr_out)
-    hvsr_out['ProcessingStatus']['HVStatus'] = True
+    hvsr_out['processing_status']['process_hvsr_status'] = True
 
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
@@ -5704,7 +5733,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             azimuth = 90
         hvsr_out['single_azimuth'] = azimuth
 
-    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return hvsr_out
 
@@ -5957,17 +5986,17 @@ def remove_noise(hvsr_data, remove_method=None,
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                    hvsr_out[site_name] = __remove_noise_batch(**args) #Call another function, that lets us run this function again
                 except Exception as e:
-                    hvsr_out[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
-                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus']=False
+                    hvsr_out[site_name]['processing_status']['remove_noise_status']=False
+                    hvsr_out[site_name]['processing_status']['overall_status']=False
                     if verbose:
                         print(e)
             else:
-                hvsr_data[site_name]['ProcessingStatus']['RemoveNoiseStatus']=False
-                hvsr_data[site_name]['ProcessingStatus']['OverallStatus']=False
+                hvsr_data[site_name]['processing_status']['remove_noise_status']=False
+                hvsr_data[site_name]['processing_status']['overall_status']=False
                 hvsr_out = hvsr_data
 
         output = HVSRBatch(hvsr_out, df_as_read=hvsr_data.input_df)
@@ -6114,8 +6143,8 @@ def remove_noise(hvsr_data, remove_method=None,
         for key, value in orig_args.items():
             output['processing_parameters']['remove_noise'][key] = value
         
-        output['ProcessingStatus']['RemoveNoiseStatus'] = True
-        output = _check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        output['processing_status']['remove_noise_status'] = True
+        output = sprit_utils._check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
         output = __remove_windows_from_df(output, verbose=verbose)
 
@@ -6239,19 +6268,19 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
             args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
-            if hvsr_data[site_name]['ProcessingStatus']['OverallStatus']:
+            if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_out[site_name] = __remove_outlier_curves(**args) #Call another function, that lets us run this function again
                 except:
                     hvsr_out = hvsr_data
-                    hvsr_out[site_name]['ProcessingStatus']['RemoveOutlierCurves'] = False
-                    hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False                    
+                    hvsr_out[site_name]['processing_status']['remove_outlier_curves_status'] = False
+                    hvsr_out[site_name]['processing_status']['overall_status'] = False                    
             else:
                 hvsr_out = hvsr_data
-                hvsr_out[site_name]['ProcessingStatus']['RemoveOutlierCurves'] = False
-                hvsr_out[site_name]['ProcessingStatus']['OverallStatus'] = False
+                hvsr_out[site_name]['processing_status']['remove_outlier_curves_status'] = False
+                hvsr_out[site_name]['processing_status']['overall_status'] = False
         hvsr_out = HVSRBatch(hvsr_out, df_as_read=hvsr_data.input_df)
-        hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
         return hvsr_out
 
     #Create plot if designated        
@@ -6394,9 +6423,9 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     for key, value in orig_args.items():
         hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
 
-    hvsr_data['ProcessingStatus']['RemoveOutlierCurvesStatus'] = True
+    hvsr_data['processing_status']['remove_outlier_curves_status'] = True
     
-    hvsr_out = _check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     
     return hvsr_out
 
@@ -6668,49 +6697,6 @@ def __process_hvsr_batch(**process_hvsr_kwargs):
     return hvsr_data
 
 # OTHER HELPER FUNCTIONS
-# Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
-def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
-    """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
-
-    Parameters
-    ----------
-    hvsr_data : sprit.HVSRData
-        Data being processed
-
-    Returns
-    -------
-    sprit.HVSRData
-        Data being processed, with updated the 'OverallStatus' key of the attribute ProcessingStatus updated.
-    """
-    #Convert HVSRData to same format as HVSRBatch so same code works the same on both
-    if isinstance(hvsr_data, HVSRData):
-        siteName = hvsr_data['site']
-        hvsr_interim = {siteName: hvsr_data}
-    else:
-        hvsr_interim = hvsr_data
-    
-    # Check overall processing status on all (or only 1 if HVSRData) site(s)
-    for sitename in hvsr_interim.keys():
-        statusOK = True
-        for status_type, status_value in hvsr_interim[sitename]['ProcessingStatus'].items():
-            if not status_value and (status_type != 'RemoveNoiseStatus' and status_type!='RemoveOutlierCurvesStatus'):
-                statusOK = False
-                
-        if statusOK:
-            hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = True
-        else:
-            hvsr_interim[sitename]['ProcessingStatus']['OverallStatus'] = False
-
-    # Get back original data in HVSRData format, if that was the input
-    if isinstance(hvsr_data, HVSRData):
-        hvsr_data = hvsr_interim[siteName]
-    
-    # Print how long it took to perform function
-    if verbose:
-        elapsed = (datetime.datetime.now()-start_time)
-        print(f"\t\t{func_name} completed in  {str(elapsed)[:-3]}")
-    return hvsr_data
-
 
 # HELPER functions for fetch_data() and get_metadata()
 # Read in metadata .inv file, specifically for RaspShake
@@ -9235,20 +9221,38 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
 
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
-        
-    _h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
-            3: math.sqrt(_h1 * _h2), # Geometric mean
-            4: math.sqrt(_p1 + _p2), # Vector summation
-            5: math.sqrt((_p1 + _p2) / 2.0), # Quadratic mean
-            6: max(_h1, _h2), # Max horizontal value
-            7: min(_h1, _h2), # Minimum horizontal value
-            8: 'do_azimuth_calc',
-            'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
+
+    # Previous structure from IRIS module
+    #_h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
+    #        3: math.sqrt(_h1 * _h2), # Geometric mean
+    #        4: math.sqrt(_p1 + _p2), # Vector summation
+    #        5: math.sqrt((_p1 + _p2) / 2.0), # Quadratic mean
+    #        6: max(_h1, _h2), # Max horizontal value
+    #        7: min(_h1, _h2), # Minimum horizontal value
+    #        8: 'do_azimuth_calc',
+    #        'az': _h1} # If azimuth, horizontals are already combined, no _h2} 
     
-    if _h[use_method] == 'do_azimuth_calc':
-        _hvsr = az_calc(azimuth, _h1, _h2) / _hz
+    # Combine horizontal methods
+    if use_method == 2 or str(use_method) == '2':
+        _hCombined = (_h1 + _h2) / 2.0
+    elif use_method == 3 or str(use_method) == '3':
+        _hCombined = math.sqrt(_h1 * _h2)
+    elif use_method == 4 or str(use_method) == '4':
+        _hCombined = math.sqrt(_p1 + _p2)
+    elif use_method == 5 or str(use_method) == '5':
+        _hCombined = math.sqrt((_p1 + _p2) / 2.0)
+    elif use_method == 6 or str(use_method) == '6':
+        _hCombined = max(_h1, _h2)
+    elif use_method == 7 or str(use_method) == '7':
+        _hCombined = min(_h1, _h2)
+    elif use_method == 8 or str(use_method) == '8':
+        _hCombined = az_calc(azimuth, _h1, _h2)
+    elif use_method == 'az' or str(use_method) == 'az':
+        _hCombined = _h1
     else:
-        _hvsr = _h[use_method] / _hz
+        _hCombined = _h1
+    
+    _hvsr = _hCombined / _hz
     return _hvsr
 
 

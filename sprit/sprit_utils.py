@@ -35,7 +35,7 @@ def assert_check(var, cond=None, var_type=None, error_message='Output not valid'
             else:
                 print(' and ', end='')
             print(f"test condition is met.")
-        
+  
 
 def check_gui_requirements():
     #First, check requirements
@@ -65,6 +65,7 @@ def check_gui_requirements():
     #        # Install qtwayland5
     #        os.system("sudo apt install qtwayland5")
 
+
 #Get check mark
 def check_mark(incolor=False, interminal=False):
     """The default Windows terminal is not able to display the check mark character correctly.
@@ -80,6 +81,7 @@ def check_mark(incolor=False, interminal=False):
     if sys.platform=='win32' and interminal:
         check = get_char(u'\u039E')
     return check
+
 
 #Converts filepaths to pathlib paths, if not already
 def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
@@ -117,6 +119,7 @@ def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
             raise RuntimeError('File does not exist: {}'.format(filepath))
     return filepath
 
+
 #Check to make the number of time-steps are the same for each channel
 def check_tsteps(hvsr_data):
     """Check time steps of PPSDS to make sure they are all the same length"""
@@ -132,6 +135,7 @@ def check_tsteps(hvsr_data):
         minTStep = min(tSteps)
     return minTStep
 
+
 #Check the x-values for each channel, to make sure they are all the same length
 def check_xvalues(ppsds):
     """Check x_values of PPSDS to make sure they are all the same length"""
@@ -144,6 +148,54 @@ def check_xvalues(ppsds):
         print('X-values (periods or frequencies) do not have the same values. \n This may result in computational errors')
         #Do stuff to fix it?
     return ppsds
+
+
+# Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
+def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
+    """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
+
+    Parameters
+    ----------
+    hvsr_data : sprit.HVSRData
+        Data being processed
+
+    Returns
+    -------
+    sprit.HVSRData
+        Data being processed, with updated the 'overall_status key of the attribute processing_status updated.
+    """
+
+    # Convert HVSRData to same format as HVSRBatch so same code works the same on both
+    if isinstance(hvsr_data, sprit_hvsr.HVSRData):
+        siteName = hvsr_data['site']
+        hvsr_interim = {siteName: hvsr_data}
+    else:
+        hvsr_interim = hvsr_data
+    
+    # Check overall processing status on all (or only 1 if HVSRData) site(s)
+    optional = ['remove_noise_status', 'remove_outlier_curves_status', 'calculate_azimuths_status', 'overall_status']
+    for sitename in hvsr_interim.keys():
+        statusOK = True
+        for status_type, status_value in hvsr_interim[sitename]['processing_status'].items():
+            if status_value is False and status_type.lower() not in optional:
+                statusOK = False
+
+        if statusOK:
+            hvsr_interim[sitename]['processing_status']['overall_status'] = True
+        else:
+            hvsr_interim[sitename]['processing_status']['overall_status'] = False
+
+    # Get back original data in HVSRData format, if that was the input
+    if isinstance(hvsr_data, sprit_hvsr.HVSRData):
+        hvsr_data = hvsr_interim[siteName]
+    
+    # Print how long it took to perform function
+    if verbose:
+        elapsed = (datetime.datetime.now()-start_time)
+        print(f"\t\t{func_name} completed in  {str(elapsed)[:-3]}")
+
+    return hvsr_data
+
 
 #Formats time into desired output
 def format_time(inputDT, tzone='UTC'):
@@ -314,6 +366,7 @@ def format_time(inputDT, tzone='UTC'):
     outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)
 
     return outputTimeObj
+
 
 #Get character for printing
 def get_char(in_char):
@@ -542,3 +595,4 @@ def x_mark(incolor=False, inTerminal=False):
     else:
         xmark = get_char(u'\u2718')
     return xmark
+
