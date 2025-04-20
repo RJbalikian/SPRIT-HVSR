@@ -753,10 +753,10 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
 
 def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
                 results_fig=None, results_graph_widget=None,
-                return_fig=False, show_results_plot=True,
+                return_fig=False, show_results_plot=True, html_plot=True,
                 verbose=False,):
     
-    if  results_fig is None:
+    if results_fig is None:
         results_fig = go.FigureWidget()
 
     hvsr_data = hv_data
@@ -909,9 +909,10 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
 
     # Update entire figure
+    titleString = f"{hvsr_data['site']} Results"
     results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
                             showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.7,
-                            title=f"{hvsr_data['site']} Results")
+                            title=titleString)
     
     # Reset results_graph_widget and display 
     if results_graph_widget is not None:
@@ -920,8 +921,10 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
             display(results_fig)
 
     if show_results_plot:
-        results_fig.write_html(titleString + 'plot.html', auto_open=True)
-        #results_fig.show()
+        if html_plot:
+            results_fig.write_html(titleString.replace(' ', '_') + 'plot.html', auto_open=True)
+        else:
+            results_fig.show()
     
     if return_fig:
         return results_fig
@@ -1045,12 +1048,12 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rms
         titleText += ' PSD Curves'
     outlier_fig = go.Figure()
         
-    if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
+    if 'generate_psds_status' in hvsr_data.processing_status.keys() and hvsr_data.processing_status['generate_psds_status']:
         #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n'{roc_kwargs}"    
         #hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
         pass
     else:
-        #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.ProcessingStatus['PPSDStatus']=False\n'{roc_kwargs}"
+        #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status['generate_psds_status']=False\n'{roc_kwargs}"
         return outlier_fig
 
     if roc_kwargs['use_hv_curve']:
