@@ -1,4 +1,3 @@
-import sprit.sprit_hvsr as sprit
 import inspect
 
 import plotly.express as px
@@ -9,6 +8,8 @@ from obspy  import UTCDateTime
 import pandas as pd
 import plotly.graph_objects as go
 from scipy import signal
+
+import sprit.sprit_hvsr as sprit
 
 st.set_page_config(layout="wide")
 
@@ -239,7 +240,6 @@ def make_input_fig():
     return inputFig
 
 
-
 def update_data():
     st.session_state.data_chart_event = st.session_state.data_plot
     specKey = 'Z'
@@ -313,7 +313,6 @@ def update_data():
     inputFig.add_trace(newSpecOverlay, row=1, col=1)
     inputFig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
     inputFig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
-
 
 
 def update_selection_type():
