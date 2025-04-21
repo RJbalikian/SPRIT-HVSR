@@ -583,7 +583,6 @@ class HVSRData:
     @check_instance    
     def __init__(self, params):
         self.params = params
-        #self.datastream = None
         self.batch = False
         #self.tsteps_used = []
 
@@ -930,24 +929,7 @@ class HVSRData:
             raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
         self._params = value
     
-    @property
-    def datastream(self):
-        """A copy of the original obspy datastream read in. This helps to retain the original data even after processing is carried out.
-
-        Returns
-        -------
-        obspy.core.Stream.stream
-            Obspy stream
-        """
-        return self._datastream
-
-    @datastream.setter
-    def datastream(self, value):
-        if value is not None and (not isinstance(value, obspy.core.stream.Stream)):
-            raise ValueError("datastream must be an obspy Stream.")
-        self._datastream = value
-        
-    #batch
+    # batch
     @property
     def batch(self):
         """Whether this HVSRData object is part of an HVSRBatch object. This is used throughout the code to help direct the object into the proper processing pipeline.
@@ -2362,8 +2344,10 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
                 pass
 
         hvsr_data['processing_parameters']['check_peaks'] = {}
+        exclude_params_list = ['hvsr_data']
         for key, value in orig_args.items():
-            hvsr_data['processing_parameters']['check_peaks'][key] = value
+            if key not in exclude_params_list:  
+                hvsr_data['processing_parameters']['check_peaks'][key] = value
     return hvsr_data
 
 
@@ -3272,31 +3256,31 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 specComp = kwargs['spectrogram_component']
             else:
                 specComp = 'Z'
-            params['InputPlot'] = sprit_plot.plot_preview(hv_data=params, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
+            params['Input_Plot'] = sprit_plot.plot_input_stream(hv_data=params, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
         elif plot_engine.lower() in ['obspy', 'ospby', 'osbpy', 'opsby', 'opspy', 'o']:
-            params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+            params['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
             if show_plot:
                 plt.show()
             else:
                 plt.close()
         else:
             try:
-                params['InputPlot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+                params['Input_Plot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
                 
-                #_get_removed_windows(input=dataIN, fig=params['InputPlot'][0], ax=params['InputPlot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
+                #_get_removed_windows(input=dataIN, fig=params['Input_Plot'][0], ax=params['Input_Plot'][1], lineArtist =[], winArtist = [], existing_lineArtists=[], existing_xWindows=[], exist_win_format='matplotlib', keep_line_artists=True, time_type='matplotlib', show_plot=True)
                 if show_plot:
                     plt.show()
                 else:
                     plt.close()                    
             except Exception as e:
                 print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
-                params['InputPlot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+                params['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
                 if show_plot:
                     plt.show()
                 else:
                     plt.close()
     else:
-        params['InputPlot'] = None
+        params['Input_Plot'] = None
 
     # Sort channels (make sure Z is first, makes things easier later)
     if isinstance(params, HVSRBatch):
@@ -3344,8 +3328,10 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     if 'processing_parameters' not in params.keys():
         params['processing_parameters'] = {}
     params['processing_parameters']['fetch_data'] = {}
+    exclude_params_list = ['params']
     for key, value in orig_args.items():
-        params['processing_parameters']['fetch_data'][key] = value
+        if key not in exclude_params_list:
+            params['processing_parameters']['fetch_data'][key] = value
 
     # Attach response data to stream and get paz (for PPSD later)
     # Check if response can be attached
@@ -3821,8 +3807,10 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5,
     if 'processing_parameters' not in hvsr_data.keys():
         hvsr_data['processing_parameters'] = {}
     hvsr_data['processing_parameters']['generate_psds'] = {}
+    exclude_params_list = ['hvsr_data']
     for key, value in orig_args.items():
-        hvsr_data['processing_parameters']['generate_psds'][key] = value
+        if key not in exclude_params_list:
+            hvsr_data['processing_parameters']['generate_psds'][key] = value
     
     hvsr_data['processing_status']['generate_psds_status'] = True
     hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
@@ -4039,8 +4027,10 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
     # Put Processing parameters in hvsr_results immediately (gets used later local function in get_report)
     hvsr_results['processing_parameters']['get_report'] = {}
+    exclude_params_list = ['hvsr_results']
     for key, value in orig_args.items():
-        hvsr_results['processing_parameters']['get_report'][key] = value
+        if key not in exclude_params_list:
+            hvsr_results['processing_parameters']['get_report'][key] = value
     
     if verbose:
         print('\nGetting HVSR Report: get_report()')
@@ -4233,7 +4223,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             
             if 'plot' in report_export_format:
                 export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format='plot')
-            hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
+            #hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = fig
+            hvsr_results['HV_Plot'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
                 if not verbose:
@@ -4929,7 +4920,9 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
     plotlyList = ['plotly', 'plty', 'p']
 
     if plot_engine.lower() in plotlyList:
-        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, results_fig=fig, return_fig=return_fig, show_results_plot=show_plot)
+        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, 
+                                            results_fig=fig, return_fig=return_fig, use_figure_widget=False,
+                                            show_results_plot=show_plot)
         if return_fig:
             return plotlyFigure
     else: #plot_engine.lower() in mplList or any other value not in plotly list
@@ -5725,8 +5718,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
     hvsr_out['processing_parameters']['process_hvsr'] = {}
+    exclude_params_list = ['hvsr_data']
     for key, value in orig_args.items():
-        hvsr_out['processing_parameters']['process_hvsr'][key] = value
+        if key not in exclude_params_list:
+            hvsr_out['processing_parameters']['process_hvsr'][key] = value
     
     if str(horizontal_method) == '8' or horizontal_method.lower() == 'single azimuth':
         if azimuth is None:
@@ -6420,10 +6415,12 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
     hvsr_out['processing_parameters']['remove_outlier_curves'] = {}
+    exclude_params_list = ['hvsr_data']
     for key, value in orig_args.items():
-        hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
+        if key not in exclude_params_list:
+            hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
 
-    hvsr_data['processing_status']['remove_outlier_curves_status'] = True
+    hvsr_out['processing_status']['remove_outlier_curves_status'] = True
     
     hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
     

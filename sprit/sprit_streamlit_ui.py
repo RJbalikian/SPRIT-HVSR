@@ -21,8 +21,11 @@ import zoneinfo
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from plotly import subplots
+from plotly.express import scatter as pxScatter
+from plotly.express import timeline as pxTimeline
+from plotly.graph_objects import Heatmap as goHeatmap
+from plotly.graph_objs._figurewidget import FigureWidget
+from plotly.subplots import make_subplots
 import streamlit as st
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
@@ -488,7 +491,6 @@ def on_read_data():
     ipKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.input_params).parameters.keys())}
     fdKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.fetch_data).parameters.keys())}
 
-        
     st.toast('Reading data', icon="⌛")
     with st.spinner(f"Reading data: {ipKwargs['input_data']}"):
         inParams = sprit.input_params(**ipKwargs)
@@ -503,7 +505,6 @@ def on_read_data():
 
 
 def display_read_data(do_setup_tabs=False):
-    print("DISPLAYING READ DATA")
     
     if do_setup_tabs:
         st.session_state.mainContainer = st.container()
@@ -613,7 +614,7 @@ def _generate_stream_specgram(_trace):
 
 def make_input_fig():
     no_subplots = 5
-    inputFig = subplots.make_subplots(rows=no_subplots, cols=1,
+    inputFig = make_subplots(rows=no_subplots, cols=1,
                                       row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
                                       shared_xaxes=True,
                                       horizontal_spacing=0.01,
@@ -650,7 +651,7 @@ def make_input_fig():
     minz = np.percentile(st.session_state.psdArr, 1)
     maxz = np.percentile(st.session_state.psdArr, 99)
 
-    hmap = go.Heatmap(z=st.session_state.psdArr,
+    hmap = goHeatmap(z=st.session_state.psdArr,
                 x=timeWindowArr[:-1],
                 y=f,
                 colorscale='Turbo', #opacity=0.8,
@@ -664,7 +665,7 @@ def make_input_fig():
     # Get Use Array and hvdf
     hvdf, useArrShape = _get_use_array(hvsr_data, f=f, timeWindowArr=timeWindowArr, psdArr=st.session_state.psdArr)
 
-    timelineFig = px.timeline(data_frame=hvdf,
+    timelineFig = pxTimeline(data_frame=hvdf,
                             x_start='TimesProcessed_Start',
                             x_end='TimesProcessed_End',
                             y=['Used']*hvdf.shape[0],
@@ -679,7 +680,7 @@ def make_input_fig():
     useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
 
 
-    specOverlay = go.Heatmap(z=useArr,
+    specOverlay = goHeatmap(z=useArr,
                         x=hvdf['TimesProcessed_Start'],
                         y=f,
                         colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
@@ -691,7 +692,7 @@ def make_input_fig():
     minTraceData = min(min(zTrace.data), min(eTrace.data), min(nTrace.data))
     maxTraceData = max(max(zTrace.data), max(eTrace.data), max(nTrace.data))
 
-    streamOverlay = go.Heatmap(z=useArr,
+    streamOverlay = goHeatmap(z=useArr,
                     x=hvdf['TimesProcessed_Start'],
                     y=np.linspace(minTraceData, maxTraceData, useArr.shape[0]),
                     colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
@@ -707,7 +708,7 @@ def make_input_fig():
 
 
     # Data traces
-    zDataFig = px.scatter(x=xTraceTimes, y=zTrace.data)
+    zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
     zDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,0,1)'),
                         line=dict(width=1, color='rgba(0,0,0,1)'),
@@ -716,7 +717,7 @@ def make_input_fig():
         inputFig.add_trace(zTrace, row=3, col=1)
 
 
-    eDataFig = px.scatter(x=xTraceTimes, y=eTrace.data)
+    eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
     eDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,255,1)'),
                         line=dict(width=1, color='rgba(0,0,255,1)'),
@@ -725,7 +726,7 @@ def make_input_fig():
         inputFig.add_trace(eTrace, row=4, col=1)
 
 
-    nDataFig = px.scatter(x=xTraceTimes, y=nTrace.data)
+    nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
     nDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(255,0,0,1)'),
                         line=dict(width=1, color='rgba(255,0,0,1)'),
@@ -742,6 +743,7 @@ def make_input_fig():
     inputFig.update_xaxes(type='date', range=[xTraceTimes[0], xTraceTimes[-1]])
 
     st.session_state.input_fig = inputFig
+    st.session_state.hvsr_data.Input_Plot = inputFig
 
     return inputFig
 
@@ -827,7 +829,7 @@ def update_data():
     useArr = np.tile(hvdf.Use, (useArrShape, 1))
     useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
 
-    newSpecOverlay = go.Heatmap(z = useArr,
+    newSpecOverlay = goHeatmap(z = useArr,
                                 x = hvdf['TimesProcessed_Start'],
                                 y=st.session_state.stream_spec_freqs,
                                 colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
@@ -871,7 +873,7 @@ def display_results():
     # Input data
     st.session_state.input_fig = make_input_fig()
     st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                        on_select=update_data, key='data_plot', 
+                                        on_select=update_data, #key='input_data_plot',
                                         selection_mode='box', use_container_width=True, theme='streamlit')
 
     st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
@@ -881,7 +883,7 @@ def display_results():
 
 
     write_to_info_tab(st.session_state.infoTab)
-    #st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    #st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['Input_Plot'], use_container_width=True)
     outlier_plot_in_tab()
     #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
     st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
@@ -911,6 +913,7 @@ def display_results():
 
     st.session_state.dlPDFReport.download_button(label="Report (.pdf)",
                 data=pdf_byte,
+                on_click=display_results,
                 file_name=f"{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf",
                 mime='application/octet-stream',
                 icon=":material/summarize:")
@@ -926,6 +929,7 @@ def display_results():
     st.session_state.dlStream.download_button(
         label='Data (.mseed)',
         data=streamBytes,
+        on_click=display_results,
         file_name=f"{hvData.site}_DataStream_{hvID}_{nowTimeStr}.mseed",
         icon=":material/graphic_eq:"
     )
@@ -941,6 +945,7 @@ def display_results():
         label="Table (.csv)",
         data=csv,
         file_name=f"{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv",
+        on_click=display_results,
         mime="text/csv",
         icon=":material/table:",
     )
@@ -957,6 +962,7 @@ def display_results():
         data=img,
         file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
         mime="image/png",
+        on_click=display_results,
         icon=":material/analytics:"
         )
 
@@ -969,16 +975,16 @@ def display_results():
             label="Pickled (.hvsr)",
             data=hvsrPickle,
             file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
+            on_click=display_results,
             icon=":material/database:")
     except Exception as e:
         print(e)
-        st.session_state.dlHVSR.download_button(
+        st.session_state.dlHVSR.button(
             label=".hvsr not available",
             data='HVSR Data ',
-            file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
             disabled=True,
+            on_click=display_results,
             icon=":material/database:")
-
 
 def write_to_info_tab(infoTab):
     with infoTab:
@@ -1010,7 +1016,7 @@ def update_from_outlier_selection():
     display_results()
     #write_to_info_tab(infoTab)
     
-    #inputTab.plotly_chart(st.session_state.hvsr_data['InputPlot'], use_container_width=True)
+    #inputTab.plotly_chart(st.session_state.hvsr_data['Input_Plot'], use_container_width=True)
     #outlier_plot_in_tab()
     #plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key='outlier_plot', use_container_width=True, theme='streamlit')
     #csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
@@ -1053,11 +1059,11 @@ def outlier_plot_in_tab():
     x_data = st.session_state.hvsr_data['x_freqs']['Z'][:-1]
     
     no_subplots = 1
-    outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
+    outlierFig = make_subplots(rows=no_subplots, cols=1,
                                         shared_xaxes=True, horizontal_spacing=0.01,
                                         vertical_spacing=0.1)
 
-    scatterFig = px.scatter()
+    scatterFig = pxScatter()
     scatter_traces = []
     line_traces = []
 
@@ -1067,7 +1073,7 @@ def outlier_plot_in_tab():
         if hvDF.loc[currInd, 'Use']:  
             scatterArray = np.array(list(hvsr_data)[::5])
             x_data_Scatter = np.array(list(x_data)[::5])
-            currFig = px.scatter(x=x_data_Scatter, y=scatterArray)
+            currFig = pxScatter(x=x_data_Scatter, y=scatterArray)
             currFig.update_traces(mode='markers+lines',
                             marker=dict(size=1, color='rgba(0,0,0,0.1)'),
                             line=dict(width=1, color='rgba(0,0,0,0.1)'),
@@ -1078,7 +1084,7 @@ def outlier_plot_in_tab():
         else:
             scatterArray = np.array(list(hvsr_data)[::5])
             x_data_Scatter = np.array(list(x_data)[::5])
-            currFig = px.scatter(x=x_data_Scatter, y=scatterArray,
+            currFig = pxScatter(x=x_data_Scatter, y=scatterArray,
                                 opacity=0.5)
             currFig.update_traces(mode='markers+lines',
                                 marker=dict(size=1, color='rgba(195,87,0,0.4)'),

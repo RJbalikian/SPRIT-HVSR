@@ -13,10 +13,15 @@ from IPython.display import display, clear_output
 import kaleido
 import matplotlib.pyplot as plt
 import numpy as np
+from obspy import UTCDateTime
 import pandas as pd
 import plotly.express as px
+from plotly.graph_objs import Heatmap as goHeatmap
+from plotly.express import timeline as pxTimeline
+from plotly.express import scatter as pxScatter
 import plotly.graph_objs as go
 import plotly.subplots as subplots
+from plotly.subplots import make_subplots
 from scipy import signal, interpolate
 import shapely
 
@@ -49,7 +54,7 @@ def read_data(button):
     use_hv_curve_rmse.value=False
     use_hv_curve_rmse.disabled=True
 
-    update_preview_fig(hvsr_data, preview_fig)
+    update_preview_fig(hvsr_data, input_fig)
 
     if button.description=='Read Data':
         sprit_tabs.selected_index = 1
@@ -751,8 +756,9 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
 
     return results_fig
 
+
 def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
-                results_fig=None, results_graph_widget=None,
+                results_fig=None, results_graph_widget=None, use_figure_widget=False,
                 return_fig=False, show_results_plot=True, html_plot=True,
                 verbose=False,):
     
@@ -766,7 +772,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     ylim = [0, plotymax]
 
     if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
-        hvsr_data=hvsr_data[0]
+        hvsr_data = hvsr_data[0]
 
     hvsrDF = hvsr_data.hvsr_windows_df
 
@@ -785,7 +791,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     
     # Get all data for each plotted item
     # Get subplot numbers based on plot_list
-    spec=[]
+    spec = []
     if plot_list[0]==[]:
         # if for some reason, HVSR plot was not indicated, add it
         hv_plot_row = 1 # Default first row to hv (may change later)
@@ -826,8 +832,8 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
                 else:
                     spec_plot_row = 3       
 
-    specList=[]
-    rHeights=[1]
+    specList = []
+    rHeights = [1]
     if hv_plot_row == 1:
         if comp_plot_row == 1:
             specList.append([{'secondary_y': True}])
@@ -854,16 +860,19 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     results_fig.data = []
     results_fig.update_layout(grid=None)  # Clear the existing grid layout, in case applicable
 
-    results_subp = subplots.make_subplots(rows=noSubplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+    results_fig = make_subplots(rows=noSubplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                 specs=specList,
                                 row_heights=rHeights)
     results_fig.update_layout(grid={'rows': noSubplots})
 
-    results_fig = go.FigureWidget(results_subp)
+    if use_figure_widget:
+        results_fig = go.FigureWidget(results_fig)
 
     if plot_list[1] != []:
-        results_fig = parse_comp_plot_list(hvsr_data, results_fig=results_fig, comp_plot_list=plot_list[1])
-        results_fig.update_xaxes(title_text='Frequency [Hz]', row=comp_plot_row, col=1)
+        results_fig = parse_comp_plot_list(hvsr_data, results_fig=results_fig, 
+                                           comp_plot_list=plot_list[1])
+        results_fig.update_xaxes(title_text='Frequency [Hz]',
+                                 row=comp_plot_row, col=1)
 
     # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
     results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list, results_fig=results_fig)
@@ -878,7 +887,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
         results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
 
     # Final figure updating
-    resultsFigWidth=650
+    resultsFigWidth  =650
 
     components_HV_on_same_plot = (plot_list[1]==[] or '+' not in plot_list[1][0])
     if components_HV_on_same_plot:
@@ -929,13 +938,245 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     if return_fig:
         return results_fig
 
-def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
-    if preview_fig is None:
-        preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
-        #preview_fig = go.FigureWidget(preview_subp)
-        preview_fig = go.Figure(preview_subp)
 
-    preview_fig.data = []
+def _get_use_array(hvsr_data, stream=None, f=None, timeWindowArr=None, psdArr=None):
+    
+    if stream is None and hasattr(hvsr_data, 'stream_edited'):
+        streamEdit = hvsr_data.stream_edited.copy()
+    elif stream is None:
+        streamEdit = hvsr_data.stream.copy()
+    else:
+        streamEdit = stream.copy()
+
+    earliestStart = UTCDateTime(3000, 12, 31)
+    for trace in streamEdit:
+        if trace.stats.starttime < earliestStart:
+            earliestStart = trace.stats.starttime
+
+    zList = []
+    eList = []
+    nList = []
+    streamEdit = streamEdit.split()
+    for trace in streamEdit:
+        traceSTime = trace.stats.starttime
+        traceETime = trace.stats.endtime
+
+        if trace.stats.component == 'Z':
+            zList.append([traceSTime, traceETime])
+        if trace.stats.component == 'E':
+            eList.append([traceSTime, traceETime])
+        if trace.stats.component == 'N':
+            nList.append([traceSTime, traceETime])
+
+    gapListUTC = []
+    for i, currWindow in enumerate(zList):
+        if i > 0:
+            prevWindow = zList[i-1]
+
+            gapListUTC.append([prevWindow[1], currWindow[0]])
+
+    gapList = [[np.datetime64(gTimeUTC.datetime) for gTimeUTC in gap] for gap in gapListUTC]
+
+    if hasattr(hvsr_data, 'hvsr_windows_df'):
+        hvdf = hvsr_data.hvsr_windows_df
+        tps = pd.Series(hvdf.index.copy(), name='TimesProcessed_Start', index=hvdf.index)
+        hvdf["TimesProcessed_Start"] = tps
+        useArrShape = f.shape[0]
+        
+    else:
+        useSeries = pd.Series([True]*(timeWindowArr.shape[0]-1), name='Use')
+        sTimeSeries = pd.Series(timeWindowArr[:-1], name='TimesProcessed')
+        eTimeSeries = pd.Series(timeWindowArr[1:], name='TimesProcessed_End')
+
+        hvdf = pd.DataFrame({'TimesProcessed': sTimeSeries,
+                             'TimesProcessed_End': eTimeSeries,
+                             'Use': useSeries})
+
+        hvdf.set_index('TimesProcessed', inplace=True, drop=True)
+        hvdf['TimesProcessed_Start'] = timeWindowArr[:-1]
+        
+        useArrShape = psdArr.shape[0]
+
+    if 'TimesProcessed_Obspy' not in hvdf.columns:
+        hvdf['TimesProcessed_Obspy'] = [UTCDateTime(dt64) for dt64 in sTimeSeries]
+        hvdf['TimesProcessed_ObspyEnd'] = [UTCDateTime(dt64) for dt64 in eTimeSeries]
+
+    # Do processing
+    if len(gapListUTC) > 0:
+        for gap in gapListUTC:
+
+            stOutEndIn = hvdf['TimesProcessed_Obspy'].gt(gap[0]) & hvdf['TimesProcessed_Obspy'].lt(gap[1])
+            stInEndOut = hvdf['TimesProcessed_ObspyEnd'].gt(gap[0]) & hvdf['TimesProcessed_ObspyEnd'].lt(gap[1])
+            bothIn = hvdf['TimesProcessed_Obspy'].lt(gap[0]) & hvdf['TimesProcessed_ObspyEnd'].gt(gap[1])
+            bothOut = hvdf['TimesProcessed_Obspy'].gt(gap[0]) & hvdf['TimesProcessed_ObspyEnd'].lt(gap[1])
+
+            hvdf.loc[hvdf[stOutEndIn | stInEndOut | bothIn | bothOut].index, 'Use'] = False
+
+    return hvdf, useArrShape
+
+
+def plot_input_stream(hv_data, stream=None, input_fig=None, 
+                        spectrogram_component='Z', 
+                        show_plot=True, return_fig=False):
+
+    if stream is None and hasattr(hv_data, 'stream'):
+        stream = hv_data.stream
+
+    hvsr_data = hv_data
+
+    specKey = str(spectrogram_component).upper()
+
+    no_subplots = 5
+    if input_fig is None:
+        input_fig = make_subplots(rows=no_subplots, cols=1,
+                                 row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
+                                 shared_xaxes=True,
+                                 horizontal_spacing=0.01,
+                                vertical_spacing=0.01
+                                )
+
+    # Windows PSD and Used
+    zTrace = stream.select(component='Z').merge()[0]
+    eTrace = stream.select(component='E').merge()[0]
+    nTrace = stream.select(component='N').merge()[0]
+    
+
+    sTime = zTrace.stats.starttime
+    xTraceTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
+
+    if specKey == 'N':
+        specTrace = nTrace
+    elif specKey == 'E':
+        specTrace = eTrace
+    else:
+        specTrace = zTrace
+
+    f, specTimes, psdArr = signal.spectrogram(x=specTrace.data,
+                              fs=specTrace.stats.sampling_rate,
+                              mode='magnitude')
+
+    stream_spec_freqs = f
+    stream_spec_times = specTimes
+    psdArr = psdArr
+
+    if f[0] == 0:
+        f[0] = f[1] / 10  # Fix so bottom number is not 0
+
+    specTimes = list(specTimes)
+    specTimes.insert(0, 0)
+    timeWindowArr = np.array([np.datetime64((sTime + tT).datetime) for tT in specTimes])
+    
+    hvsrBand = hvsr_data['hvsr_band']
+
+    minz = np.percentile(psdArr, 1)
+    maxz = np.percentile(psdArr, 99)
+
+    hmap = goHeatmap(z=psdArr,
+                     x=timeWindowArr[:-1],
+                     y=f,
+                     colorscale='Turbo', #opacity=0.8,
+                     showlegend=False,
+                     hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                     zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram')
+    input_fig.add_trace(hmap, row=1, col=1)
+    input_fig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+    input_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
+
+    # Get Use Array and hvdf
+    hvdf, useArrShape = _get_use_array(hvsr_data, stream=stream, f=f, timeWindowArr=timeWindowArr, psdArr=psdArr)
+
+    timelineFig = pxTimeline(data_frame=hvdf,
+                            x_start='TimesProcessed_Start',
+                            x_end='TimesProcessed_End',
+                            y=['Used']*hvdf.shape[0],
+                            #y="Use",#range_y=[-20, -10],
+                            color='Use',
+                            color_discrete_map={True: 'rgba(0,255,0,1)',
+                                                False: 'rgba(255,0,0,1)'})
+    for timelineTrace in timelineFig.data:
+        input_fig.add_trace(timelineTrace, row=2, col=1)
+
+    useArr = np.tile(hvdf.Use, (useArrShape, 1))
+    useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
+
+
+    specOverlay = goHeatmap(z=useArr,
+                        x=hvdf['TimesProcessed_Start'],
+                        y=f,
+                        colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
+                        showlegend=False,
+                        #hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                        showscale=False, name=f'{specKey} Component Spectrogram')
+    input_fig.add_trace(specOverlay, row=1, col=1)
+    
+    # Get min and max of all traces to scale consistently
+    minTraceData = min(min(zTrace.data), min(eTrace.data), min(nTrace.data))
+    maxTraceData = max(max(zTrace.data), max(eTrace.data), max(nTrace.data))
+
+    streamOverlay = goHeatmap(z=useArr,
+                    x=hvdf['TimesProcessed_Start'],
+                    y=np.linspace(minTraceData, maxTraceData, useArr.shape[0]),
+                    colorscale=[[0, 'rgba(0,0,0,0.8)'], [0.1, 'rgba(255,255,255, 0.00001)'], [1, 'rgba(255,255,255, 0.00001)']],
+                    showlegend=False,
+                    #hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                    showscale=False, name=f'{specKey} Component Spectrogram')
+    input_fig.add_trace(streamOverlay, row=3, col=1)
+    input_fig.add_trace(streamOverlay, row=4, col=1)
+    input_fig.add_trace(streamOverlay, row=5, col=1)
+
+    input_fig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+    input_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
+
+
+    # Data traces
+    zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
+    zDataFig.update_traces(mode='markers+lines',
+                        marker=dict(size=1, color='rgba(0,0,0,1)'),
+                        line=dict(width=1, color='rgba(0,0,0,1)'),
+                        selector=dict(mode='markers'))
+    for zTrace in zDataFig.data:
+        input_fig.add_trace(zTrace, row=3, col=1)
+
+    eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+    eDataFig.update_traces(mode='markers+lines',
+                        marker=dict(size=1, color='rgba(0,0,255,1)'),
+                        line=dict(width=1, color='rgba(0,0,255,1)'),
+                        selector=dict(mode='markers'))
+    for eTrace in eDataFig.data:
+        input_fig.add_trace(eTrace, row=4, col=1)
+
+
+    nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+    nDataFig.update_traces(mode='markers+lines',
+                        marker=dict(size=1, color='rgba(255,0,0,1)'),
+                        line=dict(width=1, color='rgba(255,0,0,1)'),
+                        selector=dict(mode='markers'))
+
+    for nTrace in nDataFig.data:
+        input_fig.add_trace(nTrace, row=5, col=1)
+
+    input_fig.update_layout(title_text="Frequency and Data values over time", 
+                        height=650, showlegend=False)
+
+    input_fig.update_xaxes(type='date', range=[xTraceTimes[0], xTraceTimes[-1]])
+
+    hvsr_data['Input_Plot'] = input_fig # not currently using
+
+    if show_plot:
+        input_fig.show()
+
+    if return_fig:
+        return input_fig
+    else:
+        return hvsr_data
+
+def _plot_input_stream(hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
+    if input_fig is None:
+        preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
+        #input_fig = go.FigureWidget(preview_subp)
+        input_fig = go.Figure(preview_subp)
+
+    input_fig.data = []
     
     hvsr_data = hv_data
     if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
@@ -984,7 +1225,7 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
     for tpass in t:
         axisTimes.append((dt_times[0]+datetime.timedelta(seconds=tpass)).isoformat())
 
-    # Add data to preview_fig
+    # Add data to input_fig
     # Add spectrogram of Z component
     minz = np.percentile(Sxx, 1)
     maxz = np.percentile(Sxx, 99)
@@ -995,31 +1236,31 @@ def plot_preview(hv_data, stream=None, preview_fig=None, spectrogram_component='
                 showlegend=False,
                 hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
                 zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram')
-    preview_fig.add_trace(hmap, row=1, col=1)
-    preview_fig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[1])], row=1, col=1)
-    preview_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
+    input_fig.add_trace(hmap, row=1, col=1)
+    input_fig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[1])], row=1, col=1)
+    input_fig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
 
     # Add raw traces
     dec_factor=5 #This just makes the plotting go faster, by "decimating" the data
-    preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
+    input_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
                                     line={'color':'black', 'width':0.5},marker=None, name='Z component data'), row=2, col='all')
-    preview_fig.update_yaxes(title={'text':'Z'}, row=2, col=1)
-    preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_e[0].data[::dec_factor],
+    input_fig.update_yaxes(title={'text':'Z'}, row=2, col=1)
+    input_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_e[0].data[::dec_factor],
                                     line={'color':'blue', 'width':0.5},marker=None, name='E component data'),row=3, col='all')
-    preview_fig.update_yaxes(title={'text':'E'}, row=3, col=1)
-    preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
+    input_fig.update_yaxes(title={'text':'E'}, row=3, col=1)
+    input_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
                                     line={'color':'red', 'width':0.5},marker=None, name='N component data'), row=4, col='all')
-    preview_fig.update_yaxes(title={'text':'N'}, row=4, col=1)
+    input_fig.update_yaxes(title={'text':'N'}, row=4, col=1)
     
-    #preview_fig.add_trace(p)
-    preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
+    #input_fig.add_trace(p)
+    input_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
                                 title=f"{siteName} Data Preview")
 
     if show_plot:
-        preview_fig.show()
+        input_fig.show()
 
     if return_fig:
-        return preview_fig
+        return input_fig
 
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
     
@@ -1189,7 +1430,6 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rms
         outlier_fig.show()
 
     return outlier_fig
-
 
 def __plotly_outlier_curves_px(**input_args):
     """Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API

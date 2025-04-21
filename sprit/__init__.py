@@ -73,7 +73,7 @@ from sprit.sprit_jupyter_UI import(
     )
 
 from sprit.sprit_plot import(
-    plot_preview,
+    plot_input_stream,
     plot_results,
     plot_outlier_curves,
     parse_plot_string,
