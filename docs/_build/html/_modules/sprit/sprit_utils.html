@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_utils &mdash; sprit 2.5.0 documentation</title>
+  <title>sprit.sprit_utils &mdash; sprit 2.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=3c4615cf"></script>
+      <script src="../../_static/documentation_options.js?v=ae39cb24"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -109,7 +109,7 @@
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; and &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;test condition is met.&quot;</span><span class="p">)</span></div>
 
-        
+  
 
 <div class="viewcode-block" id="check_gui_requirements">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_gui_requirements">[docs]</a>
@@ -142,6 +142,7 @@
     <span class="c1">#        # Install qtwayland5</span>
     <span class="c1">#        os.system(&quot;sudo apt install qtwayland5&quot;)</span>
 
+
 <span class="c1">#Get check mark</span>
 <div class="viewcode-block" id="check_mark">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_mark">[docs]</a>
@@ -159,6 +160,7 @@
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">==</span><span class="s1">&#39;win32&#39;</span> <span class="ow">and</span> <span class="n">interminal</span><span class="p">:</span>
         <span class="n">check</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u039E</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">check</span></div>
+
 
 
 <span class="c1">#Converts filepaths to pathlib paths, if not already</span>
@@ -200,6 +202,7 @@
     <span class="k">return</span> <span class="n">filepath</span></div>
 
 
+
 <span class="c1">#Check to make the number of time-steps are the same for each channel</span>
 <div class="viewcode-block" id="check_tsteps">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_tsteps">[docs]</a>
@@ -218,6 +221,7 @@
     <span class="k">return</span> <span class="n">minTStep</span></div>
 
 
+
 <span class="c1">#Check the x-values for each channel, to make sure they are all the same length</span>
 <div class="viewcode-block" id="check_xvalues">
 <a class="viewcode-back" href="../../sprit.sprit_utils.html#sprit.check_xvalues">[docs]</a>
@@ -232,6 +236,54 @@
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;X-values (periods or frequencies) do not have the same values. </span><span class="se">\n</span><span class="s1"> This may result in computational errors&#39;</span><span class="p">)</span>
         <span class="c1">#Do stuff to fix it?</span>
     <span class="k">return</span> <span class="n">ppsds</span></div>
+
+
+
+<span class="c1"># Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_processing_status</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">func_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : sprit.HVSRData</span>
+<span class="sd">        Data being processed</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sprit.HVSRData</span>
+<span class="sd">        Data being processed, with updated the &#39;overall_status key of the attribute processing_status updated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Convert HVSRData to same format as HVSRBatch so same code works the same on both</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">):</span>
+        <span class="n">siteName</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span>
+        <span class="n">hvsr_interim</span> <span class="o">=</span> <span class="p">{</span><span class="n">siteName</span><span class="p">:</span> <span class="n">hvsr_data</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hvsr_interim</span> <span class="o">=</span> <span class="n">hvsr_data</span>
+    
+    <span class="c1"># Check overall processing status on all (or only 1 if HVSRData) site(s)</span>
+    <span class="n">optional</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;remove_noise_status&#39;</span><span class="p">,</span> <span class="s1">&#39;remove_outlier_curves_status&#39;</span><span class="p">,</span> <span class="s1">&#39;calculate_azimuths_status&#39;</span><span class="p">,</span> <span class="s1">&#39;overall_status&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sitename</span> <span class="ow">in</span> <span class="n">hvsr_interim</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">statusOK</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">status_type</span><span class="p">,</span> <span class="n">status_value</span> <span class="ow">in</span> <span class="n">hvsr_interim</span><span class="p">[</span><span class="n">sitename</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">status_value</span> <span class="ow">is</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">status_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">optional</span><span class="p">:</span>
+                <span class="n">statusOK</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">statusOK</span><span class="p">:</span>
+            <span class="n">hvsr_interim</span><span class="p">[</span><span class="n">sitename</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;overall_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hvsr_interim</span><span class="p">[</span><span class="n">sitename</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;overall_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Get back original data in HVSRData format, if that was the input</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">):</span>
+        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hvsr_interim</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span>
+    
+    <span class="c1"># Print how long it took to perform function</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">-</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2"> completed in  </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">elapsed</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">hvsr_data</span>
 
 
 <span class="c1">#Formats time into desired output</span>
@@ -405,6 +457,7 @@
     <span class="n">outputTimeObj</span> <span class="o">=</span> <span class="n">outputTimeObj</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">outputTimeObj</span></div>
+
 
 
 <span class="c1">#Get character for printing</span>
@@ -654,6 +707,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">xmark</span> <span class="o">=</span> <span class="n">get_char</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;</span><span class="se">\u2718</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">xmark</span></div>
+
 
 </pre></div>
 
