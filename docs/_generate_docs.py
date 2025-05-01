@@ -158,6 +158,7 @@ if RTD_DOCS:
     if not htmlDir.exists():
         os.mkdir(htmlDir)
     
+    # Copy to from htmldir to docsdir
     for f in htmlDir.iterdir():
         if f.name[0] != '_':
             shutil.copy(f, docsDir.joinpath(f.name))
@@ -173,6 +174,7 @@ if RTD_DOCS:
                         shutil.copy(f2.joinpath('theme.css'),
                                     docsDir.joinpath('theme.css'))
 
+    # Update stuff for html files
     for file in docsDir.iterdir():
         if file.suffix == '.html':
             with open(file.as_posix(), mode='r', encoding='utf-8') as f:

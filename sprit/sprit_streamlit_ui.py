@@ -1372,18 +1372,18 @@ with st.sidebar:
                 doNoiseRemList = [do_stalta, do_sat, do_noise, do_stdev, do_warm, do_cool]
                 autoRemList = [do_stdev, do_sat]
 
-                if not st.session_state.noise_removal:
+                if hasattr(st.session_state, 'noise_removal') and not st.session_state.noise_removal:
                     for doNR in doNoiseRemList:
                         doNR = False
 
-                if st.session_state.auto_noise_removal and not any(autoRemList):
+                if hasattr(st.session_state, 'auto_noise_removal') and st.session_state.auto_noise_removal and not any(autoRemList):
                     do_stdev = True
                     do_sat = True
 
                 # Standard devation ratio
                 st.toggle("StDev Ratio Noise Detection", value=do_stdev, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='stdev_noise_removal')
-                stDevDisabled = (not st.session_state.stdev_noise_removal) or noiseRemDisabled
+                stDevDisabled = hasattr(st.session_state, 'stdev_noise_removal') and ((not st.session_state.stdev_noise_removal) or noiseRemDisabled)
                 #std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0,
                 st.number_input('Moving StDev. Threshold', min_value=0.0, max_value=100.0, step=0.1, value=2.0,
                                 help='The threshold value of StDev_Moving / StDev_Total to use as a removal threshold',
@@ -1399,7 +1399,7 @@ with st.sidebar:
                 # Saturation threshold
                 st.toggle("Saturation Threshold Noise Detection", value=do_sat, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='sat_noise_removal')
-                satRemDisabled = (not st.session_state.sat_noise_removal) or noiseRemDisabled
+                satRemDisabled = hasattr(st.session_state, "sat_noise_removal") and ((not st.session_state.sat_noise_removal) or noiseRemDisabled)
 
 
                 st.number_input('Saturation Percent', value=0.99, min_value=0.0, max_value=1.0, step=0.01,
@@ -1408,7 +1408,7 @@ with st.sidebar:
                 # STALTA
                 st.toggle("STALTA Noise Detection", value=do_stalta, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='stalta_noise_removal')
-                staltaDisabled = (not st.session_state.stalta_noise_removal) or noiseRemDisabled
+                staltaDisabled =  hasattr(st.session_state, "stalta_noise_removal") and ((not st.session_state.stalta_noise_removal) or noiseRemDisabled)
 
                 staCol, ltaCol = st.columns([0.5,0.5])
                 staCol.number_input('Short Term Average (STA)', step=0.5, value=2.0,
@@ -1425,7 +1425,7 @@ with st.sidebar:
                 # Noise threshold
                 st.toggle("Noise Threshold Noise Detection", value=do_noise, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='noise_thresh_noise_removal')
-                noiseDisabled = (not st.session_state.noise_thresh_noise_removal) or noiseRemDisabled
+                noiseDisabled = hasattr(st.session_state, "noise_thresh_noise_removal") and ((not st.session_state.noise_thresh_noise_removal) or noiseRemDisabled)
 
                 st.number_input('Noise Percent', value=0.8, min_value=0.0, max_value=1.0, step=0.05, 
                                 format="%.2f", disabled=noiseDisabled, key='noise_percent')
@@ -1437,37 +1437,30 @@ with st.sidebar:
                 # Warmup
                 st.toggle("Warmup Time Removal", value=do_warm, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='warmup_noise_removal')
-                warmupDisabled = (not st.session_state.warmup_noise_removal) or noiseRemDisabled
+                warmupDisabled = hasattr(st.session_state, "warmup_noise_removal") and ((not st.session_state.warmup_noise_removal) or noiseRemDisabled)
 
                 st.number_input('Warmup Time (seconds)', disabled=warmupDisabled, step=1, key='warmup_time')
 
                 # Cooldown
                 st.toggle("Cooldown Time Removal", value=do_cool, disabled=noiseRemDisabled, 
                             help='Whether to remove noise from input data.', key='cooldown_noise_removal')
-                cooldownDisabled = (not st.session_state.cooldown_noise_removal) or noiseRemDisabled
+                cooldownDisabled = hasattr(st.session_state, "cooldown_noise_removal") and ((not st.session_state.cooldown_noise_removal) or noiseRemDisabled)
 
                 st.number_input('Cooldown Time (seconds)', disabled=cooldownDisabled, step=1, key='cooldown_time')
 
 
             st.toggle("Remove Outlier Curves", value=False,
                         help='Whether to remove outlier curves from input data.', key='outlier_curves_removal')
-            outlierCurveDisabled = not st.session_state.outlier_curves_removal
+            outlierCurveDisabled = hasattr(st.session_state, "outlier_curves_removal") and not st.session_state.outlier_curves_removal
 
             # Outlier curves
             remCurvePopover = st.popover('Remove Outlier Curve Options', disabled=outlierCurveDisabled, use_container_width=True)
             with remCurvePopover:
                 st.number_input("Outlier Threshold", disabled=outlierCurveDisabled, value=98, key='rmse_thresh')
                 st.radio('Threshold type', horizontal=True, disabled=outlierCurveDisabled, options=['Percentile', 'Value'], key='threshRadio')
-                st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
+                st.session_state.use_percentile = hasattr(st.session_state, 'threshRadio') and st.session_state.threshRadio =='Percentile'
                 st.radio('Threshold curve', horizontal=True, disabled=outlierCurveDisabled, options=['HV Curve', 'Component Curves'], key='curveRadio')
-                st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
-
-
-
-            #noise_rem_method_list = ['None', 'Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer']
-            #st.multiselect("Noise Removal Method",
-            #            options=,
-            #            key='remove_method')
+                st.session_state.use_hv_curve = hasattr(st.session_state, "curveRadio") and (st.session_state.curveRadio == 'HV Curve')
 
             if VERBOSE:
                 print_param(PARAM2PRINT)
@@ -1482,7 +1475,8 @@ with st.sidebar:
             st.number_input("Minimum Decibel Value", value=-200, step=1, key='min_deb')
             st.number_input("Maximum Decibel Value", value=-50, step=1, key='max_deb')
             st.number_input("Decibel bin size", value=1.0, step=0.1, key='deb_step')
-            st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
+            if all(hasattr(st.session_state, attr) for attr in ['min_deb', 'max_deb', 'deb_step']): # For gen_docs
+                st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
 
             st.number_input('PPSD Length (seconds)', step=1, key='ppsd_length')
             st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
