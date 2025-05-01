@@ -5015,14 +5015,14 @@ Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</d
 </code></pre></div>
 </dd>
 <dt id="sprit.sprit_hvsr.read_tromino_files"><code class="name flex">
-<span>def <span class="ident">read_tromino_files</span></span>(<span>input_data,<br>struct_format='e',<br>tromino_model=None,<br>sampling_rate=None,<br>set_record_duration=None,<br>start_byte=24576,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">read_tromino_files</span></span>(<span>input_data,<br>struct_format='H',<br>tromino_model=None,<br>sampling_rate=None,<br>set_record_duration=None,<br>start_byte=24576,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_tromino_files(input_data, struct_format=&#39;e&#39;, tromino_model=None,
+<pre><code class="python">def read_tromino_files(input_data, struct_format=&#39;H&#39;, tromino_model=None,
     sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     &#34;&#34;&#34;Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
@@ -5110,14 +5110,14 @@ Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</d
     if &#39;sampling_rate&#39; in kwargs.keys():
         sampling_rate = kwargs[&#39;sampling_rate&#39;]
 
-    sTime = obspy.UTCDateTime(params[&#39;acq_date&#39;].year, params[&#39;acq_date&#39;].month, params[&#39;acq_date&#39;].day,
-                              params[&#39;starttime&#39;].hour, params[&#39;starttime&#39;].minute,
-                              params[&#39;starttime&#39;].second,params[&#39;starttime&#39;].microsecond)
+    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
+                              starttime.hour, starttime.minute,
+                              starttime.second, starttime.microsecond)
     eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
 
     loc = &#39;&#39;
-    if type(params[&#39;station&#39;]) is int or params[&#39;station&#39;].isdigit():
-        loc = str(params[&#39;station&#39;])
+    if type(station) is int or station.isdigit():
+        loc = str(station)
 
     traceHeader1 = {&#39;sampling_rate&#39;:sampling_rate,
             &#39;calib&#39; : 1,
@@ -7715,10 +7715,13 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
             utcSTime = self.starttime
             utcETime = self.endtime
         
-        minDur = str((utcETime - utcSTime)//60).split(&#39;.&#39;)[0]
-        secDur = str(round((((utcETime - utcSTime)//60) - int(minDur)) * 60, 2))
+        minDur = int(str((utcETime - utcSTime)//60).split(&#39;.&#39;)[0])
+        secDur = float(round((((utcETime - utcSTime) / 60) - int(minDur)) * 60, 3))
+        if secDur &gt;= 60:
+            minDur += int(secDur//60)
+            secDur = secDur - (secDur//60)*60
 
-        acqDurStr = f&#39;Record duration: {minDur}:{secDur} ({utcETime-utcSTime} seconds)&#39;
+        acqDurStr = f&#39;Record duration: {minDur}:{secDur:06.3f} ({utcETime-utcSTime} seconds)&#39;
         if aDateStr == __get_ip_default(&#39;acq_date&#39;) and sTimeStr == __get_ip_default(&#39;starttime&#39;):
             acqTimeStr += &#39;No acquisition time specified.\n&#39;
         else:
