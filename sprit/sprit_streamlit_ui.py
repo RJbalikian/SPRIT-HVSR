@@ -344,14 +344,6 @@ def on_file_upload():
 def setup_main_container(do_setup_tabs=False):
     mainContainer = st.container()
     st.session_state.mainContainer = mainContainer
-    dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-
-    st.session_state.dlText = dlText
-    st.session_state.dlPDFReport = dlPDFReport
-    st.session_state.dlStream = dlStream
-    st.session_state.dlTable = dlTable
-    st.session_state.dlPlot = dlPlot
-    st.session_state.dlHVSR = dlHVSR
 
     if do_setup_tabs:
         setup_tabs(mainContainer)
@@ -365,7 +357,8 @@ if not st.session_state.initial_setup:
 
 # Set up tabs
 def setup_tabs(mainContainer):
-    inputTab, outlierTab, infoTab, resultsTab = mainContainer.tabs(['Data', 'Outliers', 'Info','Results'])
+    
+    resultsTab, inputTab, outlierTab, infoTab  = mainContainer.tabs(['Results', 'Data', 'Outliers', 'Info'])
     plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
     #tabs: st.session_state.inputTab, st.session_state.outlierTab, st.session_state.infoTab, st.session_state.resultsTab, plotReportTab, st.session_state.csvReportTab, st.session_state.strReportTab
 
@@ -386,84 +379,85 @@ def on_run_data():
         st.session_state.input_data = 'sample'
 
     # Now run the data
-    if st.session_state.input_data!='':
-        srun = {}
-        for key, value in st.session_state.items():
-            if key in st.session_state.run_kws:
-                if value != st.session_state.default_params[key]:
-                    if str(value) != str(st.session_state.default_params[key]):
-                        srun[key] = value
+    srun = {}
+    for key, value in st.session_state.items():
+        if key in st.session_state.run_kws:
+            if value != st.session_state.default_params[key]:
+                if str(value) != str(st.session_state.default_params[key]):
+                    srun[key] = value
+        
+        if key == 'plot_engine':
+            srun[key] = value
             
-            if key == 'plot_engine':
-                srun[key] = value
-                
-        # Get plots all right
-        #srun['plot_engine'] = 'matplotlib'
-        srun['plot_input_stream'] = True
-        srun['show_plot'] = False
-        srun['verbose'] = False #True
+    # Get plots all right
+    #srun['plot_engine'] = 'matplotlib'
+    srun['plot_input_stream'] = True
+    srun['show_plot'] = False
+    srun['verbose'] = False #True
 
-        # Update outputs
-        srun['report_export_format'] = None
-        srun['show_pdf_report'] = False
-        srun['show_print_report'] = True
-        srun['show_plot_report'] = False
+    # Update outputs
+    srun['report_export_format'] = None
+    srun['show_pdf_report'] = False
+    srun['show_print_report'] = True
+    srun['show_plot_report'] = False
+    
+    if VERBOSE:
+        print('SPRIT RUN', srun)
+    st.toast('Data is processing', icon="⌛")
+    
+    setup_main_container(do_setup_tabs=False)
+    with st.session_state.mainContainer:
+        spinnerText = 'Data is processing with default parameters.'
+        excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+        NOWTIME = datetime.datetime.now()
+        secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
+                                'hvsr_band':(0.1, 50), 'use_hv_curve':True,
+                                'starttime':datetime.time(0,0,0),
+                                'endtime':datetime.time(23, 59, 0),
+                                'peak_freq_range':(0.1, 50),
+                                'stalta_thresh':(8, 16),
+                                'period_limits':(0.02, 10),
+                                'remove_method':['None'],
+                                'report_export_format':None,
+                                'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
+                                'show_pdf_report':False,
+                                'show_print_report':True,
+                                'show_plot_report':False,
+                                'elev_unit':'m',
+                                'plot_type':'HVSR p ann C+ p ann Spec p',
+                                'suppress_report_outputs':True
+                                }
         
-        if VERBOSE:
-            print('SPRIT RUN', srun)
-        st.toast('Data is processing', icon="⌛")
-        
-        setup_main_container(do_setup_tabs=False)
-        with st.session_state.mainContainer:
-            spinnerText = 'Data is processing with default parameters.'
-            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
-            NOWTIME = datetime.datetime.now()
-            secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                 'hvsr_band':(0.1, 50), 'use_hv_curve':True,
-                                 'starttime':datetime.time(0,0,0),
-                                 'endtime':datetime.time(23, 59, 0),
-                                 'peak_freq_range':(0.1, 50),
-                                 'stalta_thresh':(8, 16),
-                                 'period_limits':(0.02, 10),
-                                 'remove_method':['None'],
-                                 'report_export_format':None,
-                                 'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
-                                 'show_pdf_report':False,
-                                 'show_print_report':True,
-                                 'show_plot_report':False,
-                                 'elev_unit':'m',
-                                 'plot_type':'HVSR p ann C+ p ann Spec p',
-                                 'suppress_report_outputs':True
-                                 }
-            
-            nonDefaultParams = False
+        nonDefaultParams = False
 
-            srun['report_formats'] = ['print', 'table', 'plot', 'html', 'pdf']
-            srun['suppress_report_outputs'] = True
-            if 'input_data' in srun:
-                del srun['input_data']
+        srun['report_formats'] = ['print', 'table', 'plot', 'html', 'pdf']
+        srun['suppress_report_outputs'] = True
+        if 'input_data' in srun:
+            del srun['input_data']
 
-            # Display non-default parameters, if applicable
-            for key, value in srun.items():
+        # Display non-default parameters, if applicable
+        for key, value in srun.items():
 
-                if key not in excludedKeys:
-                    if key in secondaryDefaults and secondaryDefaults[key] == value:
-                        pass
-                    else:
-                        nonDefaultParams = True
-                        spinnerText = spinnerText + f"\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})"
-            if nonDefaultParams:
-                spinnerText = spinnerText.replace('default', 'the following non-default')
-            with st.spinner(spinnerText):
-                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
-        
-        st.balloons()
+            if key not in excludedKeys:
+                if key in secondaryDefaults and secondaryDefaults[key] == value:
+                    pass
+                else:
+                    nonDefaultParams = True
+                    spinnerText = spinnerText + f"\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})"
+        if nonDefaultParams:
+            spinnerText = spinnerText.replace('default', 'the following non-default')
+        with st.spinner(spinnerText):
+            st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
+    
+    st.balloons()
 
-        st.session_state.stream = st.session_state.hvsr_data['stream']
-        st.session_state.stream_edited = st.session_state.hvsr_data['stream_edited']
+    st.session_state.stream = st.session_state.hvsr_data['stream']
+    st.session_state.stream_edited = st.session_state.hvsr_data['stream_edited']
 
-        display_results()
-        st.session_state.prev_datapath = st.session_state.input_data
+    display_download_buttons()
+    st.toast('Displaying results (download available)')
+    display_results()
+    st.session_state.prev_datapath = st.session_state.input_data
 
 
 def on_read_data():
@@ -528,6 +522,157 @@ def display_read_data(do_setup_tabs=False):
     st.session_state.infoTab.write(f"Record Length: {recLength/60:.2f} minutes ({recLength} seconds)")
     st.session_state.infoTab.write("---")
     st.session_state.infoTab.code(str(st.session_state.hvsr_data))
+
+
+def display_results():
+    # Set up container for output data
+    setup_main_container(do_setup_tabs=True)
+
+    # Input data
+    st.session_state.input_fig = make_input_fig()
+    st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                        on_select=update_data, #key='input_data_plot',
+                                        selection_mode='box', use_container_width=True, theme='streamlit')
+
+    st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
+    st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle', 
+                                                 default='Add', on_change=update_selection_type, disabled=True, 
+                                                 help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+
+
+    write_to_info_tab(st.session_state.infoTab)
+    #st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['Input_Plot'], use_container_width=True)
+    outlier_plot_in_tab()
+    #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
+    st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+    st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
+
+
+@st.fragment
+def display_download_buttons():
+    ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+    dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+    ##st.session_state.dlText = dlText
+    ##st.session_state.dlPDFReport = dlPDFReport
+    ##st.session_state.dlStream = dlStream
+    ##st.session_state.dlTable = dlTable
+    ##st.session_state.dlPlot = dlPlot
+    ##st.session_state.dlHVSR = dlHVSR
+
+    # Download Buttons
+    ##st.session_state.dlText.text("Download Results: ")
+    dlText.text("Download Results: ")
+
+    # Set up variables for download section
+    hvData = st.session_state.hvsr_data
+    hvID = ''
+    if hasattr(hvData, 'hvsr_id'):
+        hvID = hvData['hvsr_id']
+
+    nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # PDF Report download
+    @st.cache_data
+    def _convert_pdf_for_download(_hv_data):
+        pdfPath = sprit._generate_pdf_report(_hv_data, return_pdf_path=True)
+        with open(pdfPath, "rb") as pdf_file:
+            PDFbyte = pdf_file.read()
+        return PDFbyte
+    
+    pdf_byte = _convert_pdf_for_download(hvData)
+
+    ##st.session_state.dlPDFReport.download_button(label="Report (.pdf)",
+    dlPDFReport.download_button(label="Report (.pdf)",
+                data=pdf_byte,
+                #on_click=display_results,
+                file_name=f"{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf",
+                mime='application/octet-stream',
+                icon=":material/summarize:")
+
+    # Data Stream
+    @st.cache_data
+    def _convert_stream_for_download(_stream):
+        strm = io.BytesIO()
+        _stream.write(strm, format='MSEED')
+        return strm.getvalue()
+    streamBytes = _convert_stream_for_download(hvData.stream)
+
+    ##st.session_state.dlStream.download_button(
+    dlStream.download_button(
+        label='Data (.mseed)',
+        data=streamBytes,
+        #on_click=display_results,
+        file_name=f"{hvData.site}_DataStream_{hvID}_{nowTimeStr}.mseed",
+        icon=":material/graphic_eq:"
+    )
+
+    # Table download
+    @st.cache_data
+    def _convert_table_for_download(df):
+        return df.to_csv().encode("utf-8")
+
+    csv = _convert_table_for_download(st.session_state.hvsr_data['Table_Report'])
+
+    ##st.session_state.dlTable.download_button(
+    dlTable.download_button(
+        label="Table (.csv)",
+        data=csv,
+        file_name=f"{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv",
+        #on_click=display_results,
+        mime="text/csv",
+        icon=":material/table:",
+    )
+
+    # Plot
+    @st.cache_data
+    def _convert_plot_for_download(_HV_Plot):            
+        _img = io.BytesIO()
+        if st.session_state.plot_engine == 'Matplotlib':
+            _HV_Plot.savefig(_img, format='png')
+        else:
+            _img = _HV_Plot.to_image(format='png')
+        
+        return _img
+
+    img = _convert_plot_for_download(hvData['HV_Plot'])
+
+    ##st.session_state.dlPlot.download_button(
+    dlPlot.download_button(
+        label="Plot (.png)",
+        data=img,
+        file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
+        mime="image/png",
+        #on_click=display_results,
+        icon=":material/analytics:"
+        )
+
+
+    # HVSR File
+    try:
+        @st.cache_data
+        def _convert_hvsr_for_download(_hvsr_data):
+            _hvsrPickle = pickle.dumps(_hvsr_data)
+            return _hvsrPickle
+
+        hvsrPickle = _convert_hvsr_for_download(st.session_state.hvsr_data)
+
+        ##st.session_state.dlHVSR.download_button(
+        dlHVSR.download_button(
+            label="Pickled (.hvsr)",
+            data=hvsrPickle,
+            file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
+            #on_click=display_results,
+            icon=":material/database:")
+    except Exception as e:
+        print(e)
+        ##st.session_state.dlHVSR.button(
+        dlHVSR.download_button(
+            label=".hvsr not available",
+            data='HVSR Data ',
+            disabled=True,
+            #on_click=display_results,
+            icon=":material/database:")
 
 
 def on_reset():
@@ -865,126 +1010,6 @@ def update_data():
 def update_selection_type():
     st.session_state.input_selection_mode = st.session_state.input_selection_toggle
 
-
-def display_results():
-    # Set up container for output data
-    setup_main_container(do_setup_tabs=True)
-
-    # Input data
-    st.session_state.input_fig = make_input_fig()
-    st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                        on_select=update_data, #key='input_data_plot',
-                                        selection_mode='box', use_container_width=True, theme='streamlit')
-
-    st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-    st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle', 
-                                                 default='Add', on_change=update_selection_type, disabled=True, 
-                                                 help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
-
-
-    write_to_info_tab(st.session_state.infoTab)
-    #st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data['Input_Plot'], use_container_width=True)
-    outlier_plot_in_tab()
-    #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data['OutlierPlot'], use_container_width=True)
-    st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-    st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-    st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
-
-    # Download Buttons
-    st.session_state.dlText.text("Download Results: ")
-
-    # Set up variables for download section
-    hvData = st.session_state.hvsr_data
-    hvID = ''
-    if hasattr(hvData, 'hvsr_id'):
-        hvID = hvData['hvsr_id']
-
-    nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    # PDF Report download
-    @st.cache_data
-    def convert_pdf_for_download(_hv_data):
-        pdfPath = sprit._generate_pdf_report(_hv_data, return_pdf_path=True)
-        with open(pdfPath, "rb") as pdf_file:
-            PDFbyte = pdf_file.read()
-        return PDFbyte
-    
-    pdf_byte = convert_pdf_for_download(hvData)
-
-    st.session_state.dlPDFReport.download_button(label="Report (.pdf)",
-                data=pdf_byte,
-                on_click=display_results,
-                file_name=f"{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf",
-                mime='application/octet-stream',
-                icon=":material/summarize:")
-
-    # Data Stream
-    strm = io.BytesIO()
-    @st.cache_data
-    def convert_stream_for_download(_stream):
-        _stream.write(strm, format='MSEED')
-        return strm.getvalue()
-    streamBytes = convert_stream_for_download(hvData.stream)
-
-    st.session_state.dlStream.download_button(
-        label='Data (.mseed)',
-        data=streamBytes,
-        on_click=display_results,
-        file_name=f"{hvData.site}_DataStream_{hvID}_{nowTimeStr}.mseed",
-        icon=":material/graphic_eq:"
-    )
-
-    # Table download
-    @st.cache_data
-    def convert_table_for_download(df):
-        return df.to_csv().encode("utf-8")
-
-    csv = convert_table_for_download(st.session_state.hvsr_data['Table_Report'])
-
-    st.session_state.dlTable.download_button(
-        label="Table (.csv)",
-        data=csv,
-        file_name=f"{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv",
-        on_click=display_results,
-        mime="text/csv",
-        icon=":material/table:",
-    )
-
-    # Plot
-    img = io.BytesIO()
-    if st.session_state.plot_engine == 'Matplotlib':
-        hvData['HV_Plot'].savefig(img, format='png')
-    else:
-        img = hvData['HV_Plot'].to_image(format='png')
-    
-    st.session_state.dlPlot.download_button(
-        label="Plot (.png)",
-        data=img,
-        file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
-        mime="image/png",
-        on_click=display_results,
-        icon=":material/analytics:"
-        )
-
-
-    # HVSR File
-    try:
-        hvsrPickle = pickle.dumps(st.session_state.hvsr_data)
-
-        st.session_state.dlHVSR.download_button(
-            label="Pickled (.hvsr)",
-            data=hvsrPickle,
-            file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
-            on_click=display_results,
-            icon=":material/database:")
-    except Exception as e:
-        print(e)
-        st.session_state.dlHVSR.button(
-            label=".hvsr not available",
-            data='HVSR Data ',
-            disabled=True,
-            on_click=display_results,
-            icon=":material/database:")
 
 def write_to_info_tab(infoTab):
     with infoTab:
