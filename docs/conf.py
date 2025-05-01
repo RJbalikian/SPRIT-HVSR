@@ -1,6 +1,6 @@
 import sphinx_rtd_theme
 import numpydoc
-import sprit
+#import sprit
 
 import sys
 import os
@@ -24,9 +24,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'sprit'
-copyright = '2024, Author'
+copyright = '2025, Author'
 author = 'Riley Balikian'
-release = '2.6.1'
+release = '2.6.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

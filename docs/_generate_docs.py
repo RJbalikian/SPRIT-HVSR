@@ -9,7 +9,7 @@ import sys
 
 import markdown
 
-RELEASE_VERSION = "2.6.1"
+RELEASE_VERSION = "2.6.2"
 
 VERBOSE = True
 
@@ -122,13 +122,17 @@ if RTD_DOCS:
     with open(indFilePath.as_posix(), mode='r', encoding='utf-8') as f:
         indFileText = f.read()
 
+    # Run apidoc to update api documentation from docstrings
     if VERBOSE:
         print('Running sphinx-apidoc')
-    # Run apidoc to update api documentation from docstrings
-    subprocess.run(['sphinx-apidoc', '-F', '-M', '-e', '-f', 
-                    '-o',docsDir.as_posix(), spritDir.as_posix(),
+    subprocess.run(['sphinx-apidoc', '-F', '-M', '-e', '-f',
+                    '-o', docsDir.as_posix(), spritDir.as_posix(),
                     '-H', 'SpRIT HVSR'],
                    check=False)
+
+    print('Showing files after sphinx-apidoc command')
+    for docfile in docsDir.glob('*'):
+        print('\t', docfile)
 
     if VERBOSE:
         print('sphinx-apidoc complete')
@@ -199,7 +203,7 @@ if GITHUB_PAGES:
 
     # Set up a working directory for the files generated from pdoc
     workDir = pathlib.Path(os.getcwd())
-    print('workdir:', workDir)
+
     if workDir.stem == 'docs':
         pass
     elif 'docs' in str(workDir):
@@ -220,10 +224,12 @@ if GITHUB_PAGES:
     # Move items back into the main docs folder
     keepList = ['_generate_docs.py', 'conf.py', 'requirements.txt',
                 'wiki', 'pyinstaller', '.readthedocs.yaml', 'index.rst']
+
+    keepSuffix = ['.rst']
     
     for t in trg_path.iterdir():
 
-        if t.name in keepList:
+        if t.name in keepList or t.suffix in keepSuffix:
             # Don't do anything to requirements.txt or wiki folder
             pass
         elif t.is_dir():
