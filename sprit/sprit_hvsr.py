@@ -703,10 +703,13 @@ class HVSRData:
             utcSTime = self.starttime
             utcETime = self.endtime
         
-        minDur = str((utcETime - utcSTime)//60).split('.')[0]
-        secDur = str(round((((utcETime - utcSTime)//60) - int(minDur)) * 60, 2))
+        minDur = int(str((utcETime - utcSTime)//60).split('.')[0])
+        secDur = float(round((((utcETime - utcSTime) / 60) - int(minDur)) * 60, 3))
+        if secDur >= 60:
+            minDur += int(secDur//60)
+            secDur = secDur - (secDur//60)*60
 
-        acqDurStr = f'Record duration: {minDur}:{secDur} ({utcETime-utcSTime} seconds)'
+        acqDurStr = f'Record duration: {minDur}:{secDur:06.3f} ({utcETime-utcSTime} seconds)'
         if aDateStr == __get_ip_default('acq_date') and sTimeStr == __get_ip_default('starttime'):
             acqTimeStr += 'No acquisition time specified.\n'
         else:
@@ -5734,7 +5737,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Read data from Tromino
-def read_tromino_files(input_data, struct_format='e', tromino_model=None,
+def read_tromino_files(input_data, struct_format='H', tromino_model=None,
     sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines
 
@@ -5822,14 +5825,14 @@ def read_tromino_files(input_data, struct_format='e', tromino_model=None,
     if 'sampling_rate' in kwargs.keys():
         sampling_rate = kwargs['sampling_rate']
 
-    sTime = obspy.UTCDateTime(params['acq_date'].year, params['acq_date'].month, params['acq_date'].day,
-                              params['starttime'].hour, params['starttime'].minute,
-                              params['starttime'].second,params['starttime'].microsecond)
+    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
+                              starttime.hour, starttime.minute,
+                              starttime.second, starttime.microsecond)
     eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
 
     loc = ''
-    if type(params['station']) is int or params['station'].isdigit():
-        loc = str(params['station'])
+    if type(station) is int or station.isdigit():
+        loc = str(station)
 
     traceHeader1 = {'sampling_rate':sampling_rate,
             'calib' : 1,
