@@ -61,6 +61,7 @@ def read_data(button):
         progress_bar.value=0
     return hvsr_data
 
+
 def get_remove_noise_kwargs():
     def get_remove_method():
         remove_method_list=[]
@@ -98,6 +99,7 @@ def get_remove_noise_kwargs():
                             'verbose':verbose_check.value}
     return remove_noise_kwargs
 
+
 def get_generate_ppsd_kwargs():
     ppsd_kwargs = {
         'skip_on_gaps':skip_on_gaps.value,
@@ -115,6 +117,7 @@ def get_generate_ppsd_kwargs():
         ppsd_kwargs['special_handling'] = None        
     return ppsd_kwargs
 
+
 def get_remove_outlier_curve_kwargs():
     roc_kwargs = {
             'use_percentile':rmse_pctile_check.value,
@@ -123,6 +126,7 @@ def get_remove_outlier_curve_kwargs():
             'verbose':verbose_check.value
         }
     return roc_kwargs
+
 
 def get_process_hvsr_kwargs():
     if smooth_hv_curve_bool.value:
@@ -144,12 +148,14 @@ def get_process_hvsr_kwargs():
                 'verbose':verbose_check.value}
     return ph_kwargs
 
+
 def get_check_peaks_kwargs():
     cp_kwargs = {'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
                 'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value],
                 'peak_selection':peak_selection_type.value,
                 'verbose':verbose_check.value}
     return cp_kwargs
+
 
 def get_get_report_kwargs():
     def get_formatted_plot_str():
@@ -230,6 +236,7 @@ def get_get_report_kwargs():
                 'verbose':verbose_check.value
                     }
     return gr_kwargs
+
 
 def process_data(button):
     startProc=datetime.datetime.now()
@@ -319,6 +326,7 @@ def process_data(button):
     hvsr_results = hvsr_data
     return hvsr_results
     
+
 def parse_plot_string(plot_string):
     plot_list = plot_string.split()
 
@@ -378,6 +386,7 @@ def parse_plot_string(plot_string):
     plot_list_list = [hvsr_plot_list, comp_plot_list, spec_plot_list]
 
     return plot_list_list
+
 
 def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
     hvsr_data = hv_data
@@ -512,6 +521,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                 showarrow=False,
                                 row=1, col=1)
     return results_fig
+
 
 def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fig=None, azimuth='HV'):
     
@@ -675,6 +685,7 @@ def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fi
                         row=compRow, col=1)
     return results_fig
 
+
 def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None, azimuth='HV'):
     hvsr_data = hv_data
 
@@ -759,7 +770,7 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
 
 def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
                 results_fig=None, results_graph_widget=None, use_figure_widget=False,
-                return_fig=False, show_results_plot=True, html_plot=True,
+                return_fig=False, show_results_plot=False, html_plot=False,
                 verbose=False,):
     
     if results_fig is None:
@@ -878,7 +889,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
     results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list, results_fig=results_fig)
 
     # Will always plot the HV Curve
-    results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
+    results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'], y=hvsr_data.hvsr_curve,
                         line={'color':'black', 'width':1.5}, marker=None, name='HVSR Curve'),
                         row=1, col='all')
 
@@ -887,7 +898,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
         results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
 
     # Final figure updating
-    resultsFigWidth  =650
+    resultsFigWidth = 650
 
     components_HV_on_same_plot = (plot_list[1]==[] or '+' not in plot_list[1][0])
     if components_HV_on_same_plot:
@@ -1170,6 +1181,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
     else:
         return hvsr_data
 
+
 def _plot_input_stream(hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
     if input_fig is None:
         preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
@@ -1261,6 +1273,7 @@ def _plot_input_stream(hv_data, stream=None, input_fig=None, spectrogram_compone
 
     if return_fig:
         return input_fig
+
 
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
     
@@ -1431,6 +1444,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rms
 
     return outlier_fig
 
+
 def __plotly_outlier_curves_px(**input_args):
     """Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API
 
@@ -1474,6 +1488,7 @@ def __plotly_outlier_curves_px(**input_args):
         subplots = 3
     
     return outlierFig
+
 
 def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
                      depth_limit=250, max_elev=None, min_elev=None,
@@ -1612,6 +1627,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     hvsr_results['Depth_Plot'] = fig
     return hvsr_results
 
+
 def __plotly_express_preview(hvDataIN):
     """
     Create a multi-plot visualization of seismic data using Plotly Express.
@@ -1707,6 +1723,7 @@ def __plotly_express_preview(hvDataIN):
     
 
     return fig_spectrogram, (figZ, figE, figN)
+
 
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',

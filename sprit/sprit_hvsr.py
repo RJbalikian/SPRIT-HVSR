@@ -5006,7 +5006,10 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
         
         # set up subplots
         figLayout = 'constrained'
-        
+        figWidth = 6
+        figHeight = 4
+        figdpi = 220
+
         for i, p in enumerate(plotTypeOrder):
             pStartInd = plotIndOrder[i]
             pEndInd = plotIndOrder[i+1]
@@ -5028,7 +5031,8 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
                 perSubPDict = {}
                 if 'az' in plotTypeOrder:
                     perSubPDict['az'] = {'projection':'polar'}
-                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, layout=figLayout)
+                fig, ax = plt.subplot_mosaic(mosaicPlots, per_subplot_kw=perSubPDict, 
+                                             layout=figLayout, figsize=(figWidth, figHeight), dpi=figdpi)
                 axis = ax[p]
             elif use_subplots:
                 with warnings.catch_warnings():
@@ -5037,7 +5041,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
                         ax[p].clear()
                         axis = ax[p]
             else:
-                fig, axis = plt.subplots()
+                fig, axis = plt.subplots(figsize=(figWidth, figHeight), dpi=figdpi)
 
             if p == 'hvsr':
                 kwargs['subplot'] = p
