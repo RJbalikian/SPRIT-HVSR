@@ -3,30 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.6">
+<meta name="generator" content="pdoc3 0.11.1">
 <title>sprit.sprit_streamlit_ui API documentation</title>
 <meta name="description" content="">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => {
 hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
 hljs.highlightAll();
-/* Collapse source docstrings */
-setTimeout(() => {
-[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
-.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
-.forEach(el => {
-let d = document.createElement('details');
-d.classList.add('hljs-string');
-d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
-el.replaceWith(d);
-});
-}, 100);
 })</script>
 </head>
 <body>
@@ -48,1186 +37,144 @@ el.replaceWith(d);
 <span>def <span class="ident">check_if_default</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def check_if_default():
-    if len(st.session_state.keys()) &gt; 0:
-        print(&#39;Checking defaults, session state length: &#39;, len(st.session_state.keys()))
-        print_param(param2print)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.display_download_buttons"><code class="name flex">
 <span>def <span class="ident">display_download_buttons</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@st.fragment
-def display_download_buttons():
-    ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-    dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-    ##st.session_state.dlText = dlText
-    ##st.session_state.dlPDFReport = dlPDFReport
-    ##st.session_state.dlStream = dlStream
-    ##st.session_state.dlTable = dlTable
-    ##st.session_state.dlPlot = dlPlot
-    ##st.session_state.dlHVSR = dlHVSR
-
-    # Download Buttons
-    ##st.session_state.dlText.text(&#34;Download Results: &#34;)
-    dlText.text(&#34;Download Results: &#34;)
-
-    # Set up variables for download section
-    hvData = st.session_state.hvsr_data
-    hvID = &#39;&#39;
-    if hasattr(hvData, &#39;hvsr_id&#39;):
-        hvID = hvData[&#39;hvsr_id&#39;]
-
-    nowTimeStr = datetime.datetime.now().strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)
-
-    # PDF Report download
-    @st.cache_data
-    def _convert_pdf_for_download(_hv_data):
-        pdfPath = sprit._generate_pdf_report(_hv_data, return_pdf_path=True)
-        with open(pdfPath, &#34;rb&#34;) as pdf_file:
-            PDFbyte = pdf_file.read()
-        return PDFbyte
-    
-    pdf_byte = _convert_pdf_for_download(hvData)
-
-    ##st.session_state.dlPDFReport.download_button(label=&#34;Report (.pdf)&#34;,
-    dlPDFReport.download_button(label=&#34;Report (.pdf)&#34;,
-                data=pdf_byte,
-                #on_click=display_results,
-                file_name=f&#34;{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf&#34;,
-                mime=&#39;application/octet-stream&#39;,
-                icon=&#34;:material/summarize:&#34;)
-
-    # Data Stream
-    @st.cache_data
-    def _convert_stream_for_download(_stream):
-        strm = io.BytesIO()
-        _stream.write(strm, format=&#39;MSEED&#39;)
-        return strm.getvalue()
-    streamBytes = _convert_stream_for_download(hvData.stream)
-
-    ##st.session_state.dlStream.download_button(
-    dlStream.download_button(
-        label=&#39;Data (.mseed)&#39;,
-        data=streamBytes,
-        #on_click=display_results,
-        file_name=f&#34;{hvData.site}_DataStream_{hvID}_{nowTimeStr}.mseed&#34;,
-        icon=&#34;:material/graphic_eq:&#34;
-    )
-
-    # Table download
-    @st.cache_data
-    def _convert_table_for_download(df):
-        return df.to_csv().encode(&#34;utf-8&#34;)
-
-    csv = _convert_table_for_download(st.session_state.hvsr_data[&#39;Table_Report&#39;])
-
-    ##st.session_state.dlTable.download_button(
-    dlTable.download_button(
-        label=&#34;Table (.csv)&#34;,
-        data=csv,
-        file_name=f&#34;{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv&#34;,
-        #on_click=display_results,
-        mime=&#34;text/csv&#34;,
-        icon=&#34;:material/table:&#34;,
-    )
-
-    # Plot
-    @st.cache_data
-    def _convert_plot_for_download(_HV_Plot):            
-        _img = io.BytesIO()
-        if st.session_state.plot_engine == &#39;Matplotlib&#39;:
-            _HV_Plot.savefig(_img, format=&#39;png&#39;)
-        else:
-            _img = _HV_Plot.to_image(format=&#39;png&#39;)
-        
-        return _img
-
-    img = _convert_plot_for_download(hvData[&#39;HV_Plot&#39;])
-
-    ##st.session_state.dlPlot.download_button(
-    dlPlot.download_button(
-        label=&#34;Plot (.png)&#34;,
-        data=img,
-        file_name=f&#34;{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png&#34;,
-        mime=&#34;image/png&#34;,
-        #on_click=display_results,
-        icon=&#34;:material/analytics:&#34;
-        )
-
-
-    # HVSR File
-    try:
-        @st.cache_data
-        def _convert_hvsr_for_download(_hvsr_data):
-            _hvsrPickle = pickle.dumps(_hvsr_data)
-            return _hvsrPickle
-
-        hvsrPickle = _convert_hvsr_for_download(st.session_state.hvsr_data)
-
-        ##st.session_state.dlHVSR.download_button(
-        dlHVSR.download_button(
-            label=&#34;Pickled (.hvsr)&#34;,
-            data=hvsrPickle,
-            file_name=f&#34;{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr&#34;,
-            #on_click=display_results,
-            icon=&#34;:material/database:&#34;)
-    except Exception as e:
-        print(e)
-        ##st.session_state.dlHVSR.button(
-        dlHVSR.download_button(
-            label=&#34;.hvsr not available&#34;,
-            data=&#39;HVSR Data &#39;,
-            disabled=True,
-            #on_click=display_results,
-            icon=&#34;:material/database:&#34;)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.display_read_data"><code class="name flex">
 <span>def <span class="ident">display_read_data</span></span>(<span>do_setup_tabs=False)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def display_read_data(do_setup_tabs=False):
-    
-    if do_setup_tabs:
-        st.session_state.mainContainer = st.container()
-        st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
-    
-    st.session_state.input_fig = make_input_fig()
-    st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                        on_select=update_data, key=&#39;data_plot&#39;, 
-                                        selection_mode=&#39;box&#39;, use_container_width=True, theme=&#39;streamlit&#39;)
-
-    st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
-    st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;, 
-                                                default=&#39;Add&#39;, on_change=update_selection_type, disabled=True, 
-                                                help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
-
-    # Print information about the data to Info tab
-    st.session_state.infoTab.header(&#34;Information About Input Data&#34;)
-    st.session_state.infoTab.write(f&#34;Acquisition Date: {st.session_state.hvsr_data[&#39;acq_date&#39;]}&#34;)
-
-    recLength = (UTCDateTime(st.session_state.hvsr_data[&#39;stream&#39;][0].stats.endtime) - UTCDateTime(st.session_state.hvsr_data[&#39;stream&#39;][0].stats.starttime))
-    st.session_state.infoTab.write(f&#34;Record Length: {recLength/60:.2f} minutes ({recLength} seconds)&#34;)
-    st.session_state.infoTab.write(&#34;---&#34;)
-    st.session_state.infoTab.code(str(st.session_state.hvsr_data))</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.display_results"><code class="name flex">
 <span>def <span class="ident">display_results</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def display_results():
-    # Set up container for output data
-    setup_main_container(do_setup_tabs=True)
-
-    # Input data
-    st.session_state.input_fig = make_input_fig()
-    st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                        on_select=update_data, #key=&#39;input_data_plot&#39;,
-                                        selection_mode=&#39;box&#39;, use_container_width=True, theme=&#39;streamlit&#39;)
-
-    st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
-    st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;, 
-                                                 default=&#39;Add&#39;, on_change=update_selection_type, disabled=True, 
-                                                 help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
-
-
-    write_to_info_tab(st.session_state.infoTab)
-    #st.session_state.inputTab.plotly_chart(st.session_state.hvsr_data[&#39;Input_Plot&#39;], use_container_width=True)
-    outlier_plot_in_tab()
-    #outlierEvent = outlierTab.plotly_chart(st.session_state.hvsr_data[&#39;OutlierPlot&#39;], use_container_width=True)
-    st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data[&#39;HV_Plot&#39;], use_container_width=True)
-    st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data[&#39;Table_Report&#39;])
-    st.session_state.strReportTab.code(st.session_state.hvsr_data[&#39;Print_Report&#39;], language=None)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.initial_setup_fun"><code class="name flex">
 <span>def <span class="ident">initial_setup_fun</span></span>(<span>session_state_key, initial_value, running_value='Do not use')</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def initial_setup_fun(session_state_key, initial_value, running_value=&#39;Do not use&#39;):
-    if not hasattr(st.session_state, session_state_key):
-        st.session_state[session_state_key] = initial_value
-    elif running_value != &#34;Do not use&#34;:
-        st.session_state[session_state_key] = running_value</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.make_input_fig"><code class="name flex">
 <span>def <span class="ident">make_input_fig</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def make_input_fig():
-    no_subplots = 5
-    inputFig = make_subplots(rows=no_subplots, cols=1,
-                                      row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
-                                      shared_xaxes=True,
-                                      horizontal_spacing=0.01,
-                                      vertical_spacing=0.01
-                                      )
-
-    hvsr_data = st.session_state.hvsr_data
-
-    # Windows PSD and Used
-    #psdArr = np.flip(hvsr_data.ppsds[&#34;Z&#34;][&#39;psd_values&#39;].T)
-    zTrace = st.session_state.stream.select(component=&#39;Z&#39;).merge()[0]
-    eTrace = st.session_state.stream.select(component=&#39;E&#39;).merge()[0]
-    nTrace = st.session_state.stream.select(component=&#39;N&#39;).merge()[0]
-    specKey = &#39;Z&#39;
-
-    sTime = zTrace.stats.starttime
-    xTraceTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
-
-    f, specTimes, psdArr = _generate_stream_specgram(_trace=zTrace)
-
-    st.session_state.stream_spec_freqs = f
-    st.session_state.stream_spec_times = specTimes
-    st.session_state.psdArr = psdArr
-
-    if f[0] == 0:
-        f[0] = f[1]/10 # Fix so bottom number is not 0
-
-    specTimes = list(specTimes)
-    specTimes.insert(0, 0)
-    timeWindowArr = np.array([np.datetime64((sTime + tT).datetime) for tT in specTimes])
-    
-    hvsrBand = hvsr_data[&#39;hvsr_band&#39;]
-
-    minz = np.percentile(st.session_state.psdArr, 1)
-    maxz = np.percentile(st.session_state.psdArr, 99)
-
-    hmap = goHeatmap(z=st.session_state.psdArr,
-                x=timeWindowArr[:-1],
-                y=f,
-                colorscale=&#39;Turbo&#39;, #opacity=0.8,
-                showlegend=False,
-                hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
-                zmin=minz, zmax=maxz, showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
-    inputFig.add_trace(hmap, row=1, col=1)
-    inputFig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
-    inputFig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
-
-    # Get Use Array and hvdf
-    hvdf, useArrShape = _get_use_array(hvsr_data, f=f, timeWindowArr=timeWindowArr, psdArr=st.session_state.psdArr)
-
-    timelineFig = pxTimeline(data_frame=hvdf,
-                            x_start=&#39;TimesProcessed_Start&#39;,
-                            x_end=&#39;TimesProcessed_End&#39;,
-                            y=[&#39;Used&#39;]*hvdf.shape[0],
-                            #y=&#34;Use&#34;,#range_y=[-20, -10],
-                            color=&#39;Use&#39;,
-                            color_discrete_map={True: &#39;rgba(0,255,0,1)&#39;,
-                                                False: &#39;rgba(255,0,0,1)&#39;})
-    for timelineTrace in timelineFig.data:
-        inputFig.add_trace(timelineTrace, row=2, col=1)
-
-    useArr = np.tile(hvdf.Use, (useArrShape, 1))
-    useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
-
-
-    specOverlay = goHeatmap(z=useArr,
-                        x=hvdf[&#39;TimesProcessed_Start&#39;],
-                        y=f,
-                        colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
-                        showlegend=False,
-                        #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
-                        showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
-    inputFig.add_trace(specOverlay, row=1, col=1)
-    
-    minTraceData = min(min(zTrace.data), min(eTrace.data), min(nTrace.data))
-    maxTraceData = max(max(zTrace.data), max(eTrace.data), max(nTrace.data))
-
-    streamOverlay = goHeatmap(z=useArr,
-                    x=hvdf[&#39;TimesProcessed_Start&#39;],
-                    y=np.linspace(minTraceData, maxTraceData, useArr.shape[0]),
-                    colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
-                    showlegend=False,
-                    #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
-                    showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
-    inputFig.add_trace(streamOverlay, row=3, col=1)
-    inputFig.add_trace(streamOverlay, row=4, col=1)
-    inputFig.add_trace(streamOverlay, row=5, col=1)
-
-    inputFig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
-    inputFig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
-
-
-    # Data traces
-    zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
-    zDataFig.update_traces(mode=&#39;markers+lines&#39;,
-                        marker=dict(size=1, color=&#39;rgba(0,0,0,1)&#39;),
-                        line=dict(width=1, color=&#39;rgba(0,0,0,1)&#39;),
-                        selector=dict(mode=&#39;markers&#39;))
-    for zTrace in zDataFig.data:
-        inputFig.add_trace(zTrace, row=3, col=1)
-
-
-    eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
-    eDataFig.update_traces(mode=&#39;markers+lines&#39;,
-                        marker=dict(size=1, color=&#39;rgba(0,0,255,1)&#39;),
-                        line=dict(width=1, color=&#39;rgba(0,0,255,1)&#39;),
-                        selector=dict(mode=&#39;markers&#39;))
-    for eTrace in eDataFig.data:
-        inputFig.add_trace(eTrace, row=4, col=1)
-
-
-    nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
-    nDataFig.update_traces(mode=&#39;markers+lines&#39;,
-                        marker=dict(size=1, color=&#39;rgba(255,0,0,1)&#39;),
-                        line=dict(width=1, color=&#39;rgba(255,0,0,1)&#39;),
-                        selector=dict(mode=&#39;markers&#39;))
-    for nTrace in nDataFig.data:
-        inputFig.add_trace(nTrace, row=5, col=1)
-
-    #inputFig.update_yaxes(title=&#39;In Use&#39;, row=5, col=1)
-    #inputFig.update_xaxes(title=&#39;Time&#39;, row=5, col=1,
-    #                      dtick=1000*60,)
-    inputFig.update_layout(title_text=&#34;Frequency and Data values over time&#34;, 
-                        height=650, showlegend=False)
-
-    inputFig.update_xaxes(type=&#39;date&#39;, range=[xTraceTimes[0], xTraceTimes[-1]])
-
-    st.session_state.input_fig = inputFig
-    st.session_state.hvsr_data.Input_Plot = inputFig
-
-    return inputFig</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.on_file_upload"><code class="name flex">
 <span>def <span class="ident">on_file_upload</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def on_file_upload():
-    file = st.session_state.datapath_uploader
-    temp_dir = tempfile.mkdtemp()
-    path = pathlib.Path(temp_dir).joinpath(file.name)
-    with open(path, &#34;wb&#34;) as f:
-            f.write(file.getvalue())
-    if VERBOSE:
-        print(file.name)
-    st.session_state.input_data = path.as_posix()</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.on_read_data"><code class="name flex">
 <span>def <span class="ident">on_read_data</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def on_read_data():
-    if &#39;read_button&#39; not in st.session_state.keys() or not st.session_state.read_button:
-        return
-
-
-    if st.session_state.input_data == &#39;&#39; or st.session_state.input_data is None:
-        st.session_state.input_data = &#39;sample&#39;
-
-    st.session_state.mainContainer = st.container()
-    st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
-
-    if st.session_state.input_data != &#39;&#39;:
-        srun = {}
-        for key, value in st.session_state.items():
-            if key in st.session_state.run_kws:
-                if value != st.session_state.default_params[key]:
-                    if str(value) != str(st.session_state.default_params[key]):
-                        srun[key] = value
-            
-            if key == &#39;plot_engine&#39;:
-                srun[key] = value
-    
-    ipKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.input_params).parameters.keys())}
-    fdKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit.fetch_data).parameters.keys())}
-
-    st.toast(&#39;Reading data&#39;, icon=&#34;⌛&#34;)
-    with st.spinner(f&#34;Reading data: {ipKwargs[&#39;input_data&#39;]}&#34;):
-        inParams = sprit.input_params(**ipKwargs)
-        st.session_state.hvsr_data = sprit.fetch_data(inParams, **fdKwargs)
-    st.session_state.stream = st.session_state.hvsr_data.stream
-    if hasattr(st.session_state.hvsr_data, &#39;stream_edited&#39;):
-        st.session_state.stream_edited = st.session_state.hvsr_data.stream_edited
-    else:
-        st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
-
-    display_read_data(do_setup_tabs=False)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.on_reset"><code class="name flex">
 <span>def <span class="ident">on_reset</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def on_reset():
-    st.toast(&#34;Session state cleared&#34;)
-    st.session_state = st.session_state[&#39;NewSessionState&#39;]</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.on_run_data"><code class="name flex">
 <span>def <span class="ident">on_run_data</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def on_run_data():
-    # Runs sample data if nothing specified
-    if st.session_state.input_data == &#39;&#39;:
-        st.session_state.input_data = &#39;sample&#39;
-
-    # Now run the data
-    srun = {}
-    for key, value in st.session_state.items():
-        if key in st.session_state.run_kws:
-            if value != st.session_state.default_params[key]:
-                if str(value) != str(st.session_state.default_params[key]):
-                    srun[key] = value
-        
-        if key == &#39;plot_engine&#39;:
-            srun[key] = value
-            
-    # Get plots all right
-    #srun[&#39;plot_engine&#39;] = &#39;matplotlib&#39;
-    srun[&#39;plot_input_stream&#39;] = True
-    srun[&#39;show_plot&#39;] = False
-    srun[&#39;verbose&#39;] = False #True
-
-    # Update outputs
-    srun[&#39;report_export_format&#39;] = None
-    srun[&#39;show_pdf_report&#39;] = False
-    srun[&#39;show_print_report&#39;] = True
-    srun[&#39;show_plot_report&#39;] = False
-    
-    if VERBOSE:
-        print(&#39;SPRIT RUN&#39;, srun)
-    st.toast(&#39;Data is processing&#39;, icon=&#34;⌛&#34;)
-    
-    setup_main_container(do_setup_tabs=False)
-    with st.session_state.mainContainer:
-        spinnerText = &#39;Data is processing with default parameters.&#39;
-        excludedKeys = [&#39;plot_engine&#39;, &#39;plot_input_stream&#39;, &#39;show_plot&#39;, &#39;verbose&#39;]
-        NOWTIME = datetime.datetime.now()
-        secondaryDefaults = {&#39;acq_date&#39;: datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                &#39;hvsr_band&#39;:(0.1, 50), &#39;use_hv_curve&#39;:True,
-                                &#39;starttime&#39;:datetime.time(0,0,0),
-                                &#39;endtime&#39;:datetime.time(23, 59, 0),
-                                &#39;peak_freq_range&#39;:(0.1, 50),
-                                &#39;stalta_thresh&#39;:(8, 16),
-                                &#39;period_limits&#39;:(0.02, 10),
-                                &#39;remove_method&#39;:[&#39;None&#39;],
-                                &#39;report_export_format&#39;:None,
-                                &#39;report_formats&#39;:  [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;] ,
-                                &#39;show_pdf_report&#39;:False,
-                                &#39;show_print_report&#39;:True,
-                                &#39;show_plot_report&#39;:False,
-                                &#39;elev_unit&#39;:&#39;m&#39;,
-                                &#39;plot_type&#39;:&#39;HVSR p ann C+ p ann Spec p&#39;,
-                                &#39;suppress_report_outputs&#39;:True
-                                }
-        
-        nonDefaultParams = False
-
-        srun[&#39;report_formats&#39;] = [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;]
-        srun[&#39;suppress_report_outputs&#39;] = True
-        if &#39;input_data&#39; in srun:
-            del srun[&#39;input_data&#39;]
-
-        # Display non-default parameters, if applicable
-        for key, value in srun.items():
-
-            if key not in excludedKeys:
-                if key in secondaryDefaults and secondaryDefaults[key] == value:
-                    pass
-                else:
-                    nonDefaultParams = True
-                    spinnerText = spinnerText + f&#34;\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})&#34;
-        if nonDefaultParams:
-            spinnerText = spinnerText.replace(&#39;default&#39;, &#39;the following non-default&#39;)
-        with st.spinner(spinnerText):
-            st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
-    
-    st.balloons()
-
-    st.session_state.stream = st.session_state.hvsr_data[&#39;stream&#39;]
-    st.session_state.stream_edited = st.session_state.hvsr_data[&#39;stream_edited&#39;]
-
-    display_download_buttons()
-    st.toast(&#39;Displaying results (download available)&#39;)
-    display_results()
-    st.session_state.prev_datapath = st.session_state.input_data</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.outlier_plot_in_tab"><code class="name flex">
 <span>def <span class="ident">outlier_plot_in_tab</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def outlier_plot_in_tab():
-    hvDF = st.session_state.hvsr_data[&#39;hvsr_windows_df&#39;]
-    x_data = st.session_state.hvsr_data[&#39;x_freqs&#39;][&#39;Z&#39;][:-1]
-    
-    no_subplots = 1
-    outlierFig = make_subplots(rows=no_subplots, cols=1,
-                                        shared_xaxes=True, horizontal_spacing=0.01,
-                                        vertical_spacing=0.1)
-
-    scatterFig = pxScatter()
-    scatter_traces = []
-    line_traces = []
-
-
-    for row, hvsr_data in enumerate(hvDF[&#39;HV_Curves&#39;]):
-        currInd = hvDF.iloc[row].name
-        if hvDF.loc[currInd, &#39;Use&#39;]:  
-            scatterArray = np.array(list(hvsr_data)[::5])
-            x_data_Scatter = np.array(list(x_data)[::5])
-            currFig = pxScatter(x=x_data_Scatter, y=scatterArray)
-            currFig.update_traces(mode=&#39;markers+lines&#39;,
-                            marker=dict(size=1, color=&#39;rgba(0,0,0,0.1)&#39;),
-                            line=dict(width=1, color=&#39;rgba(0,0,0,0.1)&#39;),
-                            selector=dict(mode=&#39;markers&#39;))
-            
-            scatter_traces.append(currFig)
-
-        else:
-            scatterArray = np.array(list(hvsr_data)[::5])
-            x_data_Scatter = np.array(list(x_data)[::5])
-            currFig = pxScatter(x=x_data_Scatter, y=scatterArray,
-                                opacity=0.5)
-            currFig.update_traces(mode=&#39;markers+lines&#39;,
-                                marker=dict(size=1, color=&#39;rgba(195,87,0,0.4)&#39;),
-                                line=dict(width=1, color=&#39;rgba(195,87,0,0.4)&#39;),
-                                selector=dict(mode=&#39;markers&#39;))
-            scatter_traces.append(currFig)
-
-
-    # Add median line
-    medArr = np.nanmedian(np.stack(hvDF[&#39;HV_Curves&#39;][hvDF[&#39;Use&#39;]]), axis=0)
-    scatterArray = np.array(list(medArr)[::10])
-    x_data_Scatter = np.array(list(x_data)[::10])
-    currFig = px.line(x=x_data_Scatter, y=scatterArray,
-                    color_discrete_sequence=[&#39;red&#39;])
-    currFig.update_traces(line=dict(width=3, color=&#39;black&#39;))
-    scatter_traces.append(currFig)
-
-    for tr in scatter_traces:
-        for trace in tr.data:
-            outlierFig.add_traces(trace, rows=1, cols=1)
-
-
-    outlierFig.update_xaxes(title=&#39;Frequency [Hz]&#39;, type=&#34;log&#34;, row=1, col=1)
-    outlierFig.update_yaxes(title=&#39;H/V Ratio&#39;, row=1, col=1)
-    outlierFig.update_layout(title_text=&#34;H/V Curve Outlier Display &amp; Selection&#34;)
-
-    st.session_state.outlierTab.write(&#34;Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.&#34;)
-    # Output figure to correct tab
-    st.session_state.outlierTab.plotly_chart(outlierFig, 
-                            on_select=update_outlier, 
-                            key=&#39;outlier_plot&#39;, 
-                            use_container_width=True, 
-                            theme=&#39;streamlit&#39;) </code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.print_param"><code class="name flex">
 <span>def <span class="ident">print_param</span></span>(<span>key=None, write_key=False)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def print_param(key=PARAM2PRINT, write_key=False):
-    if key is None:
-        pass
-    elif key in st.session_state.keys():
-        print(key, st.session_state[key], &#39;type:&#39;, type(st.session_state[key]))
-        if write_key:
-            st.write(key, st.session_state[key], &#39;type:&#39;, type(st.session_state[key]))</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.setup_main_container"><code class="name flex">
 <span>def <span class="ident">setup_main_container</span></span>(<span>do_setup_tabs=False)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def setup_main_container(do_setup_tabs=False):
-    mainContainer = st.container()
-    st.session_state.mainContainer = mainContainer
-
-    if do_setup_tabs:
-        setup_tabs(mainContainer)
-    
-    st.session_state.mainContain_setup = True</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.setup_session_state"><code class="name flex">
 <span>def <span class="ident">setup_session_state</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def setup_session_state():
-    if st.session_state.initial_setup:
-        # &#34;Splash screen&#34; (only shows at initial startup)
-
-        mainContainerInitText = &#34;&#34;&#34;
-        # SpRIT HVSR
-        ## About
-        SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
-        
-        ### This app is using SpRIT v0.0.0
-        ## Links
-        * API Documentation may be accessed here: [ReadtheDocs](https://sprit.readthedocs.io/en/latest/sprit.html) and [Github Pages](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
-        * The Wiki and Tutorials may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR/wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
-        * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
-        * PyPI repository may be accessed here: [https://pypi.org/project/sprit/](https://pypi.org/project/sprit/)
-
-        ## MIT License
-        It is licensed under the MIT License:
-        &gt; Permission is hereby granted, free of charge, to any person obtaining a copy 
-        &gt; of this software and associated documentation files (the &#34;Software&#34;), to deal
-        &gt; in the Software without restriction, including without limitation the rights
-        &gt; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        &gt; copies of the Software, and to permit persons to whom the Software is
-        &gt; furnished to do so, subject to the following conditions:
-        &gt; 
-        &gt; The above copyright notice and this permission notice shall be included in all
-        &gt; copies or substantial portions of the Software.
-        &gt; 
-        &gt; THE SOFTWARE IS PROVIDED &#34;AS IS&#34;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        &gt; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        &gt; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        &gt; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-        &gt; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-        &gt; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-        &gt; SOFTWARE.
-        &#34;&#34;&#34;
-        mainContainerInitText = mainContainerInitText.replace(&#39;0.0.0&#39;, spritversion)
-
-        st.markdown(mainContainerInitText, unsafe_allow_html=True)
-        if VERBOSE:
-            print(&#39;Start sig loop, session state length: &#39;, len(st.session_state.keys()))
-            print_param(PARAM2PRINT)
-
-        # Get all function defaults
-        for fun, funDict in funList:
-            funSig = inspect.signature(fun)
-            for arg in funSig.parameters.keys():
-                if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
-                    funDict[arg] = funSig.parameters[arg].default
-                    run_kwargs[arg] = funSig.parameters[arg].default
-
-        gpsd_kwargs[&#39;ppsd_length&#39;] = run_kwargs[&#39;ppsd_length&#39;] = 30
-        gpsd_kwargs[&#39;skip_on_gaps&#39;] = run_kwargs[&#39;skip_on_gaps&#39;] = True
-        gpsd_kwargs[&#39;period_step_octaves&#39;] = run_kwargs[&#39;period_step_octaves&#39;] = 0.03125
-        gpsd_kwargs[&#39;period_limits&#39;] = run_kwargs[&#39;period_limits&#39;] = [1/run_kwargs[&#39;hvsr_band&#39;][1], 1/run_kwargs[&#39;hvsr_band&#39;][0]]
-        
-        if VERBOSE:
-            print(&#39;Done getting kwargs: &#39;, len(st.session_state.keys()))
-            print_param(PARAM2PRINT)
-
-            print(&#39;Setting up session state: &#39;, len(st.session_state.keys()))
-        #st.session_state[&#34;updated_kwargs&#34;] = {}
-        for key, value in run_kwargs.items():
-            if VERBOSE:
-                print(&#39;resetting&#39;)
-                print_param(PARAM2PRINT)
-                print(key, &#34;: &#34;, value)
-            #    if key in st.session_state.keys() and (st.session_state[key] != value):
-            st.session_state[key] = value
-
-        #listItems = [&#39;source&#39;, &#39;tzone&#39;, &#39;elev_unit&#39;, &#39;data_export_format&#39;, &#39;detrend&#39;, &#39;special_handling&#39;, &#39;peak_selection&#39;, &#39;freq_smooth&#39;, &#39;horizontal_method&#39;, &#39;stalta_thresh&#39;]
-        ## Convert items to lists
-        #for arg, value in st.session_state.items():
-        #    if arg in listItems:
-        #        valList = [value]
-        #        st.session_state[arg] = valList
-        #        run_kwargs[arg] = st.session_state[arg]
-
-        # Convert lists and numbers to strings
-        strItems = [&#39;channels&#39;, &#39;xcoord&#39;, &#39;ycoord&#39;, &#39;elevation&#39;, &#39;detrend_options&#39;, &#39;filter_options&#39;, &#39;horizontal_method&#39;]
-        for arg, value in st.session_state.items():
-            if arg in strItems:
-                if isinstance(value, (list, tuple)):
-                    newVal = &#39;[&#39;
-                    for item in value:
-                        newVal = newVal+item+&#39;, &#39;
-                    newVal = newVal[:-2]+&#39;]&#39;
-
-                    st.session_state[arg] = newVal
-                    run_kwargs[arg] = newVal
-                else:
-                    st.session_state[arg] = str(value)
-                    run_kwargs[arg] = str(value)
-
-        if VERBOSE:
-            print_param(PARAM2PRINT)
-
-        # Convert all times to python datetime objects
-        dtimeItems=[&#39;acq_date&#39;, &#39;starttime&#39;, &#39;endtime&#39;]
-        for arg , value in st.session_state.items():
-            if arg in dtimeItems:
-                if isinstance(value, str):
-                    st.session_state[arg] = datetime.datetime.strptime(value, &#34;%Y-%m-%d&#34;)
-                    run_kwargs[arg] = datetime.datetime.strptime(value, &#34;%Y-%m-%d&#34;)
-                elif isinstance(st.session_state[arg], UTCDateTime):
-                    st.session_state[arg] = value.datetime
-                    run_kwargs[arg] = value.datetime
-                else:
-                    st.session_state[arg] = value
-                    run_kwargs[arg] = value
-        
-        if VERBOSE:
-            print_param(PARAM2PRINT)
-
-        # Case matching
-        st.session_state.data_export_format = run_kwargs[&#39;data_export_format&#39;] = st.session_state.data_export_format.upper()
-        st.session_state.detrend = run_kwargs[&#39;detrend&#39;] = st.session_state.detrend.title()
-        st.session_state.azimuth_type = run_kwargs[&#39;azimuth_type&#39;] = st.session_state.azimuth_type.title()
-        st.session_state.peak_selection = run_kwargs[&#39;peak_selection&#39;] = st.session_state.peak_selection.title()
-        st.session_state.freq_smooth = run_kwargs[&#39;freq_smooth&#39;] = st.session_state.freq_smooth.title()
-        st.session_state.source = run_kwargs[&#39;source&#39;] = st.session_state.source.title()
-        #st.session_state.plot_engine = run_kwargs[&#39;plot_engine&#39;] = st.session_state.plot_engine.title()
-               
-        # Update Nones
-        # Remove method
-        if st.session_state.remove_method is None:
-            st.session_state.remove_method = run_kwargs[&#39;remove_method&#39;] = &#39;None&#39;
-        else:
-            st.session_state.remove_method = run_kwargs[&#39;remove_method&#39;] = st.session_state.remove_method.title()
-
-        # Other updates
-        st.session_state.azimuth_unit = run_kwargs[&#39;azimuth_unit&#39;] = &#39;°&#39;
-        st.session_state.plot_engine = run_kwargs[&#39;plot_engine&#39;] = &#34;Plotly&#34;
-        
-
-        # Horizontal_method
-        methodDict = {&#39;0&#39;:&#39;Diffuse Field Assumption&#39;, &#39;1&#39;:&#39;Arithmetic Mean&#39;, &#39;2&#39;:&#39;Geometric Mean&#39;, &#39;3&#39;:&#39;Vector Summation&#39;, &#39;4&#39;:&#39;Quadratic Mean&#39;, &#39;5&#39;:&#39;Maximum Horizontal Value&#39;, &#39;6&#39;:&#39;Azimuth&#39;, &#34;None&#34;:&#34;Vector Summation&#34;}            
-        if st.session_state.horizontal_method is None:
-            st.session_state.horizontal_method = run_kwargs[&#39;horizontal_method&#39;] = methodDict[&#34;3&#34;]            
-        else:
-            st.session_state.horizontal_method = run_kwargs[&#39;horizontal_method&#39;] = methodDict[st.session_state.horizontal_method]
-
-        # Set Defaults
-        st.session_state.default_params = run_kwargs
-
-        if VERBOSE:
-            print_param(PARAM2PRINT)
-
-        st.session_state.run_kws = list(run_kwargs.keys())
-        
-        if VERBOSE:
-            for key, value in st.session_state.items():
-                print(&#34;session st: &#34;, st.session_state[key], type( st.session_state[key]), &#39;| rkwargs:&#39;, value, type(value))
-
-
-        if VERBOSE:
-            print(&#39;Done with setup, session state length: &#39;, len(st.session_state.keys()))
-            print_param(PARAM2PRINT)
-
-        st.session_state[&#39;NewSessionState&#39;] = copy.copy(st.session_state)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.setup_tabs"><code class="name flex">
 <span>def <span class="ident">setup_tabs</span></span>(<span>mainContainer)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def setup_tabs(mainContainer):
-    
-    resultsTab, inputTab, outlierTab, infoTab  = mainContainer.tabs([&#39;Results&#39;, &#39;Data&#39;, &#39;Outliers&#39;, &#39;Info&#39;])
-    plotReportTab, csvReportTab, strReportTab = resultsTab.tabs([&#39;Plot&#39;, &#39;Results Table&#39;, &#39;Print Report&#39;])
-    #tabs: st.session_state.inputTab, st.session_state.outlierTab, st.session_state.infoTab, st.session_state.resultsTab, plotReportTab, st.session_state.csvReportTab, st.session_state.strReportTab
-
-    st.session_state.inputTab = inputTab
-    st.session_state.outlierTab = outlierTab
-    st.session_state.infoTab = infoTab
-    st.session_state.resultsTab = resultsTab
-    st.session_state.plotReportTab = plotReportTab
-    st.session_state.csvReportTab = csvReportTab
-    st.session_state.strReportTab = strReportTab
-
-    st.session_state.tabs_setup = True</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.text_change"><code class="name flex">
 <span>def <span class="ident">text_change</span></span>(<span>VERBOSE=False)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def text_change(VERBOSE=VERBOSE):
-    #Just a function to run so something is done when text changes
-    if VERBOSE:
-        print(&#39;TEXTCHange&#39;)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_data"><code class="name flex">
 <span>def <span class="ident">update_data</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_data():
-    st.session_state.data_chart_event = st.session_state.data_plot
-    specKey = &#39;Z&#39;
-    hvsrBand = st.session_state.hvsr_data.hvsr_band
-    # Still figuring stuff out
-    
-    # This seems to work well at the moment
-    windows = []
-    if len(st.session_state.data_chart_event[&#39;selection&#39;][&#39;box&#39;]) &gt; 0:
-        esb = st.session_state.data_chart_event[&#39;selection&#39;][&#39;box&#39;]
-        for b in esb:
-            if b[&#39;x&#39;][0] &gt; b[&#39;x&#39;][1]:
-                windows.append((b[&#39;x&#39;][1], b[&#39;x&#39;][0]))
-            else:
-                windows.append((b[&#39;x&#39;][0], b[&#39;x&#39;][1]))
-
-    # Reset the variables (but which one(s)?)
-    st.session_state.data_chart_event = {&#34;selection&#34;:{&#34;points&#34;:[],
-                                         &#34;point_indices&#34;:[],
-                                         &#39;box&#39;:[],
-                                         &#39;lasso&#39;:[]}}
-
-    if &#39;x_windows_out&#39; not in st.session_state.hvsr_data.keys():
-        st.session_state.hvsr_data[&#39;x_windows_out&#39;] = []
-    
-    # Convert times to obspy.UTCDateTime
-    utcdtWin = []
-    for currWin in windows:
-        currUTCWin = []
-
-        # Get 
-        stream1 = st.session_state.stream_edited.copy()
-        stream2 = st.session_state.stream_edited.copy()
-
-        stream1 = stream1.merge()
-        stream2 = stream2.merge()
-        
-        for pdtimestamp in currWin:
-            currUTCWin.append(UTCDateTime(pdtimestamp))
-        utcdtWin.append(currUTCWin)
-        st.session_state.hvsr_data[&#39;x_windows_out&#39;].append(currUTCWin)
-
-        # Trim data with gap in the middle where we remvoed data
-        if st.session_state.input_selection_mode == &#39;Add&#39;:
-            stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
-            stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
-
-        # Merge data back
-        newStream = (stream1 + stream2).merge()
-        st.session_state.hvsr_data[&#39;stream_edited&#39;] = newStream
-        st.session_state.stream_edited = newStream
-
-    # Use edited data to update location of bars
-    # Update useArr
-    hvdf, useArrShape = _get_use_array(hvsr_data=st.session_state.hvsr_data,
-                                       f=st.session_state.stream_spec_freqs,
-                                       timeWindowArr=st.session_state.stream_spec_times,
-                                       psdArr=st.session_state.psdArr)
-    
-    useArr = np.tile(hvdf.Use, (useArrShape, 1))
-    useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
-
-    newSpecOverlay = goHeatmap(z = useArr,
-                                x = hvdf[&#39;TimesProcessed_Start&#39;],
-                                y=st.session_state.stream_spec_freqs,
-                                colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
-                                showlegend=False,
-                                #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
-                                showscale=False,
-                                )
-
-    st.session_state.input_fig.add_trace(newSpecOverlay, row=1, col=1)
-    st.session_state.input_fig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
-    st.session_state.input_fig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
-    st.session_state.input_fig.update_layout(showlegend=False)
-
-    def has_attributes(obj, *attributes):
-        return all(hasattr(obj, attr) for attr in attributes)
-
-    procCond1 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;process_hvsr_status&#39;]
-    procCond2 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;overall_status&#39;]
-    procCond3 = has_attributes(st.session_state.hvsr_data, &#34;HV_Plot&#34;, &#34;Print_Report&#34;, &#34;Table_Report&#34;)
-
-    readCond1 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;input_params_status&#39;]
-    readCond2 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;fetch_data_status&#39;]
-
-    if procCond1 and procCond2 and procCond3:
-        display_results()
-    elif readCond1 and readCond2:
-        display_read_data(do_setup_tabs=True)
-    else:
-        # For dat that did not process correctly
-        st.session_state.mainContainer.warning(&#39;Data not read or processed correctly&#39;)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_from_data_selection"><code class="name flex">
 <span>def <span class="ident">update_from_data_selection</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_from_data_selection():
-    st.toast(&#34;Updating H/V Curve statistics&#34;)
-
-    if &#39;PPSDStatus&#39; in st.session_state.hvsr_data.processing_status and st.session_state.hvsr_data.processing_status[&#39;PPSDStatus&#39;]:
-        gpsd_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.generate_psds).parameters.keys()) and k != &#39;hvsr_data&#39;}
-        st.session_state.hvsr_data = sprit_hvsr.generate_psds(hvsr_data=st.session_state.hvsr_data, **gpsd_kwargs)
-        
-
-    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != &#39;hvsr_data&#39;}
-    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != &#39;hvsr_data&#39;}
-    getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != &#39;hvsr_data&#39;}
-
-    st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
-    st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
-    st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
-
-    display_results()</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_from_outlier_selection"><code class="name flex">
 <span>def <span class="ident">update_from_outlier_selection</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_from_outlier_selection():
-    &#34;&#34;&#34;This is intended as a callback for updating the main results tab, etc. after updating outlier curves&#34;&#34;&#34;
-    
-    st.toast(&#34;Updating H/V Curve statistics&#34;)
-    prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != &#39;hvsr_data&#39;}
-    checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != &#39;hvsr_data&#39;}
-    getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != &#39;hvsr_data&#39;}
-
-    st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
-    st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
-    st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
-
-    display_results()
-    #write_to_info_tab(infoTab)
-    
-    #inputTab.plotly_chart(st.session_state.hvsr_data[&#39;Input_Plot&#39;], use_container_width=True)
-    #outlier_plot_in_tab()
-    #plotReportTab.plotly_chart(outlierFig, on_select=update_outlier, key=&#39;outlier_plot&#39;, use_container_width=True, theme=&#39;streamlit&#39;)
-    #csvReportTab.dataframe(data=st.session_state.hvsr_data[&#39;Table_Report&#39;])
-    #strReportTab.text(st.session_state.hvsr_data[&#39;Print_Report&#39;])
-
-    #st.session_state.outlierTab.write(&#39;Navigate to the Results tab to see updated results&#39;)</code></pre>
-</details>
 <div class="desc"><p>This is intended as a callback for updating the main results tab, etc. after updating outlier curves</p></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_outlier"><code class="name flex">
 <span>def <span class="ident">update_outlier</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_outlier():
-    hvDF = st.session_state.hvsr_data[&#39;hvsr_windows_df&#39;]
-    
-    st.session_state.outlier_chart_event = st.session_state.outlier_plot
-    curves2Remove = np.unique([p[&#39;curve_number&#39;] for p in st.session_state.outlier_chart_event[&#39;selection&#39;][&#39;points&#39;]])
-    st.session_state.outlier_curves_to_remove = list(curves2Remove)
-
-    if len(st.session_state.outlier_curves_to_remove) &gt; 0:
-        
-        outlierMsgList = []
-        outlierMsgCols = [&#39;Window Number&#39;, &#34;Window Start Time&#34;]
-        for remCurve in st.session_state.outlier_curves_to_remove:
-            currInd = hvDF.iloc[remCurve].name
-            outlierMsgList.append([remCurve, currInd])
-            hvDF.loc[currInd, &#34;Use&#34;] = False
-
-        statusMsg = &#34;Removing specified outlier curve&#34;
-        if len(st.session_state.outlier_curves_to_remove) != 1:
-            statusMsg += &#39;s&#39;
-
-        #st.toast(statusMsg)
-        statusCol, updateCol = st.columns([0.8, 0.2])
-        with statusCol.status(statusMsg):
-            st.dataframe(pd.DataFrame(outlierMsgList, columns=outlierMsgCols))
-        updateCol.button(&#34;Rerun results statistics&#34;, on_click=update_from_outlier_selection,
-                         type=&#39;primary&#39;, icon=&#34;:material/update:&#34;)
-    display_results()</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_plot_string"><code class="name flex">
 <span>def <span class="ident">update_plot_string</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_plot_string():
-    plotStringDict={&#39;Peak Frequency&#39;:&#39; p&#39;, &#39;Peak Amplitude&#39;:&#39; pa&#39;, &#39;Annotation&#39;:&#39; ann&#39;,
-                    &#39;Time windows&#39;:&#39; t&#39;, &#34;Peaks of Time Windows&#34;: &#39; tp&#39;,
-                    &#39;Test 1: Peak &gt; 2x trough below&#39;:&#39;1&#39;, 
-                    &#34;Test 2: Peak &gt; 2x trough above&#34;:&#39;2&#39;,
-                    &#34;Test 3: Peak &gt; 2&#34;:&#39;3&#39;, 
-                    &#34;Test 4&#34;:&#39;4&#39;, &#34;Test 5&#34;:&#39;5&#39;, &#34;Test 6&#34;:&#39;6&#39;,
-                    }
-    
-    plotString = &#39;&#39;
-    for plot in st.session_state.plotPlotStr:
-        if plot==&#39;HVSR&#39;:
-            plotString=plotString+&#39;HVSR&#39;
-            for pc in st.session_state.hvsrPlotStr:
-                if &#39;test&#39; in pc.lower():
-                    if &#39;test&#39; not in plotString.lower():
-                        plotString = plotString + &#39; Test&#39;
-                    test_end_index = plotString.rfind(&#34;Test&#34;) + len(&#34;Test&#34;)
-                    nextSpaceIndex = plotString[test_end_index:].rfind(&#34; &#34;)
-                    if nextSpaceIndex == -1:
-                        nextSpaceIndex=len(plotString)
-                    noString = plotString[test_end_index:nextSpaceIndex]
-                    noString = noString + plotStringDict[pc]
-
-                    # Order test numbers correctly
-                    testNos = &#39;&#39;.join(sorted(noString))
-                    plotString = plotString[:test_end_index] + testNos                             
-
-                else:
-                    plotString = plotString + plotStringDict[pc]
-        if plot==&#39;Components&#39;:
-            plotString=plotString+&#39; C+&#39;
-            for pc in st.session_state.compPlotStr:
-                plotString = plotString + plotStringDict[pc]
-        if plot==&#39;Spectrogram&#39;:
-            plotString=plotString+&#39; SPEC&#39;
-            for pc in st.session_state.specPlotStr:
-                plotString = plotString + plotStringDict[pc]
-        if plot==&#39;Azimuth&#39;:
-            plotString=plotString+&#39; AZ&#39;    
-    st.session_state.plot_type = plotString</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.update_selection_type"><code class="name flex">
 <span>def <span class="ident">update_selection_type</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def update_selection_type():
-    st.session_state.input_selection_mode = st.session_state.input_selection_toggle</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.write_to_info_tab"><code class="name flex">
 <span>def <span class="ident">write_to_info_tab</span></span>(<span>infoTab)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def write_to_info_tab(infoTab):
-    with infoTab:
-        st.markdown(&#34;# Processing Parameters Used&#34;)
-        for fun, kwargDict in funList:
-            funSig = inspect.signature(fun)
-            # excludeKeys = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
-            funMD = &#34;&#34;
-            for arg in funSig.parameters.keys():
-                if arg in st.session_state.keys():
-                    funMD = funMD + f&#34;&#34;&#34;\n    * {arg} = {st.session_state[arg]}&#34;&#34;&#34;
-
-            with st.expander(f&#34;{fun.__name__}&#34;):
-                st.write(funMD, unsafe_allow_html=True)</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.write_to_outlierTab"><code class="name flex">
 <span>def <span class="ident">write_to_outlierTab</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def write_to_outlierTab():
-    pass</code></pre>
-</details>
 <div class="desc"></div>
 </dd>
 </dl>
@@ -1277,7 +224,7 @@ def display_download_buttons():
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
 </footer>
 </body>
 </html>
