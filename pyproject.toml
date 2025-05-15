@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sprit"
-authors = [{name="Riley Balikian"}, {name="Hongyu Xaio"}]
+authors = [{name="Riley Balikian"}]
 dynamic = ["readme"]
 license = {file = "LICENSE"}
 version="2.6.5"
@@ -49,7 +49,7 @@ sprit = "*"
 
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
-"ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/index.html"
+"ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/sprit.html"
 "Github Pages API Docs" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
 "Tutorials & Wiki" = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
 
