@@ -253,7 +253,7 @@ class SPRIT_App:
         
         self.data_read = False #Initialize
         #FUNCTION TO READ DATA
-        @catch_errors
+        @_catch_errors
         def read_data():
             update_progress_bars(prog_percent=0)
             #messagebox.showinfo(title="Reading Data", message='Reading Data...')
@@ -404,9 +404,9 @@ class SPRIT_App:
                                 hvsr_results['BestPeak'][azimuth]['PassList']['SignificantCycles']+
                                 hvsr_results['BestPeak'][azimuth]['PassList']['LowCurveStDevOverTime']) > 2
             if curvePass:
-                self.totalCurveResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
+                self.totalCurveResult.configure(text=sprit_utils._check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
-                self.totalCurveResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
+                self.totalCurveResult.configure(text=sprit_utils._x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
 
             self.peakTest1ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][:-1])
             self.peakTest1Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['A(f-)'][-1])
@@ -419,9 +419,9 @@ class SPRIT_App:
 
             self.peakTest4ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['P-'][:5] + ' and ' +hvsr_results['BestPeak'][azimuth]['Report']['P+'][:-1])
             if hvsr_results['BestPeak'][azimuth]['PassList']['FreqStability']:
-                self.peakTest4Result.configure(text=sprit_utils.check_mark())
+                self.peakTest4Result.configure(text=sprit_utils._check_mark())
             else:
-                self.peakTest4Result.configure(text=sprit_utils.x_mark())
+                self.peakTest4Result.configure(text=sprit_utils._x_mark())
 
             self.peakTest5ResultText.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sf'][:-1])
             self.peakTest5Result.configure(text=hvsr_results['BestPeak'][azimuth]['Report']['Sf'][-1])
@@ -436,19 +436,19 @@ class SPRIT_App:
                     hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_FreqStD']+
                     hvsr_results['BestPeak'][azimuth]['PassList']['PeakStability_AmpStD']) >= 5
             if peakPass:
-                self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
+                self.totalPeakResult.configure(text=sprit_utils._check_mark(), font=("TkDefaultFont", 16, "bold"), foreground='green')
             else:
-                self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
+                self.totalPeakResult.configure(text=sprit_utils._x_mark(), font=("TkDefaultFont", 16, "bold"), foreground='red')
 
             if curvePass and peakPass:
-                self.totalResult.configure(text=f'Pass {sprit_utils.check_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='green')
+                self.totalResult.configure(text=f'Pass {sprit_utils._check_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='green')
             else:
-                self.totalResult.configure(text=f'Fail {sprit_utils.x_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='red')
+                self.totalResult.configure(text=f'Fail {sprit_utils._x_mark()}', font=("TkDefaultFont", 22, "bold"), foreground='red')
 
             sprit_hvsr.plot_hvsr(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
-        #FUNCTION TO PROCESS DATA
-        @catch_errors
+        # FUNCTION TO PROCESS DATA
+        @_catch_errors
         def process_data():
             update_progress_bars(prog_percent=0)
             #messagebox.showinfo("Processing Data", 'Processing Data...')
@@ -2982,7 +2982,7 @@ class SPRIT_App:
 
 
 #Decorator that catches errors and warnings (to be modified later for gui)
-def catch_errors(func):
+def _catch_errors(func):
     global spritApp
 
     #Define a local function to get a list of warnings that we'll use in the output
@@ -3100,7 +3100,7 @@ def reboot_app():
     os.execl(python, python, * sys.argv)
 
 if __name__ == "__main__":
-    can_gui = sprit_utils.check_gui_requirements()  
+    can_gui = sprit_utils._check_gui_requirements()  
 
     if can_gui:
         global root

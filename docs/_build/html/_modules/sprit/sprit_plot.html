@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.6.4 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.6.5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=5248d183"></script>
+        <script src="../../_static/documentation_options.js?v=f630559a"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -427,6 +427,18 @@
 <div class="viewcode-block" id="parse_plot_string">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_plot_string">[docs]</a>
 <span class="k">def</span> <span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to parse a plot string into a list readable by plotting functions</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    plot_string : str</span>
+<span class="sd">        Plot string used by sprit.plot_hvsr to define results plot</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        A list readable by various sprit plotting functions to show what to include in the results plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">plot_list</span> <span class="o">=</span> <span class="n">plot_string</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
     <span class="n">hvsrList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;hv&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">]</span>
@@ -491,6 +503,24 @@
 <div class="viewcode-block" id="parse_hv_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_hv_plot_list">[docs]</a>
 <span class="k">def</span> <span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;HV&quot; subplot of the restults plot</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : HVSRData object</span>
+<span class="sd">        _description_</span>
+<span class="sd">    hvsr_plot_list : list</span>
+<span class="sd">        List produced by parse_plot_string</span>
+<span class="sd">    results_fig : matplotlib.Figure, optional</span>
+<span class="sd">        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None</span>
+<span class="sd">    azimuth : str, optional</span>
+<span class="sd">        Azimuth to use for calculation, by default &#39;HV&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matplotlib.figure.Figure</span>
+<span class="sd">        Figure with HV plot per input hvsr_plot_list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
     <span class="n">hv_plot_list</span> <span class="o">=</span> <span class="n">hvsr_plot_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">x_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span>
@@ -629,7 +659,26 @@
 <div class="viewcode-block" id="parse_comp_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_comp_plot_list">[docs]</a>
 <span class="k">def</span> <span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">plot_with_hv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;Components&quot; subplot of the results plot</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : HVSRData object</span>
+<span class="sd">        _description_</span>
+<span class="sd">    comp_plot_list : list</span>
+<span class="sd">        List produced by parse_plot_string</span>
+<span class="sd">    plot_with_hv : bool, default=False</span>
+<span class="sd">        Whether to plot in same subplot as HV curve</span>
+<span class="sd">    results_fig : matplotlib.Figure, optional</span>
+<span class="sd">        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None</span>
+<span class="sd">    azimuth : str, optional</span>
+<span class="sd">        Azimuth to use for calculation, by default &#39;HV&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matplotlib.figure.Figure</span>
+<span class="sd">        Figure with Components plot per input comp_plot_list</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
     <span class="k">if</span> <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">results_fig</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
@@ -795,6 +844,27 @@
 <div class="viewcode-block" id="parse_spec_plot_list">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_spec_plot_list">[docs]</a>
 <span class="k">def</span> <span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;Spectrogram&quot; subplot of the results plot</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : HVSRData object</span>
+<span class="sd">        _description_</span>
+<span class="sd">    spec_plot_list : list</span>
+<span class="sd">        List produced by parse_plot_string</span>
+<span class="sd">    subplot_num : bool, default=False</span>
+<span class="sd">        Which subplot to plot the spectrogram style plot in</span>
+<span class="sd">    results_fig : matplotlib.Figure, optional</span>
+<span class="sd">        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None</span>
+<span class="sd">    azimuth : str, optional</span>
+<span class="sd">        Azimuth to use for calculation, by default &#39;HV&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matplotlib.figure.Figure</span>
+<span class="sd">        Figure with specgram plot per input spec_plot_list</span>
+<span class="sd">    &quot;&quot;&quot;</span>   
+    
     <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
 
     <span class="k">if</span> <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -883,7 +953,36 @@
                 <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">results_graph_widget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_figure_widget</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">html_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,):</span>
-    
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot results using plotly</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : sprit.HVSRData</span>
+<span class="sd">        Data object to use for plotting</span>
+<span class="sd">    plot_string : str, optional</span>
+<span class="sd">        String for designating what to include in plot(s), by default &#39;HVSR p ann C+ p SPEC ann&#39;</span>
+<span class="sd">    results_fig : pyplot figure, optional</span>
+<span class="sd">        Which pyplot figure to plot data onto. If None, makes new figure, by default None.</span>
+<span class="sd">    results_graph_widget : plotly graph object widget, optional</span>
+<span class="sd">        Which pyplot figure to plot data onto. If None, makes new widget, if applicable, by default None.</span>
+<span class="sd">    use_figure_widget : bool, optional</span>
+<span class="sd">        Whether to use figure widget, by default False</span>
+<span class="sd">    return_fig : bool, optional</span>
+<span class="sd">        Whether to return figure, by default False</span>
+<span class="sd">    show_results_plot : bool, optional</span>
+<span class="sd">        Wheather to show plot, by default False</span>
+<span class="sd">    html_plot : bool, optional</span>
+<span class="sd">        Whether to create an HTML version of the plot, by default False</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to print information to terminal, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    plotly figure</span>
+<span class="sd">        Only if return_fig is True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">if</span> <span class="n">results_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">results_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">FigureWidget</span><span class="p">()</span>
 
@@ -1144,6 +1243,28 @@
                         <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> 
                         <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot input stream using plotly.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : HVSRData</span>
+<span class="sd">    stream : obspy.stream.Stream</span>
+<span class="sd">        Can explictly specify stream instead of using hv_data object.</span>
+<span class="sd">    input_fig : plotly.Figure</span>
+<span class="sd">        Plotly figure to plot input stream on. If None, creates new one. Default is None.</span>
+<span class="sd">    spectrogram_component : str, default=&#39;Z&#39;</span>
+<span class="sd">        Which component to use for the spectrogram</span>
+<span class="sd">    show_plot : bool, default=True</span>
+<span class="sd">        Whether to show plot or just generate it.</span>
+<span class="sd">    return_fig : bool, default=False</span>
+<span class="sd">        Whether to return figure</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    plotly figure</span>
+<span class="sd">        Only returned if return_fig is True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="s1">&#39;stream&#39;</span><span class="p">):</span>
         <span class="n">stream</span> <span class="o">=</span> <span class="n">hv_data</span><span class="o">.</span><span class="n">stream</span>
 
@@ -1298,6 +1419,28 @@
 
 
 <span class="k">def</span> <span class="nf">_plot_input_stream</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function/alternative to plot_input_stream</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hv_data : HVSRData</span>
+<span class="sd">    stream : obspy.stream.Stream</span>
+<span class="sd">        Can explictly specify stream instead of using hv_data object.</span>
+<span class="sd">    input_fig : plotly.Figure</span>
+<span class="sd">        Plotly figure to plot input stream on. If None, creates new one. Default is None.</span>
+<span class="sd">    spectrogram_component : str, default=&#39;Z&#39;</span>
+<span class="sd">        Which component to use for the spectrogram</span>
+<span class="sd">    show_plot : bool, default=True</span>
+<span class="sd">        Whether to show plot or just generate it.</span>
+<span class="sd">    return_fig : bool, default=False</span>
+<span class="sd">        Whether to return figure</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    plotly figure</span>
+<span class="sd">        Only returned if return_fig is True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">input_fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">preview_subp</span> <span class="o">=</span> <span class="n">subplots</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">row_heights</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
         <span class="c1">#input_fig = go.FigureWidget(preview_subp)</span>
@@ -1392,8 +1535,37 @@
 
 <div class="viewcode-block" id="plot_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_outlier_curves">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">plotly_module</span><span class="o">=</span><span class="s1">&#39;go&#39;</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    
+<span class="k">def</span> <span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">plotly_module</span><span class="o">=</span><span class="s1">&#39;go&#39;</span><span class="p">,</span> 
+                        <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                        <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Functio to plot outlier curves, including which have been excluded</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : HVSRData</span>
+<span class="sd">        Input data object</span>
+<span class="sd">    plot_engine : str = {&#39;plotly&#39;, &#39;matplotlib&#39;}</span>
+<span class="sd">        Which plotting library to use, by default &#39;plotly&#39;</span>
+<span class="sd">    plotly_module : str = {&#39;go&#39;, &#39;px&#39;}</span>
+<span class="sd">        Which plotly module to use if applicable, by default &#39;go&#39;</span>
+<span class="sd">    rmse_thresh : float, optional</span>
+<span class="sd">        RMSE threshold (for removing outliers), by default 0.98</span>
+<span class="sd">    use_percentile : bool, optional</span>
+<span class="sd">        Whether to use percentile or raw value, by default True</span>
+<span class="sd">    use_hv_curve : bool, optional</span>
+<span class="sd">        Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False</span>
+<span class="sd">    from_roc : bool, optional</span>
+<span class="sd">        Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False</span>
+<span class="sd">    show_plot : bool, optional</span>
+<span class="sd">        Whether to show plot, by default True</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to print information to terminal, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    plotly figure</span>
+<span class="sd">        Figure type depends on plotly_module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">orig_args</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>    
     
     <span class="n">hv_data</span> <span class="o">=</span> <span class="n">hvsr_data</span>
@@ -1855,7 +2027,68 @@
                        <span class="n">depth_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">minimum_elevation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_bedrock_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                        <span class="n">return_data_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_cross_section</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Functio to plot a cross section given an HVSRBatch or similar object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : HVSRBatch, list, or similar</span>
+<span class="sd">        HVSRBatch (intended usage) object with HVSRData objects to show in profile/cross section view</span>
+<span class="sd">    title : str, optional</span>
+<span class="sd">        Title to use for plot, by default None</span>
+<span class="sd">    fig : matplotlib.Figure, optional</span>
+<span class="sd">        Figure to use for plot, by default None</span>
+<span class="sd">    ax : matplotlib.Axis, optional</span>
+<span class="sd">        Axis to use for plot, by default None</span>
+<span class="sd">    use_elevation : bool, optional</span>
+<span class="sd">        Whether to use elevation (if True) or depth (if False), by default True</span>
+<span class="sd">    show_feet : bool, optional</span>
+<span class="sd">        Whether to show feet (if True) or meters (if False), by default False</span>
+<span class="sd">    primary_unit : str, optional</span>
+<span class="sd">        Primary unit to use (&#39;m&#39; or &#39;ft&#39;), by default &#39;m&#39;</span>
+<span class="sd">    show_curves : bool, optional</span>
+<span class="sd">        Whether to also show curves on plot, by default True</span>
+<span class="sd">    annotate_curves : bool, optional</span>
+<span class="sd">        Whether to annotate curves by plotting site names next to them, by default False</span>
+<span class="sd">    curve_alignment : str, optional</span>
+<span class="sd">        How to horizontally align the curve. </span>
+<span class="sd">        If &quot;peak&quot; the curve will be aligned so that the peak is at the correct latitude or longitude.</span>
+<span class="sd">        If &quot;max&quot; will align the maximum point of the curve to the correct location.</span>
+<span class="sd">        If any other value, will align at the surface (i.e., highest frequency). By default &#39;peak&#39;.</span>
+<span class="sd">    grid_size : list, optional</span>
+<span class="sd">        Two item list with height and width of grid for interpolation.</span>
+<span class="sd">        If &quot;auto&quot; this will be calculated based on the data, by default &#39;auto&#39;.</span>
+<span class="sd">    orientation : str, optional</span>
+<span class="sd">        The orientation of the cross section. </span>
+<span class="sd">        Should be either &quot;WE&quot;, &quot;EW&quot;, &quot;NS&quot;, or &quot;SN&quot;, by default &#39;WE&#39;.</span>
+<span class="sd">    interpolation_type : str, optional</span>
+<span class="sd">        Interpolation type to use. Uses scipy.interpolation.</span>
+<span class="sd">        Options include: &#39;cloughtocher&#39;, &#39;nearest neighbor&#39;, &#39;linear&#39;, </span>
+<span class="sd">        or &#39;radial basis function&#39;, by default &#39;cloughtocher&#39;.</span>
+<span class="sd">    surface_elevations : shapely.LineString, optional</span>
+<span class="sd">        A shapely.LineString object containing surface elevation coordinates along cross section path.</span>
+<span class="sd">        If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.</span>
+<span class="sd">    show_peak_points : bool, optional</span>
+<span class="sd">        Whether to plot small triangles where peaks were picked, by default True</span>
+<span class="sd">    smooth_bedrock_surface : bool, optional</span>
+<span class="sd">        Whether to smooth the bedrock surface when plotting, by default False</span>
+<span class="sd">    depth_limit : int, optional</span>
+<span class="sd">        Depth limit for the plot, by default 150</span>
+<span class="sd">    minimum_elevation : _type_, optional</span>
+<span class="sd">        Minimum elevation of the plot, by default None</span>
+<span class="sd">    show_bedrock_surface : bool, optional</span>
+<span class="sd">        Whether to show the bedrock surface, by default True</span>
+<span class="sd">    return_data_batch : bool, optional</span>
+<span class="sd">        Whether to return the HVSRBatch object, by default True</span>
+<span class="sd">    show_cross_section : bool, optional</span>
+<span class="sd">        Whether to show the cross section plot, by default True</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to print information about the process to terminal, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    figure</span>
+<span class="sd">        Currently only matplotlib figure supported</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting cross section plot configuration&quot;</span><span class="p">)</span>
         
@@ -2080,6 +2313,8 @@
                 <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span>  <span class="o">-</span> <span class="n">normal_peak_factor</span>
             <span class="k">elif</span> <span class="n">curve_alignment</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
                 <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span>  <span class="o">-</span> <span class="n">normal_factor</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>
             
             <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">):</span>
                 <span class="n">locatedCurve</span> <span class="o">=</span> <span class="n">locatedCurve</span> <span class="o">-</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">locatedCurve</span><span class="p">)</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">gridXcoords</span><span class="p">))</span>

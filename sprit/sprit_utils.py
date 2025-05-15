@@ -21,7 +21,7 @@ except Exception: #For testing
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
-def assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
+def _assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
     if var_type is not None:
         assert isinstance(var, var_type), error_message
         if verbose:
@@ -37,7 +37,7 @@ def assert_check(var, cond=None, var_type=None, error_message='Output not valid'
             print(f"test condition is met.")
   
 
-def check_gui_requirements():
+def _check_gui_requirements():
     #First, check requirements
     # Define a command that tries to open a window
     command = "python -c \"import tkinter; tkinter.Tk()\""
@@ -67,24 +67,24 @@ def check_gui_requirements():
 
 
 #Get check mark
-def check_mark(incolor=False, interminal=False):
+def _check_mark(incolor=False, interminal=False):
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
     if incolor:
         try:
-            check = get_char(u'\u2705')
+            check = _get_char(u'\u2705')
         except Exception:
-            check = get_char(u'\u2714')
+            check = _get_char(u'\u2714')
     else:
-        check = get_char(u'\u2714')
+        check = _get_char(u'\u2714')
 
     if sys.platform=='win32' and interminal:
-        check = get_char(u'\u039E')
+        check = _get_char(u'\u039E')
     return check
 
 
 #Converts filepaths to pathlib paths, if not already
-def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
+def _checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
     Parameters
@@ -115,13 +115,13 @@ def checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
             if verbose:
                 warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
         if not filepath.exists():
-            
             raise RuntimeError('File does not exist: {}'.format(filepath))
+
     return filepath
 
 
-#Check to make the number of time-steps are the same for each channel
-def check_tsteps(hvsr_data):
+# Check to make the number of time-steps are the same for each channel
+def _check_tsteps(hvsr_data):
     """Check time steps of PPSDS to make sure they are all the same length"""
     ppsds = hvsr_data['ppsds']
     tSteps = []
@@ -137,7 +137,7 @@ def check_tsteps(hvsr_data):
 
 
 #Check the x-values for each channel, to make sure they are all the same length
-def check_xvalues(ppsds):
+def _check_xvalues(ppsds):
     """Check x_values of PPSDS to make sure they are all the same length"""
     xLengths = []
     for k in ppsds.keys():
@@ -198,7 +198,7 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
 
 
 #Formats time into desired output
-def format_time(inputDT, tzone='UTC'):
+def _format_time(inputDT, tzone='UTC'):
     """Private function to format time, used in other functions
 
     Formats input time to datetime objects in utc
@@ -369,7 +369,7 @@ def format_time(inputDT, tzone='UTC'):
 
 
 #Get character for printing
-def get_char(in_char):
+def _get_char(in_char):
     """Outputs character with proper encoding/decoding"""
     if in_char in greek_chars.keys():
         out_char = greek_chars[in_char].encode(encoding='utf-8')
@@ -379,7 +379,7 @@ def get_char(in_char):
 
 
 # Get default dictionary with keys=parameter names and values=default values
-def get_default_args(func):
+def _get_default_args(func):
     signature = inspect.signature(func)
     return {
         k: v.default
@@ -409,7 +409,7 @@ def _get_error_from_exception(exception=None, print_error_message=True, return_e
 
 
 #Check that input strema has Z, E, N channels
-def has_required_channels(stream):
+def _has_required_channels(stream):
     channel_set = set()
     
     # Extract the channel codes from the traces in the stream
@@ -420,7 +420,7 @@ def has_required_channels(stream):
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
 #Make input data (dict) into sprit_hvsr class
-def make_it_classy(input_data, verbose=False):
+def _make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         for k, v in input_data.items():
             if k=='input_params':
@@ -439,7 +439,7 @@ def make_it_classy(input_data, verbose=False):
     return output_class
 
 #Read data directly from Raspberry Shake
-def read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
+def _read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
     src = src.replace('SHAKENAME', username)
     src = src.replace('SHAKENAME', hostname)
     src = src.replace('YEAR', year)
@@ -570,9 +570,10 @@ def _run_docstring():
     run_docstring = dsIntro + dsParameters + f"{nl.join(funcStrList)}\n\n" + dsReturns
     return run_docstring
 
-#Time functions, for timing how long a process takes
-def time_it(_t, proc_name='', verbose=True):
+# Time functions, for timing how long a process takes
+def _time_it(_t, proc_name='', verbose=True):
     """Computes elapsed time since the last call."""
+    
     t1 = datetime.datetime.now().time()
     dt = t1 - _t
     t = _t
@@ -583,16 +584,15 @@ def time_it(_t, proc_name='', verbose=True):
     return t
 
 #Get x mark (for negative test results)
-def x_mark(incolor=False, inTerminal=False):
+def _x_mark(incolor=False, inTerminal=False):
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
     
     if incolor:
         try:
-            xmark = get_char(u'\u274C')
+            xmark = _get_char(u'\u274C')
         except Exception:
-            xmark = get_char(u'\u2718')
+            xmark = _get_char(u'\u2718')
     else:
-        xmark = get_char(u'\u2718')
+        xmark = _get_char(u'\u2718')
     return xmark
-

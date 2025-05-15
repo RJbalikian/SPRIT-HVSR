@@ -328,6 +328,18 @@ def process_data(button):
     
 
 def parse_plot_string(plot_string):
+    """Function to parse a plot string into a list readable by plotting functions
+
+    Parameters
+    ----------
+    plot_string : str
+        Plot string used by sprit.plot_hvsr to define results plot
+
+    Returns
+    -------
+    list
+        A list readable by various sprit plotting functions to show what to include in the results plot.
+    """
     plot_list = plot_string.split()
 
     hvsrList = ['hvsr', 'hv', 'h']
@@ -389,6 +401,24 @@ def parse_plot_string(plot_string):
 
 
 def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
+    """Function to plot the internal list used by the "HV" subplot of the restults plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    hvsr_plot_list : list
+        List produced by parse_plot_string
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default 'HV'
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with HV plot per input hvsr_plot_list
+    """
     hvsr_data = hv_data
     hv_plot_list = hvsr_plot_list[0]
     x_data = hvsr_data.x_freqs['Z']
@@ -524,7 +554,26 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
 
 
 def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fig=None, azimuth='HV'):
-    
+    """Function to plot the internal list used by the "Components" subplot of the results plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    comp_plot_list : list
+        List produced by parse_plot_string
+    plot_with_hv : bool, default=False
+        Whether to plot in same subplot as HV curve
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default 'HV'
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with Components plot per input comp_plot_list
+    """    
     hvsr_data = hv_data
     if results_fig is None:
         results_fig=go.Figure()
@@ -687,6 +736,27 @@ def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fi
 
 
 def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None, azimuth='HV'):
+    """Function to plot the internal list used by the "Spectrogram" subplot of the results plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    spec_plot_list : list
+        List produced by parse_plot_string
+    subplot_num : bool, default=False
+        Which subplot to plot the spectrogram style plot in
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default 'HV'
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with specgram plot per input spec_plot_list
+    """   
+    
     hvsr_data = hv_data
 
     if results_fig is None:
@@ -773,6 +843,35 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
                 return_fig=False, show_results_plot=False, html_plot=False,
                 verbose=False,):
     
+    """Function to plot results using plotly
+
+    Parameters
+    ----------
+    hv_data : sprit.HVSRData
+        Data object to use for plotting
+    plot_string : str, optional
+        String for designating what to include in plot(s), by default 'HVSR p ann C+ p SPEC ann'
+    results_fig : pyplot figure, optional
+        Which pyplot figure to plot data onto. If None, makes new figure, by default None.
+    results_graph_widget : plotly graph object widget, optional
+        Which pyplot figure to plot data onto. If None, makes new widget, if applicable, by default None.
+    use_figure_widget : bool, optional
+        Whether to use figure widget, by default False
+    return_fig : bool, optional
+        Whether to return figure, by default False
+    show_results_plot : bool, optional
+        Wheather to show plot, by default False
+    html_plot : bool, optional
+        Whether to create an HTML version of the plot, by default False
+    verbose : bool, optional
+        Whether to print information to terminal, by default False
+
+    Returns
+    -------
+    plotly figure
+        Only if return_fig is True.
+    """
+
     if results_fig is None:
         results_fig = go.FigureWidget()
 
@@ -1030,6 +1129,28 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
                         spectrogram_component='Z', 
                         show_plot=True, return_fig=False):
 
+    """Function to plot input stream using plotly.
+    
+    Parameters
+    ----------
+    hv_data : HVSRData
+    stream : obspy.stream.Stream
+        Can explictly specify stream instead of using hv_data object.
+    input_fig : plotly.Figure
+        Plotly figure to plot input stream on. If None, creates new one. Default is None.
+    spectrogram_component : str, default='Z'
+        Which component to use for the spectrogram
+    show_plot : bool, default=True
+        Whether to show plot or just generate it.
+    return_fig : bool, default=False
+        Whether to return figure
+
+    Returns
+    -------
+    plotly figure
+        Only returned if return_fig is True
+    """
+
     if stream is None and hasattr(hv_data, 'stream'):
         stream = hv_data.stream
 
@@ -1183,6 +1304,28 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
 
 
 def _plot_input_stream(hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False):
+    """Helper function/alternative to plot_input_stream
+
+    Parameters
+    ----------
+    hv_data : HVSRData
+    stream : obspy.stream.Stream
+        Can explictly specify stream instead of using hv_data object.
+    input_fig : plotly.Figure
+        Plotly figure to plot input stream on. If None, creates new one. Default is None.
+    spectrogram_component : str, default='Z'
+        Which component to use for the spectrogram
+    show_plot : bool, default=True
+        Whether to show plot or just generate it.
+    return_fig : bool, default=False
+        Whether to return figure
+
+    Returns
+    -------
+    plotly figure
+        Only returned if return_fig is True
+
+    """
     if input_fig is None:
         preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
         #input_fig = go.FigureWidget(preview_subp)
@@ -1275,8 +1418,37 @@ def _plot_input_stream(hv_data, stream=None, input_fig=None, spectrogram_compone
         return input_fig
 
 
-def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False):
-    
+def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', 
+                        rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, 
+                        from_roc=False, show_plot=True, verbose=False):
+    """Functio to plot outlier curves, including which have been excluded
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData
+        Input data object
+    plot_engine : str = {'plotly', 'matplotlib'}
+        Which plotting library to use, by default 'plotly'
+    plotly_module : str = {'go', 'px'}
+        Which plotly module to use if applicable, by default 'go'
+    rmse_thresh : float, optional
+        RMSE threshold (for removing outliers), by default 0.98
+    use_percentile : bool, optional
+        Whether to use percentile or raw value, by default True
+    use_hv_curve : bool, optional
+        Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False
+    from_roc : bool, optional
+        Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False
+    show_plot : bool, optional
+        Whether to show plot, by default True
+    verbose : bool, optional
+        Whether to print information to terminal, by default False
+
+    Returns
+    -------
+    plotly figure
+        Figure type depends on plotly_module
+    """
     orig_args = locals().copy()    
     
     hv_data = hvsr_data
@@ -1732,7 +1904,68 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
                        return_data_batch=True, show_cross_section=True, verbose=False,
                        **kwargs):
-    
+    """Functio to plot a cross section given an HVSRBatch or similar object
+
+    Parameters
+    ----------
+    hvsr_data : HVSRBatch, list, or similar
+        HVSRBatch (intended usage) object with HVSRData objects to show in profile/cross section view
+    title : str, optional
+        Title to use for plot, by default None
+    fig : matplotlib.Figure, optional
+        Figure to use for plot, by default None
+    ax : matplotlib.Axis, optional
+        Axis to use for plot, by default None
+    use_elevation : bool, optional
+        Whether to use elevation (if True) or depth (if False), by default True
+    show_feet : bool, optional
+        Whether to show feet (if True) or meters (if False), by default False
+    primary_unit : str, optional
+        Primary unit to use ('m' or 'ft'), by default 'm'
+    show_curves : bool, optional
+        Whether to also show curves on plot, by default True
+    annotate_curves : bool, optional
+        Whether to annotate curves by plotting site names next to them, by default False
+    curve_alignment : str, optional
+        How to horizontally align the curve. 
+        If "peak" the curve will be aligned so that the peak is at the correct latitude or longitude.
+        If "max" will align the maximum point of the curve to the correct location.
+        If any other value, will align at the surface (i.e., highest frequency). By default 'peak'.
+    grid_size : list, optional
+        Two item list with height and width of grid for interpolation.
+        If "auto" this will be calculated based on the data, by default 'auto'.
+    orientation : str, optional
+        The orientation of the cross section. 
+        Should be either "WE", "EW", "NS", or "SN", by default 'WE'.
+    interpolation_type : str, optional
+        Interpolation type to use. Uses scipy.interpolation.
+        Options include: 'cloughtocher', 'nearest neighbor', 'linear', 
+        or 'radial basis function', by default 'cloughtocher'.
+    surface_elevations : shapely.LineString, optional
+        A shapely.LineString object containing surface elevation coordinates along cross section path.
+        If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.
+    show_peak_points : bool, optional
+        Whether to plot small triangles where peaks were picked, by default True
+    smooth_bedrock_surface : bool, optional
+        Whether to smooth the bedrock surface when plotting, by default False
+    depth_limit : int, optional
+        Depth limit for the plot, by default 150
+    minimum_elevation : _type_, optional
+        Minimum elevation of the plot, by default None
+    show_bedrock_surface : bool, optional
+        Whether to show the bedrock surface, by default True
+    return_data_batch : bool, optional
+        Whether to return the HVSRBatch object, by default True
+    show_cross_section : bool, optional
+        Whether to show the cross section plot, by default True
+    verbose : bool, optional
+        Whether to print information about the process to terminal, by default False
+
+    Returns
+    -------
+    figure
+        Currently only matplotlib figure supported
+    """
     if verbose:
         print("Getting cross section plot configuration")
         
@@ -1957,6 +2190,8 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
                 locatedCurve = locatedCurve  - normal_peak_factor
             elif curve_alignment.lower() == 'max':
                 locatedCurve = locatedCurve  - normal_factor
+            else:
+                pass
             
             if max(locatedCurve) > max(gridXcoords):
                 locatedCurve = locatedCurve - (max(locatedCurve) - max(gridXcoords))

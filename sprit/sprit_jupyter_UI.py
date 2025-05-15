@@ -31,10 +31,17 @@ global hvsr_data
     
 OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
-def get_default(func, param):
+def _get_default(func, param):
     return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
+    """Function that generates the user interface for Jupyter Notebooks.
+    
+    This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook. 
+    
+    As of version 2.6.5, this is broken but there are plans to fix in the near future.
+
+    """
     global hvsr_data
 
     ui_width = 20
@@ -53,29 +60,29 @@ def create_jupyter_ui():
     # Metadata accordion
     metadata_grid = widgets.GridspecLayout(7, 10)
     network_textbox = widgets.Text(description='Network:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'network'),
-                                    value=get_default(sprit_hvsr.input_params, 'network'),
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'network'),
+                                    value=_get_default(sprit_hvsr.input_params, 'network'),
                                     tooltip="input_params(network)")
 
     station_textbox = widgets.Text(description='Station:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'station'),
-                                    value=get_default(sprit_hvsr.input_params, 'station'))
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'station'),
+                                    value=_get_default(sprit_hvsr.input_params, 'station'))
 
     location_textbox = widgets.Text(description='Location:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'location'),
-                                    value=get_default(sprit_hvsr.input_params, 'location'))
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'location'),
+                                    value=_get_default(sprit_hvsr.input_params, 'location'))
 
     z_channel_textbox = widgets.Text(description='Z Channel:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[0],
-                                    value=get_default(sprit_hvsr.input_params, 'channels')[0])
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'channels')[0],
+                                    value=_get_default(sprit_hvsr.input_params, 'channels')[0])
 
     e_channel_textbox = widgets.Text(description='E Channel:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[2],
-                                    value=get_default(sprit_hvsr.input_params, 'channels')[2])
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'channels')[2],
+                                    value=_get_default(sprit_hvsr.input_params, 'channels')[2])
 
     n_channel_textbox = widgets.Text(description='N Channel:',
-                                    placeholder=get_default(sprit_hvsr.input_params, 'channels')[1],
-                                    value=get_default(sprit_hvsr.input_params, 'channels')[1])
+                                    placeholder=_get_default(sprit_hvsr.input_params, 'channels')[1],
+                                    value=_get_default(sprit_hvsr.input_params, 'channels')[1])
 
 
     # Instrument Settings
@@ -208,7 +215,7 @@ def create_jupyter_ui():
     tzlist.insert(0, 'US/Central')
     tzlist.insert(0, 'UTC')
     # A dropdown list with all the items from zoneinfo.available_timezones(), default 'UTC'
-    time_zone_dropdown = widgets.Dropdown(options=tzlist,value=get_default(sprit_hvsr.input_params, 'tzone'),
+    time_zone_dropdown = widgets.Dropdown(options=tzlist,value=_get_default(sprit_hvsr.input_params, 'tzone'),
                                             description='Time Zone:',layout=widgets.Layout(width='fill'))
 
     instrument_grid[0,0] = acquisition_date_picker
@@ -221,28 +228,28 @@ def create_jupyter_ui():
     location_grid = widgets.GridspecLayout(4, 10)
     # X coordinate input
     xcoord_textbox = widgets.FloatText(description='X Coordinate:', tooltip='xcoord',
-                                        value=get_default(sprit_hvsr.input_params, 'xcoord'), 
-                                        placeholder=get_default(sprit_hvsr.input_params, 'xcoord'),
+                                        value=_get_default(sprit_hvsr.input_params, 'xcoord'), 
+                                        placeholder=_get_default(sprit_hvsr.input_params, 'xcoord'),
                                         layout=widgets.Layout(width='auto'))
     location_grid[0, 0] = xcoord_textbox
 
     # Y coordinate input
     ycoord_textbox = widgets.FloatText(description='Y Coordinate', tooltip='ycoord:',
-                                        value=get_default(sprit_hvsr.input_params, 'ycoord'), 
-                                        placeholder=get_default(sprit_hvsr.input_params, 'ycoord'),
+                                        value=_get_default(sprit_hvsr.input_params, 'ycoord'), 
+                                        placeholder=_get_default(sprit_hvsr.input_params, 'ycoord'),
                                         layout=widgets.Layout(width='auto'))
     location_grid[1, 0] = ycoord_textbox
 
     # Z coordinate input
     zcoord_textbox = widgets.FloatText(description='Z Coordinate', tooltip='elevation:',
-                                        value=get_default(sprit_hvsr.input_params, 'elevation'),
-                                        placeholder=get_default(sprit_hvsr.input_params, 'elevation'),                                     
+                                        value=_get_default(sprit_hvsr.input_params, 'elevation'),
+                                        placeholder=_get_default(sprit_hvsr.input_params, 'elevation'),                                     
                                         layout=widgets.Layout(width='auto'))
     location_grid[2, 0] = zcoord_textbox
 
     # Z coordinate unit input
     elevation_unit_textbox = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
-                                                value=get_default(sprit_hvsr.input_params, 'elev_unit'),
+                                                value=_get_default(sprit_hvsr.input_params, 'elev_unit'),
                                                 description='Z Unit:', tooltip='elev_unit',
                                                 layout=widgets.Layout(width='auto'))
     location_grid[2, 1] = elevation_unit_textbox
@@ -250,15 +257,15 @@ def create_jupyter_ui():
     # Input CRS input
     input_crs_textbox = widgets.Text(description='Input CRS:',
                                         layout=widgets.Layout(width='auto'),
-                                        placholder=get_default(sprit_hvsr.input_params, 'input_crs'),
-                                        value=get_default(sprit_hvsr.input_params, 'input_crs'))
+                                        placholder=_get_default(sprit_hvsr.input_params, 'input_crs'),
+                                        value=_get_default(sprit_hvsr.input_params, 'input_crs'))
     location_grid[3, 0] = input_crs_textbox
 
     # Output CRS input
     output_crs_textbox = widgets.Text(description='Output CRS:',
                                         layout=widgets.Layout(width='auto'),
-                                        placholder=get_default(sprit_hvsr.input_params, 'output_crs'),
-                                        value=get_default(sprit_hvsr.input_params, 'output_crs'))
+                                        placholder=_get_default(sprit_hvsr.input_params, 'output_crs'),
+                                        value=_get_default(sprit_hvsr.input_params, 'output_crs'))
     location_grid[3, 1] = output_crs_textbox
 
     # IO PARAMS ACCORDION
@@ -271,26 +278,26 @@ def create_jupyter_ui():
             description='Data Formats:', layout=widgets.Layout(width='auto'))
 
     hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]', style={'description_width': 'initial'},
-                                          placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[0],
-                                          value=get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
-    hvsr_band_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'hvsr_band')[1],
-                                          value=get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
+                                          placeholder=_get_default(sprit_hvsr.input_params, 'hvsr_band')[0],
+                                          value=_get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
+    hvsr_band_max_box = widgets.FloatText(placeholder=_get_default(sprit_hvsr.input_params, 'hvsr_band')[1],
+                                          value=_get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
     hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width='auto'))
 
 
-    peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
-                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],
+    peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
+                                                value=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],
                                                 style={'description_width': 'initial'}, layout=widgets.Layout(width='auto'))
-    peak_freq_range_max_box = widgets.FloatText(placeholder=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
-                                                value=get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
+    peak_freq_range_max_box = widgets.FloatText(placeholder=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
+                                                value=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
     peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width='auto'))
 
 
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
                             description='Detrend Type:',  layout=widgets.Layout(width='auto'))
-    detrend_options = widgets.FloatText(description='Order:', tooltip='detrend_options', placeholder=get_default(sprit_hvsr.fetch_data, 'detrend_options'), 
-                                      value=get_default(sprit_hvsr.fetch_data, 'detrend_options'),layout=widgets.Layout(width='auto'))
+    detrend_options = widgets.FloatText(description='Order:', tooltip='detrend_options', placeholder=_get_default(sprit_hvsr.fetch_data, 'detrend_options'), 
+                                      value=_get_default(sprit_hvsr.fetch_data, 'detrend_options'),layout=widgets.Layout(width='auto'))
 
     # A text to specify the trim directory
     trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
@@ -1613,7 +1620,7 @@ def create_jupyter_ui():
 
     outlier_thresh_slider_label = widgets.Label(value='RMSE Thresholds:')
     rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),disabled=True)
-    rmse_pctile_slider = widgets.FloatSlider(value=get_default(sprit_hvsr.remove_outlier_curves, 'rmse_thresh'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
+    rmse_pctile_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, 'rmse_thresh'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
     
     def calc_rmse(array_2d):
         medArray = np.nanmedian(array_2d, axis=0)
@@ -2010,7 +2017,7 @@ def create_jupyter_ui():
     mpl_kwargs = widgets.Text(style={'description_width': 'initial'},
                                 layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    plot_hvsr_call = widgets.Label(value=f"Plot String: '{get_default(sprit_hvsr.get_report, 'plot_type')}'")
+    plot_hvsr_call = widgets.Label(value=f"Plot String: '{_get_default(sprit_hvsr.get_report, 'plot_type')}'")
     def update_plot_string():
         plot_hvsr_text = f"""Plot String: {get_get_report_kwargs()['plot_type']}"""
         plot_hvsr_call.value = plot_hvsr_text

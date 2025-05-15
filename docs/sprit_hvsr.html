@@ -40,7 +40,8 @@ hljs.highlightAll();
 <span>def <span class="ident">batch_data_read</span></span>(<span>batch_data, batch_type='table', param_col=None, batch_params=None, verbose=False, **readcsv_getMeta_fetch_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to read data in data as a batch of multiple data files. This is best used through sprit.fetch_data(<em>args, source='batch', </em>*other_kwargs).</p>
+<div class="desc"><p>Function to read data in data as a batch of multiple data files.
+This is best used through sprit.fetch_data(<em>args, source='batch', </em>*other_kwargs).</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>batch_data</code></strong> :&ensp;<code>filepath</code> or <code>list</code></dt>
@@ -73,7 +74,8 @@ If 'table', will read data from a file read in using pandas.read_csv(), by defau
 <span>def <span class="ident">calculate_azimuth</span></span>(<span>hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']</p>
+<div class="desc"><p>Function to calculate azimuthal horizontal component at specified angle(s).
+Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code></dt>
@@ -111,7 +113,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 <span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_range=[0.1, 50], azimuth='HV', verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes quality checks</p>
+<div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict</code></dt>
@@ -138,7 +140,8 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 <span>def <span class="ident">export_data</span></span>(<span>hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Export data into pickle format that can be read back in using import_data() so data does not need to be processed each time.
+<div class="desc"><p>Export data into pickle format that can be read back in using import_data().
+Intended so data does not need to be processed each time it needs to be used.
 Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -154,7 +157,7 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 <span>def <span class="ident">export_report</span></span>(<span>hvsr_results, report_export_path=None, report_export_format=['pdf'], azimuth='HV', csv_handling='rename', show_report=True, verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to export reports to disk. Exportable formats include:
+<div class="desc"><p>Function to export reports to disk. Exportable formats for report_export_format include:
 * 'table': saves a pandas DataFrame as a csv)
 * 'plot': saves the matplotlib or plotly plot figure (depending on what is designated via plot_engine) as an image (png by default)
 * 'print': saves the print report as a .txt file
@@ -193,7 +196,7 @@ Otherwise, this is the output file or , by default None</dd>
 <span>def <span class="ident">export_settings</span></span>(<span>hvsr_data, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Save settings to json file</p>
+<div class="desc"><p>Save processing settings to json file.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>export_settings_path</code></strong> :&ensp;<code>str</code>, default=<code>"default"</code></dt>
@@ -216,7 +219,7 @@ If 'processing', saves the processing settings to their respective file. By defa
 <span>def <span class="ident">fetch_data</span></span>(<span>params, source='file', data_export_path=None, data_export_format='mseed', detrend='spline', detrend_options=2, filter_type=None, filter_options={}, update_metadata=True, plot_input_stream=False, plot_engine='matplotlib', show_plot=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Fetch ambient seismic data from a source to read into obspy stream</p>
+<div class="desc"><p>Fetch ambient seismic data from a source to read into obspy stream. </p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt>params
@@ -273,23 +276,47 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
 <span>def <span class="ident">generate_ppsds</span></span>(<span>hvsr_data, **gen_psds_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>This function is to maintain backwards compatibility with previous version</p></div>
+<div class="desc"><p>This function is to maintain backwards compatibility with previous version</p>
+<h2 id="see-also">See Also</h2>
+<p><code><a title="sprit.sprit_hvsr.generate_psds" href="#sprit.sprit_hvsr.generate_psds">generate_psds()</a></code></p></div>
 </dd>
 <dt id="sprit.sprit_hvsr.generate_psds"><code class="name flex">
-<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', skip_on_gaps=True, num_freq_bins=512, obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs)</span>
+<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', remove_response=False, skip_on_gaps=True, num_freq_bins=512, obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generates PPSDs for each channel</p>
-<p>Channels need to be in Z, N, E order
-Info on PPSD creation here: <a href="https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html">https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html</a></p>
+<div class="desc"><p>Calculate Power Spectral Density (PSD) curves for each channel.
+Uses the <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html">scipy.signal.welch()</a> function
+to generate PSDs by default, or can use Obspy's PPSD class.
+Info on Obspy PPSD creation here (if obspy_ppsds=True): <a href="https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html">https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html</a></p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>dict, <a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a> object,</code> or <code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a> object</code></dt>
 <dd>Data object containing all the parameters and other data of interest (stream and paz, for example)</dd>
+<dt><strong><code>window_length</code></strong> :&ensp;<code>float</code></dt>
+<dd>Length of the window, in seconds, to use for each PSD calculation. Defaults to 30.0.</dd>
+<dt><strong><code>overlap_pct</code></strong> :&ensp;<code>float</code></dt>
+<dd>Percentage (should be 0-1) for overlapping each window used for PSD calculation. Defaults to 0.5.</dd>
+<dt><strong><code>window_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Type of window to use. This is passed to the window parameter of the scipy.signal.welch function</dd>
+<dt><strong><code>window_length_method</code></strong> :&ensp;<code>str = {'length', 'number'}</code></dt>
+<dd>Whether the window length should be a measure of length in seconds or number of windows.
+If number of windows uses integer value.</dd>
+<dt><strong><code>remove_response</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to remove the instrument response from the data traces before calculating PSD data.
+If True, the appropriate metadata (i.e., obspy.Inventory object) must be attached to the stream and should be stored in the 'inv' attribute of hvsr_data.</dd>
+<dt><strong><code>skip_on_gaps</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
+<dd>Whether to skip data gaps when processing windows.
+This is passed to the skip_on_gaps parameter of the Obspy PPSD class.</dd>
+<dt><strong><code>num_freq_bins</code></strong> :&ensp;<code>int</code>, default=<code>512</code></dt>
+<dd>Number of frequency bins to use. When using the default (i.e., scipy.signal.welch) PSD function, the frequency bins are created manually for processing.</dd>
+<dt><strong><code>obspy_ppsds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to use the Obspy PPSD class.</dd>
 <dt><strong><code>azimuthal_ppsds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to generate PPSDs for azimuthal data</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to print inputs and results to terminal</dd>
+<dt><strong><code>plot_psds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Whether to show a plot of the psds here.</dd>
 <dt><strong><code>**obspy_ppsd_kwargs</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
 If the following keywords are not specified, their defaults are amended in this function from the obspy defaults for its PPSD function. Specifically:
@@ -300,13 +327,17 @@ If the following keywords are not specified, their defaults are amended in this 
 <h2 id="returns">Returns</h2>
 <pre><code>ppsds : HVSRData object
     Dictionary containing entries with ppsds for each channel
-</code></pre></div>
+</code></pre>
+<h2 id="see-also">See Also</h2>
+<p><code>scipy.signal.welch</code>
+<code>obspy.signal.spectral_estimation.PPSD</code></p></div>
 </dd>
 <dt id="sprit.sprit_hvsr.get_metadata"><code class="name flex">
 <span>def <span class="ident">get_metadata</span></span>(<span>params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get metadata and calculate or get paz parameter needed for PPSD</p>
+<div class="desc"><p>Get metadata and calculate or get paz parameter needed for PSD
+Adds an obspy.Inventory object to the "inv" attribute or key of params</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
@@ -379,7 +410,7 @@ The extension/suffix defaults to png for report_formats="plot", csv for 'table',
 </dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.gui"><code class="name flex">
-<span>def <span class="ident">gui</span></span>(<span>kind='browser')</span>
+<span>def <span class="ident">gui</span></span>(<span>kind: str = 'browser')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to open a graphical user interface (gui)</p>
@@ -391,12 +422,6 @@ The extension/suffix defaults to png for report_formats="plot", csv for 'table',
 * "widget" opens jupyter widget (using ipywidgets)
 * "window" opens windowed gui (using tkinter)</dd>
 </dl></div>
-</dd>
-<dt id="sprit.sprit_hvsr.gui_test"><code class="name flex">
-<span>def <span class="ident">gui_test</span></span>(<span>)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_hvsr.import_data"><code class="name flex">
 <span>def <span class="ident">import_data</span></span>(<span>import_filepath, data_format='pickle', show_data=False)</span>
@@ -420,7 +445,22 @@ The extension/suffix defaults to png for report_formats="plot", csv for 'table',
 <span>def <span class="ident">import_settings</span></span>(<span>settings_import_path, settings_import_type='instrument', verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Function to import settings, intended for use with settings saved to disk using export_settings</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>settings_import_path</code></strong> :&ensp;<code>pathlike object</code></dt>
+<dd>Filepath to exported settings document</dd>
+<dt><strong><code>settings_import_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>What type of settings to export (can be 'instrument' or 'all'), by default 'instrument'</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to print information to terminal, by default False</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the function names as keys of internal dictionaries,
+with key:value pairs for each parameter name:value in that function.</dd>
+</dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.input_params"><code class="name flex">
 <span>def <span class="ident">input_params</span></span>(<span>input_data, site='HVSRSite', project=None, network='AM', station='NONE', location='00', channels=['EHZ', 'EHN', 'EHE'], acq_date=None, starttime=None, endtime=None, tzone='UTC', xcoord=-88.229, ycoord=40.101, elevation=225, input_crs='EPSG:4326', output_crs=None, elev_unit='meters', depth=0, instrument='Seismometer', metapath=None, hvsr_band=[0.1, 50], peak_freq_range=[0.1, 50], processing_parameters={}, verbose=False)</span>
@@ -692,20 +732,33 @@ Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</d
 <span>def <span class="ident">read_tromino_files</span></span>(<span>input_data, struct_format='H', tromino_model=None, sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ machines</p>
+<div class="desc"><p>Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ and Blue machines</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>input_data</code></strong> :&ensp;<code>str, pathlib.Path()</code></dt>
-<dd>The input parameter <em>datapath</em> from sprit.input_params()</dd>
-<dt><strong><code>params</code></strong> :&ensp;<code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code> or <code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a></code></dt>
-<dd>The parameters as read in from input_params() and and fetch_data()</dd>
+<dt><strong><code>input_data</code></strong> :&ensp;<code>str</code></dt>
+<dd>Falseilepath to .trc file</dd>
+<dt><strong><code>struct_format</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>This is the format used in the struct module.
+Usually should not be changed, by default 'H'</dd>
+<dt><strong><code>tromino_model</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Which tromino model is being read.
+Currently only "Yellow" and "Blue" are supported.
+If None, assumes "Yellow", by default None.</dd>
+<dt><strong><code>sampling_rate</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Sampling rate (samples per second) used during acquisition.
+This may later be detected automatically.
+If None, 128 used, by default None</dd>
+<dt><strong><code>set_record_duration</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Duration of record to set manually in minutes, by default None</dd>
+<dt><strong><code>start_byte</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Used internally, by default 24576</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>Whether to print results to terminal, by default False</dd>
+<dd>Whether to print information to terminal, by default False</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>obspy.Stream</code></dt>
-<dd>An obspy.Stream object containing the trace data from the Tromino instrument</dd>
+<dt><code>obspy.stream.Stream</code></dt>
+<dd>Obspy Stream object with Tromino data</dd>
 </dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.remove_noise"><code class="name flex">
@@ -809,6 +862,7 @@ Otherwise, specify a float or integer to use as the cutoff RMSE value (all curve
 - input_params(): The input_data parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
 - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from input_data and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
 - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
+- calculate_azimuth(): calculate one or several azimuths. Single azimuth can be a way to combine H components too.
 - generate_psds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
 - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
 - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
@@ -890,7 +944,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.input_params" href="#sprit.sprit_hvsr.input_params">input_params()</a>)</code> for specifics.</dd>
 <dt><strong><code>fetch_data</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
-<dd>Fetch ambient seismic data from a source to read into obspy stream
+<dd>Fetch ambient seismic data from a source to read into obspy stream.
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.fetch_data">fetch_data()</a></dd>
 <dt><strong><code>params</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.fetch_data" href="index.html#sprit.fetch_data">fetch_data()</a>)</code> for specifics.</dd>
@@ -921,7 +975,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>kwargs</code></strong> :&ensp;<code>any</code>, default <code>= {}</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.fetch_data" href="#sprit.sprit_hvsr.fetch_data">fetch_data()</a>)</code> for specifics.</dd>
 <dt><strong><code>calculate_azimuth</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
-<dd>Function to calculate azimuthal horizontal component at specified angle(s). Adds each new horizontal
+<dd>Function to calculate azimuthal horizontal component at specified angle(s).
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.calculate_azimuth">calculate_azimuth()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.calculate_azimuth" href="index.html#sprit.calculate_azimuth">calculate_azimuth()</a>)</code> for specifics.</dd>
@@ -975,7 +1029,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_noise" href="#sprit.sprit_hvsr.remove_noise">remove_noise()</a>)</code> for specifics.</dd>
 <dt><strong><code>generate_psds</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
-<dd>Generates PPSDs for each channel
+<dd>Calculate Power Spectral Density (PSD) curves for each channel.
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.generate_psds">generate_psds()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="index.html#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
@@ -987,6 +1041,8 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="index.html#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>window_length_method</code></strong> :&ensp;<code>any</code>, default <code>= 'length'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="index.html#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
+<dt><strong><code>remove_response</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.generate_psds" href="#sprit.sprit_hvsr.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>skip_on_gaps</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.generate_psds" href="#sprit.sprit_hvsr.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>num_freq_bins</code></strong> :&ensp;<code>any</code>, default <code>= 512</code></dt>
@@ -1040,7 +1096,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>check_peaks</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
-<dd>Function to run tests on HVSR peaks to find best one and see if it passes quality checks
+<dd>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.check_peaks">check_peaks()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="index.html#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
@@ -1092,7 +1148,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>kwargs</code></strong> :&ensp;<code>any</code>, default <code>= {}</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a>)</code> for specifics.</dd>
 <dt><strong><code>export_data</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
-<dd>Export data into pickle format that can be read back in using import_data() so data does not need to
+<dd>Export data into pickle format that can be read back in using import_data().
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_data">export_data()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.export_data" href="index.html#sprit.export_data">export_data()</a>)</code> for specifics.</dd>
@@ -1108,7 +1164,18 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>hvsr_results</code></strong> :&ensp;<code><a title="sprit.HVSRData" href="index.html#sprit.HVSRData">HVSRData</a></code> or <code><a title="sprit.HVSRBatch" href="index.html#sprit.HVSRBatch">HVSRBatch</a> object</code></dt>
 <dd>If a single file/data point is being processed, a HVSRData object will be returned. Otherwise, it will be a HVSRBatch object. See their documention for more information.</dd>
 </dl>
-<h2 id="raises">Raises</h2>
+<h2 id="see-also">See Also</h2>
+<p><code><a title="sprit.sprit_hvsr.input_params" href="#sprit.sprit_hvsr.input_params">input_params()</a></code>
+<code><a title="sprit.sprit_hvsr.fetch_data" href="#sprit.sprit_hvsr.fetch_data">fetch_data()</a></code>
+<code><a title="sprit.sprit_hvsr.remove_noise" href="#sprit.sprit_hvsr.remove_noise">remove_noise()</a></code>
+<code><a title="sprit.sprit_hvsr.calculate_azimuth" href="#sprit.sprit_hvsr.calculate_azimuth">calculate_azimuth()</a></code>
+<code><a title="sprit.sprit_hvsr.generate_psds" href="#sprit.sprit_hvsr.generate_psds">generate_psds()</a></code>
+<code><a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a></code>
+<code><a title="sprit.sprit_hvsr.process_hvsr" href="#sprit.sprit_hvsr.process_hvsr">process_hvsr()</a></code>
+<code><a title="sprit.sprit_hvsr.check_peaks" href="#sprit.sprit_hvsr.check_peaks">check_peaks()</a></code>
+<code><a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a></code>
+<code><a title="sprit.sprit_hvsr.export_data" href="#sprit.sprit_hvsr.export_data">export_data()</a> </code>Raises</p>
+<hr>
 <dl>
 <dt><code>RuntimeError</code></dt>
 <dd>If the input parameter may not be read correctly. This is raised if the input_params() function fails. This raises an error since no other data processing or reading steps will be able to carried out correctly.</dd>
@@ -1123,30 +1190,6 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 </code></dt>
 <dd>
 <div class="desc"></div>
-</dd>
-<dt id="sprit.sprit_hvsr.update_elevation"><code class="name flex">
-<span>def <span class="ident">update_elevation</span></span>(<span>hvsr_data, updated_surface_elevation, updated_elevation_unit)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Function to quickly update all attributes associated with elevation of an HVSRData object</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>hvsr_data</code></strong> :&ensp;<code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code> or <code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a></code></dt>
-<dd>HVSRData or HVSRBatch object containing attributes related to elevation.
-If HVSRBatch, updated_surface_elevation should be list or tuple and
-updated_elevation_unit may either be str or
-list/tuple of strings.</dd>
-<dt><strong><code>updated_surface_elevation</code></strong> :&ensp;<code>numbers.Number</code></dt>
-<dd>Number (float or int) with the updated elevation.
-Meters is the preferred unit. If feet are used instead, it will be converted to meters.</dd>
-<dt><strong><code>updated_elevation_unit</code></strong> :&ensp;<code>str</code></dt>
-<dd>Unit used for updated_surface_elevation. If 'feet', it will be converted to meters.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code></dt>
-<dd>HVSRData object with all attributes related to elevation updated</dd>
-</dl></div>
 </dd>
 </dl>
 </section>
@@ -1915,9 +1958,9 @@ It contains all the processed data, input parameters, and reports.</p>
             peakInfoStr += &#34;-&#34;*(len(peakInfoStr) - 3) + &#39;\n&#39;
             peakInfoStr += &#39;{0:.3f} Hz ± {1:.4f} Hz&#39;.format(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], float(self[&#34;BestPeak&#34;][azimuth][&#39;Sf&#39;]))
             if curvePass and peakPass:
-                peakInfoStr += &#39;\n\t  {} Peak at {} Hz passed SESAME quality tests! :D&#39;.format(sprit_utils.check_mark(), round(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;],3))
+                peakInfoStr += &#39;\n\t  {} Peak at {} Hz passed SESAME quality tests! :D&#39;.format(sprit_utils._check_mark(), round(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;],3))
             else:
-                peakInfoStr += &#39;\n\t  {} Peak at {} Hz did NOT pass SESAME quality tests :(&#39;.format(sprit_utils.x_mark(), round(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;],3))
+                peakInfoStr += &#39;\n\t  {} Peak at {} Hz did NOT pass SESAME quality tests :(&#39;.format(sprit_utils._x_mark(), round(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;],3))
         else:
             peakInfoStr = &#39;F₀ not Calculated&#39;
 
@@ -1946,6 +1989,7 @@ It contains all the processed data, input parameters, and reports.</p>
     def __repr__(self):
         return self.__str__()
 
+    # METHODS (many reflect dictionary methods)    
     def __to_json(self, filepath):
         &#34;&#34;&#34;Not yet supported, will export HVSRData object to json&#34;&#34;&#34;
         # open the file with the given filepath
@@ -1973,10 +2017,14 @@ It contains all the processed data, input parameters, and reports.</p>
             If True, it will first try to save each file to the same directory as input_data, then if that does not work, to the current working directory, then to the user&#39;s home directory, by default True
         ext : str, optional
             The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
+        
+        See Also
+        --------
+        export_data
+        
         &#34;&#34;&#34;
         export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
-    # METHODS (many reflect dictionary methods)    
     def copy(self, copy_type=&#39;shallow&#39;):
         &#34;&#34;&#34;Make a copy of the HVSRData object. Uses python copy module.
         
@@ -2283,7 +2331,9 @@ By default True.
 If True, it will first try to save each file to the same directory as input_data, then if that does not work, to the current working directory, then to the user's home directory, by default True</dd>
 <dt><strong><code>ext</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.</dd>
-</dl></div>
+</dl>
+<h2 id="see-also">See Also</h2>
+<p><code><a title="sprit.sprit_hvsr.export_data" href="#sprit.sprit_hvsr.export_data">export_data()</a></code></p></div>
 </dd>
 <dt id="sprit.sprit_hvsr.HVSRData.export_settings"><code class="name flex">
 <span>def <span class="ident">export_settings</span></span>(<span>self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True)</span>
@@ -2395,7 +2445,6 @@ If True, it will first try to save each file to the same directory as input_data
 <li><code><a title="sprit.sprit_hvsr.get_metadata" href="#sprit.sprit_hvsr.get_metadata">get_metadata</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.gui" href="#sprit.sprit_hvsr.gui">gui</a></code></li>
-<li><code><a title="sprit.sprit_hvsr.gui_test" href="#sprit.sprit_hvsr.gui_test">gui_test</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.import_data" href="#sprit.sprit_hvsr.import_data">import_data</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.import_settings" href="#sprit.sprit_hvsr.import_settings">import_settings</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.input_params" href="#sprit.sprit_hvsr.input_params">input_params</a></code></li>
@@ -2408,7 +2457,6 @@ If True, it will first try to save each file to the same directory as input_data
 <li><code><a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.run" href="#sprit.sprit_hvsr.run">run</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.test_function" href="#sprit.sprit_hvsr.test_function">test_function</a></code></li>
-<li><code><a title="sprit.sprit_hvsr.update_elevation" href="#sprit.sprit_hvsr.update_elevation">update_elevation</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

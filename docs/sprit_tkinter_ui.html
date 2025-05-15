@@ -34,12 +34,6 @@ hljs.highlightAll();
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="sprit.sprit_tkinter_ui.catch_errors"><code class="name flex">
-<span>def <span class="ident">catch_errors</span></span>(<span>func)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt id="sprit.sprit_tkinter_ui.on_closing"><code class="name flex">
 <span>def <span class="ident">on_closing</span></span>(<span>)</span>
 </code></dt>
@@ -277,7 +271,7 @@ saving data) must be done before calling this function.</p></div>
         
         self.data_read = False #Initialize
         #FUNCTION TO READ DATA
-        @catch_errors
+        @_catch_errors
         def read_data():
             update_progress_bars(prog_percent=0)
             #messagebox.showinfo(title=&#34;Reading Data&#34;, message=&#39;Reading Data...&#39;)
@@ -428,9 +422,9 @@ saving data) must be done before calling this function.</p></div>
                                 hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;SignificantCycles&#39;]+
                                 hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowCurveStDevOverTime&#39;]) &gt; 2
             if curvePass:
-                self.totalCurveResult.configure(text=sprit_utils.check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
+                self.totalCurveResult.configure(text=sprit_utils._check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
             else:
-                self.totalCurveResult.configure(text=sprit_utils.x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
+                self.totalCurveResult.configure(text=sprit_utils._x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
 
             self.peakTest1ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;A(f-)&#39;][:-1])
             self.peakTest1Result.configure(text=hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;A(f-)&#39;][-1])
@@ -443,9 +437,9 @@ saving data) must be done before calling this function.</p></div>
 
             self.peakTest4ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;P-&#39;][:5] + &#39; and &#39; +hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;P+&#39;][:-1])
             if hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;FreqStability&#39;]:
-                self.peakTest4Result.configure(text=sprit_utils.check_mark())
+                self.peakTest4Result.configure(text=sprit_utils._check_mark())
             else:
-                self.peakTest4Result.configure(text=sprit_utils.x_mark())
+                self.peakTest4Result.configure(text=sprit_utils._x_mark())
 
             self.peakTest5ResultText.configure(text=hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;Sf&#39;][:-1])
             self.peakTest5Result.configure(text=hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;Sf&#39;][-1])
@@ -460,19 +454,19 @@ saving data) must be done before calling this function.</p></div>
                     hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;PeakStability_FreqStD&#39;]+
                     hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;PeakStability_AmpStD&#39;]) &gt;= 5
             if peakPass:
-                self.totalPeakResult.configure(text=sprit_utils.check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
+                self.totalPeakResult.configure(text=sprit_utils._check_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;green&#39;)
             else:
-                self.totalPeakResult.configure(text=sprit_utils.x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
+                self.totalPeakResult.configure(text=sprit_utils._x_mark(), font=(&#34;TkDefaultFont&#34;, 16, &#34;bold&#34;), foreground=&#39;red&#39;)
 
             if curvePass and peakPass:
-                self.totalResult.configure(text=f&#39;Pass {sprit_utils.check_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;green&#39;)
+                self.totalResult.configure(text=f&#39;Pass {sprit_utils._check_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;green&#39;)
             else:
-                self.totalResult.configure(text=f&#39;Fail {sprit_utils.x_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
+                self.totalResult.configure(text=f&#39;Fail {sprit_utils._x_mark()}&#39;, font=(&#34;TkDefaultFont&#34;, 22, &#34;bold&#34;), foreground=&#39;red&#39;)
 
             sprit_hvsr.plot_hvsr(hvsr_results, plot_type=get_kindstr(), fig=self.fig_results, ax=self.ax_results, use_subplots=True, clear_fig=False)
 
-        #FUNCTION TO PROCESS DATA
-        @catch_errors
+        # FUNCTION TO PROCESS DATA
+        @_catch_errors
         def process_data():
             update_progress_bars(prog_percent=0)
             #messagebox.showinfo(&#34;Processing Data&#34;, &#39;Processing Data...&#39;)
@@ -3047,7 +3041,6 @@ saving data) must be done before calling this function.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="sprit.sprit_tkinter_ui.catch_errors" href="#sprit.sprit_tkinter_ui.catch_errors">catch_errors</a></code></li>
 <li><code><a title="sprit.sprit_tkinter_ui.on_closing" href="#sprit.sprit_tkinter_ui.on_closing">on_closing</a></code></li>
 <li><code><a title="sprit.sprit_tkinter_ui.reboot_app" href="#sprit.sprit_tkinter_ui.reboot_app">reboot_app</a></code></li>
 </ul>
