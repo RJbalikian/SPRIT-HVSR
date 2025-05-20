@@ -5035,7 +5035,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
     plotlyList = ['plotly', 'plty', 'p']
 
     if plot_engine.lower() in plotlyList:
-        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, 
+        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, azimuth=azimuth,
                                             results_fig=fig, return_fig=return_fig, use_figure_widget=False,
                                             show_results_plot=show_plot)
         if return_fig:
