@@ -49,6 +49,7 @@ sprit = "*"
 
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
+"SpRIT Web App" = "https://sprithvsr.streamlit.app"
 "ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/sprit.html"
 "SpRIT App (streamlit) Docs" = "https://github.com/RJbalikian/sprit-streamlit/wiki"
 "Github Pages API Docs" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
