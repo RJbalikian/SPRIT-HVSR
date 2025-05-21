@@ -123,7 +123,6 @@ def main():
     gr_kwargs = {}
     run_kwargs = {}
 
-    #spritLogoPath = pathlib.Path(r"C:\Users\riley\LocalData\Repos\SPRIT-HVSR\sprit\resources\icon\SpRITLogo.png")
     if spritLogoPath.exists():
         st.logo(spritLogoPath, size='large')
 
@@ -531,6 +530,8 @@ def main():
     def display_results():
         # Set up container for output data
         setup_main_container(do_setup_tabs=True)
+
+        st.session_state.mainContainer.code(st.session_state.hvsr_data['Print_Report'])
 
         # Input data
         st.session_state.input_fig = make_input_fig()
@@ -1024,16 +1025,17 @@ def main():
     def write_to_info_tab(infoTab):
         with infoTab:
             st.markdown("# Processing Parameters Used")
+            hvsrDataList = ['params', 'hvsr_data', 'hvsr_results']
             for fun, kwargDict in funList:
                 funSig = inspect.signature(fun)
                 # excludeKeys = ['params', 'hvsr_data', 'hvsr_results']
                 funMD = ""
                 for arg in funSig.parameters.keys():
-                    if arg in st.session_state.keys():
+                    if arg in st.session_state.keys() and arg not in hvsrDataList:
                         funMD = funMD + f"""\n    * {arg} = {st.session_state[arg]}"""
 
                 with st.expander(f"{fun.__name__}"):
-                    st.write(funMD, unsafe_allow_html=True)
+                    st.markdown(funMD, unsafe_allow_html=True)
 
 
     def update_from_outlier_selection():
@@ -1284,6 +1286,7 @@ def main():
                 #with st.expander('Primary Input Parameters', expanded=True):
                 #if "hvsr_band" not in st.session_state:
                 #    st.session_state.hvsr_band = [0.4, 40]
+
 
             #@st.experimental_dialog("Update Parameters to Fetch Data", width='large')
             #def open_fd_dialog():
