@@ -7,7 +7,7 @@ name = "sprit"
 authors = [{name="Riley Balikian"}]
 dynamic = ["readme"]
 license = {file = "LICENSE"}
-version="2.7.0"
+version="2.7.1"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 requires-python = ">=3.9"
@@ -24,7 +24,7 @@ classifiers = [
 
 [tool.poetry]
 name='SpRIT Streamlit'
-version="2.7.0"
+version="2.7.1"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 authors = ["Riley Balikian <your_email@example.com>"]
 license = "MIT"

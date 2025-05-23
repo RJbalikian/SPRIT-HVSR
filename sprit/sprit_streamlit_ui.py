@@ -29,7 +29,6 @@ from scipy import signal
 try:
     import sprit
     from sprit import sprit_hvsr
-    print('did it this way')
 except Exception:
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, parent_dir)
@@ -551,13 +550,17 @@ def main():
         display_download_buttons()
         display_results()
 
+
     def display_results():
         # Set up container for output data
         setup_main_container(do_setup_tabs=True)
         st.toast('Displaying results')
-        st.session_state.mainContainer.code(body=st.session_state.hvsr_data['Print_Report'],
-                                            language='text')
         
+        if st.session_state.interactive_display:
+            st.session_state.mainContainer.code(body=st.session_state.hvsr_data['Print_Report'],
+                                            language='text')
+            st.session_state.mainContainer.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+
         # Input data
         if st.session_state.interactive_display or (hasattr(st.session_state, 'data_results_toggle') and st.session_state.data_results_toggle):
             st.session_state.input_fig = make_input_fig()
