@@ -1,20 +1,15 @@
-try:
-    import sprit
-except Exception:
-    try:
-        import sprit_hvsr as sprit
-        import sprit_plot
-    except Exception:
-        from sprit import sprit_hvsr as sprit
-        from sprit import sprit_plot
+"""This file contains the code to run the SpRIT app (via streamlit) both locally and on the web."""
 
+import base64
 import copy
 import datetime
 import inspect
 import io
+import os
 import pathlib
 import pickle
 import pkg_resources
+import sys
 import tempfile
 import zoneinfo
 
@@ -34,12 +29,14 @@ from scipy import signal
 try:
     import sprit
     from sprit import sprit_hvsr
+    print('did it this way')
 except Exception:
-    try:
-        import sprit_hvsr
-    except Exception:
-        import sprit as sprit_hvsr
-
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, parent_dir)
+    import sprit
+    from sprit import sprit_hvsr
+    
+    
 VERBOSE = False
 
 RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
@@ -66,8 +63,15 @@ print_param(PARAM2PRINT)
 
 def main():
 
-    icon = ":material/electric_bolt:"
-    if hasattr(sprit, '__version__'):
+    if spritLogoPath.exists():
+        st.logo(image=spritLogoPath, size='large',
+                link=r"https://github.com/RJbalikian/SPRIT-HVSR",
+                icon_image=spritLogoPath)
+        icon = spritLogoPath
+    else:
+        icon = ":material/electric_bolt:"
+        
+    if 'sprit' in sys.modules and hasattr(sprit, '__version__'):
         spritversion = sprit.__version__
     else:
         spritversion = '2.0+'
@@ -78,6 +82,7 @@ def main():
     SpRIT is developed by Riley Balikian at the Illinois State Geological Survey.
 
     Please visit the following links for any questions:
+    * [App user guide](https://github.com/RJbalikian/sprit-streamlit/wiki)
     * [API Documentation](https://sprit.readthedocs.io/en/latest/sprit.html)
     * [Wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki) 
     * [Pypi Repository](https://pypi.org/project/sprit/)
@@ -123,9 +128,6 @@ def main():
     gr_kwargs = {}
     run_kwargs = {}
 
-    if spritLogoPath.exists():
-        st.logo(spritLogoPath, size='large')
-
     if VERBOSE:
         print('Start getting default values, session state length: ', len(st.session_state.keys()))
         print_param(PARAM2PRINT)
@@ -158,18 +160,34 @@ def main():
 
             mainContainerInitText = """
             # SpRIT HVSR
+
+            sprit_logo
+
             ## About
             SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
             
-            ### This app is using SpRIT v0.0.0
-            ## Links
+
+            ## For help with app usage, please visit the app user guide [here](https://github.com/RJbalikian/sprit-streamlit/wiki).
+            
+            ### Related Links
             * API Documentation may be accessed here: [ReadtheDocs](https://sprit.readthedocs.io/en/latest/sprit.html) and [Github Pages](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
             * The Wiki and Tutorials may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR/wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
             * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
             * PyPI repository may be accessed here: [https://pypi.org/project/sprit/](https://pypi.org/project/sprit/)
+            """
+            if spritLogoPath.exists():
+                #encodedImage = 
+                mainContainerInitText = mainContainerInitText.replace('sprit_logo', f"<img src='data:image/png;base64,{base64.b64encode(spritLogoPath.read_bytes()).decode()}' class='img-fluid'>")
+            else:
+                mainContainerInitText = mainContainerInitText.replace('sprit_logo', "")
+            
 
+            st.markdown(mainContainerInitText, unsafe_allow_html=True)
+            
+            licenseExpander = st.expander(label='License information')
+            licenseInfo = """
             ## MIT License
-            It is licensed under the MIT License:
+            SpRIT is licensed under the MIT License:
             > Permission is hereby granted, free of charge, to any person obtaining a copy 
             > of this software and associated documentation files (the "Software"), to deal
             > in the Software without restriction, including without limitation the rights
@@ -186,11 +204,13 @@ def main():
             > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
             > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
             > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-            > SOFTWARE.
-            """
-            mainContainerInitText = mainContainerInitText.replace('0.0.0', spritversion)
-
-            st.markdown(mainContainerInitText, unsafe_allow_html=True)
+            > SOFTWARE."""
+            licenseExpander.markdown(licenseInfo, unsafe_allow_html=True)
+            
+            versionText = "### This app is using SpRIT v0.0.0"
+            versionText = versionText.replace('0.0.0', spritversion)
+            st.markdown(versionText)     
+                        
             if VERBOSE:
                 print('Start sig loop, session state length: ', len(st.session_state.keys()))
                 print_param(PARAM2PRINT)
@@ -360,7 +380,7 @@ def main():
     def setup_tabs(mainContainer):
         
         resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs(['Results', 'Data', 'Outliers', 'Info'])
-        plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Plot', 'Results Table', 'Print Report'])
+        plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Summary/Plot', 'Results Table', 'Print Report'])
 
         st.session_state.inputTab = inputTab
         st.session_state.outlierTab = outlierTab
@@ -527,28 +547,52 @@ def main():
         st.session_state.infoTab.code(str(st.session_state.hvsr_data))
 
 
+    def display_buttons_and_results():
+        display_download_buttons()
+        display_results()
+
     def display_results():
         # Set up container for output data
         setup_main_container(do_setup_tabs=True)
-
-        st.session_state.mainContainer.code(st.session_state.hvsr_data['Print_Report'])
-
+        st.toast('Displaying results')
+        st.session_state.mainContainer.code(body=st.session_state.hvsr_data['Print_Report'],
+                                            language='text')
+        
         # Input data
-        st.session_state.input_fig = make_input_fig()
-        st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                            on_select=update_data, key='data_plot',
-                                            selection_mode='box', use_container_width=True, theme='streamlit')
+        if st.session_state.interactive_display or (hasattr(st.session_state, 'data_results_toggle') and st.session_state.data_results_toggle):
+            st.session_state.input_fig = make_input_fig()
+            st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                                on_select=update_data, key='data_plot',
+                                                selection_mode='box', use_container_width=True, theme='streamlit')
 
-        st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-        st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle', 
+            st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
+            st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
                                                     default='Add', on_change=update_selection_type, disabled=True, 
                                                     help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
-
+        
+        else:
+            st.session_state.inputTab.toggle(label='Display input data stream and windows used',
+                                             value=False,
+                                             on_change=display_buttons_and_results,
+                                             help='Toggle on to display interactive chart with input data stream for selecting windows for removal.',
+                                             key='data_results_toggle')
+            
         write_to_info_tab(st.session_state.infoTab)
 
-        outlier_plot_in_tab()
+        if st.session_state.interactive_display or (hasattr(st.session_state, 'outlier_toggle') and st.session_state.outlier_toggle):
+            outlier_plot_in_tab()
+        else:
+            st.session_state.outlierTab.toggle(label='Display outlier chart',
+                                               value=False,
+                                               help='Turn on to display outlier chart (you may need to navigate back to this tab)',
+                                               key='outlier_toggle',
+                                               on_change=display_buttons_and_results)
 
-        st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+        if st.session_state.interactive_display:
+            st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+        else:
+            st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
+        
         st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
         st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
 
@@ -556,8 +600,8 @@ def main():
     @st.fragment
     def display_download_buttons():
         ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-        dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-
+        dlText, dlStream, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+        st.divider()
 
         # Download Buttons
         ##st.session_state.dlText.text("Download Results: ")
@@ -1135,7 +1179,6 @@ def main():
             for trace in tr.data:
                 outlierFig.add_traces(trace, rows=1, cols=1)
 
-
         outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
         outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
         outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
@@ -1257,6 +1300,9 @@ def main():
             st.session_state.hvsr_band = st.select_slider('HVSR Band', options=bandVals, #key='hvsr_band',
                             value=st.session_state.hvsr_band
                             )
+
+            st.toggle(label='Display interactive charts (slower)', value=False, key='interactive_display',
+                      help="Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.")
 
             if VERBOSE:
                 print_param(PARAM2PRINT)
