@@ -426,7 +426,7 @@ def main():
         
         setup_main_container(do_setup_tabs=False)
         with st.session_state.mainContainer:
-            spinnerText = 'Data is processing with default parameters.'
+            spinnerText = '# Data is processing with default parameters.'
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
@@ -456,16 +456,48 @@ def main():
 
             # Display non-default parameters, if applicable
             for key, value in srun.items():
-
                 if key not in excludedKeys:
                     if key in secondaryDefaults and secondaryDefaults[key] == value:
                         pass
                     else:
+                        if nonDefaultParams is False:
+                            spinnerDFList = []
                         nonDefaultParams = True
-                        spinnerText = spinnerText + f"\n-\t {key} = {value} ({type(value)} is not {st.session_state.default_params[key]}; {type(st.session_state.default_params[key])})"
+
+                        def _get_centered_text(text, just='center', add_parenth=False, size=20):
+                            if len(str(text)) > size:
+                                keyText = str(text)[:size-3] = "..."
+                            else:
+                                keyText = str(text)
+                            
+                            if add_parenth:
+                                keyText = f"({keyText})"
+
+                            if just=='center':
+                                return keyText.center(size)
+                            elif just=='right':
+                                return keyText.rjust(size)
+                            elif just=='left':
+                                return keyText.ljust(size)
+                        
+
+                        keyText = _get_centered_text(key)
+                        valText = _get_centered_text(value, just='right')
+                        valTypeText = _get_centered_text(type(value), just='left', add_parenth=True)
+                        defValText = _get_centered_text(st.session_state.default_params[key], just='right')
+                        defValTypeText = _get_centered_text(type(st.session_state.default_params[key]), just='left', add_parenth=True)
+
+                        spinnerText = spinnerText + f"\n\t| {keyText} | {valText} {valTypeText} | {defValText} {defValTypeText}     |"
+                        spinnerDFList.append([key, value, type(value), st.session_state.default_params[key], type(st.session_state.default_params[key])])
+
             if nonDefaultParams:
                 spinnerText = spinnerText.replace('default', 'the following non-default')
-            with st.spinner(spinnerText):
+                tableHeader =  "\n\t|      Parameter       |           Input Value (and type)          |            Default value (and type)           |"
+                tableHeader2 = "\n\t|----------------------|-------------------------------------------|-----------------------------------------------|\n\t"
+                spinnerText = spinnerText.replace("\n\t", tableHeader+tableHeader2, 1)
+
+                spinnerDF = pd.DataFrame(spinnerDFList, columns=['Parameter', "Value Selected", "Selected value type", 'Default Value', 'Default value type'])
+            with st.spinner(spinnerText, show_time=True):
                 st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
         
         st.balloons()
