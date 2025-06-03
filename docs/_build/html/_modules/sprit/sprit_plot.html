@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.6.5 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.7.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=f630559a"></script>
+        <script src="../../_static/documentation_options.js?v=7b940564"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -949,7 +949,7 @@
 
 <div class="viewcode-block" id="plot_results">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_results">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span>
                 <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">results_graph_widget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_figure_widget</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">html_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,):</span>
@@ -1105,7 +1105,7 @@
 
     <span class="c1"># SPEC plot</span>
     <span class="k">if</span> <span class="n">plot_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="p">[]:</span>
-        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">parse_spec_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">subplot_num</span><span class="o">=</span><span class="n">spec_plot_row</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="n">results_fig</span><span class="p">)</span>
+        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">parse_spec_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">subplot_num</span><span class="o">=</span><span class="n">spec_plot_row</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="n">results_fig</span><span class="p">)</span>
 
     <span class="c1"># Final figure updating</span>
     <span class="n">resultsFigWidth</span> <span class="o">=</span> <span class="mi">650</span>

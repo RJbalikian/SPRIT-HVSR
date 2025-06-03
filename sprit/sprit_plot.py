@@ -838,7 +838,7 @@ def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None,
     return results_fig
 
 
-def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
+def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
                 results_fig=None, results_graph_widget=None, use_figure_widget=False,
                 return_fig=False, show_results_plot=False, html_plot=False,
                 verbose=False,):
@@ -994,7 +994,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann',
 
     # SPEC plot
     if plot_list[2] != []:
-        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, results_fig=results_fig)
+        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, azimuth=azimuth, results_fig=results_fig)
 
     # Final figure updating
     resultsFigWidth = 650

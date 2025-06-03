@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.6.5 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.7.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=f630559a"></script>
+        <script src="../../_static/documentation_options.js?v=7b940564"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1494,13 +1494,26 @@
     <span class="c1"># Calculate azimuths</span>
     <span class="n">hvsr_az</span> <span class="o">=</span> <span class="n">hvsrDataIN</span>
     <span class="n">azimuth_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">calculate_azimuth</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
-    <span class="k">if</span> <span class="s1">&#39;horizontal_method&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;8&#39;</span> <span class="ow">or</span> <span class="s1">&#39;single&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+    
+    <span class="n">azList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span> <span class="s1">&#39;single azimuth&#39;</span><span class="p">,</span> <span class="s1">&#39;single&#39;</span><span class="p">]</span>
+    
+    <span class="n">azCond1</span> <span class="o">=</span> <span class="s1">&#39;horizontal_method&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;8&#39;</span>
+    <span class="n">azCond2</span> <span class="o">=</span> <span class="s1">&#39;horizontal_method&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">azList</span>
+    <span class="n">azCond3</span> <span class="o">=</span> <span class="n">azimuth_calculation</span>
+    <span class="n">azCond4</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">azimuth_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">azCond1</span> <span class="ow">or</span> <span class="n">azCond2</span> <span class="ow">or</span> <span class="n">azCond3</span> <span class="ow">or</span> <span class="n">azCond4</span><span class="p">:</span>
         <span class="n">azimuth_calculation</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;single&#39;</span>
         
         <span class="k">if</span> <span class="s1">&#39;azimuth_angle&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">45</span>  
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">azimuth_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">azimuth_calculation</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">45</span>
+        
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;R&quot;</span>  <span class="c1"># str(kwargs[&#39;azimuth_angle&#39;]).zfill(3)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;horizontal_method&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Single Azimuth&#39;</span>
+
         <span class="k">try</span><span class="p">:</span>
             <span class="n">hvsr_az</span> <span class="o">=</span> <span class="n">calculate_azimuth</span><span class="p">(</span><span class="n">hvsrDataIN</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">azimuth_kwargs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1509,14 +1522,16 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">errMsg</span> <span class="o">=</span> <span class="n">e</span>
             
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during generate_psds() for </span><span class="si">{</span><span class="n">hvsr_az</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="si">{</span><span class="n">errMsg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>            
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during calculate_azimuth() for </span><span class="si">{</span><span class="n">hvsr_az</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="si">{</span><span class="n">errMsg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>            
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_az</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">hvsr_az</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="n">hvsr_az</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;calculate_azimuths_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">hvsr_az</span><span class="p">[</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;calculate_azimuths_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-     
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">azimuth_calculation</span> <span class="o">=</span> <span class="kc">False</span>
+        
      
     <span class="c1"># Remove Noise</span>
     <span class="n">data_noiseRemoved</span> <span class="o">=</span> <span class="n">hvsr_az</span>
@@ -1578,6 +1593,7 @@
         <span class="n">generate_psds_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">generate_psds</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
         <span class="n">PPSDkwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">PPSD</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
         <span class="n">generate_psds_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">PPSDkwargs</span><span class="p">)</span>
+        <span class="n">generate_psds_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuthal_psds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">azimuth_calculation</span>
         <span class="n">psd_data</span> <span class="o">=</span> <span class="n">generate_psds</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">psd_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">generate_psds_kwargs</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">):</span>
@@ -1644,6 +1660,11 @@
     <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">data_curvesRemoved</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">process_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">process_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+        
+        <span class="k">if</span> <span class="n">azimuth_calculation</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+                <span class="n">process_hvsr_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">azimuth_kwargs</span><span class="p">[</span><span class="s1">&#39;azimuth_angle&#39;</span><span class="p">]</span>
+        
         <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">psd_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">process_hvsr_kwargs</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_get_error_from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span>
@@ -2084,7 +2105,7 @@
 <span class="c1"># Function to generate azimuthal readings from the horizontal components</span>
 <div class="viewcode-block" id="calculate_azimuth">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.calculate_azimuth">[docs]</a>
-<span class="k">def</span> <span class="nf">calculate_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">azimuth_angle</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">azimuth_type</span><span class="o">=</span><span class="s1">&#39;multiple&#39;</span><span class="p">,</span> <span class="n">azimuth_unit</span><span class="o">=</span><span class="s1">&#39;degrees&#39;</span><span class="p">,</span> 
+<span class="k">def</span> <span class="nf">calculate_azimuth</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">azimuth_angle</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">azimuth_type</span><span class="o">=</span><span class="s1">&#39;multiple&#39;</span><span class="p">,</span> <span class="n">azimuth_unit</span><span class="o">=</span><span class="s1">&#39;degrees&#39;</span><span class="p">,</span> 
                       <span class="n">show_az_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">plot_azimuth_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to calculate azimuthal horizontal component at specified angle(s). </span>
 <span class="sd">       Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data[&#39;stream&#39;]</span>
@@ -3660,7 +3681,7 @@
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.generate_psds">[docs]</a>
 <span class="k">def</span> <span class="nf">generate_psds</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">overlap_pct</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">,</span> 
                   <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_on_gaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> 
-                  <span class="n">obspy_ppsds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuthal_ppsds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_psds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">obspy_ppsd_kwargs</span><span class="p">):</span>
+                  <span class="n">obspy_ppsds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuthal_psds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_psds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">obspy_ppsd_kwargs</span><span class="p">):</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate Power Spectral Density (PSD) curves for each channel.</span>
 <span class="sd">        Uses the [scipy.signal.welch()](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) function </span>
@@ -3690,7 +3711,7 @@
 <span class="sd">            Number of frequency bins to use. When using the default (i.e., scipy.signal.welch) PSD function, the frequency bins are created manually for processing.</span>
 <span class="sd">        obspy_ppsds : bool, default=False</span>
 <span class="sd">            Whether to use the Obspy PPSD class.</span>
-<span class="sd">        azimuthal_ppsds : bool, default=False</span>
+<span class="sd">        azimuthal_psds : bool, default=False</span>
 <span class="sd">            Whether to generate PPSDs for azimuthal data</span>
 <span class="sd">        verbose : bool, default=True</span>
 <span class="sd">            Whether to print inputs and results to terminal</span>
@@ -3765,7 +3786,7 @@
                     <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> (previously </span><span class="si">{</span><span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
-    <span class="n">azimuthal_ppsds</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;azimuthal_ppsds&#39;</span><span class="p">]</span>
+    <span class="n">azimuthal_psds</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;azimuthal_psds&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
     <span class="n">obspy_ppsd_kwargs</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;obspy_ppsd_kwargs&#39;</span><span class="p">]</span>
 
@@ -3938,15 +3959,17 @@
     <span class="k">if</span> <span class="n">obspy_ppsds</span><span class="p">:</span>
         <span class="n">hvsr_data</span><span class="p">,</span> <span class="n">dfList</span><span class="p">,</span> <span class="n">colList</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">_get_obspy_ppsds</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="o">**</span><span class="n">obspy_ppsd_kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">psdDict</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">psdDict</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="n">azimuthal_psds</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">x_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="n">num_freq_bins</span><span class="p">))</span>
-        <span class="n">psdDictUpdate</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">psdDict</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()]),</span>
-                         <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">psdDict</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()]),</span>
-                         <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">psdDict</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()]),</span>
-                         <span class="p">}</span>
-
-        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:{},</span> <span class="s1">&#39;E&#39;</span><span class="p">:{},</span> <span class="s1">&#39;N&#39;</span><span class="p">:{}}</span>
+        
+        <span class="n">psdDictUpdate</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">compdict</span> <span class="ow">in</span> <span class="n">psdDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">psdDictUpdate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">compdict</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1">#hvsr_data[&#39;ppsds&#39;] = {&#39;Z&#39;:{}, &#39;E&#39;:{}, &#39;N&#39;:{}}</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">psdDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">currSt</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
                       
@@ -4470,7 +4493,7 @@
             <span class="k">if</span> <span class="s1">&#39;plot_engine&#39;</span> <span class="ow">in</span> <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">)</span>
 
-            <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="n">plot_engine</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_plot_report</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="n">plot_engine</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_plot_report</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">expFigAx</span> <span class="o">=</span> <span class="n">fig</span>
             
             <span class="k">if</span> <span class="s1">&#39;plot&#39;</span> <span class="ow">in</span> <span class="n">report_export_format</span><span class="p">:</span>
@@ -5204,7 +5227,7 @@
     <span class="n">plotlyList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">plotlyList</span><span class="p">:</span>
-        <span class="n">plotlyFigure</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> 
+        <span class="n">plotlyFigure</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_results</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="n">plot_type</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span>
                                             <span class="n">results_fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="n">return_fig</span><span class="p">,</span> <span class="n">use_figure_widget</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                             <span class="n">show_results_plot</span><span class="o">=</span><span class="n">show_plot</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
@@ -5804,8 +5827,11 @@
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">horizontal_method</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">horizontal_method</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
             <span class="n">horizontal_method</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">horizontal_method</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">horizontal_method</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="ow">in</span> <span class="n">methodList</span><span class="p">:</span>
             <span class="n">horizontal_method</span> <span class="o">=</span> <span class="n">methodList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">horizontal_method</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Horizontal method </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2"> not recognized, reverting to default (geometric mean).</span><span class="se">\n\t</span><span class="s2">Must be one of </span><span class="si">{</span><span class="n">methodList</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">horizontal_method</span> <span class="o">=</span> <span class="mi">3</span>
 
     <span class="c1"># Now, horizontal_method is int no matter how it was entered</span>
     <span class="n">methodInt</span> <span class="o">=</span> <span class="n">horizontal_method</span>
@@ -7636,6 +7662,7 @@
 
     <span class="k">return</span> <span class="n">st</span>
 
+
 <span class="k">def</span> <span class="nf">__extract_text_sections</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract text sections from binary data&quot;&quot;&quot;</span>
     <span class="c1"># Find blocks of ASCII text (simple approach)</span>
@@ -7647,6 +7674,7 @@
         <span class="n">text_sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
     
     <span class="k">return</span> <span class="n">text_sections</span>
+
 
 <span class="k">def</span> <span class="nf">__extract_gps_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract GPS NMEA sentences from binary data&quot;&quot;&quot;</span>
@@ -7662,6 +7690,7 @@
         <span class="n">gps_sentences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
     
     <span class="k">return</span> <span class="n">gps_sentences</span>
+
 
 <span class="k">def</span> <span class="nf">__locate_data_start_blue</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This function looks after the last GPS point for an intitial, likely starting position of seismometer data&quot;&quot;&quot;</span>
@@ -7682,6 +7711,7 @@
             <span class="k">return</span> <span class="n">end_GPS_marker</span> <span class="o">+</span> <span class="mi">8</span>
     
     <span class="k">return</span> <span class="n">end_GPS_marker</span>
+
 
 <span class="k">def</span> <span class="nf">__swap_bytes</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -7707,6 +7737,7 @@
         <span class="n">swapped</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     
     <span class="k">return</span> <span class="n">swapped</span>
+
 
 <span class="c1"># Read data from raspberry shake</span>
 <span class="k">def</span> <span class="nf">__read_RS_file_struct</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">doy</span><span class="p">,</span> <span class="n">inv</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -8944,7 +8975,7 @@
 
 <span class="c1"># Helper functions for generate_psds()</span>
 <span class="c1"># Generate psds from raw data (no response removed)</span>
-<span class="k">def</span> <span class="nf">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get psds from raw trace streams (no response information is needed in this case)</span>
 
 <span class="sd">    Parameters</span>
@@ -8973,21 +9004,26 @@
     <span class="n">edata</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;E&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
     <span class="n">ndata</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">remove_response</span><span class="p">:</span>
-        <span class="n">zdata</span> <span class="o">=</span> <span class="n">zdata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-        <span class="n">edata</span> <span class="o">=</span> <span class="n">edata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-        <span class="n">ndata</span> <span class="o">=</span> <span class="n">ndata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-        
-        <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">zdata</span><span class="p">:</span>
-            <span class="n">trace</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">])</span>
-        <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">edata</span><span class="p">:</span>
-            <span class="n">trace</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">])</span>
-        <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">ndata</span><span class="p">:</span>
-            <span class="n">trace</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">])</span>            
+    <span class="n">dataDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="n">zdata</span><span class="p">,</span>
+                <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="n">edata</span><span class="p">,</span>
+                <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="n">ndata</span><span class="p">}</span>
 
-        <span class="n">zdata</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
-        <span class="n">edata</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
-        <span class="n">ndata</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">do_azimuths</span><span class="p">:</span>
+        <span class="n">azimuthStream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;R&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">azimuthTrace</span> <span class="ow">in</span> <span class="n">azimuthStream</span><span class="p">:</span>
+            <span class="n">dataDict</span><span class="p">[</span><span class="n">azimuthTrace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span> <span class="o">=</span> <span class="n">azimuthTrace</span>
+        
+    
+
+    <span class="k">if</span> <span class="n">remove_response</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">compStream</span> <span class="ow">in</span> <span class="n">dataDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">compStream</span> <span class="o">=</span> <span class="n">compStream</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">compStream</span><span class="p">:</span>
+                <span class="n">trace</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">])</span>
+            
+            <span class="n">compStream</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">Instrument Response Removed from Traces</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -8995,6 +9031,7 @@
     <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">zdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span>
     <span class="n">sample_space</span> <span class="o">=</span> <span class="n">zdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>
     <span class="n">zdata</span> <span class="o">=</span> <span class="n">zdata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
 
     <span class="c1"># Transform overlap to proper formatting (% b/w 0-1)</span>
     <span class="k">if</span> <span class="n">overlap</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
@@ -9016,7 +9053,6 @@
     <span class="n">psd_window_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_length</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">)</span>
     <span class="n">overlap_samples</span> <span class="o">=</span> <span class="n">overlap</span> <span class="o">*</span> <span class="n">psd_window_samples</span>
 
-        
     <span class="c1"># Generated x values to which data will be interpolated later</span>
     <span class="c1">#  This maintains consistency in array size across all FFT windows</span>
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_band&#39;</span><span class="p">):</span>
@@ -9029,8 +9065,10 @@
     <span class="n">x_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">low_freq</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hi_freq</span><span class="p">),</span> <span class="mi">512</span><span class="p">)</span>
 
     <span class="c1"># For each component, create the time windows and do FFT analysis</span>
-    <span class="n">psdDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:{},</span> <span class="s1">&#39;E&#39;</span><span class="p">:{},</span> <span class="s1">&#39;N&#39;</span><span class="p">:{}}</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">curr_component</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="n">zdata</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="n">edata</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="n">ndata</span><span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">psdDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">curr_component</span> <span class="ow">in</span> <span class="n">dataDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">psdDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        
         <span class="c1"># Get all data in same format (obspy.Stream, traces will be extracted later)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curr_component</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
             <span class="n">st</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">curr_component</span><span class="p">])</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
@@ -9854,7 +9892,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="n">reportStr</span><span class="p">)</span>
 
     <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reportStr</span>
-    <span class="k">if</span> <span class="n">azimuth</span><span class="o">==</span><span class="s1">&#39;HV&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">azimuth</span><span class="o">==</span><span class="s1">&#39;HV&#39;</span> <span class="ow">or</span> <span class="n">azimuth</span><span class="o">==</span><span class="s1">&#39;R&#39;</span><span class="p">:</span>
         <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reportStr</span>
     <span class="k">return</span> <span class="n">hvsr_results</span>
 
@@ -9944,7 +9982,7 @@
             <span class="nb">print</span><span class="p">()</span>
 
     <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outDF</span>
-    <span class="k">if</span> <span class="n">azimuth</span><span class="o">==</span><span class="s1">&#39;HV&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">azimuth</span> <span class="o">==</span> <span class="s1">&#39;HV&#39;</span> <span class="ow">or</span> <span class="n">azimuth</span> <span class="o">==</span> <span class="s1">&#39;R&#39;</span><span class="p">:</span>
         <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outDF</span>
     <span class="k">return</span> <span class="n">hvsr_results</span>
 
@@ -9985,7 +10023,7 @@
 
 
 <span class="c1"># Private function for html report generation</span>
-<span class="k">def</span> <span class="nf">_generate_html_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">show_html_report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_generate_html_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span> <span class="n">show_html_report</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function that generates html report, intented to be used by get_report() public function</span>
 
 <span class="sd">    Parameters</span>
@@ -10013,8 +10051,8 @@
     <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;HVSR_ID&quot;</span><span class="p">,</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">])</span>
 
     <span class="c1"># Update peak freq info</span>
-    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;PEAKFREQ&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="s1">&#39;HV&#39;</span><span class="p">][</span><span class="s1">&#39;f0&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)))</span>
-    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;PEAKSTDEV&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="s1">&#39;HV&#39;</span><span class="p">][</span><span class="s1">&#39;Sf&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)))</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;PEAKFREQ&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;f0&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)))</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;PEAKSTDEV&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Sf&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)))</span>
 
     <span class="k">if</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="p">[</span><span class="s1">&#39;PeakPasses&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;SESAME_TESTS_RESULTS&quot;</span><span class="p">,</span> <span class="s1">&#39;Peak has passed the SESAME validation tests.&#39;</span><span class="p">)</span>
@@ -10256,7 +10294,6 @@
         <span class="n">xlim</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;xlim&#39;</span><span class="p">]</span>
     
     <span class="k">if</span> <span class="s1">&#39;ylim&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-
         <span class="n">ylim</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsrp2&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">])</span><span class="o">*</span><span class="mf">1.1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">:</span>
             <span class="n">ylim</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_curve&#39;</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
@@ -10856,7 +10893,11 @@
     <span class="n">anyKey</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ppsds</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
     
     <span class="c1"># Get data</span>
-    <span class="n">psdArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">))</span>
+    <span class="n">hvCurveColumn</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
+    <span class="k">if</span> <span class="n">azimuth</span> <span class="o">!=</span> <span class="s1">&#39;HV&#39;</span><span class="p">:</span>
+        <span class="n">hvCurveColumn</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">azimuth</span>
+    
+    <span class="n">psdArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">hvCurveColumn</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">))</span>
     <span class="n">useArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;Use&#39;</span><span class="p">])</span>
     <span class="n">useArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">useArr</span><span class="p">,</span> <span class="p">(</span><span class="n">psdArr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">useArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">useArr</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>

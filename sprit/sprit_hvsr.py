@@ -1350,13 +1350,26 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Calculate azimuths
     hvsr_az = hvsrDataIN
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-    if 'horizontal_method' in kwargs.keys() and (str(kwargs['horizontal_method']) == '8' or 'single' in str(kwargs['horizontal_method']).lower()):
+    
+    azList = ['azimuth', 'single azimuth', 'single']
+    
+    azCond1 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']) == '8'
+    azCond2 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']).lower() in azList
+    azCond3 = azimuth_calculation
+    azCond4 = len(azimuth_kwargs.keys()) > 0
+
+    if azCond1 or azCond2 or azCond3 or azCond4:
         azimuth_calculation = True
         azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
         if 'azimuth_angle' not in kwargs.keys():
-            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45  
-    if len(azimuth_kwargs.keys()) > 0 or azimuth_calculation is True:
+            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
+        
+        kwargs['azimuth'] = "R"  # str(kwargs['azimuth_angle']).zfill(3)
+        
+        if 'horizontal_method' not in kwargs.keys():
+            kwargs['horizontal_method'] = 'Single Azimuth'
+
         try:
             hvsr_az = calculate_azimuth(hvsrDataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
@@ -1365,14 +1378,16 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             else:
                 errMsg = e
             
-            print(f"Error during generate_psds() for {hvsr_az.site}: \n{errMsg}")            
+            print(f"Error during calculate_azimuth() for {hvsr_az.site}: \n{errMsg}")            
 
             if isinstance(hvsr_az, HVSRBatch):
                 for site_name in hvsr_az.keys():
                     hvsr_az[site_name]['processing_status']['calculate_azimuths_status'] = False
             else:
                 hvsr_az['processing_status']['calculate_azimuths_status'] = False
-     
+    else:
+        azimuth_calculation = False
+        
      
     # Remove Noise
     data_noiseRemoved = hvsr_az
@@ -1434,6 +1449,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         generate_psds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_psds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
         generate_psds_kwargs.update(PPSDkwargs)
+        generate_psds_kwargs['azimuthal_psds'] = azimuth_calculation
         psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
     except Exception as e:
         if hasattr(e, 'message'):
@@ -1500,6 +1516,11 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     hvsr_results = data_curvesRemoved
     try:
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
+        
+        if azimuth_calculation:
+            if azimuth_kwargs['azimuth_type'] == 'single':
+                process_hvsr_kwargs['azimuth'] = azimuth_kwargs['azimuth_angle']
+        
         hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
         sprit_utils._get_error_from_exception(e,
@@ -1934,7 +1955,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
 
 # Function to generate azimuthal readings from the horizontal components
-def calculate_azimuth(hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', 
+def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azimuth_unit='degrees', 
                       show_az_plot=False, verbose=False, **plot_azimuth_kwargs):
     """Function to calculate azimuthal horizontal component at specified angle(s). 
        Adds each new horizontal component as a radial component to obspy.Stream object at hvsr_data['stream']
@@ -3489,7 +3510,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', 
                   remove_response=False, skip_on_gaps=True, num_freq_bins=512, 
-                  obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
+                  obspy_ppsds=False, azimuthal_psds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     
     """Calculate Power Spectral Density (PSD) curves for each channel.
         Uses the [scipy.signal.welch()](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) function 
@@ -3519,7 +3540,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             Number of frequency bins to use. When using the default (i.e., scipy.signal.welch) PSD function, the frequency bins are created manually for processing.
         obspy_ppsds : bool, default=False
             Whether to use the Obspy PPSD class.
-        azimuthal_ppsds : bool, default=False
+        azimuthal_psds : bool, default=False
             Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
@@ -3594,7 +3615,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
 
-    azimuthal_ppsds = orig_args['azimuthal_ppsds']
+    azimuthal_psds = orig_args['azimuthal_psds']
     verbose = orig_args['verbose']
     obspy_ppsd_kwargs = orig_args['obspy_ppsd_kwargs']
 
@@ -3767,15 +3788,17 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
     else:
-        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, overlap=overlap_pct, remove_response=remove_response, show_psd_plot=False)
+        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
 
         x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
-        psdDictUpdate = {"Z": np.array([list(np.flip(arr)) for time, arr in psdDict['Z'].items()]),
-                         "E": np.array([list(np.flip(arr)) for time, arr in psdDict['E'].items()]),
-                         "N": np.array([list(np.flip(arr)) for time, arr in psdDict['N'].items()]),
-                         }
-
-        hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
+        
+        psdDictUpdate = {}
+        hvsr_data['ppsds'] = {}
+        for key, compdict in psdDict.items():
+            psdDictUpdate[key] = np.array([list(np.flip(arr)) for time, arr in compdict.items()])
+            hvsr_data['ppsds'][key] = {}
+        
+        #hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
         for key, item in psdDict.items():
             currSt = hvsr_data.stream.select(component=key).merge()
                       
@@ -4293,7 +4316,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             if 'plot_engine' in plot_hvsr_kwargs.keys():
                 plot_hvsr_kwargs.pop('plot_engine')
 
-            fig = plot_hvsr(hvsr_results, plot_type=plot_type, plot_engine=plot_engine, show_plot=show_plot_report, return_fig=True)
+            fig = plot_hvsr(hvsr_results, plot_type=plot_type, azimuth=azimuth, plot_engine=plot_engine, show_plot=show_plot_report, return_fig=True)
             expFigAx = fig
             
             if 'plot' in report_export_format:
@@ -5012,7 +5035,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
     plotlyList = ['plotly', 'plty', 'p']
 
     if plot_engine.lower() in plotlyList:
-        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, 
+        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, azimuth=azimuth,
                                             results_fig=fig, return_fig=return_fig, use_figure_widget=False,
                                             show_results_plot=show_plot)
         if return_fig:
@@ -5606,8 +5629,11 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     if type(horizontal_method) is str:
         if horizontal_method.isdigit():
             horizontal_method = int(horizontal_method)
-        else:
+        elif str(horizontal_method).title() in methodList:
             horizontal_method = methodList.index(horizontal_method.title())
+        else:
+            print(f"\tHorizontal method {f} not recognized, reverting to default (geometric mean).\n\tMust be one of {methodList}")
+            horizontal_method = 3
 
     # Now, horizontal_method is int no matter how it was entered
     methodInt = horizontal_method
@@ -7425,6 +7451,7 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
 
     return st
 
+
 def __extract_text_sections(data):
     """Extract text sections from binary data"""
     # Find blocks of ASCII text (simple approach)
@@ -7436,6 +7463,7 @@ def __extract_text_sections(data):
         text_sections.append(match.group(0))
     
     return text_sections
+
 
 def __extract_gps_data(data):
     """Extract GPS NMEA sentences from binary data"""
@@ -7451,6 +7479,7 @@ def __extract_gps_data(data):
         gps_sentences.append(match.group(0))
     
     return gps_sentences
+
 
 def __locate_data_start_blue(data):
     """This function looks after the last GPS point for an intitial, likely starting position of seismometer data"""
@@ -7471,6 +7500,7 @@ def __locate_data_start_blue(data):
             return end_GPS_marker + 8
     
     return end_GPS_marker
+
 
 def __swap_bytes(input_file):
     """
@@ -7496,6 +7526,7 @@ def __swap_bytes(input_file):
         swapped[-1] = data[-1]
     
     return swapped
+
 
 # Read data from raspberry shake
 def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=False):
@@ -8733,7 +8764,7 @@ s
 
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
-def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, remove_response=False, verbose=False):
+def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, remove_response=False, do_azimuths=False, verbose=False):
     """Helper function to get psds from raw trace streams (no response information is needed in this case)
 
     Parameters
@@ -8762,21 +8793,26 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
     edata = hvsr_data.stream.select(component='E').merge()
     ndata = hvsr_data.stream.select(component='N').merge()
 
-    if remove_response:
-        zdata = zdata.split()
-        edata = edata.split()
-        ndata = ndata.split()
-        
-        for trace in zdata:
-            trace.remove_response(hvsr_data['inv'])
-        for trace in edata:
-            trace.remove_response(hvsr_data['inv'])
-        for trace in ndata:
-            trace.remove_response(hvsr_data['inv'])            
+    dataDict = {'Z':zdata,
+                'E':edata,
+                'N':ndata}
 
-        zdata.merge()
-        edata.merge()
-        ndata.merge()
+    if do_azimuths:
+        azimuthStream = hvsr_data.stream.select(component='R').merge()
+        
+        for azimuthTrace in azimuthStream:
+            dataDict[azimuthTrace.stats.component.upper()] = azimuthTrace
+        
+    
+
+    if remove_response:
+        for key, compStream in dataDict.items():
+            compStream = compStream.split()
+            
+            for trace in compStream:
+                trace.remove_response(hvsr_data['inv'])
+            
+            compStream.merge()
 
         if verbose:
             print("\n\tInstrument Response Removed from Traces\n")
@@ -8784,6 +8820,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
     sample_rate = zdata[0].stats.sampling_rate
     sample_space = zdata[0].stats.delta
     zdata = zdata.split()
+
 
     # Transform overlap to proper formatting (% b/w 0-1)
     if overlap > 100:
@@ -8805,7 +8842,6 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
     psd_window_samples = int(window_length * sample_rate)
     overlap_samples = overlap * psd_window_samples
 
-        
     # Generated x values to which data will be interpolated later
     #  This maintains consistency in array size across all FFT windows
     if hasattr(hvsr_data, 'hvsr_band'):
@@ -8818,8 +8854,10 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
     x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), 512)
 
     # For each component, create the time windows and do FFT analysis
-    psdDict = {'Z':{}, 'E':{}, 'N':{}}
-    for key, curr_component in {'Z':zdata, 'E':edata, 'N':ndata}.items():
+    psdDict = {}
+    for key, curr_component in dataDict.items():
+        psdDict[key] = {}
+        
         # Get all data in same format (obspy.Stream, traces will be extracted later)
         if isinstance(curr_component, obspy.Trace):
             st = obspy.Stream([curr_component]).merge()
@@ -9643,7 +9681,7 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
         print(reportStr)
 
     hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
-    if azimuth=='HV':
+    if azimuth=='HV' or azimuth=='R':
         hvsr_results['Print_Report'] = reportStr
     return hvsr_results
 
@@ -9733,7 +9771,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
             print()
 
     hvsr_results['BestPeak'][azimuth]['Report']['Table_Report'] = outDF
-    if azimuth=='HV':
+    if azimuth == 'HV' or azimuth == 'R':
         hvsr_results['Table_Report'] = outDF
     return hvsr_results
 
@@ -9774,7 +9812,7 @@ def _display_html_report(html_report):
 
 
 # Private function for html report generation
-def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
+def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, verbose=False):
     """Private function that generates html report, intented to be used by get_report() public function
 
     Parameters
@@ -9802,8 +9840,8 @@ def _generate_html_report(hvsr_results, show_html_report=False, verbose=False):
     html = html.replace("HVSR_ID", hvsr_results['hvsr_id'])
 
     # Update peak freq info
-    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak']['HV']['f0'], 3)))
-    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak']['HV']['Sf'], 3)))
+    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak'][azimuth]['f0'], 3)))
+    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak'][azimuth]['Sf'], 3)))
 
     if hvsr_results.Table_Report['PeakPasses'][0]:
         html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
@@ -10045,7 +10083,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-
         ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.1]
         if ylim[1] > 25:
             ylim = [0, max(hvsr_data['hvsr_curve']+1)]
@@ -10645,7 +10682,11 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     anyKey = list(ppsds.keys())[0]
     
     # Get data
-    psdArr = np.stack(hvsrDF['HV_Curves'].apply(np.flip))
+    hvCurveColumn = 'HV_Curves'
+    if azimuth != 'HV':
+        hvCurveColumn += '_'+azimuth
+    
+    psdArr = np.stack(hvsrDF[hvCurveColumn].apply(np.flip))
     useArr = np.array(hvsrDF['Use'])
     useArr = np.tile(useArr, (psdArr.shape[1], 1)).astype(int)
     useArr = np.clip(useArr, a_min=0.15, a_max=1)

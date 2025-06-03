@@ -53,7 +53,7 @@ to derive a relation between the resonant frequency and the …</p></div>
 </dd>
 <dt><code class="name"><a title="sprit.sprit_streamlit_ui" href="sprit_streamlit_ui.html">sprit.sprit_streamlit_ui</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>This file contains the code to run the SpRIT app (via streamlit) both locally and on the web.</p></div>
 </dd>
 <dt><code class="name"><a title="sprit.sprit_tkinter_ui" href="sprit_tkinter_ui.html">sprit.sprit_tkinter_ui</a></code></dt>
 <dd>
@@ -105,7 +105,7 @@ If 'table', will read data from a file read in using pandas.read_csv(), by defau
 </dl></div>
 </dd>
 <dt id="sprit.calculate_azimuth"><code class="name flex">
-<span>def <span class="ident">calculate_azimuth</span></span>(<span>hvsr_data, azimuth_angle=30, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs)</span>
+<span>def <span class="ident">calculate_azimuth</span></span>(<span>hvsr_data, azimuth_angle=45, azimuth_type='multiple', azimuth_unit='degrees', show_az_plot=False, verbose=False, **plot_azimuth_kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to calculate azimuthal horizontal component at specified angle(s).
@@ -341,7 +341,7 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
 </dl></div>
 </dd>
 <dt id="sprit.generate_psds"><code class="name flex">
-<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', remove_response=False, skip_on_gaps=True, num_freq_bins=512, obspy_ppsds=False, azimuthal_ppsds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs)</span>
+<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', remove_response=False, skip_on_gaps=True, num_freq_bins=512, obspy_ppsds=False, azimuthal_psds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate Power Spectral Density (PSD) curves for each channel.
@@ -371,7 +371,7 @@ This is passed to the skip_on_gaps parameter of the Obspy PPSD class.</dd>
 <dd>Number of frequency bins to use. When using the default (i.e., scipy.signal.welch) PSD function, the frequency bins are created manually for processing.</dd>
 <dt><strong><code>obspy_ppsds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to use the Obspy PPSD class.</dd>
-<dt><strong><code>azimuthal_ppsds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dt><strong><code>azimuthal_psds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to generate PPSDs for azimuthal data</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to print inputs and results to terminal</dd>
@@ -838,7 +838,7 @@ This is the default, so usually 'i' is not needed.
 </dl></div>
 </dd>
 <dt id="sprit.plot_results"><code class="name flex">
-<span>def <span class="ident">plot_results</span></span>(<span>hv_data, plot_string='HVSR p ann C+ p SPEC ann', results_fig=None, results_graph_widget=None, use_figure_widget=False, return_fig=False, show_results_plot=False, html_plot=False, verbose=False)</span>
+<span>def <span class="ident">plot_results</span></span>(<span>hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV', results_fig=None, results_graph_widget=None, use_figure_widget=False, return_fig=False, show_results_plot=False, html_plot=False, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot results using plotly</p>
@@ -1190,7 +1190,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.calculate_azimuth">calculate_azimuth()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.calculate_azimuth" href="#sprit.calculate_azimuth">calculate_azimuth()</a>)</code> for specifics.</dd>
-<dt><strong><code>azimuth_angle</code></strong> :&ensp;<code>any</code>, default <code>= 30</code></dt>
+<dt><strong><code>azimuth_angle</code></strong> :&ensp;<code>any</code>, default <code>= 45</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.calculate_azimuth" href="#sprit.calculate_azimuth">calculate_azimuth()</a>)</code> for specifics.</dd>
 <dt><strong><code>azimuth_type</code></strong> :&ensp;<code>any</code>, default <code>= 'multiple'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.calculate_azimuth" href="#sprit.calculate_azimuth">calculate_azimuth()</a>)</code> for specifics.</dd>
@@ -1260,7 +1260,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>obspy_ppsds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
-<dt><strong><code>azimuthal_ppsds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dt><strong><code>azimuthal_psds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
