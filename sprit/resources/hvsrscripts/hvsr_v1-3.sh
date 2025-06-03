@@ -17,7 +17,7 @@ OPTION |   ARGUMENT   | DESCRIPTION       \n\t\
  -s    | STARTUP_TIME | The amount of time between when the hvsr command is run and when data is saved, in seconds (default is 15 sec)\n\t\
  -t    |              | Run this site as a test (does not save data or turn off Shake)\n\t\
  -v    |              | Print information to terminal in verbose manner\n\t\
- -h    |              | Print this help message (-h should only be used by itself\n\t\
+ -h    |              | Print this help message (-h should only be used by itself)\n\t\
  -e    | EXPORT_DISK* | EXPORT_DISK argument is optional; Export data in /opt/hvsr/data folder to inserted USB disk (experimental)\n\n"
 
 #CODE
@@ -40,6 +40,7 @@ CHECK_INT=30
 VERBOSE=""
 
 RUN_AS_TEST=false
+TEST_TEXT=""
 CURR_YEAR=$(date +'%Y')
 STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="/opt/hvsr"
@@ -64,7 +65,7 @@ while getopts 'n:t:d:c:s:h:ve' opt; do
             echo $SITE_NAME
             ;;
         t) RUN_AS_TEST=true
-            echo "RUNNING SITE AS TEST (will not power off instrument)";;
+            TEST_TEXT="RUNNING SITE AS TEST (will not power off instrument)";;
         d) DURATION="$OPTARG";;
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
@@ -184,6 +185,7 @@ END_TIME=$(date -d @"$END_TIMESTAMP" +"%H:%M:%S")
 # Print out information
 echo "HVSR SCRIPT VERSION $SCRIPT_VERSION"
 echo "LAST UPDATED $SCRIPT_UPDATE"
+echo "$TEST_TEXT"
 echo ""
 echo "---------------------------------------------------------------------"
 echo "                            SITE INFORMATION"
@@ -250,7 +252,8 @@ done
 # Final printouts
 echo "  ----------------------------------------------------------------------"
 echo ""
-echo "ACQUISITION COMPLETED"
+echo "ACQUISITION COMPLETED!"
+echo ""
 
 # DATA CLEAN UP
 echo "Cleaning up data now"
@@ -286,14 +289,18 @@ fpath="$HVSRDATA_DIR/"$SITE_NAME"_"$STATION"_$(date -d "$START_TIME" '+%j_%Y-%m-
 echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
-slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o $fpath $VERBOSE :18000
+slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o "$fpath" $VERBOSE :18000
 
 #RASPBERRY SHAKE SYSTEM CHECK HERE
 # If this is being run on a raspberry shake, poweroff instrument
 if ! $RUN_AS_TEST; then
     # Shutdown instrument
-    echo "Powering down"
+    echo "Powering down in 5 seconds"
+    sleep 5
     sudo poweroff
 else
     echo "Program Completed. If this was a not a test, your Raspbery Pi system would shut down now."
 fi
+
+echo "Program will end in 10 seconds"
+sleep 10
