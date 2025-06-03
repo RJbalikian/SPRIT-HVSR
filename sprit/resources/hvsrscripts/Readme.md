@@ -48,8 +48,12 @@ Enter the following lines (the first two lines below are not strictly necessary,
 
 ```bash
 hvsr(){
+    if [ "$1" == "-h"] ; then
+        sudo bash /opt/hvsr/hvsr_v1-3.sh -h
+        return 0
+    fi
     echo "Starting HVSR script in screen session.
-    sleep 2
+    sleep 1
     screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
     }
 ```
@@ -85,7 +89,7 @@ After your script has run, the acquisition screen will close and you will be ret
 
 You can check that the file was saved by looking in the `/opt/hvsr/data` folder. Use the `-l -h` flags to see the size of the file in human readable format:
 
-> Note: The files should be about 9kb in size (or at least that was our results from a six-second test as defined above)
+> Note: The files should be about 5-10kb in size (or at least that was our results from a six-second test as defined above)
 
 ```bash
 ls /opt/hvsr/data -l -h
@@ -94,6 +98,7 @@ ls /opt/hvsr/data -l -h
 See the [Usage](#Usage) section below for more details on the arguments and options you can use with the HVSR script.
 
 # Usage
+> NOTE: the -n flag signifies a file name. You can use a space in the file name as long as the name is in quotes (e.g., `hvsr -n "Site Name"`), but it is recommended not to use spaces in the site names.
 The intended purpose of this file is that you can set up everything before acquiring data at a site and to eliminate the need to reconnect a computer at the end of the acquisition.
 
 The data will also be collated into a single file with all three components, thereby saving work and potential for error later. 
@@ -107,6 +112,41 @@ hvsr -h
 This will print up a help file to your terminal, which will show all the flags and their meanings and usage.
 
 For example, see below:
+```text
+Usage: hvsr_v1-3.sh CAPITALIZED WORD after option indicates variable to which that argument gets passed.
+
+	OPTION |   ARGUMENT   | DESCRIPTION       
+	-------|--------------|-------------------
+	 -n    | SITE_NAME    | Name of site; this will be used as the first part of the filename; defaults to 'HVSRSite'
+	 -d    | DURATION     | Duration of HVSR acquisition, in minutes (default is 20 min; up to one decimal point supported)
+	 -c    | CHECK_INT    | The interval at which to check/print status, in seconds (default is 30 sec)
+	 -s    | STARTUP_TIME | The amount of time between when the hvsr command is run and when data is saved, in seconds (default is 15 sec)
+	 -t    |              | Run this site as a test (does not save data or turn off Shake)
+	 -v    |              | Print information to terminal in verbose manner
+	 -h    |              | Print this help message (-h should only be used by itself)
+	 -e    | EXPORT_DISK* | EXPORT_DISK argument is optional; Export data in /opt/hvsr/data folder to inserted USB disk (experimental)
+```
 
 
 
+## Examples
+### Example 1
+Acquire data for site called "HourLongSite" for one hour before ending acquisition, collating data, saving to file, and powering off Shake.
+
+```bash
+hvsr -n "HourLongSite"
+```
+### Example 2
+Acquire data for 30 minutes, save data but do not turn off shake when done.
+
+```bash
+hvsr -d 30 -t TRUE
+```
+> Note: the `TRUE` after -t is not strictly necesssary, but it prevents an error message.
+
+### Example 3
+Acquire data for 10 minutes for site called "ShortSite", giving yourself 30 seconds of startup time between the time you run the hvsr command and when it begins to save data for the site.
+
+```bash
+hvsr -n "ShortSite" -d 10 -s 30
+```
