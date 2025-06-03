@@ -3,19 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.1">
+<meta name="generator" content="pdoc3 0.11.6">
 <title>sprit.sprit_plot API documentation</title>
 <meta name="description" content="">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => {
 hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
 hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
 })</script>
 </head>
 <body>
@@ -37,42 +48,421 @@ hljs.highlightAll();
 <span>def <span class="ident">get_check_peaks_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_check_peaks_kwargs():
+    cp_kwargs = {&#39;hvsr_band&#39;:[hvsr_band_min_box.value, hvsr_band_max_box.value],
+                &#39;peak_freq_range&#39;:[peak_freq_range_min_box.value, peak_freq_range_max_box.value],
+                &#39;peak_selection&#39;:peak_selection_type.value,
+                &#39;verbose&#39;:verbose_check.value}
+    return cp_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.get_generate_ppsd_kwargs"><code class="name flex">
 <span>def <span class="ident">get_generate_ppsd_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_generate_ppsd_kwargs():
+    ppsd_kwargs = {
+        &#39;skip_on_gaps&#39;:skip_on_gaps.value,
+        &#39;db_bins&#39;:[db_bins_min.value, db_bins_max.value, db_bins_step.value],
+        &#39;ppsd_length&#39;:ppsd_length.value,
+        &#39;overlap&#39;:overlap_pct.value,
+        &#39;special_handling&#39;:special_handling_dropdown.value,
+        &#39;period_smoothing_width_octaves&#39;:period_smoothing_width.value,
+        &#39;period_step_octaves&#39;:period_step_octave.value,
+        &#39;period_limits&#39;:[period_limits_min.value, period_limits_max.value],
+        &#39;verbose&#39;:verbose_check.value
+        }
+
+    if str(ppsd_kwargs[&#39;special_handling&#39;]).lower() == &#39;none&#39;:
+        ppsd_kwargs[&#39;special_handling&#39;] = None        
+    return ppsd_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.get_get_report_kwargs"><code class="name flex">
 <span>def <span class="ident">get_get_report_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_get_report_kwargs():
+    def get_formatted_plot_str():
+        # Initialize plot string
+        hvsr_plot_str = &#39;&#39;
+        comp_plot_str = &#39;&#39;
+        spec_plot_str = &#39;&#39;
+
+        # Whether to use each plot
+        if use_plot_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34;HVSR&#34;
+        if use_plot_comp.value:
+            comp_plot_str=comp_plot_str + &#34;C&#34;
+        if use_plot_spec.value:
+            spec_plot_str=spec_plot_str + &#34;SPEC&#34;
+
+        # Whether components be on the same plot as HV curve?
+        if not combine_hv_comp.value:
+            comp_plot_str=comp_plot_str + &#34;+&#34;
+        else:
+            comp_plot_str=comp_plot_str.replace(&#39;+&#39;,&#39;&#39;)
+
+        # Whether to show (log) standard deviations
+        if not show_std_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; -s&#34;
+        if not show_std_comp.value:
+            comp_plot_str=comp_plot_str + &#34; -s&#34;                
+
+        # Whether to show all peaks
+        if show_all_peaks_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; all&#34;
+
+        # Whether curves from each time window are shown
+        if show_all_curves_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; t&#34;
+        if show_all_curves_comp.value:
+            comp_plot_str=comp_plot_str + &#34; t&#34;
+
+        # Whether the best peak is displayed
+        if show_best_peak_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; p&#34;
+        if show_best_peak_comp.value:
+            comp_plot_str=comp_plot_str + &#34; p&#34;
+        if show_best_peak_spec.value:
+            spec_plot_str=spec_plot_str + &#34; p&#34;
+
+        # Whether best peak value is annotated
+        if ann_best_peak_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; ann&#34;
+        if ann_best_peak_comp.value:
+            comp_plot_str=comp_plot_str + &#34; ann&#34;
+        if ann_best_peak_spec.value:
+            spec_plot_str=spec_plot_str + &#34; ann&#34;
+
+        # Whether peaks from individual time windows are shown
+        if show_ind_peaks_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; tp&#34;
+        if show_ind_peaks_spec.value:
+            spec_plot_str=spec_plot_str + &#39; tp&#39;
+        
+        # Whether to show legend
+        if show_legend_hv.value:
+            hvsr_plot_str=hvsr_plot_str + &#34; leg&#34;
+        if ann_best_peak_comp.value:
+            comp_plot_str=comp_plot_str + &#34; leg&#34;
+        if show_legend_spec.value:
+            spec_plot_str=spec_plot_str + &#34; leg&#34;            
+
+        # Combine string into one
+        plot_str = hvsr_plot_str + &#39; &#39; + comp_plot_str+ &#39; &#39; + spec_plot_str
+        return plot_str
+
+    gr_kwargs = {&#39;report_format&#39;:[&#39;print&#39;,&#39;csv&#39;],
+                    &#39;plot_type&#39;:get_formatted_plot_str(),
+                    &#39;export_path&#39;:None,
+                    &#39;csv_overwrite_opt&#39;:&#39;overwrite&#39;,
+                    &#39;no_output&#39;:False,
+                &#39;verbose&#39;:verbose_check.value
+                    }
+    return gr_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.get_process_hvsr_kwargs"><code class="name flex">
 <span>def <span class="ident">get_process_hvsr_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_process_hvsr_kwargs():
+    if smooth_hv_curve_bool.value:
+        smooth_value = smooth_hv_curve.value
+    else:
+        smooth_value = smooth_hv_curve_bool.value
+
+    if resample_hv_curve_bool.value:
+        resample_value = resample_hv_curve.value
+    else:
+        resample_value = resample_hv_curve_bool.value
+
+    ph_kwargs={&#39;method&#39;:h_combine_meth.value,
+                &#39;smooth&#39;:smooth_value,
+                &#39;freq_smooth&#39;:freq_smoothing.value,
+                &#39;f_smooth_width&#39;:freq_smooth_width.value,
+                &#39;resample&#39;:resample_value,
+                &#39;outlier_curve_rmse_percentile&#39;:use_hv_curve_rmse.value,
+                &#39;verbose&#39;:verbose_check.value}
+    return ph_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.get_remove_noise_kwargs"><code class="name flex">
 <span>def <span class="ident">get_remove_noise_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_remove_noise_kwargs():
+    def get_remove_method():
+        remove_method_list=[]
+        do_stalta = stalta_check.value
+        do_sat_pct = max_saturation_check.value
+        do_noiseWin=noisy_windows_check.value
+        do_warmcool=warmcool_check.value
+        
+        if auto_remove_check.value:
+            remove_method_list=[&#39;stalta&#39;, &#39;saturation&#39;, &#39;noise&#39;, &#39;warmcool&#39;]
+        else:
+            if do_stalta:
+                remove_method_list.append(&#39;stalta&#39;)
+            if do_sat_pct:
+                remove_method_list.append(&#39;saturation&#39;)
+            if do_noiseWin:
+                remove_method_list.append(&#39;noise&#39;)
+            if do_warmcool:
+                remove_method_list.append(&#39;warmcool&#39;)
+        
+        if not remove_method_list:
+            remove_method_list = None
+        return remove_method_list
+    
+    remove_noise_kwargs = {&#39;remove_method&#39;:get_remove_method(),
+                            &#39;sat_percent&#39;:max_saturation_pct.value, 
+                            &#39;noise_percent&#39;:max_window_pct.value,
+                            &#39;sta&#39;:sta.value,
+                            &#39;lta&#39;:lta.value, 
+                            &#39;stalta_thresh&#39;:[stalta_thresh_low.value, stalta_thresh_hi.value], 
+                            &#39;warmup_time&#39;:warmup_time.value,
+                            &#39;cooldown_time&#39;:cooldown_time.value,
+                            &#39;min_win_size&#39;:noisy_window_length.value,
+                            &#39;remove_raw_noise&#39;:raw_data_remove_check.value,
+                            &#39;verbose&#39;:verbose_check.value}
+    return remove_noise_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.get_remove_outlier_curve_kwargs"><code class="name flex">
 <span>def <span class="ident">get_remove_outlier_curve_kwargs</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_remove_outlier_curve_kwargs():
+    roc_kwargs = {
+            &#39;use_percentile&#39;:rmse_pctile_check.value,
+            &#39;rmse_thresh&#39;:rmse_thresh.value,
+            &#39;use_hv_curve&#39;:False,
+            &#39;verbose&#39;:verbose_check.value
+        }
+    return roc_kwargs</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.parse_comp_plot_list"><code class="name flex">
 <span>def <span class="ident">parse_comp_plot_list</span></span>(<span>hv_data, comp_plot_list, plot_with_hv=False, results_fig=None, azimuth='HV')</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_fig=None, azimuth=&#39;HV&#39;):
+    &#34;&#34;&#34;Function to plot the internal list used by the &#34;Components&#34; subplot of the results plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    comp_plot_list : list
+        List produced by parse_plot_string
+    plot_with_hv : bool, default=False
+        Whether to plot in same subplot as HV curve
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default &#39;HV&#39;
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with Components plot per input comp_plot_list
+    &#34;&#34;&#34;    
+    hvsr_data = hv_data
+    if results_fig is None:
+        results_fig=go.Figure()
+
+    # Initial setup
+    x_data = hvsr_data.x_freqs[&#39;Z&#39;]
+    hvsrDF = hvsr_data.hvsr_windows_df
+    
+    same_plot = False
+    if plot_with_hv:
+        same_plot = True
+    else:
+        same_plot = ((comp_plot_list != []) and (&#39;+&#39; not in comp_plot_list[0]))
+
+    if same_plot:
+        yaxis_to_use = &#39;y2&#39;
+        use_secondary = True
+        transparency_modifier = 0.5
+    else:
+        yaxis_to_use = &#39;y&#39;
+        use_secondary=False
+        transparency_modifier = 1
+
+    # Keep components if azimuth is used, but make them lighter
+    if len(hvsr_data.hvsr_az.keys()) &gt; 0:
+        h_transparency_modifier = transparency_modifier * 0.5
+    else:
+        h_transparency_modifier = transparency_modifier
+        
+    v_transparency_modifier = transparency_modifier
+    az_transparency_modifier = transparency_modifier
+
+        
+    h_alpha = 0.4 * h_transparency_modifier
+    v_alpha = 0.4 * v_transparency_modifier
+    az_alpha = 0.4 * az_transparency_modifier
+    components = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+
+    compColor_semi_light = {&#39;Z&#39;:f&#39;rgba(128,128,128,{v_alpha})&#39;,
+                &#39;E&#39;:f&#39;rgba(0,0,128,{h_alpha})&#39;,
+                &#39;N&#39;:f&#39;rgba(128,0,0,{h_alpha})&#39;}
+
+    h_alpha = 0.7 * h_transparency_modifier
+    v_alpha = 0.7 * v_transparency_modifier
+    az_alpha = 0.7 * az_transparency_modifier    
+    compColor_semi = {&#39;Z&#39;:f&#39;rgba(128,128,128,{v_alpha})&#39;,
+                    &#39;E&#39;:f&#39;rgba(100,100,128,{h_alpha})&#39;, 
+                    &#39;N&#39;:f&#39;rgba(128,100,100,{h_alpha})&#39;}
+
+    compColor = {&#39;Z&#39;:f&#39;rgba(128,128,128,{v_alpha})&#39;, 
+                &#39;E&#39;:f&#39;rgba(100,100,250,{h_alpha})&#39;, 
+                &#39;N&#39;:f&#39;rgba(250,100,100,{h_alpha})&#39;}
+
+    for az in hvsr_data.hvsr_az.keys():
+        components.append(az)
+        compColor_semi_light[az] = f&#39;rgba(0,128,0,{az_alpha})&#39;
+        compColor_semi[az] = f&#39;rgba(100,128,100,{az_alpha})&#39;
+        compColor[az] = f&#39;rgba(100,250,100,{az_alpha})&#39;
+
+    # Whether to plot in new subplot or not
+    if same_plot:
+        compRow=1
+    else:
+        compRow=2
+
+    # Whether to plot individual time curves
+    if &#39;t&#39; in comp_plot_list:
+        for comp in components:
+            alltimecurves = np.stack(hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;psd_values_&#39;+comp])
+            for i, row in enumerate(alltimecurves):
+                if i==0:
+                    showLeg = True
+                else:
+                    showLeg= False
+                
+                results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode=&#39;lines&#39;,
+                                line=dict(width=0.5, dash=&#34;solid&#34;, 
+                                color=compColor_semi[comp]),
+                                name=&#39;Ind. time win. curve&#39;,
+                                showlegend=False,
+                                hoverinfo=&#39;none&#39;,
+                                yaxis=yaxis_to_use),
+                                secondary_y=use_secondary,
+                                row=compRow, col=1)
+
+    # Code to plot standard deviation windows, if not removed
+    if &#39;-s&#39; not in comp_plot_list:
+        for comp in components:
+            # Show standard deviation
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_p[comp],
+                                    line={&#39;color&#39;:compColor_semi_light[comp], &#39;width&#39;:0.1},marker=None, 
+                                    showlegend=False, name=&#39;Log. St.Dev. Upper&#39;,
+                                    hoverinfo=&#39;none&#39;,    
+                                    yaxis=yaxis_to_use),
+                                    secondary_y=use_secondary,
+                                    row=compRow, col=1)
+            
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+                                    line={&#39;color&#39;:compColor_semi_light[comp], &#39;width&#39;:0.1},marker=None,
+                                    fill=&#39;tonexty&#39;, fillcolor=compColor_semi_light[comp],
+                                    name=f&#39;St.Dev. [{comp}]&#39;, hoverinfo=&#39;none&#39;, showlegend=False, 
+                                    yaxis=yaxis_to_use),
+                                    secondary_y=use_secondary,
+                                    row=compRow, col=1)
+            
+    # Code to plot location of best peak
+    if &#39;p&#39; in comp_plot_list:
+        minVal = 10000
+        maxVal = -10000
+        for comp in components:
+            currPPSDCurve = hvsr_data[&#39;psd_values_tavg&#39;][comp]
+            if np.nanmin(currPPSDCurve) &lt; minVal:
+                minVal = np.nanmin(currPPSDCurve)
+            if np.nanmax(currPPSDCurve) &gt; maxVal:
+                maxVal = np.nanmax(currPPSDCurve)
+
+        results_fig.add_trace(go.Scatter(
+            x=[hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], None], # set x to None
+            y=[minVal,maxVal,None], # set y to None
+            mode=&#34;lines&#34;, # set mode to lines
+            line=dict(width=1, dash=&#34;dash&#34;, color=&#34;black&#34;), # set line properties
+            name=&#34;Best Peak&#34;,
+            yaxis=yaxis_to_use),
+            secondary_y=use_secondary,
+            row=compRow, col=1)
+        
+    # Code to annotate value of best peak
+    if &#39;ann&#39; in comp_plot_list:
+        minVal = 1e6 # A high number to compare against (comparer should always be lower)
+        for comp in components:
+            currPPSDCurve = hvsr_data[&#39;ppsd_std_vals_m&#39;][comp]
+            if np.nanmin(currPPSDCurve) &lt; minVal:
+                minVal = np.nanmin(currPPSDCurve)
+        results_fig.add_annotation(x=np.log10(hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]),
+                        y=minVal,
+                        text=f&#34;{hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                        bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                        showarrow=False,
+                        yref=yaxis_to_use,
+                        secondary_y=use_secondary,
+                        row=compRow, col=1)
+
+    # Plot the main averaged component PPSDs
+    for comp in components:
+        results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs[comp],
+                                        y=hvsr_data[&#39;psd_values_tavg&#39;][comp],
+                                        line=dict(width=2, dash=&#34;solid&#34;, 
+                                        color=compColor[comp]),marker=None, 
+                                        name=&#39;PPSD Curve &#39;+comp,    
+                                        yaxis=yaxis_to_use), 
+                                        secondary_y=use_secondary,
+                                        row=compRow, col=&#39;all&#39;)
+
+    # If new subplot, update accordingly
+    if compRow==2:
+        results_fig.update_xaxes(type=&#39;log&#39;,
+                        range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                        row=compRow, col=1)
+    return results_fig</code></pre>
+</details>
 <div class="desc"><p>Function to plot the internal list used by the "Components" subplot of the results plot</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -97,6 +487,162 @@ hljs.highlightAll();
 <span>def <span class="ident">parse_hv_plot_list</span></span>(<span>hv_data, hvsr_plot_list, results_fig=None, azimuth='HV')</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth=&#39;HV&#39;):
+    &#34;&#34;&#34;Function to plot the internal list used by the &#34;HV&#34; subplot of the restults plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    hvsr_plot_list : list
+        List produced by parse_plot_string
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default &#39;HV&#39;
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with HV plot per input hvsr_plot_list
+    &#34;&#34;&#34;
+    hvsr_data = hv_data
+    hv_plot_list = hvsr_plot_list[0]
+    x_data = hvsr_data.x_freqs[&#39;Z&#39;]
+    hvsrDF = hvsr_data.hvsr_windows_df
+
+    plotymax = max(hvsr_data.hvsrp2[&#39;HV&#39;]) + (max(hvsr_data.hvsrp2[&#39;HV&#39;]) - max(hvsr_data.hvsr_curve))
+    ylim = [0, plotymax]
+
+
+    if results_fig is None:
+        results_fig = go.Figure()
+
+    if azimuth == &#39;HV&#39;:
+        HVCol = &#39;HV_Curves&#39;
+    else:
+        HVCol = &#39;HV_Curves_&#39;+azimuth
+
+    if &#39;tp&#39; in hv_plot_list:
+        allpeaks = []
+        for row in hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;CurvesPeakFreqs_&#39;+azimuth].values:
+            for peak in row:
+                allpeaks.append(peak)
+        allInd = []
+        for row, peakList in enumerate(hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;CurvesPeakIndices_&#39;+azimuth].values):
+            for ind in peakList:
+                allInd.append((row, ind))
+        x_vals = []
+        y_vals = []
+        y_max = np.nanmax(hvsr_data.hvsrp[azimuth])
+        hvCurveInd = list(hvsrDF.columns).index(HVCol)
+
+        for i, tp in enumerate(allpeaks):
+            x_vals.extend([tp, tp, None]) # add two x values and a None
+            y_vals.extend([0, hvsrDF.iloc[allInd[i][0], hvCurveInd][allInd[i][1]], None]) # add the first and last y values and a None            
+
+        results_fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode=&#39;lines&#39;,
+                                        line=dict(width=4, dash=&#34;solid&#34;, 
+                                        color=&#34;rgba(128,0,0,0.1)&#34;), 
+                                        name=&#39;Best Peaks Over Time&#39;),
+                                        row=1, col=1)
+
+    if &#39;t&#39; in hv_plot_list:
+        alltimecurves = np.stack(hvsrDF[hvsrDF[&#39;Use&#39;]][HVCol])
+        for i, row in enumerate(alltimecurves):
+            if i==0:
+                showLeg = True
+            else:
+                showLeg= False
+            results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode=&#39;lines&#39;,
+                                        line=dict(width=0.5, dash=&#34;solid&#34;, 
+                                        color=&#34;rgba(100, 110, 100, 0.8)&#34;), 
+                                        showlegend=showLeg,
+                                        name=&#39;Ind. time win. curve&#39;, 
+                                        hoverinfo=&#39;none&#39;),
+                                        row=1, col=1)
+
+    if &#39;all&#39; in hv_plot_list:
+        for i, p in enumerate(hvsr_data[&#39;hvsr_peak_freqs&#39;][azimuth]):
+            if i==0:
+                showLeg = True
+            else:
+                showLeg= False
+
+            results_fig.add_trace(go.Scatter(
+                x=[p, p, None], # set x to None
+                y=[0, np.nanmax(np.stack(hvsrDF[HVCol])),None], # set y to None
+                mode=&#34;lines&#34;, # set mode to lines
+                line=dict(width=1, dash=&#34;dot&#34;, color=&#34;gray&#34;), # set line properties
+                name=&#34;All checked peaks&#34;, # set legend name
+                showlegend=showLeg),
+                row=1, col=1)
+
+    if &#39;fr&#39; in hv_plot_list:
+        lowX = [hvsr_data.hvsr_band[0], hvsr_data.hvsr_band[0]]
+        lowWinX = [hvsr_data.peak_freq_range[0], hvsr_data.peak_freq_range[0]]
+        hiWinX = [hvsr_data.peak_freq_range[1], hvsr_data.peak_freq_range[1]]
+        hiX =  [hvsr_data.hvsr_band[1], hvsr_data.hvsr_band[1]]
+        
+        yPts = ylim
+        
+        # Show windows where peak_freq_range is
+        results_fig.add_trace(go.Scatter(x=lowWinX, y=yPts,
+                                line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1}, marker=None,
+                                fill=&#39;tozerox&#39;, fillcolor=&#34;rgba(128, 100, 100, 0.6)&#34;,
+                                showlegend=False, name=&#39;Peak Frequency exclusion range&#39;,
+                                hoverinfo=&#39;none&#39;),
+                                row=1, col=1)
+        
+        results_fig.add_trace(go.Scatter(x=hiWinX, y=yPts,
+                                line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1},marker=None, 
+                                showlegend=False,
+                                hoverinfo=&#39;none&#39;),
+                                row=1, col=1)
+        
+        results_fig.add_trace(go.Scatter(x=hiX, y=yPts,
+                                line=None, marker=None,
+                                fill=&#39;tonextx&#39;, fillcolor=&#34;rgba(128, 100, 100, 0.6)&#34;,
+                                name=&#39;Peak frequency exclusion range&#39;, hoverinfo=&#39;none&#39;),
+                                row=1, col=1)        
+
+    if &#39;-s&#39; not in hv_plot_list:
+        # Show standard deviation
+        results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2[azimuth],
+                                line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1},marker=None, 
+                                showlegend=False, name=&#39;Log. St.Dev. Upper&#39;,
+                                hoverinfo=&#39;none&#39;),
+                                row=1, col=1)
+        
+        results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrm2[azimuth],
+                                line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1},marker=None,
+                                fill=&#39;tonexty&#39;, fillcolor=&#34;rgba(128, 128, 128, 0.6)&#34;,
+                                name=&#39;Log. St.Dev.&#39;, hoverinfo=&#39;none&#39;),
+                                row=1, col=1)
+            
+    if &#39;p&#39; in hv_plot_list:
+        results_fig.add_trace(go.Scatter(
+            x=[hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], None], # set x to None
+            y=[0,np.nanmax(np.stack(hvsrDF[&#39;HV_Curves&#39;])),None], # set y to None
+            mode=&#34;lines&#34;, # set mode to lines
+            line=dict(width=1, dash=&#34;dash&#34;, color=&#34;black&#34;), # set line properties
+            name=&#34;Best Peak&#34;),
+            row=1, col=1)
+
+    if &#39;ann&#39; in hv_plot_list:
+        # Annotate best peak
+        results_fig.add_annotation(x=np.log10(hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]),
+                                y=0, yanchor=&#39;bottom&#39;, xanchor=&#39;center&#39;,
+                                text=f&#34;{hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                                bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                                showarrow=False,
+                                row=1, col=1)
+    return results_fig</code></pre>
+</details>
 <div class="desc"><p>Function to plot the internal list used by the "HV" subplot of the restults plot</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -119,6 +665,82 @@ hljs.highlightAll();
 <span>def <span class="ident">parse_plot_string</span></span>(<span>plot_string)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_plot_string(plot_string):
+    &#34;&#34;&#34;Function to parse a plot string into a list readable by plotting functions
+
+    Parameters
+    ----------
+    plot_string : str
+        Plot string used by sprit.plot_hvsr to define results plot
+
+    Returns
+    -------
+    list
+        A list readable by various sprit plotting functions to show what to include in the results plot.
+    &#34;&#34;&#34;
+    plot_list = plot_string.split()
+
+    hvsrList = [&#39;hvsr&#39;, &#39;hv&#39;, &#39;h&#39;]
+    compList = [&#39;component&#39;, &#39;comp&#39;, &#39;c&#39;]
+    compPlus = [item + &#39;+&#39; for item in compList]
+    specList = [&#39;spectrogram&#39;, &#39;specgram&#39;, &#39;spec&#39;,&#39;sg&#39;, &#39;s&#39;]
+
+    hvInd = np.nan
+    compInd = np.nan
+    specInd = np.nan
+
+    hvIndFound = False
+    compIndFound = False
+    specIndFound = False
+
+    for i, item in enumerate(plot_list):
+        if item.lower() in hvsrList and not hvIndFound:
+            # assign the index
+            hvInd = i
+            hvIndFound = True
+        if (item.lower() in compList or item.lower() in compPlus) and not compIndFound:
+            # assign the index
+            compInd = i
+            compIndFound = True
+        if item.lower() in specList and not specIndFound:
+            # assign the index
+            specInd = i
+            specIndFound = True
+
+    # Get individual plot lists (should already be correctly ordered)
+    if hvInd is np.nan:
+        hvsr_plot_list = [&#39;HVSR&#39;]
+
+    if compInd is np.nan:
+        comp_plot_list = []
+        if specInd is np.nan:
+            if hvInd is not np.nan:
+                hvsr_plot_list = plot_list
+            spec_plot_list = []
+        else:
+            if hvInd is not np.nan:
+                hvsr_plot_list = plot_list[hvInd:specInd]
+            spec_plot_list = plot_list[specInd:]
+    else:
+        if hvInd is not np.nan:
+            hvsr_plot_list = plot_list[hvInd:compInd]
+        
+        if specInd is np.nan:
+            comp_plot_list = plot_list[compInd:]
+            spec_plot_list = []
+        else:
+            comp_plot_list = plot_list[compInd:specInd]
+            spec_plot_list = plot_list[specInd:]
+
+    # Figure out how many subplots there will be
+    plot_list_list = [hvsr_plot_list, comp_plot_list, spec_plot_list]
+
+    return plot_list_list</code></pre>
+</details>
 <div class="desc"><p>Function to parse a plot string into a list readable by plotting functions</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -135,6 +757,112 @@ hljs.highlightAll();
 <span>def <span class="ident">parse_spec_plot_list</span></span>(<span>hv_data, spec_plot_list, subplot_num, results_fig=None, azimuth='HV')</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, results_fig=None, azimuth=&#39;HV&#39;):
+    &#34;&#34;&#34;Function to plot the internal list used by the &#34;Spectrogram&#34; subplot of the results plot
+
+    Parameters
+    ----------
+    hv_data : HVSRData object
+        _description_
+    spec_plot_list : list
+        List produced by parse_plot_string
+    subplot_num : bool, default=False
+        Which subplot to plot the spectrogram style plot in
+    results_fig : matplotlib.Figure, optional
+        Matplotlib Figure object to plot data onto. If None, new Figure created, by default None
+    azimuth : str, optional
+        Azimuth to use for calculation, by default &#39;HV&#39;
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with specgram plot per input spec_plot_list
+    &#34;&#34;&#34;   
+    
+    hvsr_data = hv_data
+
+    if results_fig is None:
+        results_fig=go.Figure()
+
+    if azimuth == &#39;HV&#39;:
+        HVCol = &#39;HV_Curves&#39;
+    else:
+        HVCol = &#39;HV_Curves_&#39;+azimuth
+
+    # Initial setup
+    hvsrDF = hvsr_data.hvsr_windows_df
+    specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
+    y_data = hvsr_data.x_freqs[&#39;Z&#39;][1:]
+    image_data = np.stack(hvsrDF[HVCol]).T
+
+    maxZ = np.percentile(image_data, 100)
+    minZ = np.percentile(image_data, 0)
+
+    use_mask = hvsr_data.hvsr_windows_df.Use.values
+    use_mask = np.tile(use_mask, (image_data.shape[0],1))
+    use_mask = np.where(use_mask is False, np.nan, use_mask)
+
+    hmap = go.Heatmap(z=image_data,
+                x=specAxisTimes,
+                y=y_data,
+                colorscale=&#39;Turbo&#39;,
+                showlegend=False,
+                #opacity=0.7,
+                hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;H/V Amplitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                zmin=minZ,zmax=maxZ, showscale=False, name=&#39;HV Curve Amp. over Time&#39;)
+    results_fig.add_trace(hmap, row=subplot_num, col=1)
+
+    data_used = go.Heatmap(
+        x=specAxisTimes,
+        y=y_data,
+        z=use_mask.astype(bool),
+        showlegend=False,
+        colorscale=[[0, &#39;rgba(0,0,0,0.66)&#39;], [0.25, &#39;rgba(0,0,0,0.66)&#39;], [1, &#39;rgba(250,250,250,0)&#39;]],
+        showscale=False, name=&#39;Used&#39;)
+    results_fig.add_trace(data_used, row=subplot_num, col=1)
+
+
+    # tp currently is not being added to spec_plot_list
+    if &#39;tp&#39; in spec_plot_list:
+        yvals = []
+        for row in hvsrDF[HVCol].values:
+            maxInd = np.argmax(row)
+            yvals.append(y_data[maxInd])
+        tp_trace = go.Scatter(x=specAxisTimes, y=yvals, mode=&#39;markers&#39;,
+                                line=None, marker=dict(color=&#39;white&#39;, size=2, line=dict(color=&#39;black&#39;, width=0.1)), name=&#39;Individual H/V Peaks&#39;)
+        results_fig.add_trace(tp_trace, row=subplot_num, col=&#39;all&#39;)
+
+    if &#39;p&#39; in spec_plot_list:
+        results_fig.add_hline(y=hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], line_width=1, line_dash=&#39;dash&#39;, line_color=&#39;black&#39;, row=subplot_num, col=&#39;all&#39;)
+
+    if &#39;ann&#39; in spec_plot_list:
+        results_fig.add_annotation(x=specAxisTimes[-1],
+                                y=hvsr_data[&#39;hvsr_band&#39;][1],
+                                text=f&#34;Peak: {hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                                bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                                showarrow=False, xanchor=&#39;right&#39;, yanchor=&#39;top&#39;,
+                                row=subplot_num, col=&#39;all&#39;)
+
+    if &#39;leg&#39; in spec_plot_list:
+        pass
+
+    results_fig.update_yaxes(type=&#39;log&#39;,
+                    range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                    row=subplot_num, col=1)
+
+    results_fig.add_annotation(
+        text=f&#34;{hvsrDF[&#39;Use&#39;].astype(bool).sum()}/{hvsrDF.shape[0]} windows used&#34;,
+        x=max(specAxisTimes),
+        y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
+        xanchor=&#34;right&#34;, yanchor=&#34;bottom&#34;,bgcolor=&#39;rgba(256,256,256,0.7)&#39;,
+        showarrow=False,row=subplot_num, col=1)
+
+    return results_fig</code></pre>
+</details>
 <div class="desc"><p>Function to plot the internal list used by the "Spectrogram" subplot of the results plot</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -156,9 +884,488 @@ hljs.highlightAll();
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data, title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', show_curves=True, annotate_curves=False, curve_alignment='peak', grid_size='auto', orientation='WE', interpolation_type='cloughtocher', surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False, depth_limit=150, minimum_elevation=None, show_bedrock_surface=True, return_data_batch=True, show_cross_section=True, verbose=False, **kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation='WE',<br>interpolation_type='cloughtocher',<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit=&#39;m&#39;, 
+                       show_curves=True, annotate_curves=False, curve_alignment=&#39;peak&#39;,
+                       grid_size=&#39;auto&#39;, orientation=&#39;WE&#39;, interpolation_type=&#39;cloughtocher&#39;,
+                       surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
+                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
+                       return_data_batch=True, show_cross_section=True, verbose=False,
+                       **kwargs):
+    &#34;&#34;&#34;Functio to plot a cross section given an HVSRBatch or similar object
+
+    Parameters
+    ----------
+    hvsr_data : HVSRBatch, list, or similar
+        HVSRBatch (intended usage) object with HVSRData objects to show in profile/cross section view
+    title : str, optional
+        Title to use for plot, by default None
+    fig : matplotlib.Figure, optional
+        Figure to use for plot, by default None
+    ax : matplotlib.Axis, optional
+        Axis to use for plot, by default None
+    use_elevation : bool, optional
+        Whether to use elevation (if True) or depth (if False), by default True
+    show_feet : bool, optional
+        Whether to show feet (if True) or meters (if False), by default False
+    primary_unit : str, optional
+        Primary unit to use (&#39;m&#39; or &#39;ft&#39;), by default &#39;m&#39;
+    show_curves : bool, optional
+        Whether to also show curves on plot, by default True
+    annotate_curves : bool, optional
+        Whether to annotate curves by plotting site names next to them, by default False
+    curve_alignment : str, optional
+        How to horizontally align the curve. 
+        If &#34;peak&#34; the curve will be aligned so that the peak is at the correct latitude or longitude.
+        If &#34;max&#34; will align the maximum point of the curve to the correct location.
+        If any other value, will align at the surface (i.e., highest frequency). By default &#39;peak&#39;.
+    grid_size : list, optional
+        Two item list with height and width of grid for interpolation.
+        If &#34;auto&#34; this will be calculated based on the data, by default &#39;auto&#39;.
+    orientation : str, optional
+        The orientation of the cross section. 
+        Should be either &#34;WE&#34;, &#34;EW&#34;, &#34;NS&#34;, or &#34;SN&#34;, by default &#39;WE&#39;.
+    interpolation_type : str, optional
+        Interpolation type to use. Uses scipy.interpolation.
+        Options include: &#39;cloughtocher&#39;, &#39;nearest neighbor&#39;, &#39;linear&#39;, 
+        or &#39;radial basis function&#39;, by default &#39;cloughtocher&#39;.
+    surface_elevations : shapely.LineString, optional
+        A shapely.LineString object containing surface elevation coordinates along cross section path.
+        If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.
+    show_peak_points : bool, optional
+        Whether to plot small triangles where peaks were picked, by default True
+    smooth_bedrock_surface : bool, optional
+        Whether to smooth the bedrock surface when plotting, by default False
+    depth_limit : int, optional
+        Depth limit for the plot, by default 150
+    minimum_elevation : _type_, optional
+        Minimum elevation of the plot, by default None
+    show_bedrock_surface : bool, optional
+        Whether to show the bedrock surface, by default True
+    return_data_batch : bool, optional
+        Whether to return the HVSRBatch object, by default True
+    show_cross_section : bool, optional
+        Whether to show the cross section plot, by default True
+    verbose : bool, optional
+        Whether to print information about the process to terminal, by default False
+
+    Returns
+    -------
+    figure
+        Currently only matplotlib figure supported
+    &#34;&#34;&#34;
+    if verbose:
+        print(&#34;Getting cross section plot configuration&#34;)
+        
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
+    elif ax is None and fig is not None:
+        fig = fig
+        ax = fig.get_axes()[0]
+    elif fig is None and ax is not None:
+        ax = ax
+        fig = plt.figure()
+        fig.axes.append(ax)
+    else:
+        fig = fig
+        ax = ax
+    plt.sca(ax)
+    
+    if verbose:
+        print(&#34;Getting data batch for cross section plot&#34;)
+    batchExt = None
+    if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
+        if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+            batchExt = &#39;hvsr&#39;
+    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+    
+    if verbose:
+        print(&#34;Sorting and Orienting data&#34;)
+    # Get orientation/order of data
+    nsList = [&#39;ns&#39;, &#34;north-south&#34;, &#39;northsouth&#39;, &#39;south&#39;, &#39;s&#39;]
+    snList = [&#39;sn&#39;, &#34;south-north&#34;, &#39;southnorth&#39;, &#39;north&#39;, &#39;n&#39;]
+    weList = [&#39;we&#39;, &#34;west-east&#34;, &#39;westeast&#39;, &#39;east&#39;, &#39;e&#39;]
+    ewList = [&#39;ew&#39;, &#34;east-west&#34;, &#39;eastwest&#39;, &#39;west&#39;, &#39;w&#39;]
+
+    if str(orientation).lower() in nsList:
+        ordercoord = &#39;latitude&#39;
+        order = &#39;descending&#39;
+        profile_direction = &#39;north-south&#39;
+    elif str(orientation).lower() in snList:
+        ordercoord = &#39;latitude&#39;
+        order = &#39;ascending&#39;
+        profile_direction  = &#39;south-north&#39;
+    elif str(orientation).lower() in weList:
+        ordercoord = &#39;longitude&#39;
+        order = &#39;ascending&#39;
+        profile_direction = &#39;west-east&#39;
+    elif str(orientation).lower() in ewList:
+        ordercoord = &#39;longitude&#39;
+        order = &#39;descending&#39;
+        profile_direction = &#39;east-west&#39;
+    else:
+        if verbose:
+            print(f&#34;Value for orientation={orientation} is not recognized. Using West-East orientation.&#34;)
+        order = &#39;ascending&#39;
+        ordercoord=&#39;longitude&#39;
+        profile_direction = &#39;west-east (default)&#39;
+
+    # Get data in correct order, as specified by orientation parameter
+    reverseit = (order == &#39;descending&#39;)
+    sorted_sites = sorted(hvDataBatch, key=lambda site: hvDataBatch[site][ordercoord], reverse=reverseit)
+    hvDataSorted = [hvDataBatch[h] for h in sorted_sites]
+
+    if verbose:
+        print(f&#39;Plotting {len(hvDataBatch.sites)} sites, {profile_direction}.&#39;)
+        [print(f&#34;\t{hvdata.site[:12]:&lt;12}: {hvdata.longitude:&gt;8.4f}, {hvdata.latitude:&gt;8.4f}, {hvdata.elevation:&lt;6.1f}&#34;) for hvdata in hvDataSorted]
+
+    # Get cross section profile
+    shapelyPoints = []
+    interpData = []
+    interpCoords = {&#39;longitude&#39;:[], &#39;latitude&#39;:[], &#39;elevation&#39;:[]}
+    for i, hvData in enumerate(hvDataSorted):
+        if not hasattr(hvData, &#39;x_elev_m&#39;):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            hvData = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+        
+        #print(hvData[&#39;longitude&#39;], hvData[&#39;latitude&#39;])
+        # Create shapely Point objects at each profile location
+        x = hvData[&#39;longitude&#39;]
+        y = hvData[&#39;latitude&#39;]
+        z = hvData[&#39;elevation&#39;]
+
+        shapelyPoints.append(shapely.Point(x, y, z))
+
+        #Points arranged for interpolation
+        interpData.extend(list(hvData.hvsr_curve))
+        for i, pt in enumerate(hvData.hvsr_curve):
+            interpCoords[&#39;longitude&#39;].append(x)
+            interpCoords[&#39;latitude&#39;].append(y)
+            interpCoords[&#39;elevation&#39;].append(hvData[&#39;x_elev_m&#39;][&#39;Z&#39;][i])
+
+        #Since already doing loop, ensure hvData has all depth/elev info it needs
+        if not hasattr(hvData, &#39;x_elev_m&#39;):
+            calc_depth_kwargs = {k: v for k, v in kwargs.items()
+                                      if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            if &#39;calculate_depth_in_feet&#39; not in calc_depth_kwargs:
+                calc_depth_kwargs[&#39;calculate_depth_in_feet&#39;] = True
+            hvDataSorted[i] = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
+
+    xSectionProfile = shapely.LineString(shapelyPoints)
+    profileXs, profileYs = xSectionProfile.xy
+    
+    orderCoordValues = profileXs
+    if ordercoord == &#39;latitude&#39;:
+        orderCoordValues = profileYs
+
+    minX = min(profileXs)
+    minY = min(profileYs)
+    maxX = max(profileXs)
+    maxY = max(profileYs)
+
+    # Generate grid
+    if verbose:
+        print(&#34;Generating Grid: &#34;, end=&#39;&#39;)
+    xSectionLength = xSectionProfile.length
+    if grid_size == &#39;auto&#39;:
+        grid_size=(50, 100)
+
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+
+    elif isinstance(grid_size, (list, tuple)):
+        cellHNumber = grid_size[0]
+        cellWNumber = grid_size[1]
+    else:
+        grid_size=(50, 100)
+
+        cellHNumber = grid_size[0]
+        cellWNumber = xSectionLength/grid_size[1]
+
+        if verbose:
+            print(f&#39;grid_size value ({grid_size} not recognized, using grid 100 cells wide and 50 cells high: grid_size=(50, 100))&#39;)
+
+    cellWSize = xSectionLength/cellWNumber
+    
+    max_surf_elev = max([hvd.elevation for hvd in hvDataSorted])
+    min_br_elev = min([hvd.Table_Report[&#39;Peak&#39;][0] for hvd in hvDataSorted])
+    elev_range = max_surf_elev - min_br_elev
+
+    max_grid_elev = math.ceil(max_surf_elev)
+
+    # Minimum grid elevation is determined by depth_limit and minimum_elevation
+    if str(minimum_elevation).lower() == &#39;auto&#39;:
+        min_grid_elev = min_br_elev - (elev_range) * 0.1
+    elif isinstance(minimum_elevation, numbers.Number):
+        min_grid_elev = minimum_elevation
+    elif minimum_elevation is None:
+        min_grid_elev = max_grid_elev - depth_limit
+    
+    xSectionDepth = max_grid_elev - min_grid_elev
+    cellHSize = xSectionDepth/cellHNumber
+
+    # Get grid coordinates (all coords in z direction (depth/elev))
+    gridZcoords = np.linspace(min_grid_elev, max_grid_elev, cellHNumber)
+
+    gridXDists = np.linspace(0, xSectionProfile.length, cellWNumber)
+    gridXcoords = [] # All coords in the &#34;x&#34; direction (along profile)
+    for xdist in gridXDists:
+        x, y = xSectionProfile.interpolate(xdist).xy
+        if &#39;east&#39; in profile_direction:
+            gridXcoords.append(x[0])
+        else:
+            gridXcoords.append(y[0])
+    gridXcoords = np.array(gridXcoords)
+    if verbose:
+        print(f&#39;Grid generated ({cellWNumber*cellHNumber} cells)\n\tx-range: {xSectionLength:.5f} ({cellWNumber:d} cells, each {cellWSize:.5f} units in size)\n\tz-range: {xSectionDepth:.2f} ({cellHNumber:d} cells, each {cellHSize:.5f} units in size)&#39;)
+
+    #print(&#39;x&#39;, len(interpCoords[&#39;longitude&#39;]))
+    #print(&#39;y&#39;, len(interpCoords[&#39;latitude&#39;]))
+    #print(&#39;z&#39;, len(interpCoords[&#39;elevation&#39;]))
+    #print(&#39;interp&#39;, np.array(interpData).shape)
+    if verbose:
+        print(f&#39;Beginning interpolation ({interpolation_type})... &#39;, end=&#39;&#39;)
+    
+    ctList = [&#39;cloughtocher2dinterpolator&#39;, &#39;cloughtocher&#39;, &#39;ct&#39;, &#39;clough-tocher&#39;, &#39;clough tocher&#39;, &#39;cubic&#39;, &#39;c&#39;]
+    nearList = [&#39;nearestnd&#39;, &#39;nearest&#39;, &#39;near&#39;, &#39;n&#39;]
+    linList = [&#39;linearnd&#39;, &#39;linear&#39;, &#39;lin&#39;, &#39;l&#39;]
+    rbfList = [&#39;radial basis function&#39;, &#39;rbf&#39;, &#39;rbfinterpolator&#39;]
+    
+    if str(interpolation_type).lower() in ctList:
+        interp = interpolate.CloughTocher2DInterpolator(list(zip(interpCoords[ordercoord], interpCoords[&#39;elevation&#39;])), interpData)
+    elif str(interpolation_type).lower() in nearList:
+        interp = interpolate.NearestNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords[&#39;elevation&#39;])), interpData)
+    elif str(interpolation_type).lower() in rbfList:
+        interp = interpolate.RBFInterpolator(list(zip(interpCoords[ordercoord], interpCoords[&#39;elevation&#39;])), interpData)        
+    elif str(interpolation_type).lower() in linList:
+        interp = interpolate.LinearNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords[&#39;elevation&#39;])), interpData)
+        
+    xx, zz = np.meshgrid(gridXcoords, gridZcoords)
+    interpData = interp(xx, zz)
+    interpDataflat = interpData[:-1, :-1]
+    if verbose:
+        print(&#39;Data interpolated&#39;)
+        print(&#39;Plotting colormesh&#39;)
+    
+    
+    # kwargs-defined pcolormesh kwargs
+    pcolormeshKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plt.pcolormesh).parameters.keys())}
+    
+    # Set defaults for cmap and shading (if not overriden in kwargs)
+    if &#39;cmap&#39; not in pcolormeshKwargs:
+        pcolormeshKwargs[&#39;cmap&#39;] = &#39;nipy_spectral&#39;
+    if &#39;shading&#39; not in pcolormeshKwargs:
+        pcolormeshKwargs[&#39;shading&#39;] = &#39;flat&#39;
+                
+    ax.pcolormesh(xx, zz, interpDataflat, zorder=0, **pcolormeshKwargs)
+    
+    if show_curves:
+        if verbose:
+            print(&#39;Plotting curves&#39;)
+        norm_div = 1
+        normal_factor = np.diff(orderCoordValues)
+        normal_factor = np.nanmedian(normal_factor[normal_factor != 0]) / norm_div
+        
+        zAttr = &#39;x_depth_m&#39;
+        if use_elevation:
+            zAttr = &#39;x_elev_m&#39;
+
+        for hvData in hvDataSorted:
+            hvData[&#39;Normalized_HVCurve&#39;] = (hvData[&#39;hvsr_curve&#39;] / np.nanmax(hvData[&#39;hvsr_curve&#39;])) * normal_factor
+            locatedCurve = hvData[&#39;Normalized_HVCurve&#39;] + hvData[ordercoord]
+            if curve_alignment.lower() == &#39;peak&#39;:
+                normal_peak_factor = (hvData[&#34;BestPeak&#34;][&#39;HV&#39;][&#39;A0&#39;] / np.nanmax(hvData[&#39;hvsr_curve&#39;])) * normal_factor
+                locatedCurve = locatedCurve  - normal_peak_factor
+            elif curve_alignment.lower() == &#39;max&#39;:
+                locatedCurve = locatedCurve  - normal_factor
+            else:
+                pass
+            
+            if max(locatedCurve) &gt; max(gridXcoords):
+                locatedCurve = locatedCurve - (max(locatedCurve) - max(gridXcoords))
+            if min(locatedCurve) &lt; min(gridXcoords):
+                locatedCurve = locatedCurve + (min(gridXcoords) - min(locatedCurve))
+                
+            ax.plot(locatedCurve, hvData[zAttr][&#39;Z&#39;][:-1], c=&#39;k&#39;, linewidth=0.5, zorder=3)
+
+    if annotate_curves:
+        for hvData in hvDataSorted:
+            if len(hvData.site) &gt; 10:
+                sitename = hvData.site[:8]+ &#39;...&#39;
+            else:
+                sitename = hvData.site
+            ax.text(hvData[ordercoord], y=min_grid_elev, s=sitename, ha=&#39;right&#39;, va=&#39;bottom&#39;, rotation=&#39;vertical&#39;)
+    
+    if smooth_bedrock_surface:
+        show_bedrock_surface = True
+
+    if show_peak_points or show_bedrock_surface:
+        brX = []
+        brZ = []
+        for hvData in hvDataSorted:
+            if &#39;BedrockElevation&#39; in hvData[&#39;Table_Report&#39;].columns:
+                brX.append(hvData[ordercoord])
+                brZ.append(hvData[&#39;Table_Report&#39;].loc[0,&#39;BedrockElevation&#39;][()])
+        if show_peak_points:
+            ax.scatter(brX, brZ, zorder=5, c=&#39;k&#39;, marker=&#39;v&#39;)
+
+        
+        if smooth_bedrock_surface:
+            #brSurfZ = scipy.signal.savgol(brZ, window_length=len(brZ))
+            if brX[0] &gt; brX[-1]:
+                brX = np.flip(brX)
+                brZ = np.flip(brZ)
+                doFlip=True
+            else:
+                doFlip=False
+                
+            newX = np.sort(gridXcoords)
+            brSurfZ = np.interp(newX, brX, brZ)
+            brSurfX = newX
+        else:
+            brSurfX = brX
+            brSurfZ = brZ
+        
+        zMinPts = list(np.array(brSurfZ) * 0 + min(gridZcoords))
+        
+        if show_bedrock_surface:
+            ax.fill_between(brSurfX, brSurfZ, zMinPts,facecolor=&#39;w&#39;, alpha=0.5, zorder=1)
+            ax.plot(brSurfX, brSurfZ, c=&#39;k&#39;, zorder=2)
+        
+    
+    # Plot surfaces
+    if verbose:
+        print(&#39;Plotting surfaces&#39;)
+    if surface_elevations is None:
+        surfPts_shapely = []
+        surfPtsX = []
+        surfPtsZ = []
+        
+        surface_elevations = shapely.LineString([shapely.Point(hvData[&#39;longitude&#39;], 
+                                                               hvData[&#34;latitude&#34;], 
+                                                               hvData[&#34;elevation&#34;]) 
+                                                 for hvData in hvDataSorted])
+    
+    xPts = []
+    zPts = []
+    for surf_pt in surface_elevations.coords:
+        surfPtDict = {&#39;longitude&#39;:surf_pt[0], 
+                      &#39;latitude&#39;: surf_pt[1],
+                      &#39;elevation&#39;: surf_pt[2]}
+        xPts.append(surfPtDict[ordercoord])
+        zPts.append(surfPtDict[&#39;elevation&#39;])
+    
+    zMaxPts = list(np.array(zPts) * 0 + max_grid_elev)
+    ax.fill_between(xPts, zPts, zMaxPts, facecolor=&#39;w&#39;, zorder=1000)
+    ax.plot(xPts, zPts, c=&#39;g&#39;, linewidth=1.5, zorder=1001)
+
+    # Plot configuration
+    if verbose:
+        print(&#39;Configuring plot&#39;)
+    ax.set_xlim([min(gridXcoords), max(gridXcoords)])
+    ax.set_ylim([min_grid_elev, max_grid_elev])
+    
+    
+    ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+    ax.set_xlabel(str(ordercoord).title())
+    ax.xaxis.set_label_position(&#39;top&#39;)
+    ax.set_ylabel(&#39;Elevation [Meters]&#39;)
+    if title is None:
+        title = &#39;HVSR Cross Section Profile&#39;
+    ax.set_title(title)
+    
+    # Calculate angle
+    profile_angle = math.degrees(math.atan2(shapelyPoints[-1].y - shapelyPoints[0].y, shapelyPoints[-1].x - shapelyPoints[0].x))
+    #Convert angle to geographic coordinates
+    profile_angle = (profile_angle*-1) + 90
+    if profile_angle &lt; 0:
+        profile_angle += 360
+
+    if verbose:
+        print(f&#34;Calculated profile angle to be {profile_angle:.3f} degrees.&#34;)
+    # Calculate nomencalture
+    if profile_angle &lt; -11.25 + 22.5 * 1:
+        profileStart = &#39;S&#39;
+        profileEnd = &#39;N&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 2:
+        profileEnd = &#39;NNE&#39;
+        profileStart = &#39;SSW&#39;        
+    elif profile_angle &lt; -11.25 + 22.5 * 3:
+        profileEnd = &#39;NE&#39;
+        profileStart = &#39;SW&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 4:
+        profileEnd = &#39;ENE&#39;
+        profileStart = &#39;WSW&#39;        
+    elif profile_angle &lt; -11.25 + 22.5 * 5:
+        profileEnd = &#39;E&#39;
+        profileStart = &#39;W&#39;        
+    elif profile_angle &lt; -11.25 + 22.5 * 6:
+        profileEnd = &#39;ESE&#39;
+        profileStart = &#39;WNW&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 7:
+        profileEnd = &#39;SE&#39;
+        profileStart = &#39;NW&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 8:
+        profileEnd = &#39;SSE&#39;
+        profileStart = &#39;NNW&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 9:
+        profileEnd = &#39;S&#39;
+        profileStart = &#39;N&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 10:
+        profileEnd = &#39;SSW&#39;
+        profileStart = &#39;NNE&#39;        
+    elif profile_angle &lt; -11.25 + 22.5 * 11:
+        profileEnd = &#39;SW&#39;
+        profileStart = &#39;NE&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 12:
+        profileEnd = &#39;WSW&#39;
+        profileStart = &#39;ENE&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 13:
+        profileEnd = &#39;W&#39;
+        profileStart = &#39;E&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 14:
+        profileEnd = &#39;WNW&#39;
+        profileStart = &#39;ESE&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 15:
+        profileEnd = &#39;NW&#39;
+        profileStart = &#39;SE&#39;
+    elif profile_angle &lt; -11.25 + 22.5 * 16:
+        profileEnd = &#39;NNW&#39;
+        profileStart = &#39;SSE&#39;
+    elif profile_angle &lt;= 360:
+        profileEnd = &#39;N&#39;
+        profileStart = &#39;S&#39;
+
+    if &#39;north&#39; in profile_direction[:5] or &#39;east&#39; in profile_direction[:5]:
+        ax.invert_xaxis()
+        #print(&#39;inverting&#39;)
+        #profileInt = profileEnd
+        #profileEnd = profileStart
+        #profileStart = profileInt
+
+    plt.sca(ax)
+    plt.figtext(0.1,0.95, s=profileStart)
+    plt.figtext(0.9,0.95, s=profileEnd)
+
+    if show_cross_section:
+        if verbose:
+            print(&#39;Displaying plot&#39;)
+        plt.sca(ax)
+        plt.show()
+        
+    if return_data_batch:
+        hvBatch = sprit_hvsr.HVSRBatch(hvDataSorted)
+        hvBatch[&#39;Cross_Section_Plot&#39;] = fig
+        return hvBatch
+            
+    return fig</code></pre>
+</details>
 <div class="desc"><p>Functio to plot a cross section given an HVSRBatch or similar object</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -222,15 +1429,399 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_depth_curve"><code class="name flex">
-<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, depth_limit=250, max_elev=None, min_elev=None, annotate=True, depth_plot_export_path=None, fig=None, ax=None, show_depth_curve=True)</span>
+<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results,<br>use_elevation=True,<br>show_feet=False,<br>normalize_curve=True,<br>depth_limit=250,<br>max_elev=None,<br>min_elev=None,<br>annotate=True,<br>depth_plot_export_path=None,<br>fig=None,<br>ax=None,<br>show_depth_curve=True)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
+                     depth_limit=250, max_elev=None, min_elev=None,
+                     annotate=True, depth_plot_export_path=None, 
+                     fig=None, ax=None, show_depth_curve=True):
+    
+    if fig is None and ax is None:
+        fig, ax = plt.subplots(layout=&#39;constrained&#39;)
+        fig.set_size_inches(3, 5)
+        fig.suptitle(hvsr_results[&#39;site&#39;])
+        ax.set_title(&#39;Calibrated Depth to Interface&#39;, size=&#39;small&#39;)
+    ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+    
+    surfElev = hvsr_results.Table_Report[&#39;Elevation&#39;][0]
+    bedrockElev = hvsr_results.Table_Report[&#39;BedrockElevation&#39;][0]
+    bedrockDepth = hvsr_results.Table_Report[&#39;BedrockDepth&#39;][0]
+    curveRange = max(hvsr_results.hvsr_curve) - min(hvsr_results.hvsr_curve)
+
+    if normalize_curve:
+        curvePlot = (hvsr_results.hvsr_curve - min(hvsr_results.hvsr_curve)) / curveRange
+        xBase = 0
+        xCap = 1
+        xLims = [-0.25, 1.25]
+        ax.set_xticks([0, 1])
+    else:
+        curvePlot = hvsr_results.hvsr_curve
+        xBase = min(hvsr_results.hvsr_curve)
+        xCap = max(hvsr_results.hvsr_curve)
+        xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
+ 
+    if use_elevation:
+        yLims = [hvsr_results.x_elev_m[&#39;Z&#39;][0] - depth_limit,
+              hvsr_results.x_elev_m[&#39;Z&#39;][0]]
+        yVals = hvsr_results.x_elev_m[&#39;Z&#39;][:-1]
+        ax.set_ylabel(&#39;Elevation [m]&#39;)
+        bedrockVal = bedrockElev
+        if annotate:
+            #Annotate surface elevation
+            ax.text(x=xLims[0],
+                    y=surfElev,
+                    s=str(round(surfElev, 2))+&#39;m&#39;,
+                    ha=&#39;right&#39;,
+                    va=&#39;bottom&#39;,
+                    size=&#39;x-small&#39;)
+
+            # Annotate bedrock elevation
+            ax.text(x=xBase,
+                    y=bedrockElev,
+                    s=&#39; &#39; + str(round(bedrockElev, 2))+&#39;m\n elevation&#39;,
+                    ha=&#39;left&#39;,
+                    va=&#39;center&#39;,
+                    size=&#39;x-small&#39;)
+            
+            # Annotate bedrock depth
+            ax.text(x=xBase,
+                    y=max(yLims),
+                    s=str(round(bedrockDepth, 2))+&#39;m deep &#39;,
+                    ha=&#39;right&#39;,
+                    va=&#39;top&#39;,
+                    size=&#39;x-small&#39;,
+                    rotation=&#39;vertical&#39;)
+    else:
+        yLims = [depth_limit, hvsr_results.x_depth_m[&#39;Z&#39;][0]]
+        yVals = hvsr_results.x_depth_m[&#39;Z&#39;][:-1]
+        ax.set_ylabel(&#39;Depth [m]&#39;)
+        bedrockVal = bedrockDepth
+        if annotate:
+            # Annotate surface elevation
+            ax.text(x=xLims[0],
+                    y=0,
+                    s=str(round(surfElev, 2))+&#39;m&#39;,
+                    ha=&#39;right&#39;,
+                    va=&#39;bottom&#39;,
+                    size=&#39;x-small&#39;)
+            
+            # Annotate Bedrock elevation
+            ax.text(x=xBase,
+                    y=bedrockVal,
+                    s=str(round(bedrockElev, 2))+&#39;m\nelevation&#39;,
+                    ha=&#39;center&#39;,
+                    va=&#39;center&#39;,
+                    size=&#39;x-small&#39;)
+
+            # Annotate Bedrock depth
+            ax.text(x=xBase,
+                    y=(min(yLims)+bedrockDepth)/2,
+                    s=str(round(bedrockDepth, 2))+&#39;m deep&#39;,
+                    ha=&#39;right&#39;,
+                    va=&#39;top&#39;,
+                    size=&#39;x-small&#39;,
+                    rotation=&#39;vertical&#39;)
+
+    # Plot curve
+    ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot, alpha=0.2, facecolor=&#39;k&#39;)
+    ax.plot(curvePlot, yVals, c=&#39;k&#39;, linewidth=0.5)
+    if show_feet:
+        ax_ft = ax.twinx()
+        ax_ft.plot(curvePlot, yVals*3.281, alpha=0)
+        ax_ft.set_ylim(yLims[0]*3.281, yLims[1]*3.281)
+        ax_ft.set_ylabel(&#39;Elevation [ft]&#39;)
+        if not use_elevation:
+            ax_ft.set_ylabel(&#39;Depth [ft]&#39;)
+        
+    # Plot peak location
+    ax.hlines(y=bedrockVal,
+               xmin=xBase, xmax=xCap,
+               linestyles=&#39;dotted&#39;, colors=&#39;k&#39;, linewidths=0.5)
+    ax.scatter(xBase, y=bedrockVal, c=&#39;k&#39;, s=0.5)
+    ax.scatter(xCap, y=bedrockVal, c=&#39;k&#39;, s=0.5)
+    
+    # Plot &#34;base&#34; line
+    ax.axvline(x=xBase, linestyle=&#39;dotted&#39;, c=&#39;k&#39;, linewidth=0.5)
+
+    ax.set_ylim(yLims)
+    ax.set_xlim(xLims)
+    
+    xlabel = &#34;H/V Ratio&#34;
+    if normalize_curve:
+        xlabel += &#39;\n(Normalized)&#39; 
+    ax.set_xlabel(&#39;H/V Ratio&#39;)
+    ax.xaxis.set_label_position(&#39;top&#39;)
+    ax.set_title(hvsr_results[&#39;site&#39;])
+
+    plt.sca(ax)
+    if show_depth_curve:
+        plt.show()
+    else:
+        plt.close()
+        
+    if depth_plot_export_path is not None:
+        if isinstance(depth_plot_export_path, os.PathLike):
+            fig.savefig(depth_plot_export_path)
+        else:
+            print(f&#39;Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}&#39;)
+    
+    hvsr_results[&#39;Depth_Plot&#39;] = fig
+    return hvsr_results</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_input_stream"><code class="name flex">
-<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False)</span>
+<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data,<br>stream=None,<br>input_fig=None,<br>spectrogram_component='Z',<br>show_plot=True,<br>return_fig=False)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_input_stream(hv_data, stream=None, input_fig=None, 
+                        spectrogram_component=&#39;Z&#39;, 
+                        show_plot=True, return_fig=False):
+
+    &#34;&#34;&#34;Function to plot input stream using plotly.
+    
+    Parameters
+    ----------
+    hv_data : HVSRData
+    stream : obspy.stream.Stream
+        Can explictly specify stream instead of using hv_data object.
+    input_fig : plotly.Figure
+        Plotly figure to plot input stream on. If None, creates new one. Default is None.
+    spectrogram_component : str, default=&#39;Z&#39;
+        Which component to use for the spectrogram
+    show_plot : bool, default=True
+        Whether to show plot or just generate it.
+    return_fig : bool, default=False
+        Whether to return figure
+
+    Returns
+    -------
+    plotly figure
+        Only returned if return_fig is True
+    &#34;&#34;&#34;
+
+    if stream is None and hasattr(hv_data, &#39;stream&#39;):
+        stream = hv_data.stream
+
+    hvsr_data = hv_data
+
+    specKey = str(spectrogram_component).upper()
+
+    no_subplots = 5
+    if input_fig is None:
+        input_fig = make_subplots(rows=no_subplots, cols=1,
+                                 row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
+                                 shared_xaxes=True,
+                                 horizontal_spacing=0.01,
+                                vertical_spacing=0.01
+                                )
+
+    # Windows PSD and Used
+    zStream = stream.select(component=&#39;Z&#39;).merge()
+    zTraces = zStream.split()
+    zTrace = zStream[0]
+
+    eStream = stream.select(component=&#39;E&#39;).merge()
+    eTraces = eStream.split()
+    eTrace = eStream[0]
+
+    nStream = stream.select(component=&#39;N&#39;).merge()
+    nTraces = nStream.split()
+    nTrace = nStream[0]
+    
+
+    sTimeZ = zTrace.stats.starttime
+    sTimeE = eTrace.stats.starttime
+    sTimeN = nTrace.stats.starttime        
+    # Z
+    for i, zTr in enumerate(zTraces):
+        if i == 0:
+            xTraceTimesZ = [np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()]
+            xTraceTimesAppZ = [[np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()]]
+        else:
+            xTraceTimesAppZ.append([np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()])
+            xTraceTimesZ.extend([np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()])
+    
+    # E
+    for i, eTr in enumerate(eTraces):
+        if i == 0:
+            xTraceTimesE = [np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]
+            xTraceTimesAppE = [[np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]]
+        else:
+            xTraceTimesAppE.append([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+            xTraceTimesE.extend([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+
+    # N
+    for i, nTr in enumerate(nTraces):
+        if i == 0:
+            xTraceTimesN = [np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]
+            xTraceTimesAppN = [[np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]]
+        else:
+            xTraceTimesAppN.append([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+            xTraceTimesN.extend([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+
+
+    if specKey == &#39;N&#39;:
+        specTrace = nTrace
+    elif specKey == &#39;E&#39;:
+        specTrace = eTrace
+    else:
+        specTrace = zTrace
+
+    f, specTimes, psdArr = signal.spectrogram(x=specTrace.data,
+                              fs=specTrace.stats.sampling_rate,
+                              mode=&#39;magnitude&#39;)
+
+    stream_spec_freqs = f
+    stream_spec_times = specTimes
+    psdArr = psdArr
+
+    if f[0] == 0:
+        f[0] = f[1] / 10  # Fix so bottom number is not 0
+
+    specTimes = list(specTimes)
+    specTimes.insert(0, 0)
+    timeWindowArr = np.array([np.datetime64((sTimeZ + tT).datetime) for tT in specTimes])
+    
+    hvsrBand = hvsr_data[&#39;hvsr_band&#39;]
+
+    minz = np.percentile(psdArr, 1)
+    maxz = np.percentile(psdArr, 99)
+
+    hmap = goHeatmap(z=psdArr,
+                     x=timeWindowArr[:-1],
+                     y=f,
+                     colorscale=&#39;Turbo&#39;, #opacity=0.8,
+                     showlegend=False,
+                     hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                     zmin=minz, zmax=maxz, showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
+    input_fig.add_trace(hmap, row=1, col=1)
+    input_fig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+    input_fig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
+
+    # Get Use Array and hvdf
+    hvdf, useArrShape = _get_use_array(hvsr_data, stream=stream, f=f, timeWindowArr=timeWindowArr, psdArr=psdArr)
+
+    timelineFig = pxTimeline(data_frame=hvdf,
+                            x_start=&#39;TimesProcessed_Start&#39;,
+                            x_end=&#39;TimesProcessed_End&#39;,
+                            y=[&#39;Used&#39;]*hvdf.shape[0],
+                            #y=&#34;Use&#34;,#range_y=[-20, -10],
+                            color=&#39;Use&#39;,
+                            color_discrete_map={True: &#39;rgba(0,255,0,1)&#39;,
+                                                False: &#39;rgba(255,0,0,1)&#39;})
+    for timelineTrace in timelineFig.data:
+        input_fig.add_trace(timelineTrace, row=2, col=1)
+
+    useArr = np.tile(hvdf.Use, (useArrShape, 1))
+    useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
+
+
+    specOverlay = goHeatmap(z=useArr,
+                        x=hvdf[&#39;TimesProcessed_Start&#39;],
+                        y=f,
+                        colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
+                        showlegend=False,
+                        #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                        showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
+    input_fig.add_trace(specOverlay, row=1, col=1)
+    
+    # Get min and max of all traces to scale consistently
+    minTraceData = min(min(zTrace.data), min(eTrace.data), min(nTrace.data))
+    maxTraceData = max(max(zTrace.data), max(eTrace.data), max(nTrace.data))
+
+    streamOverlay = goHeatmap(z=useArr,
+                    x=hvdf[&#39;TimesProcessed_Start&#39;],
+                    y=np.linspace(minTraceData, maxTraceData, useArr.shape[0]),
+                    colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
+                    showlegend=False,
+                    #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                    showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
+    input_fig.add_trace(streamOverlay, row=3, col=1)
+    input_fig.add_trace(streamOverlay, row=4, col=1)
+    input_fig.add_trace(streamOverlay, row=5, col=1)
+
+    input_fig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+    input_fig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
+
+
+    # Data traces
+    # Z Traces
+    for i, zTr in enumerate(zTraces):
+        if i == 0:
+            zDataFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+        else:
+            zTempFig = pxScatter(x=xTraceTimesAppZ[i])
+            for zFigTrace in zTempFig.data:
+                zDataFig.add_trace(zFigTrace)
+    
+    zDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                        marker=dict(size=1, color=&#39;rgba(0,0,0,1)&#39;),
+                        line=dict(width=1, color=&#39;rgba(0,0,0,1)&#39;),
+                        selector=dict(mode=&#39;markers&#39;))
+    for zTrace in zDataFig.data:
+        input_fig.add_trace(zTrace, row=3, col=1)
+
+    # E Traces
+    for i, eTr in enumerate(eTraces):
+        if i == 0:
+            eDataFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+        else:
+            eTempFig = pxScatter(x=xTraceTimesAppE[i])
+            for eFigTrace in eTempFig.data:
+                eDataFig.add_trace(eFigTrace)
+    
+
+    #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+    eDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                        marker=dict(size=1, color=&#39;rgba(0,0,255,1)&#39;),
+                        line=dict(width=1, color=&#39;rgba(0,0,255,1)&#39;),
+                        selector=dict(mode=&#39;markers&#39;))
+    for eTrace in eDataFig.data:
+        input_fig.add_trace(eTrace, row=4, col=1)
+
+    # N Traces
+    for i, nTr in enumerate(nTraces):
+        if i == 0:
+            nDataFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+        else:
+            nTempFig = pxScatter(x=xTraceTimesAppN[i])
+            for nFigTrace in nTempFig.data:
+                nDataFig.add_trace(nFigTrace)
+    
+    #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+    nDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                        marker=dict(size=1, color=&#39;rgba(255,0,0,1)&#39;),
+                        line=dict(width=1, color=&#39;rgba(255,0,0,1)&#39;),
+                        selector=dict(mode=&#39;markers&#39;))
+
+    for nTrace in nDataFig.data:
+        input_fig.add_trace(nTrace, row=5, col=1)
+
+    input_fig.update_layout(title_text=&#34;Frequency and Data values over time&#34;, 
+                        height=650, showlegend=False)
+
+    input_fig.update_xaxes(type=&#39;date&#39;, range=[xTraceTimesZ[0], xTraceTimesZ[-1]])
+
+    hvsr_data[&#39;Input_Plot&#39;] = input_fig # not currently using
+
+    if show_plot:
+        input_fig.show()
+
+    if return_fig:
+        return input_fig
+    else:
+        return hvsr_data</code></pre>
+</details>
 <div class="desc"><p>Function to plot input stream using plotly.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -254,9 +1845,211 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_outlier_curves"><code class="name flex">
-<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False)</span>
+<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data,<br>plot_engine='plotly',<br>plotly_module='go',<br>rmse_thresh=0.98,<br>use_percentile=True,<br>use_hv_curve=False,<br>from_roc=False,<br>show_plot=True,<br>verbose=False)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_outlier_curves(hvsr_data, plot_engine=&#39;plotly&#39;, plotly_module=&#39;go&#39;, 
+                        rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, 
+                        from_roc=False, show_plot=True, verbose=False):
+    &#34;&#34;&#34;Functio to plot outlier curves, including which have been excluded
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData
+        Input data object
+    plot_engine : str = {&#39;plotly&#39;, &#39;matplotlib&#39;}
+        Which plotting library to use, by default &#39;plotly&#39;
+    plotly_module : str = {&#39;go&#39;, &#39;px&#39;}
+        Which plotly module to use if applicable, by default &#39;go&#39;
+    rmse_thresh : float, optional
+        RMSE threshold (for removing outliers), by default 0.98
+    use_percentile : bool, optional
+        Whether to use percentile or raw value, by default True
+    use_hv_curve : bool, optional
+        Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False
+    from_roc : bool, optional
+        Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False
+    show_plot : bool, optional
+        Whether to show plot, by default True
+    verbose : bool, optional
+        Whether to print information to terminal, by default False
+
+    Returns
+    -------
+    plotly figure
+        Figure type depends on plotly_module
+    &#34;&#34;&#34;
+    orig_args = locals().copy()    
+    
+    hv_data = hvsr_data
+    #outlier_fig = go.FigureWidget()
+    pxList = [&#39;px&#39;, &#39;express&#39;, &#39;exp&#39;, &#39;plotly express&#39;, &#39;plotlyexpress&#39;]
+    if str(plotly_module).lower() in pxList:
+        return __plotly_outlier_curves_px(**orig_args)
+    
+    outlier_fig = go.Figure()
+    
+    roc_kwargs = {&#39;rmse_thresh&#39;:rmse_thresh,
+                    &#39;use_percentile&#39;:True,
+                    &#39;use_hv_curve&#39;:use_hv_curve,
+                    &#39;show_outlier_plot&#39;:False,
+                    &#39;plot_engine&#39;:&#39;None&#39;,
+                    &#39;verbose&#39;:verbose
+                    }
+
+    titleText = &#39;Outlier Curve Plot&#39;
+    if use_hv_curve:
+        titleText += &#39; (H/V Curves)&#39;
+    else:
+        titleText += &#39; PSD Curves&#39;
+    outlier_fig = go.Figure()
+        
+    if &#39;generate_psds_status&#39; in hvsr_data.processing_status.keys() and hvsr_data.processing_status[&#39;generate_psds_status&#39;]:
+        #log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n&#39;{roc_kwargs}&#34;    
+        #hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        pass
+    else:
+        #log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status[&#39;generate_psds_status&#39;]=False\n&#39;{roc_kwargs}&#34;
+        return outlier_fig
+
+    if roc_kwargs[&#39;use_hv_curve&#39;]:
+        no_subplots = 1
+        if hasattr(hvsr_data, &#39;hvsr_windows_df&#39;) and &#39;HV_Curves&#39; in hvsr_data.hvsr_windows_df.columns:
+            outlier_fig.data = []
+            outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+            outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
+            outlier_fig.update_layout(grid={&#39;rows&#39;: 1})
+            #outlier_fig = go.FigureWidget(outlier_subp)
+            outlier_fig = go.Figure(outlier_subp)
+
+            x_data = hvsr_data[&#39;x_freqs&#39;][&#39;Z&#39;]
+            curve_traces = []
+            for ind, (i, hv) in enumerate(hvsr_data.hvsr_windows_df.iterrows()):
+                nameLabel = f&#34;Window starting at {i.strftime(&#39;%H:%M:%S&#39;)}&lt;br&gt;Window #{ind}&#34;
+                curve_traces.append(go.Scatter(x=x_data, y=hv[&#39;HV_Curves&#39;], 
+                            hovertemplate=nameLabel, line=dict(color=&#39;rgba(0,0,0,0.1)&#39;, width=0.75),
+                            showlegend=False))
+            outlier_fig.add_traces(curve_traces)
+            
+            # Calculate a median curve, and reshape so same size as original
+            medCurve = np.nanmedian(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]), axis=0)
+            outlier_fig.add_trace(go.Scatter(x=x_data, y=medCurve, line=dict(color=&#39;rgba(0,0,0,1)&#39;, width=1.5),showlegend=False))
+            
+            minY = np.nanmin(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+            maxY = np.nanmax(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+            totalWindows = hvsr_data.hvsr_windows_df.shape[0]
+            #medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+
+    else:
+        no_subplots = 3
+        outlier_fig.data = []
+        outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+        outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
+                                                row_heights=[1, 1, 1])
+        outlier_fig.update_layout(grid={&#39;rows&#39;: 3})
+        #outlier_fig = go.FigureWidget(outlier_subp)
+        outlier_fig = go.Figure(outlier_subp)
+
+        if hasattr(hvsr_data, &#39;hvsr_windows_df&#39;):
+            rowDict = {&#39;Z&#39;:1, &#39;E&#39;:2, &#39;N&#39;:3}
+            showTLabelsDict={&#39;Z&#39;:False, &#39;E&#39;:False, &#39;N&#39;:True}
+            def comp_rgba(comp, a):
+                compstr = &#39;&#39;
+                if comp==&#39;Z&#39;:
+                    compstr = f&#39;rgba(0, 0, 0, {a})&#39;
+                if comp==&#39;E&#39;:
+                    compstr = f&#39;rgba(50, 50, 250, {a})&#39;
+                if comp==&#39;N&#39;:
+                    compstr = f&#39;rgba(250, 50, 50, {a})&#39;
+                return compstr                         
+            compNames = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+            rmse_to_plot=[]
+            med_traces=[]
+
+            noRemoved = 0
+            indRemoved = []
+            for i, comp in enumerate(compNames):
+                if hasattr(hvsr_data, &#39;x_freqs&#39;):
+                    x_data = hvsr_data[&#39;x_freqs&#39;][comp]
+                else:
+                    x_data = [1/p for p in hvsr_data[&#39;ppsds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
+                column = &#39;psd_values_&#39;+comp
+                # Retrieve data from dataframe (use all windows, just in case)
+                curr_data = np.stack(hvsr_data[&#39;hvsr_windows_df&#39;][column])
+                
+                # Calculate a median curve, and reshape so same size as original
+                medCurve = np.nanmedian(curr_data, axis=0)
+                medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+                medTrace = go.Scatter(x=x_data, y=medCurve, line=dict(color=comp_rgba(comp, 1), width=1.5), 
+                                                name=f&#39;{comp} Component&#39;, showlegend=True)
+                # Calculate RMSE
+                rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+
+                rmse_threshold = np.percentile(rmse, roc_kwargs[&#39;rmse_thresh&#39;])
+                
+                # Retrieve index of those RMSE values that lie outside the threshold
+                timeIndex = hvsr_data[&#39;hvsr_windows_df&#39;].index
+                for j, curve in enumerate(curr_data):
+                    if rmse[j] &gt; rmse_threshold:
+                        badTrace = go.Scatter(x=x_data, y=curve,
+                                            line=dict(color=comp_rgba(comp, 1), width=1.5, dash=&#39;dash&#39;),
+                                            #marker=dict(color=comp_rgba(comp, 1), size=3),
+                                            name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
+                        outlier_fig.add_trace(badTrace, row=rowDict[comp], col=1)
+                        if j not in indRemoved:
+                            indRemoved.append(j)
+                        noRemoved += 1
+                    else:
+                        goodTrace = go.Scatter(x=x_data, y=curve,
+                                                line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
+                        outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
+
+                #timeIndRemoved = pd.DatetimeIndex([timeIndex[ind] for ind in indRemoved])
+                #hvsr_data[&#39;hvsr_windows_df&#39;].loc[timeIndRemoved, &#39;Use&#39;] = False
+
+                outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
+                
+                outlier_fig.update_xaxes(showticklabels=False, row=1, col=1)
+                outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;Z&#39;}, row=1, col=1)
+                outlier_fig.update_xaxes(showticklabels=False, row=2, col=1)
+                outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;E&#39;}, row=2, col=1)
+                outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
+                outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;N&#39;}, row=3, col=1)
+
+                outlier_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=True,
+                                title=f&#34;{hvsr_data[&#39;site&#39;]} Outliers&#34;)
+                if comp == &#39;N&#39;:
+                    minY = np.nanmin(curr_data)
+                    maxY = np.nanmax(curr_data)
+                totalWindows = curr_data.shape[0]
+            
+            outlier_fig.add_annotation(
+                text=f&#34;{len(indRemoved)}/{totalWindows} outlier windows removed&#34;,
+                x=np.log10(max(x_data)) - (np.log10(max(x_data))-np.log10(min(x_data))) * 0.01,
+                y=minY+(maxY-minY)*0.01,
+                xanchor=&#34;right&#34;, yanchor=&#34;bottom&#34;,#bgcolor=&#39;rgba(256,256,256,0.7)&#39;,
+                showarrow=False,row=no_subplots, col=1)
+
+
+    outlier_fig.update_xaxes(type=&#39;log&#39;)
+    outlier_fig.update_layout(paper_bgcolor=&#39;white&#39;, plot_bgcolor=&#39;white&#39;,
+                              font_color=&#39;black&#39;, 
+                              title=dict(font_color=&#39;black&#39;,
+                              text=titleText))
+    #with outlier_graph_widget:
+    #    clear_output(wait=True)
+    #    display(outlier_fig)
+    
+    hvsr_data[&#39;OutlierPlot&#39;] = outlier_fig # not currently using
+    if show_plot:
+        outlier_fig.show()
+
+    return outlier_fig</code></pre>
+</details>
 <div class="desc"><p>Functio to plot outlier curves, including which have been excluded</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -286,9 +2079,223 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_results"><code class="name flex">
-<span>def <span class="ident">plot_results</span></span>(<span>hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV', results_fig=None, results_graph_widget=None, use_figure_widget=False, return_fig=False, show_results_plot=False, html_plot=False, verbose=False)</span>
+<span>def <span class="ident">plot_results</span></span>(<span>hv_data,<br>plot_string='HVSR p ann C+ p SPEC ann',<br>azimuth='HV',<br>results_fig=None,<br>results_graph_widget=None,<br>use_figure_widget=False,<br>return_fig=False,<br>show_results_plot=False,<br>html_plot=False,<br>verbose=False)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_results(hv_data, plot_string=&#39;HVSR p ann C+ p SPEC ann&#39;, azimuth=&#39;HV&#39;,
+                results_fig=None, results_graph_widget=None, use_figure_widget=False,
+                return_fig=False, show_results_plot=False, html_plot=False,
+                verbose=False,):
+    
+    &#34;&#34;&#34;Function to plot results using plotly
+
+    Parameters
+    ----------
+    hv_data : sprit.HVSRData
+        Data object to use for plotting
+    plot_string : str, optional
+        String for designating what to include in plot(s), by default &#39;HVSR p ann C+ p SPEC ann&#39;
+    results_fig : pyplot figure, optional
+        Which pyplot figure to plot data onto. If None, makes new figure, by default None.
+    results_graph_widget : plotly graph object widget, optional
+        Which pyplot figure to plot data onto. If None, makes new widget, if applicable, by default None.
+    use_figure_widget : bool, optional
+        Whether to use figure widget, by default False
+    return_fig : bool, optional
+        Whether to return figure, by default False
+    show_results_plot : bool, optional
+        Wheather to show plot, by default False
+    html_plot : bool, optional
+        Whether to create an HTML version of the plot, by default False
+    verbose : bool, optional
+        Whether to print information to terminal, by default False
+
+    Returns
+    -------
+    plotly figure
+        Only if return_fig is True.
+    &#34;&#34;&#34;
+
+    if results_fig is None:
+        results_fig = go.FigureWidget()
+
+    hvsr_data = hv_data
+
+    xlim = [hvsr_data.hvsr_band[0], hvsr_data.hvsr_band[1]]
+    plotymax = max(hvsr_data.hvsrp2[&#39;HV&#39;]) + (max(hvsr_data.hvsrp2[&#39;HV&#39;]) - max(hvsr_data.hvsr_curve))
+    ylim = [0, plotymax]
+
+    if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+        hvsr_data = hvsr_data[0]
+
+    hvsrDF = hvsr_data.hvsr_windows_df
+
+    plot_list = parse_plot_string(plot_string)
+
+    combinedComp = False
+    # By default there 3 subplots
+    noSubplots = 3
+    # Remove any subplots that are not indicated by plot_type parameter
+    noSubplots = noSubplots - plot_list.count([])
+    
+    # Now, check if comp plot is combined with HV
+    if plot_list[1] != [] and &#39;+&#39; not in plot_list[1][0]:
+        combinedComp = True
+        noSubplots -= 1
+    
+    # Get all data for each plotted item
+    # Get subplot numbers based on plot_list
+    spec = []
+    if plot_list[0]==[]:
+        # if for some reason, HVSR plot was not indicated, add it
+        hv_plot_row = 1 # Default first row to hv (may change later)
+        noSubplots += 1
+        if plot_list[1] == []:
+            comp_plot_row = None
+            if plot_list[2] == []:
+                spec_plot_row = None
+                hv_plot_row = 1 #If nothing specified, do basic h/v plot
+            else:
+                spec_plot_row = 1 # If only spec specified
+        else:
+            comp_plot_row = 1 # If no HV specified by comp is, comp is subplot 1
+
+            if plot_list[2] == []:
+                spec_plot_row = None
+            else:
+                spec_plot_row = 2 # If only comp and spec specified comp first then spec
+    else:
+        hv_plot_row = 1 # HV specified explicitly
+        if plot_list[1] == []:
+            comp_plot_row = None
+            if plot_list[2] == []:
+                spec_plot_row = None
+            else:
+                spec_plot_row = 2 # if no comp specified, spec is 2nd subplot
+        else:
+            if combinedComp:
+                comp_plot_row = 1
+                if plot_list[2] == []:
+                    spec_plot_row = None
+                else:
+                    spec_plot_row = 2
+            else:
+                comp_plot_row = 2
+                if plot_list[2] == []:
+                    spec_plot_row = None
+                else:
+                    spec_plot_row = 3       
+
+    specList = []
+    rHeights = [1]
+    if hv_plot_row == 1:
+        if comp_plot_row == 1:
+            specList.append([{&#39;secondary_y&#39;: True}])
+            if spec_plot_row == 2:
+                specList.append([{&#39;secondary_y&#39;: False}])
+    else:
+        specList.append([{&#39;secondary_y&#39;: False}])
+
+        if noSubplots &gt;= 2:
+            specList.append([{&#39;secondary_y&#39;: False}])
+            rHeights = [1.5,1]
+        if noSubplots == 3:
+            specList.append([{&#39;secondary_y&#39;: False}])
+            rHeights = [2,1.5,1]
+    
+    # Failsafes
+    while len(specList)&lt;noSubplots:
+        specList.append([{}])
+
+    while len(rHeights)&lt;noSubplots:
+        rHeights.append(1)
+
+    # Re-initialize results_fig
+    results_fig.data = []
+    results_fig.update_layout(grid=None)  # Clear the existing grid layout, in case applicable
+
+    results_fig = make_subplots(rows=noSubplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+                                specs=specList,
+                                row_heights=rHeights)
+    results_fig.update_layout(grid={&#39;rows&#39;: noSubplots})
+
+    if use_figure_widget:
+        results_fig = go.FigureWidget(results_fig)
+
+    if plot_list[1] != []:
+        results_fig = parse_comp_plot_list(hvsr_data, results_fig=results_fig, 
+                                           comp_plot_list=plot_list[1])
+        results_fig.update_xaxes(title_text=&#39;Frequency [Hz]&#39;,
+                                 row=comp_plot_row, col=1)
+
+    # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
+    results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list, results_fig=results_fig)
+
+    # Will always plot the HV Curve
+    results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs[&#39;Z&#39;], y=hvsr_data.hvsr_curve,
+                        line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:1.5}, marker=None, name=&#39;HVSR Curve&#39;),
+                        row=1, col=&#39;all&#39;)
+
+    # SPEC plot
+    if plot_list[2] != []:
+        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row, azimuth=azimuth, results_fig=results_fig)
+
+    # Final figure updating
+    resultsFigWidth = 650
+
+    components_HV_on_same_plot = (plot_list[1]==[] or &#39;+&#39; not in plot_list[1][0])
+    if components_HV_on_same_plot:
+        compxside = &#39;bottom&#39;
+        secondaryY = True
+        showHVTickLabels = True
+        showComptickLabels = True
+    else:
+        compxside = &#39;bottom&#39;
+        secondaryY = False
+        showHVTickLabels = True
+        showComptickLabels = True
+    
+    # Update H/V Plot
+    results_fig.update_xaxes(type=&#39;log&#39;, title_text=&#39;Frequency [Hz]&#39;, title_standoff=0,
+                    range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                    side=&#39;bottom&#39;, showticklabels=showHVTickLabels,
+                    row=1, col=1)
+    results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1, secondary_y=False, range=ylim)
+
+    # Update Component plot
+    results_fig.update_xaxes(type=&#39;log&#39;,overlaying=&#39;x&#39;, showticklabels=showComptickLabels,  title_standoff=0,
+                             range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                             side=compxside, row=comp_plot_row, col=1)    
+    results_fig.update_yaxes(title_text=&#34;PPSD Amp\n[m2/s4/Hz][dB]&#34;, secondary_y=secondaryY, row=comp_plot_row, col=1)
+
+    # Update Spec plot
+    results_fig.update_yaxes(title_text=&#39;H/V Over Time&#39;, row=noSubplots, col=1)
+
+    # Update entire figure
+    titleString = f&#34;{hvsr_data[&#39;site&#39;]} Results&#34;
+    results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0},
+                            showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.7,
+                            title=titleString)
+    
+    # Reset results_graph_widget and display 
+    if results_graph_widget is not None:
+        with results_graph_widget:
+            clear_output(wait=True)
+            display(results_fig)
+
+    if show_results_plot:
+        if html_plot:
+            results_fig.write_html(titleString.replace(&#39; &#39;, &#39;_&#39;) + &#39;plot.html&#39;, auto_open=True)
+        else:
+            results_fig.show()
+    
+    if return_fig:
+        return results_fig</code></pre>
+</details>
 <div class="desc"><p>Function to plot results using plotly</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -321,12 +2328,137 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <span>def <span class="ident">process_data</span></span>(<span>button)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process_data(button):
+    startProc=datetime.datetime.now()
+    progress_bar.value = 0
+    log_textArea.value += f&#34;\n\nPROCESSING DATA [{startProc}]&#34;
+    global hvsr_data
+    # Read data again only if internal hvsr_data input_data variable is different from what is in the gui
+    if not &#39;hvsr_data&#39; in globals() or not hasattr(hvsr_data, &#39;input_data&#39;) or \
+            (pathlib.Path(hvsr_data.input_data).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
+        hvsr_data = read_data(button)
+
+    remove_noise_kwargs = get_remove_noise_kwargs()
+    hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_noise()\n\t{remove_noise_kwargs}&#34;
+    progress_bar.value = 0.3
+
+    generate_ppsd_kwargs = get_generate_ppsd_kwargs()
+    hvsr_data = sprit_hvsr.generate_psds(hvsr_data, **generate_ppsd_kwargs)
+    progress_bar.value = 0.5
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}&#34;
+    
+    
+    # If this was started by clicking &#34;Generate PPSDs&#34;, stop here
+    if button.description == &#39;Generate PPSDs&#39;:
+        return
+
+    ph_kwargs = get_process_hvsr_kwargs()
+    hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}&#34;
+    progress_bar.value = 0.75
+    update_outlier_fig()
+
+    roc_kwargs = get_remove_outlier_curve_kwargs()
+    hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}&#34;
+    progress_bar.value = 0.85
+    outlier_fig, hvsr_data = update_outlier_fig()
+
+    use_hv_curve_rmse.value=False
+    use_hv_curve_rmse.disabled=False
+
+    def get_rmse_range():
+        minRMSE = 10000
+        maxRMSE = -1
+        if roc_kwargs[&#39;use_hv_curve&#39;]:
+            colnames = [&#39;HV_Curves&#39;]
+        else:
+            colnames = [&#39;psd_values_Z&#39;,
+                        &#39;psd_values_E&#39;,
+                        &#39;psd_values_N&#39;]
+        dataList = []
+        for col in colnames:
+            dataArr = np.stack(hvsr_data.hvsr_windows_df[col])
+            medCurveArr = np.nanmedian(dataArr, axis=0)
+            rmse = np.sqrt(((np.subtract(dataArr, medCurveArr)**2).sum(axis=1))/dataArr.shape[1])
+            if rmse.min() &lt; minRMSE:
+                minRMSE = rmse.min()
+            if rmse.max() &gt; maxRMSE:
+                maxRMSE = rmse.max()
+        rmse_thresh_slider.min = minRMSE
+        rmse_thresh_slider.max = maxRMSE
+        rmse_thresh_slider.step = round((maxRMSE-minRMSE)/100, 2)
+        rmse_thresh_slider.value = maxRMSE
+    get_rmse_range()
+
+    cp_kwargs = get_check_peaks_kwargs()
+    hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ncheck_peaks()\n\t{cp_kwargs}&#34;
+    progress_bar.value = 0.9
+
+    gr_kwargs = get_get_report_kwargs()
+    hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}\n\n&#34;
+    hvsr_data.get_report(report_format=&#39;print&#39;) # Just in case print wasn&#39;t included
+    log_textArea.value += hvsr_data[&#39;Print_Report&#39;]
+    printed_results_textArea.value = hvsr_data[&#39;Print_Report&#39;]
+    hvsr_data.get_report(report_format=&#39;csv&#39;) 
+    results_table.value = hvsr_data[&#39;CSV_Report&#39;].to_html()
+    
+    log_textArea.value += f&#39;Processing time: {datetime.datetime.now() - startProc}&#39;
+    progress_bar.value = 0.95
+
+    update_results_fig(hvsr_data, gr_kwargs[&#39;plot_type&#39;])
+    
+    progress_bar.value = 1
+    global hvsr_results
+    hvsr_results = hvsr_data
+    return hvsr_results</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.read_data"><code class="name flex">
 <span>def <span class="ident">read_data</span></span>(<span>button)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_data(button):
+    progress_bar.value = 0
+    log_textArea.value += f&#34;\n\nREADING DATA [{datetime.datetime.now()}]&#34;
+
+    ip_kwargs = get_input_params()
+    hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
+    log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ninput_params():\n&#39;{ip_kwargs}&#34;
+    if button.description==&#39;Read Data&#39;:
+        progress_bar.value=0.333
+    else:
+        progress_bar.value=0.1
+    fd_kwargs = get_fetch_data_params()
+    hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
+    log_textArea.value += &#39;\n\n&#39;+str(datetime.datetime.now())+&#39;\nfetch_data():\n\t&#39;+str(fd_kwargs)
+    if button.description==&#39;Read Data&#39;:
+        progress_bar.value=0.666
+    else:
+        progress_bar.value=0.2
+    
+    use_hv_curve_rmse.value=False
+    use_hv_curve_rmse.disabled=True
+
+    update_preview_fig(hvsr_data, input_fig)
+
+    if button.description==&#39;Read Data&#39;:
+        sprit_tabs.selected_index = 1
+        progress_bar.value=0
+    return hvsr_data</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 </dl>
@@ -369,7 +2501,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 </body>
 </html>

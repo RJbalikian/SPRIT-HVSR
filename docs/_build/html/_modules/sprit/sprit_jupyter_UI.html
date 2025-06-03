@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_jupyter_UI &mdash; sprit 2.7.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_jupyter_UI &mdash; sprit 2.7.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=7b940564"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=4c6c8f0e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -74,42 +72,42 @@
 <span></span><span class="sd">&quot;&quot;&quot;Functions to create jupyter notebook widget UI</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span>
-<span class="kn">from</span> <span class="nn">tkinter</span> <span class="kn">import</span> <span class="n">filedialog</span>
-<span class="kn">import</span> <span class="nn">webbrowser</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tkinter</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tkinter</span><span class="w"> </span><span class="kn">import</span> <span class="n">filedialog</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">webbrowser</span>
 
-<span class="kn">from</span> <span class="nn">zoneinfo</span> <span class="kn">import</span> <span class="n">available_timezones</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">zoneinfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">available_timezones</span>
 
-<span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
-<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">subplots</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ipywidgets</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">widgets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">subplots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
 
 <span class="k">try</span><span class="p">:</span> <span class="c1">#For distribution</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_utils</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_utils</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
 <span class="k">except</span><span class="p">:</span> <span class="c1">#For local testing</span>
-    <span class="kn">import</span> <span class="nn">sprit_hvsr</span> 
-    <span class="kn">import</span> <span class="nn">sprit_utils</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span> 
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_utils</span>
 
 <span class="k">global</span> <span class="n">hvsr_data</span>
     
 <span class="n">OBSPY_FORMATS</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;AH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_PSE&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTH&#39;</span><span class="p">,</span> <span class="s1">&#39;ALSEP_WTN&#39;</span><span class="p">,</span> <span class="s1">&#39;CSS&#39;</span><span class="p">,</span> <span class="s1">&#39;DMX&#39;</span><span class="p">,</span> <span class="s1">&#39;GCF&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE1&#39;</span><span class="p">,</span> <span class="s1">&#39;GSE2&#39;</span><span class="p">,</span> <span class="s1">&#39;KINEMETRICS_EVT&#39;</span><span class="p">,</span> <span class="s1">&#39;KNET&#39;</span><span class="p">,</span> <span class="s1">&#39;MSEED&#39;</span><span class="p">,</span> <span class="s1">&#39;NNSA_KB_CORE&#39;</span><span class="p">,</span> <span class="s1">&#39;PDAS&#39;</span><span class="p">,</span> <span class="s1">&#39;PICKLE&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;REFTEK130&#39;</span><span class="p">,</span> <span class="s1">&#39;RG16&#39;</span><span class="p">,</span> <span class="s1">&#39;SAC&#39;</span><span class="p">,</span> <span class="s1">&#39;SACXY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEG2&#39;</span><span class="p">,</span> <span class="s1">&#39;SEGY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEISAN&#39;</span><span class="p">,</span> <span class="s1">&#39;SH_ASC&#39;</span><span class="p">,</span> <span class="s1">&#39;SLIST&#39;</span><span class="p">,</span> <span class="s1">&#39;SU&#39;</span><span class="p">,</span> <span class="s1">&#39;TSPAIR&#39;</span><span class="p">,</span> <span class="s1">&#39;WAV&#39;</span><span class="p">,</span> <span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">]</span>
 
-<span class="k">def</span> <span class="nf">_get_default</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_default</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
 
 <div class="viewcode-block" id="create_jupyter_ui">
 <a class="viewcode-back" href="../../sprit.sprit_jupyter_UI.html#sprit.create_jupyter_ui">[docs]</a>
-<span class="k">def</span> <span class="nf">create_jupyter_ui</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_jupyter_ui</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function that generates the user interface for Jupyter Notebooks.</span>
 <span class="sd">    </span>
 <span class="sd">    This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook. </span>
@@ -168,7 +166,7 @@
                                             <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
     <span class="n">inst_settings_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">inst_settings_text</span><span class="p">,</span><span class="n">instrument_read_button</span><span class="p">,</span> <span class="n">instrument_settings_button</span><span class="p">])</span>
     
-    <span class="k">def</span> <span class="nf">select_inst</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_inst</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s1">&#39;Select .inst file&#39;</span><span class="p">:</span>
                 <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
@@ -248,11 +246,11 @@
                                                 <span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">acquisition_date_picker</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                                                 <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">on_acq_date_change</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_acq_date_change</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="n">acquisition_doy</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">acquisition_date_picker</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
     <span class="n">acquisition_date_picker</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">on_acq_date_change</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">on_doy_change</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_doy_change</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="n">curr_year</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">year</span>
         <span class="k">if</span> <span class="n">acquisition_doy</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="p">:</span>
             <span class="n">curr_year</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -399,7 +397,7 @@
                 <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span>
                 <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">select_proc</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_proc</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s1">&#39;Select .proc file&#39;</span><span class="p">:</span>
                 <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
@@ -506,7 +504,7 @@
                                             <span class="n">value</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">,</span><span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;horizontal&#39;</span><span class="p">,</span> 
                                             <span class="n">style</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;description_width&#39;</span><span class="p">:</span> <span class="s1">&#39;initial&#39;</span><span class="p">},</span>
                                             <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;20%&#39;</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">on_ds_change</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_ds_change</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span> <span class="ow">or</span> <span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span><span class="o">==</span> <span class="s1">&#39;batch&#39;</span><span class="p">:</span>
             <span class="n">browse_data_button</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;Select Files&#39;</span>
         <span class="k">else</span><span class="p">:</span>
@@ -537,7 +535,7 @@
 
     <span class="c1"># A button next to it labeled &quot;Browse&quot;</span>
     <span class="n">browse_data_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Select Files&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">select_datapath</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_datapath</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
             <span class="n">root</span><span class="o">.</span><span class="n">wm_attributes</span><span class="p">(</span><span class="s1">&#39;-topmost&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
@@ -559,7 +557,7 @@
 
     <span class="c1"># A button next to it labeled &quot;Browse&quot;</span>
     <span class="n">browse_metadata_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Select File(s)&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">select_metapath</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_metapath</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
             <span class="n">root</span><span class="o">.</span><span class="n">wm_attributes</span><span class="p">(</span><span class="s1">&#39;-topmost&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
@@ -587,7 +585,7 @@
                                             <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;success&#39;</span><span class="p">,</span><span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;5%&#39;</span><span class="p">))</span>
 
     <span class="c1"># Update input_param call</span>
-    <span class="k">def</span> <span class="nf">update_input_param_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_input_param_call</span><span class="p">():</span>
         <span class="n">input_param_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(input_data=&#39;</span><span class="si">{</span><span class="n">data_filepath</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, metapath=&#39;</span><span class="si">{</span><span class="n">metadata_filepath</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, site=&#39;</span><span class="si">{</span><span class="n">site_name</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, network=&#39;</span><span class="si">{</span><span class="n">network_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;,</span>
 <span class="s2">                    station=&#39;</span><span class="si">{</span><span class="n">station_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, location=&#39;</span><span class="si">{</span><span class="n">location_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, loc=&#39;</span><span class="si">{</span><span class="n">location_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, channels=</span><span class="si">{</span><span class="p">[</span><span class="n">z_channel_textbox</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">e_channel_textbox</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">n_channel_textbox</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
 <span class="s2">                    acq_date=&#39;</span><span class="si">{</span><span class="n">acquisition_date_picker</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, starttime=&#39;</span><span class="si">{</span><span class="n">start_time_picker</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, endtime=&#39;</span><span class="si">{</span><span class="n">end_time_picker</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;, tzone=&#39;</span><span class="si">{</span><span class="n">time_zone_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39;,</span>
@@ -599,7 +597,7 @@
     <span class="n">update_input_param_call</span><span class="p">()</span>
     
     <span class="c1"># Update fetch_data call</span>
-    <span class="k">def</span> <span class="nf">update_fetch_data_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_fetch_data_call</span><span class="p">():</span>
         <span class="n">fetch_data_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(params=hvsr_data, source=</span><span class="si">{</span><span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, trim_dir=</span><span class="si">{</span><span class="n">trim_directory</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
 <span class="s2">                            export_format=</span><span class="si">{</span><span class="n">trim_export_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, detrend=</span><span class="si">{</span><span class="n">detrend_type_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, detrend_options=</span><span class="si">{</span><span class="n">detrend_options</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, verbose=</span><span class="si">{</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;&quot;&quot;</span>
         <span class="n">fetch_data_call</span><span class="o">.</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39;</span> <span class="o">+</span> <span class="n">fetch_data_text</span> <span class="o">+</span> <span class="s1">&#39;&lt;/p&gt;&#39;</span>
@@ -632,7 +630,7 @@
                             <span class="n">input_accordion_box</span><span class="p">,</span>
                             <span class="n">progress_hbox</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">get_input_params</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_input_params</span><span class="p">():</span>
         <span class="n">input_params_kwargs</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;input_data&#39;</span><span class="p">:</span><span class="n">data_filepath</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="s1">&#39;metapath&#39;</span><span class="p">:</span><span class="n">metadata_filepath</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -651,7 +649,7 @@
             <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:[</span><span class="n">peak_freq_range_min_box</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">peak_freq_range_max_box</span><span class="o">.</span><span class="n">value</span><span class="p">]}</span>
         <span class="k">return</span> <span class="n">input_params_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_fetch_data_params</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_fetch_data_params</span><span class="p">():</span>
         <span class="n">fetch_data_kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span><span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
             <span class="s1">&#39;trim_dir&#39;</span><span class="p">:</span><span class="n">trim_directory</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -665,7 +663,7 @@
             <span class="n">fetch_data_kwargs</span><span class="p">[</span><span class="s1">&#39;trim_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">fetch_data_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">progress_bar</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">READING DATA [</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">]&quot;</span>
 
@@ -696,8 +694,8 @@
     
     <span class="n">read_data_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">read_data</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_remove_noise_kwargs</span><span class="p">():</span>
-        <span class="k">def</span> <span class="nf">get_remove_method</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_remove_noise_kwargs</span><span class="p">():</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_remove_method</span><span class="p">():</span>
             <span class="n">remove_method_list</span><span class="o">=</span><span class="p">[]</span>
             <span class="n">do_stalta</span> <span class="o">=</span> <span class="n">stalta_check</span><span class="o">.</span><span class="n">value</span>
             <span class="n">do_sat_pct</span> <span class="o">=</span> <span class="n">max_saturation_check</span><span class="o">.</span><span class="n">value</span>
@@ -733,7 +731,7 @@
                                 <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">remove_noise_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_generate_ppsd_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_generate_ppsd_kwargs</span><span class="p">():</span>
         <span class="n">ppsd_kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;skip_on_gaps&#39;</span><span class="p">:</span><span class="n">skip_on_gaps</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="s1">&#39;db_bins&#39;</span><span class="p">:[</span><span class="n">db_bins_min</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">db_bins_max</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">db_bins_step</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
@@ -750,7 +748,7 @@
             <span class="n">ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;special_handling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>        
         <span class="k">return</span> <span class="n">ppsd_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_remove_outlier_curve_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_remove_outlier_curve_kwargs</span><span class="p">():</span>
         <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;use_percentile&#39;</span><span class="p">:</span><span class="n">rmse_pctile_check</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
                 <span class="s1">&#39;rmse_thresh&#39;</span><span class="p">:</span><span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -759,7 +757,7 @@
             <span class="p">}</span>
         <span class="k">return</span> <span class="n">roc_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_process_hvsr_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_process_hvsr_kwargs</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">smooth_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">smooth_value</span> <span class="o">=</span> <span class="n">smooth_hv_curve</span><span class="o">.</span><span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
@@ -779,15 +777,15 @@
                     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">ph_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_check_peaks_kwargs</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_check_peaks_kwargs</span><span class="p">():</span>
         <span class="n">cp_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">:[</span><span class="n">hvsr_band_min_box</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">hvsr_band_max_box</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
                     <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:[</span><span class="n">peak_freq_range_min_box</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">peak_freq_range_max_box</span><span class="o">.</span><span class="n">value</span><span class="p">],</span>
                     <span class="s1">&#39;peak_selection&#39;</span><span class="p">:</span><span class="n">peak_selection_type</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
                     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">cp_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_get_report_kwargs</span><span class="p">():</span>
-        <span class="k">def</span> <span class="nf">get_formatted_plot_str</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_get_report_kwargs</span><span class="p">():</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_formatted_plot_str</span><span class="p">():</span>
             <span class="c1"># Initialize plot string</span>
             <span class="n">hvsr_plot_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
             <span class="n">comp_plot_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -866,7 +864,7 @@
                      <span class="p">}</span>
         <span class="k">return</span> <span class="n">gr_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">process_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">startProc</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
         <span class="n">progress_bar</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">PROCESSING DATA [</span><span class="si">{</span><span class="n">startProc</span><span class="si">}</span><span class="s2">]&quot;</span>
@@ -906,7 +904,7 @@
         <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="o">=</span><span class="kc">False</span>
         <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">disabled</span><span class="o">=</span><span class="kc">False</span>
 
-        <span class="k">def</span> <span class="nf">get_rmse_range</span><span class="p">():</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_rmse_range</span><span class="p">():</span>
             <span class="n">minRMSE</span> <span class="o">=</span> <span class="mi">10000</span>
             <span class="n">maxRMSE</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="k">if</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]:</span>
@@ -954,7 +952,7 @@
         <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">hvsr_data</span>
         <span class="k">return</span> <span class="n">hvsr_results</span>
         
-    <span class="k">def</span> <span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
         <span class="n">plot_list</span> <span class="o">=</span> <span class="n">plot_string</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
         <span class="n">hvsrList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="s1">&#39;hv&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">]</span>
@@ -1014,7 +1012,7 @@
 
         <span class="k">return</span> <span class="n">plot_list_list</span>
 
-    <span class="k">def</span> <span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="n">x_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span>
         <span class="n">hvsrDF</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span>
@@ -1111,7 +1109,7 @@
                                     <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">results_fig</span>
 
-    <span class="k">def</span> <span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="c1"># Initial setup</span>
@@ -1251,7 +1249,7 @@
                             <span class="n">row</span><span class="o">=</span><span class="n">compRow</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">results_fig</span>
 
-    <span class="k">def</span> <span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="k">if</span> <span class="n">azimuth</span> <span class="o">==</span> <span class="s1">&#39;HV&#39;</span><span class="p">:</span>
             <span class="n">HVCol</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
@@ -1328,7 +1326,7 @@
 
         <span class="k">return</span> <span class="n">results_fig</span>
 
-    <span class="k">def</span> <span class="nf">update_results_fig</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_results_fig</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">results_fig</span>
         <span class="k">global</span> <span class="n">results_subp</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
@@ -1439,7 +1437,7 @@
     <span class="n">preview_subp</span> <span class="o">=</span> <span class="n">subplots</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">vertical_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">row_heights</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">preview_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">FigureWidget</span><span class="p">(</span><span class="n">preview_subp</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">update_preview_fig</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">preview_fig</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_preview_fig</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">preview_fig</span><span class="p">):</span>
         <span class="n">preview_fig</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
@@ -1545,7 +1543,7 @@
     <span class="n">remove_noise_call_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">remove_noise_prefix</span><span class="p">,</span> <span class="n">remove_noise_call</span><span class="p">])</span>
 
     <span class="c1"># Update remove_outlier call</span>
-    <span class="k">def</span> <span class="nf">update_remove_noise_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_remove_noise_call</span><span class="p">():</span>
         <span class="n">rnkwargs</span> <span class="o">=</span> <span class="n">get_remove_noise_kwargs</span><span class="p">()</span>
         <span class="n">rn_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, remove_method=</span><span class="si">{</span><span class="n">rnkwargs</span><span class="p">[</span><span class="s1">&#39;remove_method&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
 <span class="s2">                    sat_percent=</span><span class="si">{</span><span class="n">rnkwargs</span><span class="p">[</span><span class="s1">&#39;sat_percent&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
@@ -1647,7 +1645,7 @@
     <span class="n">generate_ppsd_call_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">generate_ppsd_prefix</span><span class="p">,</span> <span class="n">generate_ppsd_call</span><span class="p">])</span>
 
     <span class="c1"># Update generate_psds() call</span>
-    <span class="k">def</span> <span class="nf">update_generate_ppsd_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_generate_ppsd_call</span><span class="p">():</span>
         <span class="n">gppsdkwargs</span> <span class="o">=</span> <span class="n">get_generate_ppsd_kwargs</span><span class="p">()</span>
         <span class="n">gppsd_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, </span>
 <span class="s2">                        stats=hvsr_data[&#39;stream&#39;].select(component=&#39;*&#39;).traces[0].stats, </span>
@@ -1697,12 +1695,12 @@
     <span class="n">rmse_thresh_slider</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;RMSE Value&#39;</span><span class="p">,</span><span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">),</span><span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">rmse_pctile_slider</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">_get_default</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="s1">&#39;rmse_thresh&#39;</span><span class="p">),</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Percentile&quot;</span><span class="p">,</span><span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">),)</span>
     
-    <span class="k">def</span> <span class="nf">calc_rmse</span><span class="p">(</span><span class="n">array_2d</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_rmse</span><span class="p">(</span><span class="n">array_2d</span><span class="p">):</span>
         <span class="n">medArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">array_2d</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">array_2d</span><span class="p">,</span> <span class="n">medArray</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">array_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">rmse</span>
     
-    <span class="k">def</span> <span class="nf">on_update_rmse_thresh_slider</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_update_rmse_thresh_slider</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">rmse</span> <span class="o">=</span> <span class="n">calc_rmse</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span><span class="p">[</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1718,7 +1716,7 @@
             <span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">rmse_thresh_slider</span><span class="o">.</span><span class="n">value</span>
             <span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">((</span><span class="n">rmse</span> <span class="o">&lt;</span> <span class="n">rmse_thresh_slider</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">rmse</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
 
-    <span class="k">def</span> <span class="nf">on_update_rmse_pctile_slider</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_update_rmse_pctile_slider</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">rmse</span> <span class="o">=</span> <span class="n">calc_rmse</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span><span class="p">[</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1734,7 +1732,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">rmse_thresh_slider</span><span class="o">.</span><span class="n">value</span>
 
-    <span class="k">def</span> <span class="nf">on_update_rmse_pctile_check</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_update_rmse_pctile_check</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">rmse_pctile_check</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">rmse_thresh_slider</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1742,7 +1740,7 @@
             <span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">rmse_thresh_slider</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">False</span>
     
-    <span class="k">def</span> <span class="nf">on_update_rmse_thresh</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_update_rmse_thresh</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">rmse_pctile_check</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1763,13 +1761,13 @@
     <span class="n">remove_outlier_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">remove_outlier_curve_prefix</span><span class="p">,</span> <span class="n">remove_outlier_curve_call</span><span class="p">])</span>
 
     <span class="c1"># Update remove_outlier call</span>
-    <span class="k">def</span> <span class="nf">update_remove_outlier_curve_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_remove_outlier_curve_call</span><span class="p">():</span>
         <span class="n">roc_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, rmse_thresh=</span><span class="si">{</span><span class="n">rmse_thresh</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, use_percentile=</span><span class="si">{</span><span class="n">rmse_pctile_check</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
 <span class="s2">                            use_hv_curve=</span><span class="si">{</span><span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">...verbose=</span><span class="si">{</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;&quot;&quot;</span>
         <span class="n">remove_outlier_curve_call</span><span class="o">.</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39;</span> <span class="o">+</span> <span class="n">roc_text</span> <span class="o">+</span> <span class="s1">&#39;&lt;/p&gt;&#39;</span>
     <span class="n">update_remove_outlier_curve_call</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">update_outlier_fig_button</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_outlier_fig_button</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">outlier_fig</span><span class="p">,</span> <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">update_outlier_fig</span><span class="p">(</span><span class="n">button</span><span class="p">)</span>
 
     <span class="n">generate_ppsd_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">process_data</span><span class="p">)</span>
@@ -1787,7 +1785,7 @@
     <span class="k">with</span> <span class="n">outlier_graph_widget</span><span class="p">:</span>
         <span class="n">display</span><span class="p">(</span><span class="n">outlier_fig</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">update_outlier_fig</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_rmse_thresh</span><span class="o">=</span><span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">_use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_use_hv_curve</span><span class="o">=</span><span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_outlier_fig</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_rmse_thresh</span><span class="o">=</span><span class="n">rmse_pctile_slider</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">_use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_use_hv_curve</span><span class="o">=</span><span class="n">use_hv_curve_rmse</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
         <span class="k">global</span> <span class="n">outlier_fig</span>
         <span class="k">global</span> <span class="n">hvsr_data</span>
         <span class="n">hv_data</span> <span class="o">=</span> <span class="n">hvsr_data</span>
@@ -1843,7 +1841,7 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">):</span>
                 <span class="n">rowDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
                 <span class="n">showTLabelsDict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-                <span class="k">def</span> <span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
                     <span class="n">compstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
                     <span class="k">if</span> <span class="n">comp</span><span class="o">==</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span>
                         <span class="n">compstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;rgba(0, 0, 0, </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">)&#39;</span>
@@ -1973,7 +1971,7 @@
     <span class="n">process_hvsr_call_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">process_hvsr_call_prefix</span><span class="p">,</span> <span class="n">process_hvsr_call</span><span class="p">])</span>
 
     <span class="c1"># Update process_hvsr call</span>
-    <span class="k">def</span> <span class="nf">update_process_hvsr_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_process_hvsr_call</span><span class="p">():</span>
         <span class="n">ph_kwargs</span> <span class="o">=</span> <span class="n">get_process_hvsr_kwargs</span><span class="p">()</span>
         <span class="n">ph_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, </span>
 <span class="s2">                        method=</span><span class="si">{</span><span class="n">ph_kwargs</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
@@ -1992,7 +1990,7 @@
     <span class="n">check_peaks_call_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">check_peaks_call_prefix</span><span class="p">,</span> <span class="n">check_peaks_call</span><span class="p">])</span>
 
     <span class="c1"># Update process_hvsr call</span>
-    <span class="k">def</span> <span class="nf">update_check_peaks_call</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_check_peaks_call</span><span class="p">():</span>
         <span class="n">cp_kwargs</span> <span class="o">=</span> <span class="n">get_check_peaks_kwargs</span><span class="p">()</span>
         <span class="n">cp_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, </span>
 <span class="s2">                        hvsr_band=</span><span class="si">{</span><span class="n">cp_kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
@@ -2093,13 +2091,13 @@
                                 <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">),</span> <span class="n">disabled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="n">plot_hvsr_call</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Plot String: &#39;</span><span class="si">{</span><span class="n">_get_default</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;plot_type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">update_plot_string</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_plot_string</span><span class="p">():</span>
         <span class="n">plot_hvsr_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Plot String: </span><span class="si">{</span><span class="n">get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
         <span class="n">plot_hvsr_call</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">plot_hvsr_text</span>
     <span class="n">update_plot_string</span><span class="p">()</span>
 
     <span class="n">update_plot_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Update Plot&#39;</span><span class="p">,</span><span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span><span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">manually_update_results_fig</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">manually_update_results_fig</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="n">plot_string</span> <span class="o">=</span> <span class="n">get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span>
         <span class="n">update_results_fig</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_string</span><span class="p">)</span>
         <span class="n">sprit_tabs</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="mi">4</span>
@@ -2210,7 +2208,7 @@
                                             <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
     <span class="n">export_results_table_browse_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Export Table&#39;</span><span class="p">,</span>
                                             <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">export_results_table</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_results_table</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">button</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;Export Table&#39;</span><span class="p">:</span>
                 <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
@@ -2305,15 +2303,15 @@
                                    <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">flex</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">justify_content</span><span class="o">=</span><span class="s1">&#39;flex-start&#39;</span><span class="p">,</span> <span class="n">align_content</span><span class="o">=</span><span class="s1">&#39;flex-end&#39;</span><span class="p">))</span>
 
     <span class="c1"># Function to open a link</span>
-    <span class="k">def</span> <span class="nf">open_dist</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_dist</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">link</span> <span class="o">=</span> <span class="s1">&#39;https://pypi.org/project/sprit/&#39;</span>
         <span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new_tab</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">open_repo</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_repo</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">link</span> <span class="o">=</span> <span class="s1">&#39;https://github.com/RJbalikian/SPRIT-HVSR&#39;</span>
         <span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new_tab</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">open_docs</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_docs</span><span class="p">(</span><span class="n">button</span><span class="p">):</span>
         <span class="n">link</span> <span class="o">=</span> <span class="s1">&#39;https://rjbalikian.github.io/SPRIT-HVSR/main.html&#39;</span>
         <span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new_tab</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
 
@@ -2344,13 +2342,13 @@
 
     <span class="n">sprit_widget</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">VBox</span><span class="p">([</span><span class="n">titlehbox</span><span class="p">,</span> <span class="n">sprit_tabs</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">observe_children</span><span class="p">(</span><span class="n">widget</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">observe_children</span><span class="p">(</span><span class="n">widget</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">widget</span><span class="p">,</span> <span class="s1">&#39;children&#39;</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">widget</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="n">child</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span>
                 <span class="n">observe_children</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">any_update</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">any_update</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
         <span class="n">update_input_param_call</span><span class="p">()</span>
         <span class="n">update_fetch_data_call</span><span class="p">()</span>
         <span class="n">update_remove_noise_call</span><span class="p">()</span>
