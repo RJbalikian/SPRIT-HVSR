@@ -426,7 +426,7 @@ def main():
         
         setup_main_container(do_setup_tabs=False)
         with st.session_state.mainContainer:
-            spinnerText = '# Data is processing with default parameters.'
+            spinnerText = '## Data is processing with default parameters.'
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
@@ -672,6 +672,7 @@ def main():
         #@st.cache_data
         def _convert_stream_for_download(_stream):
             strm = io.BytesIO()
+            _stream = _stream.split()
             _stream.write(strm, format='MSEED')
             return strm.getvalue()
         streamBytes = _convert_stream_for_download(hvData.stream)
@@ -794,21 +795,31 @@ def main():
             hvdf = hvsr_data.hvsr_windows_df
             tps = pd.Series(hvdf.index.copy(), name='TimesProcessed_Start', index=hvdf.index)
             hvdf["TimesProcessed_Start"] = tps
-            useArrShape = f.shape[0]
+            useArrShape = np.array(f).shape[0]
             
         else:
-            useSeries = pd.Series([True]*(timeWindowArr.shape[0]-1), name='Use')
-            sTimeSeries = pd.Series(timeWindowArr[:-1], name='TimesProcessed')
-            eTimeSeries = pd.Series(timeWindowArr[1:], name='TimesProcessed_End')
+            useSeriesList = []
+            sTimeSeriesList = []
+            eTimeSeriesList = []
+            useArrShape = 0
+            for i, tArr in enumerate(timeWindowArr):
+                useSeriesList.extend([True]*(np.array(tArr).shape[0]-1))
+                sTimeSeriesList.extend(tArr[:-1])
+                eTimeSeriesList.extend(tArr[1:])
+                
+                useArrShape += np.array(psdArr[i]).shape[0]
+
+            useSeries = pd.Series(useSeriesList, name='Use')
+            sTimeSeries = pd.Series(sTimeSeriesList, name='TimesProcessed')
+            eTimeSeries = pd.Series(eTimeSeriesList, name='TimesProcessed_End')
 
             hvdf = pd.DataFrame({'TimesProcessed':sTimeSeries,
                                 'TimesProcessed_End':eTimeSeries,
                                 'Use':useSeries})
 
             hvdf.set_index('TimesProcessed', inplace=True, drop=True)
-            hvdf['TimesProcessed_Start'] = timeWindowArr[:-1]
+            hvdf['TimesProcessed_Start'] = sTimeSeriesList
             
-            useArrShape = psdArr.shape[0]
 
         if 'TimesProcessed_Obspy' not in hvdf.columns:
             hvdf['TimesProcessed_Obspy'] = [UTCDateTime(dt64) for dt64 in sTimeSeries]
@@ -849,45 +860,100 @@ def main():
 
         # Windows PSD and Used
         #psdArr = np.flip(hvsr_data.ppsds["Z"]['psd_values'].T)
-        zTrace = st.session_state.stream.select(component='Z').merge()[0]
-        eTrace = st.session_state.stream.select(component='E').merge()[0]
-        nTrace = st.session_state.stream.select(component='N').merge()[0]
+        zStream = st.session_state.stream.select(component='Z').merge() 
+        zTraces = zStream.split()
+        zTrace = zStream[0]
+
+        eStream = st.session_state.stream.select(component='E').merge() 
+        eTraces = eStream.split()
+        eTrace = eStream[0]
+
+        nStream = st.session_state.stream.select(component='N').merge()
+        nTraces = nStream.split()
+        nTrace = nStream[0]
+
         specKey = 'Z'
 
-        sTime = zTrace.stats.starttime
-        xTraceTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
+        xTraceTimesAppZ = []
+        f = []
+        specTimes = []
+        psdArr = []
+        timeWindowArr = []
 
-        f, specTimes, psdArr = _generate_stream_specgram(_trace=zTrace)
+        sTimeZ = zTraces[0].stats.starttime
+        sTimeE = eTraces[0].stats.starttime
+        sTimeN = nTraces[0].stats.starttime        
+      
+        # E
+        for i, eTr in enumerate(eTraces):
+            if i == 0:
+                xTraceTimesE = [np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]
+                xTraceTimesAppE = [[np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]]
+            else:
+                xTraceTimesAppE.append([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+                xTraceTimesE.extend([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
 
+        # N
+        for i, nTr in enumerate(nTraces):
+            if i == 0:
+                xTraceTimesN = [np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]
+                xTraceTimesAppN = [[np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]]
+            else:
+                xTraceTimesAppN.append([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+                xTraceTimesN.extend([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+
+
+
+        for i, zTrace in enumerate(zTraces):
+            sTimeZ = zTrace.stats.starttime
+
+            if i == 0:
+                xTraceTimesZ = [np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()]
+                xTraceTimesAppZ = [[np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()]]
+            else:
+                xTraceTimesAppZ.append([np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()])
+                xTraceTimesZ.extend([np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()])
+
+            fTemp, specTimesTemp, psdArrTemp = _generate_stream_specgram(_trace=zTrace)
+
+            if fTemp[0] == 0:
+                fTemp[0] = fTemp[1]/10 # Fix so bottom number is not 0
+            f.append(fTemp)
+
+            specTimesTemp = list(specTimesTemp)
+            specTimesTemp.insert(0, 0)
+            specTimes.append(specTimesTemp)
+
+            timeWindowArr.append(np.array([np.datetime64((sTimeZ + tT).datetime) for tT in specTimesTemp]))
+            
+            psdArr.append(psdArrTemp)
+
+
+            minz = np.percentile(psdArrTemp, 1)
+            maxz = np.percentile(psdArrTemp, 99)
+
+            hmap = goHeatmap(z=psdArrTemp,
+                        x=timeWindowArr[i][:-1],
+                        y=fTemp,
+                        colorscale='Turbo', #opacity=0.8,
+                        showlegend=False,
+                        hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
+                        zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram; Trace {i}')
+
+
+            inputFig.add_trace(hmap, row=1, col=1)
+            
         st.session_state.stream_spec_freqs = f
         st.session_state.stream_spec_times = specTimes
         st.session_state.psdArr = psdArr
 
-        if f[0] == 0:
-            f[0] = f[1]/10 # Fix so bottom number is not 0
-
-        specTimes = list(specTimes)
-        specTimes.insert(0, 0)
-        timeWindowArr = np.array([np.datetime64((sTime + tT).datetime) for tT in specTimes])
-        
         hvsrBand = hvsr_data['hvsr_band']
 
-        minz = np.percentile(st.session_state.psdArr, 1)
-        maxz = np.percentile(st.session_state.psdArr, 99)
-
-        hmap = goHeatmap(z=st.session_state.psdArr,
-                    x=timeWindowArr[:-1],
-                    y=f,
-                    colorscale='Turbo', #opacity=0.8,
-                    showlegend=False,
-                    hovertemplate='Time [UTC]: %{x}<br>Frequency [Hz]: %{y:.2f}<br>Spectrogram Magnitude: %{z:.2f}<extra></extra>',
-                    zmin=minz, zmax=maxz, showscale=False, name=f'{specKey} Component Spectrogram')
-        inputFig.add_trace(hmap, row=1, col=1)
         inputFig.update_yaxes(type='log', range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
         inputFig.update_yaxes(title={'text':f'Spectrogram ({specKey})'}, row=1, col=1)
 
         # Get Use Array and hvdf
-        hvdf, useArrShape = _get_use_array(hvsr_data, f=f, timeWindowArr=timeWindowArr, psdArr=st.session_state.psdArr)
+        hvdf, useArrShape = _get_use_array(hvsr_data, f=f, timeWindowArr=timeWindowArr, psdArr=psdArr)
 
         timelineFig = pxTimeline(data_frame=hvdf,
                                 x_start='TimesProcessed_Start',
@@ -932,7 +998,15 @@ def main():
 
 
         # Data traces
-        zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
+        # Z Traces
+        for i, zTr in enumerate(zTraces):
+            if i == 0:
+                zDataFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+            else:
+                zTempFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+                for zFigTrace in zTempFig.data:
+                    zDataFig.add_trace(zFigTrace)
+        
         zDataFig.update_traces(mode='markers+lines',
                             marker=dict(size=1, color='rgba(0,0,0,1)'),
                             line=dict(width=1, color='rgba(0,0,0,1)'),
@@ -940,8 +1014,17 @@ def main():
         for zTrace in zDataFig.data:
             inputFig.add_trace(zTrace, row=3, col=1)
 
+        # E Traces
+        for i, eTr in enumerate(eTraces):
+            if i == 0:
+                eDataFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+            else:
+                eTempFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+                for eFigTrace in eTempFig.data:
+                    eDataFig.add_trace(eFigTrace)
+        
 
-        eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+        #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
         eDataFig.update_traces(mode='markers+lines',
                             marker=dict(size=1, color='rgba(0,0,255,1)'),
                             line=dict(width=1, color='rgba(0,0,255,1)'),
@@ -949,8 +1032,16 @@ def main():
         for eTrace in eDataFig.data:
             inputFig.add_trace(eTrace, row=4, col=1)
 
-
-        nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+        # N Traces
+        for i, nTr in enumerate(nTraces):
+            if i == 0:
+                nDataFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+            else:
+                nTempFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+                for nFigTrace in nTempFig.data:
+                    nDataFig.add_trace(nFigTrace)
+        
+        #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
         nDataFig.update_traces(mode='markers+lines',
                             marker=dict(size=1, color='rgba(255,0,0,1)'),
                             line=dict(width=1, color='rgba(255,0,0,1)'),
@@ -958,13 +1049,43 @@ def main():
         for nTrace in nDataFig.data:
             inputFig.add_trace(nTrace, row=5, col=1)
 
+
+
+        #zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
+        #zDataFig.update_traces(mode='markers+lines',
+        #                    marker=dict(size=1, color='rgba(0,0,0,1)'),
+        #                    line=dict(width=1, color='rgba(0,0,0,1)'),
+        #                    selector=dict(mode='markers'))
+        #for zTrace in zDataFig.data:
+        #    inputFig.add_trace(zTrace, row=3, col=1)
+
+
+        #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+        #eDataFig.update_traces(mode='markers+lines',
+        #                    marker=dict(size=1, color='rgba(0,0,255,1)'),
+        #                    line=dict(width=1, color='rgba(0,0,255,1)'),
+        #                    selector=dict(mode='markers'))
+        #for eTrace in eDataFig.data:
+        #    inputFig.add_trace(eTrace, row=4, col=1)
+
+
+        #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+        #nDataFig.update_traces(mode='markers+lines',
+        #                    marker=dict(size=1, color='rgba(255,0,0,1)'),
+        #                    line=dict(width=1, color='rgba(255,0,0,1)'),
+        #                    selector=dict(mode='markers'))
+        #for nTrace in nDataFig.data:
+        #    inputFig.add_trace(nTrace, row=5, col=1)
+
         #inputFig.update_yaxes(title='In Use', row=5, col=1)
         #inputFig.update_xaxes(title='Time', row=5, col=1,
         #                      dtick=1000*60,)
         inputFig.update_layout(title_text="Frequency and Data values over time", 
                             height=650, showlegend=False)
 
-        inputFig.update_xaxes(type='date', range=[xTraceTimes[0], xTraceTimes[-1]])
+        chartStartT = min(xTraceTimesZ[0], xTraceTimesE[0], xTraceTimesN[0])
+        chartEndT = max(xTraceTimesZ[-1], xTraceTimesE[-1], xTraceTimesN[-1])
+        inputFig.update_xaxes(type='date', range=[chartStartT, chartEndT])
 
         st.session_state.input_fig = inputFig
         st.session_state.hvsr_data.Input_Plot = inputFig

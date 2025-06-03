@@ -1168,13 +1168,49 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
                                 )
 
     # Windows PSD and Used
-    zTrace = stream.select(component='Z').merge()[0]
-    eTrace = stream.select(component='E').merge()[0]
-    nTrace = stream.select(component='N').merge()[0]
+    zStream = stream.select(component='Z').merge()
+    zTraces = zStream.split()
+    zTrace = zStream[0]
+
+    eStream = stream.select(component='E').merge()
+    eTraces = eStream.split()
+    eTrace = eStream[0]
+
+    nStream = stream.select(component='N').merge()
+    nTraces = nStream.split()
+    nTrace = nStream[0]
     
 
-    sTime = zTrace.stats.starttime
-    xTraceTimes = [np.datetime64((sTime + tT).datetime) for tT in zTrace.times()]
+    sTimeZ = zTrace.stats.starttime
+    sTimeE = eTrace.stats.starttime
+    sTimeN = nTrace.stats.starttime        
+    # Z
+    for i, zTr in enumerate(zTraces):
+        if i == 0:
+            xTraceTimesZ = [np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()]
+            xTraceTimesAppZ = [[np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()]]
+        else:
+            xTraceTimesAppZ.append([np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()])
+            xTraceTimesZ.extend([np.datetime64((sTimeZ + tT).datetime) for tT in zTr.times()])
+    
+    # E
+    for i, eTr in enumerate(eTraces):
+        if i == 0:
+            xTraceTimesE = [np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]
+            xTraceTimesAppE = [[np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]]
+        else:
+            xTraceTimesAppE.append([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+            xTraceTimesE.extend([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+
+    # N
+    for i, nTr in enumerate(nTraces):
+        if i == 0:
+            xTraceTimesN = [np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]
+            xTraceTimesAppN = [[np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]]
+        else:
+            xTraceTimesAppN.append([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+            xTraceTimesN.extend([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+
 
     if specKey == 'N':
         specTrace = nTrace
@@ -1196,7 +1232,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
 
     specTimes = list(specTimes)
     specTimes.insert(0, 0)
-    timeWindowArr = np.array([np.datetime64((sTime + tT).datetime) for tT in specTimes])
+    timeWindowArr = np.array([np.datetime64((sTimeZ + tT).datetime) for tT in specTimes])
     
     hvsrBand = hvsr_data['hvsr_band']
 
@@ -1261,7 +1297,15 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
 
 
     # Data traces
-    zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
+    # Z Traces
+    for i, zTr in enumerate(zTraces):
+        if i == 0:
+            zDataFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+        else:
+            zTempFig = pxScatter(x=xTraceTimesAppZ[i])
+            for zFigTrace in zTempFig.data:
+                zDataFig.add_trace(zFigTrace)
+    
     zDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,0,1)'),
                         line=dict(width=1, color='rgba(0,0,0,1)'),
@@ -1269,7 +1313,17 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
     for zTrace in zDataFig.data:
         input_fig.add_trace(zTrace, row=3, col=1)
 
-    eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+    # E Traces
+    for i, eTr in enumerate(eTraces):
+        if i == 0:
+            eDataFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+        else:
+            eTempFig = pxScatter(x=xTraceTimesAppE[i])
+            for eFigTrace in eTempFig.data:
+                eDataFig.add_trace(eFigTrace)
+    
+
+    #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
     eDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(0,0,255,1)'),
                         line=dict(width=1, color='rgba(0,0,255,1)'),
@@ -1277,8 +1331,16 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
     for eTrace in eDataFig.data:
         input_fig.add_trace(eTrace, row=4, col=1)
 
-
-    nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+    # N Traces
+    for i, nTr in enumerate(nTraces):
+        if i == 0:
+            nDataFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+        else:
+            nTempFig = pxScatter(x=xTraceTimesAppN[i])
+            for nFigTrace in nTempFig.data:
+                nDataFig.add_trace(nFigTrace)
+    
+    #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
     nDataFig.update_traces(mode='markers+lines',
                         marker=dict(size=1, color='rgba(255,0,0,1)'),
                         line=dict(width=1, color='rgba(255,0,0,1)'),
@@ -1290,7 +1352,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None,
     input_fig.update_layout(title_text="Frequency and Data values over time", 
                         height=650, showlegend=False)
 
-    input_fig.update_xaxes(type='date', range=[xTraceTimes[0], xTraceTimes[-1]])
+    input_fig.update_xaxes(type='date', range=[xTraceTimesZ[0], xTraceTimesZ[-1]])
 
     hvsr_data['Input_Plot'] = input_fig # not currently using
 
