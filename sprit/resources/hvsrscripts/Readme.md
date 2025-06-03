@@ -48,8 +48,12 @@ Enter the following lines (the first two lines below are not strictly necessary,
 
 ```bash
 hvsr(){
+    if [ "$1" == "-h"] ; then
+        sudo bash /opt/hvsr/hvsr_v1-3.sh -h
+        return 0
+    fi
     echo "Starting HVSR script in screen session.
-    sleep 2
+    sleep 1
     screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
     }
 ```
