@@ -89,7 +89,7 @@ After your script has run, the acquisition screen will close and you will be ret
 
 You can check that the file was saved by looking in the `/opt/hvsr/data` folder. Use the `-l -h` flags to see the size of the file in human readable format:
 
-> Note: The files should be about 9kb in size (or at least that was our results from a six-second test as defined above)
+> Note: The files should be about 5-10kb in size (or at least that was our results from a six-second test as defined above)
 
 ```bash
 ls /opt/hvsr/data -l -h
