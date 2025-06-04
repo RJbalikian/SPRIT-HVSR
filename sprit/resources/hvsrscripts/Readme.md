@@ -178,7 +178,7 @@ Usage: hvsr_v1-3.sh CAPITALIZED WORD after option indicates variable to which th
 Acquire data for site called "HourLongSite" for one hour before ending acquisition, collating data, saving to file, and powering off Shake.
 
 ```bash
-hvsr -n "HourLongSite"
+hvsr -n "HourLongSite" -d 60
 ```
 ### Example 2
 Acquire data for 30 minutes, save data but do not turn off shake when done.
