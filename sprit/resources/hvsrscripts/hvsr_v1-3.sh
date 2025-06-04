@@ -4,7 +4,6 @@ set -e
 SCRIPT_VERSION="v1.3"
 SCRIPT_UPDATE="2025-06-02"
 
-
 #DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
@@ -21,18 +20,8 @@ OPTION |   ARGUMENT   | DESCRIPTION       \n\t\
  -e    | EXPORT_DISK* | EXPORT_DISK argument is optional; Export data in /opt/hvsr/data folder to inserted USB disk (experimental)\n\n"
 
 #CODE
-# HANDLE SIGNAL DISCONNECT
-# First, set up script to continue running even if there is a signal disconnect (SSH is disconnected)
-# Function to handle disconnection
-handle_disconnection() {
-    echo "    Disconnected from SSH at $(date +'%T'). Continuing script execution..."
-    trap ' ' HUP  # Ignore SIGHUP (hangup signal)
-}
 
-# Set up trap to handle SIGHUP (hangup signal)
-trap handle_disconnection HUP
-
-# NOW, ESTABLISH DEFAULT PARAMETERS
+# ESTABLISH DEFAULT PARAMETERS
 # Default variable values
 SITE_NAME="HVSRSite"
 DURATION=20
