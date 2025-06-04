@@ -17,13 +17,37 @@ To set up the script for easy usage in the field, the following steps are recomm
 > 4) Test
 
 ## 1) Copy file to the shake and move into /opt/hvsr directory
-Using the scp command, filezilla, or any other method transfer the hvsr_vx-x.sh to your Raspberry Shake 3D. Examples for this are included below:
+Using Copy/Paste, the scp command, filezilla, or any other method transfer the hvsr_vx-x.sh to your Raspberry Shake 3D. Examples for this are included below:
+
+### Copy/Paste (Recommended!)
+In your terminal, use ssh to enter the shake (you will be prompted for the shake's password, `shakeme` by default):
+```bash
+ssh myshake@rs.local
+```
+
+Edit/create a new file (replace the `x`'s below with the version number of the file located in the same directory as this Readme):
+
+```bash
+sudo nano /opt/hvsr/hvsr_vx-x.sh
+```
+
+Copy the text from the `hvsr_vx-x.sh` file in this directory. Right click on the terminal (now with the nano editor opened) to paste the contents of the file. 
+Type `Ctrl + s` to save and `Ctrl + x` to exit the nano editor.
 
 ### SCP
-Using this command, you will only be able to copy the file to the home directory. Then you will need to move the file to the specified hvsr folder
+> TROUBLESHOOTING
+> If you are doing this from a Windows computer, it may convert your file to DOS format, which uses a different "carraige return"/endline character than unix (which is what the shake uses).
+> If you can install the dos2unix tool on your shake (`sudo apt-get install dos2unix`) then run that command (`sudo dos2unix /path/to/hvsr_vx-x.sh`), you may be able to get around this issue.
 
-After running the scp command and ssh command, you will be asked for the Raspberry Shake's password (`shakeme` by default).
+Using scp command, sometimes you can only be able to copy the file to the home directory. Then you will need to move the file to the specified hvsr folder. 
+If it allows you to transfer the file directly to the correct folder, than Alternative 1 below may work. Otherwise, try Alternative 2
 
+#### Alternative 1
+```bash
+scp "/path/to/local/copy/of/hvsr_v1-3.sh" "myshake@rs.local:/opt/hvsr/"
+```
+
+### Alternative 2
 ```bash
 scp "/path/to/local/copy/of/hvsr_v1-3.sh" "myshake@rs.local:"
 ssh myshake@rs.local
@@ -63,6 +87,15 @@ Type `Ctrl + s` to save and `ctrl + x` to exit nano and return to your terminal.
 You will need to install the `screen` tool for this to work. Your shake will need to be connected to the internet.
 
 `sudo apt install screen`
+
+> TROUBLESHOOTING
+> You may not be able to install screen without updating the `apt` package manager.
+> You may need to change some configuration settings on your shake to do this.
+> For our instruments, this required the following commands (while the Shake was connected to the internet)
+> `sudo apt update --allow-releaseinfo-change`
+> `sudo apt install screen`
+> Then you can run the following to check that the installation worked:
+> `screen -h`, which should print the help message for screen. Otherwise, if it did not install, you will receive an error message.
 
 ## Reboot
 Enter the following command to reboot your Shake:
