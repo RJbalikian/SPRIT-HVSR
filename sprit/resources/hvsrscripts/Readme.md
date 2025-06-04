@@ -69,6 +69,13 @@ sudo reboot
 ## Test hvsr script
 Now that you have set up the hvsr function in .bashrc, it should be defined immediately upon boot.
 
+Log back into your shake via ssh:
+
+```powershell
+ssh myshake@rs.local
+```
+It will prompt you for your password.
+
 Use the following script as a test run:
 ```bash
 hvsr -n "TEST_v3" -t TRUE -d 0.1 -s 5 -c 1
