@@ -60,6 +60,10 @@ hvsr(){
 
 Type `Ctrl + s` to save and `ctrl + x` to exit nano and return to your terminal.
 
+You will need to install the `screen` tool for this to work. Your shake will need to be connected to the internet.
+
+`sudo apt install screen`
+
 ## Reboot
 Enter the following command to reboot your Shake:
 
