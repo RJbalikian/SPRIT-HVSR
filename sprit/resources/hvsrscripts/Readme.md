@@ -52,7 +52,7 @@ hvsr(){
         sudo bash /opt/hvsr/hvsr_v1-3.sh -h
         return 0
     fi
-    echo "Starting HVSR script in screen session.
+    echo "Starting HVSR script in screen session."
     sleep 1
     screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
     }
@@ -71,7 +71,7 @@ Now that you have set up the hvsr function in .bashrc, it should be defined imme
 
 Use the following script as a test run:
 ```bash
-hvsr -n "TEST1" -t TRUE -d 0.1 -s 5 -c 1
+hvsr -n "TEST_v3" -t TRUE -d 0.1 -s 5 -c 1
 ```
 
 You will see a message like "Starting HVSR Script in screen session" (this is the first line of the hvsr() function you defined above).
