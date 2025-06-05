@@ -2989,9 +2989,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     else:
         if source=='raw':
             try:
-                if inst.lower() in raspShakeInstNameList:
-                    rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
-                elif inst.lower() in trominoNameList:
+                if inst.lower() in trominoNameList:
                     params['instrument'] = 'Tromino'
                     params['params']['instrument'] = 'Tromino'
 
@@ -2999,6 +2997,12 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     paramDict = {k:v for k, v in params.items()}
                     trominoKwargs.update(paramDict)
                     rawDataIN = read_tromino_files(dPath, verbose=verbose, **trominoKwargs)
+
+                else:
+                    if inst.lower() not in raspShakeInstNameList:
+                        print(f"Unrecognized value instrument={inst}. Defaulting to raw raspberry shake data.")
+                    rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+
             except Exception as e:
                 raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.\n\n{e}")
         elif source == 'stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
