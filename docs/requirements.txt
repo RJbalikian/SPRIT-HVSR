@@ -19,4 +19,4 @@ sphinx-rtd-theme
 markdown
 pytest
 flake8
-sprit==2.7.2
+sprit==2.7.3
