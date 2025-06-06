@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 2.7.3 documentation</title>
+  <title>sprit package &mdash; sprit 2.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=e8140b17"></script>
+        <script src="_static/documentation_options.js?v=4348de45"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -81,6 +81,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.create_jupyter_ui"><code class="docutils literal notranslate"><span class="pre">create_jupyter_ui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_data"><code class="docutils literal notranslate"><span class="pre">export_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.export_hvsr"><code class="docutils literal notranslate"><span class="pre">export_hvsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.export_report"><code class="docutils literal notranslate"><span class="pre">export_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_settings"><code class="docutils literal notranslate"><span class="pre">export_settings()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.generate_psds"><code class="docutils literal notranslate"><span class="pre">generate_psds()</span></code></a></li>
@@ -454,7 +456,7 @@ If True, it will first try to save each file to the same directory as input_data
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <dl class="simple">
-<dt><a class="reference internal" href="#sprit.export_data" title="sprit.export_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_data</span></code></a></dt><dd></dd>
+<dt><a class="reference internal" href="#sprit.export_hvsr" title="sprit.export_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_hvsr</span></code></a></dt><dd></dd>
 </dl>
 </div>
 </dd></dl>
@@ -800,7 +802,51 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.export_data">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_data" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mseed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_edited_stream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_data" title="Link to this definition">¶</a></dt>
+<dd><p>Export data stream to file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hvsr_data</strong><span class="classifier">HVSRData, HVSRBatch, obspy.Stream, obspy.Trace</span></dt><dd><p>Input stream or HVSR object</p>
+</dd>
+<dt><strong>data_export_path</strong><span class="classifier">pathlike-object</span></dt><dd><p>Filepath at which to format data. If directory (recommended), filename will be generated automatically.</p>
+</dd>
+<dt><strong>data_export_format</strong><span class="classifier">str, optional</span></dt><dd><p>Format of data, should be file format supported by obspy.write(), by default ‘mseed’</p>
+</dd>
+<dt><strong>starttime</strong><span class="classifier">str, UTCDateTime, or datetime.datetime, optional</span></dt><dd><p>Starttime of stream, if trimming is desired, by default None</p>
+</dd>
+<dt><strong>endtime</strong><span class="classifier">str, UTCDateTime, or datetime.datetime, optional</span></dt><dd><p>Endtime of stream, if trimming is desired, by default None</p>
+</dd>
+<dt><strong>tzone</strong><span class="classifier">str, zoneinfo.Zoneinfo, optional</span></dt><dd><p>String readable by zoneinfo.Zoneinfo() or Zoneinfo object, by default None</p>
+</dd>
+<dt><strong>export_edited_stream</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to export the raw stream or edited stream in HVSRData object, by default False</p>
+</dd>
+<dt><strong>site</strong><span class="classifier">str, optional</span></dt><dd><p>Site name, to be used in filename generation, by default None</p>
+</dd>
+<dt><strong>project</strong><span class="classifier">str, optional</span></dt><dd><p>Project or county name, to be used in filename generation, by default None</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to print information to terminal, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>obspy.Stream</dt><dd><p>Stream object exported</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>TypeError</dt><dd><p>hvsr_data must be of type HVSRData, HVSRBatch, obspy.Stream, or obspy.Trace</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.export_hvsr">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_hvsr" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Export data into pickle format that can be read back in using import_data().</dt><dd><p>Intended so data does not need to be processed each time it needs to be used. 
 Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().</p>
@@ -814,6 +860,53 @@ Default extension is .hvsr but it is still a pickled file that can be read in us
 <dt><strong>hvsr_export_path</strong><span class="classifier">str or filepath object, default = None</span></dt><dd><p>String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, ‘wb’) statement. If None, defaults to input input_data directory, by default None</p>
 </dd>
 <dt><strong>ext</strong><span class="classifier">str, default = ‘hvsr’</span></dt><dd><p>Filepath extension to use for data file, by default ‘hvsr’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.export_report">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_export_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['pdf']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rename'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_report" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Function to export reports to disk. Exportable formats for report_export_format include: </dt><dd><ul class="simple">
+<li><p>‘table’: saves a pandas DataFrame as a csv)</p></li>
+<li><p>‘plot’: saves the matplotlib or plotly plot figure (depending on what is designated via plot_engine) as an image (png by default)</p></li>
+<li><p>‘print’: saves the print report as a .txt file</p></li>
+<li><p>‘html’: saves the html report as a .html file</p></li>
+<li><p>‘pdf’: saves the pdf report as a .pdf file</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hvsr_results</strong><span class="classifier">HVSRData object</span></dt><dd><p>HVSRData object containing the HVSR data</p>
+</dd>
+<dt><strong>report_export_path</strong><span class="classifier">path-like object, optional</span></dt><dd><p>The path to where the report should be exported. 
+If this is None (default), this is written to the home directory.
+If this is a True, uses the same directory as the input data, but generates a filename.
+If this is a directory, generates a filename. 
+If filename is specified and the extension does not match the report type, the extension is adjusted.
+Otherwise, this is the output file or , by default None</p>
+</dd>
+<dt><strong>csv_handling</strong><span class="classifier">{‘rename’, ‘append’, ‘overwrite’, ‘keep’}, optional</span></dt><dd><p>If table is the report type, this can prevent overwriting data, by default ‘rename’.
+* “rename” (or “keep”): renames the new file to prevent overwrite, appends a digit to the end of filename
+* “append”: appends the new data to the existing file
+* “overwrite”: overwrites the existing file</p>
+</dd>
+<dt><strong>report_export_format</strong><span class="classifier">str or list, optional</span></dt><dd><p>The format (or a list of formats) to export the report, by default [‘pdf’].</p>
+</dd>
+<dt><strong>show_report</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to show the designated reports that were chosen for export, by default True</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to print progress and other information to terminal, by default False</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRData</dt><dd><p>An HVSRData object that is the same as hvsr_results, but with any additionally generated reports.</p>
 </dd>
 </dl>
 </dd>
@@ -1100,11 +1193,11 @@ The extension/suffix defaults to png for report_formats=”plot”, csv for ‘t
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.import_data">
 <span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">import_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pickle'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#import_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.import_data" title="Link to this definition">¶</a></dt>
-<dd><p>Function to import .hvsr (or other extension) data exported using export_data() function</p>
+<dd><p>Function to import .hvsr (or other extension) data exported using export_hvsr() function</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>import_filepath</strong><span class="classifier">str or path object</span></dt><dd><p>Filepath of file created using export_data() function. This is usually a pickle file with a .hvsr extension</p>
+<dt><strong>import_filepath</strong><span class="classifier">str or path object</span></dt><dd><p>Filepath of file created using export_hvsr() function. This is usually a pickle file with a .hvsr extension</p>
 </dd>
 <dt><strong>data_format</strong><span class="classifier">str, default=’pickle’</span></dt><dd><p>Type of format data is in. Currently, only ‘pickle’ supported. Eventually, json or other type may be supported, by default ‘pickle’.</p>
 </dd>
@@ -2055,16 +2148,16 @@ See API documentation: [get_report()](<a class="reference external" href="https:
 </dd>
 <dt><strong>kwargs: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(get_report)</cite> for specifics.</p>
 </dd>
-<dt><strong>export_data</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Export data into pickle format that can be read back in using import_data().
-See API documentation: [export_data()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_data">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_data</a>)</p>
+<dt><strong>export_hvsr</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Export data into pickle format that can be read back in using import_data().
+See API documentation: [export_hvsr()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_hvsr">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.export_hvsr</a>)</p>
 </dd>
-<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_data)</cite> for specifics.</p>
+<dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_hvsr)</cite> for specifics.</p>
 </dd>
-<dt><strong>hvsr_export_path: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_data)</cite> for specifics.</p>
+<dt><strong>hvsr_export_path: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_hvsr)</cite> for specifics.</p>
 </dd>
-<dt><strong>ext: any, default = ‘hvsr’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_data)</cite> for specifics.</p>
+<dt><strong>ext: any, default = ‘hvsr’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_hvsr)</cite> for specifics.</p>
 </dd>
-<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_data)</cite> for specifics.</p>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_hvsr)</cite> for specifics.</p>
 </dd>
 </dl>
 </dd>
@@ -2097,7 +2190,7 @@ See API documentation: [export_data()](<a class="reference external" href="https
 <dt><a class="reference internal" href="#sprit.process_hvsr" title="sprit.process_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_hvsr</span></code></a></dt><dd></dd>
 <dt><a class="reference internal" href="#sprit.check_peaks" title="sprit.check_peaks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_peaks</span></code></a></dt><dd></dd>
 <dt><a class="reference internal" href="#sprit.get_report" title="sprit.get_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_report</span></code></a></dt><dd></dd>
-<dt><a class="reference internal" href="#sprit.export_data" title="sprit.export_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_data</span></code></a></dt><dd></dd>
+<dt><a class="reference internal" href="#sprit.export_hvsr" title="sprit.export_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_hvsr</span></code></a></dt><dd></dd>
 </dl>
 </div>
 <p class="rubric">Notes</p>
@@ -2111,7 +2204,7 @@ See API documentation: [export_data()](<a class="reference external" href="https
 - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
 - check_peaks(): this is the main function that will find and ‘score’ peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
 - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
-- export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
+- export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
 </dd></dl>
 
 <section id="submodules">
@@ -2164,6 +2257,7 @@ See API documentation: [export_data()](<a class="reference external" href="https
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.check_instance"><code class="docutils literal notranslate"><span class="pre">check_instance()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_data"><code class="docutils literal notranslate"><span class="pre">export_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_hvsr"><code class="docutils literal notranslate"><span class="pre">export_hvsr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_report"><code class="docutils literal notranslate"><span class="pre">export_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_settings"><code class="docutils literal notranslate"><span class="pre">export_settings()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>

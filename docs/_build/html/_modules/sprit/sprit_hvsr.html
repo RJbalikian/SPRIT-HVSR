@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.7.3 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=e8140b17"></script>
+        <script src="../../_static/documentation_options.js?v=4348de45"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -186,6 +186,7 @@
                     
                     <span class="s1">&#39;batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;sample_batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)}</span>
+
 
 <span class="c1"># CLASSES</span>
 <span class="c1"># Check if the data is already the right class</span>
@@ -512,7 +513,7 @@
 <span class="sd">        ext : str, optional</span>
 <span class="sd">            The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span></div>
+        <span class="n">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span></div>
 
 
 
@@ -916,10 +917,10 @@
 <span class="sd">        </span>
 <span class="sd">        See Also</span>
 <span class="sd">        --------</span>
-<span class="sd">        export_data</span>
+<span class="sd">        export_hvsr</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span></div>
+        <span class="n">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HVSRData.copy">
@@ -1287,7 +1288,7 @@
 <span class="sd">    - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.</span>
 <span class="sd">    - check_peaks(): this is the main function that will find and &#39;score&#39; peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.</span>
 <span class="sd">    - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.</span>
-<span class="sd">    - export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</span>
+<span class="sd">    - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1329,7 +1330,7 @@
 <span class="sd">    process_hvsr</span>
 <span class="sd">    check_peaks</span>
 <span class="sd">    get_report</span>
-<span class="sd">    export_data</span>
+<span class="sd">    export_hvsr</span>
 <span class="sd">        </span>
 
 <span class="sd">    Raises</span>
@@ -1778,7 +1779,7 @@
                 <span class="n">ext</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ext&#39;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;hvsr&#39;</span>
-            <span class="n">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_export_path&#39;</span><span class="p">],</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>        
+            <span class="n">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_export_path&#39;</span><span class="p">],</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>        
     <span class="k">if</span> <span class="s1">&#39;show_plot&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -1855,7 +1856,7 @@
                             <span class="n">get_metadata</span><span class="p">,</span> <span class="n">calculate_azimuth</span><span class="p">,</span> 
                             <span class="n">remove_noise</span><span class="p">,</span> <span class="n">generate_psds</span><span class="p">,</span> <span class="n">remove_outlier_curves</span><span class="p">,</span> 
                             <span class="n">process_hvsr</span><span class="p">,</span> <span class="n">check_peaks</span><span class="p">,</span> 
-                            <span class="n">get_report</span><span class="p">,</span> <span class="n">export_data</span><span class="p">]</span>
+                            <span class="n">get_report</span><span class="p">,</span> <span class="n">export_hvsr</span><span class="p">]</span>
         
         <span class="k">return</span> <span class="n">run_functions_list</span>
     <span class="n">SPRIT_RUN_FUNCTIONS</span> <span class="o">=</span> <span class="n">__get_run_functions</span><span class="p">()</span>
@@ -2551,10 +2552,172 @@
 
 
 
-<span class="c1"># Function to export data to .hvsr file (pickled)</span>
+<span class="c1"># Function to export data stream to mseed (by default) or other format supported by obspy.write()</span>
 <div class="viewcode-block" id="export_data">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.export_data">[docs]</a>
-<span class="k">def</span> <span class="nf">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">data_export_path</span><span class="p">,</span> <span class="n">data_export_format</span><span class="o">=</span><span class="s1">&#39;mseed&#39;</span><span class="p">,</span> <span class="n">starttime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">export_edited_stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                <span class="n">site</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export data stream to file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : HVSRData, HVSRBatch, obspy.Stream, obspy.Trace</span>
+<span class="sd">        Input stream or HVSR object</span>
+<span class="sd">    data_export_path : pathlike-object</span>
+<span class="sd">        Filepath at which to format data. If directory (recommended), filename will be generated automatically.</span>
+<span class="sd">    data_export_format : str, optional</span>
+<span class="sd">        Format of data, should be file format supported by obspy.write(), by default &#39;mseed&#39;</span>
+<span class="sd">    starttime : str, UTCDateTime, or datetime.datetime, optional</span>
+<span class="sd">        Starttime of stream, if trimming is desired, by default None</span>
+<span class="sd">    endtime : str, UTCDateTime, or datetime.datetime, optional</span>
+<span class="sd">        Endtime of stream, if trimming is desired, by default None</span>
+<span class="sd">    tzone : str, zoneinfo.Zoneinfo, optional</span>
+<span class="sd">        String readable by zoneinfo.Zoneinfo() or Zoneinfo object, by default None</span>
+<span class="sd">    export_edited_stream : bool, optional</span>
+<span class="sd">        Whether to export the raw stream or edited stream in HVSRData object, by default False</span>
+<span class="sd">    site : str, optional</span>
+<span class="sd">        Site name, to be used in filename generation, by default None</span>
+<span class="sd">    project : str, optional</span>
+<span class="sd">        Project or county name, to be used in filename generation, by default None</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to print information to terminal, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    obspy.Stream</span>
+<span class="sd">        Stream object exported</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        hvsr_data must be of type HVSRData, HVSRBatch, obspy.Stream, or obspy.Trace</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Extract stream for export</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">:</span>
+            <span class="n">export_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="n">data_export_path</span><span class="o">=</span><span class="n">data_export_path</span><span class="p">,</span> <span class="n">data_export_format</span><span class="o">=</span><span class="n">data_export_format</span><span class="p">,</span>
+                        <span class="n">starttime</span><span class="o">=</span><span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">endtime</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+            <span class="n">outputStream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputStream</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">hvsr_data</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Assume data is in hvsr_data</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The sprit.export_data() parameter hvsr_data must be of type HVSRData, HVSRBatch, obspy.Stream, or obspy.Trace, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">export_edited_stream</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;stream_edited&#39;</span><span class="p">):</span>
+            <span class="n">outputStream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream_edited&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputStream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+    <span class="c1"># Get starttime in obspy.UTCDateTime format</span>
+    <span class="k">if</span> <span class="n">starttime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">starttime</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">sTimeDT</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_format_time</span><span class="p">(</span><span class="n">starttime</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+            <span class="n">acqDate</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="o">.</span><span class="n">date</span>
+            <span class="n">sTimeDT</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+            <span class="n">sTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">sTimeDT</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">starttime</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tzone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">starttime</span> <span class="o">=</span> <span class="n">starttime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+            <span class="n">sTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">starttime</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">starttime</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sTimeUTC</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span>
+    
+    <span class="c1"># Get endtime in obspy.UTCDateTime format</span>
+    <span class="k">if</span> <span class="n">endtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">endtime</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">eTimeDT</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_format_time</span><span class="p">(</span><span class="n">endtime</span><span class="p">,</span> <span class="n">tzone</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+            <span class="n">acqDate</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span><span class="o">.</span><span class="n">date</span>
+            <span class="n">eTimeDT</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">acqDate</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+            <span class="n">eTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">eTimeDT</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">endtime</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tzone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">endtime</span> <span class="o">=</span> <span class="n">endtime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">tzone</span><span class="p">)</span>
+            <span class="n">eTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">endtime</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">eTimeUTC</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">endtime</span><span class="p">)</span>    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">eTimeUTC</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span>
+
+    <span class="c1"># Build filepath</span>
+    
+    <span class="n">siteName</span> <span class="o">=</span> <span class="n">site</span>
+    <span class="k">if</span> <span class="n">site</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">siteName</span> <span class="o">=</span> <span class="s2">&quot;HVSRSite&quot;</span>
+    
+    <span class="n">projectName</span> <span class="o">=</span> <span class="n">project</span>
+    <span class="k">if</span> <span class="n">project</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">projectName</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">projectName</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;-&#39;</span> <span class="ow">and</span> <span class="n">projectName</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">projectName</span> <span class="o">+=</span> <span class="s2">&quot;-&quot;</span>
+
+    <span class="n">sDateStr</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">sTimeStr</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H%M&quot;</span><span class="p">)</span>
+    <span class="n">staStr</span> <span class="o">=</span> <span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">station</span>
+    
+    <span class="n">deFormat</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_export_format</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">data_export_format</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+        <span class="n">deFormat</span> <span class="o">=</span> <span class="n">deFormat</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    
+    <span class="n">dePath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">data_export_path</span><span class="p">)</span>    
+    <span class="n">autoFname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">siteName</span><span class="si">}</span><span class="s2">_Stream_</span><span class="si">{</span><span class="n">projectName</span><span class="si">}{</span><span class="n">sDateStr</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">sTimeStr</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">staStr</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">deFormat</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">dePath</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dePath</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">dePath</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">outfPath</span> <span class="o">=</span> <span class="n">autoFname</span>
+    <span class="k">elif</span> <span class="n">dePath</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="n">outfPath</span> <span class="o">=</span> <span class="n">dePath</span>
+    
+    <span class="c1"># Trim stream as needed</span>
+    <span class="k">if</span> <span class="n">starttime</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">endtime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">isMasked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">doTrim</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">outputStream</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_array</span><span class="p">):</span>
+                <span class="n">isMasked</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">sTimeUTC</span> <span class="o">&gt;</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span> <span class="ow">or</span> <span class="n">eTimeUTC</span> <span class="o">&lt;</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="p">:</span>
+                <span class="n">doTrim</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">isMasked</span><span class="p">:</span>
+            <span class="n">outputStream</span> <span class="o">=</span> <span class="n">outputStream</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">doTrim</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Trimming data to </span><span class="si">{</span><span class="n">sTimeUTC</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">eTimeUTC</span><span class="si">}</span><span class="se">\n\t\t</span><span class="s2"> Stream starttime: </span><span class="si">{</span><span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="si">}</span><span class="se">\n\t\t</span><span class="s2"> Stream endtime: </span><span class="si">{</span><span class="n">outputStream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">outputStream</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="o">=</span><span class="n">sTimeUTC</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">eTimeUTC</span><span class="p">)</span>
+        
+    <span class="n">outputStream</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Take care of masked arrays for writing purposes</span>
+    <span class="k">if</span> <span class="s1">&#39;fill_value&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">outputStream</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_array</span><span class="p">):</span>
+                <span class="n">tr</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;fill_value&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outputStream</span> <span class="o">=</span> <span class="n">outputStream</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    
+    <span class="n">outputStream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">outfPath</span><span class="o">.</span><span class="n">as_posix</span><span class="p">())</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stream has been written to &#39;</span> <span class="o">+</span> <span class="n">outfPath</span><span class="o">.</span><span class="n">as_posix</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">outputStream</span></div>
+
+    
+
+<span class="c1"># Function to export data to .hvsr file (pickled)</span>
+<div class="viewcode-block" id="export_hvsr">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.export_hvsr">[docs]</a>
+<span class="k">def</span> <span class="nf">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Export data into pickle format that can be read back in using import_data().</span>
 <span class="sd">       Intended so data does not need to be processed each time it needs to be used. </span>
 <span class="sd">       Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().</span>
@@ -2570,7 +2733,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">_hvsr_export</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">_ext</span><span class="o">=</span><span class="n">ext</span><span class="p">):</span>
         
-        <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;HVSRData_</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_pickled.</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_HVSRData_</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">_pickled</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">_export_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_export_path</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">_export_path</span> <span class="o">=</span> <span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
             <span class="n">_export_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
@@ -2648,7 +2811,7 @@
 
         <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
             <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;.csv&#39;</span>
-        <span class="k">elif</span> <span class="n">ref</span> <span class="o">==</span><span class="s1">&#39;plot&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">ref</span> <span class="o">==</span> <span class="s1">&#39;plot&#39;</span><span class="p">:</span>
             <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;.png&#39;</span>
         <span class="k">elif</span> <span class="n">ref</span> <span class="o">==</span> <span class="s1">&#39;print&#39;</span><span class="p">:</span>
             <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;.txt&#39;</span>
@@ -2659,12 +2822,12 @@
             <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;.pdf&#39;</span>
             
         <span class="n">sitename</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;site&#39;</span><span class="p">]</span>
-        <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sitename</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;acq_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">time</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;endtime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">time</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sitename</span><span class="si">}</span><span class="s2">_REPORT_</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">fname</span> <span class="o">=</span> <span class="n">fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="c1"># Initialize output as file in home directory (if not updated)</span>
-        <span class="n">outFile</span>  <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">()</span><span class="o">.</span><span class="n">home</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">report_export_path</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">or</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outFile</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">()</span><span class="o">.</span><span class="n">home</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Check so we don&#39;t write in sample directory</span>
             <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span> <span class="ow">in</span> <span class="n">sampleFileKeyMap</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span> <span class="ow">in</span> <span class="n">sampleFileKeyMap</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> <span class="c1">#Just in case current working directory is also sample directory</span>
@@ -2679,7 +2842,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">outFile</span> <span class="o">=</span> <span class="n">inFile</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">report_export_path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
                 <span class="n">outFile</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
@@ -3453,6 +3616,7 @@
     <span class="c1"># Trim and save data as specified</span>
     <span class="k">if</span> <span class="n">data_export_path</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span>
         <span class="n">data_export_path</span> <span class="o">=</span> <span class="kc">None</span>
+    
     <span class="k">if</span> <span class="ow">not</span> <span class="n">data_export_path</span><span class="p">:</span>
         <span class="k">pass</span>
     <span class="k">else</span><span class="p">:</span>
@@ -4561,12 +4725,12 @@
 <div class="viewcode-block" id="import_data">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.import_data">[docs]</a>
 <span class="k">def</span> <span class="nf">import_data</span><span class="p">(</span><span class="n">import_filepath</span><span class="p">,</span> <span class="n">data_format</span><span class="o">=</span><span class="s1">&#39;pickle&#39;</span><span class="p">,</span> <span class="n">show_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to import .hvsr (or other extension) data exported using export_data() function</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to import .hvsr (or other extension) data exported using export_hvsr() function</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    import_filepath : str or path object</span>
-<span class="sd">        Filepath of file created using export_data() function. This is usually a pickle file with a .hvsr extension</span>
+<span class="sd">        Filepath of file created using export_hvsr() function. This is usually a pickle file with a .hvsr extension</span>
 <span class="sd">    data_format : str, default=&#39;pickle&#39;</span>
 <span class="sd">        Type of format data is in. Currently, only &#39;pickle&#39; supported. Eventually, json or other type may be supported, by default &#39;pickle&#39;.</span>
 
@@ -10200,7 +10364,7 @@
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pdf_report_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
-            <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;REPORT_</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.pdf&quot;</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_REPORT_</span><span class="si">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">.pdf&quot;</span>
             <span class="n">pdf_report_filepath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pdf_report_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>        
