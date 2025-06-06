@@ -2879,7 +2879,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             params['instrument'] = 'Tromino'
 
     # Get metadata (inventory/response information)
-    params = get_metadata(params, update_metadata=update_metadata, source=source)
+    params = get_metadata(params, update_metadata=update_metadata, source=source, verbose=verbose)
     inv = params['inv']
     date = params['acq_date']
 
@@ -3932,7 +3932,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
 
 # Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path='', update_metadata=True, source=None, **read_inventory_kwargs):
+def get_metadata(params, write_path='', update_metadata=True, source=None, verbose=False, **read_inventory_kwargs):
     """Get metadata and calculate or get paz parameter needed for PSD
        Adds an obspy.Inventory object to the "inv" attribute or key of params
     
@@ -3964,7 +3964,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, **rea
        
     if str(params['instrument']).lower() in raspShakeInstNameList:
         if update_metadata:
-            params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path)
+            params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path, verbose=verbose)
         params = _read_RS_Metadata(params, source=source)
     elif params['instrument'].lower() in trominoNameList:
         params['paz'] = {'Z':{}, 'E':{}, 'N':{}}
@@ -6838,7 +6838,7 @@ def __process_hvsr_batch(**process_hvsr_kwargs):
 
 # HELPER functions for fetch_data() and get_metadata()
 # Read in metadata .inv file, specifically for RaspShake
-def _update_shake_metadata(filepath, params, write_path=''):
+def _update_shake_metadata(filepath, params, write_path='', verbose=False):
     """Reads static metadata file provided for Rasp Shake and updates with input parameters. Used primarily in the get_metadata() function.
 
         PARAMETERS
@@ -6857,7 +6857,8 @@ def _update_shake_metadata(filepath, params, write_path=''):
         params : dict
             Updated params dict with new key:value pair with updated updated obspy.inventory object (key="inv")
     """
-    print("\tUpdating Metadata for Raspberry Shake Instrument Type")
+    if verbose:
+        print("\tUpdating Metadata for Raspberry Shake Instrument Type")
 
     network = params['net']
     station = params['sta']
@@ -7576,7 +7577,7 @@ def __read_RS_file_struct(input_data, source, year, doy, inv, params, verbose=Fa
                 fileList.sort(reverse=True) # Puts z channel first
                 folderPathList.sort(reverse=True)
                 if verbose:
-                    print('Reading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
+                    print('\n\tReading files: \n\t{}\n\t{}\n\t{}'.format(fileList[0].name, fileList[1].name, fileList[2].name))
 
             traceList = []
             for i, f in enumerate(fileList):

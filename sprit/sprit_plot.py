@@ -1019,7 +1019,7 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
     results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1, secondary_y=False, range=ylim)
 
     # Update Component plot
-    results_fig.update_xaxes(type='log',overlaying='x', showticklabels=showComptickLabels,  title_standoff=0,
+    results_fig.update_xaxes(type='log', overlaying='x', showticklabels=showComptickLabels, title_standoff=0,
                              range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                              side=compxside, row=comp_plot_row, col=1)    
     results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=secondaryY, row=comp_plot_row, col=1)
@@ -1029,8 +1029,8 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
 
     # Update entire figure
     titleString = f"{hvsr_data['site']} Results"
-    results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
-                            showlegend=False, autosize=True, width=resultsFigWidth, height=resultsFigWidth*0.7,
+    results_fig.update_layout(margin={"l":40, "r":10, "t":35, 'b':0},
+                            showlegend=False, autosize=False, width=resultsFigWidth, height=resultsFigWidth*0.7,
                             title=titleString)
     
     # Reset results_graph_widget and display 

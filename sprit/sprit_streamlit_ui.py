@@ -466,7 +466,7 @@ def main():
 
                         def _get_centered_text(text, just='center', add_parenth=False, size=20):
                             if len(str(text)) > size:
-                                keyText = str(text)[:size-3] = "..."
+                                keyText = str(text)[:size-5]+ '...'
                             else:
                                 keyText = str(text)
                             
@@ -482,9 +482,9 @@ def main():
                         
 
                         keyText = _get_centered_text(key)
-                        valText = _get_centered_text(value, just='right')
+                        valText = _get_centered_text(value, just='center')
                         valTypeText = _get_centered_text(type(value), just='left', add_parenth=True)
-                        defValText = _get_centered_text(st.session_state.default_params[key], just='right')
+                        defValText = _get_centered_text(st.session_state.default_params[key], just='center')
                         defValTypeText = _get_centered_text(type(st.session_state.default_params[key]), just='left', add_parenth=True)
 
                         spinnerText = spinnerText + f"\n\t| {keyText} | {valText} {valTypeText} | {defValText} {defValTypeText}     |"
