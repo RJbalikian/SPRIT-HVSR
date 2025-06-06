@@ -2499,7 +2499,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     projectName = project
     if project is None:
         projectName = ""
-    if projectName[-1] != '-' and projectName != "":
+    if projectName != "" and len(projectName)>0 and projectName[-1] != '-':
         projectName += "-"
 
     sDateStr = outputStream[0].stats.starttime.strftime("%Y%m%d")
@@ -2515,7 +2515,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     if dePath.is_dir():
         if not dePath.exists():
             dePath.mkdir(parents=True)
-        outfPath = autoFname
+        outfPath = dePath.joinpath(autoFname)
     elif dePath.is_file():
         outfPath = dePath
     
@@ -2574,7 +2574,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
-        fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled{ext}"
+        fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled.{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
