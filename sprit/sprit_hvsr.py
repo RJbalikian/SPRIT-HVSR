@@ -114,6 +114,7 @@ sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.20
                     'batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'sample_batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
 
+
 # CLASSES
 # Check if the data is already the right class
 # Define a decorator that wraps the __init__ method
@@ -426,7 +427,7 @@ class HVSRBatch:
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
-        export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
 
     def keys(self):
@@ -803,10 +804,10 @@ class HVSRData:
         
         See Also
         --------
-        export_data
+        export_hvsr
         
         """
-        export_data(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
 
     def copy(self, copy_type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
@@ -1143,7 +1144,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
     - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
     - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
-    - export_data(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
+    - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
 
     Parameters
     ----------
@@ -1185,7 +1186,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     process_hvsr
     check_peaks
     get_report
-    export_data
+    export_hvsr
         
 
     Raises
@@ -1634,7 +1635,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 ext = kwargs['ext']
             else:
                 ext = 'hvsr'
-            export_data(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
+            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
     if 'show_plot' in kwargs:
         if not kwargs['show_plot']:
             plt.close()
@@ -1708,7 +1709,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                             get_metadata, calculate_azimuth, 
                             remove_noise, generate_psds, remove_outlier_curves, 
                             process_hvsr, check_peaks, 
-                            get_report, export_data]
+                            get_report, export_hvsr]
         
         return run_functions_list
     SPRIT_RUN_FUNCTIONS = __get_run_functions()
@@ -2397,8 +2398,167 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
     return hvsr_data
 
 
+# Function to export data stream to mseed (by default) or other format supported by obspy.write()
+def export_data(hvsr_data, data_export_path, data_export_format='mseed', starttime=None, endtime=None, tzone=None, export_edited_stream=False, 
+                site=None, project=None, verbose=False, **kwargs):
+    """Export data stream to file
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData, HVSRBatch, obspy.Stream, obspy.Trace
+        Input stream or HVSR object
+    data_export_path : pathlike-object
+        Filepath at which to format data. If directory (recommended), filename will be generated automatically.
+    data_export_format : str, optional
+        Format of data, should be file format supported by obspy.write(), by default 'mseed'
+    starttime : str, UTCDateTime, or datetime.datetime, optional
+        Starttime of stream, if trimming is desired, by default None
+    endtime : str, UTCDateTime, or datetime.datetime, optional
+        Endtime of stream, if trimming is desired, by default None
+    tzone : str, zoneinfo.Zoneinfo, optional
+        String readable by zoneinfo.Zoneinfo() or Zoneinfo object, by default None
+    export_edited_stream : bool, optional
+        Whether to export the raw stream or edited stream in HVSRData object, by default False
+    site : str, optional
+        Site name, to be used in filename generation, by default None
+    project : str, optional
+        Project or county name, to be used in filename generation, by default None
+    verbose : bool, optional
+        Whether to print information to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        Stream object exported
+
+    Raises
+    ------
+    TypeError
+        hvsr_data must be of type HVSRData, HVSRBatch, obspy.Stream, or obspy.Trace
+    """
+    
+    # Extract stream for export
+    if isinstance(hvsr_data, HVSRBatch):
+        for site in hvsr_data:
+            export_data(hvsr_data[site], data_export_path=data_export_path, data_export_format=data_export_format,
+                        starttime=starttime, endtime=endtime, verbose=verbose, **kwargs)
+        return
+    elif isinstance(hvsr_data, (obspy.Stream, obspy.Trace)):
+        if isinstance(hvsr_data, obspy.Stream):
+            outputStream = hvsr_data.copy()
+        else:
+            outputStream = obspy.Stream([hvsr_data])
+    else:
+        # Assume data is in hvsr_data
+        if not isinstance(hvsr_data, HVSRData):
+            raise TypeError(f"The sprit.export_data() parameter hvsr_data must be of type HVSRData, HVSRBatch, obspy.Stream, or obspy.Trace, not {type(hvsr_data)}")
+
+        if export_edited_stream and hasattr(hvsr_data, 'stream_edited'):
+            outputStream = hvsr_data['stream_edited'].copy()
+        else:
+            outputStream = hvsr_data['stream'].copy()
+        
+    # Get starttime in obspy.UTCDateTime format
+    if starttime is not None:
+        if type(starttime) == str:
+            sTimeDT = sprit_utils._format_time(starttime, tzone=tzone)
+            acqDate = outputStream[0].stats.starttime.date
+            sTimeDT.replace(year=acqDate.year, month=acqDate.month, day=acqDate.day)
+            sTimeUTC = obspy.UTCDateTime(sTimeDT)
+        elif isinstance(starttime, datetime.datetime):
+            if tzone is not None:
+                starttime = starttime.replace(tzinfo=tzone)
+            sTimeUTC = obspy.UTCDateTime(starttime.astimezone(datetime.timezone.utc))
+        else:
+            sTimeUTC = obspy.UTCDateTime(starttime)
+    else:
+        sTimeUTC = outputStream[0].stats.starttime
+    
+    # Get endtime in obspy.UTCDateTime format
+    if endtime is not None:
+        if type(endtime) == str:
+            eTimeDT = sprit_utils._format_time(endtime, tzone=tzone)
+            acqDate = outputStream[-1].stats.endtime.date
+            eTimeDT.replace(year=acqDate.year, month=acqDate.month, day=acqDate.day)
+            eTimeUTC = obspy.UTCDateTime(eTimeDT)
+        elif isinstance(endtime, datetime.datetime):
+            if tzone is not None:
+                endtime = endtime.replace(tzinfo=tzone)
+            eTimeUTC = obspy.UTCDateTime(endtime.astimezone(datetime.timezone.utc))
+        else:
+            eTimeUTC = obspy.UTCDateTime(endtime)    
+    else:
+        eTimeUTC = outputStream[-1].stats.endtime
+
+    # Build filepath
+    
+    siteName = site
+    if site is None:
+        siteName = "HVSRSite"
+    
+    projectName = project
+    if project is None:
+        projectName = ""
+    if projectName[-1] != '-' and projectName != "":
+        projectName += "-"
+
+    sDateStr = outputStream[0].stats.starttime.strftime("%Y%m%d")
+    sTimeStr = outputStream[0].stats.starttime.strftime("%H%M")
+    staStr = outputStream[0].stats.station
+    
+    deFormat = str(data_export_format).upper()
+    if data_export_format[0] == '.':
+        deFormat = deFormat[1:]
+    
+    dePath = pathlib.Path(data_export_path)    
+    autoFname = f"{siteName}_Stream_{projectName}{sDateStr}-{sTimeStr}-{staStr}_{datetime.date.today()}.{deFormat}"
+    if dePath.is_dir():
+        if not dePath.exists():
+            dePath.mkdir(parents=True)
+        outfPath = autoFname
+    elif dePath.is_file():
+        outfPath = dePath
+    
+    # Trim stream as needed
+    if starttime is None and endtime is None:
+        pass
+    else:
+        isMasked = False
+        doTrim = False
+        
+        for tr in outputStream:
+            if isinstance(tr.data, np.ma.masked_array):
+                isMasked = True
+            if sTimeUTC > tr.stats.endtime or eTimeUTC < tr.stats.starttime:
+                doTrim = True
+
+        if isMasked:
+            outputStream = outputStream.split()
+        
+        if doTrim:
+            if verbose:
+                print(f"\t Trimming data to {sTimeUTC} and {eTimeUTC}\n\t\t Stream starttime: {outputStream[0].stats.starttime}\n\t\t Stream endtime: {outputStream[0].stats.endtime}")
+            outputStream.trim(starttime=sTimeUTC, endtime=eTimeUTC)
+        
+    outputStream.merge(method=1)
+
+    # Take care of masked arrays for writing purposes
+    if 'fill_value' in kwargs.keys():
+        for tr in outputStream:
+            if isinstance(tr.data, np.ma.masked_array):
+                tr.data = tr.data.filled(kwargs['fill_value'])
+    else:
+        outputStream = outputStream.split()
+    
+    outputStream.write(filename=outfPath.as_posix())
+    
+    if verbose:
+        print('Stream has been written to ' + outfPath.as_posix())
+    return outputStream
+    
+
 # Function to export data to .hvsr file (pickled)
-def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
+def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     """Export data into pickle format that can be read back in using import_data().
        Intended so data does not need to be processed each time it needs to be used. 
        Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
@@ -2414,7 +2574,7 @@ def export_data(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
-        fname = f"HVSRData_{_hvsr_data['site']}_{_hvsr_data['hvsr_id']}_pickled.{ext}"
+        fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
@@ -2489,7 +2649,7 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
 
         if ref == 'table':
             ext = '.csv'
-        elif ref =='plot':
+        elif ref == 'plot':
             ext = '.png'
         elif ref == 'print':
             ext = '.txt'
@@ -2500,12 +2660,12 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             ext = '.pdf'
             
         sitename = hvsr_results['input_params']['site']
-        fname = f"{sitename}_{hvsr_results['input_params']['acq_date']}_{str(hvsr_results['input_params']['starttime'].time)[:5]}-{str(hvsr_results['input_params']['endtime'].time)[:5]}{ext}"
+        fname = f"{sitename}_REPORT_{hvsr_results['hvsr_id']}_{datetime.date.today()}{ext}"
         fname = fname.replace(':', '')
 
         # Initialize output as file in home directory (if not updated)
-        outFile  = pathlib.Path().home().joinpath(fname)
-        if report_export_path == True or report_export_path is None:
+        outFile = pathlib.Path().home().joinpath(fname)
+        if report_export_path is True or report_export_path is None:
             # Check so we don't write in sample directory
             if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                 if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
@@ -2520,7 +2680,7 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             else:
                 outFile = inFile.with_name(fname)
         else:
-            if not report_export_path:
+            if report_export_path is False:
                 pass
             elif pathlib.Path(report_export_path).is_dir():
                 outFile = pathlib.Path(report_export_path).joinpath(fname)
@@ -3288,6 +3448,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     # Trim and save data as specified
     if data_export_path == 'None':
         data_export_path = None
+    
     if not data_export_path:
         pass
     else:
@@ -4381,12 +4542,12 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
 # Import data
 def import_data(import_filepath, data_format='pickle', show_data=False):
-    """Function to import .hvsr (or other extension) data exported using export_data() function
+    """Function to import .hvsr (or other extension) data exported using export_hvsr() function
 
     Parameters
     ----------
     import_filepath : str or path object
-        Filepath of file created using export_data() function. This is usually a pickle file with a .hvsr extension
+        Filepath of file created using export_hvsr() function. This is usually a pickle file with a .hvsr extension
     data_format : str, default='pickle'
         Type of format data is in. Currently, only 'pickle' supported. Eventually, json or other type may be supported, by default 'pickle'.
 
@@ -9989,7 +10150,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
-            fname = f"REPORT_{hvsr_results['site']}_{hvsr_results['hvsr_id']}.pdf"
+            fname = f"{hvsr_results['site']}_REPORT_{hvsr_results['hvsr_id']}_{datetime.date.today()}.pdf"
             pdf_report_filepath = pathlib.Path(pdf_report_filepath).joinpath(fname)
         
         try:        

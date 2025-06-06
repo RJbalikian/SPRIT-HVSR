@@ -3,7 +3,7 @@
 This module enables analysis of ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique.
 """
 
-__version__ = "2.7.3"
+__version__ = "2.8"
 
 try:
     import sprit.sprit_utils as sprit_utils
@@ -24,6 +24,8 @@ from sprit.sprit_hvsr import (
     run,
     calculate_azimuth,
     export_data,
+    export_hvsr,
+    export_report,
     export_settings,
     import_data,
     import_settings,
@@ -68,6 +70,8 @@ __all__ = ('sprit_hvsr',
             'run',
             'calculate_azimuth',
             'export_data',
+            'export_hvsr',
+            'export_report',
             'export_settings',
             'import_data',
             'import_settings',

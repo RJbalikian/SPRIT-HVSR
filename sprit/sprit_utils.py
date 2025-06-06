@@ -197,7 +197,7 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
     return hvsr_data
 
 
-#Formats time into desired output
+# Formats time into desired output
 def _format_time(inputDT, tzone='UTC'):
     """Private function to format time, used in other functions
 
@@ -221,12 +221,15 @@ def _format_time(inputDT, tzone='UTC'):
     # Initialize values
     year = 2000
     month = 1
-    day = 1  
-    
+    day = 1
+
+    if tzone is None:
+        tzone = 'UTC'
+
     # Parse whether inputDT has date or not
     if isinstance(inputDT, str):
-        #tzone = 'America/Chicago'
-        #Format string to datetime obj
+        # tzone = 'America/Chicago'
+        # Format string to datetime obj
         div = '-'
         timeDiv = 'T'
         if "/" in inputDT:
@@ -236,7 +239,7 @@ def _format_time(inputDT, tzone='UTC'):
             div = '-'
             hasDate = True
         else:
-            hasDate= False
+            hasDate = False
             year = datetime.datetime.today().year
             month = datetime.datetime.today().month
             day = datetime.datetime.today().day
@@ -249,16 +252,16 @@ def _format_time(inputDT, tzone='UTC'):
                 timeDiv = ' '
         else:
             hasTime = False
-        
+
         if hasDate:
-            #If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
-            if len(inputDT.split(div)[0])>2:
+            # If first number is 4-dig year (assumes yyyy-dd-mm is not possible)
+            if len(inputDT.split(div)[0]) > 2:
                 year = inputDT.split(div)[0]
                 month = inputDT.split(div)[1]
                 day = inputDT.split(div)[2].split(timeDiv)[0]
 
-            #If last number is 4-dig year            
-            elif len(inputDT.split(div)[2].split(timeDiv)[0])>2:
+            # If last number is 4-dig year        
+            elif len(inputDT.split(div)[2].split(timeDiv)[0]) > 2:
                 #..and first number is day
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%Y'   
@@ -270,9 +273,9 @@ def _format_time(inputDT, tzone='UTC'):
                     year = inputDT.split(div)[2].split(timeDiv)[0]
                     month = inputDT.split(div)[0]
                     day = inputDT.split(div)[1]     
-            
-            #Another way to catch if first number is (2-digit) year
-            elif int(inputDT.split(div)[0])>31:
+
+            # Another way to catch if first number is (2-digit) year
+            elif int(inputDT.split(div)[0]) > 31:
                 #dateStr = '%y'+div+'%m'+div+'%d'
                 year = inputDT.split(div)[0]
                 #Assumes anything less than current year is from this century
@@ -284,8 +287,8 @@ def _format_time(inputDT, tzone='UTC'):
                 month = inputDT.split(div)[1]
                 day = inputDT.split(div)[2].split(timeDiv)[0]
 
-            #If last digit is (2 digit) year           
-            elif int(inputDT.split(div)[2].split(timeDiv)[0])>31:
+            # If last digit is (2 digit) year
+            elif int(inputDT.split(div)[2].split(timeDiv)[0]) > 31:
                 #...and first digit is day
                 if int(inputDT.split(div)[0])>12:
                     #dateStr = '%d'+div+'%m'+div+'%y'       
@@ -361,8 +364,8 @@ def _format_time(inputDT, tzone='UTC'):
         outputTimeObj = outputTimeObj.replace(tzinfo=tzone)
     else:
         raise ValueError("Timezone must be either str, int, or zoneinfo.ZoneInfo object")
-    
-    #Convert to UTC
+
+    # Convert to UTC
     outputTimeObj = outputTimeObj.astimezone(datetime.timezone.utc)
 
     return outputTimeObj
@@ -438,6 +441,7 @@ def _make_it_classy(input_data, verbose=False):
         print('Made it classy | {} --> {}'.format(type(input_data), type(output_class)))
     return output_class
 
+
 #Read data directly from Raspberry Shake
 def _read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
     src = src.replace('SHAKENAME', username)
@@ -512,6 +516,7 @@ def _read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATIO
 
     return dest
 
+
 def _run_docstring():
     """This function updates the docstring the sprit.run() function, for documentation or help(sprit.run()) purposes
 
@@ -528,7 +533,7 @@ def _run_docstring():
     functionList = [sprit_hvsr.input_params, sprit_hvsr.fetch_data, sprit_hvsr.calculate_azimuth,
                     sprit_hvsr.remove_noise, sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr, 
                     sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks, 
-                    sprit_hvsr.get_report, sprit_hvsr.export_data]
+                    sprit_hvsr.get_report, sprit_hvsr.export_hvsr]
 
     funcStrList = []
     funcParams = []
@@ -570,6 +575,7 @@ def _run_docstring():
     run_docstring = dsIntro + dsParameters + f"{nl.join(funcStrList)}\n\n" + dsReturns
     return run_docstring
 
+
 # Time functions, for timing how long a process takes
 def _time_it(_t, proc_name='', verbose=True):
     """Computes elapsed time since the last call."""
@@ -582,6 +588,7 @@ def _time_it(_t, proc_name='', verbose=True):
             print(f'[ELAPSED TIME] {dt:0.1f} s', flush=True)
         t = t1
     return t
+
 
 #Get x mark (for negative test results)
 def _x_mark(incolor=False, inTerminal=False):
