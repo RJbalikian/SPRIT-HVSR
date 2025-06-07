@@ -550,6 +550,7 @@ def parse_hv_plot_list(hv_data, hvsr_plot_list, results_fig=None, azimuth='HV'):
                                 bgcolor='rgba(255, 255, 255, 0.7)',
                                 showarrow=False,
                                 row=1, col=1)
+    results_fig.update_yaxes(range=ylim, row=1, col=1)
     return results_fig
 
 
