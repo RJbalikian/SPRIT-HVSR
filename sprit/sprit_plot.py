@@ -1962,7 +1962,8 @@ def __plotly_express_preview(hvDataIN):
 
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',
-                       grid_size='auto', orientation='WE', interpolation_type='cloughtocher',
+                       grid_size='auto', orientation='WE', 
+                       interpolation_type='cloughtocher', interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
                        return_data_batch=True, show_cross_section=True, verbose=False,
@@ -2004,6 +2005,8 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         Interpolation type to use. Uses scipy.interpolation.
         Options include: 'cloughtocher', 'nearest neighbor', 'linear', 
         or 'radial basis function', by default 'cloughtocher'.
+    interpolate_log_values : bool, optional
+        Whether to use log values of the H/V curve for interpolation (can be useful for better normalizing data)
     surface_elevations : shapely.LineString, optional
         A shapely.LineString object containing surface elevation coordinates along cross section path.
         If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.
@@ -2103,7 +2106,6 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
             calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
             hvData = sprit_calibration.calculate_depth(hvData, **calc_depth_kwargs, verbose=verbose)
         
-        #print(hvData['longitude'], hvData['latitude'])
         # Create shapely Point objects at each profile location
         x = hvData['longitude']
         y = hvData['latitude']
@@ -2111,14 +2113,17 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
         shapelyPoints.append(shapely.Point(x, y, z))
 
-        #Points arranged for interpolation
-        interpData.extend(list(hvData.hvsr_curve))
+        # Points arranged for interpolation
+        if interpolate_log_values:
+            interpData.extend(list(np.log10(hvData.hvsr_curve)))
+        else:
+            interpData.extend(list(hvData.hvsr_curve))
         for i, pt in enumerate(hvData.hvsr_curve):
             interpCoords['longitude'].append(x)
             interpCoords['latitude'].append(y)
             interpCoords['elevation'].append(hvData['x_elev_m']['Z'][i])
 
-        #Since already doing loop, ensure hvData has all depth/elev info it needs
+        # Since already doing loop, ensure hvData has all depth/elev info it needs
         if not hasattr(hvData, 'x_elev_m'):
             calc_depth_kwargs = {k: v for k, v in kwargs.items()
                                       if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
@@ -2147,7 +2152,6 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
         cellHNumber = grid_size[0]
         cellWNumber = grid_size[1]
-
     elif isinstance(grid_size, (list, tuple)):
         cellHNumber = grid_size[0]
         cellWNumber = grid_size[1]
@@ -2208,12 +2212,12 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     
     if str(interpolation_type).lower() in ctList:
         interp = interpolate.CloughTocher2DInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
-    elif str(interpolation_type).lower() in nearList:
-        interp = interpolate.NearestNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
     elif str(interpolation_type).lower() in rbfList:
         interp = interpolate.RBFInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)        
     elif str(interpolation_type).lower() in linList:
         interp = interpolate.LinearNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
+    else: # elif str(interpolation_type).lower() in nearList:
+        interp = interpolate.NearestNDInterpolator(list(zip(interpCoords[ordercoord], interpCoords['elevation'])), interpData)
         
     xx, zz = np.meshgrid(gridXcoords, gridZcoords)
     interpData = interp(xx, zz)
@@ -2221,7 +2225,6 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if verbose:
         print('Data interpolated')
         print('Plotting colormesh')
-    
     
     # kwargs-defined pcolormesh kwargs
     pcolormeshKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plt.pcolormesh).parameters.keys())}
@@ -2306,11 +2309,11 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         if show_bedrock_surface:
             ax.fill_between(brSurfX, brSurfZ, zMinPts,facecolor='w', alpha=0.5, zorder=1)
             ax.plot(brSurfX, brSurfZ, c='k', zorder=2)
-        
-    
+
     # Plot surfaces
     if verbose:
         print('Plotting surfaces')
+    
     if surface_elevations is None:
         surfPts_shapely = []
         surfPtsX = []
@@ -2331,7 +2334,11 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         zPts.append(surfPtDict['elevation'])
     
     zMaxPts = list(np.array(zPts) * 0 + max_grid_elev)
+
+    # Fill in above surface so interpolation is cleaner and surface topo shape is clear
     ax.fill_between(xPts, zPts, zMaxPts, facecolor='w', zorder=1000)
+
+    # Plot surface topography
     ax.plot(xPts, zPts, c='g', linewidth=1.5, zorder=1001)
 
     # Plot configuration
@@ -2339,7 +2346,6 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         print('Configuring plot')
     ax.set_xlim([min(gridXcoords), max(gridXcoords)])
     ax.set_ylim([min_grid_elev, max_grid_elev])
-    
     
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
     ax.set_xlabel(str(ordercoord).title())
@@ -2349,16 +2355,18 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         title = 'HVSR Cross Section Profile'
     ax.set_title(title)
     
+    # Display orientation of cross section profile
     # Calculate angle
     profile_angle = math.degrees(math.atan2(shapelyPoints[-1].y - shapelyPoints[0].y, shapelyPoints[-1].x - shapelyPoints[0].x))
-    #Convert angle to geographic coordinates
-    profile_angle = (profile_angle*-1) + 90
+    
+    # Convert angle to geographic coordinates
+    profile_angle = (profile_angle * -1) + 90
     if profile_angle < 0:
         profile_angle += 360
 
     if verbose:
         print(f"Calculated profile angle to be {profile_angle:.3f} degrees.")
-    # Calculate nomencalture
+    # Calculate angle name of cross section profile
     if profile_angle < -11.25 + 22.5 * 1:
         profileStart = 'S'
         profileEnd = 'N'
@@ -2411,12 +2419,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         profileEnd = 'N'
         profileStart = 'S'
 
+    # Always orient north and east to the right
     if 'north' in profile_direction[:5] or 'east' in profile_direction[:5]:
         ax.invert_xaxis()
-        #print('inverting')
-        #profileInt = profileEnd
-        #profileEnd = profileStart
-        #profileStart = profileInt
 
     plt.sca(ax)
     plt.figtext(0.1,0.95, s=profileStart)

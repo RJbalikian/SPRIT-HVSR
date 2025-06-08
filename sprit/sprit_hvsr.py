@@ -257,7 +257,6 @@ class HVSRBatch:
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile['site']] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict
-
                 else:
                     # Assume it is .hvsr file you wish to import
                     batchfileglob = []
@@ -363,7 +362,6 @@ class HVSRBatch:
 
                             if dataObj is not None:
                                 self.batch_dict[str(row[siteCol])] = dataObj
-
         else:
             raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
@@ -388,6 +386,7 @@ class HVSRBatch:
         with open(filepath, 'w') as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
 
     def add(self, hvsr_data):
         """Function to add HVSRData objects to existing HVSRBatch objects"""
