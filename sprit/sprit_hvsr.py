@@ -58,7 +58,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
                  'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
-
+DEFAULT_BAND = [0.1, 50]
 
 # Resources directory path, and the other paths as well
 RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
@@ -2175,7 +2175,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
 
 # Quality checks, stability tests, clarity tests
 # def check_peaks(hvsr, x, y, index_list, peak, peakm, peakp, hvsr_peaks, stdf, hvsr_log_std, rank, hvsr_band=[0.1, 50], do_rank=False):
-def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_range=[0.1, 50], azimuth='HV', verbose=False):
+def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_freq_range=DEFAULT_BAND, azimuth='HV', verbose=False):
     """Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks
 
         Parameters
@@ -2262,7 +2262,7 @@ def check_peaks(hvsr_data, hvsr_band=[0.1, 50], peak_selection='max', peak_freq_
         
         if hvsr_data['processing_status']['overall_status']:
             if not hvsr_band:
-                hvsr_band = [0.1, 50]
+                hvsr_band = DEFAULT_BAND
             
             hvsr_data['hvsr_band'] = hvsr_band
 
@@ -3496,7 +3496,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 plt.close()
         else:
             try:
-                params['Input_Plot'] = _plot_specgram_stream(stream=dataIN, params=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+                params['Input_Plot'] = sprit_plot._plot_input_stream_mpl(stream=dataIN, hv_data=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
                 
                 if show_plot:
                     plt.show()
@@ -3745,7 +3745,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
             obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
         else:
-            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/50, 1/0.1]
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/DEFAULT_BAND[1], 1/DEFAULT_BAND[0]]
     else:
         if verbose:
             print(f"\t\tUpdating hvsr_band to band specified by period_limits={obspy_ppsd_kwargs['period_limits']}")
@@ -4635,8 +4635,8 @@ def input_params(input_data,
                 depth = 0,
                 instrument = "Seismometer",
                 metapath = None,
-                hvsr_band = [0.1, 50],
-                peak_freq_range = [0.1, 50],
+                hvsr_band = DEFAULT_BAND,
+                peak_freq_range = DEFAULT_BAND,
                 processing_parameters={},
                 verbose=False
                 ):
@@ -5367,143 +5367,6 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
             return fig
 
     return
-
-
-# Plot Obspy Trace in axis using matplotlib
-def plot_stream(stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True):
-    """Function to plot a stream of data with Z, E, N components using matplotlib. Similar to obspy.Stream.Plot(), but will be formatted differently and eventually more customizable.
-    This is also used in various functions throughout the package.
-
-    Parameters
-    ----------
-    stream : obspy.core.Stream.stream
-        Obpsy stream of data with Z, E, N componenents
-    params : HVSRData or HVSRBatch
-        Data object with parameters relevant for creating plot
-    fig : matplotlib.Figure, default=None
-        Optional: if not None, matplotlib.Figure in which to plot the resulting figure (i.e., can be plotted in existing figure)
-    axes : matplotlib.Axis, default=None
-        Optional: if not None, matplotlib.Axis in which to plot the resulting figure (i.e., can be plotted in existing axis)
-    show_plot : bool, default=False
-        Whether to do matplotlib.pylot.show(), by default False
-    ylim_std : float, default = 0.75
-        Optional: the standard deviation of the data at which to clip the chart, by default 0.75
-    return_fig : bool, default=True
-        Optional: whether to return the figure, by default True
-
-    Returns
-    -------
-    (matplotlib.Figure, matplotlib.Axes)
-        Tuple containing the figure and axes of the resulting plot, only returned if return_fig = True
-    """
-    if fig is None and axes is None:
-        fig, axes = plt.subplot_mosaic([['Z'],['N'],['E']], sharex=True, sharey=False)
-
-    new_stream = stream.copy()
-    #axis.plot(trace.times, trace.data)
-    
-    sTime = stream[0].stats.starttime
-    timeList = {}
-    mplTimes = {}
-
-    #In case data is masked, need to split, decimate, then merge back together
-    if isinstance(new_stream[0].data, np.ma.masked_array):
-        new_stream = new_stream.split()
-    new_stream.decimate(10)
-    new_stream.merge()
-
-    zStream = new_stream.select(component='Z')#[0]
-    eStream = new_stream.select(component='E')#[0]
-    nStream = new_stream.select(component='N')#[0]
-    streams = [zStream, nStream, eStream]
-
-    for st in streams:
-        key = st[0].stats.component
-        timeList[key] = []
-        mplTimes[key] = []
-        for tr in st:
-            for t in np.ma.getdata(tr.times()):
-                newt = sTime + t
-                timeList[key].append(newt)
-                mplTimes[key].append(newt.matplotlib_date)
-
-    #Ensure that the min and max times for each component are the same
-    for i, k in enumerate(mplTimes.keys()):
-        currMin = np.min(list(map(np.min, mplTimes[k])))
-        currMax = np.max(list(map(np.max, mplTimes[k])))
-
-        if i == 0:
-            xmin = currMin
-            xmax = currMax
-        else:
-            if xmin > currMin:
-                xmin = currMin
-            if xmax < currMax:
-                xmax = currMax
-
-    axes['Z'].xaxis_date()
-    axes['N'].xaxis_date()
-    axes['E'].xaxis_date()
-
-    #tTicks = mdates.MinuteLocator(interval=5)
-    #axis.xaxis.set_major_locator(tTicks)
-    axes['E'].xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,5)))
-    axes['E'].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    axes["E"].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
-    axes["E"].tick_params(axis='x', labelsize=8)
-    
-
-    streams = [zStream.merge(method=1), 
-               nStream.merge(method=1), 
-               eStream.merge(method=1)]
-
-    for st in streams:
-        for i, tr in enumerate(st):
-            key = tr.stats.component
-            if key == 'Z':
-                pColor='k'
-            elif key=='N':
-                pColor='r'
-            else:
-                pColor='b'
-            axes[key].plot(mplTimes[key], tr.data, color=pColor, linewidth=0.15)
-
-
-    axes['Z'].set_ylabel('Z')
-    axes['N'].set_ylabel('N')
-    axes['E'].set_ylabel('E')
-    
-    #stDz = np.abs(np.nanstd(stream.select(component='Z')[0].data))
-    #stDn = np.abs(np.nanstd(stream.select(component='N')[0].data))
-    #stDe = np.abs(np.nanstd(stream.select(component='E')[0].data))
-    #stD = max([stDz, stDn, stDe])
-    
-    for i, comp in enumerate(list(mplTimes.keys())):
-        stD = np.abs(np.nanstd(np.ma.getdata(stream.select(component=comp)[0].data)))
-        dmed = np.nanmedian(np.ma.getdata(stream.select(component=comp)[0].data))
-
-        axes[comp].set_ylim([dmed-ylim_std*stD, dmed+ylim_std*stD])
-        if xmin < 0:
-            xmin=params['hvsr_band'][0]
-        axes[comp].set_xlim([xmin, xmax])
-
-    fig.suptitle(params['site'])
-    
-    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    axes['E'].set_xlabel('UTC Time \n'+ day)
-
-    #plt.rcParams['figure.dpi'] = 100
-    #plt.rcParams['figure.figsize'] = (5,4)
-    
-    #fig.tight_layout()
-    fig.canvas.draw()
-
-    if show_plot:
-        plt.show()
-
-    if return_fig:
-        return fig
-    return                 
 
 
 # Main function for processing HVSR Curve
@@ -6481,7 +6344,7 @@ def remove_noise(hvsr_data, remove_method=None,
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, verbose=False):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -6532,7 +6395,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     use_percentile = orig_args['use_percentile']
     rmse_thresh = orig_args['rmse_thresh']
     use_hv_curve = orig_args['use_hv_curve']
-    show_plot = orig_args['show_plot']
+    show_outlier_plot = orig_args['show_outlier_plot']
     verbose = orig_args['verbose']
 
     #Print if verbose, which changes depending on if batch data or not
@@ -6579,7 +6442,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
         return hvsr_out
 
-    #Create plot if designated        
+    # Determine names of hvsr_windows_df columns to use
     if not use_hv_curve:
         compNames = ['Z', 'E', 'N']
         for col_name in hvsr_data['hvsr_windows_df'].columns:
@@ -6596,29 +6459,17 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
                 compNames.append(col_name)
         colNames = compNames
         col_prefix = 'HV_Curves'
-    if plot_engine.lower() == 'matplotlib':
-        spMosaic = []
-        if use_hv_curve:
-            spMosaic.append(['HV Curve'])
-            fSize=(8.5, 6)
-        else:
-            for c in compNames:
-                spMosaic.append([c])
-            fSize = (8.5, len(compNames) * 2)
 
-        fig, ax = plt.subplot_mosaic(spMosaic, sharex=True, figsize=fSize)
-        fig.suptitle(f"{hvsr_data['site']}\nOutlier Curves to be Removed")
-        fig.set_layout_engine('constrained')
-    
+
     # Loop through each component, and determine which curves are outliers
-    bad_rmse=[]
+    bad_rmse = []
     for i, column in enumerate(colNames):
         if column in compNames:
             if use_hv_curve == False:
-                column = col_prefix+column
+                column = col_prefix + column
             else:
                 column = column
-            
+
         # Retrieve data from dataframe (use all windows, just in case)
         curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
         
@@ -6641,70 +6492,22 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             if rmse[j] > rmse_threshold:
                 bad_rmse.append(j)
 
-        # Show plot of removed/retained data
-        if use_hv_curve == False:
-            if plot_engine.lower() == 'matplotlib':
-                # Intialize to only get unique labels
-                rem_label_got = False
-                keep_label_got = False
-                
-                # Iterate through each curve to determine if it's rmse is outside threshold, for plot
-                for j, curve in enumerate(curr_data):
-                    label=None
-                    if rmse[j] > rmse_threshold:
-                        linestyle = 'dashed'
-                        linecolor='darkred'
-                        alpha = 1
-                        linewidth = 1
-                        if not rem_label_got:
-                            label='Removed Curve'
-                            rem_label_got=True
-                    else:
-                        linestyle='solid'
-                        linecolor = 'rosybrown'
-                        alpha = 0.25
-                        linewidth=0.5
-                        if not keep_label_got:
-                            keep_label_got=True
-                            label='Retained Curve'
-
-                    # Plot each individual curve
-                    if 'x_freqs' in hvsr_data.keys():
-                        ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                    else:
-                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
-                
-                # Plot the median curve
-                if 'x_freqs' in hvsr_data.keys():
-                    ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
-                else:
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
-                
-                # Format axis
-                ax[compNames[i]].set_ylabel(f"{compNames[i]}")
-                ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
-                ax[compNames[i]].semilogx()             
-    
-    if plot_engine.lower() == 'matplotlib':
-        hvsr_data['OutlierPlot'] = fig
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
-    elif plot_engine.lower() == 'plotly':
-        hvsr_data['OutlierPlot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, from_roc=True, show_plot=show_plot, verbose=verbose)
-    else:
-        pass
-
     # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
     bad_rmse = np.unique(bad_rmse)
     if len(bad_rmse) > 0:
-        
         hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
         #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
     
+    # Show plot of removed/retained data
+    if plot_engine.lower() == 'matplotlib':
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
+    elif plot_engine.lower() == 'plotly':
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
+    else:
+        pass
+
     if verbose:
-        if len(bad_rmse)>0:
+        if len(bad_rmse) > 0:
             print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
             for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
                 print(f"\t\t  {b}")
@@ -8405,7 +8208,7 @@ def _plot_noise_windows(hvsr_data, fig=None, ax=None, clear_fig=False, fill_gaps
     #self.noise_canvasWidget.pack(fill='both')#.grid(row=0, column=0, sticky='nsew')
     fig.canvas.draw()
     
-    fig, ax = _plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+    fig, ax = sprit_plot._plot_input_stream_mpl(stream=hvsr_data['stream'], hv_data=hvsr_data, fig=fig, ax=ax, component='Z', stack_type='linear', detrend='mean', fill_gaps=fill_gaps, dbscale=True, return_fig=True, cmap_per=[0.1, 0.9])
     fig.canvas.draw()
 
     #Set initial input
@@ -8595,9 +8398,9 @@ def _select_windows(input):
             input_stream = hvsr_data['stream']
     
     if isinstance(input_stream, obspy.core.stream.Stream):
-        fig, ax = _plot_specgram_stream(input_stream, component=['Z'])
+        fig, ax = sprit_plot._plot_input_stream_mpl(input_stream, component=['Z'])
     elif isinstance(input_stream, obspy.core.trace.Trace):
-        fig, ax = _plot_specgram_stream(input_stream)
+        fig, ax = sprit_plot._plot_input_stream_mpl(input_stream)
 
     global lineArtist
     global winArtist
@@ -9013,8 +8816,8 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
         low_freq = hvsr_data.hvsr_band[0]
         hi_freq = hvsr_data.hvsr_band[1]
     else:
-        low_freq = 0.1
-        hi_freq = 50
+        low_freq = DEFAULT_BAND[0]
+        hi_freq = DEFAULT_BAND[1]
 
     x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), 512)
 
@@ -10967,247 +10770,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     return fig, ax
 
 
-# Plot spectrogram from stream
-def _plot_specgram_stream(stream, params=None, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None,fig=None, ax=None, cmap_per=[0.1,0.9], ylimstd=5, show_plot=False, return_fig=True,  **kwargs):
-    """Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream
-
-    For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html 
-
-    Parameters
-    ----------
-    stream : obspy.core.stream.Stream object
-        Stream for which to plot spectrogram
-    params : dict, optional
-        If dict, will read the hvsr_band from the a dictionary with a key ['hvsr_band'] (like the parameters dictionary). Otherwise, can read in the hvsr_band as a two-item list. Or, if None, defaults to [0.1,50], by default None.
-    component : str or list, default='Z'
-        If string, should be one character long component, by default 'Z.' If list, can contain 'E', 'N', 'Z', and will stack them per stack_type and stream.stack() method in obspy to make spectrogram.
-    stack_type : str, default = 'linear'
-        Parameter to be read directly into stack_type parameter of Stream.stack() method of obspy streams, by default 'linear'. See https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.stack.html
-        Only matters if more than one component used.
-    detrend : str, default = 'mean'
-        Parameter to be read directly into detrend parameter of matplotlib.pyplot.specgram, by default 'mean'. See: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html
-    dbscale : bool, default = True
-        If True, scale parameter of matplotlib.pyplot.specgram set to 'dB', by default True
-    return_fig : bool, default = True
-        Whether to return the figure from the function or just show it, by default True
-    cmap_per : list, default = [0.1, 0.9]
-        Two-item list wwith clip limits as percentage of values of colormap, so extremes do not taint colormap, by default [0.1,0.9]
-
-    Returns
-    -------
-    fig
-        If return_fig is True, matplotlib figure is returned
-    ax
-        If return_fig is True, matplotlib axis is returned
-    """ 
-    og_stream = stream.copy()
-
-    #Get the latest start time and earliest end times of all components
-    traceList = []
-    maxStartTime = obspy.UTCDateTime(-1e10) #Go back pretty far (almost 400 years) to start with
-    minEndTime = obspy.UTCDateTime(1e10)
-    for comp in ['E', 'N', 'Z']:
-        #Get all traces from selected component in comp_st
-        if isinstance(stream.select(component=comp).merge()[0].data, np.ma.masked_array):
-            stream = stream.split() 
-        comp_st = stream.select(component=comp).copy()
-        stream.merge()
-        if comp in component:
-            for tr in comp_st:
-                #Get all traces specified for use in one list
-                traceList.append(tr)
-
-            if stream[0].stats.starttime > maxStartTime:
-                maxStartTime = stream[0].stats.starttime
-            if stream[0].stats.endtime < minEndTime:
-                minEndTime = stream[0].stats.endtime
-
-            if isinstance(comp_st[0].data, np.ma.masked_array):
-                comp_st = comp_st.split()  
-
-    #Trim all traces to the same start/end time for total
-    for tr in traceList:
-        tr.trim(starttime=maxStartTime, endtime=minEndTime)
-    og_stream.trim(starttime=maxStartTime, endtime=minEndTime)      
-
-    #Combine all traces into single, stacked trace/stream
-    stream = obspy.Stream(traceList)
-    stream.merge()
-
-    if len(stream)>1:
-        stream.stack(group_by='all', npts_tol=200, stack_type=stack_type)  
-
-    newFig= False
-    if fig is None and ax is None:
-        #Organize the chart layout
-        mosaic = [['spec'],
-                  ['spec'],
-                  ['spec'],
-                  ['spec'],
-                  ['spec'],
-                  ['spec'],
-                  ['signalz'],
-                  ['signalz'], 
-                  ['signaln'], 
-                  ['signale']]
-        fig, ax = plt.subplot_mosaic(mosaic, sharex=True, gridspec_kw={'hspace':0.3})
-        #fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-        newFig = True
-
-    data = stream[0].data
-    if isinstance(data, np.ma.MaskedArray) and fill_gaps is not None:
-        data = data.filled(fill_gaps)
-    sample_rate = stream[0].stats.sampling_rate
-
-    if 'cmap' in kwargs.keys():
-        cmap=kwargs['cmap']
-    else:
-        cmap='turbo'
-
-    if params is None:
-        hvsr_band = [0.1, 50]
-    else:
-        hvsr_band = params['hvsr_band']
-    ymin = hvsr_band[0]
-    ymax = hvsr_band[1]
-
-    if dbscale:
-        scale='dB'
-    else:
-        scale=None
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=RuntimeWarning)
-        spec, freqs, times, im = ax['spec'].specgram(x=data, Fs=sample_rate, detrend=detrend, scale_by_freq=True, scale=scale)
-    im.remove()
-
-    difference_array = freqs-ymin
-    for i, d in enumerate(difference_array):
-        if d > 0:
-            if i-1 < 0:
-                i=1
-            minfreqInd = i-1
-            break
-            
-    difference_array = freqs-ymax
-    for i, d in enumerate(difference_array):
-        if d > 0:
-            maxfreqInd = i-1
-            break
-
-    array_displayed = spec[minfreqInd:maxfreqInd,:]
-    #freqs_displayed = freqs[minfreqInd:maxfreqInd]
-    #im.set_data(array_displayed)
-    vmin = np.nanpercentile(array_displayed, cmap_per[0]*100)
-    vmax = np.nanpercentile(array_displayed, cmap_per[1]*100)
-  
-    
-    decimation_factor = 10
-
-    sTime = stream[0].stats.starttime
-    timeList = {}
-    mplTimes = {}
-    
-    if isinstance(og_stream[0].data, np.ma.masked_array):
-        og_stream = og_stream.split()      
-    og_stream.decimate(decimation_factor)
-    og_stream.merge()
-
-    for tr in og_stream:
-        key = tr.stats.component
-        timeList[key] = []
-        mplTimes[key] = []
-        for t in np.ma.getdata(tr.times()):
-            newt = sTime + t
-            timeList[key].append(newt)
-            mplTimes[key].append(newt.matplotlib_date)
-    
-    #Ensure that the min and max times for each component are the same
-    for i, k in enumerate(mplTimes.keys()):
-        currMin = np.min(list(map(np.min, mplTimes[k])))
-        currMax = np.max(list(map(np.max, mplTimes[k])))
-
-        if i == 0:
-            xmin = currMin
-            xmax = currMax
-        else:
-            if xmin > currMin:
-                xmin = currMin
-            if xmax < currMax:
-                xmax = currMax     
-    
-    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-    im = ax['spec'].imshow(array_displayed, norm=norm, cmap=cmap, aspect='auto', interpolation=None, extent=[xmin,xmax,ymax,ymin])
-
-    ax['spec'].set_xlim([xmin, xmax])
-    ax['spec'].set_ylim([ymin, ymax])
-    ax['spec'].semilogy() 
-    
-    #cbar = plt.colorbar(mappable=im)
-    #cbar.set_label('Power Spectral Density [dB]')
-    #stream.spectrogram(samp_rate=sample_rate, axes=ax, per_lap=0.75, log=True, title=title, cmap='turbo', dbscale=dbscale, show_plot=False)
-    
-    ax['spec'].xaxis_date()
-    ax['signalz'].xaxis_date()
-    ax['signaln'].xaxis_date()
-    ax['signale'].xaxis_date()
-    #tTicks = mdates.MinuteLocator(interval=5)
-    #ax[0].xaxis.set_major_locator(tTicks)
-    ax['signale'].xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,5)))
-    ax['signale'].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    ax['signale'].xaxis.set_minor_locator(mdates.MinuteLocator(interval=1))
-    ax['signale'].tick_params(axis='x', labelsize=8)
-    
-    ax['signalz'].plot(mplTimes['Z'],og_stream.select(component='Z')[0].data, color='k', linewidth=0.25)
-    ax['signaln'].plot(mplTimes['N'],og_stream.select(component='N')[0].data, color='k', linewidth=0.1)
-    ax['signale'].plot(mplTimes['E'],og_stream.select(component='E')[0].data, color='k', linewidth=0.1)
-
-    ax['spec'].set_ylabel('Spectrogram: {}'.format(component))
-    ax['signalz'].set_ylabel('Z')
-    ax['signaln'].set_ylabel('N')
-    ax['signale'].set_ylabel('E')
-    
-    for comp in mplTimes.keys():
-        stD = np.abs(np.nanstd(np.ma.getdata(og_stream.select(component=comp)[0].data)))
-        dmed = np.nanmedian(np.ma.getdata(og_stream.select(component=comp)[0].data))
-        key = 'signal'+comp.lower()
-        ax[key].set_ylim([dmed-ylimstd*stD, dmed+ylimstd*stD])
-    
-    if params is None:
-        fig.suptitle('HVSR Site: Spectrogram and Data')
-    elif 'title' in kwargs.keys():
-        fig.suptitle(kwargs['title'])
-    else:
-        if 'input_params' in params.keys():
-            sitename = params['input_params']['site']
-        else:
-            sitename = params['site']
-        fig.suptitle('{}\nSpectrogram and Data'.format(sitename))
-    
-    day = "{}-{}-{}".format(stream[0].stats.starttime.year, stream[0].stats.starttime.month, stream[0].stats.starttime.day)
-    ax['signale'].set_xlabel('UTC Time \n'+day)
-
-    if newFig:
-        ogFigsize = matplotlib.rcParams['figure.figsize']
-        fig = plt.gcf()
-        matplotlib.rcParams['figure.figsize'] = (40, 4)
-        #plt.rcParams['figure.dpi'] = 100
-        #plt.rcParams['figure.figsize'] = (5,4)
-        #fig.tight_layout()
-        plt.rcParams['figure.figsize'] = ogFigsize
-        
-    if show_plot:
-        fig.canvas.draw()
-        plt.show()
-    
-    if return_fig:
-        return fig
-    
-    return
-
-
 # HELPER functions for checking peaks
 # Initialize peaks
-def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=[0.1, 50], _min_peak_amp=0):
+def __init_peaks(_x, _y, _index_list, _hvsr_band, peak_freq_range=DEFAULT_BAND, _min_peak_amp=0):
     """ Initialize peaks.
         
         Creates dictionary with relevant information and removes peaks in hvsr curve that are not relevant for data analysis (outside HVSR_band)

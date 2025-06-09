@@ -29,11 +29,13 @@ from scipy import signal
 try:
     import sprit
     from sprit import sprit_hvsr
+    from sprit import sprit_plot
 except Exception:
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, parent_dir)
     import sprit
     from sprit import sprit_hvsr
+    from sprit import sprit_plot
     
     
 VERBOSE = False
@@ -292,7 +294,7 @@ def main():
             st.session_state.peak_selection = run_kwargs['peak_selection'] = st.session_state.peak_selection.title()
             st.session_state.freq_smooth = run_kwargs['freq_smooth'] = st.session_state.freq_smooth.title()
             st.session_state.source = run_kwargs['source'] = st.session_state.source.title()
-            #st.session_state.plot_engine = run_kwargs['plot_engine'] = st.session_state.plot_engine.title()
+            st.session_state.plot_engine = run_kwargs['plot_engine'] = st.session_state.plot_engine.title()
                 
             # Update Nones
             # Remove method
@@ -555,18 +557,27 @@ def main():
             st.session_state.mainContainer = st.container()
             st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info'])
         
-        st.session_state.input_fig = make_input_fig()
-        if not hasattr(st.session_state, 'data_plot'):
-            st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                            on_select=update_data, key='data_plot', 
-                                            selection_mode='box', use_container_width=True, theme='streamlit')
+        st.session_state.input_fig = make_input_fig_plotly()
+        
+        if st.session_state.plot_engine == 'Matplotlib':
+            st.session_state.input_fig = make_input_fig_pyplot()
+            
+            if not hasattr(st.session_state, 'data_plot'):
+                st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, use_container_width=True)
+                st.session_state.data_plot = None
         else:
-            st.session_state.data_chart_event = st.session_state.data_plot
+            if not hasattr(st.session_state, 'data_plot'):
+                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                                on_select=update_data, key='data_plot', 
+                                                selection_mode='box', use_container_width=True, theme='streamlit')
+            else:
+                st.session_state.data_chart_event = st.session_state.data_plot
 
-        st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-        st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle', 
-                                                    default='Add', on_change=update_selection_type, disabled=True, 
-                                                    help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+            st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
+            st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
+                                                        default='Add', on_change=update_selection_type, disabled=True,
+                                                        help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+        
 
         # Print information about the data to Info tab
         st.session_state.infoTab.header("Information About Input Data")
@@ -588,50 +599,72 @@ def main():
         setup_main_container(do_setup_tabs=True)
         st.toast('Displaying results')
         
-        if st.session_state.interactive_display:
-            st.session_state.mainContainer.code(body=st.session_state.hvsr_data['Print_Report'],
-                                            language='text')
-            st.session_state.mainContainer.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+        if st.session_state.plot_engine == "Plotly":
+            # Print main results right away if taking time to plot others
+            if st.session_state.interactive_display:
+                st.session_state.mainContainer.code(body=st.session_state.hvsr_data['Print_Report'],
+                                                language='text')
+                st.session_state.mainContainer.dataframe(data=st.session_state.hvsr_data['Table_Report'])
 
-        # Input data
-        if st.session_state.interactive_display or (hasattr(st.session_state, 'data_results_toggle') and st.session_state.data_results_toggle):
-            st.session_state.input_fig = make_input_fig()
-            st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
-                                                on_select=update_data, key='data_plot',
-                                                selection_mode='box', use_container_width=True, theme='streamlit')
+            # Input data
+            if st.session_state.interactive_display or (hasattr(st.session_state, 'data_results_toggle') and st.session_state.data_results_toggle):
+                st.session_state.input_fig = make_input_fig_plotly()
+                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                                    on_select=update_data, key='data_plot',
+                                                    selection_mode='box', use_container_width=True, theme='streamlit')
 
-            st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-            st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
-                                                    default='Add', on_change=update_selection_type, disabled=True, 
-                                                    help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
-        
-        else:
-            st.session_state.inputTab.toggle(label='Display input data stream and windows used',
-                                             value=False,
-                                             on_change=display_buttons_and_results,
-                                             help='Toggle on to display interactive chart with input data stream for selecting windows for removal.',
-                                             key='data_results_toggle')
+                st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
+                st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
+                                                        default='Add', on_change=update_selection_type, disabled=True, 
+                                                        help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
             
-        write_to_info_tab(st.session_state.infoTab)
+            else:
+                st.session_state.inputTab.toggle(label='Display input data stream and windows used',
+                                                value=False,
+                                                on_change=display_buttons_and_results,
+                                                help='Toggle on to display interactive chart with input data stream for selecting windows for removal.',
+                                                key='data_results_toggle')
+                
+            write_to_info_tab(st.session_state.infoTab)
 
-        if st.session_state.interactive_display or (hasattr(st.session_state, 'outlier_toggle') and st.session_state.outlier_toggle):
-            outlier_plot_in_tab()
+            if st.session_state.interactive_display or (hasattr(st.session_state, 'outlier_toggle') and st.session_state.outlier_toggle):
+                outlier_plot_in_tab()
+            else:
+                st.session_state.outlierTab.toggle(label='Display outlier chart',
+                                                value=False,
+                                                help='Turn on to display outlier chart (you may need to navigate back to this tab)',
+                                                key='outlier_toggle',
+                                                on_change=display_buttons_and_results)
+
+            if st.session_state.interactive_display:
+                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+            else:
+                st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
+            
+            st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+            st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
+
         else:
-            st.session_state.outlierTab.toggle(label='Display outlier chart',
-                                               value=False,
-                                               help='Turn on to display outlier chart (you may need to navigate back to this tab)',
-                                               key='outlier_toggle',
-                                               on_change=display_buttons_and_results)
+            # Input plot
+            st.session_state.input_fig = make_input_fig_pyplot()
+            st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig,
+                                                                                 use_container_width=True)
+            
+            #Info tab
+            write_to_info_tab(st.session_state.infoTab)
+            
+            # Outlier chart
+            if st.session_state.interactive_display:
+                outlier_plot_in_tab()
 
-        if st.session_state.interactive_display:
-            st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
-        else:
-            st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
-        
-        st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
-        st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
-
-
+            if st.session_state.interactive_display:
+                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+            else:
+                #st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
+                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+            st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
+            st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
+            
     @st.fragment
     def display_download_buttons():
         ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
@@ -847,7 +880,20 @@ def main():
                                 mode='magnitude')
 
 
-    def make_input_fig():
+    def make_input_fig_pyplot():
+        hvsr_data = st.session_state.hvsr_data
+        stream = hvsr_data.stream
+        
+        inputFig = sprit_plot._plot_input_stream_mpl(stream=stream,
+                                                     hv_data=hvsr_data,
+                                                     return_fig=True)
+        
+        st.session_state.input_fig = inputFig
+        st.session_state.hvsr_data.Input_Plot = inputFig
+
+        return inputFig
+
+    def make_input_fig_plotly():
         no_subplots = 5
         inputFig = make_subplots(rows=no_subplots, cols=1,
                                         row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
@@ -1284,68 +1330,76 @@ def main():
 
 
     def outlier_plot_in_tab():
-        hvDF = st.session_state.hvsr_data['hvsr_windows_df']
-        x_data = st.session_state.hvsr_data['x_freqs']['Z'][:-1]
         
-        no_subplots = 1
-        outlierFig = make_subplots(rows=no_subplots, cols=1,
-                                            shared_xaxes=True, horizontal_spacing=0.01,
-                                            vertical_spacing=0.1)
+        if st.session_state.plot_engine == 'Matplotlib':
+            outlierFig = sprit_plot.plot_outlier_curves(st.session_state.hvsr_data, 
+                                                        plot_engine='Matplotlib')
+            st.session_state.outlierTab.pyplot(outlierFig, 
+                                               use_container_width=True)
+            st.session_state.outlier_plot = None
+        else:
+            hvDF = st.session_state.hvsr_data['hvsr_windows_df']
+            x_data = st.session_state.hvsr_data['x_freqs']['Z'][:-1]
+            
+            no_subplots = 1
+            outlierFig = make_subplots(rows=no_subplots, cols=1,
+                                                shared_xaxes=True, horizontal_spacing=0.01,
+                                                vertical_spacing=0.1)
 
-        scatterFig = pxScatter()
-        scatter_traces = []
-        line_traces = []
+            scatterFig = pxScatter()
+            scatter_traces = []
+            line_traces = []
 
 
-        for row, hvsr_data in enumerate(hvDF['HV_Curves']):
-            currInd = hvDF.iloc[row].name
-            if hvDF.loc[currInd, 'Use']:  
-                scatterArray = np.array(list(hvsr_data)[::5])
-                x_data_Scatter = np.array(list(x_data)[::5])
-                currFig = pxScatter(x=x_data_Scatter, y=scatterArray)
-                currFig.update_traces(mode='markers+lines',
-                                marker=dict(size=1, color='rgba(0,0,0,0.1)'),
-                                line=dict(width=1, color='rgba(0,0,0,0.1)'),
-                                selector=dict(mode='markers'))
-                
-                scatter_traces.append(currFig)
-
-            else:
-                scatterArray = np.array(list(hvsr_data)[::5])
-                x_data_Scatter = np.array(list(x_data)[::5])
-                currFig = pxScatter(x=x_data_Scatter, y=scatterArray,
-                                    opacity=0.5)
-                currFig.update_traces(mode='markers+lines',
-                                    marker=dict(size=1, color='rgba(195,87,0,0.4)'),
-                                    line=dict(width=1, color='rgba(195,87,0,0.4)'),
+            for row, hvsr_data in enumerate(hvDF['HV_Curves']):
+                currInd = hvDF.iloc[row].name
+                if hvDF.loc[currInd, 'Use']:  
+                    scatterArray = np.array(list(hvsr_data)[::5])
+                    x_data_Scatter = np.array(list(x_data)[::5])
+                    currFig = pxScatter(x=x_data_Scatter, y=scatterArray)
+                    currFig.update_traces(mode='markers+lines',
+                                    marker=dict(size=1, color='rgba(0,0,0,0.1)'),
+                                    line=dict(width=1, color='rgba(0,0,0,0.1)'),
                                     selector=dict(mode='markers'))
-                scatter_traces.append(currFig)
+                    
+                    scatter_traces.append(currFig)
+
+                else:
+                    scatterArray = np.array(list(hvsr_data)[::5])
+                    x_data_Scatter = np.array(list(x_data)[::5])
+                    currFig = pxScatter(x=x_data_Scatter, y=scatterArray,
+                                        opacity=0.5)
+                    currFig.update_traces(mode='markers+lines',
+                                        marker=dict(size=1, color='rgba(195,87,0,0.4)'),
+                                        line=dict(width=1, color='rgba(195,87,0,0.4)'),
+                                        selector=dict(mode='markers'))
+                    scatter_traces.append(currFig)
 
 
-        # Add median line
-        medArr = np.nanmedian(np.stack(hvDF['HV_Curves'][hvDF['Use']]), axis=0)
-        scatterArray = np.array(list(medArr)[::10])
-        x_data_Scatter = np.array(list(x_data)[::10])
-        currFig = px.line(x=x_data_Scatter, y=scatterArray,
-                        color_discrete_sequence=['red'])
-        currFig.update_traces(line=dict(width=3, color='black'))
-        scatter_traces.append(currFig)
+            # Add median line
+            medArr = np.nanmedian(np.stack(hvDF['HV_Curves'][hvDF['Use']]), axis=0)
+            scatterArray = np.array(list(medArr)[::10])
+            x_data_Scatter = np.array(list(x_data)[::10])
+            currFig = px.line(x=x_data_Scatter, y=scatterArray,
+                            color_discrete_sequence=['red'])
+            currFig.update_traces(line=dict(width=3, color='black'))
+            scatter_traces.append(currFig)
 
-        for tr in scatter_traces:
-            for trace in tr.data:
-                outlierFig.add_traces(trace, rows=1, cols=1)
+            for tr in scatter_traces:
+                for trace in tr.data:
+                    outlierFig.add_traces(trace, rows=1, cols=1)
 
-        outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
-        outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
-        outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
+            outlierFig.update_xaxes(title='Frequency [Hz]', type="log", row=1, col=1)
+            outlierFig.update_yaxes(title='H/V Ratio', row=1, col=1)
+            outlierFig.update_layout(title_text="H/V Curve Outlier Display & Selection")
 
-        st.session_state.outlierTab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.")
-        # Output figure to correct tab
-        st.session_state.outlierTab.plotly_chart(outlierFig, 
-                                on_select=update_outlier, 
-                                key='outlier_plot', 
-                                use_container_width=True, 
-                                theme='streamlit') 
+            st.session_state.outlierTab.write("Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.")
+            # Output figure to correct tab
+            st.session_state.outlierTab.plotly_chart(outlierFig, 
+                                    on_select=update_outlier, 
+                                    key='outlier_plot', 
+                                    use_container_width=True, 
+                                    theme='streamlit') 
 
 
     def write_to_outlierTab():
@@ -1764,7 +1818,7 @@ def main():
                 if VERBOSE:
                     print('Setting up plot tab, session state length: ', len(st.session_state.keys()))
 
-                st.selectbox("Plot Engine", options=['Plotly', "Matplotlib"], key='plot_engine', disabled=True, help="Currently, only plotly is supported.")
+                st.selectbox("Plot Engine", options=['Plotly', "Matplotlib"], key='plot_engine', disabled=False, help="Currently, interactive plots are only supported in plotly.")
                 st.text_input("Plot type (plot string)", value='HVSR p ann C+ p ann Spec p', key='plot_type')
                 st.multiselect("Charts to show", options=['HVSR', "Components", 'Spectrogram', 'Azimuth'], default=['HVSR', 'Components', "Spectrogram"], 
                                                 on_change=update_plot_string, key='plotPlotStr')

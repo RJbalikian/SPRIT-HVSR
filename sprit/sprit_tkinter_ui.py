@@ -29,9 +29,11 @@ import numpy as np
 try: #For distribution
     from sprit import sprit_utils
     from sprit import sprit_hvsr
+    from sprit import sprit_plot
 except: #For local testing
     import sprit_hvsr 
     import sprit_utils
+    import sprit_plot
     pass
 
 global spritApp
@@ -320,10 +322,10 @@ class SPRIT_App:
                 update_site_dropdown()
 
                 #Plot data in data preview tab
-                self.fig_pre, self.ax_pre = sprit_hvsr.plot_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                self.fig_pre, self.ax_pre = sprit_plot._plot_simple_stream_obspy(stream=firstSite['stream'], params=firstSite, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 #Plot data in noise preview tab
-                self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise, self.ax_noise = sprit_plot._plot_simple_stream_obspy(stream=firstSite['stream'], params=firstSite, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows(self.hvsr_data)
 
@@ -377,10 +379,10 @@ class SPRIT_App:
                 update_input_labels(self.hvsr_data)
 
                 # Plot data in data preview tab
-                self.fig_pre = sprit_hvsr.plot_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
+                self.fig_pre = sprit_plot._plot_simple_stream_obspy(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_pre, axes=self.ax_pre, return_fig=True)
 
                 # Plot data in noise preview tab
-                self.fig_noise = sprit_hvsr._plot_specgram_stream(stream=self.hvsr_data['stream'], params=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise = sprit_plot._plot_input_stream_mpl(stream=self.hvsr_data['stream'], hv_data=self.hvsr_data, fig=self.fig_noise, ax=self.ax_noise, fill_gaps=0, component='Z', stack_type='linear', detrend='mean', dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
                 select_windows(event=None, initialize=True)
                 plot_noise_windows(self.hvsr_data)
 
@@ -1420,19 +1422,19 @@ class SPRIT_App:
             from matplotlib.backend_bases import MouseButton
             import matplotlib.pyplot as plt
             
-            #self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #self.fig_noise, self.ax_noise = sprit_hvsr._plot_simple_stream_obspy(stream=input['stream'], params=input, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #self.fig_noise.canvas.draw()
             
             #if 'stream' in input.keys():
-            #    self.fig_noise, self.ax_noise = sprit_hvsr._plot_specgram_stream(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+            #    self.fig_noise, self.ax_noise = sprit_hvsr._plot_simple_stream_obspy(stream=self.params['stream'], params=self.params, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
             #else:
             #    params = input.copy()
             #    input = input['stream']
             
             #if isinstance(input, obspy.core.stream.Stream):
-            #    fig, ax = sprit_hvsr._plot_specgram_stream(input, component=['Z'])
+            #    fig, ax = sprit_hvsr._plot_simple_stream_obspy(input, component=['Z'])
             #elif isinstance(input, obspy.core.trace.Trace):
-            #    fig, ax = sprit_hvsr._plot_specgram_stream(input)
+            #    fig, ax = sprit_hvsr._plot_simple_stream_obspy(input)
             if initialize:
                 self.lineArtist = []
                 self.winArtist = []
@@ -1521,7 +1523,7 @@ class SPRIT_App:
             if not initial_setup:
                 self.noise_canvasWidget.destroy()
                 self.noise_toolbar.destroy()
-                self.fig_noise = sprit_hvsr._plot_specgram_stream(stream=hvsr_data['stream'], params=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
+                self.fig_noise = sprit_plot._plot_simple_stream_obspy(stream=hvsr_data['stream'], hv_data=hvsr_data, fig=self.fig_noise, ax=self.ax_noise, component='Z', stack_type='linear', detrend='mean', fill_gaps=0, dbscale=True, return_fig=True, cmap_per=[0.1,0.9])
 
             self.noise_canvas = FigureCanvasTkAgg(self.fig_noise, master=self.canvasFrame_noise)  # A tk.DrawingArea.
             self.noise_canvas.draw()
