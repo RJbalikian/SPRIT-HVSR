@@ -1484,6 +1484,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
             outlier_curve_keys_used = False
         if outlier_curves_removal or outlier_curve_keys_used:
+            remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
             data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
@@ -4202,7 +4203,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
 # Get report (report generation and export)
 def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV',
                plot_type=DEFAULT_PLOT_STR, plot_engine='matplotlib', 
-               show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True,
+               show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True,
                suppress_report_outputs=False, show_report_outputs=False,
                csv_handling='append', 
                report_export_format=None, report_export_path=None, 
@@ -4490,12 +4491,16 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
                 if not verbose:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                    fig.show()
+                    if str(plot_engine).lower():
+                        plt.show()
+                    else:
+                        fig.show()
                 else:
                     print('\nPlot of data report:')
-                    fig.show()
+                    if str(plot_engine).lower():
+                        plt.show()
+                    else:
+                        fig.show()                    
             else:
                 if verbose:
                     print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
@@ -6344,7 +6349,7 @@ def remove_noise(hvsr_data, remove_method=None,
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, verbose=False):
+def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, verbose=False, **kwargs):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -6492,19 +6497,20 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
             if rmse[j] > rmse_threshold:
                 bad_rmse.append(j)
 
+    # Show plot of removed/retained data
+    if plot_engine.lower() == 'matplotlib' and (generate_outlier_plot or show_outlier_plot):
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
+    elif plot_engine.lower() == 'plotly'  and (generate_outlier_plot or show_outlier_plot):
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
+    else:
+        pass
+
     # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
     bad_rmse = np.unique(bad_rmse)
     if len(bad_rmse) > 0:
         hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
         #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
     
-    # Show plot of removed/retained data
-    if plot_engine.lower() == 'matplotlib':
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
-    elif plot_engine.lower() == 'plotly':
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
-    else:
-        pass
 
     if verbose:
         if len(bad_rmse) > 0:
@@ -9823,11 +9829,13 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     if 'get_report' in hvsr_results.processing_parameters:
         plotEngine = hvsr_results.processing_parameters['get_report']['plot_engine'].lower()
         
-    if plotEngine not in ['plotly', 'plty', 'p']:
-        plt.rcParams['figure.figsize'] = (5, 6)
+    if str(plotEngine).lower() not in ['plotly', 'plty', 'p']:
+        fig = plt.figure(hvsr_results['HV_Plot'])
+        fig.set_size_inches(8.5, 6)
+        #fig.set_size_inches(4.25, 3)
         # Create a byte stream from the image
         buf = io.BytesIO()
-        plt.savefig(buf, format='png')
+        fig.savefig(buf, format='png')
         buf.seek(0)
 
         # Encode the image to base64

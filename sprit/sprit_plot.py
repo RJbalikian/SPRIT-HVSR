@@ -36,6 +36,7 @@ except:
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_calibration as sprit_calibration
 
+
 HVSR_BAND = [0.1, 50 ]# sprit_hvsr.DEFAULT_BAND
 
 def read_data(button):
@@ -1914,7 +1915,7 @@ def _plot_simple_stream_mpl(hv_data, stream=None, input_fig=None, decimate=True,
         return input_fig
 
 
-def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', 
+def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False,
                         rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, 
                         from_roc=False, show_plot=True, verbose=False, discarded_curves=None):
     """Functio to plot outlier curves, including which have been excluded
@@ -1927,6 +1928,8 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go',
         Which plotting library to use, by default 'plotly'
     plotly_module : str = {'go', 'px'}
         Which plotly module to use if applicable, by default 'go'
+    remove_outliers_during_plot : bool, optional
+        Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.
     rmse_thresh : float, optional
         RMSE threshold (for removing outliers), by default 0.98
     use_percentile : bool, optional
@@ -1951,6 +1954,9 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go',
     
     plotlyList = ['plotly', 'plty', 'p']
     mplList = ['matplotlib', 'mpl', 'pyplot', 'mtpltlb', 'm']
+    
+    if rmse_thresh < 1:
+        rmse_thresh = rmse_thresh * 100
     
     roc_kwargs = {'rmse_thresh':rmse_thresh,
                     'use_percentile':True,
@@ -2222,7 +2228,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go',
             ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
             ax[compNames[i]].semilogx()             
 
-        outlier_fig.suptitle(f"{hvsr_data['site']}\nOutlier Curves to be Removed")
+        outlier_fig.suptitle(f"{hvsr_data['site']}\n Curves Removed from Analysis")
         outlier_fig.set_layout_engine('constrained')
                 
         hvsr_data['Outlier_Plot'] = outlier_fig 
@@ -2231,7 +2237,13 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go',
             plt.show()
         else:
             plt.close()
-        
+    
+    if remove_outliers_during_plot:
+        bad_rmse = np.unique(bad_rmse)
+        if len(bad_rmse) > 0:
+            hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
+
+    
     hvsr_data['Outlier_Plot'] = outlier_fig 
     return outlier_fig
 

@@ -13,6 +13,7 @@ import sys
 import tempfile
 import zoneinfo
 
+import matplotlib
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -25,6 +26,7 @@ import streamlit as st
 from obspy import UTCDateTime
 from obspy.signal.spectral_estimation import PPSD
 from scipy import signal
+
 
 try:
     import sprit
@@ -413,6 +415,7 @@ def main():
         # Get plots all right
         #srun['plot_engine'] = 'matplotlib'
         srun['plot_input_stream'] = True
+        srun['show_outlier_plot'] = False
         srun['show_plot'] = False
         srun['verbose'] = False #True
 
@@ -429,7 +432,7 @@ def main():
         setup_main_container(do_setup_tabs=False)
         with st.session_state.mainContainer:
             spinnerText = '## Data is processing with default parameters.'
-            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose']
+            excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose', 'show_outlier_plot']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
                                     'hvsr_band':(0.1, 50), 'use_hv_curve':True,
@@ -640,31 +643,30 @@ def main():
                 st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
             else:
                 st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
-            
+
             st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
             st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
 
-        else:
+        else:  # Matplotlib
             # Input plot
             st.session_state.input_fig = make_input_fig_pyplot()
             st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig,
                                                                                  use_container_width=True)
-            
-            #Info tab
+
+            # Info tab
             write_to_info_tab(st.session_state.infoTab)
-            
+
             # Outlier chart
-            if st.session_state.interactive_display:
-                outlier_plot_in_tab()
+            outlier_plot_in_tab()
 
             if st.session_state.interactive_display:
                 st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
             else:
-                #st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
-                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
+                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
             st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
             st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
-            
+
     @st.fragment
     def display_download_buttons():
         ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
@@ -690,10 +692,9 @@ def main():
             with open(pdfPath, "rb") as pdf_file:
                 PDFbyte = pdf_file.read()
             return PDFbyte
-        
+
         pdf_byte = _convert_pdf_for_download(hvData)
 
-        ##st.session_state.dlPDFReport.download_button(label="Report (.pdf)",
         dlPDFReport.download_button(label="Report (.pdf)",
                     data=pdf_byte,
                     #on_click=display_results,
@@ -1330,7 +1331,6 @@ def main():
 
 
     def outlier_plot_in_tab():
-        
         if st.session_state.plot_engine == 'Matplotlib':
             outlierFig = sprit_plot.plot_outlier_curves(st.session_state.hvsr_data, 
                                                         plot_engine='Matplotlib')

@@ -51,8 +51,8 @@
 
         @media print {
             .image-size {
-                max-width: 175mm;
-                width: 175mm; /* width for printing */
+                max-width: 215mm;
+                width: 215mm; /* width for printing */
                 height: auto; /* Maintain aspect ratio */
                 }
             
@@ -144,7 +144,7 @@
             display: flex;
         }
         .box {
-            flex: 1;
+            /*flex: 1;*/
             padding: 5mm;
             max-width: 175mm;
         }
@@ -183,7 +183,7 @@
     <!-- Frame 2: Image -->
     <div class='results'>
         <div id="plot_frame", class="box">
-            <img src="./output.png" class="image-size", alt="Image description">
+            <img src="./output.png" class="image-size", width="99%", alt="HVSR Results Plot">
         </div>
 
     <!-- Frame 3: Monospace Text -->
