@@ -496,7 +496,7 @@ If not specified, does not write file</dd>
 </dl></div>
 </dd>
 <dt id="sprit.get_report"><code class="name flex">
-<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV', plot_type='HVSR p ann COMP+ p ann SPEC p ann', plot_engine='matplotlib', show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True, suppress_report_outputs=False, show_report_outputs=False, csv_handling='append', report_export_format=None, report_export_path=None, verbose=False, **kwargs)</span>
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV', plot_type='HVSR p ann COMP+ p ann SPEC p ann', plot_engine='matplotlib', show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True, suppress_report_outputs=False, show_report_outputs=False, csv_handling='append', report_export_format=None, report_export_path=None, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. </p>
@@ -713,7 +713,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 </dl></div>
 </dd>
 <dt id="sprit.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data, title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', show_curves=True, annotate_curves=False, curve_alignment='peak', grid_size='auto', orientation='WE', interpolation_type='cloughtocher', surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False, depth_limit=150, minimum_elevation=None, show_bedrock_surface=True, return_data_batch=True, show_cross_section=True, verbose=False, **kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data, title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', show_curves=True, annotate_curves=False, curve_alignment='peak', grid_size='auto', orientation='WE', interpolation_type='cloughtocher', interpolate_log_values=True, surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False, depth_limit=150, minimum_elevation=None, show_bedrock_surface=True, return_data_batch=True, show_cross_section=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Functio to plot a cross section given an HVSRBatch or similar object</p>
@@ -752,6 +752,8 @@ Should be either "WE", "EW", "NS", or "SN", by default 'WE'.</dd>
 <dd>Interpolation type to use. Uses scipy.interpolation.
 Options include: 'cloughtocher', 'nearest neighbor', 'linear',
 or 'radial basis function', by default 'cloughtocher'.</dd>
+<dt><strong><code>interpolate_log_values</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to use log values of the H/V curve for interpolation (can be useful for better normalizing data)</dd>
 <dt><strong><code>surface_elevations</code></strong> :&ensp;<code>shapely.LineString</code>, optional</dt>
 <dd>A shapely.LineString object containing surface elevation coordinates along cross section path.
 If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.</dd>
@@ -858,7 +860,7 @@ This is the default, so usually 'i' is not needed.
 </dl></div>
 </dd>
 <dt id="sprit.plot_input_stream"><code class="name flex">
-<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False)</span>
+<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data, stream=None, input_fig=None, plot_engine='plotly', spectrogram_component='Z', decimate=True, show_plot=True, return_fig=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot input stream using plotly.</p>
@@ -884,7 +886,7 @@ This is the default, so usually 'i' is not needed.
 </dl></div>
 </dd>
 <dt id="sprit.plot_outlier_curves"><code class="name flex">
-<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False)</span>
+<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False, rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False, discarded_curves=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Functio to plot outlier curves, including which have been excluded</p>
@@ -896,6 +898,8 @@ This is the default, so usually 'i' is not needed.
 <dd>Which plotting library to use, by default 'plotly'</dd>
 <dt><strong><code>plotly_module</code></strong> :&ensp;<code>str = {'go', 'px'}</code></dt>
 <dd>Which plotly module to use if applicable, by default 'go'</dd>
+<dt><strong><code>remove_outliers_during_plot</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.</dd>
 <dt><strong><code>rmse_thresh</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>RMSE threshold (for removing outliers), by default 0.98</dd>
 <dt><strong><code>use_percentile</code></strong> :&ensp;<code>bool</code>, optional</dt>
@@ -1109,7 +1113,7 @@ divided by the standard deviation calculated for the entire trace. This rolling 
 </dl></div>
 </dd>
 <dt id="sprit.remove_outlier_curves"><code class="name flex">
-<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_plot=False, verbose=False)</span>
+<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
@@ -1380,9 +1384,13 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>plot_engine</code></strong> :&ensp;<code>any</code>, default <code>= 'matplotlib'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
-<dt><strong><code>show_plot</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dt><strong><code>show_outlier_plot</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
+<dt><strong><code>generate_outlier_plot</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
+<dt><strong><code>kwargs</code></strong> :&ensp;<code>any</code>, default <code>= {}</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>check_peaks</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
 <dd>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks
@@ -1416,7 +1424,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.get_report" href="#sprit.get_report">get_report()</a>)</code> for specifics.</dd>
 <dt><strong><code>show_table_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.get_report" href="#sprit.get_report">get_report()</a>)</code> for specifics.</dd>
-<dt><strong><code>show_plot_report</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
+<dt><strong><code>show_plot_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.get_report" href="#sprit.get_report">get_report()</a>)</code> for specifics.</dd>
 <dt><strong><code>show_html_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.get_report" href="#sprit.get_report">get_report()</a>)</code> for specifics.</dd>
@@ -1623,7 +1631,6 @@ besides using it determine which sites are contained within it.</p></div>
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile[&#39;site&#39;]] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict
-
                 else:
                     # Assume it is .hvsr file you wish to import
                     batchfileglob = []
@@ -1729,7 +1736,6 @@ besides using it determine which sites are contained within it.</p></div>
 
                             if dataObj is not None:
                                 self.batch_dict[str(row[siteCol])] = dataObj
-
         else:
             raise TypeError(f&#34;The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}&#34;)
 
@@ -1754,6 +1760,7 @@ besides using it determine which sites are contained within it.</p></div>
         with open(filepath, &#39;w&#39;) as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
 
     def add(self, hvsr_data):
         &#34;&#34;&#34;Function to add HVSRData objects to existing HVSRBatch objects&#34;&#34;&#34;

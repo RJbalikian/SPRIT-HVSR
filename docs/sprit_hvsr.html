@@ -397,7 +397,7 @@ If not specified, does not write file</dd>
 </dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.get_report"><code class="name flex">
-<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV', plot_type='HVSR p ann COMP+ p ann SPEC p ann', plot_engine='matplotlib', show_print_report=True, show_table_report=False, show_plot_report=True, show_html_report=False, show_pdf_report=True, suppress_report_outputs=False, show_report_outputs=False, csv_handling='append', report_export_format=None, report_export_path=None, verbose=False, **kwargs)</span>
+<span>def <span class="ident">get_report</span></span>(<span>hvsr_results, report_formats=['print', 'table', 'plot', 'html', 'pdf'], azimuth='HV', plot_type='HVSR p ann COMP+ p ann SPEC p ann', plot_engine='matplotlib', show_print_report=True, show_table_report=False, show_plot_report=False, show_html_report=False, show_pdf_report=True, suppress_report_outputs=False, show_report_outputs=False, csv_handling='append', report_export_format=None, report_export_path=None, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate and/or print and/or export a report of the HVSR analysis in a variety of formats. </p>
@@ -670,33 +670,6 @@ This is the default, so usually 'i' is not needed.
 <dd>Returns figure and axis matplotlib.pyplot objects if return_fig=True, otherwise, simply plots the figures</dd>
 </dl></div>
 </dd>
-<dt id="sprit.sprit_hvsr.plot_stream"><code class="name flex">
-<span>def <span class="ident">plot_stream</span></span>(<span>stream, params, fig=None, axes=None, show_plot=False, ylim_std=0.75, return_fig=True)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Function to plot a stream of data with Z, E, N components using matplotlib. Similar to obspy.Stream.Plot(), but will be formatted differently and eventually more customizable.
-This is also used in various functions throughout the package.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>stream</code></strong> :&ensp;<code>obspy.core.Stream.stream</code></dt>
-<dd>Obpsy stream of data with Z, E, N componenents</dd>
-<dt><strong><code>params</code></strong> :&ensp;<code><a title="sprit.sprit_hvsr.HVSRData" href="#sprit.sprit_hvsr.HVSRData">HVSRData</a></code> or <code><a title="sprit.sprit_hvsr.HVSRBatch" href="#sprit.sprit_hvsr.HVSRBatch">HVSRBatch</a></code></dt>
-<dd>Data object with parameters relevant for creating plot</dd>
-<dt><strong><code>fig</code></strong> :&ensp;<code>matplotlib.Figure</code>, default=<code>None</code></dt>
-<dd>Optional: if not None, matplotlib.Figure in which to plot the resulting figure (i.e., can be plotted in existing figure)</dd>
-<dt><strong><code>axes</code></strong> :&ensp;<code>matplotlib.Axis</code>, default=<code>None</code></dt>
-<dd>Optional: if not None, matplotlib.Axis in which to plot the resulting figure (i.e., can be plotted in existing axis)</dd>
-<dt><strong><code>show_plot</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
-<dd>Whether to do matplotlib.pylot.show(), by default False</dd>
-<dt><strong><code>ylim_std</code></strong> :&ensp;<code>float</code>, default <code>= 0.75</code></dt>
-<dd>Optional: the standard deviation of the data at which to clip the chart, by default 0.75</dd>
-<dt><strong><code>return_fig</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
-<dd>Optional: whether to return the figure, by default True</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>(matplotlib.Figure, matplotlib.Axes)
-Tuple containing the figure and axes of the resulting plot, only returned if return_fig = True</p></div>
-</dd>
 <dt id="sprit.sprit_hvsr.process_hvsr"><code class="name flex">
 <span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, azimuth=None, verbose=False)</span>
 </code></dt>
@@ -859,7 +832,7 @@ divided by the standard deviation calculated for the entire trace. This rolling 
 </dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.remove_outlier_curves"><code class="name flex">
-<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_plot=False, verbose=False)</span>
+<span>def <span class="ident">remove_outlier_curves</span></span>(<span>hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
@@ -1130,9 +1103,13 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>plot_engine</code></strong> :&ensp;<code>any</code>, default <code>= 'matplotlib'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.remove_outlier_curves" href="index.html#sprit.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
-<dt><strong><code>show_plot</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dt><strong><code>show_outlier_plot</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
+<dt><strong><code>generate_outlier_plot</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
+<dt><strong><code>kwargs</code></strong> :&ensp;<code>any</code>, default <code>= {}</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.remove_outlier_curves" href="#sprit.sprit_hvsr.remove_outlier_curves">remove_outlier_curves()</a>)</code> for specifics.</dd>
 <dt><strong><code>check_peaks</code></strong> :&ensp;<code>function name (not an actual parameter) </code></dt>
 <dd>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks
@@ -1166,7 +1143,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a>)</code> for specifics.</dd>
 <dt><strong><code>show_table_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a>)</code> for specifics.</dd>
-<dt><strong><code>show_plot_report</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
+<dt><strong><code>show_plot_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a>)</code> for specifics.</dd>
 <dt><strong><code>show_html_report</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.sprit_hvsr.get_report" href="#sprit.sprit_hvsr.get_report">get_report()</a>)</code> for specifics.</dd>
@@ -1379,7 +1356,6 @@ besides using it determine which sites are contained within it.</p></div>
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile[&#39;site&#39;]] = currhvfile
                     self.batch_dict = self._batch_dict = batchfiledict
-
                 else:
                     # Assume it is .hvsr file you wish to import
                     batchfileglob = []
@@ -1485,7 +1461,6 @@ besides using it determine which sites are contained within it.</p></div>
 
                             if dataObj is not None:
                                 self.batch_dict[str(row[siteCol])] = dataObj
-
         else:
             raise TypeError(f&#34;The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}&#34;)
 
@@ -1510,6 +1485,7 @@ besides using it determine which sites are contained within it.</p></div>
         with open(filepath, &#39;w&#39;) as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
 
     def add(self, hvsr_data):
         &#34;&#34;&#34;Function to add HVSRData objects to existing HVSRBatch objects&#34;&#34;&#34;
@@ -2490,7 +2466,6 @@ If True, it will first try to save each file to the same directory as input_data
 <li><code><a title="sprit.sprit_hvsr.input_params" href="#sprit.sprit_hvsr.input_params">input_params</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.plot_azimuth" href="#sprit.sprit_hvsr.plot_azimuth">plot_azimuth</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.plot_hvsr" href="#sprit.sprit_hvsr.plot_hvsr">plot_hvsr</a></code></li>
-<li><code><a title="sprit.sprit_hvsr.plot_stream" href="#sprit.sprit_hvsr.plot_stream">plot_stream</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.process_hvsr" href="#sprit.sprit_hvsr.process_hvsr">process_hvsr</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.read_tromino_files" href="#sprit.sprit_hvsr.read_tromino_files">read_tromino_files</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.remove_noise" href="#sprit.sprit_hvsr.remove_noise">remove_noise</a></code></li>

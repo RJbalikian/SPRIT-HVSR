@@ -156,7 +156,7 @@ hljs.highlightAll();
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data, title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', show_curves=True, annotate_curves=False, curve_alignment='peak', grid_size='auto', orientation='WE', interpolation_type='cloughtocher', surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False, depth_limit=150, minimum_elevation=None, show_bedrock_surface=True, return_data_batch=True, show_cross_section=True, verbose=False, **kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data, title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', show_curves=True, annotate_curves=False, curve_alignment='peak', grid_size='auto', orientation='WE', interpolation_type='cloughtocher', interpolate_log_values=True, surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False, depth_limit=150, minimum_elevation=None, show_bedrock_surface=True, return_data_batch=True, show_cross_section=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Functio to plot a cross section given an HVSRBatch or similar object</p>
@@ -195,6 +195,8 @@ Should be either "WE", "EW", "NS", or "SN", by default 'WE'.</dd>
 <dd>Interpolation type to use. Uses scipy.interpolation.
 Options include: 'cloughtocher', 'nearest neighbor', 'linear',
 or 'radial basis function', by default 'cloughtocher'.</dd>
+<dt><strong><code>interpolate_log_values</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether to use log values of the H/V curve for interpolation (can be useful for better normalizing data)</dd>
 <dt><strong><code>surface_elevations</code></strong> :&ensp;<code>shapely.LineString</code>, optional</dt>
 <dd>A shapely.LineString object containing surface elevation coordinates along cross section path.
 If None, uses elevation data in HVSRBatch specified by hvsr_data, by default None.</dd>
@@ -228,7 +230,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_input_stream"><code class="name flex">
-<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data, stream=None, input_fig=None, spectrogram_component='Z', show_plot=True, return_fig=False)</span>
+<span>def <span class="ident">plot_input_stream</span></span>(<span>hv_data, stream=None, input_fig=None, plot_engine='plotly', spectrogram_component='Z', decimate=True, show_plot=True, return_fig=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Function to plot input stream using plotly.</p>
@@ -254,7 +256,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_outlier_curves"><code class="name flex">
-<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False)</span>
+<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False, rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False, discarded_curves=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Functio to plot outlier curves, including which have been excluded</p>
@@ -266,6 +268,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <dd>Which plotting library to use, by default 'plotly'</dd>
 <dt><strong><code>plotly_module</code></strong> :&ensp;<code>str = {'go', 'px'}</code></dt>
 <dd>Which plotly module to use if applicable, by default 'go'</dd>
+<dt><strong><code>remove_outliers_during_plot</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.</dd>
 <dt><strong><code>rmse_thresh</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>RMSE threshold (for removing outliers), by default 0.98</dd>
 <dt><strong><code>use_percentile</code></strong> :&ensp;<code>bool</code>, optional</dt>
