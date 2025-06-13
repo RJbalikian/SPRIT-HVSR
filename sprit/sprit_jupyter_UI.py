@@ -711,7 +711,7 @@ def create_jupyter_ui():
                     'verbose':verbose_check.value}
         return cp_kwargs
 
-    def get_get_report_kwargs():
+    def _get_get_report_kwargs():
         def get_formatted_plot_str():
             # Initialize plot string
             hvsr_plot_str = ''
@@ -860,7 +860,7 @@ def create_jupyter_ui():
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ncheck_peaks()\n\t{cp_kwargs}"
         progress_bar.value = 0.9
 
-        gr_kwargs = get_get_report_kwargs()
+        gr_kwargs = _get_get_report_kwargs()
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}\n\n"
         hvsr_data.get_report(report_format='print') # Just in case print wasn't included
@@ -939,7 +939,7 @@ def create_jupyter_ui():
 
         return plot_list_list
 
-    def parse_hv_plot_list(hv_data, hvsr_plot_list, azimuth='HV'):
+    def _parse_hv_plot_list(hv_data, hvsr_plot_list, azimuth='HV'):
         hvsr_data = hv_data
         x_data = hvsr_data.x_freqs['Z']
         hvsrDF = hvsr_data.hvsr_windows_df
@@ -1036,7 +1036,7 @@ def create_jupyter_ui():
                                     row=1, col=1)
         return results_fig
 
-    def parse_comp_plot_list(hv_data, comp_plot_list, azimuth='HV'):
+    def _parse_comp_plot_list(hv_data, comp_plot_list, azimuth='HV'):
         
         hvsr_data = hv_data
         # Initial setup
@@ -1176,7 +1176,7 @@ def create_jupyter_ui():
                             row=compRow, col=1)
         return results_fig
 
-    def parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, azimuth='HV'):
+    def _parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, azimuth='HV'):
         hvsr_data = hv_data
         if azimuth == 'HV':
             HVCol = 'HV_Curves'
@@ -1296,17 +1296,17 @@ def create_jupyter_ui():
         #del results_fig
         results_fig = go.FigureWidget(results_subp)
 
-        results_fig = parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
+        results_fig = _parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
 
         # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
-        results_fig = parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
+        results_fig = _parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
         # Will always plot the HV Curve
         results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
                             line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'),
                             row=1, col='all')
 
         # SPEC plot
-        results_fig = parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
+        results_fig = _parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
 
         # Final figure updating
         showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
@@ -2019,13 +2019,13 @@ def create_jupyter_ui():
 
     plot_hvsr_call = widgets.Label(value=f"Plot String: '{_get_default(sprit_hvsr.get_report, 'plot_type')}'")
     def update_plot_string():
-        plot_hvsr_text = f"""Plot String: {get_get_report_kwargs()['plot_type']}"""
+        plot_hvsr_text = f"""Plot String: {_get_get_report_kwargs()['plot_type']}"""
         plot_hvsr_call.value = plot_hvsr_text
     update_plot_string()
 
     update_plot_button = widgets.Button(description='Update Plot',button_style='info',layout=widgets.Layout(height='auto', width='auto'))
     def manually_update_results_fig(change):
-        plot_string = get_get_report_kwargs()['plot_type']
+        plot_string = _get_get_report_kwargs()['plot_type']
         update_results_fig(hvsr_results, plot_string)
         sprit_tabs.selected_index = 4
 
