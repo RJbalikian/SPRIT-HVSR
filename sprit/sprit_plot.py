@@ -1152,10 +1152,10 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
 
     hvsr_data = hv_data
 
-    xlim = [hvsr_data.hvsr_band[0], hvsr_data.hvsr_band[1]]
     plotymax = max(hvsr_data.hvsrp2['HV']) + (max(hvsr_data.hvsrp2['HV']) - max(hvsr_data.hvsr_curve))
+    if plotymax > hvsr_data.BestPeak['HV']['A0'] * 1.5:
+        plotymax = hvsr_data.BestPeak['HV']['A0'] * 1.5
     ylim = [0, plotymax]
-
     if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
         hvsr_data = hvsr_data[0]
 
@@ -1291,7 +1291,8 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
                     range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
                     side='bottom', showticklabels=showHVTickLabels,
                     row=1, col=1)
-    results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1, secondary_y=False, range=ylim)
+    results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1, 
+                             secondary_y=False, range=ylim)
 
     # Update Component plot
     results_fig.update_xaxes(type='log', overlaying='x', showticklabels=showComptickLabels, title_standoff=0,

@@ -1250,7 +1250,7 @@ def main():
             if len(utcdtWin) != 1:
                 statusMsg += 's'
 
-            statusCol, updateCol = st.columns([0.8, 0.2])
+            updateCol, statusCol = st.columns([0.2, 0.8])
             with statusCol.status(statusMsg):
                 st.dataframe(pd.DataFrame(utcdtWin, columns=['Window Start Time (UTC)', 'Window End Time (UTC)']))
             updateCol.button("Rerun results statistics",
@@ -1322,7 +1322,7 @@ def main():
                 statusMsg += 's'
 
             #st.toast(statusMsg)
-            statusCol, updateCol = st.columns([0.8, 0.2])
+            updateCol, statusCol = st.columns([0.2, 0.8])
             with statusCol.status(statusMsg):
                 st.dataframe(pd.DataFrame(outlierMsgList, columns=outlierMsgCols))
             updateCol.button("Rerun results statistics", on_click=update_from_outlier_selection,

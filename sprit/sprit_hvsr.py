@@ -10059,9 +10059,10 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        ylim = [0, max(hvsr_data['hvsrp2'][azimuth])*1.1]
-        if ylim[1] > 25:
-            ylim = [0, max(hvsr_data['hvsr_curve']+1)]
+        plotymax = max(hvsr_data.hvsrp2['HV']) + (max(hvsr_data.hvsrp2['HV']) - max(hvsr_data.hvsr_curve))
+        if plotymax > hvsr_data.BestPeak['HV']['A0'] * 1.5:
+            plotymax = hvsr_data.BestPeak['HV']['A0'] * 1.5
+        ylim = [0, plotymax]
     else:
         ylim = kwargs['ylim']
     
