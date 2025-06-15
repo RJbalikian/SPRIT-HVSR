@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 2.8.1 documentation</title>
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 2.8.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=cd87aae0"></script>
+        <script src="../../_static/documentation_options.js?v=fa7f208a"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1328,7 +1328,7 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">utcdtWin</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">statusMsg</span> <span class="o">+=</span> <span class="s1">&#39;s&#39;</span>
 
-            <span class="n">statusCol</span><span class="p">,</span> <span class="n">updateCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">])</span>
+            <span class="n">updateCol</span><span class="p">,</span> <span class="n">statusCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">])</span>
             <span class="k">with</span> <span class="n">statusCol</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">statusMsg</span><span class="p">):</span>
                 <span class="n">st</span><span class="o">.</span><span class="n">dataframe</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">utcdtWin</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Window Start Time (UTC)&#39;</span><span class="p">,</span> <span class="s1">&#39;Window End Time (UTC)&#39;</span><span class="p">]))</span>
             <span class="n">updateCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Rerun results statistics&quot;</span><span class="p">,</span>
@@ -1400,7 +1400,7 @@
                 <span class="n">statusMsg</span> <span class="o">+=</span> <span class="s1">&#39;s&#39;</span>
 
             <span class="c1">#st.toast(statusMsg)</span>
-            <span class="n">statusCol</span><span class="p">,</span> <span class="n">updateCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">])</span>
+            <span class="n">updateCol</span><span class="p">,</span> <span class="n">statusCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">])</span>
             <span class="k">with</span> <span class="n">statusCol</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">statusMsg</span><span class="p">):</span>
                 <span class="n">st</span><span class="o">.</span><span class="n">dataframe</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">outlierMsgList</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">outlierMsgCols</span><span class="p">))</span>
             <span class="n">updateCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Rerun results statistics&quot;</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="n">update_from_outlier_selection</span><span class="p">,</span>

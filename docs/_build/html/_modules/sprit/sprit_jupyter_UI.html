@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_jupyter_UI &mdash; sprit 2.8.1 documentation</title>
+  <title>sprit.sprit_jupyter_UI &mdash; sprit 2.8.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=cd87aae0"></script>
+        <script src="../../_static/documentation_options.js?v=fa7f208a"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -786,7 +786,7 @@
                     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">cp_kwargs</span>
 
-    <span class="k">def</span> <span class="nf">get_get_report_kwargs</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">_get_get_report_kwargs</span><span class="p">():</span>
         <span class="k">def</span> <span class="nf">get_formatted_plot_str</span><span class="p">():</span>
             <span class="c1"># Initialize plot string</span>
             <span class="n">hvsr_plot_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -935,7 +935,7 @@
         <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">check_peaks()</span><span class="se">\n\t</span><span class="si">{</span><span class="n">cp_kwargs</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">progress_bar</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mf">0.9</span>
 
-        <span class="n">gr_kwargs</span> <span class="o">=</span> <span class="n">get_get_report_kwargs</span><span class="p">()</span>
+        <span class="n">gr_kwargs</span> <span class="o">=</span> <span class="n">_get_get_report_kwargs</span><span class="p">()</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="o">**</span><span class="n">gr_kwargs</span><span class="p">)</span>
         <span class="n">log_textArea</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">get_report()</span><span class="se">\n\t</span><span class="si">{</span><span class="n">gr_kwargs</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
         <span class="n">hvsr_data</span><span class="o">.</span><span class="n">get_report</span><span class="p">(</span><span class="n">report_format</span><span class="o">=</span><span class="s1">&#39;print&#39;</span><span class="p">)</span> <span class="c1"># Just in case print wasn&#39;t included</span>
@@ -1014,7 +1014,7 @@
 
         <span class="k">return</span> <span class="n">plot_list_list</span>
 
-    <span class="k">def</span> <span class="nf">parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="n">x_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span>
         <span class="n">hvsrDF</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span>
@@ -1111,7 +1111,7 @@
                                     <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">results_fig</span>
 
-    <span class="k">def</span> <span class="nf">parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="c1"># Initial setup</span>
@@ -1251,7 +1251,7 @@
                             <span class="n">row</span><span class="o">=</span><span class="n">compRow</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">results_fig</span>
 
-    <span class="k">def</span> <span class="nf">parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">hv_data</span>
         <span class="k">if</span> <span class="n">azimuth</span> <span class="o">==</span> <span class="s1">&#39;HV&#39;</span><span class="p">:</span>
             <span class="n">HVCol</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
@@ -1371,17 +1371,17 @@
         <span class="c1">#del results_fig</span>
         <span class="n">results_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">FigureWidget</span><span class="p">(</span><span class="n">results_subp</span><span class="p">)</span>
 
-        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">parse_comp_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">_parse_comp_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="c1"># HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)</span>
-        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">parse_hv_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">_parse_hv_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="c1"># Will always plot the HV Curve</span>
         <span class="n">results_fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">],</span><span class="n">y</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">,</span>
                             <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">:</span><span class="mf">1.5</span><span class="p">},</span><span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HVSR Curve&#39;</span><span class="p">),</span>
                             <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
 
         <span class="c1"># SPEC plot</span>
-        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">parse_spec_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">subplot_num</span><span class="o">=</span><span class="n">spec_plot_row</span><span class="p">)</span>
+        <span class="n">results_fig</span> <span class="o">=</span> <span class="n">_parse_spec_plot_list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="o">=</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">subplot_num</span><span class="o">=</span><span class="n">spec_plot_row</span><span class="p">)</span>
 
         <span class="c1"># Final figure updating</span>
         <span class="n">showtickLabels</span> <span class="o">=</span> <span class="p">(</span><span class="n">plot_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">==</span><span class="p">[]</span> <span class="ow">or</span> <span class="s1">&#39;+&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plot_list</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
@@ -2094,13 +2094,13 @@
 
     <span class="n">plot_hvsr_call</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Plot String: &#39;</span><span class="si">{</span><span class="n">_get_default</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;plot_type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">update_plot_string</span><span class="p">():</span>
-        <span class="n">plot_hvsr_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Plot String: </span><span class="si">{</span><span class="n">get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">plot_hvsr_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Plot String: </span><span class="si">{</span><span class="n">_get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span>
         <span class="n">plot_hvsr_call</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">plot_hvsr_text</span>
     <span class="n">update_plot_string</span><span class="p">()</span>
 
     <span class="n">update_plot_button</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Update Plot&#39;</span><span class="p">,</span><span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span><span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">))</span>
     <span class="k">def</span> <span class="nf">manually_update_results_fig</span><span class="p">(</span><span class="n">change</span><span class="p">):</span>
-        <span class="n">plot_string</span> <span class="o">=</span> <span class="n">get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span>
+        <span class="n">plot_string</span> <span class="o">=</span> <span class="n">_get_get_report_kwargs</span><span class="p">()[</span><span class="s1">&#39;plot_type&#39;</span><span class="p">]</span>
         <span class="n">update_results_fig</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_string</span><span class="p">)</span>
         <span class="n">sprit_tabs</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="mi">4</span>
 
