@@ -307,7 +307,7 @@ def main():
 
             # Other updates
             st.session_state.azimuth_unit = run_kwargs['azimuth_unit'] = '°'
-            st.session_state.plot_engine = run_kwargs['plot_engine'] = "Plotly"
+            st.session_state.plot_engine = run_kwargs['plot_engine'] = "Matplotlib"
             
 
             # Horizontal_method
@@ -554,6 +554,14 @@ def main():
         display_read_data(do_setup_tabs=False)
 
 
+    def do_interactive_display():
+        if st.session_state.interactive_display:
+            st.session_state.plot_engine = "Plotly"
+        else:
+            st.session_state.plot_engine = "Matplotlib"
+
+
+
     def display_read_data(do_setup_tabs=False):
         
         if do_setup_tabs:
@@ -601,6 +609,9 @@ def main():
         # Set up container for output data
         setup_main_container(do_setup_tabs=True)
         st.toast('Displaying results')
+
+        if st.session_state.interactive_display:
+           st.session_state.plot_engine = "Plotly"
         
         if st.session_state.plot_engine == "Plotly":
             # Print main results right away if taking time to plot others
@@ -774,8 +785,9 @@ def main():
             dlHVSR.download_button(
                 label="Pickled (.hvsr)",
                 data=hvsrPickle,
-                file_name=f"{hvData.site}_Pickled_{hvID}_{nowTimeStr}.hvsr",
+                file_name=f"{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_app.hvsr",
                 #on_click=display_results,
+                mime='application/octet-stream',
                 icon=":material/database:")
         except Exception as e:
             print(e)
@@ -784,7 +796,6 @@ def main():
                 label=".hvsr not available",
                 data='HVSR Data ',
                 disabled=True,
-                #on_click=display_results,
                 icon=":material/database:")
 
 
@@ -1512,6 +1523,7 @@ def main():
                             )
 
             st.toggle(label='Display interactive charts (slower)', value=False, key='interactive_display',
+                      on_change=do_interactive_display,
                       help="Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.")
 
             if VERBOSE:
