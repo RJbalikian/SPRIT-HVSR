@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.8.2 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.8.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=fa7f208a"></script>
+        <script src="../../_static/documentation_options.js?v=5e07a493"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -607,8 +607,7 @@
                      <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     
     <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">layout</span><span class="o">=</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">layout</span><span class="o">=</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span><span class="c1">#, figsize=(5, 15))</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">])</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Calibrated Depth to Interface&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s1">&#39;small&#39;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labeltop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -627,7 +626,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">curvePlot</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span>
         <span class="n">xBase</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
-        <span class="n">xCap</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
+        <span class="n">xCap</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">BestPeak</span><span class="p">[</span><span class="s1">&#39;HV&#39;</span><span class="p">][</span><span class="s1">&#39;A0&#39;</span><span class="p">]</span><span class="c1">#max(hvsr_results.hvsr_curve)</span>
         <span class="n">xLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">xBase</span><span class="o">-</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">),</span> <span class="n">xCap</span><span class="o">+</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">)]</span>
  
     <span class="k">if</span> <span class="n">use_elevation</span><span class="p">:</span>
@@ -704,9 +703,8 @@
             <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [ft]&#39;</span><span class="p">)</span>
         
     <span class="c1"># Plot peak location</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
-               <span class="n">xmin</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xCap</span><span class="p">,</span>
-               <span class="n">linestyles</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
+               <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xBase</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xCap</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     
@@ -718,12 +716,16 @@
     
     <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;H/V Ratio&quot;</span>
     <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
-        <span class="n">xlabel</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Normalized)&#39;</span> 
+        <span class="n">xlabel</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Normalized)&#39;</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;H/V Ratio&#39;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+
     <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">])</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">show_depth_curve</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
