@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_cli &mdash; sprit 2.8.4 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_cli &mdash; sprit 2.8.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=958e345e"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=31f6b047"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -80,16 +78,16 @@
 <span class="sd">The input_data parameter of input_params() is the only required argument, though for your data processing to work correctly and to be formatted correctly, you may need to pass others as well.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">argparse</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit</span>  <span class="c1"># When distributed</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit</span>  <span class="c1"># When distributed</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit_hvsr</span> <span class="k">as</span> <span class="nn">sprit</span> <span class="c1">#When testing</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit</span> <span class="c1">#When testing</span>
 
 <div class="viewcode-block" id="get_param_docstring">
 <a class="viewcode-back" href="../../sprit.sprit_cli.html#sprit.sprit_cli.get_param_docstring">[docs]</a>
-<span class="k">def</span> <span class="nf">get_param_docstring</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_param_docstring</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">param_name</span><span class="p">):</span>
     <span class="n">function_docstring</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span>
 
     <span class="c1"># Search for the parameter&#39;s docstring within the function&#39;s docstring</span>
@@ -110,7 +108,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../sprit.sprit_cli.html#sprit.sprit_cli.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;CLI for SPRIT HVSR package (specifically the sprit.run() function)&#39;</span><span class="p">)</span>
     
     <span class="n">hvsrFunctions</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>

@@ -3,20 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.1">
+<meta name="generator" content="pdoc3 0.11.6">
 <title>sprit.sprit_calibration API documentation</title>
 <meta name="description" content="This module will be used for calibration of the ambient HVSR data acquired near wells
 to derive a relation between the resonant frequency and the …">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => {
 hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
 hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
 })</script>
 </head>
 <body>
@@ -37,9 +48,403 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sprit.sprit_calibration.calculate_depth"><code class="name flex">
-<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input, depth_model='ISGS_All', freq_col='Peak', calculate_depth_in_feet=False, calculate_elevation=True, show_depth_curve=True, surface_elevation_data='Elevation', bedrock_elevation_column='BedrockElevation', depth_column='BedrockDepth', verbose=False, export_path=None, swave_velocity=563.0, decimal_places=3, depth_model_in_latex=False, fig=None, ax=None, **kwargs)</span>
+<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model='ISGS_All',<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>show_depth_curve=True,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_column='BedrockElevation',<br>depth_column='BedrockDepth',<br>verbose=False,<br>export_path=None,<br>swave_velocity=563.0,<br>decimal_places=3,<br>depth_model_in_latex=False,<br>fig=None,<br>ax=None,<br>**kwargs)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_depth(freq_input,
+                    depth_model=&#34;ISGS_All&#34;,
+                    freq_col=&#34;Peak&#34;,
+                    calculate_depth_in_feet=False,
+                    calculate_elevation=True,
+                    show_depth_curve=True,
+                    surface_elevation_data=&#39;Elevation&#39;,
+                    bedrock_elevation_column=&#34;BedrockElevation&#34;,
+                    depth_column=&#34;BedrockDepth&#34;,
+                    verbose=False,    # if verbose is True, display warnings otherwise not
+                    export_path=None,
+                    swave_velocity=563.0,
+                    decimal_places=3,
+                    depth_model_in_latex=False,
+                    fig=None,
+                    ax=None,
+                    #group_by = &#34;County&#34;, -&gt; make a kwarg
+                    **kwargs):
+    &#34;&#34;&#34;Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
+
+    Parameters
+    ----------
+    freq_input : HVSRData, HVSRBatch, float, int, or filepath, optional
+        Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}
+    depth_model : str, tuple, list, or dict, optional
+        Model describing a relationship between frequency and depth, by default &#34;ISGS_All&#34;
+    calculate_depth_in_feet : bool, optional
+        Whether to calculate depth in feet (in addition to meters, which is done by default)
+    freq_col : str, optional
+        Name of the column containing the frequency information of the peak, by default &#34;Peak&#34; (per HVSRData.Table_Report output)
+    calculate_elevation : bool, optional
+        Whether or not to calculate elevation, by default True
+    surface_elevation_data : str or numeric, optional
+        The name of the column or a manually specified numeric value to use for the surface elevation value, by default &#34;Elevation&#34;
+    bedrock_elevation_column : str, optional
+        The name of the column in the TableReport for the bedrock elevation of the point.
+        This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default &#34;BedrockElevation&#34;
+    depth_column : str, optional
+        _description_, by default &#34;BedrockDepth&#34;
+    verbose : bool, optional
+        Whether or not to print information about the processing to the terminal, by default False
+    export_path : _type_, optional
+        _description_, by default None
+    swave_velocity : float, optional
+        Shear wave velocity to use for depth calculations in meters/second, 
+        if using the quarter wavelength shear wave velocity method, by default 563.0
+    decimal_places : int, optional
+        Number of decimal places to round depth results, by default 3
+
+    Returns
+    -------
+    HVSRBatch or list if those are input; otherwise, HVSRData object
+        The returns are the same type as freq_input, except filepath which returns pandas.DataFrame
+
+    &#34;&#34;&#34;
+    orig_args = locals()
+    ip_params, fd_params = __get_ip_df_params()
+
+    # Break out if list (of random or not) items
+    if isinstance(freq_input, (list, tuple)):
+        outputList = []
+        for item in freq_input:
+            if &#39;freq_input&#39; in orig_args:
+                orig_args.pop(&#39;freq_input&#39;)
+            calc_depth_kwargs = orig_args
+            outputList.append(calculate_depth(freq_input=item, **calc_depth_kwargs))
+        return outputList
+    
+    # Break out for Batch data
+    if isinstance(freq_input, sprit_hvsr.HVSRBatch):
+        newBatchList = []
+        # Iterate through each site/HVSRData object and run calculate_depth()
+        for site in freq_input:
+            if &#39;freq_input&#39; in orig_args:
+                orig_args.pop(&#39;freq_input&#39;)
+            calc_depth_kwargs = orig_args
+            newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
+        return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
+    
+    # initialize values
+    a = 0
+    b = 0
+    params = None
+
+    # Fetch parameters for frequency-depth model
+    if isinstance(depth_model, (tuple, list, dict)):
+        (a, b) = depth_model
+        if a == 0 or b == 0:
+            raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
+    elif isinstance(depth_model, str):
+
+        if depth_model.casefold() in list(map(str.casefold, model_parameters)):
+            for k, v in model_parameters.items():
+                if depth_model.casefold() == k.casefold():
+                    (a, b) = v
+                    break
+
+        elif depth_model.casefold() in swave:
+            params = depth_model.casefold()
+
+        elif depth_model.casefold() == &#34;all&#34;:
+            params = depth_model.casefold()
+
+        else:   # parameters a and b could be passed in as a parsable string
+            params = depth_model.split(&#39;,&#39;)
+            # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
+            # depth_model)]  #figure this out later for floating points; works for integers
+            (a, b) = params
+            if a == 0 or b == 0:
+                raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
+
+    if b &lt; 0:
+        b = b * -1
+
+    # Get frequency input
+    # Checking if freq_input is HVSRData object
+    if isinstance(freq_input, (sprit_hvsr.HVSRData, str, bytes, os.PathLike, float, int)):
+        # Get the table report
+        # If not HVSRData object, let&#39;s make a dummy one
+        if not isinstance(freq_input, sprit_hvsr.HVSRData):
+            # Check if freq_input is float/int, convert to HVSRData (use kwargs too)
+            if isinstance(freq_input, (float, int)):
+                if freq_input &lt;= 0:
+                    raise ValueError(&#34;Peak Frequency cannot be zero or negative&#34;)
+                
+                if isinstance(surface_elevation_data, numbers.Number):
+                    surface_elevation_col = &#39;Elevation&#39;
+                else:
+                    surface_elevation_col = surface_elevation_data
+                
+                tableReport = pd.DataFrame(columns=[&#39;Site Name&#39;,
+                                                    &#39;Acq_Date&#39;,
+                                                    &#39;XCoord&#39;,
+                                                    &#39;YCoord&#39;,
+                                                    surface_elevation_col,
+                                                    freq_col,
+                                                    &#39;Peak_StDev&#39;
+                                                    &#39;PeakPasses&#39;])
+                tableReport.loc[0, freq_col] = freq_input
+                
+                # Get extra parameters read in via kwargs, if applicable
+                paramDict = {&#39;input_data&#39;: &#34;from_user&#34;}
+                if isinstance(surface_elevation_data, numbers.Number):
+                    kwargs[surface_elevation_col] = surface_elevation_data
+                    surface_elevation_data = &#39;Elevation&#39;
+                
+                for kw, val in kwargs.items():
+                    if kw.lower() in [col.lower() for col in tableReport.columns]:
+                        colInd = [col.lower() for col in tableReport.columns].index(kw.lower())
+                        tableReport.iloc[0, colInd] = val
+                        
+                    if kw in ip_params or kw in fd_params:
+                        paramDict[kw] = val
+                paramDict[&#39;Table_Report&#39;] = tableReport
+                freq_input = sprit_hvsr.HVSRData(paramDict)
+            # Otherwise, assume it is a file to read in
+            else:
+                if pathlib.Path(freq_input).is_dir():
+                    filepathGlob = pathlib.Path(freq_input).glob(&#39;*.hvsr&#39;)
+                    batchList = []
+                    for hvsrfile in filepathGlob:
+                        batchList.append(sprit_hvsr.import_data(hvsrfile))
+                    
+                    batchArgs = orig_args.copy()
+                    try:
+                        del batchArgs[&#39;freq_input&#39;]
+                    except KeyError:
+                        pass
+                    
+                    hvDataOutList = []
+                    for hvData in batchList:
+                        hvDataOutList.append(calculate_depth(freq_input=hvData,
+                                                             **batchArgs))
+                    return sprit_hvsr.HVSRBatch(hvDataOutList)
+                # First, check if it is a filepath
+                freqDataPath = pathlib.Path(freq_input)
+                if not freqDataPath.exists():
+                    raise RuntimeError(f&#34;Specified filepath for frequency data does not exist: freq_input={freq_input}&#34;)
+                
+                if &#39;hvsr&#39; not in freqDataPath.suffix.lower():
+                    if verbose:
+                        print(&#39;Assuming file is a table readable by pandas.read_csv(), with column containing frequency data specified by freq_col={freq_col}&#39;)
+                    tableReport = pd.read_csv(freqDataPath)
+                                    
+                    # Get parameters from table
+                    param_dict_list = [{&#39;input_data&#39;: freq_input,
+                                        &#34;Table_Report&#34;: tableReport}] * tableReport.shape[0]
+                
+                    # Get parameters directly from table
+                    tableCols = tableReport.columns
+                    for col in tableCols:
+                        if col.lower() in ip_params or col.lower() in fd_params:
+                            for i, (ind, row) in enumerate(tableReport.iterrows()):
+                                param_dict_list[i][col.lower()] = row[col]
+                    
+                    # Get/overwrite table parameters with directly input parameters
+                    hvdList = []
+                    for parDict in param_dict_list:
+                        for kw, val in kwargs.items():
+                            if kw in ip_params or kw in fd_params:
+                                parDict[kw] = val
+                        hvdList.append(sprit_hvsr.HVSRData(parDict))
+
+                    # Either make HVSRData or HVSRBatch object
+                    if len(hvdList) &gt; 1:
+                        freq_input = sprit_hvsr.HVSRBatch(hvdList, df_as_read=pd.DataFrame(param_dict_list))
+                    else:
+                        freq_input = hvdList[0]
+
+                else:
+                    if verbose:
+                        print(&#39;Assuming file with .*hvsr* suffix is an HVSR data file created by SpRIT.&#39;)
+                    freq_input = sprit_hvsr.import_data(freqDataPath)
+                    tableReport = freq_input.Table_Report
+        elif isinstance(freq_input, sprit_hvsr.HVSRData):
+            if not hasattr(freq_input, &#39;Table_Report&#39;):
+                if verbose:
+                    warn(&#34;Passed HVSRData Object has no attribute Table_Report, attempting to generate one.&#34;)
+                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;csv&#39;)
+            else:
+                tableReport = freq_input.Table_Report
+
+        # Break out for Batch data (in case it was generated during readin of file, for example)
+        if isinstance(freq_input, sprit_hvsr.HVSRBatch):
+            newBatchList = []
+            # Iterate through each site/HVSRData object and run calculate_depth()
+            for site in freq_input:
+                if &#39;freq_input&#39; in orig_args:
+                    orig_args.pop(&#39;freq_input&#39;)
+                calc_depth_kwargs = orig_args
+                newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
+            return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)
+
+        # Calibrate data
+        pf_values = tableReport[freq_col].values
+
+        calib_data = []
+        depthModelList = []
+        depthModelTypeList = []
+
+        for site_peak_freq in pf_values:
+            try:
+                if depth_model in swave:
+                    calib_data.append(swave_velocity/(4*site_peak_freq))
+                    
+                    if depth_model_in_latex:
+                        dModelStr = f&#34;$\\frac{{{swave_velocity}}}{{4\\times{site_peak_freq}}}$&#34;
+                    else:
+                        dModelStr = f&#34;{swave_velocity}/(4 * {site_peak_freq})&#34;
+                    depthModelList.append(dModelStr)
+                    depthModelTypeList.append(&#39;Quarter Wavelength&#39;)
+                else:
+                    if depth_model == &#34;all&#34;:
+                        a_list = []
+                        b_list = []
+                        for name, model_params in model_parameters.items():
+                            a_list.append(model_params[0])
+                            b_list.append(model_params[1])
+                        (a, b) = (np.nanmean(a_list), np.nanmean(b_list))
+
+                    calib_data.append(a*(site_peak_freq**-b))
+                    if hasattr(freq_input, &#39;x_freqs&#39;):
+                        freq_input[&#39;x_depth_m&#39;] = {&#39;Z&#39;: np.around([a*(f**-b) for f in freq_input[&#34;x_freqs&#34;][&#39;Z&#39;]], decimal_places),
+                                                   &#39;E&#39;: np.around([a*(f**-b) for f in freq_input[&#34;x_freqs&#34;][&#39;E&#39;]], decimal_places),
+                                                   &#39;N&#39;: np.around([a*(f**-b) for f in freq_input[&#34;x_freqs&#34;][&#39;N&#39;]], decimal_places)}
+
+                        # Calculate depth in feet
+                        freq_input[&#39;x_depth_ft&#39;] = {&#39;Z&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;Z&#39;]*3.281, decimal_places),
+                                                    &#39;E&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;E&#39;]*3.281, decimal_places),
+                                                    &#39;N&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;N&#39;]*3.281, decimal_places)}
+                             
+                    if depth_model_in_latex:
+                        dModelStr = f&#34;{a} \\times {{{site_peak_freq}}}^{{-{b}}}&#34;
+                    else:
+                        dModelStr = f&#34;{a} * {site_peak_freq}^-{b}&#34;
+                    depthModelList.append(dModelStr)
+                    depthModelTypeList.append(&#39;Power Law&#39;)
+
+            except Exception as e:
+                raise ValueError(&#34;Error in calculating depth, check HVSRData object for empty values or missing columns&#34;) from e
+
+        # Record depth data in table
+        tableReport[depth_column] = np.around(calib_data, decimal_places)
+        
+        # Calculate elevation data
+        if calculate_elevation and surface_elevation_data in tableReport.columns:
+            tableReport[bedrock_elevation_column] = np.around((float(tableReport.loc[0, surface_elevation_data]) - float(tableReport.loc[0, depth_column])), decimal_places)
+            if hasattr(freq_input, &#39;x_depth_m&#39;):
+                freq_input[&#39;x_elev_m&#39;] = {&#39;Z&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;Z&#39;]], decimal_places),
+                                          &#39;E&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;E&#39;]], decimal_places),
+                                          &#39;N&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;N&#39;]], decimal_places)}
+
+        if calculate_depth_in_feet:
+            tableReport[depth_column+&#39;_ft&#39;] = np.around(calib_data*3.281,
+                                                     decimals=decimal_places)
+            if calculate_elevation and surface_elevation_data in tableReport.columns:
+                tableReport[bedrock_elevation_column+&#39;_ft&#39;] = np.around(tableReport[bedrock_elevation_column] * 3.281,
+                                                                decimals=decimal_places)
+                if hasattr(freq_input, &#39;x_elev_m&#39;) and not hasattr(freq_input[&#39;x_depth_ft&#39;]):
+                    # Calculate depth in feet
+                    freq_input[&#39;x_depth_ft&#39;] = {&#39;Z&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;Z&#39;]*3.281, decimal_places),
+                                                &#39;E&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;E&#39;]*3.281, decimal_places),
+                                                &#39;N&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;N&#39;]*3.281, decimal_places)}
+
+        tableReport[&#34;DepthModel&#34;] = depthModelList
+        tableReport[&#34;DepthModelType&#34;] = depthModelTypeList
+
+        # Do plotting work
+        if fig is None and ax is None:
+            fig, ax = plt.subplots()
+        elif fig is not None:
+            ax = fig.get_axes()
+            if len(ax) == 1:
+                ax = ax[0]
+
+        if hasattr(freq_input, &#39;hvsr_curve&#39;):
+            pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                     show_depth_curve=show_depth_curve,
+                                                     fig=fig, ax=ax,
+                                                     **pdc_kwargs)
+        else:
+            surfElevVal = tableReport.loc[0, surface_elevation_col]
+            brElevVal = tableReport.loc[0, bedrock_elevation_column]
+            if np.isnan(surfElevVal):
+                surfElevVal = 0
+                
+            if np.isnan(brElevVal):
+                brElevVal = tableReport.loc[0, depth_column]
+                yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+            else:
+                yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
+
+            ax.axhline(0, xmin=-0.1, xmax=1, c=&#39;k&#39;)
+            ax.plot([0, 0], [0, brElevVal], linestyle=&#39;dotted&#39;, c=&#39;k&#39;)
+            
+            ax.scatter(x=0, y=surfElevVal, c=&#39;k&#39;, marker=&#39;v&#39;)
+            ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
+            
+            spc = &#34; &#34;
+            ax.text(x=0, y=brElevVal, 
+                    s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
+                    va=&#39;top&#39;)
+            
+            ax.set_xlim([-0.1, 1])
+            ax.set_ylim(yLIMITS)
+            
+            ax.set_ylabel(&#39;Depth [m]&#39;)
+            ax.set_xticks([])
+            titleText = f&#39;Calibrated Depth from Input Frequency&#39;
+            fig.suptitle(titleText)
+            if isinstance(depth_model, (tuple, list)):
+                aText = depth_model[0]
+                bText = np.sqrt(depth_model[1]**2)*-1
+                ax.text(x=0,
+                        y=surfElevVal, va=&#39;bottom&#39;,
+                        s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
+            
+        plt.sca(ax)
+        if show_depth_curve:
+            plt.show()
+        else:
+            plt.close()
+        
+        # Export as specified
+        if export_path is not None and os.path.exists(export_path):
+            if export_path == freq_input:
+                tableReport.to_csv(freq_input)
+                if verbose:
+                    print(&#34;Saving data in the original file&#34;)
+
+            else:
+                if &#34;/&#34; in export_path:
+                    temp = os.path.join(export_path+ &#34;/&#34;+ site + &#34;.csv&#34;)
+                    tableReport.to_csv(temp)
+                
+                else:
+                    temp = os.path.join(export_path+&#34;\\&#34;+ site + &#34;.csv&#34;)
+                    tableReport.to_csv(temp)
+
+                if verbose:
+                    print(&#34;Saving data to the path specified&#34;)
+        
+        
+        freq_input.Table_Report = tableReport
+        return freq_input
+            
+    else:
+        raise RuntimeError(f&#34;The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}&#34;)</code></pre>
+</details>
 <div class="desc"><p>Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -77,9 +482,159 @@ if using the quarter wavelength shear wave velocity method, by default 563.0</dd
 </dl></div>
 </dd>
 <dt id="sprit.sprit_calibration.calibrate"><code class="name flex">
-<span>def <span class="ident">calibrate</span></span>(<span>calib_filepath, calib_type='power', peak_freq_col='PeakFrequency', calib_depth_col='Bedrock_Depth', outlier_radius=None, xcoord_col='xcoord', ycoord_col='ycoord', bedrock_type=None, show_calibration_plot=True)</span>
+<span>def <span class="ident">calibrate</span></span>(<span>calib_filepath,<br>calib_type='power',<br>peak_freq_col='PeakFrequency',<br>calib_depth_col='Bedrock_Depth',<br>outlier_radius=None,<br>xcoord_col='xcoord',<br>ycoord_col='ycoord',<br>bedrock_type=None,<br>show_calibration_plot=True)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calibrate(calib_filepath, calib_type=&#34;power&#34;, peak_freq_col=&#34;PeakFrequency&#34;, calib_depth_col=&#34;Bedrock_Depth&#34;, 
+            outlier_radius=None, xcoord_col=&#39;xcoord&#39;, ycoord_col=&#39;ycoord&#39;, bedrock_type=None,
+            show_calibration_plot=True):
+    
+    &#34;&#34;&#34;The calibrate function allows input of table with f0 and known depths to generate a power-law regression relationship.
+
+    Parameters
+    ----------
+    calib_filepath : pathlike object
+        Path to file readable by pandas.read_csv() with a column for frequencies
+        and a column for depths.
+    calib_type : str, optional
+        Which calibration to use. Currently only power-law is supported, by default &#34;power&#34;
+    outlier_radius : None or float, optional
+        Radius (in CRS of coordinates) within which to use the points for calibration, by default None.
+        Not currently supported.
+    bedrock_type : str or None, optional
+        Bedrock type by which to select which points to use for calibration, by default None.
+        Not currently supported.
+    peak_freq_col : str, optional
+        Which column in calib_filepath to use for fundamental frequency values, by default &#34;PeakFrequency&#34;
+    calib_depth_col : str, optional
+        Which column in calib_filepath to use for depth values, by default &#34;Bedrock_Depth&#34;
+    show_calibration_plot : bool, optional
+        Whether to show the calibration plot, by default True
+
+    Returns
+    -------
+    tuple
+        Tuple (a, b) containing the parameters used for calibration regression.
+    &#34;&#34;&#34;
+
+    calib_data = None
+    calib_types = [&#34;Power&#34;, &#34;swave_velocity&#34;, &#34;Matrix&#34;]
+    calib_type_list = list(map(lambda x : x.casefold(), calib_types))
+    power_list = [&#34;power&#34;, &#39;power law&#39;, &#39;powerlaw&#39;, &#39;power-law&#39;, &#34;pow&#34;, &#39;p&#39;]
+    bedrock_types = [&#34;shale&#34;, &#34;limestone&#34;, &#34;dolomite&#34;,
+                     &#34;sedimentary&#34;, &#34;igneous&#34;, &#34;metamorphic&#34;]
+   
+    freq_columns_names = [&#34;PeakFrequency&#34;, &#34;ResonanceFrequency&#34;, &#34;peak_freq&#34;,
+                &#34;res_freq&#34;, &#34;Peakfrequency&#34;, &#34;Resonancefrequency&#34;, &#34;PF&#34;, &#34;RF&#34;, &#34;pf&#34;, &#34;rf&#34;]
+    bedrock_depth_names = [&#34;BedrockDepth&#34;, &#34;DepthToBedrock&#34;, &#34;bedrock_depth&#34;,
+                            &#34;depth_bedrock&#34;, &#34;depthtobedrock&#34;, &#34;bedrockdepth&#34;]
+
+    #if calib_type.lower() in power_list:
+
+    depthDataDF = pd.read_csv(calib_filepath)
+
+    depths = depthDataDF[calib_depth_col]
+    freqs = depthDataDF[peak_freq_col]
+
+    def hvsrPowerLaw(f0, a, b):
+        return a*f0**b
+
+    popt, pcov = curve_fit(hvsrPowerLaw, freqs, depths)
+
+    if show_calibration_plot:
+        plt.loglog(sorted(freqs), sorted(hvsrPowerLaw(freqs, popt[0], popt[1]), reverse=True), 
+                    linestyle=&#39;dotted&#39;, linewidth=0.5,
+                    label=f&#34;${popt[0]:.2f} * f_0 ^{{{popt[1]:0.3f}}}$&#34;)
+        plt.scatter(freqs, depths, label=f&#34;a = {popt[0]:0.2f}\nb = {popt[1]:0.3f}&#34;, zorder=100)
+        ax = plt.gca()
+
+        plt.legend()
+        plt.title(f&#39;Frequency-Depth Calibration&#39;)
+        plt.xlabel(&#39;Frequency\n[Hz]&#39;)
+        plt.ylabel(&#39;Depth [m]&#39;)
+        tickList = [0.01, 0.1, 1, 10, 100, 1000]
+
+        for i, t in enumerate(tickList):
+            if min(freqs) &gt; t and min(freqs) &lt;= tickList[i+1]:
+                minX = t
+            if i!=0 and max(freqs) &gt; tickList[i-1] and max(freqs) &lt;= t:
+                maxX = t                
+        
+        for i, t in enumerate(tickList):
+            if min(depths) &gt; t and min(depths) &lt;= tickList[i+1]:
+                minY = t
+            if i !=0 and max(depths) &gt; tickList[i-1] and max(depths) &lt;= t:
+                maxY = t
+
+        plt.grid(True, which=&#39;both&#39;, axis=&#39;both&#39;, linewidth=0.5, zorder=-1)
+
+        if maxX &gt; 100:
+            xArr = [0.1, 1, 10, 100, 1000]
+            xTick = [&#39;$10^-1$&#39;, &#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;, &#39;$10^3$&#39;]
+        elif maxX &gt; 10:
+            xArr = [0.1, 1, 10, 100]
+            xTick = [&#39;$10^-1$&#39;, &#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;]
+        elif maxX &gt; 1:
+            xArr = [0.1, 1, 10]
+            xTick = [&#39;$10^-1$&#39;, &#39;$10^0$&#39;, &#39;$10^1$&#39;]
+        else:
+            xArr = [0.1, 1, 10, 100]
+            xTick = [&#39;$10^-1$&#39;, &#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;]
+
+        if minX &gt; 0.1:
+            xTick = xTick[1:]
+            xArr = xArr[1:]
+        if minX &gt; 1:
+            xTick = xTick[1:]
+            xArr = xArr[1:]
+        if minX &gt; 10:
+            xTick = xTick[1:]
+            xArr = xArr[1:]
+
+        if maxY &gt; 100:
+            yArr = [1, 10, 100, 1000]
+            yTick = [&#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;, &#39;$10^3$&#39;]
+        elif maxY &gt; 10:
+            yArr = [1, 10, 100]
+            yTick = [&#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;]
+        elif maxY &gt; 11:
+            yArr = [1, 10, 100]
+            yTick = [&#39;$10^0$&#39;, &#39;$10^1$&#39;]
+        else:
+            yArr = [1, 10, 100]
+            yTick = [&#39;$10^0$&#39;, &#39;$10^1$&#39;, &#39;$10^2$&#39;]
+
+        if minY &gt; 1:
+            yTick = yTick[1:]
+            yArr = yArr[1:]
+        if minY &gt; 10:
+            yTick = yTick[1:]
+            yArr = yArr[1:]
+        if minY &gt; 100:
+            yTick = yTick[1:]
+            yArr = yArr[1:]
+
+        # Set major ticks
+        plt.xticks(xArr, xTick)
+        plt.yticks(yArr, yTick)
+
+        # Add minor ticks
+        ax = plt.gca()
+        ax.xaxis.set_minor_locator(LogLocator(subs=(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)))
+        ax.yaxis.set_minor_locator(LogLocator(subs=(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)))
+
+        plt.xlim([xArr[0]-0.001*xArr[0], xArr[-1]+0.005*xArr[-1]])
+        plt.ylim([yArr[0]-0.005*yArr[0], yArr[-1]+0.005*yArr[-1]])
+        plt.show()
+    
+    calibration_vals = tuple(popt)
+
+    return calibration_vals</code></pre>
+</details>
 <div class="desc"><p>The calibrate function allows input of table with f0 and known depths to generate a power-law regression relationship.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -111,6 +666,13 @@ Not currently supported.</dd>
 <span>def <span class="ident">power_law</span></span>(<span>f, a, b)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def power_law(f, a, b):
+    return a*(f**-b)</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 </dl>
@@ -139,7 +701,7 @@ Not currently supported.</dd>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 </body>
 </html>

@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.8.4 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_plot &mdash; sprit 2.8.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=958e345e"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=31f6b047"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -71,43 +69,43 @@
            <div itemprop="articleBody">
              
   <h1>Source code for sprit.sprit_plot</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">webbrowser</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">webbrowser</span>
 
-<span class="kn">from</span> <span class="nn">zoneinfo</span> <span class="kn">import</span> <span class="n">available_timezones</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">zoneinfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">available_timezones</span>
 
-<span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
-<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
-<span class="kn">import</span> <span class="nn">kaleido</span>
-<span class="kn">import</span> <span class="nn">matplotlib.dates</span> <span class="k">as</span> <span class="nn">mdates</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">obspy</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
-<span class="kn">import</span> <span class="nn">obspy</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
-<span class="kn">from</span> <span class="nn">plotly.graph_objs</span> <span class="kn">import</span> <span class="n">Heatmap</span> <span class="k">as</span> <span class="n">goHeatmap</span>
-<span class="kn">from</span> <span class="nn">plotly.express</span> <span class="kn">import</span> <span class="n">timeline</span> <span class="k">as</span> <span class="n">pxTimeline</span>
-<span class="kn">from</span> <span class="nn">plotly.express</span> <span class="kn">import</span> <span class="n">scatter</span> <span class="k">as</span> <span class="n">pxScatter</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="nn">go</span>
-<span class="kn">import</span> <span class="nn">plotly.subplots</span> <span class="k">as</span> <span class="nn">subplots</span>
-<span class="kn">from</span> <span class="nn">plotly.subplots</span> <span class="kn">import</span> <span class="n">make_subplots</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span><span class="p">,</span> <span class="n">interpolate</span>
-<span class="kn">import</span> <span class="nn">shapely</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ipywidgets</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">widgets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">clear_output</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">kaleido</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.dates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mdates</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">obspy</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTCDateTime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">obspy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Heatmap</span> <span class="k">as</span> <span class="n">goHeatmap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeline</span> <span class="k">as</span> <span class="n">pxTimeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter</span> <span class="k">as</span> <span class="n">pxScatter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">subplots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_subplots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span><span class="p">,</span> <span class="n">interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shapely</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit_hvsr</span>
-    <span class="kn">import</span> <span class="nn">sprit_calibration</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_calibration</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit.sprit_hvsr</span> <span class="k">as</span> <span class="nn">sprit_hvsr</span>
-    <span class="kn">import</span> <span class="nn">sprit.sprit_calibration</span> <span class="k">as</span> <span class="nn">sprit_calibration</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_hvsr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_calibration</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_calibration</span>
 
 
 <span class="n">HVSR_BAND</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">50</span> <span class="p">]</span><span class="c1"># sprit_hvsr.DEFAULT_BAND</span>
@@ -116,7 +114,7 @@
 <span class="c1"># Plot cross section</span>
 <div class="viewcode-block" id="plot_cross_section">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_cross_section">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_cross_section</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">primary_unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_cross_section</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span>  <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">primary_unit</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> 
                        <span class="n">show_curves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">annotate_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">curve_alignment</span><span class="o">=</span><span class="s1">&#39;peak&#39;</span><span class="p">,</span>
                        <span class="n">grid_size</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;WE&#39;</span><span class="p">,</span> 
                        <span class="n">interpolation_type</span><span class="o">=</span><span class="s1">&#39;cloughtocher&#39;</span><span class="p">,</span> <span class="n">interpolate_log_values</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -601,7 +599,7 @@
 <span class="c1"># Plot depth curve</span>
 <div class="viewcode-block" id="plot_depth_curve">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_depth_curve">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
                      <span class="n">depth_limit</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">max_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_elev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">depth_plot_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                      <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -745,7 +743,7 @@
 <span class="c1"># Plot input stream</span>
 <div class="viewcode-block" id="plot_input_stream">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_input_stream">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_input_stream</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_input_stream</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span>
                         <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
@@ -791,7 +789,7 @@
 <span class="c1"># Plot outlier curves</span>
 <div class="viewcode-block" id="plot_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_outlier_curves">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">plotly_module</span><span class="o">=</span><span class="s1">&#39;go&#39;</span><span class="p">,</span> <span class="n">remove_outliers_during_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">plotly_module</span><span class="o">=</span><span class="s1">&#39;go&#39;</span><span class="p">,</span> <span class="n">remove_outliers_during_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                         <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
                         <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">discarded_curves</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Functio to plot outlier curves, including which have been excluded</span>
@@ -906,7 +904,7 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">):</span>
                 <span class="n">rowDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
                 <span class="n">showTLabelsDict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-                <span class="k">def</span> <span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">comp_rgba</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
                     <span class="n">compstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
                     <span class="k">if</span> <span class="n">comp</span><span class="o">==</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span>
                         <span class="n">compstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;rgba(0, 0, 0, </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s1">)&#39;</span>
@@ -1128,7 +1126,7 @@
 <span class="c1"># Parse plot string</span>
 <div class="viewcode-block" id="parse_plot_string">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.parse_plot_string">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_plot_string</span><span class="p">(</span><span class="n">plot_string</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to parse a plot string into a list readable by plotting functions</span>
 
 <span class="sd">    Parameters</span>
@@ -1205,7 +1203,7 @@
 <span class="c1"># Parse the SPEC part of the plot string</span>
 <div class="viewcode-block" id="plot_results">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_results">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_results</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">plot_string</span><span class="o">=</span><span class="s1">&#39;HVSR p ann C+ p SPEC ann&#39;</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">,</span>
                 <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">results_graph_widget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_figure_widget</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_results_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">html_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,):</span>
@@ -1419,7 +1417,7 @@
 
 
 <span class="c1"># Parse the HVSR part of the plot string</span>
-<span class="k">def</span> <span class="nf">_parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_hv_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">hvsr_plot_list</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;HV&quot; subplot of the restults plot</span>
 
 <span class="sd">    Parameters</span>
@@ -1574,7 +1572,7 @@
 
 
 <span class="c1"># Parse the COMPONENT part of the plot string</span>
-<span class="k">def</span> <span class="nf">_parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">plot_with_hv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_comp_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">comp_plot_list</span><span class="p">,</span> <span class="n">plot_with_hv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;Components&quot; subplot of the results plot</span>
 
 <span class="sd">    Parameters</span>
@@ -1757,7 +1755,7 @@
 
 
 <span class="c1"># Parse the SPEC part of the plot string</span>
-<span class="k">def</span> <span class="nf">_parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_spec_plot_list</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">spec_plot_list</span><span class="p">,</span> <span class="n">subplot_num</span><span class="p">,</span> <span class="n">results_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="s1">&#39;HV&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot the internal list used by the &quot;Spectrogram&quot; subplot of the results plot</span>
 
 <span class="sd">    Parameters</span>
@@ -1861,7 +1859,7 @@
 
 
 <span class="c1"># Helper function to get the array of values using the &quot;Use&quot; column (or equivalent of hvsr_windows_df)</span>
-<span class="k">def</span> <span class="nf">_get_use_array</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeWindowArr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psdArr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_use_array</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeWindowArr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psdArr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     
     <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;stream_edited&#39;</span><span class="p">):</span>
         <span class="n">streamEdit</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream_edited</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -1937,7 +1935,7 @@
 
 
 <span class="c1"># Plot Obspy Trace in axis using matplotlib</span>
-<span class="k">def</span> <span class="nf">_plot_simple_stream_obspy</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ylim_std</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_simple_stream_obspy</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ylim_std</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot a stream of data with Z, E, N components using matplotlib. Similar to obspy.Stream.Plot(), but will be formatted differently and eventually more customizable.</span>
 <span class="sd">    This is also used in various functions throughout the package.</span>
 
@@ -2088,7 +2086,7 @@
 
 
 <span class="c1"># Helper function to plot the input stream using plotly</span>
-<span class="k">def</span> <span class="nf">_plot_input_stream_plotly</span><span class="p">(</span><span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_input_stream_plotly</span><span class="p">(</span><span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                         <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     
@@ -2305,7 +2303,7 @@
 
 
 <span class="c1"># Plot input from stream using matplotlib</span>
-<span class="k">def</span> <span class="nf">_plot_input_stream_mpl</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="n">ylimstd</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_input_stream_mpl</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">hv_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">stack_type</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dbscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_gaps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap_per</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="n">ylimstd</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function for plotting spectrogram in a nice matplotlib chart from an obspy.stream</span>
 
 <span class="sd">    For more details on main function being called, see https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.specgram.html </span>
@@ -2562,7 +2560,7 @@
 
 
 <span class="c1"># Plot input from stream using matplotlib</span>
-<span class="k">def</span> <span class="nf">_plot_simple_stream_mpl</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_plot_simple_stream_mpl</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decimate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">spectrogram_component</span><span class="o">=</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function/alternative to plot_input_stream</span>
 
 <span class="sd">    Parameters</span>
@@ -2680,7 +2678,7 @@
 
 
 <span class="c1"># Helper function for plotting outlier curves using the express module of plotly</span>
-<span class="k">def</span> <span class="nf">__plotly_outlier_curves_px</span><span class="p">(</span><span class="o">**</span><span class="n">input_args</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__plotly_outlier_curves_px</span><span class="p">(</span><span class="o">**</span><span class="n">input_args</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API</span>
 
 <span class="sd">    Returns</span>
@@ -2726,7 +2724,7 @@
 
 
 <span class="c1"># Helper function for plotting the input data stream (preview chart) using plotly</span>
-<span class="k">def</span> <span class="nf">__plotly_express_preview</span><span class="p">(</span><span class="n">hvDataIN</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__plotly_express_preview</span><span class="p">(</span><span class="n">hvDataIN</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a multi-plot visualization of seismic data using Plotly Express.</span>
 <span class="sd">    </span>
