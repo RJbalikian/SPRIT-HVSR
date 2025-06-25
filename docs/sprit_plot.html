@@ -734,7 +734,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             #Annotate surface elevation
             ax.text(x=xLims[0],
                     y=surfElev,
-                    s=str(round(surfElev, 2))+&#39;m&#39;,
+                    s=str(round(float(surfElev), 2))+&#39;m&#39;,
                     ha=&#39;right&#39;,
                     va=&#39;bottom&#39;,
                     size=&#39;x-small&#39;)
@@ -742,7 +742,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             # Annotate bedrock elevation
             ax.text(x=xBase,
                     y=bedrockElev,
-                    s=&#39; &#39; + str(round(bedrockElev, 2))+&#39;m\n elevation&#39;,
+                    s=&#39; &#39; + str(round(float(bedrockElev), 2))+&#39;m\n elevation&#39;,
                     ha=&#39;left&#39;,
                     va=&#39;center&#39;,
                     size=&#39;x-small&#39;)
@@ -750,7 +750,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             # Annotate bedrock depth
             ax.text(x=xBase,
                     y=max(yLims),
-                    s=str(round(bedrockDepth, 2))+&#39;m deep &#39;,
+                    s=str(round(float(bedrockDepth), 2))+&#39;m deep &#39;,
                     ha=&#39;right&#39;,
                     va=&#39;top&#39;,
                     size=&#39;x-small&#39;,
@@ -764,7 +764,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             # Annotate surface elevation
             ax.text(x=xLims[0],
                     y=0,
-                    s=str(round(surfElev, 2))+&#39;m&#39;,
+                    s=str(round(float(surfElev), 2))+&#39;m&#39;,
                     ha=&#39;right&#39;,
                     va=&#39;bottom&#39;,
                     size=&#39;x-small&#39;)
@@ -772,15 +772,15 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             # Annotate Bedrock elevation
             ax.text(x=xBase,
                     y=bedrockVal,
-                    s=str(round(bedrockElev, 2))+&#39;m\nelevation&#39;,
+                    s=str(round(float(bedrockElev), 2))+&#39;m\nelevation&#39;,
                     ha=&#39;center&#39;,
                     va=&#39;center&#39;,
                     size=&#39;x-small&#39;)
 
             # Annotate Bedrock depth
             ax.text(x=xBase,
-                    y=(min(yLims)+bedrockDepth)/2,
-                    s=str(round(bedrockDepth, 2))+&#39;m deep&#39;,
+                    y=(min(yLims)+float(bedrockDepth))/2,
+                    s=str(round(float(bedrockDepth), 2))+&#39;m deep&#39;,
                     ha=&#39;right&#39;,
                     va=&#39;top&#39;,
                     size=&#39;x-small&#39;,
