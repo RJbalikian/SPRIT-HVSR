@@ -561,7 +561,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             #Annotate surface elevation
             ax.text(x=xLims[0],
                     y=surfElev,
-                    s=str(round(surfElev, 2))+'m',
+                    s=str(round(float(surfElev), 2))+'m',
                     ha='right',
                     va='bottom',
                     size='x-small')
@@ -569,7 +569,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             # Annotate bedrock elevation
             ax.text(x=xBase,
                     y=bedrockElev,
-                    s=' ' + str(round(bedrockElev, 2))+'m\n elevation',
+                    s=' ' + str(round(float(bedrockElev), 2))+'m\n elevation',
                     ha='left',
                     va='center',
                     size='x-small')
@@ -577,7 +577,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             # Annotate bedrock depth
             ax.text(x=xBase,
                     y=max(yLims),
-                    s=str(round(bedrockDepth, 2))+'m deep ',
+                    s=str(round(float(bedrockDepth), 2))+'m deep ',
                     ha='right',
                     va='top',
                     size='x-small',
@@ -591,7 +591,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             # Annotate surface elevation
             ax.text(x=xLims[0],
                     y=0,
-                    s=str(round(surfElev, 2))+'m',
+                    s=str(round(float(surfElev), 2))+'m',
                     ha='right',
                     va='bottom',
                     size='x-small')
@@ -599,15 +599,15 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             # Annotate Bedrock elevation
             ax.text(x=xBase,
                     y=bedrockVal,
-                    s=str(round(bedrockElev, 2))+'m\nelevation',
+                    s=str(round(float(bedrockElev), 2))+'m\nelevation',
                     ha='center',
                     va='center',
                     size='x-small')
 
             # Annotate Bedrock depth
             ax.text(x=xBase,
-                    y=(min(yLims)+bedrockDepth)/2,
-                    s=str(round(bedrockDepth, 2))+'m deep',
+                    y=(min(yLims)+float(bedrockDepth))/2,
+                    s=str(round(float(bedrockDepth), 2))+'m deep',
                     ha='right',
                     va='top',
                     size='x-small',
