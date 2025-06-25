@@ -979,9 +979,9 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
         if calculate_elevation and surface_elevation_data in tableReport.columns:
             tableReport[bedrock_elevation_column] = np.around((float(tableReport.loc[0, surface_elevation_data]) - float(tableReport.loc[0, depth_column])), decimal_places)
             if hasattr(freq_input, &#39;x_depth_m&#39;):
-                freq_input[&#39;x_elev_m&#39;] = {&#39;Z&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;Z&#39;]], decimal_places),
-                                          &#39;E&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;E&#39;]], decimal_places),
-                                          &#39;N&#39;: np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input[&#34;x_depth_m&#34;][&#39;N&#39;]], decimal_places)}
+                freq_input[&#39;x_elev_m&#39;] = {&#39;Z&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;Z&#39;]], decimal_places),
+                                          &#39;E&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;E&#39;]], decimal_places),
+                                          &#39;N&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;N&#39;]], decimal_places)}
 
         if calculate_depth_in_feet:
             tableReport[depth_column+&#39;_ft&#39;] = np.around(calib_data*3.281,
