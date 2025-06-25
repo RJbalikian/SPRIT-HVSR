@@ -52,13 +52,12 @@ from sprit.sprit_jupyter_UI import (
     )
 
 from sprit.sprit_plot import (
-    parse_plot_string,
+    plot_cross_section,
+    plot_depth_curve,
     plot_input_stream,
     plot_outlier_curves,
-    plot_preview,
+    parse_plot_string,
     plot_results,
-    plot_depth_curve,
-    plot_cross_section,
     )
 
 from sprit.sprit_calibration import (
@@ -97,13 +96,12 @@ __all__ = ('sprit_hvsr',
         'sprit_jupyter_UI',
             'create_jupyter_ui',
         'sprit_plot',
+            'plot_cross_section',
+            'plot_depth_curve',
             'plot_input_stream',
-            'plot_preview',
-            'plot_results',
             'plot_outlier_curves',
             'parse_plot_string',
-            'plot_depth_curve',
-            'plot_cross_section',
+            'plot_results',
         'sprit_calibration',
             'calculate_depth',
             'calibrate',
