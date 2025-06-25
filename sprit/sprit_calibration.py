@@ -371,12 +371,12 @@ def calculate_depth(freq_input,
         
         # Calculate elevation data
         if calculate_elevation and surface_elevation_data in tableReport.columns:
-            tableReport[bedrock_elevation_column] = (tableReport[surface_elevation_data] - tableReport[depth_column]).round(decimal_places)
+            tableReport[bedrock_elevation_column] = np.around((float(tableReport.loc[0, surface_elevation_data]) - float(tableReport.loc[0, depth_column])), decimal_places)
             if hasattr(freq_input, 'x_depth_m'):
                 freq_input['x_elev_m'] = {'Z': np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input["x_depth_m"]['Z']], decimal_places),
                                           'E': np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input["x_depth_m"]['E']], decimal_places),
                                           'N': np.around([tableReport[surface_elevation_data].values[0] - f for f in freq_input["x_depth_m"]['N']], decimal_places)}
-        
+
         if calculate_depth_in_feet:
             tableReport[depth_column+'_ft'] = np.around(calib_data*3.281,
                                                      decimals=decimal_places)
@@ -388,7 +388,7 @@ def calculate_depth(freq_input,
                     freq_input['x_depth_ft'] = {'Z': np.around(freq_input['x_depth_m']['Z']*3.281, decimal_places),
                                                 'E': np.around(freq_input['x_depth_m']['E']*3.281, decimal_places),
                                                 'N': np.around(freq_input['x_depth_m']['N']*3.281, decimal_places)}
-                    
+
         tableReport["DepthModel"] = depthModelList
         tableReport["DepthModelType"] = depthModelTypeList
 
