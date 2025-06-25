@@ -529,8 +529,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
                      fig=None, ax=None, show_depth_curve=True):
     
     if fig is None and ax is None:
-        fig, ax = plt.subplots(layout='constrained')
-        fig.set_size_inches(3, 5)
+        fig, ax = plt.subplots(layout='constrained')#, figsize=(5, 15))
         fig.suptitle(hvsr_results['site'])
         ax.set_title('Calibrated Depth to Interface', size='small')
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
@@ -549,7 +548,7 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     else:
         curvePlot = hvsr_results.hvsr_curve
         xBase = min(hvsr_results.hvsr_curve)
-        xCap = max(hvsr_results.hvsr_curve)
+        xCap = hvsr_results.BestPeak['HV']['A0']#max(hvsr_results.hvsr_curve)
         xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
  
     if use_elevation:
@@ -626,9 +625,8 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             ax_ft.set_ylabel('Depth [ft]')
         
     # Plot peak location
-    ax.hlines(y=bedrockVal,
-               xmin=xBase, xmax=xCap,
-               linestyles='dotted', colors='k', linewidths=0.5)
+    ax.axhline(y=bedrockVal,
+               linestyle='dotted', c='k', linewidth=0.5)
     ax.scatter(xBase, y=bedrockVal, c='k', s=0.5)
     ax.scatter(xCap, y=bedrockVal, c='k', s=0.5)
     
@@ -640,12 +638,16 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
     
     xlabel = "H/V Ratio"
     if normalize_curve:
-        xlabel += '\n(Normalized)' 
+        xlabel += '\n(Normalized)'
+        ax.set_xticks([])
+
     ax.set_xlabel('H/V Ratio')
     ax.xaxis.set_label_position('top')
+
     ax.set_title(hvsr_results['site'])
 
     plt.sca(ax)
+    fig.set_size_inches(4, 8)
     if show_depth_curve:
         plt.show()
     else:

@@ -107,7 +107,7 @@ def calculate_depth(freq_input,
 
     Parameters
     ----------
-    freq_input : HVSRData, HVSRBatch, float, or filepath, optional
+    freq_input : HVSRData, HVSRBatch, float, int, or filepath, optional
         Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}
     depth_model : str, tuple, list, or dict, optional
         Model describing a relationship between frequency and depth, by default "ISGS_All"
@@ -162,8 +162,9 @@ def calculate_depth(freq_input,
                 orig_args.pop('freq_input')
             calc_depth_kwargs = orig_args
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
-        return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)
+        return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
     
+    # initialize values
     a = 0
     b = 0
     params = None
@@ -298,8 +299,7 @@ def calculate_depth(freq_input,
                         print('Assuming file with .*hvsr* suffix is an HVSR data file created by SpRIT.')
                     freq_input = sprit_hvsr.import_data(freqDataPath)
                     tableReport = freq_input.Table_Report
-
-        if isinstance(freq_input, sprit_hvsr.HVSRData):
+        elif isinstance(freq_input, sprit_hvsr.HVSRData):
             if not hasattr(freq_input, 'Table_Report'):
                 if verbose:
                     warn("Passed HVSRData Object has no attribute Table_Report, attempting to generate one.")
@@ -399,12 +399,50 @@ def calculate_depth(freq_input,
             ax = fig.get_axes()
             if len(ax) == 1:
                 ax = ax[0]
-        
-        pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-        freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
-                                                 show_depth_curve=show_depth_curve,
-                                                 fig=fig, ax=ax, **pdc_kwargs)
-        
+
+        if hasattr(freq_input, 'hvsr_curve'):
+            pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                     show_depth_curve=show_depth_curve,
+                                                     fig=fig, ax=ax,
+                                                     **pdc_kwargs)
+        else:
+            surfElevVal = tableReport.loc[0, surface_elevation_col]
+            brElevVal = tableReport.loc[0, bedrock_elevation_column]
+            if np.isnan(surfElevVal):
+                surfElevVal = 0
+                
+            if np.isnan(brElevVal):
+                brElevVal = tableReport.loc[0, depth_column]
+                yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+            else:
+                yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
+
+            ax.axhline(0, xmin=-0.1, xmax=1, c='k')
+            ax.plot([0, 0], [0, brElevVal], linestyle='dotted', c='k')
+            
+            ax.scatter(x=0, y=surfElevVal, c='k', marker='v')
+            ax.scatter(x=0, y=brElevVal, c='k', marker='^')
+            
+            spc = " "
+            ax.text(x=0, y=brElevVal, 
+                    s=f"  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)",
+                    va='top')
+            
+            ax.set_xlim([-0.1, 1])
+            ax.set_ylim(yLIMITS)
+            
+            ax.set_ylabel('Depth [m]')
+            ax.set_xticks([])
+            titleText = f'Calibrated Depth from Input Frequency'
+            fig.suptitle(titleText)
+            if isinstance(depth_model, (tuple, list)):
+                aText = depth_model[0]
+                bText = np.sqrt(depth_model[1]**2)*-1
+                ax.text(x=0,
+                        y=surfElevVal, va='bottom',
+                        s=f"  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$")
+            
         plt.sca(ax)
         if show_depth_curve:
             plt.show()
@@ -429,9 +467,11 @@ def calculate_depth(freq_input,
 
                 if verbose:
                     print("Saving data to the path specified")
-            
+        
+        
         freq_input.Table_Report = tableReport
         return freq_input
+            
     else:
         raise RuntimeError(f"The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}")
 
