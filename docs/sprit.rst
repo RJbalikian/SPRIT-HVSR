@@ -3,8 +3,8 @@ sprit package
 
 .. automodule:: sprit
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
