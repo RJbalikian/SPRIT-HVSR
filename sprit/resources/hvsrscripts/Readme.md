@@ -72,7 +72,7 @@ Enter the following lines (the first two lines below are not strictly necessary,
 
 ```bash
 hvsr(){
-    if [ "$1" == "-h"] ; then
+    if [ "$1" == "-h" ] ; then
         sudo bash /opt/hvsr/hvsr_v1-3.sh -h
         return 0
     fi
@@ -122,7 +122,7 @@ You will see a message like "Starting HVSR Script in screen session" (this is th
 Then, the terminal will open a new "screen", which will display information about the site.
 
 The following is true of the test run as defined above:
-* The site name will be TES_v3
+* The site name will be TEST_v3
 * It will run as a test program (i.e., it will not shut down your shake at the end of the site).
 * There will be a 5-second starting timer before acquisition begins
 * The data acquisition will last 0.1 minutes (6 seconds)
