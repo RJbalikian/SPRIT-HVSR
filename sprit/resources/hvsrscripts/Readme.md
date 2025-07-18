@@ -77,7 +77,7 @@ hvsr(){
         return 0
     fi
 
-    if command -v screen &> /dev/null; then
+    if [ -e "/usr/bin/screen" ]; then
         echo "Starting HVSR script in screen session."
         sleep 1
         screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
