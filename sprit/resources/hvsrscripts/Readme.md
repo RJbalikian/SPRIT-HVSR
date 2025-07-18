@@ -92,7 +92,7 @@ You will need to install the `screen` tool for this to work. Your shake will nee
 > You may not be able to install screen without updating the `apt` package manager.
 > You may need to change some configuration settings on your shake to do this.
 > For our instruments, this required the following commands (while the Shake was connected to the internet)
-> `sudo apt update --allow-releaseinfo-change`
+> `sudo apt update`
 > `sudo apt install screen`
 > Then you can run the following to check that the installation worked:
 > `screen -h`, which should print the help message for screen. Otherwise, if it did not install, you will receive an error message.
