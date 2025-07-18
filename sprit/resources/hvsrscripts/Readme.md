@@ -76,19 +76,31 @@ hvsr(){
         sudo bash /opt/hvsr/hvsr_v1-3.sh -h
         return 0
     fi
-    echo "Starting HVSR script in screen session."
-    sleep 1
-    screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
-    }
+
+    if command -v screen &> /dev/null; then
+        echo "Starting HVSR script in screen session."
+        sleep 1
+        screen -mS hvsr sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
+    else
+        echo "Starting HVSR script."
+        echo "WARNING! SCRIPT WILL STOP ON SSH DISCONNECT!"
+        sudo bash /opt/hvsr/hvsr_v1-3.sh "$@"
+    fi
+}
 ```
 
 Type `Ctrl + s` to save and `ctrl + x` to exit nano and return to your terminal.
 
-You will need to install the `screen` tool for this to work. Your shake will need to be connected to the internet.
+You will need to install the `screen` tool for this to work, at least if you want the HVSR script to continue running after you disconnect your SSH device. 
+Your Shake will need to be connected to the internet to install the `screen` tool.
 
 `sudo apt install screen`
 
 > TROUBLESHOOTING
+> For the shake to continue running the HVSR script after being disconnected from the SSH device, you must install screen.
+> The HVSR script will work without installing screen, but it will stop if you disconnect the SSH device while it is running.
+> TO prevent this, we use the screen tool to run an additional terminal session in the background
+> (this won't be interrupted by a signal hangup from disconnecting the SSH device).
 > You may not be able to install screen without updating the `apt` package manager.
 > You may need to change some configuration settings on your shake to do this.
 > For our instruments, this required the following commands (while the Shake was connected to the internet)
