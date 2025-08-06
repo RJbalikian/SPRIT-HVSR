@@ -38,6 +38,7 @@ import pandas as pd
 import plotly
 from pyproj import CRS, Transformer
 import scipy
+from scipy.spatial.distance import squareform, pdist
 
 try:  # For distribution
     from sprit import sprit_utils
@@ -8736,6 +8737,77 @@ s
     return outStream
 
 
+# Helper functions for remove_outlier_curves()
+# Use DBSCAN algorithm for outlier detection
+def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True, 
+                          dist_metric='euclidean', neighborhood_percentile=95, min_neighborhood_pts=5):
+    """
+    This is a helper function for remove_outlier_curves() to use a DBSCAN algorithm 
+    to identify and discard outlier curves.
+
+    Parameters
+    ----------
+    hvsr_data : HVSRData
+        HVSRData instance on which to perform DBSCAN analysis
+    use_hv_curves : bool, optional
+        Whether to use HV_Curves as the curve set of interest, by default True
+    dist_metric : str, optional
+        Distance metric to use (see scipy.spatial.distance.pdist), by default 'euclidean'
+    neighborhood_percentile : int, optional
+        Percentile value to use in selecting neighborhood cutoff size.
+        100 would use the largest distance in the distance matrix. 0 would use the smallest (0), by default 95
+    min_neighborhood_pts : int, optional
+        Minimum number of points in a curve's neighborhood for that point to be considered a core point, by default 5
+
+    Returns
+    -------
+    HVSRData
+        HVSRData instance with the hvsr_windows_df DataFrame "Use" column updated
+    """
+
+    # Get the correct set of curves to use
+    # This can be generalized better (and adapted for azimuthal values)
+    if use_hv_curves:
+        curveCols = ['HV_Curves']
+    else:
+        curveCols = ['psd_values_Z', 'psd_values_E', 'psd_values_N']
+
+
+    # Clean up percentile value
+    if neighborhood_percentile < 0 or neighborhood_percentile > 100:
+        print("\tNeighborhood_percentile must be between 0-100, not ", neighborhood_percentile)
+        print('\t  Resetting neighborhood_percentile to 95')
+        neighborhood_percentile = 95
+    elif neighborhood_percentile > 0 and neighborhood_percentile < 1:
+        neighborhood_percentile = neighborhood_percentile * 100
+
+
+    # Define local function to use general dbscan algorithm for identifying outliers
+    def _dbscan_outliers(distance_matrix, n_percentile, min_pts):
+        n = dist_matrix.shape[0]
+        is_noise = np.zeros(n, dtype=bool)
+        eps = np.percentile(dist_matrix, 100-n_percentile)
+
+        for i in range(n):
+            neighbors = np.where(dist_matrix[i] <= eps)[0]
+            if len(neighbors) < min_pts:
+                is_noise[i] = True
+        return is_noise
+
+    # Iterate through curves of interest
+    for curveCol in curveCols:
+        curves = np.stack(hvsr_data.hvsr_windows_df[curveCol])
+        dist_matrix = squareform(pdist(curves, metric=dist_metric))
+
+        noise_array = _dbscan_outliers(distance_matrix=dist_matrix, 
+                                       n_percentile=neighborhood_percentile, 
+                                       min_pts=min_neighborhood_pts)
+        
+        # Remove curves from analysis
+        hvsr_data.hvsr_windows_df.loc[~noise_array, 'Use'] = False
+
+    return hvsr_data
+
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
 def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, remove_response=False, do_azimuths=False, verbose=False):
@@ -9318,7 +9390,7 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
 
 
 # Get HVSR
-def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=4):
+def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
     """ Helper function to calculate H/V ratio
 
     _dbz : list
