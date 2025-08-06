@@ -708,7 +708,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None, plot_engine='plotly'
 
 # Plot outlier curves
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False,
-                        rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, 
+                        outlier_threshold=0.98, use_percentile=True, use_hv_curve=False, 
                         from_roc=False, show_plot=True, verbose=False, discarded_curves=None):
     """Functio to plot outlier curves, including which have been excluded
 
@@ -722,7 +722,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
         Which plotly module to use if applicable, by default 'go'
     remove_outliers_during_plot : bool, optional
         Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.
-    rmse_thresh : float, optional
+    outlier_threshold : float, optional
         RMSE threshold (for removing outliers), by default 0.98
     use_percentile : bool, optional
         Whether to use percentile or raw value, by default True
@@ -747,10 +747,10 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
     plotlyList = ['plotly', 'plty', 'p']
     mplList = ['matplotlib', 'mpl', 'pyplot', 'mtpltlb', 'm']
     
-    if rmse_thresh < 1:
-        rmse_thresh = rmse_thresh * 100
+    if outlier_threshold < 1:
+        outlier_threshold = outlier_threshold * 100
     
-    roc_kwargs = {'rmse_thresh':rmse_thresh,
+    roc_kwargs = {'outlier_threshold':outlier_threshold,
                     'use_percentile':True,
                     'use_hv_curve':use_hv_curve,
                     'show_outlier_plot':False,
@@ -854,7 +854,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                     # Calculate RMSE
                     rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
 
-                    rmse_threshold = np.percentile(rmse, roc_kwargs['rmse_thresh'])
+                    rmse_threshold = np.percentile(rmse, roc_kwargs['outlier_threshold'])
                     
                     # Retrieve index of those RMSE values that lie outside the threshold
                     timeIndex = hvsr_data['hvsr_windows_df'].index
@@ -970,11 +970,11 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
             hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
             if use_percentile is True:
-                rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], rmse_thresh)
+                rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], outlier_threshold)
                 if verbose:
-                    print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
+                    print(f'\tRMSE at {outlier_threshold}th percentile for {column} calculated at: {rmse_threshold:.2f}')
             else:
-                rmse_threshold = rmse_thresh
+                rmse_threshold = outlier_threshold
              
             # Retrieve index of those RMSE values that lie outside the threshold
             for j, curve in enumerate(curr_data):
@@ -2589,14 +2589,14 @@ def _plot_simple_stream_mpl(hv_data, stream=None, input_fig=None, decimate=True,
 
 
 # Helper function for plotting outlier curves using the express module of plotly
-def __plotly_outlier_curves_px(**input_args):
+def __plotly_outlier_curves_px(hvsr_data, **input_args):
     """Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API
 
     Returns
     -------
     plotly.express figure
     """
-    #input_args: hvsr_data, plot_engine='plotly', plotly_module='go', rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False
+    #input_args: hvsr_data, plot_engine='plotly', plotly_module='go', outlier_threshold=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False
     hvData = input_args['hvsr_data']
     x_data = hvsr_data['x_freqs']
    

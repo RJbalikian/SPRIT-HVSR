@@ -1777,7 +1777,7 @@ def main():
                 st.selectbox("Curve Smoothing", options=['None', 'Savgoy Filter', 'Konno Ohmachi', "Proportional", "Constant"], index=2, key='freq_smooth')
                 st.select_slider("Curve Smoothing Parameter", options=np.arange(1000).tolist(), value=40, key='f_smooth_width')
                 st.select_slider("Resample", options=rList, value=1000, key='resample')
-                st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_rmse_percentile')
+                st.select_slider('Outlier Curve Removal', options=rList[:100], key='outlier_curve_percentile_threshold')
                 if VERBOSE:
                     print_param(PARAM2PRINT)
 

@@ -494,7 +494,7 @@ class SPRIT_App:
             update_progress_bars(prog_percent=50)
 
             self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
-                                            rmse_thresh=98,
+                                            outlier_threshold=98,
                                             use_percentile=True,
                                             use_hv_curve = False,
                                             show_plot = False)

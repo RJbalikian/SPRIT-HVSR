@@ -678,7 +678,7 @@ def create_jupyter_ui():
     def get_remove_outlier_curve_kwargs():
         roc_kwargs = {
                 'use_percentile':rmse_pctile_check.value,
-                'rmse_thresh':rmse_thresh.value,
+                'outlier_threshold':outlier_threshold.value,
                 'use_hv_curve':False,
                 'verbose':verbose_check.value
             }
@@ -700,7 +700,7 @@ def create_jupyter_ui():
                     'freq_smooth':freq_smoothing.value,
                     'f_smooth_width':freq_smooth_width.value,
                     'resample':resample_value,
-                    'outlier_curve_rmse_percentile':use_hv_curve_rmse.value,
+                    'outlier_curve_percentile_threshold':use_hv_curve_rmse.value,
                     'verbose':verbose_check.value}
         return ph_kwargs
 
@@ -1607,11 +1607,11 @@ def create_jupyter_ui():
 
     # OUTLIER SETTINGS SUBTAB
     rmse_pctile_check = widgets.Checkbox(description='Using percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    rmse_thresh = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
+    outlier_threshold = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
                                     placeholder=98, value=98, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers (may only be used after they have been calculated during the process_hvsr() step))', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=False, disabled=True)
 
-    outlier_threshbox_hbox = widgets.HBox(children=[rmse_thresh, rmse_pctile_check])
+    outlier_threshbox_hbox = widgets.HBox(children=[outlier_threshold, rmse_pctile_check])
     outlier_params_vbox = widgets.VBox(children=[outlier_threshbox_hbox, use_hv_curve_rmse])
 
     global outlier_fig
@@ -1620,7 +1620,7 @@ def create_jupyter_ui():
 
     outlier_thresh_slider_label = widgets.Label(value='RMSE Thresholds:')
     rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),disabled=True)
-    rmse_pctile_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, 'rmse_thresh'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
+    rmse_pctile_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, 'outlier_threshold'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
     
     def calc_rmse(array_2d):
         medArray = np.nanmedian(array_2d, axis=0)
@@ -1638,9 +1638,9 @@ def create_jupyter_ui():
             rmse = np.stack([rmsez, rmsee, rmsen]).flatten()
 
         if rmse_pctile_check.value:
-            rmse_thresh.value = rmse_pctile_slider.value
+            outlier_threshold.value = rmse_pctile_slider.value
         else:
-            rmse_thresh.value = rmse_thresh_slider.value
+            outlier_threshold.value = rmse_thresh_slider.value
             rmse_pctile_slider.value = ((rmse < rmse_thresh_slider.value).sum() / len(rmse)) * 100
 
     def on_update_rmse_pctile_slider(change):
@@ -1655,9 +1655,9 @@ def create_jupyter_ui():
 
         if rmse_pctile_check.value:
             rmse_thresh_slider.value = np.percentile(rmse, rmse_pctile_slider.value)
-            rmse_thresh.value = rmse_pctile_slider.value
+            outlier_threshold.value = rmse_pctile_slider.value
         else:
-            rmse_thresh.value = rmse_thresh_slider.value
+            outlier_threshold.value = rmse_thresh_slider.value
 
     def on_update_rmse_pctile_check(change):
         if rmse_pctile_check.value:
@@ -1669,14 +1669,14 @@ def create_jupyter_ui():
     
     def on_update_rmse_thresh(change):
         if rmse_pctile_check.value:
-            rmse_pctile_slider.value = rmse_thresh.value
+            rmse_pctile_slider.value = outlier_threshold.value
         else:
-            rmse_thresh_slider.value = rmse_thresh.value
+            rmse_thresh_slider.value = outlier_threshold.value
 
     rmse_pctile_check.observe(on_update_rmse_pctile_check)
     rmse_thresh_slider.observe(on_update_rmse_thresh_slider)
     rmse_pctile_slider.observe(on_update_rmse_pctile_slider)
-    rmse_thresh.observe(on_update_rmse_thresh)
+    outlier_threshold.observe(on_update_rmse_thresh)
 
     use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_psds() step)', layout=widgets.Layout(height='auto', width='80%'))
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
@@ -1689,7 +1689,7 @@ def create_jupyter_ui():
 
     # Update remove_outlier call
     def update_remove_outlier_curve_call():
-        roc_text = f"""(hvsr_data=hvsr_data, rmse_thresh={rmse_thresh.value}, use_percentile={rmse_pctile_check.value},
+        roc_text = f"""(hvsr_data=hvsr_data, outlier_threshold={outlier_threshold.value}, use_percentile={rmse_pctile_check.value},
                             use_hv_curve={use_hv_curve_rmse.value}...verbose={verbose_check.value})"""
         remove_outlier_curve_call.value='<style>p {word-wrap: break-word}</style> <p>' + roc_text + '</p>'
     update_remove_outlier_curve_call()
@@ -1718,7 +1718,7 @@ def create_jupyter_ui():
         hv_data = hvsr_data
 
 
-        roc_kwargs = {'rmse_thresh':rmse_pctile_slider.value,
+        roc_kwargs = {'outlier_threshold':rmse_pctile_slider.value,
                         'use_percentile':True,
                         'use_hv_curve':use_hv_curve_rmse.value,
                         'plot_engine':'plotly',
@@ -1800,7 +1800,7 @@ def create_jupyter_ui():
                     # Calculate RMSE
                     rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
 
-                    rmse_threshold = np.percentile(rmse, roc_kwargs['rmse_thresh'])
+                    rmse_threshold = np.percentile(rmse, roc_kwargs['outlier_threshold'])
                     
                     # Retrieve index of those RMSE values that lie outside the threshold
                     timeIndex = hvsr_data['hvsr_windows_df'].index
@@ -1906,7 +1906,7 @@ def create_jupyter_ui():
                         freq_smooth={ph_kwargs['freq_smooth']}, 
                         f_smooth_width={ph_kwargs['f_smooth_width']}, 
                         resample={ph_kwargs['resample']}, 
-                        outlier_curve_rmse_percentile={ph_kwargs['outlier_curve_rmse_percentile']}, 
+                        outlier_curve_percentile_threshold={ph_kwargs['outlier_curve_percentile_threshold']}, 
                         verbose={verbose_check.value})"""
         process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
     update_process_hvsr_call()
@@ -2202,7 +2202,7 @@ def create_jupyter_ui():
             'resample': resample_hv_curve,
             'verbose': verbose_check},
         'remove_outlier_curves': 
-            {'rmse_thresh': rmse_thresh,
+            {'outlier_threshold': outlier_threshold,
             'use_percentile': rmse_pctile_check,
             'use_hv_curve': use_hv_curve_rmse,
             'verbose': verbose_check},

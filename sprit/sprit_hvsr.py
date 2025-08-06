@@ -5376,7 +5376,9 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
 
 
 # Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, resample=True, outlier_curve_rmse_percentile=False, azimuth=None, verbose=False):
+def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', 
+                 f_smooth_width=40, resample=True, 
+                 outlier_curve_percentile_threshold=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
     
     This is the main function that uses other (private) functions to do 
@@ -5415,10 +5417,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
-    outlier_curve_rmse_percentile : bool, float, default = False
+    outlier_curve_percentile_threshold : bool, float, default = False
         If False, outlier curve removal is not carried out here. 
         If True, defaults to 98 (98th percentile). 
-        Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().
+        Otherwise, float of percentile used as outlier_threshold of remove_outlier_curve().
     azimuth : float, default = None
         The azimuth angle to use when method is single azimuth.
     verbose : bool, defualt=False
@@ -5450,7 +5452,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     freq_smooth = orig_args['freq_smooth']
     f_smooth_width = orig_args['f_smooth_width']
     resample = orig_args['resample']
-    outlier_curve_rmse_percentile = orig_args['outlier_curve_rmse_percentile']
+    outlier_curve_percentile_threshold = orig_args['outlier_curve_percentile_threshold']
     verbose = orig_args['verbose']
 
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
@@ -5802,10 +5804,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     #Initialize array based only on the curves we are currently using
     indHVCurvesArr = np.stack(hvsr_out['hvsr_windows_df']['HV_Curves'][hvsr_out['hvsr_windows_df']['Use']])
 
-    if outlier_curve_rmse_percentile:
-        if outlier_curve_rmse_percentile is True:
-            outlier_curve_rmse_percentile = 98
-        hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, rmse_thresh=outlier_curve_rmse_percentile, use_hv_curve=True, verbose=verbose)
+    if outlier_curve_percentile_threshold:
+        if outlier_curve_percentile_threshold is True:
+            outlier_curve_percentile_threshold = 98
+        hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, outlier_threshold=outlier_curve_percentile_threshold, use_hv_curve=True, verbose=verbose)
 
     hvsr_out['ind_hvsr_stdDev'] = {}
     for col_name in hvsr_out['hvsr_windows_df'].columns:
@@ -6350,7 +6352,10 @@ def remove_noise(hvsr_data, remove_method=None,
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv_curve=False, plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, verbose=False, **kwargs):
+def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
+                          outlier_threshold=98, use_percentile=True, use_hv_curve=False,
+                          plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True,
+                          verbose=False, **kwargs):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
     Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
@@ -6362,12 +6367,14 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
     ----------
     hvsr_data : dict
         Input dictionary containing all the values and parameters of interest
-    rmse_thresh : float or int, default=98
+    outlier_method : str, default='dbscan'
+        The method to use for outlier detection. Currently, 'dbscan' and 'prototype' is supported.
+    outlier_threshold : float or int, default=98
         The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
         This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
         Otherwise, specify a float or integer to use as the cutoff RMSE value (all curves with RMSE above will be removed)
     use_percentile :  float, default=True
-        Whether rmse_thresh should be interepreted as a raw RMSE value or as a percentile of the RMSE values.
+        Whether outlier_threshold should be interepreted as a raw RMSE value or as a percentile of the RMSE values.
     use_hv_curve : bool, default=False
         Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.
     show_plot : bool, default=False
@@ -6399,7 +6406,7 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
 
     # Reset parameters in case of manual override of imported parameters
     use_percentile = orig_args['use_percentile']
-    rmse_thresh = orig_args['rmse_thresh']
+    outlier_threshold = orig_args['outlier_threshold']
     use_hv_curve = orig_args['use_hv_curve']
     show_outlier_plot = orig_args['show_outlier_plot']
     verbose = orig_args['verbose']
@@ -6448,6 +6455,11 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
         return hvsr_out
 
+    dbscanList = ['dbscan', 'distance', 'dist', 'dbs', 'db', 'd']
+    prototypeList = ['prototype', 'proto', 'ptype', 'p',
+                     'root mean square', 'root mean square error', 
+                     'rms', 'rmse', 'r']
+
     # Determine names of hvsr_windows_df columns to use
     if not use_hv_curve:
         compNames = ['Z', 'E', 'N']
@@ -6466,62 +6478,72 @@ def remove_outlier_curves(hvsr_data, rmse_thresh=98, use_percentile=True, use_hv
         colNames = compNames
         col_prefix = 'HV_Curves'
 
-
-    # Loop through each component, and determine which curves are outliers
-    bad_rmse = []
-    for i, column in enumerate(colNames):
-        if column in compNames:
-            if use_hv_curve == False:
-                column = col_prefix + column
-            else:
-                column = column
-
-        # Retrieve data from dataframe (use all windows, just in case)
-        curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
-        
-        # Calculate a median curve, and reshape so same size as original
-        medCurve = np.nanmedian(curr_data, axis=0)
-        medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
-        
-        # Calculate RMSE
-        rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
-        hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
-        if use_percentile is True:
-            rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], rmse_thresh)
-            if verbose:
-                print(f'\tRMSE at {rmse_thresh}th percentile for {column} calculated at: {rmse_threshold:.2f}')
-        else:
-            rmse_threshold = rmse_thresh
-        
-        # Retrieve index of those RMSE values that lie outside the threshold
-        for j, curve in enumerate(curr_data):
-            if rmse[j] > rmse_threshold:
-                bad_rmse.append(j)
-
-    # Show plot of removed/retained data
-    if plot_engine.lower() == 'matplotlib' and (generate_outlier_plot or show_outlier_plot):
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
-    elif plot_engine.lower() == 'plotly'  and (generate_outlier_plot or show_outlier_plot):
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, rmse_thresh=rmse_thresh, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
-    else:
-        pass
-
-    # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
-    bad_rmse = np.unique(bad_rmse)
-    if len(bad_rmse) > 0:
-        hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
-        #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
     
+    if str(outlier_method).lower() in dbscanList:
+        hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curve=use_hv_curve, 
+                                           dist_metric='euclidean', neighborhood_percentile=95,
+                                           min_neighborhood_pts=5,
+                                           verbose=verbose)
+    elif str(outlier_method).lower() == 'prototype':
+        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curve=use_hv_curve, verbose=verbose)
+    else:
+        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curve=use_hv_curve, verbose=verbose)
+    
+    def __prototype_outlier_detect(hvsr_data, use_hv_curve=False, verbose=False):
+        # Loop through each component, and determine which curves are outliers
+        bad_rmse = []
+        for i, column in enumerate(colNames):
+            if column in compNames:
+                if use_hv_curve == False:
+                    column = col_prefix + column
+                else:
+                    column = column
 
-    if verbose:
-        if len(bad_rmse) > 0:
-            print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
-            for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
-                print(f"\t\t  {b}")
+            # Retrieve data from dataframe (use all windows, just in case)
+            curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
+            
+            # Calculate a median curve, and reshape so same size as original
+            medCurve = np.nanmedian(curr_data, axis=0)
+            medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+            
+            # Calculate RMSE
+            rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+            hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
+            if use_percentile is True:
+                rmse_threshold = np.percentile(rmse[~np.isnan(rmse)], outlier_threshold)
+                if verbose:
+                    print(f'\tRMSE at {outlier_threshold}th percentile for {column} calculated at: {rmse_threshold:.2f}')
+            else:
+                rmse_threshold = outlier_threshold
+            
+            # Retrieve index of those RMSE values that lie outside the threshold
+            for j, curve in enumerate(curr_data):
+                if rmse[j] > rmse_threshold:
+                    bad_rmse.append(j)
+
+        # Show plot of removed/retained data
+        if plot_engine.lower() == 'matplotlib' and (generate_outlier_plot or show_outlier_plot):
+            hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
+        elif plot_engine.lower() == 'plotly'  and (generate_outlier_plot or show_outlier_plot):
+            hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
         else:
-            print('\tNo outlier curves have been removed')
-                
-    hvsr_out = hvsr_data
+            pass
+
+        # Get unique values of bad_rmse indices and set the "Use" column of the hvsr_windows_df to False for that window
+        bad_rmse = np.unique(bad_rmse)
+        if len(bad_rmse) > 0:
+            hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'] * (rmse_threshold > hvsr_data['hvsr_windows_df']['RMSE_'+column])
+            #hvsr_data['hvsr_windows_df'].loc[bad_index, "Use"] = False   
+        
+        if verbose:
+            if len(bad_rmse) > 0:
+                print(f"\n\t\tThe windows starting at the following times have been removed from further analysis ({len(bad_rmse)}/{hvsr_data['hvsr_windows_df'].shape[0]}):")
+                for b in hvsr_data['hvsr_windows_df'].index[pd.Series(bad_rmse)]:
+                    print(f"\t\t  {b}")
+            else:
+                print('\tNo outlier curves have been removed')
+                    
+        return hvsr_data
 
     if 'processing_parameters' not in hvsr_out.keys():
         hvsr_out['processing_parameters'] = {}
@@ -8807,6 +8829,10 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
         hvsr_data.hvsr_windows_df.loc[~noise_array, 'Use'] = False
 
     return hvsr_data
+
+
+#def __prototype_outlier_detect(hvsr_data, use_hv_curves=True):
+
 
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
