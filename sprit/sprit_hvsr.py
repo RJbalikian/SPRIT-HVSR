@@ -6353,7 +6353,7 @@ def remove_noise(hvsr_data, remove_method=None,
 
 # Remove outlier ppsds
 def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
-                          outlier_threshold=98, use_percentile=True, min_pts=5,
+                          outlier_threshold=50, use_percentile=True, min_pts=5,
                           use_hv_curves=False,
                           plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True,
                           verbose=False, **kwargs):
@@ -8731,7 +8731,7 @@ s
 # Helper functions for remove_outlier_curves()
 # Use DBSCAN algorithm for outlier detection
 def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True, 
-                          dist_metric='euclidean', neighborhood_percentile=95, min_neighborhood_pts=5,
+                          dist_metric='euclidean', neighborhood_percentile=50, min_neighborhood_pts=5,
                           verbose=False):
     """
     This is a helper function for remove_outlier_curves() to use a DBSCAN algorithm 
@@ -8775,16 +8775,14 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
     # Define local function to use general dbscan algorithm for identifying outliers
     def _dbscan_outliers(distance_matrix, n_percentile, min_pts):
         n = dist_matrix.shape[0]
-        is_noise = np.zeros(n, dtype=bool)
-        eps = np.percentile(dist_matrix, 100-n_percentile)
+        has_neighbors = np.ones(n, dtype=bool)
+        eps = np.percentile(dist_matrix, n_percentile)
 
         for i in range(n):
             neighbors = np.where(dist_matrix[i] <= eps)[0]
-            print("NEIGH", i, neighbors)
             if len(neighbors) < min_pts:
-                print("ISNOISE")
-                is_noise[i] = True
-        return is_noise
+                has_neighbors[i] = False
+        return has_neighbors
 
     # Iterate through curves of interest
     for curveCol in curveCols:
@@ -10346,10 +10344,12 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                                 ax.fill_betweenx(ylim,v-width,v+width, color='r', alpha=0.05)
                 # Show curves at all time windows
                 if k == 't':
-                    for t in np.stack(hvsrDF[used]['HV_Curves']):
-                        ax.plot(x, t, color='k', alpha=0.25, linewidth=0.8, linestyle=':')
-                    for t in np.stack(hvsrDF[notused]['HV_Curves']):
-                        ax.plot(x, t, color='orangered', alpha=0.666, linewidth=0.8, linestyle=':', zorder=0)
+                    if used.sum() > 0:
+                        for t in np.stack(hvsrDF[used]['HV_Curves']):
+                            ax.plot(x, t, color='k', alpha=0.25, linewidth=0.8, linestyle=':')
+                    if notused.sum() > 0:
+                        for t in np.stack(hvsrDF[notused]['HV_Curves']):
+                            ax.plot(x, t, color='orangered', alpha=0.666, linewidth=0.8, linestyle=':', zorder=0)
 
         # Plot SESAME test results and thresholds on HVSR plot
         if 'test' in k and kwargs['subplot'] == 'hvsr':
