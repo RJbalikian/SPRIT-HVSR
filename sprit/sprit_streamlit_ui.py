@@ -435,7 +435,7 @@ def main():
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose', 'show_outlier_plot']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                    'hvsr_band':(0.1, 50), 'use_hv_curve':True,
+                                    'hvsr_band':(0.1, 50), 'use_hv_curves':True,
                                     'starttime':datetime.time(0,0,0),
                                     'endtime':datetime.time(23, 59, 0),
                                     'peak_freq_range':(0.1, 50),
@@ -1727,7 +1727,7 @@ def main():
                     st.radio('Threshold type', horizontal=True, disabled=outlierCurveDisabled, options=['Percentile', 'Value'], key='threshRadio')
                     st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
                     st.radio('Threshold curve', horizontal=True, disabled=outlierCurveDisabled, options=['HV Curve', 'Component Curves'], key='curveRadio')
-                    st.session_state.use_hv_curve = (st.session_state.curveRadio=='HV Curve')
+                    st.session_state.use_hv_curves = (st.session_state.curveRadio=='HV Curve')
 
 
 

@@ -708,7 +708,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None, plot_engine='plotly'
 
 # Plot outlier curves
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False,
-                        outlier_threshold=0.98, use_percentile=True, use_hv_curve=False, 
+                        outlier_threshold=0.98, use_percentile=True, use_hv_curves=False, 
                         from_roc=False, show_plot=True, verbose=False, discarded_curves=None):
     """Functio to plot outlier curves, including which have been excluded
 
@@ -726,7 +726,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
         RMSE threshold (for removing outliers), by default 0.98
     use_percentile : bool, optional
         Whether to use percentile or raw value, by default True
-    use_hv_curve : bool, optional
+    use_hv_curves : bool, optional
         Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False
     from_roc : bool, optional
         Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False
@@ -752,7 +752,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
     
     roc_kwargs = {'outlier_threshold':outlier_threshold,
                     'use_percentile':True,
-                    'use_hv_curve':use_hv_curve,
+                    'use_hv_curves':use_hv_curves,
                     'show_outlier_plot':False,
                     'plot_engine':'None',
                     'verbose':verbose
@@ -767,7 +767,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
         outlier_fig = go.Figure()
         
         titleText = 'Outlier Curve Plot'
-        if use_hv_curve:
+        if use_hv_curves:
             titleText += ' (H/V Curves)'
         else:
             titleText += ' PSD Curves'
@@ -781,7 +781,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
             #log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status['generate_psds_status']=False\n'{roc_kwargs}"
             return outlier_fig
 
-        if roc_kwargs['use_hv_curve']:
+        if roc_kwargs['use_hv_curves']:
             no_subplots = 1
             if hasattr(hvsr_data, 'hvsr_windows_df') and 'HV_Curves' in hvsr_data.hvsr_windows_df.columns:
                 outlier_fig.data = []
@@ -917,7 +917,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
         #        print(b)
 
         # Determine names of hvsr_windows_df columns to use
-        if not use_hv_curve:
+        if not use_hv_curves:
             compNames = ['Z', 'E', 'N']
             for col_name in hvsr_data['hvsr_windows_df'].columns:
                 if 'psd_values' in col_name and 'RMSE' not in col_name:
@@ -935,7 +935,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
             col_prefix = 'HV_Curves'
     
         spMosaic = []
-        if use_hv_curve:
+        if use_hv_curves:
             spMosaic.append(['HV Curve'])
             fSize = (8.5, 6)
         else:
@@ -953,7 +953,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
         bad_rmse = []
         for i, column in enumerate(colNames):
             if column in compNames:
-                if use_hv_curve == False:
+                if use_hv_curves == False:
                     column = col_prefix + column
                 else:
                     column = column
@@ -2596,12 +2596,12 @@ def __plotly_outlier_curves_px(hvsr_data, **input_args):
     -------
     plotly.express figure
     """
-    #input_args: hvsr_data, plot_engine='plotly', plotly_module='go', outlier_threshold=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False
+    #input_args: hvsr_data, plot_engine='plotly', plotly_module='go', outlier_threshold=0.98, use_percentile=True, use_hv_curves=False, from_roc=False, show_plot=True, verbose=False
     hvData = input_args['hvsr_data']
     x_data = hvsr_data['x_freqs']
    
     
-    if input_args['use_hv_curve']:
+    if input_args['use_hv_curves']:
         no_subplots = 1
         outlierFig = subplots.make_subplots(rows=no_subplots, cols=1,
                                             shared_xaxes=True, horizontal_spacing=0.01,

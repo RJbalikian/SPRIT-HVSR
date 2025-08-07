@@ -5807,7 +5807,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     if outlier_curve_percentile_threshold:
         if outlier_curve_percentile_threshold is True:
             outlier_curve_percentile_threshold = 98
-        hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, outlier_threshold=outlier_curve_percentile_threshold, use_hv_curve=True, verbose=verbose)
+        hvsr_out = remove_outlier_curves(hvsr_out, use_percentile=True, outlier_threshold=outlier_curve_percentile_threshold, use_hv_curves=True, verbose=verbose)
 
     hvsr_out['ind_hvsr_stdDev'] = {}
     for col_name in hvsr_out['hvsr_windows_df'].columns:
@@ -6354,7 +6354,7 @@ def remove_noise(hvsr_data, remove_method=None,
 # Remove outlier ppsds
 def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
                           outlier_threshold=98, use_percentile=True, min_pts=5,
-                          use_hv_curve=False,
+                          use_hv_curves=False,
                           plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True,
                           verbose=False, **kwargs):
     """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
@@ -6380,7 +6380,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
         The minimum number of points to use for the outlier detection method.
         This is only used if outlier_method='dbscan' 
         This is minimum number of points a point needs in its neighborhood to not be considered an outlier.
-    use_hv_curve : bool, default=False
+    use_hv_curves : bool, default=False
         Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.
     show_plot : bool, default=False
         Whether to show a plot of the removed data
@@ -6412,7 +6412,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
     # Reset parameters in case of manual override of imported parameters
     use_percentile = orig_args['use_percentile']
     outlier_threshold = orig_args['outlier_threshold']
-    use_hv_curve = orig_args['use_hv_curve']
+    use_hv_curves = orig_args['use_hv_curves']
     show_outlier_plot = orig_args['show_outlier_plot']
     verbose = orig_args['verbose']
 
@@ -6466,7 +6466,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
                      'rms', 'rmse', 'r']
 
     # Determine names of hvsr_windows_df columns to use
-    if not use_hv_curve:
+    if not use_hv_curves:
         compNames = ['Z', 'E', 'N']
         for col_name in hvsr_data['hvsr_windows_df'].columns:
             if 'psd_values' in col_name and 'RMSE' not in col_name:
@@ -6484,13 +6484,13 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
         col_prefix = 'HV_Curves'
 
     if str(outlier_method).lower() in dbscanList:
-        hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curve=use_hv_curve, 
+        hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curves=use_hv_curves, 
                                            dist_metric='euclidean', neighborhood_percentile=outlier_threshold,
                                            min_neighborhood_pts=min_pts,
                                            verbose=verbose)
         
     elif str(outlier_method).lower() in prototypeList:
-        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curve=use_hv_curve, 
+        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curves=use_hv_curves, 
                                               use_percentile=use_percentile,
                                               outlier_threshold=outlier_threshold,
                                               col_names=colNames,
@@ -6498,7 +6498,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
                                               col_prefix=col_prefix,
                                               verbose=verbose)
     else:
-        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curve=use_hv_curve, 
+        hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curves=use_hv_curves, 
                                               use_percentile=use_percentile,
                                               outlier_threshold=outlier_threshold,
                                               col_names=colNames,
@@ -6508,9 +6508,9 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
     
     # Show plot of removed/retained data
     if plot_engine.lower() == 'matplotlib' and (generate_outlier_plot or show_outlier_plot):
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curves=use_hv_curves, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
     elif plot_engine.lower() == 'plotly'  and (generate_outlier_plot or show_outlier_plot):
-        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curve=use_hv_curve, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
+        hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curves=use_hv_curves, plot_engine='plotly', from_roc=True, show_plot=show_outlier_plot, verbose=verbose)
     else:
         pass
 
@@ -8731,7 +8731,8 @@ s
 # Helper functions for remove_outlier_curves()
 # Use DBSCAN algorithm for outlier detection
 def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True, 
-                          dist_metric='euclidean', neighborhood_percentile=95, min_neighborhood_pts=5):
+                          dist_metric='euclidean', neighborhood_percentile=95, min_neighborhood_pts=5,
+                          verbose=False):
     """
     This is a helper function for remove_outlier_curves() to use a DBSCAN algorithm 
     to identify and discard outlier curves.
@@ -8779,7 +8780,9 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
 
         for i in range(n):
             neighbors = np.where(dist_matrix[i] <= eps)[0]
+            print("NEIGH", i, neighbors)
             if len(neighbors) < min_pts:
+                print("ISNOISE")
                 is_noise[i] = True
         return is_noise
 
@@ -8791,7 +8794,6 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
         noise_array = _dbscan_outliers(distance_matrix=dist_matrix, 
                                        n_percentile=neighborhood_percentile, 
                                        min_pts=min_neighborhood_pts)
-        
         # Remove curves from analysis
         hvsr_data.hvsr_windows_df.loc[~noise_array, 'Use'] = False
 
@@ -8799,7 +8801,7 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
 
 
 # This is a remove_outlier_curve() helper function to use a "prototype" curve (median curve) to detect outliers
-def __prototype_outlier_detect(hvsr_data, use_hv_curve=False, 
+def __prototype_outlier_detect(hvsr_data, use_hv_curves=False, 
                                 use_percentile=True, outlier_threshold=98,
                                 col_names=['HV_Curves'], comp_names=['Z', 'E', 'N'], 
                                 col_prefix = 'HV_Curves',
@@ -8809,7 +8811,7 @@ def __prototype_outlier_detect(hvsr_data, use_hv_curve=False,
     bad_rmse = []
     for i, column in enumerate(col_names):
         if column in comp_names:
-            if use_hv_curve == False:
+            if use_hv_curves == False:
                 column = col_prefix + column
             else:
                 column = column

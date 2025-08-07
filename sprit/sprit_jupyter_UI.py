@@ -679,7 +679,7 @@ def create_jupyter_ui():
         roc_kwargs = {
                 'use_percentile':rmse_pctile_check.value,
                 'outlier_threshold':outlier_threshold.value,
-                'use_hv_curve':False,
+                'use_hv_curves':False,
                 'verbose':verbose_check.value
             }
         return roc_kwargs
@@ -834,7 +834,7 @@ def create_jupyter_ui():
         def get_rmse_range():
             minRMSE = 10000
             maxRMSE = -1
-            if roc_kwargs['use_hv_curve']:
+            if roc_kwargs['use_hv_curves']:
                 colnames = ['HV_Curves']
             else:
                 colnames = ['psd_values_Z',
@@ -1690,7 +1690,7 @@ def create_jupyter_ui():
     # Update remove_outlier call
     def update_remove_outlier_curve_call():
         roc_text = f"""(hvsr_data=hvsr_data, outlier_threshold={outlier_threshold.value}, use_percentile={rmse_pctile_check.value},
-                            use_hv_curve={use_hv_curve_rmse.value}...verbose={verbose_check.value})"""
+                            use_hv_curves={use_hv_curve_rmse.value}...verbose={verbose_check.value})"""
         remove_outlier_curve_call.value='<style>p {word-wrap: break-word}</style> <p>' + roc_text + '</p>'
     update_remove_outlier_curve_call()
 
@@ -1720,7 +1720,7 @@ def create_jupyter_ui():
 
         roc_kwargs = {'outlier_threshold':rmse_pctile_slider.value,
                         'use_percentile':True,
-                        'use_hv_curve':use_hv_curve_rmse.value,
+                        'use_hv_curves':use_hv_curve_rmse.value,
                         'plot_engine':'plotly',
                         'show_plot':False,
                         'verbose':verbose_check.value
@@ -1732,7 +1732,7 @@ def create_jupyter_ui():
             log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.ProcessingStatus['PPSDStatus']=False\n'{roc_kwargs}"
             return outlier_fig, hvsr_data
 
-        if roc_kwargs['use_hv_curve']:
+        if roc_kwargs['use_hv_curves']:
             no_subplots = 1
             if hasattr(hvsr_data, 'hvsr_windows_df') and 'HV_Curves' in hvsr_data.hvsr_windows_df.columns:
                 outlier_fig.data = []
@@ -2204,7 +2204,7 @@ def create_jupyter_ui():
         'remove_outlier_curves': 
             {'outlier_threshold': outlier_threshold,
             'use_percentile': rmse_pctile_check,
-            'use_hv_curve': use_hv_curve_rmse,
+            'use_hv_curves': use_hv_curve_rmse,
             'verbose': verbose_check},
         'check_peaks': 
             {'hvsr_band': [hvsr_band_min_box, hvsr_band_max_box],
