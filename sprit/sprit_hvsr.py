@@ -6395,7 +6395,7 @@ def remove_noise(hvsr_data, remove_method=None,
 
 
 # Remove outlier ppsds
-def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
+def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                           outlier_threshold=50, use_percentile=True, min_pts=5,
                           use_hv_curves=False,
                           plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True,
