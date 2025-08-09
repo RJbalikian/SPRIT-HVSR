@@ -6411,7 +6411,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
     ----------
     hvsr_data : dict
         Input dictionary containing all the values and parameters of interest
-    outlier_method : str, default='dbscan'
+    outlier_method : str, default='prototype'
         The method to use for outlier detection. Currently, 'dbscan' and 'prototype' is supported.
     outlier_threshold : float or int, default=98
         The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
