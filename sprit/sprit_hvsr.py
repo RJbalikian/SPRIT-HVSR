@@ -1475,16 +1475,19 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             if not psd_data[site_name]['batch']:
                 psd_data = psd_data[site_name]
 
-    # Remove Outlier Curves
+    # Remove Outlier PSD Curves
     data_curvesRemoved = psd_data
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-
+        if 'use_hv_curves' not in remove_outlier_curve_kwargs.keys():
+            use_hv_curves = False
+        else:
+            use_hv_curves = remove_outlier_curve_kwargs['use_hv_curves']
         # Check whether it is indicated to remove outlier curves
         outlier_curve_keys_used = True
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
             outlier_curve_keys_used = False
-        if outlier_curves_removal or outlier_curve_keys_used:
+        if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves:
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
             data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
@@ -1507,7 +1510,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         
         for site_name in data_curvesRemoved_interim.keys():  # This should work more or less the same for batch and regular data now
             data_curvesRemoved_interim[site_name]['processing_status']['remove_outlier_curves_status'] = False
-            data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
+            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
     
             #If it wasn't originally HVSRBatch, make it HVSRData object again
             if not data_curvesRemoved_interim[site_name]['batch']:
@@ -1538,7 +1541,49 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not hvsr_results[site_name]['batch']:
                 hvsr_results = hvsr_results[site_name]            
-            
+
+    # Remove outlier HV Curves
+    try:
+        remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+        if 'use_hv_curves' not in remove_outlier_curve_kwargs.keys():
+            use_hv_curves = False
+        else:
+            use_hv_curves = remove_outlier_curve_kwargs['use_hv_curves']
+        # Check whether it is indicated to remove outlier curves
+        outlier_curve_keys_used = True
+        if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
+            outlier_curve_keys_used = False
+        if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves:
+            remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
+            hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose,**remove_outlier_curve_kwargs)   
+    except Exception as e:
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+        
+        # Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(hvsr_results, HVSRData):
+            data_curvesRemoved_interim = {hvsr_results['site']: hvsr_results}
+        else:
+            data_curvesRemoved_interim = hvsr_results
+        
+        for site_name in data_curvesRemoved_interim.keys():  # This should work more or less the same for batch and regular data now
+            data_curvesRemoved_interim[site_name]['processing_status']['remove_outlier_curves_status'] = False
+            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
+    
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not data_curvesRemoved_interim[site_name]['batch']:
+                data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
+        hvsr_results = data_curvesRemoved_interim
+        
+
     # Final post-processing/reporting
     # Check peaks
     check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -5630,8 +5675,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 # If no simple curve smoothing
                 psdRaw[k] = np.array(input_ppsds)
         
-
-
         hvsrDF['psd_values_'+k] = list(psdRaw[k])
         use = hvsrDF['Use'].astype(bool)
 
@@ -6485,8 +6528,13 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
 
     if str(outlier_method).lower() in dbscanList:
         hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curves=use_hv_curves, 
-                                           dist_metric='euclidean', neighborhood_percentile=outlier_threshold,
+                                           use_percentile=use_percentile,
+                                           neighborhood_size=outlier_threshold,
+                                           dist_metric='euclidean', 
                                            min_neighborhood_pts=min_pts,
+                                           col_names=colNames,
+                                           comp_names=compNames,
+                                           col_prefix=col_prefix,
                                            verbose=verbose)
         
     elif str(outlier_method).lower() in prototypeList:
@@ -6505,7 +6553,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='dbscan',
                                               comp_names=compNames,
                                               col_prefix=col_prefix,
                                               verbose=verbose)
-    
+
     # Show plot of removed/retained data
     if plot_engine.lower() == 'matplotlib' and (generate_outlier_plot or show_outlier_plot):
         hvsr_data['Outlier_Plot'] = sprit_plot.plot_outlier_curves(hvsr_data, outlier_threshold=outlier_threshold, use_percentile=use_percentile, use_hv_curves=use_hv_curves, plot_engine='matplotlib', show_plot=show_outlier_plot, verbose=verbose)
@@ -8730,9 +8778,12 @@ s
 
 # Helper functions for remove_outlier_curves()
 # Use DBSCAN algorithm for outlier detection
-def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True, 
-                          dist_metric='euclidean', neighborhood_percentile=50, min_neighborhood_pts=5,
-                          verbose=False):
+def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True, use_percentile=True,
+                            dist_metric='euclidean', 
+                            neighborhood_size=50, min_neighborhood_pts=5,
+                            col_names=['HV_Curves'], comp_names=['Z', 'E', 'N'], 
+                            col_prefix = 'HV_Curves',                       
+                            verbose=False):
     """
     This is a helper function for remove_outlier_curves() to use a DBSCAN algorithm 
     to identify and discard outlier curves.
@@ -8745,7 +8796,7 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
         Whether to use HV_Curves as the curve set of interest, by default True
     dist_metric : str, optional
         Distance metric to use (see scipy.spatial.distance.pdist), by default 'euclidean'
-    neighborhood_percentile : int, optional
+    neighborhood_size : int, optional
         Percentile value to use in selecting neighborhood cutoff size.
         100 would use the largest distance in the distance matrix. 0 would use the smallest (0), by default 95
     min_neighborhood_pts : int, optional
@@ -8759,39 +8810,64 @@ def __dbscan_outlier_detect(hvsr_data, use_hv_curves=True,
 
     # Get the correct set of curves to use
     # This can be generalized better (and adapted for azimuthal values)
-    if use_hv_curves:
-        curveCols = ['HV_Curves']
-    else:
-        curveCols = ['psd_values_Z', 'psd_values_E', 'psd_values_N']
+    #if use_hv_curves:
+    #    curveCols = ['HV_Curves']
+    #else:
+    #    curveCols = ['psd_values_Z', 'psd_values_E', 'psd_values_N']
+
 
     # Clean up percentile value
-    if neighborhood_percentile < 0 or neighborhood_percentile > 100:
-        print("\tNeighborhood_percentile must be between 0-100, not ", neighborhood_percentile)
-        print('\t  Resetting neighborhood_percentile to 95')
-        neighborhood_percentile = 95
-    elif neighborhood_percentile > 0 and neighborhood_percentile < 1:
-        neighborhood_percentile = neighborhood_percentile * 100
+    if use_percentile:
+        if neighborhood_size < 0 or neighborhood_size > 100:
+            print("\tNeighborhood_percentile must be between 0-100, not ", neighborhood_size)
+            print('\t  Resetting neighborhood_size to 95')
+            neighborhood_size = 95
+        elif neighborhood_size > 0 and neighborhood_size < 1:
+            neighborhood_size = neighborhood_size * 100
 
     # Define local function to use general dbscan algorithm for identifying outliers
-    def _dbscan_outliers(distance_matrix, n_percentile, min_pts):
+    def _dbscan_outliers(distance_matrix, n_size, min_pts, _use_percentile=True):
         n = dist_matrix.shape[0]
         has_neighbors = np.ones(n, dtype=bool)
-        eps = np.percentile(dist_matrix, n_percentile)
+
+        # Get epsilon based on whether it is a percentile
+        if _use_percentile:
+            eps = np.percentile(dist_matrix, n_size)
+        else:
+            eps = n_size
 
         for i in range(n):
             neighbors = np.where(dist_matrix[i] <= eps)[0]
-            if len(neighbors) < min_pts:
+            if len(neighbors)-1 < min_pts:
                 has_neighbors[i] = False
+            
+            #print(i, len(neighbors), has_neighbors[i])
+        
         return has_neighbors
 
+
+    for i, column in enumerate(col_names):
+        if column in comp_names:
+            if use_hv_curves == False:
+                column = col_prefix + column
+            else:
+                column = column
+
+
     # Iterate through curves of interest
-    for curveCol in curveCols:
-        curves = np.stack(hvsr_data.hvsr_windows_df[curveCol])
+    for i, column in enumerate(col_names):
+        if column in comp_names:
+            if use_hv_curves == False:
+                column = col_prefix + column
+            else:
+                column = column
+        curves = np.stack(hvsr_data['hvsr_windows_df'][column])
         dist_matrix = squareform(pdist(curves, metric=dist_metric))
 
         noise_array = _dbscan_outliers(distance_matrix=dist_matrix, 
-                                       n_percentile=neighborhood_percentile, 
-                                       min_pts=min_neighborhood_pts)
+                                       n_size=neighborhood_size, 
+                                       min_pts=min_neighborhood_pts,
+                                       _use_percentile=use_percentile)
         # Remove curves from analysis
         hvsr_data.hvsr_windows_df.loc[~noise_array, 'Use'] = False
 

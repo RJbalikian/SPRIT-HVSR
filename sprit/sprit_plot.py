@@ -710,7 +710,7 @@ def plot_input_stream(hv_data, stream=None, input_fig=None, plot_engine='plotly'
 def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False,
                         outlier_threshold=0.98, use_percentile=True, use_hv_curves=False, 
                         from_roc=False, show_plot=True, verbose=False, discarded_curves=None):
-    """Functio to plot outlier curves, including which have been excluded
+    """Function to plot outlier curves, including which have been excluded
 
     Parameters
     ----------
@@ -958,14 +958,13 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                 else:
                     column = column
 
-
             # Retrieve data from dataframe (use all windows, just in case)
             curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
             
             # Calculate a median curve, and reshape so same size as original
             medCurve = np.nanmedian(curr_data, axis=0)
             medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
-            
+
             # Calculate RMSE
             rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
             hvsr_data['hvsr_windows_df']['RMSE_'+column] = rmse
@@ -975,7 +974,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                     print(f'\tRMSE at {outlier_threshold}th percentile for {column} calculated at: {rmse_threshold:.2f}')
             else:
                 rmse_threshold = outlier_threshold
-             
+
             # Retrieve index of those RMSE values that lie outside the threshold
             for j, curve in enumerate(curr_data):
                 if rmse[j] > rmse_threshold:
@@ -1004,21 +1003,40 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                         label='Retained Curve'
 
                 # Plot each individual curve
-                if 'x_freqs' in hvsr_data.keys():
-                    ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                if not use_hv_curves:
+                    if 'x_freqs' in hvsr_data.keys():
+                        ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    else:
+                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                 else:
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    if 'x_freqs' in hvsr_data.keys():
+                        ax["HV Curve"].plot(hvsr_data.x_freqs['Z'][:-1], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                    else:
+                        ax["HV Curve"].plot(1/(hvsr_data.ppsds['Z']['period_bin_centers'][:-1]), curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)                    
             
             # Plot the median curve
-            if 'x_freqs' in hvsr_data.keys():
-                ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
+            if 'HV_Curves' in compNames[i]:
+                axName = 'HV Curve'
+                keyName = 'Z'
             else:
-                ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+                axName = keyName = compNames[i]
             
+            if not use_hv_curves:
+                if 'x_freqs' in hvsr_data.keys():
+                    ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
+                else:
+                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+            else:
+                if 'x_freqs' in hvsr_data.keys():
+                    ax['HV Curve'].plot(hvsr_data.x_freqs['Z'][:-1], medCurve, linewidth=1, color='k', label='Median Curve')
+                else:
+                    ax['HV Curve'].plot(1/hvsr_data.ppsds['Z']['period_bin_centers'][:-1],medCurve, linewidth=1, color='k', label='Median Curve')
+
+
             # Format axis
-            ax[compNames[i]].set_ylabel(f"{compNames[i]}")
-            ax[compNames[i]].legend(fontsize=10, labelspacing=0.1)
-            ax[compNames[i]].semilogx()             
+            ax[axName].set_ylabel(f"{compNames[i]}")
+            ax[axName].legend(fontsize=10, labelspacing=0.1)
+            ax[axName].semilogx()
 
         outlier_fig.suptitle(f"{hvsr_data['site']}\n Curves Removed from Analysis")
         outlier_fig.set_layout_engine('constrained')
