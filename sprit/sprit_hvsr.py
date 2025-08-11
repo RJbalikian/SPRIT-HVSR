@@ -4771,7 +4771,7 @@ def input_params(input_data,
         f"{project}-{acq_date.strftime("%Y%m%d")}-{starttime.strftime("%H%M")}-{station}".
     network : str, default='AM'
         The network designation of the seismometer. This is necessary for data from Raspberry Shakes. 'AM' is for Amateur network, which fits Raspberry Shakes.
-    station : str, default='RAC84'
+    station : str, default='None'
         The station name of the seismometer. This is necessary for data from Raspberry Shakes.
     location : str, default='00'
         Location information of the seismometer.
@@ -6648,7 +6648,7 @@ def test_function():
 
 
 # Update all elevation-related attriutes
-def _update_elevation(hvsr_data, updated_surface_elevation, updated_elevation_unit):
+def update_elevation(hvsr_data, updated_surface_elevation, updated_elevation_unit):
     """Function to quickly update all attributes associated with elevation of an HVSRData object
 
     Parameters
@@ -6762,6 +6762,102 @@ def _update_elevation(hvsr_data, updated_surface_elevation, updated_elevation_un
     hvsr_data['processing_parameters']['fetch_data']['params']['params']['elev_unit'] = 'meters'
     
     return hvsr_data
+
+
+# Update instrument response file headers in .resp format
+def update_resp_file(resp_file, new_network, new_station, 
+                     return_inv=True, new_channels='CHZ', new_location="",
+                     starttime_new=None, endtime_new=None, new_resp_file=None,
+                     existing_starttime='2015,001,00:00:00.0000', existing_endtime="No Ending Time",
+                     existing_network='XX', existing_station='NS124', existing_channel='CHZ', existing_location='??'):
+    """Function to update headers in .RESP instrument response files for easy copying.
+       It is recommended to read this into a variable and set it as the metadata parameter of input_params
+       if it is desired to correct for instrument response, for example.
+
+    Parameters
+    ----------
+    resp_file : str
+        Filepath to input response file
+    new_network : str
+        Name of network to update header to.
+    new_station : str
+        Name of station to update header to.
+    return_inv : bool, optional
+        Whether to return an obspy inventory object.
+        If False, a .RESP file will be saved in the same directory as resp_file, by default True
+    new_channels : str, optional
+        Name or list of channels to update the header to.
+        If list, multiple inventory objects will be created/saved, by default 'CHZ'
+    new_location : str, optional
+        New instrument location attribute to update header to, by default ""
+    starttime : obspy.UTCDateTime, optional
+        Input to update starttime. Must be readable by obspy.UTCDateTime(), by default None
+    endtime : obspy.UTCDateTime, optional
+        Input to update endtime. Must be readable by obspy.UTCDateTime(), by default None
+    new_resp_file : str, optional
+        Filepath to designate for .RESP file output, if desired (and return_inv=False)
+        If None, uses same directory as resp_file, by default None
+    existing_network : str, optional
+        Name of network as specified in input file, by default 'XX'
+    existing_station : str, optional
+        name of station as specified in input file, by default 'NS124'
+    existing_channel : str, optional
+        Name of channel as specified in input file, by default 'CHZ'
+    existing_location : str, optional
+        Name of location as specified in input file, by default '??'
+
+    Returns
+    -------
+    obspy.Inventory
+        Only returned if return_inv = True
+    """
+
+    with open(resp_file) as inFile:
+        respTextIN = inFile.read()
+
+    respText = respTextIN.replace(existing_network, new_network)
+    respText = respText.replace(existing_station, new_station)
+    respTextNoChann = respText.replace(existing_location, new_location)
+    if not isinstance(new_channels, (list, tuple)):
+        new_channels = [new_channels]
+
+    if starttime_new is not None:
+        sTime = obspy.UTCDateTime(starttime_new)
+        sTimeText = existing_starttime.replace('2015,', str(sTime.year)+',')
+        sTimeText = sTimeText.replace('001,', str(sTime.julday)+',')
+        sTimeText = sTimeText.replace('00:00:00.0000', str(sTime.strftime("%H:%M:%S.%f")))
+        respTextNoChann = respTextNoChann.replace(existing_starttime, sTimeText)
+
+    if endtime_new is not None:
+        eTime = obspy.UTCDateTime(endtime_new)
+        respTextNoChann = respTextNoChann.replace(existing_endtime, 
+                                                  f"{eTime.year},{eTime.julday},{eTime.strftime('%H:%M:%S.%f')}")
+
+    invList = []
+    for i, newcha in enumerate(new_channels):
+        print(newcha)
+        respText = respTextNoChann.replace(existing_channel, newcha)
+
+        if return_inv:
+            invList.append(obspy.read_inventory(io.StringIO(respText)))
+                        
+        else:
+            if new_resp_file is None:
+                dir = pathlib.Path(resp_file).parent
+                new_resp_file = dir.joinpath(f"RESP_{new_network}.{new_station}.{new_station}.{newcha}.resp")
+            else:
+                new_resp_file = pathlib.Path(new_resp_file)
+
+            with open(new_resp_file.as_posix(), 'w') as outFile:
+                outFile.write(new_resp_file.as_posix())
+    
+    if return_inv:
+        for i, r in enumerate(invList):
+            if i == 0:
+                inv = r
+            else:
+                inv = inv + r
+        return inv
 
 # BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data
 # Helper function for batch processing of check_peaks
