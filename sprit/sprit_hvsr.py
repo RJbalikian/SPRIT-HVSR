@@ -60,6 +60,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 DEFAULT_BAND = [0.1, 50]
+PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "HV_Plot", "Depth_Plot"]
 
 # Resources directory path, and the other paths as well
 RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
@@ -774,21 +775,75 @@ class HVSRData:
         return self.__str__()
 
     # METHODS (many reflect dictionary methods)    
-    def __to_json(self, filepath):
+    def to_json(self, json_filepath, **kwargs):
         """Not yet supported, will export HVSRData object to json"""
-        # open the file with the given filepath
-        def unseriable_fun(o):
-            if isinstance(o, np.ndarray):
-                output = o.tolist()
-            try:
-                output = o.__dict__
-            except:
-                output = dir(o)
-            return output
 
-        with open(filepath, 'w') as f:
+        class_keys_to_convert = (datetime.date, obspy.UTCDateTime, 
+                             datetime.time, CRS, obspy.Inventory)
+
+        def iterative_json_parser(input_attrib, level=0):
+            outValue = input_attrib
+            
+            if isinstance(input_attrib, dict):  # simplified condition for demo
+            # if isinstance(input_attrib, (dict, sprit.HVSRData)):  # use this line instead
+                outValue = {}
+                level += 1
+                for i, (key, value) in enumerate(input_attrib.items()):
+                    outKey = key
+                    print(level, "".join(['  ']*level), outKey)
+                    if not isinstance(outKey, (str, int, float, bool, type(None))):
+                        outKey = str(outKey)
+                    
+                    # Recursively process the value
+                    processed_value = iterative_json_parser(value, level)
+                    
+                    # Apply string conversion if needed
+                    if isinstance(processed_value, class_keys_to_convert):
+                        processed_value = str(processed_value)
+                    
+                    outValue[outKey] = processed_value
+                
+                return outValue
+            
+            elif isinstance(input_attrib, list):
+                outValue = []
+                for item in input_attrib:
+                    if isinstance(item, np.ndarray):
+                        outValue.append(item.tolist())
+                    else:
+                        # Recursively process list items
+                        outValue.append(iterative_json_parser(item, level))
+                return outValue
+            
+            elif isinstance(input_attrib, np.ndarray):
+                outValue = input_attrib.tolist()
+                return outValue
+            
+            elif isinstance(input_attrib, pd.DataFrame):
+                # Convert DataFrame to dict, but then recursively process it
+                dict_value = input_attrib.to_dict()
+                return iterative_json_parser(dict_value, level)
+            
+            elif isinstance(input_attrib, class_keys_to_convert):
+                return str(input_attrib)
+            
+            else:
+                return input_attrib
+
+        sKeys = True
+        if 'sort_keys' in kwargs:
+            sKeys = kwargs['sort_keys']
+            del kwargs['sort_keys']
+
+        indent = 4
+        if 'indent' in kwarg:
+            indent = kwargs['indent']
+            del kwargs['indent']
+
+        with open(json_filepath, 'w') as f:
             # dump the JSON string to the file
-            json.dump(self, f, default=unseriable_fun, sort_keys=True, indent=4)
+            json.dump(self, fp=f, default=iterative_json_parser, 
+                      sort_keys=True, indent=indent, **kwargs)
 
     def export(self, hvsr_export_path=None, ext='hvsr'):
         """Method to export HVSRData objects to .hvsr pickle files.
@@ -2604,7 +2659,9 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     
 
 # Function to export data to .hvsr file (pickled)
-def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
+def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', 
+                export_plots=False,
+                verbose=False):
     """Export data into pickle format that can be read back in using import_data().
        Intended so data does not need to be processed each time it needs to be used. 
        Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
@@ -2633,13 +2690,21 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', verbose=False):
         with open(_export_path, 'wb') as f:
             pickle.dump(_hvsr_data, f) 
             
+        if verbose:
+            print('EXPORT COMPLETE')
         print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
-            
+
+    hvData = hvsr_data.copy()
+    if export_plots is False:
+        for pk in PLOT_KEYS:
+            if hasattr(hvData, pk):
+                del hvData[pk]
+
     if isinstance(hvsr_data, HVSRBatch):
         for sitename in hvsr_data.keys():
             _hvsr_export(hvsr_data[sitename], hvsr_export_path, ext)
     elif isinstance(hvsr_data, HVSRData):
-        _hvsr_export(hvsr_data, hvsr_export_path, ext)
+        _hvsr_export(hvData, hvsr_export_path, ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     
