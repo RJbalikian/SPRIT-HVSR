@@ -29,9 +29,18 @@ except: #For local testing
 
 global hvsr_data
     
-OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
+OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 
+                  'CSS', 'DMX', 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 
+                  'MSEED', 'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
+                  'SAC', 'SACXY', 
+                  'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 
+                  'TRC', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
 def _get_default(func, param):
+
+    if param == 'output_crs':
+        return 'EPSG:4326'
+
     return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
@@ -43,11 +52,11 @@ def create_jupyter_ui():
 
     """
     global hvsr_data
+    global results_fig
+    global log_textArea
 
     ui_width = 20
     ui_height= 12
-    global results_fig
-    global log_textArea
     log_textArea = widgets.Textarea(value="SESSION LOG", disabled=True, layout={'height': '300px','width': '99%', 'overflow': 'scroll'})
 
     # INPUT TAB
@@ -595,6 +604,7 @@ def create_jupyter_ui():
         log_textArea.value += f"\n\nREADING DATA [{datetime.datetime.now()}]"
 
         ip_kwargs = get_input_params()
+        [print(ik, type(iv)) for ik, iv in ip_kwargs.items()]
         hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ninput_params():\n'{ip_kwargs}"
         if button.description=='Read Data':
@@ -695,7 +705,7 @@ def create_jupyter_ui():
         else:
             resample_value = resample_hv_curve_bool.value
 
-        ph_kwargs={'method':h_combine_meth.value,
+        ph_kwargs={'horizontal_method':h_combine_meth.value,
                     'smooth':smooth_value,
                     'freq_smooth':freq_smoothing.value,
                     'f_smooth_width':freq_smooth_width.value,
@@ -1452,10 +1462,12 @@ def create_jupyter_ui():
     warmup_time = widgets.FloatText(description='Warmup time [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'))
     cooldown_time = widgets.FloatText(description='Cooldown time [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'))
 
-    #STD Ratio
-    std_ratio_check = widgets.Checkbox(description='Standard Deviation Antitrigger (not yet implemented)', value=False, disabled=True, indent=False)
-    std_ratio_text = widgets.FloatText(description='StdDev Ratio:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'), disabled=True)
-    std_window_length_text = widgets.FloatText(description='Moving window Length [s]:',  style={'description_width': 'initial'}, placeholder=0, value=0,layout=widgets.Layout(height='auto', width='auto'),disabled=True)
+    # STD Ratio
+    # std_ratio_thresh=2, std_window_s=20, min_win_size=5
+    std_ratio_check = widgets.Checkbox(description='Standard Deviation Antitrigger (not yet implemented)', value=False, disabled=False, indent=False)
+    std_ratio_thresh_text = widgets.FloatText(description='StdDev Ratio:',  style={'description_width': 'initial'}, placeholder=2, value=2, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    std_window_length_text = widgets.FloatText(description='Moving window Length [s]:',  style={'description_width': 'initial'}, placeholder=20, value=20, layout=widgets.Layout(height='auto', width='auto'),disabled=False)
+    std_window_length_text = widgets.FloatText(description='Minimum Window Size [s]:',  style={'description_width': 'initial'}, placeholder=2, value=2, layout=widgets.Layout(height='auto', width='auto'),disabled=False)
 
     #Autoremove
     auto_remove_check = widgets.Checkbox(description='Use Auto Remove', value=False, disabled=False, indent=False)
@@ -1498,7 +1510,7 @@ def create_jupyter_ui():
     sat_hbox = widgets.HBox([max_saturation_check, max_saturation_pct])
     noise_win_hbox = widgets.HBox([noisy_windows_check, max_window_pct, noisy_window_length])
     warmcool_hbox = widgets.HBox([warmcool_check, warmup_time, cooldown_time])
-    std_ratio_hbox = widgets.HBox([std_ratio_check, std_ratio_text, std_window_length_text])
+    std_ratio_hbox = widgets.HBox([std_ratio_check, std_ratio_thresh_text, std_window_length_text])
     spacer_hbox = widgets.HBox([tenpct_spacer])
 
     preview_noise_tab = widgets.VBox([stalta_hbox,
@@ -1725,11 +1737,11 @@ def create_jupyter_ui():
                         'show_plot':False,
                         'verbose':verbose_check.value
                       }
-        if 'PPSDStatus' in hvsr_data.ProcessingStatus.keys() and hvsr_data.ProcessingStatus['PPSDStatus']:
+        if 'generate_psds_status' in hvsr_data.processing_status.keys() and hvsr_data.processing_status['generate_psds_status']:
             log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n'{roc_kwargs}"    
             hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
         else:
-            log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.ProcessingStatus['PPSDStatus']=False\n'{roc_kwargs}"
+            log_textArea.value += f"\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status['generate_psds_status']=False\n'{roc_kwargs}"
             return outlier_fig, hvsr_data
 
         if roc_kwargs['use_hv_curves']:
@@ -1901,7 +1913,7 @@ def create_jupyter_ui():
     def update_process_hvsr_call():
         ph_kwargs = get_process_hvsr_kwargs()
         ph_text = f"""(hvsr_data=hvsr_data, 
-                        method={ph_kwargs['method']}, 
+                        horizontal_method={ph_kwargs['horizontal_method']}, 
                         smooth={ph_kwargs['smooth']}, 
                         freq_smooth={ph_kwargs['freq_smooth']}, 
                         f_smooth_width={ph_kwargs['f_smooth_width']}, 
@@ -2195,7 +2207,7 @@ def create_jupyter_ui():
              'period_step_octaves':period_step_octave, 
              'period_limits':[hvsr_band_min_box, hvsr_band_max_box]},
         'process_hvsr': 
-            {'method': h_combine_meth,
+            {'horizontal_method': h_combine_meth,
             'smooth': smooth_hv_curve,
             'freq_smooth': freq_smoothing,
             'f_smooth_width': freq_smooth_width,

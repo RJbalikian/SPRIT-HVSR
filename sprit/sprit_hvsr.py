@@ -7959,7 +7959,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False, verbo
 
 
 # Helper function for getting windows to remove noise using moving stdev
-def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_size=5):
+def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_size=2):
     """Helper function for removing noisy data due to high local standard deviation.
     This is similar to the default noise removal method used in Grilla software.
 
