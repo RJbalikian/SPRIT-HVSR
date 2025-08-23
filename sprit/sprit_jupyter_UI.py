@@ -3,6 +3,7 @@
 
 import datetime
 import inspect
+import pkg_resources
 import os
 import pathlib
 import tkinter as tk
@@ -36,6 +37,12 @@ OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN',
                   'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 
                   'TRC', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
+RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
+SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
+SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
+
+spritLogoPath = RESOURCE_DIR.joinpath("icon").joinpath("SpRITLogo.png")
+
 def _get_default(func, param):
 
     if param == 'output_crs':
@@ -67,7 +74,36 @@ def create_jupyter_ui():
     input_accordion = widgets.Accordion()
 
     # Metadata accordion
-    metadata_grid = widgets.GridspecLayout(7, 10)
+    metadata_grid = widgets.GridspecLayout(8, 10)
+
+    # A text box labeled Metadata Filepath
+    metadata_filepath = widgets.Text(description='Metadata Filepath:',
+                                        style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
+
+    # A button next to it labeled "Browse"
+    browse_metadata_button = widgets.Button(description='Select File(s)', layout=widgets.Layout(width='10%'))
+    def select_metapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes('-topmost', True)
+            root.withdraw()
+            metadata_filepath.value = str(filedialog.askopenfilenames(title='Select Metadata File(s)'))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_metadata_button.disabled=True
+            browse_metadata_button.description='Use Text Field'
+    browse_metadata_button.on_click(select_metapath)
+
+    # Dropdown with instrument types
+    instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino Yellow', 'Tromino Blue', 'Other Seismometer'],
+                                        #style={'description_width': 'initial'},
+                                        description='Instrument:',
+                                        layout=widgets.Layout(width='100%'))
+
+    metadata_hbox = widgets.HBox()
+    metadata_hbox.children = [metadata_filepath, browse_metadata_button]
+
     network_textbox = widgets.Text(description='Network:',
                                     placeholder=_get_default(sprit_hvsr.input_params, 'network'),
                                     value=_get_default(sprit_hvsr.input_params, 'network'),
@@ -146,8 +182,8 @@ def create_jupyter_ui():
                         if c.lower()[2] =='n':
                             n_channel_textbox.value = c
                 
-                if 'metapath' in inst_settings.keys():
-                    metadata_filepath.value = inst_settings['metapath']
+                if 'metadata' in inst_settings.keys():
+                    metadata_filepath.value = inst_settings['metadata']
 
                 if 'hvsr_band' in inst_settings.keys():
                     hvsr_band_min_box.value = inst_settings['hvsr_band'][0]
@@ -161,13 +197,14 @@ def create_jupyter_ui():
     instrument_settings_button.on_click(select_inst)
     instrument_read_button.on_click(select_inst)
 
-    metadata_grid[0,:] = inst_settings_hbox
-    metadata_grid[1,0] = network_textbox
-    metadata_grid[2,0] = station_textbox
-    metadata_grid[3,0] = location_textbox
-    metadata_grid[4,0] = z_channel_textbox
-    metadata_grid[5,0] = e_channel_textbox
-    metadata_grid[6,0] = n_channel_textbox
+    metadata_grid[0,:] = metadata_hbox
+    metadata_grid[1,:] = inst_settings_hbox
+    metadata_grid[2,0] = network_textbox
+    metadata_grid[3,0] = station_textbox
+    metadata_grid[4,0] = location_textbox
+    metadata_grid[5,0] = z_channel_textbox
+    metadata_grid[6,0] = e_channel_textbox
+    metadata_grid[7,0] = n_channel_textbox
 
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
@@ -237,38 +274,33 @@ def create_jupyter_ui():
     location_grid = widgets.GridspecLayout(4, 10)
     # X coordinate input
     xcoord_textbox = widgets.FloatText(description='X Coordinate:', tooltip='xcoord',
-                                        value=_get_default(sprit_hvsr.input_params, 'xcoord'), 
-                                        placeholder=_get_default(sprit_hvsr.input_params, 'xcoord'),
-                                        layout=widgets.Layout(width='auto'))
-    location_grid[0, 0] = xcoord_textbox
+                                       value=_get_default(sprit_hvsr.input_params, 'xcoord'), 
+                                       placeholder=_get_default(sprit_hvsr.input_params, 'xcoord'))
+    #location_grid[0, 0] = xcoord_textbox
 
     # Y coordinate input
     ycoord_textbox = widgets.FloatText(description='Y Coordinate', tooltip='ycoord:',
-                                        value=_get_default(sprit_hvsr.input_params, 'ycoord'), 
-                                        placeholder=_get_default(sprit_hvsr.input_params, 'ycoord'),
-                                        layout=widgets.Layout(width='auto'))
-    location_grid[1, 0] = ycoord_textbox
+                                       value=_get_default(sprit_hvsr.input_params, 'ycoord'), 
+                                       placeholder=_get_default(sprit_hvsr.input_params, 'ycoord'))
+    #location_grid[1, 0] = ycoord_textbox
 
     # Z coordinate input
     zcoord_textbox = widgets.FloatText(description='Z Coordinate', tooltip='elevation:',
-                                        value=_get_default(sprit_hvsr.input_params, 'elevation'),
-                                        placeholder=_get_default(sprit_hvsr.input_params, 'elevation'),                                     
-                                        layout=widgets.Layout(width='auto'))
-    location_grid[2, 0] = zcoord_textbox
+                                       value=_get_default(sprit_hvsr.input_params, 'elevation'),
+                                       placeholder=_get_default(sprit_hvsr.input_params, 'elevation'))
+    #location_grid[2, 0] = zcoord_textbox
 
     # Z coordinate unit input
-    elevation_unit_textbox = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
-                                                value=_get_default(sprit_hvsr.input_params, 'elev_unit'),
-                                                description='Z Unit:', tooltip='elev_unit',
-                                                layout=widgets.Layout(width='auto'))
-    location_grid[2, 1] = elevation_unit_textbox
+    elev_unit_dropdown = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
+                                          value=_get_default(sprit_hvsr.input_params, 'elev_unit'),
+                                          description='Z Unit:', tooltip='elev_unit')
+    #location_grid[2, 1] = elev_unit_dropdown
 
     # Input CRS input
     input_crs_textbox = widgets.Text(description='Input CRS:',
-                                        layout=widgets.Layout(width='auto'),
-                                        placholder=_get_default(sprit_hvsr.input_params, 'input_crs'),
-                                        value=_get_default(sprit_hvsr.input_params, 'input_crs'))
-    location_grid[3, 0] = input_crs_textbox
+                                     placholder=_get_default(sprit_hvsr.input_params, 'input_crs'),
+                                     value=_get_default(sprit_hvsr.input_params, 'input_crs'))
+    #location_grid[3, 0] = input_crs_textbox
 
     # Output CRS input
     output_crs_textbox = widgets.Text(description='Output CRS:',
@@ -311,11 +343,11 @@ def create_jupyter_ui():
     # A text to specify the trim directory
     trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
                                     layout=widgets.Layout(width='auto'))
-    trim_export_dropdown = widgets.Dropdown(
+    data_export_format_dropdown = widgets.Dropdown(
                 options=OBSPY_FORMATS,
                 value='MSEED',
-                description='Trim Format:', layout=widgets.Layout(width='auto'))
-    trim_directory_upload = widgets.FileUpload(
+                description='Data Export Format:', layout=widgets.Layout(width='auto'))
+    data_export_upload = widgets.FileUpload(
                             accept='', 
                             multiple=False, layout=widgets.Layout(width='auto'))
 
@@ -388,8 +420,8 @@ def create_jupyter_ui():
     ioparam_grid[4,:1] = detrend_type_dropdown
     ioparam_grid[4,1] = detrend_options
     ioparam_grid[5,:6] = trim_directory
-    ioparam_grid[5, 6:8] = trim_export_dropdown
-    ioparam_grid[5, 8] = trim_directory_upload
+    ioparam_grid[5, 6:8] = data_export_format_dropdown
+    ioparam_grid[5, 8] = data_export_upload
 
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(2, 10)
@@ -429,48 +461,21 @@ def create_jupyter_ui():
     # A text box for the site name
     site_name = widgets.Text(description='Site Name:',
                             value='HVSR_Site',
-                            placeholder='HVSR_Site',
-                            style={'description_width': 'initial'}, layout=widgets.Layout(width='30%'))
+                            placeholder='HVSR_Site')
+                            
+
+    project = widgets.Text(description='Project:', 
+                           placeholder= "Project or County Name")
 
     tenpct_spacer = widgets.Button(description='', layout=widgets.Layout(width='20%', visibility='hidden'))
-
-    # Dropdown with different source types 
-    data_source_type = widgets.Dropdown(options=[('File', 'file'), ('Raw', 'raw'), ('Batch', 'batch'), ('Directory', 'dir')],
-                                            description='Data Source type:',
-                                            value='file',orientation='horizontal', 
-                                            style={'description_width': 'initial'},
-                                            layout=widgets.Layout(width='20%'))
-    def on_ds_change(event):
-        if data_source_type.value == 'file' or data_source_type.value== 'batch':
-            browse_data_button.description = 'Select Files'
-        else:
-            browse_data_button.description = 'Select Folders'
-    data_source_type.observe(on_ds_change)
-    # Dropdown labeled "Instrument" with options "Raspberry Shake", "Tromino", "Other"
-    instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino', 'Other'],
-                                        style={'description_width': 'initial'},
-                                        description='Instrument:',layout=widgets.Layout(width='20%'))
-
-    # Processing Settings
-    processing_settings_button = widgets.FileUpload(accept='.proc', description='Processing Settings',
-                                            multiple=False,layout=widgets.Layout(width='10%'))
-
-    # Whether to show plots outside of widget
-    show_plot_check =  widgets.Checkbox(description='Print Plots', value=False, disabled=False, indent=False,
-                                    layout=widgets.Layout(width='10%', justify_content='flex-end'))
-
-
-    # Whether to print to terminal
-    verbose_check = widgets.Checkbox(description='Verbose', value=False, disabled=False, indent=False,
-                                    layout=widgets.Layout(width='10%', justify_content='flex-end'))
+    fivepct_spacer = widgets.Button(description='', layout=widgets.Layout(width='5%', visibility='hidden'))
 
     # A text box labeled Data Filepath
-    data_filepath = widgets.Text(description='Data Filepath:',
+    data_filepath = widgets.Text(description='Data Filepath:    ',
                                     placeholder='sample', value='sample',
-                                    style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
-
-    # A button next to it labeled "Browse"
-    browse_data_button = widgets.Button(description='Select Files', layout=widgets.Layout(width='10%'))
+                                    style={'description_width': 'initial'},layout=widgets.Layout(width='100%'))
+    # A button next to input_data text labeled "Browse"
+    browse_data_button = widgets.Button(description='Browse', layout=widgets.Layout(width='100%'))
     def select_datapath(event):
         try:
             root = tk.Tk()
@@ -487,46 +492,53 @@ def create_jupyter_ui():
             browse_data_button.description='Use Text Field'
     browse_data_button.on_click(select_datapath)
 
-    # A text box labeled Metadata Filepath
-    metadata_filepath = widgets.Text(description='Metadata Filepath:',
-                                        style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
+    # Dropdown with different source types 
+    data_source_type = widgets.Dropdown(options=[('File', 'file'), ('Raw', 'raw'), ('Batch', 'batch'), ('Directory', 'dir')],
+                                            description='Data Source type:',
+                                            value='file',orientation='horizontal',
+                                            style={'description_width': 'initial'},
+                                            layout=widgets.Layout(width='90%'))
+    def on_ds_change(event):
+        if data_source_type.value == 'file' or data_source_type.value== 'batch':
+            browse_data_button.description = 'Select Files'
+        else:
+            browse_data_button.description = 'Select Folders'
+    data_source_type.observe(on_ds_change)
 
-    # A button next to it labeled "Browse"
-    browse_metadata_button = widgets.Button(description='Select File(s)', layout=widgets.Layout(width='10%'))
-    def select_metapath(event):
-        try:
-            root = tk.Tk()
-            root.wm_attributes('-topmost', True)
-            root.withdraw()
-            metadata_filepath.value = str(filedialog.askopenfilenames(title='Select Metadata File(s)'))
-            root.destroy()
-        except Exception as e:
-            print(e)
-            browse_metadata_button.disabled=True
-            browse_metadata_button.description='Use Text Field'
-    browse_metadata_button.on_click(select_metapath)
+    # Processing Settings
+    processing_settings_button = widgets.FileUpload(accept='.proc', description='Processing Settings',
+                                            multiple=False,layout=widgets.Layout(width='10%'))
+
+    # Whether to show plots outside of widget
+    show_plot_check =  widgets.Checkbox(description='Print Plots', value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width='8%', justify_content='flex-end'))
+
+
+    # Whether to print to terminal
+    verbose_check = widgets.Checkbox(description='Verbose', value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width='5%', justify_content='flex-end'))
 
     # A progress bar
     progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
                                     bar_style='info',
-                                    orientation='horizontal',layout=widgets.Layout(width='85%'))
+                                    orientation='horizontal',layout=widgets.Layout(width='100%'))
 
     # A dark yellow button labeled "Read Data"
     read_data_button = widgets.Button(description='Read Data',
-                                    button_style='warning',layout=widgets.Layout(width='10%'))
+                                    button_style='warning')
 
 
-    # A forest green button labeled "Process HVSR"
+    # A forest green button labeled "Run"
     process_hvsr_button = widgets.Button(description='Run',
-                                            button_style='success',layout=widgets.Layout(width='5%'))
+                                         button_style='success')
 
     # Update input_param call
     def update_input_param_call():
-        input_param_text = f"""(input_data='{data_filepath.value}', metapath='{metadata_filepath.value}', site='{site_name.value}', network='{network_textbox.value}',
+        input_param_text = f"""(input_data='{data_filepath.value}', metadata='{metadata_filepath.value}', site='{site_name.value}', project='{project.value}', network='{network_textbox.value}',
                     station='{station_textbox.value}', location='{location_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
-                    input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elevation_unit_textbox.value}',
+                    input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elev_unit_dropdown.value}',
                     instrument='{instrument_dropdown.value}', hvsr_band={[hvsr_band_min_box.value, hvsr_band_max_box.value]}, 
                     peak_freq_range={[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}, verbose={verbose_check.value})"""
         input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
@@ -535,23 +547,50 @@ def create_jupyter_ui():
     # Update fetch_data call
     def update_fetch_data_call():
         fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
-                            export_format={trim_export_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, verbose={verbose_check.value})"""
+                            export_format={data_export_format_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, verbose={verbose_check.value})"""
         fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
     update_fetch_data_call()
 
-    site_hbox = widgets.HBox()
-    site_hbox.children = [site_name, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, tenpct_spacer, show_plot_check, verbose_check]
-    datapath_hbox = widgets.HBox()
-    datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
-    metadata_hbox = widgets.HBox()
-    metadata_hbox.children = [metadata_filepath, browse_metadata_button, instrument_dropdown]
-    progress_hbox = widgets.HBox()
-    progress_hbox.children = [progress_bar, read_data_button, process_hvsr_button]
 
-    input_params_vbox = widgets.VBox()
-    input_params_vbox.children = [site_hbox,datapath_hbox,metadata_hbox,progress_hbox]
+    input_param_grid = widgets.GridspecLayout(10, 10)
+    input_param_grid[0, 0:3] = site_name
+    input_param_grid[0, 3:5] = project
+
+    #input_param_grid[1, 0:2] = network_textbox
+    input_param_grid[1, 0:2] = station_textbox
+    input_param_grid[1, 3:5] = instrument_dropdown
+
+    input_param_grid[2, 0:2] = xcoord_textbox
+    input_param_grid[2, 3:5] = ycoord_textbox
+    input_param_grid[2, 6:8] = zcoord_textbox
+
+    input_param_grid[3, 0:2] = input_crs_textbox
+    input_param_grid[3, 3:5] = output_crs_textbox
+    input_param_grid[3, 6:8] = elev_unit_dropdown
+
+    input_param_grid[4, 0:7] = data_filepath
+    input_param_grid[4, 7:8] = browse_data_button
+    input_param_grid[4, 8:] = data_source_type
 
     input_accordion_box.children = [input_accordion]
+    input_param_grid[5:9, :] = input_accordion_box
+
+    input_param_grid[9, 0:7] = progress_bar
+    input_param_grid[9, 7] = read_data_button
+    input_param_grid[9, 8:] = process_hvsr_button
+
+    #site_hbox = widgets.HBox()
+    #site_hbox.children = [site_name, fivepct_spacer, project]
+    #instrument_hbox = widgets.HBox()
+    #instrument_hbox.children = [network_textbox, fivepct_spacer, station_textbox, fivepct_spacer, instrument_dropdown]
+    #datapath_hbox = widgets.HBox()
+    ##datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
+    #progress_hbox = widgets.HBox()
+    #progress_hbox.children = [progress_bar, read_data_button, process_hvsr_button]
+
+    #input_params_vbox = widgets.VBox()
+    #input_params_vbox.children = [site_hbox, input_param_grid, datapath_hbox, progress_hbox]
+
     #input_HBox.children = [input_accordion_label_box, input_accordion_box]
     #input_HBox.layout= widgets.Layout(align_content='space-between')
 
@@ -560,16 +599,18 @@ def create_jupyter_ui():
                                                 grid_template_rows='repeat(12, 1)'))
 
     # Add the VBox to the GridBox
-    input_tab.children = [site_hbox,
-                            datapath_hbox,
-                            metadata_hbox,
-                            input_accordion_box,
-                            progress_hbox]
+    input_tab.children = [input_param_grid]
+    #input_tab.children = [site_hbox,
+    #                      input_param_grid,
+    #                      datapath_hbox,
+    #                      input_accordion_box,
+    #                      progress_hbox]
 
     def get_input_params():
         input_params_kwargs={
             'input_data':data_filepath.value,
-            'metapath':metadata_filepath.value,
+            'project':project.value,
+            'metadata':metadata_filepath.value,
             'site':site_name.value,
             'instrument':instrument_dropdown.value,
             'network':network_textbox.value, 'station':station_textbox.value, 'location':location_textbox.value, 
@@ -579,7 +620,7 @@ def create_jupyter_ui():
             'tzone':time_zone_dropdown.value,
             'xcoord':xcoord_textbox.value,
             'ycoord':ycoord_textbox.value,
-            'elevation':zcoord_textbox.value, 'elev_unit':elevation_unit_textbox.value,'depth':0,
+            'elevation':zcoord_textbox.value, 'elev_unit':elev_unit_dropdown.value,'depth':0,
             'input_crs':input_crs_textbox.value,'output_crs':output_crs_textbox.value,
             'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
             'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}
@@ -604,7 +645,6 @@ def create_jupyter_ui():
         log_textArea.value += f"\n\nREADING DATA [{datetime.datetime.now()}]"
 
         ip_kwargs = get_input_params()
-        [print(ik, type(iv)) for ik, iv in ip_kwargs.items()]
         hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ninput_params():\n'{ip_kwargs}"
         if button.description=='Read Data':
@@ -612,6 +652,7 @@ def create_jupyter_ui():
         else:
             progress_bar.value=0.1
         fd_kwargs = get_fetch_data_params()
+        print(fd_kwargs)
         hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
         log_textArea.value += '\n\n'+str(datetime.datetime.now())+'\nfetch_data():\n\t'+str(fd_kwargs)
         if button.description=='Read Data':
@@ -792,11 +833,12 @@ def create_jupyter_ui():
             plot_str = hvsr_plot_str + ' ' + comp_plot_str+ ' ' + spec_plot_str
             return plot_str
 
-        gr_kwargs = {'report_format':['print','csv'],
+        gr_kwargs = {'report_formats':['print','table'],
                      'plot_type':get_formatted_plot_str(),
-                     'export_path':None,
+                     'plot_engine':'plotly',
+                     'report_export_path':None,
                      'csv_overwrite_opt':'overwrite',
-                     'no_output':False,
+                     'suppress_report_outputs':False,
                     'verbose':verbose_check.value
                      }
         return gr_kwargs
@@ -873,11 +915,11 @@ def create_jupyter_ui():
         gr_kwargs = _get_get_report_kwargs()
         hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}\n\n"
-        hvsr_data.get_report(report_format='print') # Just in case print wasn't included
+        hvsr_data.get_report(report_formats=['print']) # Just in case print wasn't included
         log_textArea.value += hvsr_data['Print_Report']
         printed_results_textArea.value = hvsr_data['Print_Report']
-        hvsr_data.get_report(report_format='csv') 
-        results_table.value = hvsr_data['CSV_Report'].to_html()
+        hvsr_data.get_report(report_formats=['table']) 
+        results_table.value = hvsr_data['Table_Report'].to_html()
         
         log_textArea.value += f'Processing time: {datetime.datetime.now() - startProc}'
         progress_bar.value = 0.95
@@ -1174,7 +1216,7 @@ def create_jupyter_ui():
                                             y=hvsr_data['psd_values_tavg'][comp],
                                             line=dict(width=2, dash="solid", 
                                             color=compColor[comp]),marker=None, 
-                                            name='PPSD Curve '+comp,    
+                                            name='PSD Curve '+comp,    
                                             yaxis=yaxis_to_use), 
                                             secondary_y=use_secondary,
                                             row=compRow, col='all')
@@ -1351,9 +1393,9 @@ def create_jupyter_ui():
         results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
         results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
         if comp_plot_row==1:
-            results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
+            results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
         else:
-            results_fig.update_yaxes(title_text="PPSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
+            results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
         
         # Reset results_graph_widget and display 
         with results_graph_widget:
@@ -1539,7 +1581,7 @@ def create_jupyter_ui():
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
 
-    # PPSD SETTINGS SUBTAB
+    # PSD SETTINGS SUBTAB
     ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
     ppsd_length = widgets.FloatText(style={'description_width': 'initial'}, 
                                     placeholder=20, value=20,layout=widgets.Layout(height='auto', width='auto'), disabled=False)
@@ -2108,7 +2150,7 @@ def create_jupyter_ui():
     # Place everything in Settings Tab
     settings_subtabs = widgets.Tab([ppsd_settings_tab, hvsr_settings_tab, outlier_settings_tab, plot_settings_tab])
     settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
-    settings_subtabs.set_title(0, "PPSD Settings")
+    settings_subtabs.set_title(0, "PSD Settings")
     settings_subtabs.set_title(1, "HVSR Settings")
     settings_subtabs.set_title(2, "Outlier Settings")
     settings_subtabs.set_title(3, "Plot Settings")
@@ -2153,7 +2195,7 @@ def create_jupyter_ui():
                 root = tk.Tk()
                 root.wm_attributes('-topmost', True)
                 root.withdraw()
-                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension='.csv', title='Save CSV Report'))
+                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension='.csv', title='Save Table Report'))
                 root.destroy()
         except Exception as e:
             print(e)
@@ -2161,8 +2203,11 @@ def create_jupyter_ui():
             export_results_table_browse_button.description='Use Text Field'
 
         out_path = export_results_table_filepath.value
-        sprit_hvsr.get_report(hvsr_results, report_format='csv', export_path=out_path,
+        if not hasattr(hvsr_results, "Table_Report"):
+            sprit_hvsr.get_report(hvsr_results, report_formats=['table'], export_path=out_path,
                               csv_overwrite_opt='overwrite')
+        else:
+            hvsr_results['Table_Report'].to_csv(out_path)
 
     export_results_table_browse_button.on_click(export_results_table)
     export_results_table_read_button.on_click(export_results_table)
@@ -2179,9 +2224,9 @@ def create_jupyter_ui():
     widget_param_dict = {
         'fetch_data': 
             {'source': data_source_type,
-            'trim_dir': trim_directory,
-            'export_format': trim_export_dropdown,
-            'detrend': detrend_type_dropdown,
+            'data_export_path': trim_directory,
+            'data_export_format': data_export_format_dropdown,
+            'detrend_type': detrend_type_dropdown,
             'detrend_options': detrend_options,
             'verbose': verbose_check},
         'remove_noise': 
@@ -2237,7 +2282,11 @@ def create_jupyter_ui():
     sprit_tabs.set_title(3, "Log")
     sprit_tabs.set_title(4, "Results")
 
-    sprit_title = widgets.Label(value='SPRIT', layout=widgets.Layout(width='150px'))
+    with open(spritLogoPath.as_posix(), "rb") as file:
+        image = file.read()
+
+    sprit_logo = widgets.Image(value=image, format='png', width=30,height=30)
+    sprit_title = widgets.Label(value='pRIT', layout=widgets.Layout(width='150px'))
     sprit_subtitle = widgets.Label(value='Tools for ambient siesmic noise analysis using HVSR',
                                    layout=widgets.Layout(flex='1', justify_content='flex-start', align_content='flex-end'))
 
@@ -2266,7 +2315,9 @@ def create_jupyter_ui():
     repobutton.on_click(open_repo)
     docsbutton.on_click(open_docs)
 
-    titlehbox = widgets.HBox([sprit_title, sprit_subtitle, repobutton, sourcebutton, docsbutton],
+    titlehbox = widgets.HBox([sprit_logo, sprit_title, sprit_subtitle, 
+                              show_plot_check, verbose_check, 
+                              repobutton, sourcebutton, docsbutton],
                             layout = widgets.Layout(align_content='space-between'))
     
     title_style = {
@@ -2279,7 +2330,8 @@ def create_jupyter_ui():
     # Apply the style to the label
     sprit_title.style = title_style
 
-    sprit_widget = widgets.VBox([titlehbox, sprit_tabs])
+    sprit_widget = widgets.VBox([titlehbox, sprit_tabs], 
+                                layout = widgets.Layout(align_content='space-between'))
 
     def observe_children(widget, callback):
         if hasattr(widget, 'children'):

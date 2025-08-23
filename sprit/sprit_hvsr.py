@@ -910,7 +910,7 @@ class HVSRData:
         --------
         get_report
         """
-        report_return = get_report(self, **kwargs)
+        report_return = get_report(hvsr_results=self, **kwargs)
         return report_return
 
     def items(self):
@@ -962,7 +962,7 @@ class HVSRData:
         --------
         get_report
         """
-        report_return = get_report(self, **kwargs)
+        report_return = get_report(hvsr_results=self, **kwargs)
         return report_return
     
     def select(self, **kwargs):
@@ -2935,7 +2935,7 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
     procSetFPath = settingsPath.joinpath(fnameDict['processing'])
 
     #Get settings values
-    instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metapath", "hvsr_band"]
+    instKeys = ["instrument", "net", "sta", "loc", "cha", "depth", "metadata", "hvsr_band"]
     inst_location_keys = ['xcoord', 'ycoord', 'elevation', 'elev_unit', 'input_crs']
     procFuncs = [fetch_data, remove_noise, generate_psds, process_hvsr, check_peaks, get_report]
 
@@ -4228,7 +4228,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
         Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
     """
     
-    invPath = params['metapath']
+    invPath = params['metadata']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 
                              'rs', 'rs3d', 'rasp. shake', 
                              'raspshake', 'raspberry shake 3d']
@@ -4296,7 +4296,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
         if not invPath:
             pass #if invPath is None
         elif not pathlib.Path(invPath).exists() or invPath == '':
-            warnings.warn(f"The metapath parameter was not specified correctly. Returning original params value {params['metapath']}")
+            warnings.warn(f"The metadata parameter was not specified correctly. Returning original params value {params['metadata']}")
         readInvKwargs = {}
         argspecs = inspect.getfullargspec(obspy.read_inventory)
         for argName in argspecs[0]:
@@ -4567,7 +4567,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             if show_table_report:
                 verbose_table = True
             
-            hsvr_results = _generate_table_report(hsvr_results, 
+            hsvr_results = _generate_table_report(hvsr_results, 
                                 azimuth=azimuth,
                                 show_table_report=show_table_report,
                                 verbose=verbose_table)
@@ -4750,7 +4750,7 @@ def input_params(input_data,
                 elev_unit = 'meters',
                 depth = 0,
                 instrument = "Seismometer",
-                metapath = None,
+                metadata = None,
                 hvsr_band = DEFAULT_BAND,
                 peak_freq_range = DEFAULT_BAND,
                 processing_parameters={},
@@ -4803,7 +4803,7 @@ def input_params(input_data,
         Depth of seismometer. Not currently used, but will likely be used in the future.
     instrument : str {'Raspberry Shake', "Tromino"}
         Instrument from which the data was acquired. 
-    metapath : str or pathlib.Path object, default=None
+    metadata : str or pathlib.Path object, default=None
         Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).
     hvsr_band : list, default=[0.1, 50]
         Two-element list containing low and high "corner" frequencies (in Hz) for processing. This can specified again later.
@@ -5005,7 +5005,7 @@ def input_params(input_data,
                       'acq_date':acq_date,'starttime':starttime,'endtime':endtime, 'timezone':'UTC', #Will be in UTC by this point
                       'xcoord_input':xcoordIN, 'ycoord_input': ycoordIN ,'xcoord':xcoord, 'ycoord':ycoord, 'longitude':xcoord_wgs84,'latitude':ycoord_wgs84,
                       'elevation':elevation, 'elev_unit':elev_unit, 'input_crs':input_crs, 'output_crs':output_crs,
-                      'depth':depth, 'input_data': input_data, 'metapath':metapath, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
+                      'depth':depth, 'input_data': input_data, 'metadata':metadata, 'hvsr_band':hvsr_band, 'peak_freq_range':peak_freq_range,
                       'processing_parameters':processing_parameters, 'processing_status':{'input_params_status':True, 'overall_status':True}
                       }
     
@@ -5024,9 +5024,9 @@ def input_params(input_data,
         inputParamDict.update(instrument_settings_dict)
     
     if str(instrument).lower() in raspShakeInstNameList:
-        if metapath is None or metapath=='':
-            metapath = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
-            inputParamDict['metapath'] = metapath
+        if metadata is None or metadata=='':
+            metadata = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
+            inputParamDict['metadata'] = metadata
 
     for settingName in instrument_settings_dict.keys():
         if settingName in inputParamDict.keys():
@@ -7140,8 +7140,8 @@ def _read_RS_Metadata(params, source=None):
     if 'inv' in params.keys():
         inv = params['inv']
     else:
-        sprit_utils._checkifpath(params['metapath'])
-        inv = obspy.read_inventory(params['metapath'], format='STATIONXML', level='response')
+        sprit_utils._checkifpath(params['metadata'])
+        inv = obspy.read_inventory(params['metadata'], format='STATIONXML', level='response')
         params['inv'] = inv
 
     station = params['sta']
@@ -7162,7 +7162,7 @@ def _read_RS_Metadata(params, source=None):
         os.remove(tpf.name)
     else:
         inv = sprit_utils._checkifpath(inv)
-        inv = obspy.read_inventory(params['metapath'], format='STATIONXML', level='response')
+        inv = obspy.read_inventory(params['metadata'], format='STATIONXML', level='response')
         params['inv'] = inv
         tree = ET.parse(inv)
         root = tree.getroot()

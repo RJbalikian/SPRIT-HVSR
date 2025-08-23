@@ -1549,7 +1549,7 @@ def main():
                 st.text_input("Location", placeholder='00', key='loc')
                 st.text_input("Channels", placeholder='EHZ, EHE, EHN', key='channels')
         
-                st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metapath')
+                st.text_input('Metadata Filepath', help='Filepath to instrument response file', key='metadata')
 
                 #with st.expander('Primary Input Parameters', expanded=True):
                 #if "hvsr_band" not in st.session_state:

@@ -280,7 +280,7 @@ class SPRIT_App:
 
                 update_progress_bars(prog_percent=1)            
                 self.params = sprit_hvsr.input_params(input_data=self.fpath,
-                                    metapath = self.meta_path.get(),
+                                    metadata = self.meta_path.get(),
                                     site=self.site_name.get(),
                                     network=self.network.get(),
                                     station=self.station.get(),
@@ -339,7 +339,7 @@ class SPRIT_App:
 
                 update_progress_bars(prog_percent=1)
                 self.params = sprit_hvsr.input_params( input_data=self.fpath,
-                                    metapath = self.meta_path.get(),
+                                    metadata = self.meta_path.get(),
                                     site=self.site_name.get(),
                                     network=self.network.get(), 
                                     station=self.station.get(), 
@@ -575,7 +575,7 @@ class SPRIT_App:
 
         def update_input_params_call():
             prevCall = self.input_params_call.cget('text')
-            self.input_params_call.configure(text="input_params( input_data='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', location='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
+            self.input_params_call.configure(text="input_params( input_data='{}', metadata={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', location='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -1165,7 +1165,7 @@ class SPRIT_App:
 
         #self.starttime, self.endtime = get_times()
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text='input_params() call')
-        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params( input_data='{}', metapath={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', location='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text="input_params( input_data='{}', metadata={}, site='{}', instrument='{}',\n\tnetwork='{}', station='{}', location='{}', channels=[{}, {}, {}], \n\tacq_date='{}', starttime='{}', endttime='{}', tzone='{}', \n\txcoord={}, ycoord={}, elevation={}, input_crs='{}', output_crs='{}', elev_unit='{}',   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])".format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
