@@ -209,9 +209,12 @@ def create_jupyter_ui():
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
     # Date Picker labelled "Acquisition Date"
-    acquisition_date_picker = widgets.DatePicker(description='Acq.Date:',
+    acquisition_date_picker = widgets.DatePicker(description='Acq. Date:',
                                             placeholder=datetime.datetime.today().date(),
                                             value=datetime.datetime.today().date())
+    #acquisition_date_picker = widgets.NaiveDatetimePicker(description='Start time and Date',
+    #                                                      placeholder=datetime.datetime.now(),
+    #                                                      value=datetime.datetime.now())
 
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.IntText(description='DOY',
@@ -261,8 +264,9 @@ def create_jupyter_ui():
     tzlist.insert(0, 'US/Central')
     tzlist.insert(0, 'UTC')
     # A dropdown list with all the items from zoneinfo.available_timezones(), default 'UTC'
-    time_zone_dropdown = widgets.Dropdown(options=tzlist,value=_get_default(sprit_hvsr.input_params, 'tzone'),
-                                            description='Time Zone:',layout=widgets.Layout(width='fill'))
+    time_zone_dropdown = widgets.Dropdown(description='Time Zone:',
+                                          options=tzlist,
+                                          value=_get_default(sprit_hvsr.input_params, 'tzone'))
 
     instrument_grid[0,0] = acquisition_date_picker
     instrument_grid[0,1] = acquisition_doy
@@ -572,8 +576,14 @@ def create_jupyter_ui():
     input_param_grid[4, 7:8] = browse_data_button
     input_param_grid[4, 8:] = data_source_type
 
+    input_param_grid[5,0:2] = acquisition_date_picker
+    input_param_grid[5,2] = acquisition_doy
+    input_param_grid[5,3] = start_time_picker
+    input_param_grid[5,4] = end_time_picker
+    input_param_grid[5,5:8] = time_zone_dropdown
+
     input_accordion_box.children = [input_accordion]
-    input_param_grid[5:9, :] = input_accordion_box
+    input_param_grid[6:9, :] = input_accordion_box
 
     input_param_grid[9, 0:7] = progress_bar
     input_param_grid[9, 7] = read_data_button
