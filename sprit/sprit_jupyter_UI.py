@@ -186,8 +186,7 @@ def create_jupyter_ui():
                     metadata_filepath.value = inst_settings['metadata']
 
                 if 'hvsr_band' in inst_settings.keys():
-                    hvsr_band_min_box.value = inst_settings['hvsr_band'][0]
-                    hvsr_band_max_box.value = inst_settings['hvsr_band'][1]
+                    hvsr_band_slide.value = (inst_settings['hvsr_band'][0], inst_settings['hvsr_band'][1])
 
         except Exception as e:
             print(e)
@@ -217,7 +216,7 @@ def create_jupyter_ui():
     #                                                      value=datetime.datetime.now())
 
     # Label that shows the Date currently selected in the Date Picker
-    acquisition_doy = widgets.IntText(description='DOY',
+    acquisition_doy = widgets.IntText(description='Day of Year',
                                                 placeholder=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 value=f"{acquisition_date_picker.value.timetuple().tm_yday}",
                                                 layout=widgets.Layout(width='auto'))
@@ -237,25 +236,25 @@ def create_jupyter_ui():
     try:
         start_time_picker = widgets.TimePicker(description='Start Time:',
                                             placeholder=datetime.time(0,0,0),
-                                            value=datetime.time(0,0,0),
-                                            layout=widgets.Layout(width='auto'))
+                                            value=datetime.time(0,0,0),)
+                                            #layout=widgets.Layout(width='auto'))
     except Exception as e:
         start_time_picker = widgets.Text(description='Start Time:',
                                         placeholder='00:00',
-                                        value='00:00',
-                                        layout=widgets.Layout(width='auto'))
+                                        value='00:00')
+                                        #layout=widgets.Layout(width='auto'))
 
     # Time selector (hour and minute) labelled "End Time". Same as Start Time otherwise.
     try:
         end_time_picker = widgets.TimePicker(description='End Time:',
                                         placeholder=datetime.time(23,59),
-                                        value=datetime.time(23,59),
-                                        layout=widgets.Layout(width='auto'))
+                                        value=datetime.time(23,59),)
+                                        #layout=widgets.Layout(width='auto'))
     except Exception as e:
         end_time_picker = widgets.Text(description='End Time:',
                                         placeholder='23:59:59.999999',
-                                        value='23:59:59.999999',
-                                        layout=widgets.Layout(width='auto'))
+                                        value='23:59:59.999999',)
+                                        #layout=widgets.Layout(width='auto'))
 
     tzlist = list(available_timezones())
     tzlist.sort()
@@ -322,21 +321,28 @@ def create_jupyter_ui():
             value='MSEED',
             description='Data Formats:', layout=widgets.Layout(width='auto'))
 
-    hvsr_band_min_box = widgets.FloatText(description='HVSR Band [Hz]', style={'description_width': 'initial'},
-                                          placeholder=_get_default(sprit_hvsr.input_params, 'hvsr_band')[0],
-                                          value=_get_default(sprit_hvsr.input_params, 'hvsr_band')[0])
-    hvsr_band_max_box = widgets.FloatText(placeholder=_get_default(sprit_hvsr.input_params, 'hvsr_band')[1],
-                                          value=_get_default(sprit_hvsr.input_params, 'hvsr_band')[1])
-    hvsr_band_hbox = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(width='auto'))
+    peak_freq_range_slide = widgets.FloatRangeSlider(value=[0.5, 25],
+                                                        min=0.1,
+                                                        max=64, 
+                                                        step=0.1,
+                                                        description='Peak Range',
+                                                        tooltip='Define the frequency range over which to search for peaks',
+                                                        readout_format='.1f',
+                                                        layout=widgets.Layout(height='auto', width='auto'),
+                                                        #style={'description_width': 'initial'}
+                                                        )
 
 
-    peak_freq_range_min_box = widgets.FloatText(description='Peak Range [Hz]',placeholder=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[0], 
-                                                value=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[0],
-                                                style={'description_width': 'initial'}, layout=widgets.Layout(width='auto'))
-    peak_freq_range_max_box = widgets.FloatText(placeholder=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[1], 
-                                                value=_get_default(sprit_hvsr.input_params, 'peak_freq_range')[1],layout=widgets.Layout(width='auto'))
-    peak_freq_range_hbox = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(width='auto'))
-
+    hvsr_band_slide = widgets.FloatRangeSlider(value=[0.5, 25],
+                                               min=0.1,
+                                               max=64, 
+                                               step=0.1,
+                                               description='HVSR Band',
+                                               tooltip='Define the frequency range over which HVSR data is processed',
+                                               readout_format='.1f',
+                                               layout=widgets.Layout(height='auto', width='auto'),
+                                               #style={'description_width': 'initial'}
+                                               )
 
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
@@ -419,8 +425,8 @@ def create_jupyter_ui():
 
     ioparam_grid[0,:] = proc_settings_hbox
     ioparam_grid[1,0] = data_format_dropdown
-    ioparam_grid[2,:5] = hvsr_band_hbox
-    ioparam_grid[3,:5] = peak_freq_range_hbox
+    ioparam_grid[2,:5] = hvsr_band_slide
+    ioparam_grid[3,:5] = peak_freq_range_slide
     ioparam_grid[4,:1] = detrend_type_dropdown
     ioparam_grid[4,1] = detrend_options
     ioparam_grid[5,:6] = trim_directory
@@ -543,8 +549,8 @@ def create_jupyter_ui():
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
                     input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elev_unit_dropdown.value}',
-                    instrument='{instrument_dropdown.value}', hvsr_band={[hvsr_band_min_box.value, hvsr_band_max_box.value]}, 
-                    peak_freq_range={[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}, verbose={verbose_check.value})"""
+                    instrument='{instrument_dropdown.value}', hvsr_band={hvsr_band_slide.value},
+                    peak_freq_range={[peak_freq_range_slide.value[0], peak_freq_range_slide.value[1]]}, verbose={verbose_check.value})"""
         input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
     update_input_param_call()
     
@@ -556,38 +562,55 @@ def create_jupyter_ui():
     update_fetch_data_call()
 
 
-    input_param_grid = widgets.GridspecLayout(10, 10)
-    input_param_grid[0, 0:3] = site_name
-    input_param_grid[0, 3:5] = project
+    input_param_grid = widgets.GridspecLayout(15, 10)
+    
+    input_param_grid[0, 0:7] = data_filepath
+    input_param_grid[0, 7:8] = browse_data_button
+    input_param_grid[0, 8:] = data_source_type
+    
+    fullDivide = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
+    halfDivide = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
+    input_param_grid[1,:] = fullDivide
 
-    #input_param_grid[1, 0:2] = network_textbox
-    input_param_grid[1, 0:2] = station_textbox
-    input_param_grid[1, 3:5] = instrument_dropdown
+    input_param_grid[2, 0:2] = site_name
+    input_param_grid[2, 2:4] = project
 
-    input_param_grid[2, 0:2] = xcoord_textbox
-    input_param_grid[2, 3:5] = ycoord_textbox
-    input_param_grid[2, 6:8] = zcoord_textbox
+    #input_param_grid[3, 0:2] = network_textbox
+    input_param_grid[3, 0:2] = station_textbox
+    input_param_grid[3, 2:4] = instrument_dropdown
 
-    input_param_grid[3, 0:2] = input_crs_textbox
-    input_param_grid[3, 3:5] = output_crs_textbox
-    input_param_grid[3, 6:8] = elev_unit_dropdown
+    input_param_grid[4,:6] = halfDivide
 
-    input_param_grid[4, 0:7] = data_filepath
-    input_param_grid[4, 7:8] = browse_data_button
-    input_param_grid[4, 8:] = data_source_type
+    input_param_grid[5, 0:2] = xcoord_textbox
+    input_param_grid[5, 2:4] = ycoord_textbox
+    input_param_grid[5, 4:6] = zcoord_textbox
 
-    input_param_grid[5,0:2] = acquisition_date_picker
-    input_param_grid[5,2] = acquisition_doy
-    input_param_grid[5,3] = start_time_picker
-    input_param_grid[5,4] = end_time_picker
-    input_param_grid[5,5:8] = time_zone_dropdown
+    input_param_grid[6, 0:2] = input_crs_textbox
+    input_param_grid[6, 2:4] = output_crs_textbox
+    input_param_grid[6, 4:6] = elev_unit_dropdown
+    
+    input_param_grid[7,:6] = halfDivide
+    
+    input_param_grid[8, 0:2] = acquisition_date_picker
+    input_param_grid[8, 2] = acquisition_doy
+
+    input_param_grid[9,0:2] = start_time_picker
+    input_param_grid[9,2] = end_time_picker
+    input_param_grid[9,3:5] = time_zone_dropdown
+    
+    input_param_grid[10,:6] = halfDivide
+    
+    input_param_grid[11,0:4] = peak_freq_range_slide
+    input_param_grid[12,0:4] = hvsr_band_slide
+    
+    input_param_grid[13,:] = fullDivide
 
     input_accordion_box.children = [input_accordion]
-    input_param_grid[6:9, :] = input_accordion_box
+    #input_param_grid[6:9, :] = input_accordion_box
 
-    input_param_grid[9, 0:7] = progress_bar
-    input_param_grid[9, 7] = read_data_button
-    input_param_grid[9, 8:] = process_hvsr_button
+    input_param_grid[14, 0:8] = progress_bar
+    input_param_grid[14, 8] = read_data_button
+    input_param_grid[14, 9] = process_hvsr_button
 
     #site_hbox = widgets.HBox()
     #site_hbox.children = [site_name, fivepct_spacer, project]
@@ -605,11 +628,19 @@ def create_jupyter_ui():
     #input_HBox.layout= widgets.Layout(align_content='space-between')
 
     # Create a GridBox with 12 rows and 20 columns
+    global input_tab
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns='repeat(10, 1)',
                                                 grid_template_rows='repeat(12, 1)'))
 
+    input_subtabs = widgets.Tab([input_param_grid, input_accordion_box])
+    input_subtabs.set_title(0, "Main Inputs")
+    input_subtabs.set_title(1, "Additional Settings")
+    
+    input_tab = widgets.VBox(children=[input_subtabs])
+
+
     # Add the VBox to the GridBox
-    input_tab.children = [input_param_grid]
+    #input_tab.children = [input_param_grid]
     #input_tab.children = [site_hbox,
     #                      input_param_grid,
     #                      datapath_hbox,
@@ -632,8 +663,8 @@ def create_jupyter_ui():
             'ycoord':ycoord_textbox.value,
             'elevation':zcoord_textbox.value, 'elev_unit':elev_unit_dropdown.value,'depth':0,
             'input_crs':input_crs_textbox.value,'output_crs':output_crs_textbox.value,
-            'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
-            'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value]}
+            'hvsr_band':hvsr_band_slide.value,
+            'peak_freq_range':peak_freq_range_slide.value}
         return input_params_kwargs
 
     def get_fetch_data_params():
@@ -766,8 +797,8 @@ def create_jupyter_ui():
         return ph_kwargs
 
     def get_check_peaks_kwargs():
-        cp_kwargs = {'hvsr_band':[hvsr_band_min_box.value, hvsr_band_max_box.value],
-                    'peak_freq_range':[peak_freq_range_min_box.value, peak_freq_range_max_box.value],
+        cp_kwargs = {'hvsr_band':hvsr_band_slide,
+                    'peak_freq_range':peak_freq_range_slide,
                     'peak_selection':peak_selection_type.value,
                     'verbose':verbose_check.value}
         return cp_kwargs
@@ -1616,8 +1647,8 @@ def create_jupyter_ui():
                                     placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     
     period_limit_label = widgets.Label(value='Period Limits:')
-    minPLim = round(1/(hvsr_band_max_box.value), 3)
-    maxPLim = round(1/(hvsr_band_min_box.value), 3)
+    minPLim = round(1/(hvsr_band_slide.value[1]), 3)
+    maxPLim = round(1/(hvsr_band_slide.value[0]), 3)
     period_limits_min = widgets.FloatText(description='Min. Period Limit', style={'description_width': 'initial'},
                                     placeholder=minPLim, value=minPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
     period_limits_max = widgets.FloatText(description='Max. Period Limit', style={'description_width': 'initial'},
@@ -1947,9 +1978,9 @@ def create_jupyter_ui():
     smooth_hv_curve = widgets.IntText(description='Smooth H/V Curve', style={'description_width': 'initial'},
                                     placeholder=51, value=51, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
-    hvsr_band_hbox_hvsrSet = widgets.HBox([hvsr_band_min_box, hvsr_band_max_box],layout=widgets.Layout(height='auto', width='auto'))
+    hvsr_band_hbox_hvsrSet = hvsr_band_slide#widgets.HBox([hvsr_band_slide],layout=widgets.Layout(height='auto', width='auto'))
 
-    peak_freq_range_hbox_hvsrSet = widgets.HBox([peak_freq_range_min_box, peak_freq_range_max_box],layout=widgets.Layout(height='auto', width='auto'))
+    peak_freq_range_hbox_hvsrSet = peak_freq_range_slide#widgets.HBox([peak_freq_range_slide],})
 
     peak_selection_type = widgets.Dropdown(description='Peak Selection Method', value='max',
                                     options=[('Highest Peak', 'max'),
@@ -2260,7 +2291,7 @@ def create_jupyter_ui():
              'special_handling':special_handling_dropdown, 
              'period_smoothing_width_octaves':period_smoothing_width, 
              'period_step_octaves':period_step_octave, 
-             'period_limits':[hvsr_band_min_box, hvsr_band_max_box]},
+             'period_limits':hvsr_band_slide},
         'process_hvsr': 
             {'horizontal_method': h_combine_meth,
             'smooth': smooth_hv_curve,
@@ -2274,8 +2305,8 @@ def create_jupyter_ui():
             'use_hv_curves': use_hv_curve_rmse,
             'verbose': verbose_check},
         'check_peaks': 
-            {'hvsr_band': [hvsr_band_min_box, hvsr_band_max_box],
-            'peak_freq_range': [peak_freq_range_min_box, peak_freq_range_max_box],
+            {'hvsr_band': hvsr_band_slide,
+            'peak_freq_range': peak_freq_range_slide,
             'verbose': verbose_check},
         'get_report': 
             {
