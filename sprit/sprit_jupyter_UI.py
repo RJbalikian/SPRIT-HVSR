@@ -48,6 +48,9 @@ def _get_default(func, param):
     if param == 'output_crs':
         return 'EPSG:4326'
 
+    if inspect.signature(func).parameters[param].default is None:
+        return str(inspect.signature(func).parameters[param].default)
+
     return inspect.signature(func).parameters[param].default
 
 def create_jupyter_ui():
@@ -73,15 +76,34 @@ def create_jupyter_ui():
     input_accordion_box = widgets.VBox()
     input_accordion = widgets.Accordion()
 
-    # Metadata accordion
-    metadata_grid = widgets.GridspecLayout(8, 10)
+    # Input Params Accordion
+    input_params_grid = widgets.GridspecLayout(5, 10)
+    fetch_data_grid = widgets.GridspecLayout(5, 10)
+    calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
+    noise_removal_grid = widgets.GridspecLayout(5, 10)
+    generate_psds_grid = widgets.GridspecLayout(5, 10)
+    process_hvsr_grid = widgets.GridspecLayout(5, 10)
+    remove_outliers_grid = widgets.GridspecLayout(5, 10)
+    check_peaks_grid = widgets.GridspecLayout(5, 10)
+    get_reports_grid = widgets.GridspecLayout(5, 10)
+
+    # A text box for the site name
+    site_textbox = widgets.Text(description='Site Name',
+                            value='HVSR_Site',
+                            placeholder='HVSR_Site')
+                            
+    # Text box for project/county name
+    project_textbox = widgets.Text(description='Project', 
+                           placeholder= "Project or County Name")
 
     # A text box labeled Metadata Filepath
-    metadata_filepath = widgets.Text(description='Metadata Filepath:',
-                                        style={'description_width': 'initial'},layout=widgets.Layout(width='70%'))
+    metadata_filepath = widgets.Text(description='Metadata',
+                                     placeholder='Filepath to file to be read by obspy.read_inventory()',
+                                    #style={'description_width': 'initial'},
+                                    layout=widgets.Layout(width='auto'))
 
     # A button next to it labeled "Browse"
-    browse_metadata_button = widgets.Button(description='Select File(s)', layout=widgets.Layout(width='10%'))
+    browse_metadata_button = widgets.Button(description='Browse', layout=widgets.Layout(width='auto'))
     def select_metapath(event):
         try:
             root = tk.Tk()
@@ -96,13 +118,13 @@ def create_jupyter_ui():
     browse_metadata_button.on_click(select_metapath)
 
     # Dropdown with instrument types
-    instrument_dropdown = widgets.Dropdown(options=['Raspberry Shake', 'Tromino Yellow', 'Tromino Blue', 'Other Seismometer'],
-                                        #style={'description_width': 'initial'},
-                                        description='Instrument:',
-                                        layout=widgets.Layout(width='100%'))
-
-    metadata_hbox = widgets.HBox()
-    metadata_hbox.children = [metadata_filepath, browse_metadata_button]
+    instrument_dropdown = widgets.Dropdown(options=[('Raspberry Shake', 'raspberry shake'), 
+                                                    ('Tromino Yellow', 'tromino yellow'), 
+                                                    ('Tromino Blue', 'tromino blue'), 
+                                                    ('Other Seismometer', 'seismometer')],
+                                           #style={'description_width': 'initial'},
+                                           description='Instrument:',
+                                           layout=widgets.Layout(width='100%'))
 
     network_textbox = widgets.Text(description='Network:',
                                     placeholder=_get_default(sprit_hvsr.input_params, 'network'),
@@ -131,12 +153,12 @@ def create_jupyter_ui():
 
 
     # Instrument Settings
-    inst_settings_text = widgets.Text(placeholder='Instrument Settings Filepath', layout=widgets.Layout(width='55%'))
-    instrument_read_button = widgets.Button(icon='fa-file-import',button_style='success',
-                                            layout=widgets.Layout(width='4%'))
-    instrument_settings_button = widgets.Button(description='Select .inst file',
-                                            layout=widgets.Layout(width='10%'))
-    inst_settings_hbox = widgets.HBox([inst_settings_text,instrument_read_button, instrument_settings_button])
+    inst_settings_text = widgets.Text(description='Inst. Settings', 
+                                      placeholder='Filepath to data with instrument settings', 
+                                      layout=widgets.Layout(width='auto'))
+    instrument_read_button = widgets.Button(description='Browse', icon='fa-file-import',
+                                            layout=widgets.Layout(width='auto'))
+
     
     def select_inst(event):
         try:
@@ -190,20 +212,25 @@ def create_jupyter_ui():
 
         except Exception as e:
             print(e)
-            instrument_settings_button.disabled=True
-            instrument_settings_button.description='Use Text Field'
+            instrument_read_button.disabled=True
+            instrument_read_button.description='Use Text Field'
     
-    instrument_settings_button.on_click(select_inst)
     instrument_read_button.on_click(select_inst)
 
-    metadata_grid[0,:] = metadata_hbox
-    metadata_grid[1,:] = inst_settings_hbox
-    metadata_grid[2,0] = network_textbox
-    metadata_grid[3,0] = station_textbox
-    metadata_grid[4,0] = location_textbox
-    metadata_grid[5,0] = z_channel_textbox
-    metadata_grid[6,0] = e_channel_textbox
-    metadata_grid[7,0] = n_channel_textbox
+    # Input parameters parameters
+    input_params_grid[0, 0:2] = network_textbox
+    input_params_grid[0, 6:8] = location_textbox
+
+    input_params_grid[1, 0:2] = z_channel_textbox
+    input_params_grid[1, 2:4] = e_channel_textbox
+    input_params_grid[1, 4:6] = n_channel_textbox
+
+
+    input_params_grid[2, :9] = metadata_filepath
+    input_params_grid[2, 9:] = browse_metadata_button
+
+    input_params_grid[3, :9] = inst_settings_text
+    input_params_grid[3, 9:] = instrument_read_button
 
     # Acquisition Accordion
     instrument_grid = widgets.GridspecLayout(5, 10)
@@ -277,40 +304,45 @@ def create_jupyter_ui():
     location_grid = widgets.GridspecLayout(4, 10)
     # X coordinate input
     xcoord_textbox = widgets.FloatText(description='X Coordinate:', tooltip='xcoord',
-                                       value=_get_default(sprit_hvsr.input_params, 'xcoord'), 
+                                       value=_get_default(sprit_hvsr.input_params, 'xcoord'),
+                                        layout=widgets.Layout(width='100%'),
                                        placeholder=_get_default(sprit_hvsr.input_params, 'xcoord'))
     #location_grid[0, 0] = xcoord_textbox
 
     # Y coordinate input
     ycoord_textbox = widgets.FloatText(description='Y Coordinate', tooltip='ycoord:',
-                                       value=_get_default(sprit_hvsr.input_params, 'ycoord'), 
+                                       value=_get_default(sprit_hvsr.input_params, 'ycoord'),
+                                        layout=widgets.Layout(width='100%'),                                       
                                        placeholder=_get_default(sprit_hvsr.input_params, 'ycoord'))
     #location_grid[1, 0] = ycoord_textbox
 
     # Z coordinate input
     zcoord_textbox = widgets.FloatText(description='Z Coordinate', tooltip='elevation:',
+                                       layout=widgets.Layout(width='100%'),
                                        value=_get_default(sprit_hvsr.input_params, 'elevation'),
                                        placeholder=_get_default(sprit_hvsr.input_params, 'elevation'))
     #location_grid[2, 0] = zcoord_textbox
 
-    # Z coordinate unit input
-    elev_unit_dropdown = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
-                                          value=_get_default(sprit_hvsr.input_params, 'elev_unit'),
-                                          description='Z Unit:', tooltip='elev_unit')
-    #location_grid[2, 1] = elev_unit_dropdown
-
     # Input CRS input
     input_crs_textbox = widgets.Text(description='Input CRS:',
+                                     layout=widgets.Layout(width='75%'),
                                      placholder=_get_default(sprit_hvsr.input_params, 'input_crs'),
                                      value=_get_default(sprit_hvsr.input_params, 'input_crs'))
     #location_grid[3, 0] = input_crs_textbox
 
     # Output CRS input
     output_crs_textbox = widgets.Text(description='Output CRS:',
-                                        layout=widgets.Layout(width='auto'),
+                                        layout=widgets.Layout(width='75%'),
                                         placholder=_get_default(sprit_hvsr.input_params, 'output_crs'),
                                         value=_get_default(sprit_hvsr.input_params, 'output_crs'))
-    location_grid[3, 1] = output_crs_textbox
+    #location_grid[3, 1] = output_crs_textbox
+
+    # Z coordinate unit input
+    elev_unit_dropdown = widgets.Dropdown(options=[('Feet', 'feet'), ('Meters', 'meters')],
+                                         layout=widgets.Layout(width='75%'),
+                                          value=_get_default(sprit_hvsr.input_params, 'elev_unit'),
+                                          description='Z Unit:', tooltip='elev_unit')
+    #location_grid[2, 1] = elev_unit_dropdown
 
     # IO PARAMS ACCORDION
     ioparam_grid = widgets.GridspecLayout(6, 10)
@@ -434,7 +466,7 @@ def create_jupyter_ui():
     ioparam_grid[5, 8] = data_export_upload
 
     # PYTHON API ACCORDION
-    inputAPI_grid = widgets.GridspecLayout(2, 10)
+    inputAPI_grid = widgets.GridspecLayout(3, 10)
     # A text label with "input_params()"
     input_params_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'input_params' + '</p>', 
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
@@ -446,44 +478,59 @@ def create_jupyter_ui():
 
     # A text label with "fetch_data()"
     fetch_data_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'fetch_data' + '</p>', 
-                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+                                     layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
     fetch_data_call = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + '()' + '</p>',
-                                     layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
+                                   layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
     inputAPI_grid[1, 0] = fetch_data_prefix
     inputAPI_grid[1, 1:] = fetch_data_call
 
     # Set it all in place
-    metaLabel = widgets.Label('Instrument', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
-    instLabel = widgets.Label('Acquisition', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
-    locLabel = widgets.Label('Location', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
-    ioparmLabel = widgets.Label('IO/Params', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
-    apiLabel = widgets.Label('API Call', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
-    input_accordion_label_box.children = [metaLabel, instLabel, locLabel, ioparmLabel, apiLabel]
-    input_accordion_label_box.layout = widgets.Layout(align_content='space-between', width='5%')
+    #metaLabel = widgets.Label('Input Params', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #fetchLabel = widgets.Label('Fetch Data', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #remNoiseLabel = widgets.Label('Noise Removal', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #azimuthLabel = widgets.Label('Calculate Azimuths', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #genPSDLabel = widgets.Label('Generate PSDs', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #procHVSRLabel = widgets.Label('Process HVSR', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #remCurveLabel = widgets.Label('Remove Outlier Curves', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #checkPeakLabel = widgets.Label('Check Peaks', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #reportLabel = widgets.Label('Get Reports', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #apiLabel = widgets.Label('API Call', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
+    #input_accordion_label_box.children = [metaLabel, instLabel, locLabel, ioparmLabel, apiLabel]
+    #input_accordion_label_box.layout = widgets.Layout(align_content='space-between', width='5%')
 
-    input_accordion.children = [metadata_grid, instrument_grid, location_grid, ioparam_grid, inputAPI_grid]
-    input_accordion.titles = ["Instrument Metadata", "Acquisition Information", "Location Information", "I/O and Parameters", "See Python API Call"]
+    input_accordion.children = [input_params_grid, 
+                                fetch_data_grid,
+                                calculate_azimuths_grid,
+                                noise_removal_grid,
+                                generate_psds_grid,
+                                process_hvsr_grid,
+                                remove_outliers_grid,
+                                check_peaks_grid,
+                                get_reports_grid,
+                                inputAPI_grid]
+    input_accordion.titles = ["Input Params", 
+                              "Fetch Data",
+                              "Calculate Azimuths",
+                              "Noise Removal", 
+                              "Generate PSDs",
+                              "Process HVSR",
+                              "Remove Outlier Curves",
+                              "Check Peaks",
+                              "Get Reports",
+                              "See Python API Call"]
     input_accordion_box.layout = widgets.Layout(align_content='space-between', width='99%')
     
     input_accordion.layout = widgets.Layout(width='99%')
 
     # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
-    # A text box for the site name
-    site_name = widgets.Text(description='Site Name:',
-                            value='HVSR_Site',
-                            placeholder='HVSR_Site')
-                            
-
-    project = widgets.Text(description='Project:', 
-                           placeholder= "Project or County Name")
-
     tenpct_spacer = widgets.Button(description='', layout=widgets.Layout(width='20%', visibility='hidden'))
     fivepct_spacer = widgets.Button(description='', layout=widgets.Layout(width='5%', visibility='hidden'))
 
     # A text box labeled Data Filepath
-    data_filepath = widgets.Text(description='Data Filepath:    ',
+    data_filepath = widgets.Text(description='Data Filepath',
                                     placeholder='sample', value='sample',
-                                    style={'description_width': 'initial'},layout=widgets.Layout(width='100%'))
+                                    #style={'description_width': 'initial'},
+                                    layout=widgets.Layout(width='100%'))
     # A button next to input_data text labeled "Browse"
     browse_data_button = widgets.Button(description='Browse', layout=widgets.Layout(width='100%'))
     def select_datapath(event):
@@ -544,7 +591,7 @@ def create_jupyter_ui():
 
     # Update input_param call
     def update_input_param_call():
-        input_param_text = f"""(input_data='{data_filepath.value}', metadata='{metadata_filepath.value}', site='{site_name.value}', project='{project.value}', network='{network_textbox.value}',
+        input_param_text = f"""(input_data='{data_filepath.value}', metadata='{metadata_filepath.value}', site='{site_textbox.value}', project_textbox='{project_textbox.value}', network='{network_textbox.value}',
                     station='{station_textbox.value}', location='{location_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
@@ -562,77 +609,60 @@ def create_jupyter_ui():
     update_fetch_data_call()
 
 
-    input_param_grid = widgets.GridspecLayout(15, 10)
+    main_settings_grid = widgets.GridspecLayout(15, 10)
     
-    input_param_grid[0, 0:7] = data_filepath
-    input_param_grid[0, 7:8] = browse_data_button
-    input_param_grid[0, 8:] = data_source_type
+    main_settings_grid[0, 0:6] = data_filepath
+    main_settings_grid[0, 6:7] = browse_data_button
+    main_settings_grid[0, 8:] = data_source_type
     
-    fullDivide = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
-    halfDivide = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
-    input_param_grid[1,:] = fullDivide
+    main_settings_grid[1,:] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
-    input_param_grid[2, 0:2] = site_name
-    input_param_grid[2, 2:4] = project
+    main_settings_grid[2, 0:2] = site_textbox
+    main_settings_grid[2, 2:4] = project_textbox
 
-    #input_param_grid[3, 0:2] = network_textbox
-    input_param_grid[3, 0:2] = station_textbox
-    input_param_grid[3, 2:4] = instrument_dropdown
+    main_settings_grid[3, 0:2] = station_textbox
+    main_settings_grid[3, 2:4] = instrument_dropdown
 
-    input_param_grid[4,:6] = halfDivide
+    main_settings_grid[4,:6] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
-    input_param_grid[5, 0:2] = xcoord_textbox
-    input_param_grid[5, 2:4] = ycoord_textbox
-    input_param_grid[5, 4:6] = zcoord_textbox
+    main_settings_grid[5, 0:1] = xcoord_textbox
+    main_settings_grid[5, 2:3] = ycoord_textbox
+    main_settings_grid[5, 4:5] = zcoord_textbox
 
-    input_param_grid[6, 0:2] = input_crs_textbox
-    input_param_grid[6, 2:4] = output_crs_textbox
-    input_param_grid[6, 4:6] = elev_unit_dropdown
+    main_settings_grid[6, 0] = input_crs_textbox
+    main_settings_grid[6, 2] = output_crs_textbox
+    main_settings_grid[6, 4] = elev_unit_dropdown
     
-    input_param_grid[7,:6] = halfDivide
+    main_settings_grid[7,:6] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
     
-    input_param_grid[8, 0:2] = acquisition_date_picker
-    input_param_grid[8, 2] = acquisition_doy
+    main_settings_grid[8, 0:2] = acquisition_date_picker
+    main_settings_grid[8, 2] = acquisition_doy
 
-    input_param_grid[9,0:2] = start_time_picker
-    input_param_grid[9,2] = end_time_picker
-    input_param_grid[9,3:5] = time_zone_dropdown
+    main_settings_grid[9,0:2] = start_time_picker
+    main_settings_grid[9,2] = end_time_picker
+    main_settings_grid[9,3:5] = time_zone_dropdown
     
-    input_param_grid[10,:6] = halfDivide
+    main_settings_grid[10,:6] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
     
-    input_param_grid[11,0:4] = peak_freq_range_slide
-    input_param_grid[12,0:4] = hvsr_band_slide
+    main_settings_grid[11,0:4] = peak_freq_range_slide
+    main_settings_grid[12,0:4] = hvsr_band_slide
     
-    input_param_grid[13,:] = fullDivide
+    main_settings_grid[13,:] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
     input_accordion_box.children = [input_accordion]
-    #input_param_grid[6:9, :] = input_accordion_box
+    #main_settings_grid[6:9, :] = input_accordion_box
 
-    input_param_grid[14, 0:8] = progress_bar
-    input_param_grid[14, 8] = read_data_button
-    input_param_grid[14, 9] = process_hvsr_button
+    main_settings_grid[14, 0:8] = progress_bar
+    main_settings_grid[14, 8] = read_data_button
+    main_settings_grid[14, 9] = process_hvsr_button
 
-    #site_hbox = widgets.HBox()
-    #site_hbox.children = [site_name, fivepct_spacer, project]
-    #instrument_hbox = widgets.HBox()
-    #instrument_hbox.children = [network_textbox, fivepct_spacer, station_textbox, fivepct_spacer, instrument_dropdown]
-    #datapath_hbox = widgets.HBox()
-    ##datapath_hbox.children = [data_filepath, browse_data_button, data_source_type]
-    #progress_hbox = widgets.HBox()
-    #progress_hbox.children = [progress_bar, read_data_button, process_hvsr_button]
-
-    #input_params_vbox = widgets.VBox()
-    #input_params_vbox.children = [site_hbox, input_param_grid, datapath_hbox, progress_hbox]
-
-    #input_HBox.children = [input_accordion_label_box, input_accordion_box]
-    #input_HBox.layout= widgets.Layout(align_content='space-between')
 
     # Create a GridBox with 12 rows and 20 columns
     global input_tab
     input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns='repeat(10, 1)',
                                                 grid_template_rows='repeat(12, 1)'))
 
-    input_subtabs = widgets.Tab([input_param_grid, input_accordion_box])
+    input_subtabs = widgets.Tab([main_settings_grid, input_accordion_box])
     input_subtabs.set_title(0, "Main Inputs")
     input_subtabs.set_title(1, "Additional Settings")
     
@@ -640,9 +670,9 @@ def create_jupyter_ui():
 
 
     # Add the VBox to the GridBox
-    #input_tab.children = [input_param_grid]
+    #input_tab.children = [main_settings_grid]
     #input_tab.children = [site_hbox,
-    #                      input_param_grid,
+    #                      main_settings_grid,
     #                      datapath_hbox,
     #                      input_accordion_box,
     #                      progress_hbox]
@@ -650,9 +680,9 @@ def create_jupyter_ui():
     def get_input_params():
         input_params_kwargs={
             'input_data':data_filepath.value,
-            'project':project.value,
+            'project_textbox':project_textbox.value,
             'metadata':metadata_filepath.value,
-            'site':site_name.value,
+            'site':site_textbox.value,
             'instrument':instrument_dropdown.value,
             'network':network_textbox.value, 'station':station_textbox.value, 'location':location_textbox.value, 
             'channels':[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value],
