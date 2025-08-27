@@ -78,7 +78,7 @@ def create_jupyter_ui():
 
     # Input Params Accordion
     input_params_grid = widgets.GridspecLayout(5, 10)
-    fetch_data_grid = widgets.GridspecLayout(5, 10)
+    fetch_data_grid = widgets.GridspecLayout(7, 10)
     calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
     noise_removal_grid = widgets.GridspecLayout(5, 10)
     generate_psds_grid = widgets.GridspecLayout(5, 10)
@@ -344,15 +344,7 @@ def create_jupyter_ui():
                                           description='Z Unit:', tooltip='elev_unit')
     #location_grid[2, 1] = elev_unit_dropdown
 
-    # IO PARAMS ACCORDION
-    ioparam_grid = widgets.GridspecLayout(6, 10)
-
     # Data format (for obspy format to use to read in)
-    data_format_dropdown = widgets.Dropdown(
-            options=OBSPY_FORMATS,
-            value='MSEED',
-            description='Data Formats:', layout=widgets.Layout(width='auto'))
-
     peak_freq_range_slide = widgets.FloatRangeSlider(value=[0.5, 25],
                                                         min=0.1,
                                                         max=64, 
@@ -376,22 +368,47 @@ def create_jupyter_ui():
                                                #style={'description_width': 'initial'}
                                                )
 
+    # FETCH DATA ACCORDION
     # A dropdown labeled "Detrend type" with "Spline", "Polynomial", or "None"
     detrend_type_dropdown = widgets.Dropdown(options=[('Spline', 'spline'), ('Polynomial', 'polynomial'), ('None', 'none')],
-                            description='Detrend Type:',  layout=widgets.Layout(width='auto'))
-    detrend_options = widgets.FloatText(description='Order:', tooltip='detrend_options', placeholder=_get_default(sprit_hvsr.fetch_data, 'detrend_options'), 
-                                      value=_get_default(sprit_hvsr.fetch_data, 'detrend_options'),layout=widgets.Layout(width='auto'))
+                            description='Detrend type',  layout=widgets.Layout(width='auto'))
+    detrend_options = widgets.Text(description='Options', tooltip='detrend_options', 
+                                   placeholder="order="+str(_get_default(sprit_hvsr.fetch_data, 'detrend_options')), 
+                                   value="order="+str(_get_default(sprit_hvsr.fetch_data, 'detrend_options')),
+                                   layout=widgets.Layout(width='auto'))
+
+    filter_type_dropdown = widgets.Dropdown(options=[('Bandpass', 'bandpass'), 
+                                                      ('Bandstop', 'bandstop'), 
+                                                      ('Highpass', 'highpass'), 
+                                                      ('Lowpass', 'lowpass'), 
+                                                      ('Lowpass (Cheby 2)', 'lowpass_cheby_2'), 
+                                                      ('Lowpass (FIR)', 'lowpass_fir'), 
+                                                      ('Remez (FIR)', 'remez_fir'), 
+                                                      ('None', 'none')],
+                                             value="none",
+                                             description='Filter type',  layout=widgets.Layout(width='auto'))
+
+    filter_options = widgets.Text(description='Options', 
+                                      tooltip="Options for obspy.filter() method in a format: 'option_name=option_value, 2ndoptname=2ndoptvalue'", 
+                                      placeholder=str(_get_default(sprit_hvsr.fetch_data, 'filter_options')),
+                                      value=str(_get_default(sprit_hvsr.fetch_data, 'filter_options')),
+                                      layout=widgets.Layout(width='auto'))
 
     # A text to specify the trim directory
-    trim_directory = widgets.Text(description='Trim Dir.:', value="None",#pathlib.Path().home().as_posix(),
+    data_export_path_textbox = widgets.Text(description='Export Path', value="None",#pathlib.Path().home().as_posix(),
                                     layout=widgets.Layout(width='auto'))
-    data_export_format_dropdown = widgets.Dropdown(
-                options=OBSPY_FORMATS,
-                value='MSEED',
-                description='Data Export Format:', layout=widgets.Layout(width='auto'))
-    data_export_upload = widgets.FileUpload(
-                            accept='', 
-                            multiple=False, layout=widgets.Layout(width='auto'))
+
+    data_export_format_dropdown = widgets.Dropdown(options=OBSPY_FORMATS,
+                                                   value='MSEED',
+                                                   description='Format', 
+                                                   layout=widgets.Layout(width='auto'))
+    
+    update_metadata_checkbox = widgets.Checkbox(value=True,
+                                                description='Update Metadata',
+                                                disabled=False,
+                                                indent=False,
+                                                tooltip='Only applicable if metadata specified')
+                                                
 
     # Processing Settings
     proc_settings_text = widgets.Text(placeholder='Instrument Settings Filepath', layout=widgets.Layout(width='55%'))
@@ -449,21 +466,91 @@ def create_jupyter_ui():
                                     widget_param_dict[func][prm].value = val
         except Exception as e:
             print(e)
-            proc_settings_browse_button.disabled=True
-            proc_settings_browse_button.description='Use Text Field'
+            proc_settings_browse_button.disabled = True
+            proc_settings_browse_button.description = 'Use Text Field'
     
     proc_settings_read_button.on_click(select_proc)
     proc_settings_browse_button.on_click(select_proc)
 
-    ioparam_grid[0,:] = proc_settings_hbox
-    ioparam_grid[1,0] = data_format_dropdown
-    ioparam_grid[2,:5] = hvsr_band_slide
-    ioparam_grid[3,:5] = peak_freq_range_slide
-    ioparam_grid[4,:1] = detrend_type_dropdown
-    ioparam_grid[4,1] = detrend_options
-    ioparam_grid[5,:6] = trim_directory
-    ioparam_grid[5, 6:8] = data_export_format_dropdown
-    ioparam_grid[5, 8] = data_export_upload
+    fetch_data_grid[0, :] = proc_settings_hbox
+    fetch_data_grid[1, 0] = data_export_format_dropdown
+
+    fetch_data_grid[2, 0] = detrend_type_dropdown
+    fetch_data_grid[2, 1] = detrend_options
+
+    fetch_data_grid[3, 0] = filter_type_dropdown
+    fetch_data_grid[3, 1] = filter_options
+
+    fetch_data_grid[4, :] = update_metadata_checkbox
+
+    fetch_data_grid[5, 0] = widgets.Label('Data Export')
+    fetch_data_grid[5, 1:6] = data_export_path_textbox
+    fetch_data_grid[5, 6:8] = data_export_format_dropdown
+
+    # Calculate Azimuth
+    #azimuth_angle=45, azimuth_type='multiple', azimuth_unit='degrees', verbose=False
+    azimuth_angle_slide = widgets.IntSlider(value=45,
+                                    min=0,
+                                    max=360,
+                                    step=1,
+                                    description='Angle',
+                                    disabled=False,
+                                    continuous_update=False,
+                                    orientation='horizontal',
+                                    readout=True)
+
+    azimuth_type_dropdown = widgets.Dropdown(
+                                            options=[('Multiple/steps', 'multiple'), ('Single', 'single')],
+                                            value='single',
+                                            description='Type')
+
+    azimuth_unit_dropdown = widgets.Dropdown(options=[('°', 'degrees'), ('rad', 'radians')],
+                                            value='degrees',
+                                            description='Type')
+
+    calculate_azimuths_grid[0, :] = widgets.Label("Azimuth information")
+    calculate_azimuths_grid[0, 1:] = azimuth_angle_slide
+    calculate_azimuths_grid[1, :] = azimuth_type_dropdown
+    calculate_azimuths_grid[2, :] = azimuth_unit_dropdown
+
+    # Noise removal
+    # remove_method=None, 
+    # processing_window=None, 
+    # sat_percent=0.995, 
+    # noise_percent=0.8, 
+    # sta=2, lta=30, stalta_thresh=[8, 16], 
+    # std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0, 
+    # warmup_time=0, cooldown_time=0, min_win_size=1, 
+    # remove_raw_noise=False,
+
+
+    # Generate PSDs
+    # window_length=30.0, 
+    # overlap_pct=0.5, 
+    # window_type='hann', window_length_method='length', 
+    # remove_response=False, skip_on_gaps=True, 
+    # num_freq_bins=512, 
+    # obspy_ppsds=False, azimuthal_psds=False, verbose=False
+
+
+    # Process HVSR
+    # horizontal_method=None, 
+    # smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, 
+    # resample=True, 
+    # outlier_curve_rmse_percentile=False, 
+    # azimuth=None, 
+    # verbose=False
+
+    # Remove outlier curves
+    # rmse_thresh=98, use_percentile=True, 
+    # use_hv_curve=False, 
+    # plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, 
+    # verbose=False
+    
+    # Check peaks
+    # hvsr_band=[0.1, 50], 
+    # peak_selection='max', 
+    # peak_freq_range=[0.1, 50]    
 
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(3, 10)
@@ -506,7 +593,6 @@ def create_jupyter_ui():
                                 process_hvsr_grid,
                                 remove_outliers_grid,
                                 check_peaks_grid,
-                                get_reports_grid,
                                 inputAPI_grid]
     input_accordion.titles = ["Input Params", 
                               "Fetch Data",
@@ -516,7 +602,6 @@ def create_jupyter_ui():
                               "Process HVSR",
                               "Remove Outlier Curves",
                               "Check Peaks",
-                              "Get Reports",
                               "See Python API Call"]
     input_accordion_box.layout = widgets.Layout(align_content='space-between', width='99%')
     
@@ -591,7 +676,7 @@ def create_jupyter_ui():
 
     # Update input_param call
     def update_input_param_call():
-        input_param_text = f"""(input_data='{data_filepath.value}', metadata='{metadata_filepath.value}', site='{site_textbox.value}', project_textbox='{project_textbox.value}', network='{network_textbox.value}',
+        input_param_text = f"""(input_data='{data_filepath.value}', metadata='{metadata_filepath.value}', site='{site_textbox.value}', project='{project_textbox.value}', network='{network_textbox.value}',
                     station='{station_textbox.value}', location='{location_textbox.value}', loc='{location_textbox.value}', channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
@@ -603,8 +688,12 @@ def create_jupyter_ui():
     
     # Update fetch_data call
     def update_fetch_data_call():
-        fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, trim_dir={trim_directory.value},
-                            export_format={data_export_format_dropdown.value}, detrend={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, verbose={verbose_check.value})"""
+        fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, data_export_path={data_export_path_textbox.value},
+                            data_export_format={data_export_format_dropdown.value}, 
+                            detrend_type={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, 
+                            filter_type={filter_type_dropdown.value}, filter_options={filter_options.value},
+                            update_metadata={update_metadata_checkbox.value},
+                            verbose={verbose_check.value}, ...)"""
         fetch_data_call.value='<style>p {word-wrap: break-word}</style> <p>' + fetch_data_text + '</p>'
     update_fetch_data_call()
 
@@ -680,7 +769,7 @@ def create_jupyter_ui():
     def get_input_params():
         input_params_kwargs={
             'input_data':data_filepath.value,
-            'project_textbox':project_textbox.value,
+            'project':project_textbox.value,
             'metadata':metadata_filepath.value,
             'site':site_textbox.value,
             'instrument':instrument_dropdown.value,
@@ -700,15 +789,24 @@ def create_jupyter_ui():
     def get_fetch_data_params():
         fetch_data_kwargs = {
             'source':data_source_type.value, 
-            'trim_dir':trim_directory.value,
-            'export_format':data_format_dropdown.value,
-            'detrend':detrend_type_dropdown.value,
-            'detrend_options':detrend_options.value}
-        if str(fetch_data_kwargs['detrend']).lower() == 'none':
-            fetch_data_kwargs['detrend'] = None
+            'data_export_path':data_export_path_textbox.value,
+            'export_format':data_export_format_dropdown.value,
+            'detrend_type':detrend_type_dropdown.value,
+            'detrend_options':detrend_options.value,
+            'filter_type':filter_type_dropdown.value,
+            'filter_options':filter_options.value,
+            'update_metadata':update_metadata_checkbox.value           
+            }
+
+        if str(fetch_data_kwargs['detrend_type']).lower() == 'none':
+            fetch_data_kwargs['detrend_type'] = None
         
-        if str(fetch_data_kwargs['trim_dir']).lower() == 'none':
-            fetch_data_kwargs['trim_dir'] = None
+        if str(fetch_data_kwargs['data_export_path']).lower() == 'none':
+            fetch_data_kwargs['data_export_path'] = None
+
+        if str(fetch_data_kwargs['filter_type']).lower() == 'none':
+            fetch_data_kwargs['filter_type'] = None
+
         return fetch_data_kwargs
 
     def read_data(button):
@@ -2295,10 +2393,13 @@ def create_jupyter_ui():
     widget_param_dict = {
         'fetch_data': 
             {'source': data_source_type,
-            'data_export_path': trim_directory,
+            'data_export_path': data_export_path_textbox,
             'data_export_format': data_export_format_dropdown,
             'detrend_type': detrend_type_dropdown,
             'detrend_options': detrend_options,
+            'filter_type': filter_type_dropdown,
+            'filter_options': filter_options,
+            'update_metadata':update_metadata_checkbox.value,
             'verbose': verbose_check},
         'remove_noise': 
             {
