@@ -81,8 +81,8 @@ def create_jupyter_ui():
     fetch_data_grid = widgets.GridspecLayout(7, 10)
     calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
     noise_removal_grid = widgets.GridspecLayout(10, 10)
-    generate_psds_grid = widgets.GridspecLayout(5, 10)
-    process_hvsr_grid = widgets.GridspecLayout(5, 10)
+    generate_psds_grid = widgets.GridspecLayout(4, 5)
+    process_hvsr_grid = widgets.GridspecLayout(6, 10)
     remove_outliers_grid = widgets.GridspecLayout(5, 10)
     check_peaks_grid = widgets.GridspecLayout(5, 10)
     get_reports_grid = widgets.GridspecLayout(5, 10)
@@ -713,33 +713,79 @@ def create_jupyter_ui():
     # obspy_ppsds=False, azimuthal_psds=False, verbose=False
     
     window_length_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.generate_psds, "window_length")),
-                                        description='Window Length',
-                                        tooltip='Length of windows used for FFT analysis',
+                                        description='Length',
+                                        tooltip='Length of windows used for FFT analysis, in seconds or number (depending on window_length_method)',
                                         disabled=False)
 
-    window_length_method_dropdown
+    window_length_method_dropdown = widgets.Dropdown(options=[('Length', 'length'), ('Number of windows', 'number')],
+                                            value='length',
+                                            tooltip="How to define the window length (by length or by number of windows)",
+                                            description='Method',)
 
     overlap_pct_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.generate_psds, "overlap_pct")),
                                                  min=0,
                                                  max=1.0,
                                                  step=0.01,
-                                                 description='Overlap',
+                                                 description='Overlap %',
                                                  tooltip='Percentage by which to overlap windows used for FFT analysis',
                                                  disabled=False)
-    window_type_dropdown
-
-    remove_response_check
-
-    skip_on_gaps_check
-
-    num_freq_bins_dropdown
-
-    obspy_ppsds_check
     
-    azimuthal_psds_check
+    window_type_dropdown = widgets.Dropdown(options=[('Hann', 'hann'), 
+                                                     ("Boxcar", 'boxcar'),
+                                                     ('Triangle', 'triang'),
+                                                     ('Blackman', 'blackman'),
+                                                     ('Hamming', 'hamming'),
+                                                     ('Bartlett', 'bartlett'),
+                                                     ('Flattop', 'flattop'),
+                                                     ('Parzen', 'parzen'),
+                                                     ('Bohman', 'bohman'),
+                                                     ('Blackman-Harris', 'blackmanharris'),
+                                                     ('Nuttal', 'nuttall'),
+                                                     ('Barthan', 'barthann'),
+                                                     ('Cosine', 'cosine'),
+                                                     ('Exponential', 'exponential'),
+                                                     ('Tukey', 'tukey'),
+                                                     ('Taylor', 'taylor'),
+                                                     ('Lanczos', 'lanczos')],
+                                            value='hann',
+                                            tooltip='Type of window to use. See scip.signal.get_window() for more information.',
+                                            description='Window Type',)
 
+    remove_response_check = widgets.Checkbox(value=False,
+                                             description='Remove Response',
+                                             tooltip='Whether to remove instrument response. Must have metadata attached to data.',
+                                             disabled=False)
 
-    generate_psds_grid
+    skip_on_gaps_check  = widgets.Checkbox(value=False,
+                                           description='Skip on Gaps',
+                                           tooltip='Whether to skip windows if there are gaps',
+                                           disabled=False)
+
+    obspy_ppsds_check = widgets.Checkbox(value=False,
+                                         description='Use Obspy PPSDs',
+                                         tooltip='Whether to use the Obspy PPSD class to create PPSDs',
+                                         disabled=False)
+    
+    azimuthal_psds_check = widgets.Checkbox(value=False,
+                                            description='Use Azimuths',
+                                            tooltip='Whether to generate PSDs based on azimuths',
+                                            disabled=False)
+
+    num_freq_bins_dropdown = widgets.Dropdown(options=[64,128,512,1024,2048],
+                                            value=512,
+                                            tooltip='The number of frequency bins to use in creating PSDs',
+                                            description='# Freq. Bins',)
+
+    generate_psds_grid[0, 0] = widgets.Label("Window settings")
+    generate_psds_grid[0, 1] = window_length_float
+    generate_psds_grid[0, 2] = window_length_method_dropdown
+    generate_psds_grid[1, 1] = overlap_pct_float
+    generate_psds_grid[1, 2] = window_type_dropdown
+    generate_psds_grid[2, 0] = remove_response_check
+    generate_psds_grid[2, 1] = skip_on_gaps_check
+    generate_psds_grid[2, 2] = obspy_ppsds_check
+    generate_psds_grid[2, 3] = azimuthal_psds_check
+    generate_psds_grid[3, 0] = num_freq_bins_dropdown
     
     # Process HVSR
     # horizontal_method=None, 
@@ -749,9 +795,61 @@ def create_jupyter_ui():
     # azimuth=None, 
     # verbose=False
 
-    process_hvsr_grid
+    # HVSR SETTINGS SUBTAB
+    h_combine_meth = widgets.Dropdown(description='', value=3,
+                                    options=[('1. Differential Field Assumption', 1),
+                                             ('2. Arithmetic Mean |  H = (N + E)/2', 2), 
+                                             ('3. Geometric Mean | H = √(N * E) (SESAME recommended)', 3),
+                                             ('4. Vector Summation | H = √(N^2 + E^2)', 4),
+                                             ('5. Quadratic Mean | H = √(N^2 + E^2)/2', 5),
+                                             ('6. Maximum Horizontal Value | H = max(N, E)', 6),
+                                             ('7. Minimum Horizontal Value | H = max(N, E)', 7),
+                                             ('8. Single Azimuth |  H = H2·cos(az) + H1·sin(az)', 8)],)
+                                    #style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
+    freq_smoothing = widgets.Dropdown(description='', value='konno ohmachi',
+                                    options=[('Konno-Ohmachi', 'konno ohmachi'),
+                                             ('Constant','constant'),
+                                             ('Proportional', 'proportional'),
+                                             ('None', None)],
+                                    )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    freq_smooth_width = widgets.FloatText(description='Width', #style={'description_width': 'initial'},
+                                    placeholder=40, value=40,)# layout=widgets.Layout(height='auto', width='auto'), disabled=False)
 
+    resample_hv_curve_bool = widgets.Checkbox(value=True, description='Resample')
+    resample_hv_curve = widgets.IntText(description='', #style={'description_width': 'initial'},
+                                    placeholder=512, value=512, )#layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    smooth_hv_curve_bool = widgets.Checkbox(value=True,description='Smooth')# layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'})
+    smooth_hv_curve = widgets.IntText(description='',# style={'description_width': 'initial'},
+                                    placeholder=51, value=51,)# layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    hvsr_band_hbox_hvsrSet = hvsr_band_slide#widgets.HBox([hvsr_band_slide],layout=widgets.Layout(height='auto', width='auto'))
+
+    peak_freq_range_hbox_hvsrSet = peak_freq_range_slide#widgets.HBox([peak_freq_range_slide],})
+
+    peak_selection_type = widgets.Dropdown(description='Peak Method', value='max',
+                                        options=[('Highest Peak', 'max'),
+                                             ('Best Scored','scored')],
+                                        )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', )
+                                            #layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
+    process_hvsr_call = widgets.HTML(value='()')
+    process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
+
+    process_hvsr_grid[0, 0] = widgets.Label("Horizontal Combination Method")
+    process_hvsr_grid[0, 1:] = h_combine_meth
+    process_hvsr_grid[1, 0] = widgets.Label("Frequency Smoothing Operation")
+    process_hvsr_grid[1, 1] = freq_smoothing
+    process_hvsr_grid[1, 2] = freq_smooth_width
+    process_hvsr_grid[2, 0] = resample_hv_curve_bool
+    process_hvsr_grid[2, 1] = resample_hv_curve
+    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
+    process_hvsr_grid[3, 1] = smooth_hv_curve
+    process_hvsr_grid[4, 0] = peak_selection_type
+    #process_hvsr_grid[5, 1:] = process_hvsr_call_hbox
+    
     # Remove outlier curves
     # rmse_thresh=98, use_percentile=True, 
     # use_hv_curve=False, 
@@ -1139,6 +1237,21 @@ def create_jupyter_ui():
                     'outlier_curve_percentile_threshold':use_hv_curve_rmse.value,
                     'verbose':verbose_check.value}
         return ph_kwargs
+
+    # Update process_hvsr call
+    def update_process_hvsr_call():
+        ph_kwargs = get_process_hvsr_kwargs()
+        ph_text = f"""(hvsr_data=hvsr_data, 
+                        horizontal_method={ph_kwargs['horizontal_method']}, 
+                        smooth={ph_kwargs['smooth']}, 
+                        freq_smooth={ph_kwargs['freq_smooth']}, 
+                        f_smooth_width={ph_kwargs['f_smooth_width']}, 
+                        resample={ph_kwargs['resample']}, 
+                        outlier_curve_percentile_threshold={ph_kwargs['outlier_curve_percentile_threshold']}, 
+                        verbose={verbose_check.value})"""
+        process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
+    #update_process_hvsr_call()
+
 
     def get_check_peaks_kwargs():
         cp_kwargs = {'hvsr_band':hvsr_band_slide,
@@ -2295,60 +2408,6 @@ def create_jupyter_ui():
 
         return outlier_fig, hvsr_data
 
-    # HVSR SETTINGS SUBTAB
-    h_combine_meth = widgets.Dropdown(description='Horizontal Combination Method', value=3,
-                                    options=[('1. Differential Field Assumption (not implemented)', 1), 
-                                             ('2. Arithmetic Mean |  H = (N + E)/2', 2), 
-                                             ('3. Geometric Mean | H = √(N * E) (SESAME recommended)', 3),
-                                             ('4. Vector Summation | H = √(N^2 + E^2)', 4),
-                                             ('5. Quadratic Mean | H = √(N^2 + E^2)/2', 5),
-                                             ('6. Maximum Horizontal Value | H = max(N, E)', 6)],
-                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    freq_smoothing = widgets.Dropdown(description='Frequency Smoothing Operations', value='konno ohmachi',
-                                    options=[('Konno-Ohmachi', 'konno ohmachi'),
-                                             ('Constant','constant'),
-                                             ('Proportional', 'proportional'),
-                                             ('None', None)],
-                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    freq_smooth_width = widgets.FloatText(description='Freq. Smoothing Width', style={'description_width': 'initial'},
-                                    placeholder=40, value=40, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    resample_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    resample_hv_curve = widgets.IntText(description='Resample H/V Curve', style={'description_width': 'initial'},
-                                    placeholder=512, value=512, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    smooth_hv_curve_bool = widgets.Checkbox(layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    smooth_hv_curve = widgets.IntText(description='Smooth H/V Curve', style={'description_width': 'initial'},
-                                    placeholder=51, value=51, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    hvsr_band_hbox_hvsrSet = hvsr_band_slide#widgets.HBox([hvsr_band_slide],layout=widgets.Layout(height='auto', width='auto'))
-
-    peak_freq_range_hbox_hvsrSet = peak_freq_range_slide#widgets.HBox([peak_freq_range_slide],})
-
-    peak_selection_type = widgets.Dropdown(description='Peak Selection Method', value='max',
-                                    options=[('Highest Peak', 'max'),
-                                             ('Best Scored','scored')],
-                                    style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', 
-                                       layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
-    process_hvsr_call = widgets.HTML(value='()')
-    process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
-
-    # Update process_hvsr call
-    def update_process_hvsr_call():
-        ph_kwargs = get_process_hvsr_kwargs()
-        ph_text = f"""(hvsr_data=hvsr_data, 
-                        horizontal_method={ph_kwargs['horizontal_method']}, 
-                        smooth={ph_kwargs['smooth']}, 
-                        freq_smooth={ph_kwargs['freq_smooth']}, 
-                        f_smooth_width={ph_kwargs['f_smooth_width']}, 
-                        resample={ph_kwargs['resample']}, 
-                        outlier_curve_percentile_threshold={ph_kwargs['outlier_curve_percentile_threshold']}, 
-                        verbose={verbose_check.value})"""
-        process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
-    update_process_hvsr_call()
 
     check_peaks_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>'+'check_peaks' + '</p>',
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
@@ -2366,21 +2425,10 @@ def create_jupyter_ui():
         check_peaks_call.value='<style>p {word-wrap: break-word}</style> <p>' + cp_text + '</p>'
     update_check_peaks_call()
 
-    freq_smooth_hbox = widgets.HBox([freq_smoothing, freq_smooth_width])
-    resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
-    smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
+    #freq_smooth_hbox = widgets.HBox([freq_smoothing, freq_smooth_width])
+    #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
+    #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
     
-    # Set up vbox for hvsr_settings subtab
-    hvsr_settings_tab = widgets.VBox([h_combine_meth,
-                                    freq_smooth_hbox,
-                                    resample_hbox,
-                                    smooth_hbox,
-                                    hvsr_band_hbox_hvsrSet,
-                                    peak_freq_range_hbox_hvsrSet,
-                                    peak_selection_type,
-                                    process_hvsr_call_hbox,
-                                    check_peaks_call_hbox])
-
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value='HVSR Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
     component_plot_label = widgets.Label(value='Component Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
@@ -2533,12 +2581,11 @@ def create_jupyter_ui():
     update_plot_button.on_click(manually_update_results_fig)
 
     # Place everything in Settings Tab
-    settings_subtabs = widgets.Tab([ppsd_settings_tab, hvsr_settings_tab, outlier_settings_tab, plot_settings_tab])
+    settings_subtabs = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, plot_settings_tab])
     settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
     settings_subtabs.set_title(0, "PSD Settings")
-    settings_subtabs.set_title(1, "HVSR Settings")
-    settings_subtabs.set_title(2, "Outlier Settings")
-    settings_subtabs.set_title(3, "Plot Settings")
+    settings_subtabs.set_title(1, "Outlier Settings")
+    settings_subtabs.set_title(2, "Plot Settings")
 
     # LOG TAB - not currently using
     log_tab = widgets.VBox(children=[log_textArea])

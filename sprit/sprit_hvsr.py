@@ -4064,7 +4064,9 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
     else:
-        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
+        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
+                                                           num_freq_bins=num_freq_bins,
+                                                           overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
 
         x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
         
@@ -9092,7 +9094,9 @@ def __prototype_outlier_detect(hvsr_data, use_hv_curves=False,
 
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
-def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_psd_plot=False, remove_response=False, do_azimuths=False, verbose=False):
+def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_method='length', window_type='hann',
+                               overlap=0.5, num_freq_bins=512,
+                               show_psd_plot=False, remove_response=False, do_azimuths=False, verbose=False):
     """Helper function to get psds from raw trace streams (no response information is needed in this case)
 
     Parameters
@@ -9179,7 +9183,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
         low_freq = DEFAULT_BAND[0]
         hi_freq = DEFAULT_BAND[1]
 
-    x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), 512)
+    x_freqs = np.logspace(np.log10(low_freq), np.log10(hi_freq), num_freq_bins)
 
     # For each component, create the time windows and do FFT analysis
     psdDict = {}
@@ -9200,7 +9204,8 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
 
         # Get all possible windows and initialize output window list for windows that are actually used
         #  This will likely be the same if there are no gaps in the data
-        windows = _create_windows(hvsr_data=hvsr_data, window=window_length, overlap=overlap, window_length_method='length', verbose=False)
+        windows = _create_windows(hvsr_data=hvsr_data, window=window_length, 
+                                  overlap=overlap, window_length_method=window_length_method, verbose=False)
         windows_out = []
 
         # Iterate through each window to trim data trace and perform fft analysis
@@ -9234,9 +9239,10 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, overlap=0.5, show_
             if nsamplesperwin > 1:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore') # Sometimes unnecessary warnings arise
-                    f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, window='hann', nperseg=nsamplesperwin, 
-                                        noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
-                                        scaling='density', axis=-1, average='mean')
+                    f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, 
+                                                window=window_type, nperseg=nsamplesperwin, 
+                                                noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
+                                                scaling='density', axis=-1, average='mean')
                 
                 # Only add successful psds to psdDict (and the window starttime to window_out)
                 if pxx.size > 0 and f.size > 0:
