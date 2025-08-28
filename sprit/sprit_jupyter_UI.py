@@ -80,7 +80,7 @@ def create_jupyter_ui():
     input_params_grid = widgets.GridspecLayout(5, 10)
     fetch_data_grid = widgets.GridspecLayout(7, 10)
     calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
-    noise_removal_grid = widgets.GridspecLayout(5, 10)
+    noise_removal_grid = widgets.GridspecLayout(10, 10)
     generate_psds_grid = widgets.GridspecLayout(5, 10)
     process_hvsr_grid = widgets.GridspecLayout(5, 10)
     remove_outliers_grid = widgets.GridspecLayout(5, 10)
@@ -499,8 +499,7 @@ def create_jupyter_ui():
                                     orientation='horizontal',
                                     readout=True)
 
-    azimuth_type_dropdown = widgets.Dropdown(
-                                            options=[('Multiple/steps', 'multiple'), ('Single', 'single')],
+    azimuth_type_dropdown = widgets.Dropdown(options=[('Multiple/steps', 'multiple'), ('Single', 'single')],
                                             value='single',
                                             description='Type')
 
@@ -522,7 +521,188 @@ def create_jupyter_ui():
     # std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0, 
     # warmup_time=0, cooldown_time=0, min_win_size=1, 
     # remove_raw_noise=False,
+    remove_method_select = widgets.SelectMultiple(options=[('None', None),
+                                                            ("Moving St. Dev.", "moving_std"),
+                                                            ('Saturation Threshold', 'saturation'),
+                                                            ("Noise Threshold","noise"),
+                                                            ('STA/LTA', 'stalta'),
+                                                            ('Warmup', "warmup"),
+                                                            ("Cooldown", "cooldown"),
+                                                            ("Processing Windows", 'processing_window')],
+                                                    value=[None],
+                                                    rows=8,
+                                                    description='Method',
+                                                    disabled=False
+                                                    )
 
+    std_ratio_thresh_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, "std_ratio_thresh")),
+                                                      min=0.0,
+                                                      max=50,
+                                                      step=0.25,
+                                                      description='StDev Ratio',
+                                                      tooltip='The threshold for the ratio between the moving standard deviation/total standard deviation of the record to use as a threshold',
+                                                      disabled=True)
+    
+    std_window_size_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, "std_window_size")),
+                                                     min=0.0,
+                                                     max=60,
+                                                     step=0.5,
+                                                     description='StDev Window Size',
+                                                     tooltip='The size of the moving standard deviation window, in seconds',
+                                                     disabled=True)
+    
+    min_std_win = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, "min_std_win")),
+                                                        min=0.0,
+                                                        max=30,
+                                                        step=0.25,
+                                                        description='Min. StDev Window Size',
+                                                        tooltip='The minimum size of the window that can be removed by the moving standard deviation method, in seconds',
+                                                        disabled=True)
+
+
+    sat_percent_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, "sat_percent")),
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.05,
+                                                description='Saturation %',
+                                                tooltip='Percent (0-1) of absolute value of maximum value in dataset, above which value data is excluded from analysis',
+                                                disabled=True)
+
+    noise_percent_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, "noise_percent")),
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.05,
+                                                description='Noise %',
+                                                tooltip='Percent (0-1) of absolute value of maximum value in dataset, above which value data is excluded from analysis if persistent for min_win_size',
+                                                disabled=True)
+
+
+    sta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, "sta")),
+                                                step=0.1,
+                                                description='STA',
+                                                tooltip='Length of window to use for short term average',
+                                                disabled=True)
+
+    lta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, "lta")),
+                                                step=0.1,
+                                                description='LTA',
+                                                tooltip='Length of window to use for long term average',
+                                                disabled=True)
+
+    stalta_floatSlide = widgets.FloatRangeSlider(
+                                        value=_get_default(sprit_hvsr.remove_noise, "stalta_thresh"),
+                                        min=0,
+                                        max=100,
+                                        step=0.1,
+                                        description='STALTA Thresh.',
+                                        disabled=True,
+                                        continuous_update=False,
+                                        orientation='horizontal',
+                                        readout=True,
+                                        tooltip='The threshold at which an event is triggered, and at which the event is no longer considered active',
+                                        readout_format='.1f')
+
+    warmup_time_int = widgets.IntText(
+                                value=int(_get_default(sprit_hvsr.remove_noise, "warmup_time")),
+                                description='Warmup [s]',
+                                tooltip= 'Warmup time in seconds (time to exclude from start of record)',
+                                disabled=True
+                            )
+    
+    cooldown_time_int = widgets.IntText(
+                                value=int(_get_default(sprit_hvsr.remove_noise, "cooldown_time")),
+                                description='Cooldown [s]',
+                                tooltip= 'Cooldown time in seconds (time to exclude from end of record)',
+                                disabled=True
+                            )
+
+    min_win_size_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, "min_win_size")),
+                                           description='Min Window Size',
+                                           tooltip='Minimum length (in seconds) of windows that can be removed',
+                                           disabled=True)
+
+    proc_wind_text = widgets.Text(value='None',
+                                  tooltip='Manual specification of windows in the format: [[Starttime0, EndTime0], [Starttime1, Endtime1],....]',
+                                  description='Windows',
+                                  disabled=True)
+
+    raw_noise_checkbox = widgets.Checkbox(value=False,
+                                          description='Use raw stream',
+                                          disabled=True,
+                                          indent=False)
+
+
+
+    def on_remove_method_change(event):
+        print('disabling')
+        stalta_disabled = True
+        mst_disabled = True
+        sat_disabled = True
+        noise_disabled = True
+        warm_disabled = True
+        cool_disabled = True
+        proc_win_disabled = True
+        any_method_disabled = True
+
+        if 'stalta' in remove_method_select.value:
+            stalta_disabled = False
+            any_method_disabled = False
+
+        if 'moving_std' in remove_method_select.value:
+            mst_disabled = False
+            any_method_disabled = False
+
+        if 'saturation' in remove_method_select.value:
+            sat_disabled = False
+            any_method_disabled = False
+
+        if 'noise' in remove_method_select.value:
+            noise_disabled = False
+            any_method_disabled = False
+
+        if 'warmup' in remove_method_select.value:
+            warm_disabled = False
+            any_method_disabled = False
+
+        if 'cooldown' in remove_method_select.value:
+            cool_disabled = False
+            any_method_disabled = False
+
+        if 'processing_window' in remove_method_select.value:
+            proc_win_disabled = False
+            any_method_disabled = False
+
+        # Now disable them all...or not
+        min_std_win.disabled = std_window_size_float.disabled = std_ratio_thresh_float = mst_disabled
+        sat_percent_float.disabled = sat_disabled
+        noise_percent_float.disabled = noise_disabled
+        sta_float.disabled = lta_float.disabled = stalta_floatSlide.disabled = stalta_disabled
+        warmup_time_int.disabled = warm_disabled
+        cooldown_time_int.disabled = cool_disabled
+        min_win_size_float.disabled = any_method_disabled
+        proc_wind_text.disabled = proc_win_disabled
+        raw_noise_checkbox.disabled = any_method_disabled
+    remove_method_select.observe(on_remove_method_change)
+
+    # Set up arrangement
+    noise_removal_grid[0:5, :2] = remove_method_select
+    noise_removal_grid[0:5, 2:4] = raw_noise_checkbox
+
+    noise_removal_grid[5, :2] = std_ratio_thresh_float
+    noise_removal_grid[5, 2:4] = std_window_size_float
+    noise_removal_grid[5, 4:6] = min_std_win
+
+    noise_removal_grid[6, :2] = sat_percent_float
+    noise_removal_grid[6, 2:4] = noise_percent_float
+
+    noise_removal_grid[7, 0:2] = sta_float
+    noise_removal_grid[7, 2:4] = lta_float
+    noise_removal_grid[7, 4:6] = stalta_floatSlide
+
+    noise_removal_grid[8, 0:2] = warmup_time_int
+    noise_removal_grid[8, 2:4] = cooldown_time_int
+
+    noise_removal_grid[9, :] = proc_wind_text
 
     # Generate PSDs
     # window_length=30.0, 
@@ -531,8 +711,36 @@ def create_jupyter_ui():
     # remove_response=False, skip_on_gaps=True, 
     # num_freq_bins=512, 
     # obspy_ppsds=False, azimuthal_psds=False, verbose=False
+    
+    window_length_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.generate_psds, "window_length")),
+                                        description='Window Length',
+                                        tooltip='Length of windows used for FFT analysis',
+                                        disabled=False)
+
+    window_length_method_dropdown
+
+    overlap_pct_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.generate_psds, "overlap_pct")),
+                                                 min=0,
+                                                 max=1.0,
+                                                 step=0.01,
+                                                 description='Overlap',
+                                                 tooltip='Percentage by which to overlap windows used for FFT analysis',
+                                                 disabled=False)
+    window_type_dropdown
+
+    remove_response_check
+
+    skip_on_gaps_check
+
+    num_freq_bins_dropdown
+
+    obspy_ppsds_check
+    
+    azimuthal_psds_check
 
 
+    generate_psds_grid
+    
     # Process HVSR
     # horizontal_method=None, 
     # smooth=True, freq_smooth='konno ohmachi', f_smooth_width=40, 
@@ -541,16 +749,24 @@ def create_jupyter_ui():
     # azimuth=None, 
     # verbose=False
 
+    process_hvsr_grid
+
+
     # Remove outlier curves
     # rmse_thresh=98, use_percentile=True, 
     # use_hv_curve=False, 
     # plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, 
     # verbose=False
     
+    remove_outliers_grid
+
+
     # Check peaks
     # hvsr_band=[0.1, 50], 
     # peak_selection='max', 
     # peak_freq_range=[0.1, 50]    
+
+    check_peaks_grid
 
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(3, 10)

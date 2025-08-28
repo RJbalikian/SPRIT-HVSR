@@ -6393,7 +6393,7 @@ def remove_noise(hvsr_data, remove_method=None,
                 outStream = __remove_noise_thresh(outStream, noise_percent=noise_percent, lta=lta, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in warmup_cooldown:
                 outStream = __remove_warmup_cooldown(stream=outStream, warmup_time=warmup_time, cooldown_time=cooldown_time, verbose=verbose)
-            elif rem_kind.lower() in procWinList:
+            elif rem_kind.lower() in procWinList and str(processing_window).lower() != 'none':
                 outStream = _keep_processing_windows(stream=outStream, processing_window=processing_window, verbose=verbose)
             else:
                 if len(remove_method)==1:
