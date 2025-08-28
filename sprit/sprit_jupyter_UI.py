@@ -828,11 +828,6 @@ def create_jupyter_ui():
 
     peak_freq_range_hbox_hvsrSet = peak_freq_range_slide#widgets.HBox([peak_freq_range_slide],})
 
-    peak_selection_type = widgets.Dropdown(description='Peak Method', value='max',
-                                        options=[('Highest Peak', 'max'),
-                                             ('Best Scored','scored')],
-                                        )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
     process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', )
                                             #layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
     process_hvsr_call = widgets.HTML(value='()')
@@ -847,7 +842,6 @@ def create_jupyter_ui():
     process_hvsr_grid[2, 1] = resample_hv_curve
     process_hvsr_grid[3, 0] = smooth_hv_curve_bool
     process_hvsr_grid[3, 1] = smooth_hv_curve
-    process_hvsr_grid[4, 0] = peak_selection_type
     #process_hvsr_grid[5, 1:] = process_hvsr_call_hbox
     
     # Remove outlier curves
@@ -864,8 +858,12 @@ def create_jupyter_ui():
     # peak_selection='max', 
     # peak_freq_range=[0.1, 50]    
 
-    check_peaks_grid
-
+    peak_selection_type = widgets.Dropdown(description='Peak Method', value='max',
+                                        options=[('Highest Peak', 'max'),
+                                             ('Best Scored','scored')],
+                                        )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    check_peaks_grid[0, 0] = peak_selection_type
+    
     # PYTHON API ACCORDION
     inputAPI_grid = widgets.GridspecLayout(3, 10)
     # A text label with "input_params()"
