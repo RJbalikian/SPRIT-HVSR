@@ -59,7 +59,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
                  'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
-DEFAULT_BAND = [0.1, 50]
+DEFAULT_BAND = [0.5, 40]
 PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "HV_Plot", "Depth_Plot"]
 
 # Resources directory path, and the other paths as well
@@ -1176,7 +1176,13 @@ def gui(kind: str = 'browser'):
         try:
             sprit_jupyter_UI.create_jupyter_ui()
         except Exception as e:
-            print(e)
+            if hasattr(e, 'message'):
+                errMsg = e.message
+            else:
+                errMsg = e
+            print(errMsg)
+            raise e
+            
     elif kind.lower() in liteList:
         print("Lite GUI is not currently supported")
 
@@ -3785,7 +3791,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', 
-                  remove_response=False, skip_on_gaps=True, num_freq_bins=512, 
+                  remove_response=False, skip_on_gaps=True, num_freq_bins=512, hvsr_band=DEFAULT_BAND,
                   obspy_ppsds=False, azimuthal_psds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
     
     """Calculate Power Spectral Density (PSD) curves for each channel.
@@ -3857,7 +3863,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
             obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
         else:
-            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/DEFAULT_BAND[1], 1/DEFAULT_BAND[0]]
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_band[1], 1/hvsr_band[0]]
     else:
         if verbose:
             print(f"\t\tUpdating hvsr_band to band specified by period_limits={obspy_ppsd_kwargs['period_limits']}")
@@ -4125,7 +4131,6 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         # hvsr_data['ppsds']['Z']['times_gaps']: list of two-item lists with UTCDatetimes for gaps
         
         # #Maybe not needed hvsr_data['ppsds']['Z']['current_times_used']
-
 
     hvsrDF = pd.DataFrame(dfList, columns=colList)
     if verbose:
@@ -6520,11 +6525,19 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                     orig_args[k] = v
 
     # Reset parameters in case of manual override of imported parameters
-    use_percentile = orig_args['use_percentile']
+    outlier_method = orig_args['outlier_method']
     outlier_threshold = orig_args['outlier_threshold']
+    use_percentile = orig_args['use_percentile']
+    min_pts = orig_args['min_pts']
     use_hv_curves = orig_args['use_hv_curves']
+    plot_engine = orig_args['plot_engine']
     show_outlier_plot = orig_args['show_outlier_plot']
+    generate_outlier_plot = orig_args['generate_outlier_plot']
     verbose = orig_args['verbose']
+
+    # Allow skipping step if outlier_method specified as None (may help GUIs)
+    if str(outlier_method).lower() == 'none' or outlier_method is None:
+        return hvsr_data
 
     #Print if verbose, which changes depending on if batch data or not
     if (verbose and isinstance(hvsr_data, HVSRBatch)) or (verbose and not hvsr_data['batch']):
@@ -6593,6 +6606,7 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
         colNames = compNames
         col_prefix = 'HV_Curves'
 
+    # Remove outlier depending on method, prototype as default
     if str(outlier_method).lower() in dbscanList:
         hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curves=use_hv_curves, 
                                            use_percentile=use_percentile,
