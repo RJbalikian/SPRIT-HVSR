@@ -81,8 +81,8 @@ def create_jupyter_ui():
     fetch_data_grid = widgets.GridspecLayout(7, 10)
     calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
     noise_removal_grid = widgets.GridspecLayout(10, 10)
-    generate_psds_grid = widgets.GridspecLayout(4, 5)
-    process_hvsr_grid = widgets.GridspecLayout(6, 10)
+    generate_psds_grid = widgets.GridspecLayout(6, 5)
+    process_hvsr_grid = widgets.GridspecLayout(5, 10)
     remove_outliers_grid = widgets.GridspecLayout(5, 10)
     check_peaks_grid = widgets.GridspecLayout(5, 10)
     get_reports_grid = widgets.GridspecLayout(5, 10)
@@ -208,7 +208,7 @@ def create_jupyter_ui():
                     metadata_filepath.value = inst_settings['metadata']
 
                 if 'hvsr_band' in inst_settings.keys():
-                    hvsr_band_slide.value = (inst_settings['hvsr_band'][0], inst_settings['hvsr_band'][1])
+                    hvsr_band_rangeSlide.value = (inst_settings['hvsr_band'][0], inst_settings['hvsr_band'][1])
 
         except Exception as e:
             print(e)
@@ -345,7 +345,7 @@ def create_jupyter_ui():
     #location_grid[2, 1] = elev_unit_dropdown
 
     # Data format (for obspy format to use to read in)
-    peak_freq_range_slide = widgets.FloatRangeSlider(value=[0.5, 25],
+    peak_freq_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
                                                         min=0.1,
                                                         max=64, 
                                                         step=0.1,
@@ -353,11 +353,10 @@ def create_jupyter_ui():
                                                         tooltip='Define the frequency range over which to search for peaks',
                                                         readout_format='.1f',
                                                         layout=widgets.Layout(height='auto', width='auto'),
-                                                        #style={'description_width': 'initial'}
                                                         )
 
 
-    hvsr_band_slide = widgets.FloatRangeSlider(value=[0.5, 25],
+    hvsr_band_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
                                                min=0.1,
                                                max=64, 
                                                step=0.1,
@@ -365,7 +364,6 @@ def create_jupyter_ui():
                                                tooltip='Define the frequency range over which HVSR data is processed',
                                                readout_format='.1f',
                                                layout=widgets.Layout(height='auto', width='auto'),
-                                               #style={'description_width': 'initial'}
                                                )
 
     # FETCH DATA ACCORDION
@@ -673,7 +671,7 @@ def create_jupyter_ui():
             any_method_disabled = False
 
         # Now disable them all...or not
-        min_std_win.disabled = std_window_size_float.disabled = std_ratio_thresh_float = mst_disabled
+        min_std_win.disabled = std_window_size_float.disabled = std_ratio_thresh_float.disabled = mst_disabled
         sat_percent_float.disabled = sat_disabled
         noise_percent_float.disabled = noise_disabled
         sta_float.disabled = lta_float.disabled = stalta_floatSlide.disabled = stalta_disabled
@@ -688,9 +686,10 @@ def create_jupyter_ui():
     noise_removal_grid[0:5, :2] = remove_method_select
     noise_removal_grid[0:5, 2:4] = raw_noise_checkbox
 
-    noise_removal_grid[5, :2] = std_ratio_thresh_float
-    noise_removal_grid[5, 2:4] = std_window_size_float
-    noise_removal_grid[5, 4:6] = min_std_win
+    noise_removal_grid[5, :1] = widgets.Label("St. Dev. Ratio (Total / Moving)")
+    noise_removal_grid[5, 2:4] = std_ratio_thresh_float
+    noise_removal_grid[5, 4:6] = std_window_size_float
+    noise_removal_grid[5, 6:8] = min_std_win
 
     noise_removal_grid[6, :2] = sat_percent_float
     noise_removal_grid[6, 2:4] = noise_percent_float
@@ -776,6 +775,64 @@ def create_jupyter_ui():
                                             tooltip='The number of frequency bins to use in creating PSDs',
                                             description='# Freq. Bins',)
 
+    hvsr_band_gpsd_Rangeslide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                                         min=0.1,
+                                                         max=64, 
+                                                         step=0.1,
+                                                         description='HVSR Band',
+                                                         tooltip='Define the frequency range over which HVSR data is processed',
+                                                         readout_format='.1f',
+                                                         layout=widgets.Layout(height='auto', width='auto'))
+    widgets.link((hvsr_band_gpsd_Rangeslide, 'value'), (hvsr_band_rangeSlide, 'value'))
+
+    peak_freq_gpsd_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                                         min=0.1,
+                                                         max=64, 
+                                                         step=0.1,
+                                                         description='Peak Range',
+                                                         tooltip='Define the frequency range over which to search for peaks',
+                                                         readout_format='.1f',
+                                                         layout=widgets.Layout(height='auto', width='auto'))
+    widgets.link((peak_freq_gpsd_rangeSlide, 'value'), (peak_freq_rangeSlide, 'value'))
+
+    # Obspy PPSD SETTINGS
+    ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
+    ppsd_length = widgets.FloatText(style={'description_width': 'initial'}, 
+                                    placeholder=20, value=20,layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    
+    overlap_pct_label = widgets.Label(value='Overlap %:')
+    overlap_pct = widgets.FloatText(style={'description_width': 'initial'}, 
+                                    placeholder=0.5, value=0.5, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    period_step_label = widgets.Label(value='Period Step Octaves:')
+    period_step_octave = widgets.FloatText(style={'description_width': 'initial'}, 
+                                           placeholder=0.0625, value=0.0625, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    skip_on_gaps_label = widgets.Label(value='Skip on gaps:')
+    skip_on_gaps = widgets.Checkbox(value=False, disabled=False, indent=False)
+
+    db_step_label = widgets.Label(value='dB bins:')
+    db_bins_min = widgets.FloatText(description='Min. dB', style={'description_width': 'initial'},
+                                    placeholder=-200, value=-200, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    db_bins_max = widgets.FloatText(description='Max. dB', style={'description_width': 'initial'},
+                                    placeholder=-50, value=-50, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    db_bins_step = widgets.FloatText(description='dB Step', style={'description_width': 'initial'},
+                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    
+    period_limit_label = widgets.Label(value='Period Limits:')
+    minPLim = round(1/(hvsr_band_rangeSlide.value[1]), 3)
+    maxPLim = round(1/(hvsr_band_rangeSlide.value[0]), 3)
+    period_limits_min = widgets.FloatText(description='Min. Period Limit', style={'description_width': 'initial'},
+                                    placeholder=minPLim, value=minPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    period_limits_max = widgets.FloatText(description='Max. Period Limit', style={'description_width': 'initial'},
+                                    placeholder=maxPLim, value=maxPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    period_smoothing_width = widgets.FloatText(description='Period Smoothing Width', style={'description_width': 'initial'},
+                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
+    special_handling_dropdown = widgets.Dropdown(description='Special Handling', value='none',
+                                                options=[('None', 'none'), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
+                                            style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+
     generate_psds_grid[0, 0] = widgets.Label("Window settings")
     generate_psds_grid[0, 1] = window_length_float
     generate_psds_grid[0, 2] = window_length_method_dropdown
@@ -786,6 +843,8 @@ def create_jupyter_ui():
     generate_psds_grid[2, 2] = obspy_ppsds_check
     generate_psds_grid[2, 3] = azimuthal_psds_check
     generate_psds_grid[3, 0] = num_freq_bins_dropdown
+    generate_psds_grid[4, 0:2] = peak_freq_gpsd_rangeSlide
+    generate_psds_grid[5, 0:2] = hvsr_band_gpsd_Rangeslide
     
     # Process HVSR
     # horizontal_method=None, 
@@ -796,76 +855,118 @@ def create_jupyter_ui():
     # verbose=False
 
     # HVSR SETTINGS SUBTAB
-    h_combine_meth = widgets.Dropdown(description='', value=3,
-                                    options=[('1. Differential Field Assumption', 1),
-                                             ('2. Arithmetic Mean |  H = (N + E)/2', 2), 
-                                             ('3. Geometric Mean | H = √(N * E) (SESAME recommended)', 3),
-                                             ('4. Vector Summation | H = √(N^2 + E^2)', 4),
-                                             ('5. Quadratic Mean | H = √(N^2 + E^2)/2', 5),
-                                             ('6. Maximum Horizontal Value | H = max(N, E)', 6),
-                                             ('7. Minimum Horizontal Value | H = max(N, E)', 7),
-                                             ('8. Single Azimuth |  H = H2·cos(az) + H1·sin(az)', 8)],)
-                                    #style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
+    h_combine_meth_dropdown = widgets.Dropdown(description='', value=3,
+                                      tooltip="Select how to combine the horizontal components",
+                                      options=[('1. Differential Field Assumption', 1),
+                                               ('2. Arithmetic Mean |  H = (N + E)/2', 2), 
+                                               ('3. Geometric Mean | H = √(N * E) (SESAME recommended)', 3),
+                                               ('4. Vector Summation | H = √(N^2 + E^2)', 4),
+                                               ('5. Quadratic Mean | H = √(N^2 + E^2)/2', 5),
+                                               ('6. Maximum Horizontal Value | H = max(N, E)', 6),
+                                               ('7. Minimum Horizontal Value | H = max(N, E)', 7),
+                                               ('8. Single Azimuth |  H = H2·cos(az) + H1·sin(az)', 8)])
 
-    freq_smoothing = widgets.Dropdown(description='', value='konno ohmachi',
-                                    options=[('Konno-Ohmachi', 'konno ohmachi'),
-                                             ('Constant','constant'),
-                                             ('Proportional', 'proportional'),
-                                             ('None', None)],
-                                    )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    freq_smooth_width = widgets.FloatText(description='Width', #style={'description_width': 'initial'},
-                                    placeholder=40, value=40,)# layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    resample_hv_curve_bool = widgets.Checkbox(value=True, description='Resample')
-    resample_hv_curve = widgets.IntText(description='', #style={'description_width': 'initial'},
-                                    placeholder=512, value=512, )#layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    smooth_hv_curve_bool = widgets.Checkbox(value=True,description='Smooth')# layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'})
-    smooth_hv_curve = widgets.IntText(description='',# style={'description_width': 'initial'},
-                                    placeholder=51, value=51,)# layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    hvsr_band_hbox_hvsrSet = hvsr_band_slide#widgets.HBox([hvsr_band_slide],layout=widgets.Layout(height='auto', width='auto'))
-
-    peak_freq_range_hbox_hvsrSet = peak_freq_range_slide#widgets.HBox([peak_freq_range_slide],})
-
-    process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', )
-                                            #layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
-    process_hvsr_call = widgets.HTML(value='()')
-    process_hvsr_call_hbox = widgets.HBox([process_hvsr_call_prefix, process_hvsr_call])
-
-    process_hvsr_grid[0, 0] = widgets.Label("Horizontal Combination Method")
-    process_hvsr_grid[0, 1:] = h_combine_meth
-    process_hvsr_grid[1, 0] = widgets.Label("Frequency Smoothing Operation")
-    process_hvsr_grid[1, 1] = freq_smoothing
-    process_hvsr_grid[1, 2] = freq_smooth_width
-    process_hvsr_grid[2, 0] = resample_hv_curve_bool
-    process_hvsr_grid[2, 1] = resample_hv_curve
-    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
-    process_hvsr_grid[3, 1] = smooth_hv_curve
-    #process_hvsr_grid[5, 1:] = process_hvsr_call_hbox
+    freq_smoothing_dropdown = widgets.Dropdown(description='', value='konno ohmachi',
+                                      tooltip="Select which type of frequency smoothing algorithm to use",
+                                      options=[('Konno-Ohmachi', 'konno ohmachi'),
+                                               ('Constant','constant'),
+                                               ('Proportional', 'proportional'),
+                                               ('None', None)])
     
-    # Remove outlier curves
-    # rmse_thresh=98, use_percentile=True, 
-    # use_hv_curve=False, 
-    # plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, 
-    # verbose=False
-    
-    remove_outliers_grid
+    freq_smooth_width_float = widgets.FloatText(description='Width',
+                                          tooltip="Specify the width for the smoothing algorithm",
+                                          placeholder=40, value=40)
 
+    resample_hv_curve_bool = widgets.Checkbox(value=True, description='Resample',
+                                              tooltip="Whether to resample the data to a speicified number of frequency bins.")
+    resample_hv_curve = widgets.IntText(description='', tooltip="If resampling, how many frequency points/bins to use.",
+                                        placeholder=512, value=512)
 
-    # Check peaks
-    # hvsr_band=[0.1, 50], 
-    # peak_selection='max', 
-    # peak_freq_range=[0.1, 50]    
+    smooth_hv_curve_bool = widgets.Checkbox(value=True,description='Smooth',
+                                            tooltip='Whether to smooth the data (this does not account for logarithmic frequency width increases.)')
+    smooth_hv_curve = widgets.IntText(description='', tooltip="The window width to use for smoothing.",
+                                    placeholder=51, value=51)
 
     peak_selection_type = widgets.Dropdown(description='Peak Method', value='max',
                                         options=[('Highest Peak', 'max'),
                                              ('Best Scored','scored')],
                                         )#style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    check_peaks_grid[0, 0] = peak_selection_type
+
+    process_hvsr_grid[0, 0] = widgets.Label("Horizontal Combination Method")
+    process_hvsr_grid[0, 1:] = h_combine_meth_dropdown
+    process_hvsr_grid[1, 0] = widgets.Label("Frequency Smoothing Operation")
+    process_hvsr_grid[1, 1] = freq_smoothing_dropdown
+    process_hvsr_grid[1, 2] = freq_smooth_width_float
+    process_hvsr_grid[2, 0] = resample_hv_curve_bool
+    process_hvsr_grid[2, 1] = resample_hv_curve
+    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
+    process_hvsr_grid[3, 1] = smooth_hv_curve
+    process_hvsr_grid[4, 0] = peak_selection_type
+
+    # Remove outlier curves
+    # outlier_method='prototype',
+    # use_percentile=True, 
+    # use_hv_curve=False, 
+    # outiler_threshold=98, 
+    # min_pts=5,
+    # plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True, 
+    # verbose=False
     
+
+    outlier_method_dropdown = widgets.Dropdown(description='Method', value=None,
+                                               tooltip="Select which type of outlier removal algorithm to use.",
+                                               options=[('Prototype/RMSE', 'prototype'),
+                                                        ('DBSCAN','dbscan'),
+                                                        ('None', None)])
+    outlier_pctile_check = widgets.Checkbox(description='Use percentile', 
+                                            value=True)
+    
+    use_hv_curve_outliers_check = widgets.Checkbox(description="Use HV Curves",
+                                             tooltip='Whether to use HV Curve Outliers or PSD curves. HV Curves are only used after they have been calculated during the process_hvsr() step', 
+                                             layout=widgets.Layout(height='auto', width='auto'), 
+                                             #style={'description_width': 'initial'}, 
+                                             value=False, 
+                                             disabled=False)
+    
+    outlier_threshold_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, 'outlier_threshold'), min=0, max=100, step=0.1,
+                                                description='Threshold',
+                                                layout=widgets.Layout(height='auto', width='auto'),
+                                                disabled=False)
+    
+    min_pts_float = widgets.FloatText(description='Min. Pts.',
+                                      tooltip="The minimum number of points in a neighborhood, when 'DBSCAN' is used for the outlier method.",
+                                      placeholder=5, value=5, disabled=True)
+    def outlier_method_update(event):
+        if 'dbscan' in str(outlier_method_dropdown.value).lower():
+            min_pts_float.disabled=False
+        else:
+            min_pts_float.disabled=True
+    outlier_method_dropdown.observe(outlier_method_update)
+
+    # Define Outlier Fig
+    global outlier_fig
+    outlier_fig = go.FigureWidget()
+    outlier_graph_widget = widgets.Output()
+
+    remove_outliers_grid[0, 0] = widgets.Label("Outlier Curve Removal")
+    remove_outliers_grid[1, 0] = use_hv_curve_outliers_check
+    remove_outliers_grid[1, 1] = outlier_method_dropdown
+    remove_outliers_grid[1, 2] = min_pts_float
+    remove_outliers_grid[2, 0] = outlier_pctile_check
+    remove_outliers_grid[2, 1:] = outlier_threshold_slider
+
     # PYTHON API ACCORDION
-    inputAPI_grid = widgets.GridspecLayout(3, 10)
+    inputAPI_grid = widgets.GridspecLayout(6, 10)
+
+    # A text label with "input_params()"
+    #run_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'sprit.run' + '</p>', 
+    #                                   layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    #run_call = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + '()' + '</p>',
+    #                                 layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
+    #input_params_call =  widgets.Label(value='input_params()', layout=widgets.Layout(width='auto'))
+    #inputAPI_grid[0, 0] = run_prefix
+    #inputAPI_grid[0, 1:] = run_call
+
     # A text label with "input_params()"
     input_params_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'input_params' + '</p>', 
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
@@ -882,6 +983,36 @@ def create_jupyter_ui():
                                    layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
     inputAPI_grid[1, 0] = fetch_data_prefix
     inputAPI_grid[1, 1:] = fetch_data_call
+
+    # Generate PPSDs python call
+    generate_psds_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_psds' + '</p>', 
+                                     layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    generate_psds_call = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + '()' + '</p>',
+                                   layout=widgets.Layout(width='fill', justify_content='flex-start',align_content='flex-start'),)
+    inputAPI_grid[2, 0] = generate_psds_prefix
+    inputAPI_grid[2, 1:] = generate_psds_call
+
+    # Process HVSR call
+    process_hvsr_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'process_hvsr' + '</p>', )
+                                            #layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
+    process_hvsr_call = widgets.HTML(value='()')
+    inputAPI_grid[3, 0] = process_hvsr_call_prefix
+    inputAPI_grid[3, 1:] = process_hvsr_call
+
+    # Remove Outlier Curves call
+    remove_outlier_curves_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'remove_outlier_curves' + '</p>', )
+                                            #layout=widgets.Layout(width='fill', justify_content='flex-end', align_content='flex-start'))
+    remove_outlier_curves_call = widgets.HTML(value='()')
+    inputAPI_grid[4, 0] = remove_outlier_curves_prefix
+    inputAPI_grid[4, 1:] = remove_outlier_curves_call
+
+    # Check peaks
+    check_peaks_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>'+'check_peaks' + '</p>',
+                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
+    check_peaks_call = widgets.HTML(value='()')
+    #check_peaks_call_hbox = widgets.HBox([check_peaks_call_prefix, check_peaks_call])
+    inputAPI_grid[5, 0] = check_peaks_call_prefix
+    inputAPI_grid[5, 1:] = check_peaks_call
 
     # Set it all in place
     #metaLabel = widgets.Label('Input Params', layout=widgets.Layout(height='20%', align_content='center', justify_content='flex-end'))
@@ -904,7 +1035,6 @@ def create_jupyter_ui():
                                 generate_psds_grid,
                                 process_hvsr_grid,
                                 remove_outliers_grid,
-                                check_peaks_grid,
                                 inputAPI_grid]
     input_accordion.titles = ["Input Params", 
                               "Fetch Data",
@@ -913,7 +1043,6 @@ def create_jupyter_ui():
                               "Generate PSDs",
                               "Process HVSR",
                               "Remove Outlier Curves",
-                              "Check Peaks",
                               "See Python API Call"]
     input_accordion_box.layout = widgets.Layout(align_content='space-between', width='99%')
     
@@ -993,8 +1122,8 @@ def create_jupyter_ui():
                     acq_date='{acquisition_date_picker.value}', starttime='{start_time_picker.value}', endtime='{end_time_picker.value}', tzone='{time_zone_dropdown.value}',
                     xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
                     input_crs='{input_crs_textbox.value}', output_crs='{output_crs_textbox.value}', elev_unit='{elev_unit_dropdown.value}',
-                    instrument='{instrument_dropdown.value}', hvsr_band={hvsr_band_slide.value},
-                    peak_freq_range={[peak_freq_range_slide.value[0], peak_freq_range_slide.value[1]]}, verbose={verbose_check.value})"""
+                    instrument='{instrument_dropdown.value}', hvsr_band={hvsr_band_rangeSlide.value},
+                    peak_freq_range={[peak_freq_rangeSlide.value[0], peak_freq_rangeSlide.value[1]]}, verbose={verbose_check.value})"""
         input_params_call.value='<style>p {word-wrap: break-word}</style> <p>' + input_param_text + '</p>'
     update_input_param_call()
     
@@ -1045,8 +1174,8 @@ def create_jupyter_ui():
     
     main_settings_grid[10,:6] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
     
-    main_settings_grid[11,0:4] = peak_freq_range_slide
-    main_settings_grid[12,0:4] = hvsr_band_slide
+    main_settings_grid[11,0:4] = peak_freq_rangeSlide
+    main_settings_grid[12,0:4] = hvsr_band_rangeSlide
     
     main_settings_grid[13,:] = widgets.HTML('<hr>', layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'))
 
@@ -1069,15 +1198,6 @@ def create_jupyter_ui():
     
     input_tab = widgets.VBox(children=[input_subtabs])
 
-
-    # Add the VBox to the GridBox
-    #input_tab.children = [main_settings_grid]
-    #input_tab.children = [site_hbox,
-    #                      main_settings_grid,
-    #                      datapath_hbox,
-    #                      input_accordion_box,
-    #                      progress_hbox]
-
     def get_input_params():
         input_params_kwargs={
             'input_data':data_filepath.value,
@@ -1094,8 +1214,8 @@ def create_jupyter_ui():
             'ycoord':ycoord_textbox.value,
             'elevation':zcoord_textbox.value, 'elev_unit':elev_unit_dropdown.value,'depth':0,
             'input_crs':input_crs_textbox.value,'output_crs':output_crs_textbox.value,
-            'hvsr_band':hvsr_band_slide.value,
-            'peak_freq_range':peak_freq_range_slide.value}
+            'hvsr_band':hvsr_band_rangeSlide.value,
+            'peak_freq_range':peak_freq_rangeSlide.value}
         return input_params_kwargs
 
     def get_fetch_data_params():
@@ -1133,7 +1253,6 @@ def create_jupyter_ui():
         else:
             progress_bar.value=0.1
         fd_kwargs = get_fetch_data_params()
-        print(fd_kwargs)
         hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
         log_textArea.value += '\n\n'+str(datetime.datetime.now())+'\nfetch_data():\n\t'+str(fd_kwargs)
         if button.description=='Read Data':
@@ -1141,8 +1260,8 @@ def create_jupyter_ui():
         else:
             progress_bar.value=0.2
         
-        use_hv_curve_rmse.value=False
-        use_hv_curve_rmse.disabled=True
+        use_hv_curve_outliers_check.value=False
+        use_hv_curve_outliers_check.disabled=True
 
         update_preview_fig(hvsr_data, preview_fig)
 
@@ -1192,26 +1311,55 @@ def create_jupyter_ui():
 
     def get_generate_ppsd_kwargs():
         ppsd_kwargs = {
-            'skip_on_gaps':skip_on_gaps.value,
-            'db_bins':[db_bins_min.value, db_bins_max.value, db_bins_step.value],
-            'ppsd_length':ppsd_length.value,
-            'overlap':overlap_pct.value,
-            'special_handling':special_handling_dropdown.value,
-            'period_smoothing_width_octaves':period_smoothing_width.value,
-            'period_step_octaves':period_step_octave.value,
-            'period_limits':[period_limits_min.value, period_limits_max.value],
-            'verbose':verbose_check.value
-            }
+                    'window_length':window_length_float.value,
+                    'overlap_pct':overlap_pct_float.value,
+                    'window_type':window_type_dropdown.value,
+                    'window_length_method':window_length_method_dropdown.value,
+                    'remove_response':remove_response_check.value,
+                    'skip_on_gaps':skip_on_gaps_check.value,
+                    'num_freq_bins':num_freq_bins_dropdown.value,
+                    'obspy_ppsds':obspy_ppsds_check.value,
+                    'azimuthal_psds':azimuthal_psds_check.value,
+                    'verbose':verbose_check.value,
+                    'obspy_ppsds_kwargs':{'db_bins':[db_bins_min.value, db_bins_max.value, db_bins_step.value],
+                                 'ppsd_length':ppsd_length.value,
+                                 'special_handling':special_handling_dropdown.value,
+                                 'period_smoothing_width_octaves':period_smoothing_width.value,
+                                 'period_step_octaves':period_step_octave.value,
+                                 'period_limits':[period_limits_min.value, period_limits_max.value]}
+                    }
 
-        if str(ppsd_kwargs['special_handling']).lower() == 'none':
-            ppsd_kwargs['special_handling'] = None        
+        if str(ppsd_kwargs['obspy_ppsds_kwargs']['special_handling']).lower() == 'none':
+            ppsd_kwargs['obspy_ppsds_kwargs']['special_handling'] = None        
         return ppsd_kwargs
+
+
+    # Update process_hvsr call
+    def update_generate_psds_call():
+        #gp_kwargs = get_generate_ppsd_kwargs()
+        gp_text = f"""(hvsr_data=hvsr_data, 
+                        window_length={window_length_float.value}, 
+                        overlap_pct={overlap_pct_float.value},
+                        window_type={window_type_dropdown.value},
+                        window_length_method={window_length_method_dropdown.value},
+                        remove_response={remove_response_check.value},
+                        skip_on_gaps={skip_on_gaps_check.value},
+                        num_freq_bins={num_freq_bins_dropdown.value},
+                        obspy_ppsds={obspy_ppsds_check.value},
+                        azimuthal_psds={azimuthal_psds_check.value},
+                        ...
+                        obspy_ppsd_kwargs=...,
+                        verbose={verbose_check.value})"""
+        generate_psds_call.value='<style>p {word-wrap: break-word}</style> <p>' + gp_text + '</p>'
+    update_generate_psds_call()
 
     def get_remove_outlier_curve_kwargs():
         roc_kwargs = {
-                'use_percentile':rmse_pctile_check.value,
-                'outlier_threshold':outlier_threshold.value,
-                'use_hv_curves':False,
+                'outlier_method':outlier_method_dropdown.value,
+                'use_percentile':outlier_pctile_check.value,
+                'use_hv_curves':use_hv_curve_outliers_check.value,
+                'outlier_threshold':outlier_threshold_slider.value,
+                'min_pts':min_pts_float.value,
                 'verbose':verbose_check.value
             }
         return roc_kwargs
@@ -1227,33 +1375,31 @@ def create_jupyter_ui():
         else:
             resample_value = resample_hv_curve_bool.value
 
-        ph_kwargs={'horizontal_method':h_combine_meth.value,
+        ph_kwargs={'horizontal_method':h_combine_meth_dropdown.value,
                     'smooth':smooth_value,
-                    'freq_smooth':freq_smoothing.value,
-                    'f_smooth_width':freq_smooth_width.value,
+                    'freq_smooth':freq_smoothing_dropdown.value,
+                    'f_smooth_width':freq_smooth_width_float.value,
                     'resample':resample_value,
-                    'outlier_curve_percentile_threshold':use_hv_curve_rmse.value,
                     'verbose':verbose_check.value}
         return ph_kwargs
 
     # Update process_hvsr call
     def update_process_hvsr_call():
-        ph_kwargs = get_process_hvsr_kwargs()
+        #ph_kwargs = get_process_hvsr_kwargs()
         ph_text = f"""(hvsr_data=hvsr_data, 
-                        horizontal_method={ph_kwargs['horizontal_method']}, 
-                        smooth={ph_kwargs['smooth']}, 
-                        freq_smooth={ph_kwargs['freq_smooth']}, 
-                        f_smooth_width={ph_kwargs['f_smooth_width']}, 
-                        resample={ph_kwargs['resample']}, 
-                        outlier_curve_percentile_threshold={ph_kwargs['outlier_curve_percentile_threshold']}, 
+                        horizontal_method={h_combine_meth_dropdown.value}, 
+                        smooth={smooth_hv_curve_bool.value}, 
+                        freq_smooth={freq_smoothing_dropdown.value}, 
+                        f_smooth_width={freq_smooth_width_float.value}, 
+                        resample={resample_hv_curve_bool.value}, 
                         verbose={verbose_check.value})"""
         process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
     #update_process_hvsr_call()
 
 
     def get_check_peaks_kwargs():
-        cp_kwargs = {'hvsr_band':hvsr_band_slide,
-                    'peak_freq_range':peak_freq_range_slide,
+        cp_kwargs = {'hvsr_band':hvsr_band_rangeSlide,
+                    'peak_freq_range':peak_freq_rangeSlide,
                     'peak_selection':peak_selection_type.value,
                     'verbose':verbose_check.value}
         return cp_kwargs
@@ -1376,8 +1522,8 @@ def create_jupyter_ui():
         progress_bar.value = 0.85
         outlier_fig, hvsr_data = update_outlier_fig()
 
-        use_hv_curve_rmse.value=False
-        use_hv_curve_rmse.disabled=False
+        use_hv_curve_outliers_check.value=False
+        use_hv_curve_outliers_check.disabled=False
 
         def get_rmse_range():
             minRMSE = 10000
@@ -1397,10 +1543,10 @@ def create_jupyter_ui():
                     minRMSE = rmse.min()
                 if rmse.max() > maxRMSE:
                     maxRMSE = rmse.max()
-            rmse_thresh_slider.min = minRMSE
-            rmse_thresh_slider.max = maxRMSE
-            rmse_thresh_slider.step = round((maxRMSE-minRMSE)/100, 2)
-            rmse_thresh_slider.value = maxRMSE
+            outlier_threshold_slider.min = minRMSE
+            outlier_threshold_slider.max = maxRMSE
+            outlier_threshold_slider.step = round((maxRMSE-minRMSE)/100, 2)
+            outlier_threshold_slider.value = maxRMSE
         get_rmse_range()
 
         cp_kwargs = get_check_peaks_kwargs()
@@ -2021,17 +2167,17 @@ def create_jupyter_ui():
 
     # Update remove_outlier call
     def update_remove_noise_call():
-        rnkwargs = get_remove_noise_kwargs()
-        rn_text = f"""(hvsr_data=hvsr_data, remove_method={rnkwargs['remove_method']}, 
-                    sat_percent={rnkwargs['sat_percent']}, 
-                    noise_percent={rnkwargs['noise_percent']}, 
-                    sta={rnkwargs['sta']}, 
-                    lta={rnkwargs['lta']}, 
-                    stalta_thresh={rnkwargs['stalta_thresh']}, 
-                    warmup_time={rnkwargs['warmup_time']}, 
-                    cooldown_time={rnkwargs['cooldown_time']}, 
-                    min_win_size={rnkwargs['min_win_size']}, 
-                    remove_raw_noise={rnkwargs['remove_raw_noise']}, 
+        #rnkwargs = get_remove_noise_kwargs()
+        rn_text = f"""(hvsr_data=hvsr_data, remove_method={remove_method_select.value},
+                    sat_percent={sat_percent_float.value},
+                    noise_percent={noise_percent_float.value},
+                    sta={sta_float.value},
+                    lta={lta_float.value},
+                    stalta_thresh={stalta_floatSlide.value},
+                    warmup_time={warmup_time_int.value},
+                    cooldown_time={cooldown_time_int.value},
+                    min_win_size={min_win_size_float.value},
+                    remove_raw_noise={raw_data_remove_check.value}, 
                     verbose={verbose_check.value})"""
         remove_noise_call.value='<style>p {word-wrap: break-word}</style> <p>' + rn_text + '</p>'
     update_remove_noise_call()
@@ -2077,67 +2223,11 @@ def create_jupyter_ui():
     plot_settings_tab = widgets.GridspecLayout(18, ui_width)
     settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
 
-    # PSD SETTINGS SUBTAB
-    ppsd_length_label = widgets.Label(value='Window Length for PPSDs:')
-    ppsd_length = widgets.FloatText(style={'description_width': 'initial'}, 
-                                    placeholder=20, value=20,layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    
-    overlap_pct_label = widgets.Label(value='Overlap %:')
-    overlap_pct = widgets.FloatText(style={'description_width': 'initial'}, 
-                                    placeholder=0.5, value=0.5, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    period_step_label = widgets.Label(value='Period Step Octaves:')
-    period_step_octave = widgets.FloatText(style={'description_width': 'initial'}, 
-                                           placeholder=0.0625, value=0.0625, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    skip_on_gaps_label = widgets.Label(value='Skip on gaps:')
-    skip_on_gaps = widgets.Checkbox(value=False, disabled=False, indent=False)
-
-    db_step_label = widgets.Label(value='dB bins:')
-    db_bins_min = widgets.FloatText(description='Min. dB', style={'description_width': 'initial'},
-                                    placeholder=-200, value=-200, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    db_bins_max = widgets.FloatText(description='Max. dB', style={'description_width': 'initial'},
-                                    placeholder=-50, value=-50, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    db_bins_step = widgets.FloatText(description='dB Step', style={'description_width': 'initial'},
-                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    
-    period_limit_label = widgets.Label(value='Period Limits:')
-    minPLim = round(1/(hvsr_band_slide.value[1]), 3)
-    maxPLim = round(1/(hvsr_band_slide.value[0]), 3)
-    period_limits_min = widgets.FloatText(description='Min. Period Limit', style={'description_width': 'initial'},
-                                    placeholder=minPLim, value=minPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    period_limits_max = widgets.FloatText(description='Max. Period Limit', style={'description_width': 'initial'},
-                                    placeholder=maxPLim, value=maxPLim, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    period_smoothing_width = widgets.FloatText(description='Period Smoothing Width', style={'description_width': 'initial'},
-                                    placeholder=1, value=1, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
-    special_handling_dropdown = widgets.Dropdown(description='Special Handling', value='none',
-                                                options=[('None', 'none'), ('Ringlaser', 'ringlaser'), ('Hydrophone', 'hydrophone')],
-                                            style={'description_width': 'initial'},  layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-
     #remove_noise call
     generate_ppsd_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'generate_psds' + '</p>', 
                                        layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
-    generate_ppsd_call = widgets.HTML(value='()')
-    generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_ppsd_call])
-
-    # Update generate_psds() call
-    def update_generate_ppsd_call():
-        gppsdkwargs = get_generate_ppsd_kwargs()
-        gppsd_text = f"""(hvsr_data=hvsr_data, 
-                        stats=hvsr_data['stream'].select(component='*').traces[0].stats, 
-                        metadata=hvsr_data['paz']['*'], 
-                        skip_on_gaps={gppsdkwargs['skip_on_gaps']}, 
-                        db_bins={gppsdkwargs['db_bins']}, 
-                        ppsd_length={gppsdkwargs['ppsd_length']}, 
-                        overlap={gppsdkwargs['overlap']}, 
-                        special_handling={gppsdkwargs['special_handling']}, 
-                        period_smoothing_width_octaves={gppsdkwargs['period_smoothing_width_octaves']}, 
-                        period_step_octaves={gppsdkwargs['period_step_octaves']}, 
-                        period_limits={gppsdkwargs['period_limits']}, 
-                        verbose={verbose_check.value})"""
-        generate_ppsd_call.value='<style>p {word-wrap: break-word}</style> <p>' + gppsd_text + '</p>'
-    update_generate_ppsd_call()
+    generate_psds_call = widgets.HTML(value='()')
+    generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_psds_call])
 
     ppsd_length_hbox = widgets.HBox([ppsd_length_label, ppsd_length])
     overlap_pct_hbox = widgets.HBox([overlap_pct_label, overlap_pct])
@@ -2155,30 +2245,14 @@ def create_jupyter_ui():
                                       special_handling_dropdown,
                                       generate_ppsd_call_hbox])
 
-    # OUTLIER SETTINGS SUBTAB
-    rmse_pctile_check = widgets.Checkbox(description='Using percentile', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=True)
-    outlier_threshold = widgets.FloatText(description='RMSE Threshold', style={'description_width': 'initial'},
-                                    placeholder=98, value=98, layout=widgets.Layout(height='auto', width='auto'), disabled=False)
-    use_hv_curve_rmse = widgets.Checkbox(description='Use HV Curve Outliers (may only be used after they have been calculated during the process_hvsr() step))', layout=widgets.Layout(height='auto', width='auto'), style={'description_width': 'initial'}, value=False, disabled=True)
 
-    outlier_threshbox_hbox = widgets.HBox(children=[outlier_threshold, rmse_pctile_check])
-    outlier_params_vbox = widgets.VBox(children=[outlier_threshbox_hbox, use_hv_curve_rmse])
-
-    global outlier_fig
-    outlier_fig = go.FigureWidget()
-    outlier_graph_widget = widgets.Output()
-
-    outlier_thresh_slider_label = widgets.Label(value='RMSE Thresholds:')
-    rmse_thresh_slider = widgets.FloatSlider(value=0, min=0, max=100, step=0.1,description='RMSE Value',layout=widgets.Layout(height='auto', width='auto'),disabled=True)
-    rmse_pctile_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, 'outlier_threshold'), min=0, max=100, step=0.1, description="Percentile",layout=widgets.Layout(height='auto', width='auto'),)
-    
     def calc_rmse(array_2d):
         medArray = np.nanmedian(array_2d, axis=0)
         rmse = np.sqrt(((np.subtract(array_2d, medArray)**2).sum(axis=1))/array_2d.shape[1])
         return rmse
     
-    def on_update_rmse_thresh_slider(change):
-        if use_hv_curve_rmse.value:
+    def on_update_outlier_thresh_slider(change):
+        if use_hv_curve_outliers_check.value:
             rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
         else:
             rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']))
@@ -2187,14 +2261,14 @@ def create_jupyter_ui():
 
             rmse = np.stack([rmsez, rmsee, rmsen]).flatten()
 
-        if rmse_pctile_check.value:
-            outlier_threshold.value = rmse_pctile_slider.value
+        if outlier_pctile_check.value:
+            outlier_threshold_slider.value = outlier_threshold_slider.value
         else:
-            outlier_threshold.value = rmse_thresh_slider.value
-            rmse_pctile_slider.value = ((rmse < rmse_thresh_slider.value).sum() / len(rmse)) * 100
+            outlier_threshold_slider.value = outlier_threshold_slider.value
+            outlier_threshold_slider.value = ((rmse < outlier_threshold_slider.value).sum() / len(rmse)) * 100
 
-    def on_update_rmse_pctile_slider(change):
-        if use_hv_curve_rmse.value:
+    def on_update_thresh_pctile_slider(change):
+        if use_hv_curve_outliers_check.value:
             rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['HV_Curves']))
         else:
             rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']))
@@ -2203,45 +2277,31 @@ def create_jupyter_ui():
 
             rmse = np.stack([rmsez, rmsee, rmsen])
 
-        if rmse_pctile_check.value:
-            rmse_thresh_slider.value = np.percentile(rmse, rmse_pctile_slider.value)
-            outlier_threshold.value = rmse_pctile_slider.value
+        if outlier_pctile_check.value:
+            outlier_threshold_slider.value = np.percentile(rmse, outlier_threshold_slider.value)
+            outlier_threshold_slider.value = outlier_threshold_slider.value
         else:
-            outlier_threshold.value = rmse_thresh_slider.value
+            outlier_threshold_slider.value = outlier_threshold_slider.value
 
-    def on_update_rmse_pctile_check(change):
-        if rmse_pctile_check.value:
-            rmse_pctile_slider.disabled = False
-            rmse_thresh_slider.disabled = True
-        else:
-            rmse_pctile_slider.disabled = True
-            rmse_thresh_slider.disabled = False
-    
-    def on_update_rmse_thresh(change):
-        if rmse_pctile_check.value:
-            rmse_pctile_slider.value = outlier_threshold.value
-        else:
-            rmse_thresh_slider.value = outlier_threshold.value
-
-    rmse_pctile_check.observe(on_update_rmse_pctile_check)
-    rmse_thresh_slider.observe(on_update_rmse_thresh_slider)
-    rmse_pctile_slider.observe(on_update_rmse_pctile_slider)
-    outlier_threshold.observe(on_update_rmse_thresh)
+    #outlier_threshold_chart_slider.observe(on_update_rmse_thresh_slider)
+    #outlier_threshold_chart_slider.observe(on_update_rmse_pctile_slider)
 
     use_hv_curve_label = widgets.Label(value='NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_psds() step)', layout=widgets.Layout(height='auto', width='80%'))
     generate_ppsd_button = widgets.Button(description='Generate PPSDs', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     update_outlier_plot_button = widgets.Button(description='Remove Outliers', layout=widgets.Layout(height='auto', width='20%', justify_content='flex-end'), disabled=False)
     outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
-    remove_outlier_curve_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>' + 'remove_outlier_curves' + '</p>', 
-                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
-    remove_outlier_curve_call = widgets.HTML(value='()')
-    remove_outlier_hbox = widgets.HBox([remove_outlier_curve_prefix, remove_outlier_curve_call])
 
     # Update remove_outlier call
     def update_remove_outlier_curve_call():
-        roc_text = f"""(hvsr_data=hvsr_data, outlier_threshold={outlier_threshold.value}, use_percentile={rmse_pctile_check.value},
-                            use_hv_curves={use_hv_curve_rmse.value}...verbose={verbose_check.value})"""
-        remove_outlier_curve_call.value='<style>p {word-wrap: break-word}</style> <p>' + roc_text + '</p>'
+        roc_text = f"""(hvsr_data=hvsr_data, 
+                        outlier_method:{outlier_method_dropdown.value},
+                        outlier_threshold={outlier_threshold_slider.value}, 
+                        use_percentile={outlier_pctile_check.value},
+                        min_pts:{min_pts_float.value},
+                        use_hv_curves={use_hv_curve_outliers_check.value},
+                        ...
+                        verbose={verbose_check.value})"""
+        remove_outlier_curves_call.value='<style>p {word-wrap: break-word}</style> <p>' + roc_text + '</p>'
     update_remove_outlier_curve_call()
 
     def update_outlier_fig_button(button):
@@ -2251,26 +2311,18 @@ def create_jupyter_ui():
 
     update_outlier_plot_button.on_click(update_outlier_fig_button)
 
-    outlier_settings_tab = widgets.VBox(children=[outlier_params_vbox,
-                                                  outlier_graph_widget,
-                                                  outlier_thresh_slider_label,
-                                                  rmse_thresh_slider,
-                                                  rmse_pctile_slider,
-                                                  outlier_ppsd_hbox,
-                                                  remove_outlier_hbox])
-
     with outlier_graph_widget:
         display(outlier_fig)
 
-    def update_outlier_fig(input=None, _rmse_thresh=rmse_pctile_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_rmse.value, _verbose=verbose_check.value):
+    def update_outlier_fig(input=None, _rmse_thresh=outlier_threshold_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_outliers_check.value, _verbose=verbose_check.value):
         global outlier_fig
         global hvsr_data
         hv_data = hvsr_data
 
 
-        roc_kwargs = {'outlier_threshold':rmse_pctile_slider.value,
+        roc_kwargs = {'outlier_threshold':outlier_threshold_slider.value,
                         'use_percentile':True,
-                        'use_hv_curves':use_hv_curve_rmse.value,
+                        'use_hv_curves':use_hv_curve_outliers_check.value,
                         'plot_engine':'plotly',
                         'show_plot':False,
                         'verbose':verbose_check.value
@@ -2407,23 +2459,18 @@ def create_jupyter_ui():
         return outlier_fig, hvsr_data
 
 
-    check_peaks_call_prefix = widgets.HTML(value='<style>p {word-wrap: break-word}</style> <p>'+'check_peaks' + '</p>',
-                                       layout=widgets.Layout(width='fill', justify_content='flex-end',align_content='flex-start'))
-    check_peaks_call = widgets.HTML(value='()')
-    check_peaks_call_hbox = widgets.HBox([check_peaks_call_prefix, check_peaks_call])
-
     # Update process_hvsr call
     def update_check_peaks_call():
-        cp_kwargs = get_check_peaks_kwargs()
+        #cp_kwargs = get_check_peaks_kwargs()
         cp_text = f"""(hvsr_data=hvsr_data, 
-                        hvsr_band={cp_kwargs['hvsr_band']}, 
-                        peak_selection={cp_kwargs['peak_selection']}, 
-                        peak_freq_range={cp_kwargs['peak_freq_range']}, 
+                        peak_selection={peak_selection_type.value}, 
+                        hvsr_band={hvsr_band_rangeSlide.value}, 
+                        peak_freq_range={peak_freq_rangeSlide.value}, 
                         verbose={verbose_check.value})"""
         check_peaks_call.value='<style>p {word-wrap: break-word}</style> <p>' + cp_text + '</p>'
     update_check_peaks_call()
 
-    #freq_smooth_hbox = widgets.HBox([freq_smoothing, freq_smooth_width])
+    #freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])
     #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
     #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
     
@@ -2579,11 +2626,10 @@ def create_jupyter_ui():
     update_plot_button.on_click(manually_update_results_fig)
 
     # Place everything in Settings Tab
-    settings_subtabs = widgets.Tab([ppsd_settings_tab, outlier_settings_tab, plot_settings_tab])
+    settings_subtabs = widgets.Tab([ppsd_settings_tab, plot_settings_tab])
     settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
     settings_subtabs.set_title(0, "PSD Settings")
-    settings_subtabs.set_title(1, "Outlier Settings")
-    settings_subtabs.set_title(2, "Plot Settings")
+    settings_subtabs.set_title(1, "Plot Settings")
 
     # LOG TAB - not currently using
     log_tab = widgets.VBox(children=[log_textArea])
@@ -2679,26 +2725,26 @@ def create_jupyter_ui():
              'skip_on_gaps':skip_on_gaps, 
              'db_bins':[db_bins_min, db_bins_max, db_bins_step],
              'ppsd_length':ppsd_length, 
-             'overlap':overlap_pct, 
+             'overlap':overlap_pct_float, 
              'special_handling':special_handling_dropdown, 
              'period_smoothing_width_octaves':period_smoothing_width, 
              'period_step_octaves':period_step_octave, 
-             'period_limits':hvsr_band_slide},
+             'period_limits':hvsr_band_rangeSlide},
         'process_hvsr': 
-            {'horizontal_method': h_combine_meth,
+            {'horizontal_method': h_combine_meth_dropdown,
             'smooth': smooth_hv_curve,
-            'freq_smooth': freq_smoothing,
-            'f_smooth_width': freq_smooth_width,
+            'freq_smooth': freq_smoothing_dropdown,
+            'f_smooth_width': freq_smooth_width_float,
             'resample': resample_hv_curve,
             'verbose': verbose_check},
         'remove_outlier_curves': 
-            {'outlier_threshold': outlier_threshold,
-            'use_percentile': rmse_pctile_check,
-            'use_hv_curves': use_hv_curve_rmse,
+            {'outlier_threshold': outlier_threshold_slider,
+            'use_percentile': outlier_pctile_check,
+            'use_hv_curves': use_hv_curve_outliers_check,
             'verbose': verbose_check},
         'check_peaks': 
-            {'hvsr_band': hvsr_band_slide,
-            'peak_freq_range': peak_freq_range_slide,
+            {'hvsr_band': hvsr_band_rangeSlide,
+            'peak_freq_range': peak_freq_rangeSlide,
             'verbose': verbose_check},
         'get_report': 
             {
@@ -2776,7 +2822,7 @@ def create_jupyter_ui():
         update_input_param_call()
         update_fetch_data_call()
         update_remove_noise_call()
-        update_generate_ppsd_call()
+        update_generate_psds_call()
         update_process_hvsr_call()
         update_remove_outlier_curve_call()
         update_check_peaks_call()
