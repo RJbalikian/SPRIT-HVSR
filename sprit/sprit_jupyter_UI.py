@@ -576,10 +576,10 @@ def create_jupyter_ui():
 
 
     sta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, "sta")),
-                                                step=0.1,
-                                                description='STA',
-                                                tooltip='Length of window to use for short term average',
-                                                disabled=True)
+                                  step=0.1,
+                                  description='STA',
+                                  tooltip='Length of window to use for short term average',
+                                  disabled=True)
 
     lta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, "lta")),
                                                 step=0.1,
@@ -1065,7 +1065,11 @@ def create_jupyter_ui():
             root.wm_attributes('-topmost', True)
             root.withdraw()
             if data_source_type.value=='file' or data_source_type.value=='batch':
-                data_filepath.value = str(filedialog.askopenfilenames(defaultextension='.MSEED', title='Select Data File'))
+                filepaths = filedialog.askopenfilenames(defaultextension='.MSEED', title='Select Data File')
+                if isinstance(filepaths, tuple):
+                    if len(filepaths)==1:
+                        filepaths = str(filepaths[0])
+                data_filepath.value = str(filepaths)
             else:
                 data_filepath.value = str(filedialog.askdirectory(mustexist=True, title="Select Data Directory"))
             root.destroy()
@@ -1398,8 +1402,8 @@ def create_jupyter_ui():
 
 
     def get_check_peaks_kwargs():
-        cp_kwargs = {'hvsr_band':hvsr_band_rangeSlide,
-                    'peak_freq_range':peak_freq_rangeSlide,
+        cp_kwargs = {'hvsr_band':hvsr_band_rangeSlide.value,
+                    'peak_freq_range':peak_freq_rangeSlide.value,
                     'peak_selection':peak_selection_type.value,
                     'verbose':verbose_check.value}
         return cp_kwargs
@@ -1858,7 +1862,7 @@ def create_jupyter_ui():
                                             y=hvsr_data['psd_values_tavg'][comp],
                                             line=dict(width=2, dash="solid", 
                                             color=compColor[comp]),marker=None, 
-                                            name='PSD Curve '+comp,    
+                                            name=comp, showlegend=True,
                                             yaxis=yaxis_to_use), 
                                             secondary_y=use_secondary,
                                             row=compRow, col='all')
@@ -1979,8 +1983,8 @@ def create_jupyter_ui():
         results_fig.data = []
         results_fig.update_layout(grid=None)  # Clear the existing grid layout
         if not combinedComp: 
-            results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
-                                                row_heights=[2, 1.5, 1])
+            results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.05,
+                                                row_heights=[2, 1.5, 1.5])
         else:
             results_subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
                                     specs =[[{'secondary_y': True}],
@@ -2022,15 +2026,15 @@ def create_jupyter_ui():
         
         if preview_fig.layout.width is None:
             if outlier_fig.layout.width is None:
-                chartwidth = 800
+                chartwidth = 1200
             else:
                 chartwidth = outlier_fig.layout.width
 
         else:
             chartwidth = preview_fig.layout.width
 
-        results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0},
-                                showlegend=False, autosize=True, height = 1.2 * float(chartwidth),
+        results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0}, width=chartwidth,
+                                showlegend=False, height = 0.5625 * float(chartwidth),
                                 title=f"{hvsr_data['site']} Results")
         results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
         results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
@@ -2050,7 +2054,8 @@ def create_jupyter_ui():
 
         sprit_tabs.selected_index = 4
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
-      
+        hv_data["Plot_Report"] = results_fig
+
     process_hvsr_button.on_click(process_data)
 
     # PREVIEW TAB
@@ -2119,7 +2124,8 @@ def create_jupyter_ui():
         
         #preview_fig.add_trace(p)
         preview_fig.update_layout(margin={"l":10, "r":10, "t":30, 'b':0}, showlegend=False,
-                                  title=f"{hvsr_data['site']} Data Preview")
+                                  title=f"{hvsr_data['site']} Data Preview",
+                                  width=1200)
 
         if show_plot_check.value:
             preview_fig.show()
@@ -2496,13 +2502,13 @@ def create_jupyter_ui():
                                    style={'description_width': 'initial'})
     show_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    show_best_peak_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+    show_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
 
     annotate_peak_label = widgets.Label(value='Annotate Best Peak', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
     ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
-    ann_best_peak_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
     ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
@@ -2530,7 +2536,7 @@ def create_jupyter_ui():
                                    style={'description_width': 'initial'})
 
     show_legend_label = widgets.Label(value='Show Legend', layout=widgets.Layout(height='auto', width='auto', justify_content='flex-end', align_items='center'))
-    show_legend_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
+    show_legend_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
     show_legend_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height='auto', width='auto', justify_content='center', align_items='center'),
                                    style={'description_width': 'initial'})
