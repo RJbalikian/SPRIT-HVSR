@@ -497,18 +497,18 @@ def create_jupyter_ui():
                                     orientation='horizontal',
                                     readout=True)
 
-    azimuth_type_dropdown = widgets.Dropdown(options=[('Multiple/steps', 'multiple'), ('Single', 'single')],
-                                            value='single',
+    azimuth_type_dropdown = widgets.Dropdown(options=[('Multiple/steps', 'multiple'), ('Single', 'single'), ("None", None)],
+                                            value=None,
                                             description='Type')
 
     azimuth_unit_dropdown = widgets.Dropdown(options=[('°', 'degrees'), ('rad', 'radians')],
                                             value='degrees',
-                                            description='Type')
+                                            description='Unit')
 
-    calculate_azimuths_grid[0, :] = widgets.Label("Azimuth information")
-    calculate_azimuths_grid[0, 1:] = azimuth_angle_slide
-    calculate_azimuths_grid[1, :] = azimuth_type_dropdown
-    calculate_azimuths_grid[2, :] = azimuth_unit_dropdown
+    calculate_azimuths_grid[0, 0] = widgets.Label("Azimuth information")
+    calculate_azimuths_grid[1, 0] = azimuth_type_dropdown
+    calculate_azimuths_grid[2, 0] = azimuth_unit_dropdown
+    calculate_azimuths_grid[3, :] = azimuth_angle_slide
 
     # Noise removal
     # remove_method=None, 
@@ -2052,7 +2052,7 @@ def create_jupyter_ui():
             results_fig.show()
 
 
-        sprit_tabs.selected_index = 4
+        sprit_tabs.selected_index = 2
         log_textArea.value += f"\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}"
         hv_data["Plot_Report"] = results_fig
 
@@ -2632,10 +2632,10 @@ def create_jupyter_ui():
     update_plot_button.on_click(manually_update_results_fig)
 
     # Place everything in Settings Tab
-    settings_subtabs = widgets.Tab([ppsd_settings_tab, plot_settings_tab])
-    settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
-    settings_subtabs.set_title(0, "PSD Settings")
-    settings_subtabs.set_title(1, "Plot Settings")
+    #settings_subtabs = widgets.Tab([ppsd_settings_tab, plot_settings_tab])
+    #settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
+    #settings_subtabs.set_title(0, "PSD Settings")
+    #settings_subtabs.set_title(1, "Plot Settings")
 
     # LOG TAB - not currently using
     log_tab = widgets.VBox(children=[log_textArea])
@@ -2694,11 +2694,25 @@ def create_jupyter_ui():
     export_results_table_browse_button.on_click(export_results_table)
     export_results_table_read_button.on_click(export_results_table)
 
+    exportLabel = widgets.Label("Exports", layout=widgets.Layout(width='5%'))
+    export_directory_text = widgets.Text(description="Directory", layout=widgets.Layout(width='50%'))
+    export_data_button = widgets.Button(description='Data (.MSeed)', layout=widgets.Layout(width='10%'))
+    export_report_button = widgets.Button(description="Report (.PDF)", layout=widgets.Layout(width='10%'))
+    export_hvsr_button = widgets.Button(description="HVSR Data (.HVSR)", layout=widgets.Layout(width='10%'))
+    export_subdirectories_check = widgets.Checkbox(description='Use Subfolders', value=True,
+                                                   layout=widgets.Layout(width='15%'))
+    
     results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
+    results_export_hbox = widgets.HBox([exportLabel, export_directory_text,
+                                        export_data_button, export_report_button, export_hvsr_button,
+                                        export_subdirectories_check])
     global results_tab
-    results_subtabs = widgets.Tab([results_graph_widget, printed_results_textArea, results_table_vbox])
-    results_tab = widgets.VBox(children=[results_subtabs])
+    plots_subtabs = widgets.Tab([results_graph_widget, plot_settings_tab])
+    plots_subtabs.set_title(0, "Plot Viewer")
+    plots_subtabs.set_title(1, "Plot Settings")
+    results_subtabs = widgets.Tab([plots_subtabs, printed_results_textArea, results_table_vbox])
+    results_tab = widgets.VBox(children=[results_subtabs, results_export_hbox])
     results_subtabs.set_title(0, "Plot")
     results_subtabs.set_title(1, "Peak Tests")
     results_subtabs.set_title(2, "Peak Table")
@@ -2760,12 +2774,11 @@ def create_jupyter_ui():
     # SPRIT WIDGET
     # Add all  a tab and add the grid to it
     global sprit_tabs
-    sprit_tabs = widgets.Tab([input_tab, preview_tab, settings_tab, log_tab, results_tab])
+    sprit_tabs = widgets.Tab([input_tab, preview_tab, results_tab, log_tab])
     sprit_tabs.set_title(0, "Input")
-    sprit_tabs.set_title(1, "Preview")
-    sprit_tabs.set_title(2, "Settings")
+    sprit_tabs.set_title(1, "Data View")
+    sprit_tabs.set_title(2, "Results")
     sprit_tabs.set_title(3, "Log")
-    sprit_tabs.set_title(4, "Results")
 
     with open(spritLogoPath.as_posix(), "rb") as file:
         image = file.read()
