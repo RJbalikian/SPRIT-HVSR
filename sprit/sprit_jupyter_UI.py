@@ -43,6 +43,7 @@ SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
 spritLogoPath = RESOURCE_DIR.joinpath("icon").joinpath("SpRITLogo.png")
 
+
 def _get_default(func, param):
 
     if param == 'output_crs':
@@ -52,6 +53,7 @@ def _get_default(func, param):
         return str(inspect.signature(func).parameters[param].default)
 
     return inspect.signature(func).parameters[param].default
+
 
 def create_jupyter_ui():
     """Function that generates the user interface for Jupyter Notebooks.
@@ -84,8 +86,6 @@ def create_jupyter_ui():
     generate_psds_grid = widgets.GridspecLayout(6, 5)
     process_hvsr_grid = widgets.GridspecLayout(5, 10)
     remove_outliers_grid = widgets.GridspecLayout(5, 10)
-    check_peaks_grid = widgets.GridspecLayout(5, 10)
-    get_reports_grid = widgets.GridspecLayout(5, 10)
 
     # A text box for the site name
     site_textbox = widgets.Text(description='Site Name',
@@ -99,8 +99,7 @@ def create_jupyter_ui():
     # A text box labeled Metadata Filepath
     metadata_filepath = widgets.Text(description='Metadata',
                                      placeholder='Filepath to file to be read by obspy.read_inventory()',
-                                    #style={'description_width': 'initial'},
-                                    layout=widgets.Layout(width='auto'))
+                                     layout=widgets.Layout(width='auto'))
 
     # A button next to it labeled "Browse"
     browse_metadata_button = widgets.Button(description='Browse', layout=widgets.Layout(width='auto'))
@@ -150,7 +149,6 @@ def create_jupyter_ui():
     n_channel_textbox = widgets.Text(description='N Channel:',
                                     placeholder=_get_default(sprit_hvsr.input_params, 'channels')[1],
                                     value=_get_default(sprit_hvsr.input_params, 'channels')[1])
-
 
     # Instrument Settings
     inst_settings_text = widgets.Text(description='Inst. Settings', 
@@ -212,8 +210,8 @@ def create_jupyter_ui():
 
         except Exception as e:
             print(e)
-            instrument_read_button.disabled=True
-            instrument_read_button.description='Use Text Field'
+            instrument_read_button.disabled = True
+            instrument_read_button.description = 'Use Text Field'
     
     instrument_read_button.on_click(select_inst)
 
@@ -1064,10 +1062,10 @@ def create_jupyter_ui():
             root = tk.Tk()
             root.wm_attributes('-topmost', True)
             root.withdraw()
-            if data_source_type.value=='file' or data_source_type.value=='batch':
+            if data_source_type.value == 'file' or data_source_type.value == 'batch':
                 filepaths = filedialog.askopenfilenames(defaultextension='.MSEED', title='Select Data File')
                 if isinstance(filepaths, tuple):
-                    if len(filepaths)==1:
+                    if len(filepaths) == 1:
                         filepaths = str(filepaths[0])
                 data_filepath.value = str(filepaths)
             else:
@@ -1079,6 +1077,11 @@ def create_jupyter_ui():
             browse_data_button.description='Use Text Field'
     browse_data_button.on_click(select_datapath)
 
+    def on_input_data_change(event):
+        export_directory_text.value = pathlib.Path(data_filepath.value).parent.as_posix()
+        if export_directory_text.value == '.' or not pathlib.Path(export_directory_text.value).exists():
+            export_directory_text.value = pathlib.Path().home().as_posix()
+    data_filepath.observe(on_input_data_change)
     # Dropdown with different source types 
     data_source_type = widgets.Dropdown(options=[('File', 'file'), ('Raw', 'raw'), ('Batch', 'batch'), ('Directory', 'dir')],
                                             description='Data Source type:',
@@ -2695,12 +2698,64 @@ def create_jupyter_ui():
     export_results_table_read_button.on_click(export_results_table)
 
     exportLabel = widgets.Label("Exports", layout=widgets.Layout(width='5%'))
-    export_directory_text = widgets.Text(description="Directory", layout=widgets.Layout(width='50%'))
+    export_directory_text = widgets.Text(description="Directory", layout=widgets.Layout(width='50%'),
+                                         value= pathlib.Path().home().as_posix())
     export_data_button = widgets.Button(description='Data (.MSeed)', layout=widgets.Layout(width='10%'))
     export_report_button = widgets.Button(description="Report (.PDF)", layout=widgets.Layout(width='10%'))
     export_hvsr_button = widgets.Button(description="HVSR Data (.HVSR)", layout=widgets.Layout(width='10%'))
     export_subdirectories_check = widgets.Checkbox(description='Use Subfolders', value=True,
                                                    layout=widgets.Layout(width='15%'))
+    
+    
+    def on_export_data(event):
+        hvID = ''
+        if hasattr(hvsr_results, 'hvsr_id'):
+            hvID = hvsr_results['hvsr_id']
+        nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d")
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath('Data')
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+
+        sprit_hvsr.export_data(hvsr_results, data_export_path=export_dir)
+        print("Data exported successfully to: ", export_dir)
+    
+    def on_export_report(event):
+        hvID = ''
+        if hasattr(hvsr_results, 'hvsr_id'):
+            hvID = hvsr_results['hvsr_id']
+        nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d")
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath('Reports')
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+
+        sprit_hvsr.export_report(hvsr_results, report_export_path=export_dir)
+        print("Report exported successfully to: ", export_dir)
+    
+    
+    def on_export_hvsr(event):
+        hvID = ''
+        if hasattr(hvsr_results, 'hvsr_id'):
+            hvID = hvsr_results['hvsr_id']
+        nowTimeStr = datetime.datetime.now().strftime("%Y-%m-%d")
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath('HVSRFiles')
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+            
+        sprit_hvsr.export_hvsr(hvsr_results, hvsr_export_path=export_dir)
+        print("HVSR file exported successfully to: ", export_dir)
+            
+    export_data_button.on_click(on_export_data)
+    export_report_button.on_click(on_export_report)
+    export_hvsr_button.on_click(on_export_hvsr)
     
     results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
     results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
