@@ -651,7 +651,7 @@ def main():
                                                 on_change=display_buttons_and_results)
 
             if st.session_state.interactive_display:
-                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
             else:
                 st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
 
@@ -671,10 +671,10 @@ def main():
             outlier_plot_in_tab()
 
             if st.session_state.interactive_display:
-                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
             else:
                 st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
-                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['HV_Plot'], use_container_width=True)
+                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
             st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
             st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
 
@@ -759,7 +759,7 @@ def main():
             
             return _img
 
-        img = _convert_plot_for_download(hvData['HV_Plot'])
+        img = _convert_plot_for_download(hvData['Plot_Report'])
 
         ##st.session_state.dlPlot.download_button(
         dlPlot.download_button(
@@ -1251,7 +1251,7 @@ def main():
 
         procCond1 = st.session_state.hvsr_data['processing_status']['process_hvsr_status']
         procCond2 = st.session_state.hvsr_data['processing_status']['overall_status']
-        procCond3 = has_attributes(st.session_state.hvsr_data, "HV_Plot", "Print_Report", "Table_Report")
+        procCond3 = has_attributes(st.session_state.hvsr_data, "Plot_Report", "Print_Report", "Table_Report")
 
         readCond1 = st.session_state.hvsr_data['processing_status']['input_params_status']
         readCond2 = st.session_state.hvsr_data['processing_status']['fetch_data_status']

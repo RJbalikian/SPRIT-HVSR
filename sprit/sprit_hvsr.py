@@ -60,7 +60,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
 DEFAULT_BAND = [0.5, 40]
-PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "HV_Plot", "Depth_Plot"]
+PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "Plot_Report", "Depth_Plot", "Plot_Report"]
 
 # Resources directory path, and the other paths as well
 RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
@@ -1728,7 +1728,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 pass
             else:
                 # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['HV_Plot'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
+                # hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
                 pass
         else:
             pass
@@ -2683,6 +2683,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr',
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
+        print(dir(_hvsr_data))
         fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled.{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
@@ -2706,11 +2707,11 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr',
             if hasattr(hvData, pk):
                 del hvData[pk]
 
-    if isinstance(hvsr_data, HVSRBatch):
-        for sitename in hvsr_data.keys():
-            _hvsr_export(hvsr_data[sitename], hvsr_export_path, ext)
-    elif isinstance(hvsr_data, HVSRData):
-        _hvsr_export(hvData, hvsr_export_path, ext)
+    if isinstance(hvData, HVSRBatch):
+        for sitename in hvData.keys():
+            _hvsr_export(_hvsr_data=hvData[sitename], _export_path=hvsr_export_path, _ext=ext)
+    elif isinstance(hvData, HVSRData):
+        _hvsr_export(_hvsr_data=hvData, _export_path=hvsr_export_path, _ext=ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     
@@ -2864,9 +2865,9 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
                         print(colStr.ljust(maxColWidth), end='  ')
                     print()
         elif ref == 'plot':
-            if not hasattr(hvsr_results, 'HV_Plot'):
+            if not hasattr(hvsr_results, 'Plot_Report'):
                 fig = plot_hvsr(hvsr_results, return_fig=True)
-            hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = hvsr_results['HV_Plot'] = fig
+            hvsr_results['BestPeak'][azimuth]['Report']['Plot_Report'] = hvsr_results['Plot_Report'] = fig
 
             if verbose:
                 print(f'\nSaving plot to: {outFile}')
@@ -4346,7 +4347,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         Format in which to print or export the report.
         The following report_formats return the following items in the following attributes:
             - 'plot': hvsr_results['Print_Report'] as a str
-            - 'print': hvsr_results['HV_Plot'] - matplotlib.Figure object
+            - 'print': hvsr_results['Plot_Report'] - matplotlib.Figure object
             - 'table':  hvsr_results['Table_Report']- pandas.DataFrame object
                 - list/tuple - a list or tuple of the above objects, in the same order they are in the report_formats list
             - 'html': hvsr_results['HTML_Report'] - a string containing the text for an HTML document
@@ -4591,7 +4592,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                             show_report = False, # If report is to be shown, done in previous step
                             verbose = verbose_table)
 
-        # HV_Plot
+        # Plot_Report
         elif rep_form == 'plot':
             plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
             if 'plot_type' in plot_hvsr_kwargs.keys():
@@ -4604,8 +4605,8 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             
             if 'plot' in report_export_format:
                 export_report(hvsr_results=hvsr_results, report_export_path=report_export_path, report_export_format='plot')
-            #hvsr_results['BestPeak'][azimuth]['Report']['HV_Plot'] = fig
-            hvsr_results['HV_Plot'] = fig
+            #hvsr_results['BestPeak'][azimuth]['Report']['Plot_Report'] = fig
+            hvsr_results['Plot_Report'] = fig
 
             if show_plot_report:#'show_plot' in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs['show_plot'] is False:
                 if not verbose:
@@ -4621,7 +4622,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                         fig.show()                    
             else:
                 if verbose:
-                    print("\n\tPlot of data report created and saved in ['HV_Plot'] attribute")
+                    print("\n\tPlot of data report created and saved in ['Plot_Report'] attribute")
 
         # HTML_Report
         elif rep_form == 'html':
@@ -10204,7 +10205,7 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
         plotEngine = hvsr_results.processing_parameters['get_report']['plot_engine'].lower()
         
     if str(plotEngine).lower() not in ['plotly', 'plty', 'p']:
-        fig = plt.figure(hvsr_results['HV_Plot'])
+        fig = plt.figure(hvsr_results['Plot_Report'])
         fig.set_size_inches(8.5, 6)
         #fig.set_size_inches(4.25, 3)
         # Create a byte stream from the image
@@ -10217,9 +10218,9 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
         # Embed the image in the html document
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
     else:
-        #htmlstring = plotly.io.to_html(hvsr_results.HV_Plot, include_plotlyjs=False)
+        #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
         #print(type(htmlstring))
-        img = plotly.io.to_image(hvsr_results.HV_Plot, format='png', engine='kaleido')
+        img = plotly.io.to_image(hvsr_results.Plot_Report, format='png', engine='kaleido')
         hvplot_base64 = base64.b64encode(img).decode('utf8')
 
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
